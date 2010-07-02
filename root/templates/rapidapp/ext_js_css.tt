@@ -1,0 +1,39 @@
+<link rel="stylesheet" type="text/css" href="/static/ext/resources/css/ext-all.css" />
+<link rel="stylesheet" type="text/css" href="/static/ext/resources/css/xtheme-gray.css" />
+
+<link rel="stylesheet" type="text/css" href="/static/rapidapp/css/Ext.ux.tree.CheckTreePanel.css" />
+<link rel="stylesheet" type="text/css" href="/static/rapidapp/css/Ext.ux.grid.RowActions.css" />
+
+<!-- grid filters: -->
+<link rel="stylesheet" type="text/css" href="/static/rapidapp/js/gridfilters/css/GridFilters.css" />
+<link rel="stylesheet" type="text/css" href="/static/rapidapp/js/gridfilters/css/RangeMenu.css" />
+<!--               -->
+
+<link rel="stylesheet" type="text/css" href="/static/rapidapp/css/RapidApp.css" />
+
+<script type="text/javascript" src="/static/ext/adapter/ext/ext-base.js"></script>
+<script type="text/javascript" src="/static/ext/ext-all-debug.js"></script>
+
+<script type="text/javascript" src="/static/rapidapp/js/RowExpanderEX.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/Ext.ux.grid.RowActions.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/Ext.ux.form.XCheckbox.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/Ext.ux.tree.CheckTreePanel.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/Ext.ux.form.DateTime.js"></script>
+
+<script type="text/javascript" src="/static/rapidapp/js/Ext.ux.grid.Search.js"></script>
+
+<!-- grid filters: -->
+<script type="text/javascript" src="/static/rapidapp/js/gridfilters/menu/RangeMenu.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/gridfilters/menu/ListMenu.js"></script>
+
+<script type="text/javascript" src="/static/rapidapp/js/gridfilters/GridFilters.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/gridfilters/filter/Filter.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/gridfilters/filter/StringFilter.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/gridfilters/filter/DateFilter.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/gridfilters/filter/ListFilter.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/gridfilters/filter/NumericFilter.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/gridfilters/filter/BooleanFilter.js"></script>
+<!--               -->
+
+
+<script type="text/javascript" src="/static/rapidapp/js/RapidApp.js"></script>

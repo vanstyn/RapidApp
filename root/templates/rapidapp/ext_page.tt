@@ -7,11 +7,11 @@
 <title>[% title %]</title>
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 
-[% INCLUDE templates/ext_js_css.tt %]
+[% INCLUDE templates/rapidapp/ext_js_css.tt %]
 
 <script type="text/javascript">
-	Ext.BLANK_IMAGE_URL = '/static/extjs/resources/images/default/s.gif';
-	Ext.chart.Chart.CHART_URL = '/static/extjs/resources/charts.swf';
+	Ext.BLANK_IMAGE_URL = '/static/ext/resources/images/default/s.gif';
+	Ext.chart.Chart.CHART_URL = '/static/ext/resources/charts.swf';
 	Ext.QuickTips.init();
 </script>
 

@@ -1,4 +1,4 @@
-[% WRAPPER templates/ext_page.tt %]
+[% WRAPPER templates/rapidapp/ext_page.tt %]
 
 <script type="text/javascript">
 

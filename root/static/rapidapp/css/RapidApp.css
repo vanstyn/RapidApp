@@ -1,0 +1,324 @@
+.icon-server_database { background-image: url(/static/rapidapp/images/server_database.png) !important; }
+.icon-arrow_refresh_small { background-image: url(/static/rapidapp/images/arrow_refresh_small.png) !important; }
+.icon-database { background-image: url(/static/rapidapp/images/database.png) !important; }
+.icon-database_table { background-image: url(/static/rapidapp/images/database_table.png) !important; }
+.icon-application_view_detail { background-image: url(/static/rapidapp/images/application_view_detail.png) !important; }
+.icon-resultset_next { background-image: url(/static/rapidapp/images/resultset_next.png) !important; }
+.icon-application_edit { background-image: url(/static/rapidapp/images/application_edit.png) !important; }
+.icon-application_form_edit { background-image: url(/static/rapidapp/images/application_form_edit.png) !important; }
+.icon-cross { background-image: url(/static/rapidapp/images/cross.png) !important; }
+.icon-key_go { background-image: url(/static/rapidapp/images/key_go.png) !important; }
+.icon-key { background-image: url(/static/rapidapp/images/key.png) !important; }
+.icon-logout { background-image: url(/static/rapidapp/images/Log-Out-icon.png) !important; }
+.icon-computer { background-image: url(/static/rapidapp/images/computer-126t.gif) !important; }
+.icon-vnc { background-image: url(/static/rapidapp/images/vnc_icon.png) !important; }
+.icon-ssh { background-image: url(/static/rapidapp/images/application_osx_terminal.png) !important; }
+
+.icon-myteams { background-image: url(/static/rapidapp/images/book.png) !important; }
+.icon-team { background-image: url(/static/rapidapp/images/book_open.png) !important; }
+.icon-team-arrow { background-image: url(/static/rapidapp/images/book_next.png) !important; }
+.icon-users { background-image: url(/static/rapidapp/images/group.png) !important; }
+.icon-user { background-image: url(/static/rapidapp/images/user.png) !important; }
+.icon-user-add { background-image: url(/static/rapidapp/images/user_add.png) !important; }
+.icon-report { background-image: url(/static/rapidapp/images/chart_curve.png) !important; }
+.icon-record { background-image: url(/static/rapidapp/images/time.png) !important; }
+.icon-record-go { background-image: url(/static/rapidapp/images/table_go.png) !important; }
+.icon-manage-activities { background-image: url(/static/rapidapp/images/table_gear.png) !important; }
+.icon-players { background-image: url(/static/rapidapp/images/status_online.png) !important; }
+.icon-add { background-image: url(/static/rapidapp/images/add.png) !important; }
+.icon-activity { background-image: url(/static/rapidapp/images/table.png) !important; }
+
+.icon-delete { background-image: url(/static/rapidapp/images/cross.png) !important; }
+.icon-edit { background-image: url(/static/rapidapp/images/application_edit.png) !important; }
+
+.icon-log { background-image: url(/static/rapidapp/images/report.png) !important; }
+.icon-form-add { background-image: url(/static/rapidapp/images/application_form_add.png) !important; }
+.icon-printer { background-image: url(/static/rapidapp/images/printer.png) !important; }
+.icon-help { background-image: url(/static/rapidapp/images/help.png) !important; }
+.icon-bullet_delete { background-image: url(/static/rapidapp/images/bullet_delete.png) !important; }
+.icon-form_green { background-image: url(/static/rapidapp/images/form_green.png) !important; }
+.icon-book_green { background-image: url(/static/rapidapp/images/book_green.png) !important; }
+
+.icon-bullet_key { 
+	background-image: url(/static/rapidapp/images/bullet_key.png) !important; 
+	background-repeat:no-repeat; 
+	padding-right: 18px; 
+	padding-top: 9px; 
+	padding-bottom: 3px;
+}
+/* ----------------------------------- */
+
+/* This is needed only with gray theme: */
+.x-toolbar .xtb-sep { background-image: url(/static/extjs/resources/images/default/grid/grid-split.gif) !important }
+
+.x-tab-panel-header { border-bottom: 0px; }
+
+.offline .x-grid3-cell {
+  opacity: 0.5;
+  filter: alpha(opacity=50);
+}
+
+
+/*
+.offline .x-grid3-cell .x-grid3-cell-first {
+  opacity: 1.0 !important;
+  filter: alpha(opacity=100);
+}
+*/
+
+.x-grid3-cell-first {
+	opacity: 2.0;
+	filter: alpha(opacity=200);
+}
+
+
+.x-grid3-col-memberpc  {
+	cursor:pointer;
+}
+
+.x-tab-panel-body {
+//	border: 0 none !important;
+}
+
+.x-tab-panel-header-plain .x-tab-strip-spacer, .x-tab-panel-footer-plain .x-tab-strip-spacer {
+	border-bottom: 0 none !important;
+}
+
+
+.x-grid3-row-expander {
+	background-image: url(/static/rapidapp/images/row-expand-sprite-arrow.gif) !important;
+}
+
+.x-grid3-row-selected {
+	background: #EEF3E2 !important;
+	border:1px dotted gray;
+}
+
+
+/*
+.x-grid3-row-collapsed .x-grid3-row-expander {
+	background-image: url(/static/rapidapp/images/bullet_arrow_up_sm.png) !important;
+	display: inline;
+}
+.x-grid3-row-expanded  .x-grid3-row-expander {
+	background-image: url(/static/rapidapp/images/bullet_arrow_down_sm.png) !important;
+	display: inline;
+}
+
+
+html {
+    overflow: -moz-scrollbars-vertical;
+    position: relative;
+}
+
+body {
+    margin: 0 auto;
+    padding: 0;
+    font-family: Tahoma, Geneva, Verdana, Helvetica, sans-serif;
+    font-size: 12px;
+    background-color: #fff; color: #333;
+    letter-spacing: 0.1px;
+    position: relative;
+}
+
+*/
+td {
+  font-family: Tahoma, Geneva, Verdana, Helvetica, sans-serif;
+  letter-spacing: 0.1px;
+  vertical-align: middle;
+}
+
+
+img {
+  vertical-align: middle;
+}
+
+/*
+.x-panel-body {
+  border:1px solid gray;
+  border-top:0 none;
+}
+*/
+
+.link-underline {
+	cursor:pointer;
+	text-decoration:underline;
+}
+
+
+/*
+.x-tree-selected { font-weight: bold; }
+*/
+
+//.x-grid3-hd-row .x-grid3-td-PRI_KEY { padding: 0px 0px 0px 0px; }
+//.x-grid3-hd-inner .x-grid3-hd-PRI_KEY { padding: 0px 0px 0px 0px; }
+//.x-grid3-hd-PRI_KEY { padding: 0px 0px 0px 0px; }
+
+.x-grid3-td-editIcon .x-grid3-cell-inner { 
+	background-image: url(/static/rapidapp/images/table_edit.png) !important;
+	background-position:center center;
+	background-repeat:no-repeat;
+	padding-left: 2px;
+	padding-right: 2px; 
+	cursor: pointer;
+}
+
+
+.pos-top-right { 
+	text-align: right;
+	position:absolute;
+	top:0;
+	right:5%;
+	width:200px;
+	background-color:yellow;
+}
+
+
+.sbl-panel-body-noborder {
+    border-width: 0 0 0 0 !important;
+    padding: 0 !important;
+    background-color: white !important;
+}
+.res-block {
+	-moz-background-clip:border;
+	-moz-background-inline-policy:continuous;
+	-moz-background-origin:padding;
+	background:transparent url(../img/theme/block-top.gif) no-repeat scroll 0 0;
+	margin-bottom:15px;
+	padding-top:5px;
+	width:210px;
+}
+
+
+/*
+.sbl-panel-body-noborder, .sbl-panel-body-noborder .x-border-panel .x-border-layout-ct, .sbl-panel-body-noborder .x-panel .x-border-panel, .sbl-panel-body-noborder .x-panel-body .x-panel-body-noheader {
+    border-width: 0 0 0 0 !important;
+    padding: 0 !important;
+}
+
+
+*/
+
+/*
+html, body { height:100%; }
+*/
+
+
+
+.bold-italics { font-weight: bold !important; font-style: italic !important; }
+
+
+
+
+
+/* Taken from: http://www.extjs.com/blog/2008/05/14/form-group/  */
+
+/* add some padding so it spaces nice and relative elements dn't get clipped */
+.form-group {
+	padding-top:15px;
+	padding-bottom:10px;
+	overflow:hidden;
+}
+ 
+/* Simple blue border */
+.form-group .form-group-header {
+	padding:0;
+	border-bottom:1px solid #c3daf9;
+}
+ 
+/* Position the text element so it appears over the border added above */
+.form-group .form-group-header-text {
+	font-size:11px;
+	font-family:tahoma,arial,sans-serif;
+	line-height:13px;
+	text-transform:uppercase;
+	position:relative;
+	left:5px;
+	top:5px;
+	padding:1px 5px 1px 20px;
+	color:#4e79b2;
+	border:1px solid #c3daf9;
+	background:#fff url(/static/rapidapp/images/form-collapse-icon.gif) no-repeat 2px 0;
+}
+ 
+/* Copied from x-plain (for IE + layouts to work) */
+.form-group-body {
+    overflow:hidden;
+}
+ 
+/* Copied from x-plain (for IE + layouts to work) */
+.form-group-bwrap {
+    overflow:hidden;
+    zoom:1;
+}
+ 
+/* Change the toggle icon when collapsed */
+.x-panel-collapsed .form-group-header-text {
+	background-position: 2px -15px;
+}
+
+
+
+
+
+.x-form-display-field, .ext-gecko .x-form-display-field, .ext-strict .ext-ie7 .x-form-display-field {
+    display: block;
+    padding: 3px 0px 0px 0px;
+    padding-left: 0px;
+    position: relative;
+    z-index: 2;
+}
+
+
+
+
+
+
+
+/*- Menu Tabs 1--------------------------- */ 
+
+
+    #tabs1 {
+      float:left;
+      width:100%;
+	  background:#F4F7FB;
+      font-size:93%;
+      line-height:normal;
+	  border-top:1px solid #BCD2E6;
+      }
+    #tabs1 ul {
+	  margin:0;
+	  padding:0px 10px 10px 50px;
+	  list-style:none;
+      }
+    #tabs1 li {
+      display:inline;
+      margin:0;
+      padding:0;
+      }
+    #tabs1 a {
+      float:left;
+      background:url("/static/rapidapp/images/tableft1.gif") no-repeat left top;
+      margin:0;
+      padding:0 0 0 4px;
+      text-decoration:none;
+      }
+    #tabs1 a span {
+      float:left;
+      display:block;
+      background:url("/static/rapidapp/images/tabright1.gif") no-repeat right top;
+      padding:5px 15px 4px 6px;
+      color:#627EB7;
+      }
+    /* Commented Backslash Hack hides rule from IE5-Mac \*/
+    #tabs1 a span {float:none;}
+    /* End IE5-Mac hack */
+    #tabs a:hover span {
+      color:#627EB7;
+      }
+    #tabs1 a:hover {
+      background-position:0% -15px;
+      }
+    #tabs1 a:hover span {
+      background-position:100% -15px;
+      }
