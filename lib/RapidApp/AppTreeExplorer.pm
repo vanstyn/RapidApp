@@ -10,13 +10,15 @@ package RapidApp::AppTreeExplorer;
 
 
 use strict;
-use Moose;
 
-extends 'RapidApp::AppBase';
+
+use Moose;
+with 'RapidApp::Role::Controller';
+#extends 'RapidApp::AppBase';
 
 
 use Clone;
-use Term::ANSIColor qw(:constants);
+use Switch;
 
 our $VERSION = '0.1';
 
@@ -25,7 +27,7 @@ use RapidApp::ExtJS::DynGrid;
 
 use RapidApp::Tree;
 
-use Switch;
+
 
 #### --------------------- ####
 
@@ -72,6 +74,16 @@ sub _build_Tree {
 }
 
 
+has 'actions' => ( is => 'ro', default => sub {
+	my $self = shift;
+	return {
+		navtree				=> sub { $self->JSON_encode($self->navtree_panel)	},
+		main_panel			=> sub { $self->JSON_encode($self->main_panel);		},
+		default_content	=> sub { $self->JSON_encode($self->default_content)	},
+		main					=> sub { $self->JSON_encode($self->main);				}
+	};
+});
+
 
 ###########################################################################################
 
@@ -81,31 +93,13 @@ sub BUILD {
 }
 
 
-sub Controller {
-	my ( $self, $c, $opt, @args ) = @_;
-	
-	my $data = '';
-	
-	switch($opt) {
-	
-		case 'navtree' 				{ $data = $self->JSON_encode($self->navtree_panel($c));		}
-		case 'main_panel'				{ $data = $self->JSON_encode($self->main_panel($c));			}
-		case 'default_content'		{ $data = $self->JSON_encode($self->default_content);		}
 
-		else {
-		
-			return $self->subapps->{$opt}->($c)->Controller($c,@args) if (
-				defined $self->subapps and
-				defined $self->subapps->{$opt} and
-				ref($self->subapps->{$opt}) eq 'CODE'
-			);
-			
-		}
-	}
-	
-	$c->response->header('Cache-Control' => 'no-cache');
-	return $c->response->body( $data );
+
+sub default_action {
+	my $self = shift;
+	return $self->process_action('main');
 }
+
 
 
 
@@ -124,10 +118,6 @@ sub main {
 
 sub main_panel {
 	my $self = shift;
-	my $c = shift;
-	
-	my $params;
-	$params = $c->req->params if (defined $c);
 
 	return {
 		region	=> 'center',
@@ -138,21 +128,40 @@ sub main_panel {
 		iconCls	=> $self->iconCls,
 		items		=> [
 			$self->content_area,
-			$self->nav_tree($params),
+			$self->nav_tree
 		]
+	};
+}
+
+
+sub content_area {
+	my $self = shift;
+	
+	return $self->tabpanel if ($self->use_tabs);
+	
+	return {
+		region			=> 'center',
+		id					=> $self->content_id,
+		xtype				=> 'autopanel',
+		bodyCssClass	=> 'sbl-panel-body-noborder',
+		margins 			=> '3 3 3 0',
+		layout 			=> 'fit',
+		autoLoad			=> $self->base_url . '/default_content'
 	};
 }
 
 
 sub nav_tree {
 	my $self = shift;
-	my $params = shift;
 	
 	my $autoLoad = {
-		url => $self->base_url . '/navtree'
+		url 		=> $self->base_url . '/navtree'
 	};
 	
-	$autoLoad->{params} = $params if (defined $params and ref($params) eq 'HASH');
+	my $params = $self->c->req->params;
+
+	$autoLoad->{params} = $params if (defined $params);
+	
 	
 	return {
 		region			=> 'west',
@@ -176,19 +185,7 @@ sub nav_tree {
 }
 
 
-sub content_area {
-	my $self = shift;
-	return {
-		region			=> 'center',
-		id					=> $self->content_id,
-		xtype				=> 'autopanel',
-		bodyCssClass	=> 'sbl-panel-body-noborder',
-		margins 			=> '3 3 3 0',
-		layout 			=> 'fit',
-		autoLoad			=> $self->base_url . '/default_content',
-	} unless ($self->use_tabs);
-	return $self->tabpanel;
-}
+
 
 
 sub tabpanel {
@@ -220,10 +217,8 @@ sub default_content {
 
 sub navtree_panel {
 	my $self = shift;
-	my $c = shift;
-	
-	my $params;
-	$params = $c->req->params if (defined $c);
+
+	my $params = $self->c->req->params;
 	
 	my $config = Clone::clone($self->Tree->TreePanel_cfg);
 	
@@ -323,45 +318,6 @@ sub tabpanel_load_code {
 
 
 
-sub tabpanel_load_code_old {
-	my $self = shift;
-	my $id = shift;
-	my $path = shift;
-	my $attr = shift;
-	
-	my $cfg = {
-		layout	=> 'fit',
-		closable	=> \1,
-		xtype		=> 'autopanel',
-		autoLoad => {
-			text		=> 'Loading...',
-			nocache	=> 1,
-		} 
-	};
-	
-	my $code =
-		'var TabP = Ext.getCmp(' . "'" . $id . "'" . ');' .
-		'if (TabP) { ' .
-			'var path = ' . $path . ';' . 
-			'var attr = ' . $attr . ';' .
-			'var cfg = ' . $self->JSON_encode($cfg) . ';' .
-			'cfg.id = "tab-" + path;' . 
-			"cfg.autoLoad['url'] = path;" . 
-			"cfg.title = path;" .
-			"if(attr.text)    { cfg.title = attr.text; }" .
-			"if(attr.iconCls) { cfg.iconCls = attr.iconCls; }" .
-			"if(attr.params)  { " .
-				"cfg.autoLoad['params'] = attr.params;" .
-				"for (i in attr.params) { cfg.id += '-' + attr.params[i]; }" . 
-			"}" .
-			'if(! Ext.getCmp(cfg.id)) { TabP.add(cfg); }' .
-			"TabP.setActiveTab(cfg.id);" .
-		'}';
-	
-	return $code;
-}
-
-
 
 sub content_panel_load_path {
 	my $self = shift;
@@ -388,6 +344,7 @@ sub panel_load_code {
 		'if (ContentP) { ' .
 			'var cfg = ' . $self->JSON_encode($cfg) . ';' .
 			'cfg.url = ' . $path . ';';
+			
 	$code .= 'cfg.params = ' . $params . ';' if (defined $params and ref(\$params) eq 'SCALAR');
 	$code .= 'ContentP.load(cfg); ' .
 		'}';

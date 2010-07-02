@@ -11,6 +11,7 @@ package RapidApp::AppBase;
 
 use strict;
 use Moose;
+
 use Clone;
 use JSON;
 
@@ -27,7 +28,7 @@ our $VERSION = '0.1';
 #### --------------------- ####
 
 
-
+has 'parent_ref'						=> ( is => 'ro', default => undef );
 has 'c' 								=> ( is => 'rw',	required 	=> 1								);
 has 'base_url' 					=> ( is => 'ro',	required 	=> 1,		isa => 'Str'		);
 has 'base_params' 				=> ( is => 'ro',	lazy_build 	=> 1,		isa => 'HashRef'	);
@@ -50,6 +51,7 @@ sub _build_base_query_string { '' }
 
 sub Controller {
 	my ( $self, $c, $opt, @args ) = @_;
+	$self->c($c);
 
 	my $data = '';
 	

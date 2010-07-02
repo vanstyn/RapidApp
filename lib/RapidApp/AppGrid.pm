@@ -11,7 +11,7 @@ package RapidApp::AppGrid;
 
 use strict;
 use Moose;
-
+#with 'RapidApp::Role::Controller';
 extends 'RapidApp::AppBase';
 
 
