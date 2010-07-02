@@ -1,0 +1,42 @@
+<link rel="stylesheet" type="text/css" href="/static/extjs/resources/css/ext-all.css" />
+<link rel="stylesheet" type="text/css" href="/static/extjs/resources/css/xtheme-gray.css" />
+
+<link rel="stylesheet" type="text/css" href="/static/css/Ext.ux.tree.CheckTreePanel.css" />
+<link rel="stylesheet" type="text/css" href="/static/css/Ext.ux.grid.RowActions.css" />
+
+<!-- grid filters: -->
+<link rel="stylesheet" type="text/css" href="/static/js/gridfilters/css/GridFilters.css" />
+<link rel="stylesheet" type="text/css" href="/static/js/gridfilters/css/RangeMenu.css" />
+<!--               -->
+
+<link rel="stylesheet" type="text/css" href="/static/css/icons.css" />
+
+<script type="text/javascript" src="/static/extjs/src/core/core/Ext.js"></script>
+<script type="text/javascript" src="/static/extjs/adapter/ext/ext-base.js"></script>
+<script type="text/javascript" src="/static/extjs/ext-all-debug.js"></script>
+
+<script type="text/javascript" src="/static/js/RowExpanderEX.js"></script>
+<script type="text/javascript" src="/static/js/Ext.ux.grid.RowActions.js"></script>
+<script type="text/javascript" src="/static/js/Ext.ux.form.XCheckbox.js"></script>
+<script type="text/javascript" src="/static/js/Ext.ux.tree.CheckTreePanel.js"></script>
+<script type="text/javascript" src="/static/js/Ext.ux.form.DateTime.js"></script>
+
+<script type="text/javascript" src="/static/js/Ext.ux.grid.Search.js"></script>
+
+<!-- grid filters: -->
+<script type="text/javascript" src="/static/js/gridfilters/menu/RangeMenu.js"></script>
+<script type="text/javascript" src="/static/js/gridfilters/menu/ListMenu.js"></script>
+
+<script type="text/javascript" src="/static/js/gridfilters/GridFilters.js"></script>
+<script type="text/javascript" src="/static/js/gridfilters/filter/Filter.js"></script>
+<script type="text/javascript" src="/static/js/gridfilters/filter/StringFilter.js"></script>
+<script type="text/javascript" src="/static/js/gridfilters/filter/DateFilter.js"></script>
+<script type="text/javascript" src="/static/js/gridfilters/filter/ListFilter.js"></script>
+<script type="text/javascript" src="/static/js/gridfilters/filter/NumericFilter.js"></script>
+<script type="text/javascript" src="/static/js/gridfilters/filter/BooleanFilter.js"></script>
+<!--               -->
+
+<script type="text/javascript" src="/static/js/Ext.ux.Printer/Printer.js"></script>
+<script type="text/javascript" src="/static/js/Ext.ux.Printer/renderers/Base.js"></script>
+
+<script type="text/javascript" src="/static/js/sbl_ext_ux.js"></script>

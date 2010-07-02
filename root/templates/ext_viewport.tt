@@ -1,0 +1,38 @@
+[% WRAPPER templates/ext_page.tt %]
+
+<script type="text/javascript">
+
+	Ext.onReady(function(){
+
+		[% IF onReady_first %] [% onReady_first %] [% END %]
+
+		var config_url = '[% config_url %]';
+		var config_params = {};
+
+[% IF config_params %] config_params = [% config_params %]; [% END %]
+
+		new Ext.Viewport({
+			layout : 'fit',
+			hideBorders : true,
+			defaults : {
+				frame : true,
+				plit : true
+			},
+			items : {
+				xtype: 'dyncontainer',
+				layout: 'fit',
+				id: 'maincontainer',
+				itemsurl: config_url,
+				urlparams: config_params,
+				autoEl: {},
+				items: {
+					autoEl: {},
+					html: 'Loading wait...'
+				}
+			}
+		});
+	});
+
+</script>
+
+[% END %]
