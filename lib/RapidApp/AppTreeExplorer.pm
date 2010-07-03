@@ -13,8 +13,8 @@ use strict;
 
 
 use Moose;
-#with 'RapidApp::Role::Controller';
-extends 'RapidApp::AppBase';
+with 'RapidApp::Role::Controller';
+#extends 'RapidApp::AppBase';
 
 
 use Clone;
@@ -34,7 +34,7 @@ use RapidApp::Tree;
 has 'TreeConfig' 						=> ( is => 'ro',	required		=> 1,	isa => 'ArrayRef'		);
 has 'Tree' 								=> ( is => 'ro',	lazy_build	=> 1								);
 #has 'TreePanel_code' 				=> ( is => 'ro',	lazy_build	=> 1								);
-has 'subapps'			 				=> ( is => 'ro',	lazy_build	=> 1,	isa => 'HashRef'		);
+#has 'subapps'			 				=> ( is => 'ro',	lazy_build	=> 1,	isa => 'HashRef'		);
 has 'title' 							=> ( is => 'ro',	lazy_build	=> 1								);
 has 'content_id' 						=> ( is => 'ro',	lazy_build	=> 1								);
 has 'navtree_id' 						=> ( is => 'ro',	lazy_build	=> 1								);
@@ -47,7 +47,7 @@ has 'use_tabs' 						=> ( is => 'ro',	default		=> 0								);
 #### --------------------- ####
 
 sub _build_pathmap 			{ return {}; 										}
-sub _build_subapps 			{ return {}; 										}
+#sub _build_subapps 			{ return {}; 										}
 sub _build_title				{ ref(shift);										}
 sub _build_content_id			{ (shift)->title . '_content_area';			}
 sub _build_navtree_id			{ (shift)->title . '_nav_tree';				}
@@ -93,31 +93,31 @@ sub BUILD {
 }
 
 
-sub Controller {
-	my ( $self, $c, $opt, @args ) = @_;
-	
-	my $data = '';
-	
-	switch($opt) {
-	
-		case 'navtree' 				{ $data = $self->JSON_encode($self->navtree_panel($c));		}
-		case 'main_panel'				{ $data = $self->JSON_encode($self->main_panel($c));			}
-		case 'default_content'		{ $data = $self->JSON_encode($self->default_content);		}
-
-		else {
-		
-			return $self->subapps->{$opt}->($c)->Controller($c,@args) if (
-				defined $self->subapps and
-				defined $self->subapps->{$opt} and
-				ref($self->subapps->{$opt}) eq 'CODE'
-			);
-			
-		}
-	}
-	
-	$c->response->header('Cache-Control' => 'no-cache');
-	return $c->response->body( $data );
-}
+#sub Controller {
+#	my ( $self, $c, $opt, @args ) = @_;
+#	
+#	my $data = '';
+#	
+#	switch($opt) {
+#	
+#		case 'navtree' 				{ $data = $self->JSON_encode($self->navtree_panel($c));		}
+#		case 'main_panel'				{ $data = $self->JSON_encode($self->main_panel($c));			}
+#		case 'default_content'		{ $data = $self->JSON_encode($self->default_content);		}
+#
+#		else {
+#		
+#			return $self->subapps->{$opt}->($c)->Controller($c,@args) if (
+#				defined $self->subapps and
+#				defined $self->subapps->{$opt} and
+#				ref($self->subapps->{$opt}) eq 'CODE'
+#			);
+#			
+#		}
+#	}
+#	
+#	$c->response->header('Cache-Control' => 'no-cache');
+#	return $c->response->body( $data );
+#}
 
 
 
