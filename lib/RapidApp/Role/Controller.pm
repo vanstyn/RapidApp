@@ -55,10 +55,7 @@ sub _load_module {
 	
 	my $class_name = $self->modules->{$mod} or return 0;
 
-	return 1 if (
-		defined $self->modules_obj->{$mod} and
-		ref($self->modules_obj->{$mod}) eq $class_name
-	);
+	return 1 if (defined $self->modules_obj->{$mod} and ref($self->modules_obj->{$mod}) eq $class_name);
 	
 	
 	my $Object = $class_name->new(
