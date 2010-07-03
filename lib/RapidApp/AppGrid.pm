@@ -35,24 +35,19 @@ use Term::ANSIColor qw(:constants);
 
 
 has 'gridid' 							=> ( is => 'ro',	required => 1,		isa => 'Str'					);
-#has 'id' 								=> ( is => 'ro',	default => sub { (shift)->gridid . '-' .time;}	);
-#has 'id' 								=> ( is => 'ro',	default => sub { (shift)->gridid ;}	);
-has 'gid' 								=> ( is => 'ro',	lazy_build => 1,	isa => 'Str'					);
 
-has 'fields_hash' 					=> ( is => 'ro',	lazy_build => 1,	isa => 'HashRef'				);
 has 'title' 							=> ( is => 'ro',	default => '',	isa => 'Str'						);
 has 'title_icon_href' 				=> ( is => 'ro',	default => '',	isa => 'Str'						);
 
 has 'edit_label' 						=> ( is => 'ro',	default => 'Update',		isa => 'Str'			);
 has 'edit_label_iconCls' 			=> ( is => 'ro',	default => 'icon-edit',	isa => 'Str'			);
 has 'edit_icon_text' 				=> ( is => 'ro',	default => undef										);
-has 'edit_window_title' 			=> ( is => 'ro',	lazy_build => 1										);
+has 'edit_window_title' 			=> ( is => 'ro',	default => sub { 'Edit ' . (shift)->item_title; } 	);
 has 'add_label' 						=> ( is => 'ro',	default => 'Add',			isa => 'Str'			);
 has 'add_label_iconCls' 			=> ( is => 'ro',	default => 'icon-add',	isa => 'Str'			);
 has 'edit_window_height' 			=> ( is => 'ro',	default => 300											);
 has 'edit_window_width' 			=> ( is => 'ro',	default => 400											);
 has 'item_title' 						=> ( is => 'ro',	default => 'Item',		isa => 'Str'			);
-
 
 
 
@@ -64,10 +59,11 @@ has 'gridfilter'			 			=> ( is => 'ro',	required => 0, default => sub { \0 }				
 has 'gridfilter_remote'				=> ( is => 'ro',	required => 0, default => sub { \0 }				);
 #### ---
 
-has 'ExtJS'								=> ( is => 'ro',	lazy_build => 1,	isa => 'SBL::Web::ExtJS'	);
+has 'ExtJS'								=> ( is => 'ro',	default => sub { SBL::Web::ExtJS->new }			);
+
 
 has 'pageSize' 						=> ( is => 'ro',	required => 0,		isa => 'Int', predicate => 'has_pageSize'	);
-has 'reload_store_eval'				=> ( is => 'ro',	lazy_build => 1,	isa => 'Str'					);
+
 
 ### ---------------  'fields'  --------------- ###
 ##
@@ -207,14 +203,8 @@ has 'enableColumnMove'				=> ( is => 'ro',	required => 0,		default => 0					);
 
 
 
-sub _build_ExtJS						{ SBL::Web::ExtJS->new;				}
-sub _build_edit_window_title		{ 'Edit ' . (shift)->item_title;	}
 
-
-
-
-
-sub _build_gid {
+has 'gid' => ( is => 'ro',	lazy => 1,	isa => 'Str', default => sub {
 	my $self = shift;
 	my $id = $self->gridid . '_' . $self->base_url;
 	$id .= '-' . $self->base_query_string if ($self->has_base_query_string);
@@ -222,15 +212,15 @@ sub _build_gid {
 	$id =~ s/[^\_a-zA-Z0-9]/\_/g;
 
 	return $id;
-}
+});
 
-sub _build_reload_store_eval {
+has 'reload_store_eval' => ( is => 'ro',	lazy => 1,	isa => 'Str', default => sub {
 	my $self = shift;
 	return 'try { Ext.getCmp(\'' . $self->gid . '\').getStore().reload(); } catch (err) {}'
-}
+});
 
 
-sub _build_fields_hash {
+has 'fields_hash' => ( is => 'ro', lazy => 1, isa => 'HashRef', default => sub {			
 	my $self = shift;
 	my $h = {};
 	foreach my $field (@{$self->fields}) {
@@ -238,20 +228,9 @@ sub _build_fields_hash {
 		$h->{$field->{name}} = $field;
 	}
 	return $h;
-}
+});
 
 
-#sub _build_default_action { 
-#	my $self = shift;
-#	sub { $self->JSON_encode($self->DynGrid->Params); } 
-#}
-
-#sub _build_controller_actions { (shift)->actions }
-
-#sub default_action {
-#	my $self = shift;
-#	return $self->process_action('main');
-#}
 
 has 'default_action' => ( is => 'ro', default => 'main' );
 has 'actions' => ( is => 'ro', lazy => 1, default => sub {
