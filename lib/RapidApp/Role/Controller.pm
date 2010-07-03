@@ -17,9 +17,9 @@ has 'c'									=> ( is => 'rw' );
 has 'base_url'							=> ( is => 'rw' );
 has 'modules'							=> ( is => 'ro', 	default => sub {{}} );
 has 'modules_obj'						=> ( is => 'ro', 	default => sub {{}} );
-has 'default_module'					=> ( is => 'ro',	default => 'default_module'	);
+has 'default_module'					=> ( is => 'ro',	default => 'default_module' );
 has 'actions'							=> ( is => 'ro', 	default => sub {{}} );
-
+has 'default_action'					=> ( is => 'ro',	default => 'default_action' );
 
 sub Controller {
 	my $self = shift;
@@ -41,11 +41,12 @@ sub Controller {
 	
 	return $self->process_action($opt,@args)									if (defined $self->actions->{$opt});
 	return $self->modules_obj->{$opt}->Controller($self->c,@args)		if ($self->_load_module($opt));
-	return $self->default_action($opt,@args);
+	return $self->process_action($self->default_action,$opt,@args);
+	#return $self->default_action($opt,@args);
 }
 
 # placeholder:
-sub default_action {}
+#sub default_action {}
 
 
 

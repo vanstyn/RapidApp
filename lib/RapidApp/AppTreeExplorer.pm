@@ -73,7 +73,7 @@ sub _build_Tree {
 	);
 }
 
-
+has 'default_action' => ( is => 'ro', default => 'main' );
 has 'actions' => ( is => 'ro', default => sub {
 	my $self = shift;
 	return {
@@ -121,10 +121,10 @@ sub BUILD {
 
 
 
-sub default_action {
-	my $self = shift;
-	return $self->process_action('main');
-}
+#sub default_action {
+#	my $self = shift;
+#	return $self->process_action('main');
+#}
 
 
 

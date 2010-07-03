@@ -11,6 +11,7 @@ package RapidApp::AppBase;
 
 use strict;
 use Moose;
+with 'RapidApp::Role::Controller';
 
 use Clone;
 use JSON;
@@ -28,14 +29,9 @@ our $VERSION = '0.1';
 #### --------------------- ####
 
 
-has 'parent_ref'					=> ( is => 'ro', default => undef );
-has 'c' 								=> ( is => 'rw',	required 	=> 1								);
-has 'base_url' 					=> ( is => 'ro',	required 	=> 1,		isa => 'Str'		);
 has 'base_params' 				=> ( is => 'ro',	lazy_build 	=> 1,		isa => 'HashRef'	);
 has 'params' 						=> ( is => 'ro',	required 	=> 0,		isa => 'ArrayRef'	);
 has 'base_query_string'			=> ( is => 'ro',	lazy_build 	=> 1,		isa => 'Str'		);
-has 'controller_actions'		=> ( is => 'ro',	lazy_build 	=> 1,		isa => 'HashRef'	);
-has 'default_action'				=> ( is => 'ro',	lazy_build 	=> 1,		isa => 'CodeRef'	);
 has 'exception_style' 			=> ( is => 'ro',	required => 0,		default => "color: red; font-weight: bolder;"			);
 # ----------
 
@@ -45,27 +41,6 @@ sub _build_base_query_string { '' }
 
 
 ###########################################################################################
-
-
-
-
-sub Controller {
-	my ( $self, $c, $opt, @args ) = @_;
-	$self->c($c);
-
-	my $data = '';
-	
-	if (defined $opt and ref($self->controller_actions->{$opt}) eq 'CODE') {
-		$data = $self->controller_actions->{$opt}->(@args);
-	}
-	elsif (ref($self->default_action) eq 'CODE') {
-		$data = $self->default_action->(@args);
-	}
-		
-	$c->response->header('Cache-Control' => 'no-cache');
-	return $c->response->body( $data );
-}
-
 
 
 
@@ -102,38 +77,6 @@ sub urlparams {
 	}
 	return $new;
 }
-
-
-sub JSON_encode {
-	my $self = shift;
-	return JSON::to_json(shift);
-}
-
-
-=pod
-sub Controller {
-	my ( $self, $c, $opt, @args ) = @_;
-
-	my $data = '';
-	
-	switch($opt) {
-		case 'action_icon-edit'		{ $data = $self->action_icon_edit;							}
-		case 'action_icon-delete'	{ $data = $self->action_icon_delete;						}
-		case 'action_delete'			{ $data = $self->action_delete;								}
-		case 'add_window' 			{ $data = $self->add_window;									}
-		case 'edit_window' 			{ $data = $self->edit_window;									}
-		case 'add_submit' 			{ $data = JSON::to_json($self->add_submit);				}
-		case 'edit_submit' 			{ $data = JSON::to_json($self->edit_submit);				}
-		case 'data' 					{ $data = JSON::to_json($self->grid_rows); 				}
-		else								{ $data = JSON::to_json($self->DynGrid->Params);		}
-	}
-	
-	$c->response->header('Cache-Control' => 'no-cache');
-	return $c->response->body( $data );
-}
-
-
-=cut
 
 
 no Moose;

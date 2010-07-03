@@ -241,17 +241,26 @@ sub _build_fields_hash {
 }
 
 
-sub _build_default_action { 
-	my $self = shift;
-	sub { $self->JSON_encode($self->DynGrid->Params); } 
-}
+#sub _build_default_action { 
+#	my $self = shift;
+#	sub { $self->JSON_encode($self->DynGrid->Params); } 
+#}
 
-sub _build_controller_actions {
+#sub _build_controller_actions { (shift)->actions }
+
+#sub default_action {
+#	my $self = shift;
+#	return $self->process_action('main');
+#}
+
+has 'default_action' => ( is => 'ro', default => 'main' );
+has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	
 	my $params = $self->c->req->params;
 	
 	my $actions = {
+		'main'												=> sub { $self->JSON_encode($self->DynGrid->Params);		},
 		'action_' . $self->edit_label_iconCls		=> sub { $self->action_icon_edit; 								},
 		'action_icon-delete'								=> sub { $self->action_icon_delete;								},
 		'action_delete'									=> sub { $self->action_delete;										},
@@ -281,7 +290,7 @@ sub _build_controller_actions {
 	}
 	
 	return $actions;
-}
+});
 
 ###########################################################################################
 
