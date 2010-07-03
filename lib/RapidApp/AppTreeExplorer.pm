@@ -13,8 +13,8 @@ use strict;
 
 
 use Moose;
-with 'RapidApp::Role::Controller';
-#extends 'RapidApp::AppBase';
+#with 'RapidApp::Role::Controller';
+extends 'RapidApp::AppBase';
 
 
 use Clone;
@@ -92,6 +92,32 @@ sub BUILD {
 	$self->Tree;
 }
 
+
+sub Controller {
+	my ( $self, $c, $opt, @args ) = @_;
+	
+	my $data = '';
+	
+	switch($opt) {
+	
+		case 'navtree' 				{ $data = $self->JSON_encode($self->navtree_panel($c));		}
+		case 'main_panel'				{ $data = $self->JSON_encode($self->main_panel($c));			}
+		case 'default_content'		{ $data = $self->JSON_encode($self->default_content);		}
+
+		else {
+		
+			return $self->subapps->{$opt}->($c)->Controller($c,@args) if (
+				defined $self->subapps and
+				defined $self->subapps->{$opt} and
+				ref($self->subapps->{$opt}) eq 'CODE'
+			);
+			
+		}
+	}
+	
+	$c->response->header('Cache-Control' => 'no-cache');
+	return $c->response->body( $data );
+}
 
 
 
