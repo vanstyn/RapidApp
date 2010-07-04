@@ -7,23 +7,32 @@ package RapidApp::Role::Controller;
 use strict;
 use JSON;
 use Moose::Role;
+with 'RapidApp::Role::Module';
 
 use Term::ANSIColor qw(:constants);
 
 our $VERSION = '0.1';
 
-has 'parent_ref'						=> ( is => 'ro', default => undef );
+
 has 'c'									=> ( is => 'rw' );
-has 'base_url'							=> ( is => 'rw' );
-has 'modules'							=> ( is => 'ro', 	default => sub {{}} );
-has 'modules_obj'						=> ( is => 'ro', 	default => sub {{}} );
-has 'default_module'					=> ( is => 'ro',	default => 'default_module' );
+has 'base_url'							=> ( is => 'rw',	default => '' );
 has 'actions'							=> ( is => 'ro', 	default => sub {{}} );
 has 'default_action'					=> ( is => 'ro',	default => 'default_action' );
 
+
+has 'create_module_params' => ( is => 'ro', lazy => 1,	default => sub {
+	my $self = shift;
+	return {
+		c => $self->c
+	};
+});
+
+
+
 sub Controller {
 	my $self = shift;
-	my ( $c, $opt, @args ) = @_;
+	$self->c(shift);
+	my ( $opt, @args ) = @_;
 	
 #	print STDERR BLUE . " --> : " . ref($self) . "\n" . CLEAR;
 #	print STDERR CYAN . "base_url: " . $self->base_url . "\n" . CLEAR;
@@ -32,43 +41,20 @@ sub Controller {
 #	print STDERR GREEN . "opt: " . $opt . "\n" . CLEAR;
 	
 	
-	$self->c($c);
-	$self->base_url($self->c->namespace) unless (defined $self->parent_ref);
+	#$self->c($c);
+	#$self->base_url($self->c->namespace) unless (defined $self->parent_module);
 	
-	#$self->base_url('/' . $self->c->req->path);
+	$self->base_url($self->c->namespace);
+	
+	$self->base_url($self->parent_module->base_url . '/' . $self->module_name) if (
+		defined $self->parent_module
+	);
 	
 	$self->c->response->header('Cache-Control' => 'no-cache');
 	
-	return $self->process_action($opt,@args)									if (defined $self->actions->{$opt});
-	return $self->modules_obj->{$opt}->Controller($self->c,@args)		if ($self->_load_module($opt));
-	return $self->process_action($self->default_action,$opt,@args);
-	#return $self->default_action($opt,@args);
-}
-
-# placeholder:
-#sub default_action {}
-
-
-
-sub _load_module {
-	my $self = shift;
-	my $mod = shift;
-	
-	my $class_name = $self->modules->{$mod} or return 0;
-
-	return 1 if (defined $self->modules_obj->{$mod} and ref($self->modules_obj->{$mod}) eq $class_name);
-	
-	
-	my $Object = $class_name->new(
-		parent_ref	=> $self,
-		c 				=> $self->c,
-		#base_url		=> $self->c->namespace . '/' . $opt
-		base_url		=> $self->base_url . '/' . $mod
-	) or die "Failed to create new $class_name object";
-
-	$self->modules_obj->{$mod} = $Object;
-
-	return 1;
+	return $self->process_action($opt,@args)									if (defined $opt and defined $self->actions->{$opt});
+	return $self->modules_obj->{$opt}->Controller($self->c,@args)		if (defined $opt and $self->_load_module($opt));
+	return $self->process_action($self->default_action,@_);
 }
 
 
@@ -91,37 +77,6 @@ sub JSON_encode {
 	my $self = shift;
 	return JSON::to_json(shift);
 }
-
-
-
-# backward compat: (didn't work)
-#sub subapps {
-#	my $self = shift;
-#	
-#	$self->_load_all_modules;
-#	
-#	my $h = {};
-#	
-#	foreach my $mod (keys %{$self->modules_obj}) {
-#		my $Object = $self->modules_obj->{$mod};
-#		$h->{$mod} = sub {
-#			#my $c = shift;
-#			#$Object->c($c) if (defined $c);
-#			return $Object;
-#		};
-#	}
-#	
-#	return $h;
-#}
-
-#sub _load_all_modules {
-#	my $self = shift;
-#	
-#	foreach my $mod (keys %{$self->modules}) {
-#		$self->_load_module($mod);
-#	}
-#}
-
 
 
 1;

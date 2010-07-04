@@ -93,53 +93,6 @@ sub BUILD {
 }
 
 
-#sub Controller {
-#	my ( $self, $c, $opt, @args ) = @_;
-#	
-#	my $data = '';
-#	
-#	switch($opt) {
-#	
-#		case 'navtree' 				{ $data = $self->JSON_encode($self->navtree_panel($c));		}
-#		case 'main_panel'				{ $data = $self->JSON_encode($self->main_panel($c));			}
-#		case 'default_content'		{ $data = $self->JSON_encode($self->default_content);		}
-#
-#		else {
-#		
-#			return $self->subapps->{$opt}->($c)->Controller($c,@args) if (
-#				defined $self->subapps and
-#				defined $self->subapps->{$opt} and
-#				ref($self->subapps->{$opt}) eq 'CODE'
-#			);
-#			
-#		}
-#	}
-#	
-#	$c->response->header('Cache-Control' => 'no-cache');
-#	return $c->response->body( $data );
-#}
-
-
-
-#sub default_action {
-#	my $self = shift;
-#	return $self->process_action('main');
-#}
-
-
-
-
-#sub main {
-#	my $self = shift;
-#	return {
-#		region			=> 'center',
-#		id					=> $self->main_id,
-#		xtype				=> 'autopanel',
-#		bodyCssClass	=> 'sbl-panel-body-noborder',
-#		layout 			=> 'fit',
-#		autoLoad			=> $self->base_url . '/main_panel',
-#	};
-#}
 
 
 sub main {

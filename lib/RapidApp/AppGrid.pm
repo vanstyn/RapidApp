@@ -41,7 +41,7 @@ has 'title_icon_href' 				=> ( is => 'ro',	default => '',	isa => 'Str'						);
 has 'edit_label' 						=> ( is => 'ro',	default => 'Update',		isa => 'Str'			);
 has 'edit_label_iconCls' 			=> ( is => 'ro',	default => 'icon-edit',	isa => 'Str'			);
 has 'edit_icon_text' 				=> ( is => 'ro',	default => undef										);
-has 'edit_window_title' 			=> ( is => 'ro',	default => sub { 'Edit ' . (shift)->item_title; } 	);
+has 'edit_window_title' 			=> ( is => 'ro',	lazy => 1, default => sub { 'Edit ' . (shift)->item_title; } 	);
 has 'add_label' 						=> ( is => 'ro',	default => 'Add',			isa => 'Str'			);
 has 'add_label_iconCls' 			=> ( is => 'ro',	default => 'icon-add',	isa => 'Str'			);
 has 'edit_window_height' 			=> ( is => 'ro',	default => 300											);
