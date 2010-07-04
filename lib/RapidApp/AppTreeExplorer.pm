@@ -78,7 +78,7 @@ has 'actions' => ( is => 'ro', default => sub {
 	my $self = shift;
 	return {
 		navtree				=> sub { $self->JSON_encode($self->navtree_panel)	},
-		main_panel			=> sub { $self->JSON_encode($self->main_panel);		},
+		#main_panel			=> sub { $self->JSON_encode($self->main_panel);		},
 		default_content	=> sub { $self->JSON_encode($self->default_content)	},
 		main					=> sub { $self->JSON_encode($self->main);				}
 	};
@@ -129,25 +129,25 @@ sub BUILD {
 
 
 
+#sub main {
+#	my $self = shift;
+#	return {
+#		region			=> 'center',
+#		id					=> $self->main_id,
+#		xtype				=> 'autopanel',
+#		bodyCssClass	=> 'sbl-panel-body-noborder',
+#		layout 			=> 'fit',
+#		autoLoad			=> $self->base_url . '/main_panel',
+#	};
+#}
+
+
 sub main {
 	my $self = shift;
-	return {
-		region			=> 'center',
-		id					=> $self->main_id,
-		xtype				=> 'autopanel',
-		bodyCssClass	=> 'sbl-panel-body-noborder',
-		layout 			=> 'fit',
-		autoLoad			=> $self->base_url . '/main_panel',
-	};
-}
-
-
-sub main_panel {
-	my $self = shift;
 
 	return {
-		region	=> 'center',
-		#id			=> $self->main_id,
+		#region	=> 'center',
+		id			=> $self->main_id,
 		xtype		=> 'panel',
 		layout	=> 'border',
 		title		=> $self->title,

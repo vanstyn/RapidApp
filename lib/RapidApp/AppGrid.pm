@@ -33,7 +33,6 @@ use Term::ANSIColor qw(:constants);
 #### --------------------- ####
 
 
-
 has 'gridid' 							=> ( is => 'ro',	required => 1,		isa => 'Str'					);
 
 has 'title' 							=> ( is => 'ro',	default => '',	isa => 'Str'						);
