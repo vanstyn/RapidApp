@@ -89,10 +89,10 @@ has 'actions' => ( is => 'ro', default => sub {
 
 ###########################################################################################
 
-sub BUILD {
-	my $self = shift;
-	$self->Tree;
-}
+#sub BUILD {
+#	my $self = shift;
+#	$self->Tree;
+#}
 
 
 has 'content' => ( is => 'ro', lazy => 1, default => sub {
@@ -368,6 +368,6 @@ sub add_subapp {
 
 
 
-no Moose;
-__PACKAGE__->meta->make_immutable;
+#no Moose;
+#__PACKAGE__->meta->make_immutable;
 1;

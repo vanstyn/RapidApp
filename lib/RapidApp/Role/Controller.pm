@@ -20,6 +20,7 @@ has 'actions'					=> ( is => 'ro', 	default => sub {{}} );
 has 'default_action'			=> ( is => 'ro',	default => undef );
 has 'content'					=> ( is => 'ro',	default => '' );
 has 'render_as_json'			=> ( is => 'rw',	default => 1 );
+#has 'no_persist'				=> ( is => 'rw',	default => 0 );
 
 has 'create_module_params' => ( is => 'ro', lazy => 1,	default => sub {
 	my $self = shift;
@@ -35,23 +36,16 @@ sub Controller {
 	$self->c(shift);
 	my ( $opt, @args ) = @_;
 	
-#	print STDERR BLUE . " --> : " . ref($self) . "\n" . CLEAR;
-#	print STDERR CYAN . "base_url: " . $self->base_url . "\n" . CLEAR;
-#	print STDERR RED . "path: " . $self->c->req->path . "\n" . CLEAR;
-#	print STDERR YELLOW . "namesp: " . $self->c->namespace . "\n" . CLEAR;
-#	print STDERR GREEN . "opt: " . $opt . "\n" . CLEAR;
-	
-	
-	#$self->c($c);
-	#$self->base_url($self->c->namespace) unless (defined $self->parent_module);
-	
+	#if ($self->no_persist) {
+	#	for my $attr ($self->meta->get_all_attributes) {
+	#		$attr->clear_value($self) if ($attr->is_lazy or $attr->has_clearer);
+	#	}
+	#};
+		
 	$self->base_url($self->c->namespace);
-	
 	$self->base_url($self->parent_module->base_url . '/' . $self->module_name) if (
 		defined $self->parent_module
 	);
-	
-	$self->c->response->header('Cache-Control' => 'no-cache');
 	
 	return $self->process_action($opt,@args)							if (defined $opt and defined $self->actions->{$opt});
 	return $self->Module($opt)->Controller($self->c,@args)		if (defined $opt and $self->_load_module($opt));
