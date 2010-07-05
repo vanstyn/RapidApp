@@ -14,7 +14,7 @@ use Moose;
 with 'RapidApp::Role::Controller';
 
 use Clone;
-use JSON;
+#use JSON;
 
 use Try::Tiny;
 use RapidApp::ExtJS::MsgBox;
