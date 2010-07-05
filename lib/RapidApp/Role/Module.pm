@@ -17,7 +17,7 @@ has 'modules_obj'						=> ( is => 'ro', 	default => sub {{}} );
 has 'default_module'					=> ( is => 'ro',	default => 'default_module' );
 has 'create_module_params'			=> ( is => 'ro',	default => sub { {} } );
 has 'content'							=> ( is => 'ro',	default => sub { {} } );
-
+has 'modules_params'					=> ( is => 'ro',	default => sub { {} } );
 
 sub Module {
 	my $self = shift;
@@ -49,6 +49,13 @@ sub create_module {
 	my $class_name = shift;
 	
 	my $params = $self->create_module_params;
+	
+	if (defined $self->modules_params->{$name}) {
+		foreach my $k (keys %{$self->modules_params->{$name}}) {
+			$params->{$k} = $self->modules_params->{$name}->{$k};
+		}
+	}
+	
 	$params->{module_name} = $name;
 	$params->{parent_module} = $self;
 	

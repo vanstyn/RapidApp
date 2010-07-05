@@ -61,7 +61,8 @@ has 'gridfilter_remote'				=> ( is => 'ro',	required => 0, default => sub { \0 }
 has 'ExtJS'								=> ( is => 'ro',	default => sub { SBL::Web::ExtJS->new }			);
 
 
-has 'pageSize' 						=> ( is => 'ro',	required => 0,		isa => 'Int', predicate => 'has_pageSize'	);
+#has 'pageSize' 						=> ( is => 'ro',	required => 0,		isa => 'Int', predicate => 'has_pageSize'	);
+has 'pageSize' 						=> ( is => 'ro',	default => undef	);
 
 
 ### ---------------  'fields'  --------------- ###
@@ -235,8 +236,6 @@ has 'default_action' => ( is => 'ro', default => 'main' );
 has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	
-	my $params = $self->c->req->params;
-	
 	my $actions = {
 		'main'												=> sub { $self->JSON_encode($self->DynGrid->Params);		},
 		'action_' . $self->edit_label_iconCls		=> sub { $self->action_icon_edit; 								},
@@ -250,7 +249,7 @@ has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 		'add_submitform'									=> sub { $self->JSON_encode($self->add_submitform);			},
 		'add_submit'										=> sub { $self->JSON_encode($self->add_submit);				},
 		'edit_submit'										=> sub { $self->JSON_encode($self->edit_submit);				},
-		'data'												=> sub { $self->JSON_encode($self->grid_rows($params));	},
+		'data'												=> sub { $self->JSON_encode($self->grid_rows($self->c->req->params));	},
 		'item_form_load'									=> sub { $self->JSON_encode($self->item_form_load);			},
 	};
 	
@@ -263,7 +262,7 @@ has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 				ref($h->{coderef}) eq 'CODE' 
 			);
 			
-			$actions->{'action_' . $h->{iconCls}} = sub { $h->{coderef}->($params); };
+			$actions->{'action_' . $h->{iconCls}} = sub { $h->{coderef}->($self->c->req->params); };
 		}
 	}
 	
@@ -361,7 +360,8 @@ sub DynGrid {
 		row_checkboxes			=> $self->row_checkboxes
 	};
 	
-	$config->{pageSize} = $self->pageSize if ($self->has_pageSize);
+	#$config->{pageSize} = $self->pageSize if ($self->has_pageSize);
+	$config->{pageSize} = $self->pageSize if (defined $self->pageSize);
 	$config->{paging_bbar} = [ 'Selection: ', $self->delete_items_button, '-' ] if ($self->batch_delete);
 	
 	$config->{celldblclick_eval} = $self->dblclick_row_edit_code if ($self->dblclick_row_edit);
@@ -1247,5 +1247,5 @@ sub item_form_load {
 
 
 no Moose;
-__PACKAGE__->meta->make_immutable;
+#__PACKAGE__->meta->make_immutable;
 1;

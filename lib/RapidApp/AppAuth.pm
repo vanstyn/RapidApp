@@ -22,8 +22,8 @@ has 'login_banner'			=> ( is => 'ro',	default => 'Enter your username and passwo
 has 'logout_title'			=> ( is => 'ro',	default => 'Logout...' );
 has 'logout_banner'			=> ( is => 'ro',	default => 'Really Logout ?' );
 
-
-
+has 'username_key'			=> ( is => 'ro',	default => 'username' );
+has 'password_key'			=> ( is => 'ro',	default => 'password' );
 
 
 has 'ExtJS'			=> ( is => 'rw', lazy => 1, default => sub { RapidApp::ExtJS->new } );
@@ -56,8 +56,8 @@ sub login_window {
 		#							q~main.loadData(main.itemsurl);~
 	});
 	
-	use Data::Dumper;
-	print STDERR GREEN . Dumper($code) . CLEAR;
+	#use Data::Dumper;
+	#print STDERR GREEN . Dumper($code) . CLEAR;
 	
 	return $code;
 }
@@ -94,8 +94,8 @@ sub login {
 	
 	if (exists($self->c->req->params->{'username'})) {
 		$result = $self->c->authenticate({
-			username	=> $self->c->req->params->{'username'},
-			password	=> $self->c->req->params->{'password'}
+			$self->username_key	=> $self->c->req->params->{'username'},
+			$self->password_key	=> $self->c->req->params->{'password'}
 		});
 	}
 	

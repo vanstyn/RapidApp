@@ -229,6 +229,11 @@ sub _build_datafetch_coderef {
 		
 		my $data = $self->DbicExtQuery->data_fetch($params);
 		
+		use Data::Dumper;
+		print STDERR GREEN . Dumper($self->c->req->params) . CLEAR;
+		print STDERR YELLOW . Dumper($params) . CLEAR;
+		
+		
 		my $rows = [];
 		foreach my $row (@{$data->{rows}}) {
 			push @$rows, $self->row_to_hash($row);
@@ -392,5 +397,5 @@ sub row_to_hash {
 
 
 no Moose;
-__PACKAGE__->meta->make_immutable;
+#__PACKAGE__->meta->make_immutable;
 1;
