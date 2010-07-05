@@ -73,16 +73,18 @@ sub _build_Tree {
 	);
 }
 
-has 'default_action' => ( is => 'ro', default => 'main' );
+#has 'default_action' => ( is => 'ro', default => 'main' );
 has 'actions' => ( is => 'ro', default => sub {
 	my $self = shift;
 	return {
 		navtree				=> sub { $self->JSON_encode($self->navtree_panel)	},
 		#main_panel			=> sub { $self->JSON_encode($self->main_panel);		},
 		default_content	=> sub { $self->JSON_encode($self->default_content)	},
-		main					=> sub { $self->JSON_encode($self->main);				}
+		#main					=> sub { $self->JSON_encode($self->main);				}
 	};
 });
+
+
 
 
 ###########################################################################################
@@ -93,13 +95,19 @@ sub BUILD {
 }
 
 
+has 'content' => ( is => 'ro', lazy => 1, default => sub {
+	(shift)->main
+});
 
+#sub content {
+#	return (shift)->main;
+#}
 
 sub main {
 	my $self = shift;
 
 	return {
-		#region	=> 'center',
+		region	=> 'center',
 		id			=> $self->main_id,
 		xtype		=> 'panel',
 		layout	=> 'border',

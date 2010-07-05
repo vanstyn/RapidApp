@@ -35,6 +35,7 @@ has 'base_query_string'			=> ( is => 'ro',	lazy_build 	=> 1,		isa => 'Str'		);
 has 'exception_style' 			=> ( is => 'ro',	required => 0,		default => "color: red; font-weight: bolder;"			);
 # ----------
 
+has 'render_as_json'			=> ( is => 'rw',	default => 1 );
 
 sub _build_base_params {	return {};	}
 sub _build_base_query_string { '' }

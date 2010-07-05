@@ -49,7 +49,7 @@
 /* ----------------------------------- */
 
 /* This is needed only with gray theme: */
-.x-toolbar .xtb-sep { background-image: url(/static/extjs/resources/images/default/grid/grid-split.gif) !important }
+.x-toolbar .xtb-sep { background-image: url(/static/ext/resources/images/default/grid/grid-split.gif) !important }
 
 .x-tab-panel-header { border-bottom: 0px; }
 
