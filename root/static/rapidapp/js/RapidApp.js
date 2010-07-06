@@ -1,9 +1,12 @@
 Ext.Updater.defaults.disableCaching = true;
 
 
-// All-purpose override allowing eval code in config
+
 Ext.override(Ext.BoxComponent, {
 	initComponent: function() {
+		
+
+		// All-purpose override allowing eval code in config
 		var thisB = this;
 		if (thisB.afterRender_eval) { this.on('afterrender', function() { eval(thisB.afterRender_eval); }) }
 		var config = this;
@@ -23,26 +26,7 @@ Ext.override(Ext.BoxComponent, {
 });
 
 
-/*
-Ext.ns('Ext.ux.AjaxRPCAction');
-Ext.ux.AjaxRPCAction = function(url,params) {
-	if (!params) { params = {}; }
-	Ext.Ajax.request({
-		disableCaching: true,
-		url: url,
-		params: params,
-		success: function(response, opts) {
-			if(response.responseText) { 
-				var Result = Ext.util.JSON.decode(response.responseText);
-			
-			}
-		},
-		failure: function(response, opts) {
-			alert('Ext.ux.FetchEval (' + url + ') AJAX request failed.' );
-		}
-	});
-}
-*/
+
 
 Ext.ns('Ext.ux.FindNodebyId');
 Ext.ux.FindNodebyId = function(node,id) {
@@ -501,24 +485,8 @@ Ext.reg('jsonautopanel',Ext.ux.JsonAutoPanel);
 Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 	border: false,
 	initComponent: function() {
-	
-		var thisG = this;
-		
-		var proxy=new Ext.data.HttpProxy({url: this.data_url});
-		var reader=new Ext.data.JsonReader(
-			{
-				root: 'rows',
-				totalProperty: 'totalCount'
-			}, 
-			this.store_model
-		);
-		
-		var store=new Ext.data.Store({
-			proxy:proxy,
-			reader:reader,
-			autoDestroy: true,
-			remoteSort: this.remoteSort
-		});
+
+		var store = new Ext.data.JsonStore(this.store_config);
 		
 		var Toolbar = {
 			xtype : 'paging',
@@ -558,6 +526,7 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 		
 
 		// ----- RowActions ------ //
+		var thisG = this;
 		if (this.rowactions && this.rowactions.actions) {
 			var new_actions = [];
 			for (var i in thisG.rowactions.actions) {
@@ -864,6 +833,9 @@ Ext.extend(Ext.ux.JSONSubmitAction, Ext.form.Action.Submit, {
 				
 				var ajax_params = o.base_params ? o.base_params : {};
 				ajax_params['json_params'] = Ext.util.JSON.encode(this.form.getFieldValues());
+				if (this.form.orig_form_data) { 
+					ajax_params['orig_form_data'] = Ext.util.JSON.encode(this.form.orig_form_data);
+				}
 				
 				Ext.Ajax.request(Ext.apply(this.createCallback(o), {
 					 //form:this.form.el.dom,  <--- need to remove this line to prevent the form items from being submitted
@@ -942,11 +914,21 @@ Ext.ux.SubmitFormPanel = Ext.extend(Ext.form.FormPanel, {
 		//	});
 		//}
 		
+		if (this.store_orig_form_data) {
+			this.on('actioncomplete', function(form,action) {
+				if(action.type == 'load') {
+					form.orig_form_data = form.getFieldValues();
+				}
+			});
+		}
+		
+		
 		if (this.action_load) {
 			var action_load = this.action_load;
 			action_load['waitTitle'] = 'Loading';
 			action_load['waitMsg'] = 'Loading data';
-			this.getForm().load(action_load);
+			var form = this.getForm();
+			form.load(action_load);
 		}
 	
 		if (this.focus_field_id) {

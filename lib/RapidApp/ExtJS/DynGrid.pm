@@ -34,7 +34,7 @@ sub Params {
 		return undef unless (
 			defined $p 						and
 			ref($p) eq 'HASH' 				and
-			defined $p->{data_url}		and
+			defined $p->{store_config}		and
 			defined $p->{field_list}	
 		);
 		
@@ -46,7 +46,9 @@ sub Params {
 		$self->{Params} = $p;
 	}
 	
-	$self->{Params}->{store_model} 	= $self->store_model;
+	$self->{Params}->{store_config}->{fields} = $self->store_fields;
+	
+	#$self->{Params}->{store_model} 	= $self->store_model;
 	$self->{Params}->{column_model}	= $self->column_model;
 	
 	return $self->{Params};
@@ -111,7 +113,26 @@ sub grid_rows {
 	return $self->{grid_rows};
 }
 
+=pod
 sub store_model {
+	my $self = shift;
+	
+	my $a = [];
+	
+	foreach my $field ($self->field_list) {
+		my $h = {};
+		
+		$h->{name} 		= $field->{name};
+		
+		push @{$a}, $h;
+	}
+
+	return $a;
+}
+=cut
+
+
+sub store_fields {
 	my $self = shift;
 	
 	my $a = [];

@@ -381,7 +381,7 @@ sub DynGrid {
 	my $self = shift;
 	
 	my $config = {
-		data_url					=> $self->suburl('/data'),
+		#data_url					=> $self->suburl('/data'),
 		field_list				=> $self->grid_fields,
 		layout					=> 'fit',
 		#reload_interval		=> 10000,
@@ -397,7 +397,7 @@ sub DynGrid {
 		enableColumnMove		=> $self->enableColumnMove,
 		tbar						=> { items => $self->tbar_items },
 		viewConfig				=> { forceFit => 0, enableRowBody => \1 },
-		remoteSort				=> $self->remoteSort,
+		#remoteSort				=> $self->remoteSort,
 		gridsearch				=> $self->gridsearch,
 		gridsearch_remote		=> $self->gridsearch_remote,
 		gridfilter				=> $self->gridfilter,
@@ -411,6 +411,14 @@ sub DynGrid {
 	
 	$config->{celldblclick_eval} = $self->dblclick_row_edit_code if ($self->dblclick_row_edit);
 	$config->{celldblclick_eval} = $self->celldblclick_eval if (defined $self->celldblclick_eval);
+
+	$config->{store_config} = {
+		url				=> $self->suburl('/data'),
+		root				=> 'rows',
+		totalProperty	=> 'totalCount',
+		autoDestroy		=> \1,
+		remoteSort		=> $self->remoteSort,
+	};
 
 	my $DynGrid = RapidApp::ExtJS::DynGrid->new($config);
 	return $DynGrid;
