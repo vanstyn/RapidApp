@@ -51,6 +51,7 @@ sub login_window {
 		iconCls				=> $self->login_iconCls,
 		logo					=> $self->login_logo,
 		banner				=> $self->login_banner,
+		username_label		=> $self->username_key,
 		onSuccess_eval		=> 'window.location.reload();'
 		#onSuccess_eval		=> q~var main = Ext.getCmp('maincontainer');~ .
 		#							q~main.loadData(main.itemsurl);~

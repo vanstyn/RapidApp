@@ -20,7 +20,7 @@ has 'actions'					=> ( is => 'ro', 	default => sub {{}} );
 has 'default_action'			=> ( is => 'ro',	default => undef );
 has 'content'					=> ( is => 'ro',	default => '' );
 has 'render_as_json'			=> ( is => 'rw',	default => 1 );
-#has 'no_persist'				=> ( is => 'rw',	default => 0 );
+has 'no_persist'				=> ( is => 'rw',	default => 0 );
 
 has 'create_module_params' => ( is => 'ro', lazy => 1,	default => sub {
 	my $self = shift;
@@ -36,11 +36,15 @@ sub Controller {
 	$self->c(shift);
 	my ( $opt, @args ) = @_;
 	
-	#if ($self->no_persist) {
-	#	for my $attr ($self->meta->get_all_attributes) {
-	#		$attr->clear_value($self) if ($attr->is_lazy or $attr->has_clearer);
-	#	}
-	#};
+
+	print STDERR GREEN . '-->' . ref($self) . '  ' . join(' . ',@_) . "\n\n" . CLEAR;
+	
+	
+	if ($self->no_persist) {
+		for my $attr ($self->meta->get_all_attributes) {
+			$attr->clear_value($self) if ($attr->is_lazy or $attr->has_clearer);
+		}
+	};
 		
 	$self->base_url($self->c->namespace);
 	$self->base_url($self->parent_module->base_url . '/' . $self->module_name) if (
@@ -92,12 +96,12 @@ sub render_data {
 		ref($data) eq 'HASH'
 	);
 	
-#	use Data::Dumper;
-#	print STDERR YELLOW . Dumper($rendered_data) . CLEAR;
-#
-#	for my $i (1..5) {
-#		print STDERR RED .BOLD . Dumper(caller($i)) . "---\n" . CLEAR;
-#	}
+	#use Data::Dumper;
+	#print STDERR YELLOW . Dumper($rendered_data) . CLEAR;
+
+	#for my $i (1..5) {
+	#	print STDERR RED .BOLD . Dumper(caller($i)) . "---\n" . CLEAR;
+	#}
 	
 	
 	$self->c->response->header('Cache-Control' => 'no-cache');

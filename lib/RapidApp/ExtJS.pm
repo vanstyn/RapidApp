@@ -36,6 +36,8 @@ sub Login_Window_code {
 	$Params->{iconCls}	= 'icon-key' 		unless (defined $Params->{iconCls});
 	$Params->{banner} 	= 'Login' 			unless (defined $Params->{banner});
 	
+	$Params->{username_label} 	= 'username' 			unless (defined $Params->{username_label});
+	
 	if (defined $Params->{logo}) {
 		$Params->{logo} = '<img src="' . $Params->{logo} . '" style="padding-right:10px">';
 	}
@@ -82,7 +84,7 @@ sub Login_Window_code {
 				},{
 					id				=> 'username_field',
 					name			=> 'username',
-					fieldLabel	=> 'username'
+					fieldLabel	=> $Params->{username_label}
 				},{
 					id				=> 'password_field',
 					name			=> 'password',

@@ -31,6 +31,15 @@ has 'non_auth_content'		=> ( is => 'rw',	default => '' );
 
 
 
+sub kill_session {
+	my $self = shift;
+	
+	$self->c->logout;
+	return $self->c->delete_session('kill_session()');
+}
+
+
+
 
 around 'Controller' => sub {
 	my $orig = shift;
@@ -39,10 +48,10 @@ around 'Controller' => sub {
 	
 	$self->c($c);
 	
-	return $self->render_data($self->non_auth_content) unless (
-		defined $self->c and
-		$self->c->user_exists
-	);
+	unless ($self->c->session_is_valid and $self->c->user_exists) {
+		$self->kill_session;
+		return $self->render_data($self->non_auth_content);
+	}
 	
 	return $self->$orig(@_);
 };

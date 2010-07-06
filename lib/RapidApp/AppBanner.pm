@@ -7,6 +7,7 @@ extends 'RapidApp::AppBase';
 
 use RapidApp::AppAuth;
 
+has 'no_persist'				=> ( is => 'rw',	default => 1 );
 
 has 'height'			=> ( is => 'ro',	default => 50 );
 has 'logo'				=> ( is => 'ro',	default => '/static/images/logo.png' );
@@ -50,9 +51,9 @@ has 'modules_params' => (is => 'ro', lazy => 1, default => sub {
 });
 
 
-#has 'content' => ( is => 'ro', lazy => 1, default => sub {
+has 'content' => ( is => 'ro', lazy => 1, default => sub {
 
-sub content {
+#sub content {
 	my $self = shift;
 	return {
 		xtype				=> 'container',
@@ -97,10 +98,9 @@ sub content {
 			}
 		]
 	};
-}
+});
 
-
-sub current_user_area {
+has 'current_user_area' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	
 	my $list = [];
@@ -136,7 +136,7 @@ sub current_user_area {
 		height		=> 0,
 		bbar			=> { items => $list	}
 	};
-}
+});
 
 
 sub login_button {

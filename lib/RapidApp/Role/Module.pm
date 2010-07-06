@@ -19,6 +19,15 @@ has 'create_module_params'			=> ( is => 'ro',	default => sub { {} } );
 has 'content'							=> ( is => 'ro',	default => sub { {} } );
 has 'modules_params'					=> ( is => 'ro',	default => sub { {} } );
 
+
+sub BUILD {
+	my $self = shift;
+	foreach my $class (values %{$self->modules}) {
+		eval "use $class";
+	};
+}
+
+
 sub Module {
 	my $self = shift;
 	my $name = shift;

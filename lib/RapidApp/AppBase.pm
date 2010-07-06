@@ -55,7 +55,7 @@ sub suburl {
 	
 	$new_url .= $url;
 	
-	if ($self->has_base_query_string) {
+	if (defined $self->base_query_string) {
 		$new_url .= '?' unless ($self->base_query_string =~ /^\?/);
 		$new_url .= $self->base_query_string;
 	}

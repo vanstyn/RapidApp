@@ -19,7 +19,7 @@ use Clone;
 
 our $VERSION = '0.1';
 
-use SBL::Web::ExtJS;
+use RapidApp::ExtJS;
 use RapidApp::ExtJS::DynGrid;
 use RapidApp::ExtJS::CheckTreePanel;
 use RapidApp::ExtJS::SubmitForm;
@@ -58,10 +58,9 @@ has 'gridfilter'			 			=> ( is => 'ro',	required => 0, default => sub { \0 }				
 has 'gridfilter_remote'				=> ( is => 'ro',	required => 0, default => sub { \0 }				);
 #### ---
 
-has 'ExtJS'								=> ( is => 'ro',	default => sub { SBL::Web::ExtJS->new }			);
+has 'ExtJS'								=> ( is => 'ro',	default => sub { RapidApp::ExtJS->new }			);
 
 
-#has 'pageSize' 						=> ( is => 'ro',	required => 0,		isa => 'Int', predicate => 'has_pageSize'	);
 has 'pageSize' 						=> ( is => 'ro',	default => undef	);
 
 
@@ -136,7 +135,7 @@ has 'datafetch_coderef' 			=> ( is => 'ro',	required => 1,		isa => 'CodeRef'		);
 # -- add_item_coderef 
 # called upon submitting the add item form; 
 # field params are passed into the coderef as a HashRef in the first argument
-has 'add_item_coderef' 				=> ( is => 'ro',	required => 0,		isa => 'CodeRef'		);
+has 'add_item_coderef' 				=> ( is => 'ro',	default => undef		);
 
 # -- delete_item_coderef
 # called upon submitting a delete command for a single item
@@ -154,15 +153,15 @@ has 'edit_item_coderef' 			=> ( is => 'ro',	required => 0,		isa => 'CodeRef'		);
 # return a new HashRef, which will in turn be used to populate the edit form. If
 # this coderef is not supplied, the edit form will be populated with the data cached
 # in the Ext.data.record from the grid's store
-has 'itemfetch_coderef' 			=> ( is => 'ro',	required => 0,		isa => 'CodeRef', predicate => 'has_itemfetch_coderef'	);
+has 'itemfetch_coderef' 			=> ( is => 'ro',	default => undef	);
 
 # -- edit_custom_formfields_coderef
 # coderef should return a custom set of fields for display on the edit form
-has 'edit_custom_formfields_coderef' 	=> ( is => 'ro',	required => 0,		isa => 'CodeRef', predicate => 'has_edit_custom_formfields_coderef'	);
+has 'edit_custom_formfields_coderef' 	=> ( is => 'ro',	default => undef	);
 
 # -- delete_allowed_coderef
 # Optional coderef called to determine is the user is allowed to delete a given item
-has 'delete_allowed_coderef' 		=> ( is => 'ro',	required => 0,		isa => 'CodeRef', predicate => 'has_delete_allowed_coderef'	);
+has 'delete_allowed_coderef' 		=> ( is => 'ro',	default => undef	);
 
 ####
 ####
@@ -171,15 +170,15 @@ has 'delete_allowed_coderef' 		=> ( is => 'ro',	required => 0,		isa => 'CodeRef'
 
 has 'item_key' 						=> ( is => 'ro',	required => 0,		isa => 'Str'			);
 
-has 'extra_row_actions' 			=> ( is => 'ro',	required => 0,		isa => 'ArrayRef', predicate => 'has_extra_row_actions'	);
+has 'extra_row_actions' 			=> ( is => 'ro',	default => undef	);
 
-has 'add_item_help_html'			=> ( is => 'ro',	required => 0,	isa => 'Str', predicate => 'has_add_item_help_html'					);
-has 'delete_item_confirm_html'	=> ( is => 'ro',	required => 0,	isa => 'Str', predicate => 'has_delete_item_confirm_html'			);
+has 'add_item_help_html'			=> ( is => 'ro',	default => undef					);
+has 'delete_item_confirm_html'	=> ( is => 'ro',	default => undef			);
 has 'wrap_edit_window'				=> ( is => 'ro',	required => 0,		default => 0			);
 has 'edit_form_validate'			=> ( is => 'ro',	required => 0,		default => 0			);
 
 
-has 'celldblclick_eval'				=> ( is => 'ro',	required => 0,	isa => 'Str', predicate => 'has_celldblclick_eval'			);
+has 'celldblclick_eval'				=> ( is => 'ro',	default => undef			);
 
 has 'edit_action_wrapper_code'	=> ( is => 'ro',	lazy_build => 1										);
 has 'custom_add_item_code'			=> ( is => 'ro',	lazy_build => 1										);
@@ -207,7 +206,7 @@ has 'enableColumnMove'				=> ( is => 'ro',	required => 0,		default => 0					);
 has 'gid' => ( is => 'ro',	lazy => 1,	isa => 'Str', default => sub {
 	my $self = shift;
 	my $id = $self->gridid . '_' . $self->base_url;
-	$id .= '-' . $self->base_query_string if ($self->has_base_query_string);
+	$id .= '-' . $self->base_query_string if (defined $self->base_query_string);
 	
 	$id =~ s/[^\_a-zA-Z0-9]/\_/g;
 
@@ -253,7 +252,7 @@ has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 		'item_form_load'									=> sub { $self->JSON_encode($self->item_form_load);			},
 	};
 	
-	if ($self->has_extra_row_actions) {
+	if (defined $self->extra_row_actions) {
 		foreach my $h (@{$self->extra_row_actions}) {
 			die "extra_row_actions must be a Ref to an Array of HashRefs" unless (ref($h) eq 'HASH');
 			next unless (
@@ -273,7 +272,7 @@ has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 
 
 
-sub check_on 		{ '<img src="/static/images/checkmark.png">';				}
+sub check_on 		{ '<img src="/static/rapidapp/images/checkmark.png">';				}
 sub check_off 		{ '';																		}
 
 
@@ -360,12 +359,11 @@ sub DynGrid {
 		row_checkboxes			=> $self->row_checkboxes
 	};
 	
-	#$config->{pageSize} = $self->pageSize if ($self->has_pageSize);
 	$config->{pageSize} = $self->pageSize if (defined $self->pageSize);
 	$config->{paging_bbar} = [ 'Selection: ', $self->delete_items_button, '-' ] if ($self->batch_delete);
 	
 	$config->{celldblclick_eval} = $self->dblclick_row_edit_code if ($self->dblclick_row_edit);
-	$config->{celldblclick_eval} = $self->celldblclick_eval if ($self->has_celldblclick_eval);
+	$config->{celldblclick_eval} = $self->celldblclick_eval if (defined $self->celldblclick_eval);
 
 	my $DynGrid = RapidApp::ExtJS::DynGrid->new($config);
 	return $DynGrid;
@@ -413,7 +411,7 @@ sub rowactions {
 		tooltip => 'delete',
 	} if (defined $self->delete_item_coderef);
 	
-	if ($self->has_extra_row_actions) {
+	if (defined $self->extra_row_actions) {
 		foreach my $h (@{$self->extra_row_actions}) {
 			die "extra_row_actions must be a Ref to an Array of HashRefs" unless (ref($h) eq 'HASH');
 			my $cfg = {};
@@ -557,7 +555,7 @@ sub item_form_fields {
 	my $params = shift;
 
 	$params = $self->itemfetch_coderef->($params) if (
-		$self->has_itemfetch_coderef and
+		defined $self->itemfetch_coderef and
 		not $self->edit_form_ajax_load
 	);
 
@@ -622,7 +620,7 @@ sub edit_fields_list {
 	my $self = shift;
 	my $params = shift;
 	
-	$params = $self->itemfetch_coderef->($params) if ($self->has_itemfetch_coderef); 	
+	$params = $self->itemfetch_coderef->($params) if (defined $self->itemfetch_coderef); 	
 	
 	my @list = ();
 	
@@ -837,7 +835,7 @@ sub add_submitform {
 		text				=> 'Help',
 		iconCls			=> 'icon-help',
 		handler_func	=> q~new Ext.Window({iconCls: 'icon-help', autoScroll: true, height: 400, width: 350, html: '~ . $self->add_item_help_html . q~'}).show()~
-	}] if ($self->has_add_item_help_html);
+	}] if (defined $self->add_item_help_html);
 	
 	$config->{items} = $self->custom_add_form_items if (defined $self->custom_add_form_items);
 
@@ -890,7 +888,7 @@ sub edit_submitform {
 	#push @{$config->{items}}, $self->edit_fields_list($params);
 	
 	push @{$config->{items}}, $self->item_form_fields($params);
-	push @{$config->{items}}, $self->edit_custom_formfields_coderef->($params) if ($self->has_edit_custom_formfields_coderef);
+	push @{$config->{items}}, $self->edit_custom_formfields_coderef->($params) if (defined $self->edit_custom_formfields_coderef);
 
 	
 	$config->{action_load} = {
@@ -1004,7 +1002,7 @@ sub batch_delete_confirm_window {
 	my $params_list = shift;
 	
 	my $msg;
-	if ($self->has_delete_allowed_coderef) {
+	if (defined $self->delete_allowed_coderef) {
 		foreach my $params (@$params_list) {
 			unless ($self->delete_allowed_coderef->($params,\$msg)) {
 				$msg = 'You are not allowed to delete one more more selected items' unless (defined $msg);
@@ -1020,7 +1018,7 @@ sub batch_delete_confirm_window {
 	}
 	
 	my $delete_msg = q~<br>Really delete ~ . scalar(@$params_list) . q~ selected ~ . $self->item_title . q~ items?<br><br>~;
-	$delete_msg .= $self->delete_item_confirm_html if ($self->has_delete_item_confirm_html);
+	$delete_msg .= $self->delete_item_confirm_html if (defined $self->delete_item_confirm_html);
 	
 	return
 		q~Ext.Msg.show({~ .
@@ -1083,7 +1081,7 @@ sub delete_confirm_window {
 	my $params = shift;
 	
 	my $msg;
-	if ($self->has_delete_allowed_coderef and not $self->delete_allowed_coderef->($params,\$msg)) {
+	if (defined $self->delete_allowed_coderef and not $self->delete_allowed_coderef->($params,\$msg)) {
 		$msg = 'You are not allowed to delete this item' unless (defined $msg);
 	
 		return
@@ -1096,7 +1094,7 @@ sub delete_confirm_window {
 	}
 	
 	my $delete_msg = q~<br>Really delete ~ . $self->item_title . ' ' . $params->{$self->item_key} . q~ ?<br><br>~;
-	$delete_msg .= $self->delete_item_confirm_html if ($self->has_delete_item_confirm_html);
+	$delete_msg .= $self->delete_item_confirm_html if (defined $self->delete_item_confirm_html);
 	
 	return
 		q~Ext.Msg.show({~ .
