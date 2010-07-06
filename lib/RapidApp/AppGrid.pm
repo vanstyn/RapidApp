@@ -180,8 +180,7 @@ has 'edit_form_validate'			=> ( is => 'ro',	required => 0,		default => 0			);
 
 has 'celldblclick_eval'				=> ( is => 'ro',	default => undef			);
 
-has 'edit_action_wrapper_code'	=> ( is => 'ro',	lazy_build => 1										);
-has 'custom_add_item_code'			=> ( is => 'ro',	lazy_build => 1										);
+
 
 has 'edit_close_on_update'			=> ( is => 'ro',	default => 1											);
 has 'dblclick_row_edit'				=> ( is => 'ro',	required => 0,		default => 0					);
@@ -199,6 +198,54 @@ has 'no_rowactions'					=> ( is => 'ro',	required => 0,		default => 0					);
 has 'UseAutoSizeColumns'			=> ( is => 'ro',	required => 0,		default => sub { \1 }			);
 has 'MaxColWidth'						=> ( is => 'ro',	required => 0,		default => sub { 300 }		);
 has 'enableColumnMove'				=> ( is => 'ro',	required => 0,		default => 0					);
+
+
+# -- use_parent_tab_wrapper
+# If this module's parent module has a tabpanel_load_code defined and this 
+# option is on, the edit window will be opened with it instead of the default_action
+# window (i.e. loads in a tab of an AppTreeExplorer)
+has 'use_parent_tab_wrapper'		=> ( is => 'ro', default => 0 );
+
+has 'edit_action_wrapper_code'	=> ( is => 'ro',	lazy_build => 1 );
+has 'custom_add_item_code'			=> ( is => 'ro',	lazy_build => 1 );
+
+sub _build_edit_action_wrapper_code {
+	my $self = shift;
+	
+	my $code;
+	
+	if ($self->use_parent_tab_wrapper and defined $self->parent_module) {
+		my $tabcode = $self->parent_module->tabpanel_load_code('urlspec');
+		if (defined $tabcode) {
+			
+			$code = 
+				'var grid_row_params = Ext.util.JSON.decode(urlspec["params"]["grid_row_params"]);' .
+				'urlspec["id"] = "ed-' . $self->gridid . '-" + grid_row_params["' . $self->item_key . '"];' . 
+				'urlspec["title"] = ' . $self->edit_tab_title_code . ';' . 
+				'urlspec["iconCls"] = "' . $self->edit_label_iconCls . '";' . $tabcode;
+			
+		}
+	}
+	else {
+	
+		$code = 
+			'urlspec["url"] = "' . $self->base_url . '/edit_window";' .
+			"Ext.ux.FetchEval(urlspec['url'],urlspec['params']);";
+	}
+	
+	use Data::Dumper;
+	print STDERR BOLD . RED . Dumper($code) .CLEAR;
+	
+	return $code;
+}
+
+has 'edit_tab_title_code' => ( is => 'ro', lazy_build => 1 );
+sub _build_edit_tab_title_code {
+	my $self = shift;
+	return '"' . $self->edit_label . '"';
+	#return 'grid_row_params["' . $self->item_key . '"]'
+}
+
 
 
 
@@ -373,7 +420,7 @@ sub DynGrid {
 
 sub _build_dblclick_row_edit_code {
 	my $self = shift;
-	return 'var action = "icon-edit";' . $self->rowaction_code;
+	return 'var action = "' . $self->edit_label_iconCls . '";' . $self->rowaction_code;
 }
 
 
@@ -941,13 +988,8 @@ sub action_icon_edit {
 	return $code;
 }
 
-sub _build_edit_action_wrapper_code {
-	my $self = shift;
-	my $code = 
-		'urlspec["url"] = "' . $self->base_url . '/edit_window";' .
-		"Ext.ux.FetchEval(urlspec['url'],urlspec['params']);";
-	return $code;
-}
+
+
 
 sub edit_window {
 	my $self = shift;
