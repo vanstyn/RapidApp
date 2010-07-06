@@ -64,9 +64,16 @@ sub _build_Tree {
 		
 		treewalk_coderef		=> sub {
 			my $node_cfg = shift;
+			
+			# backward compatability for "subapp":
+			$node_cfg->{module} = $node_cfg->{subapp} if (
+				not defined $node_cfg->{module} and
+				defined $node_cfg->{subapp}
+			);
+			
 			my $cfg = shift;
-			if (defined $node_cfg->{subapp}) {
-				$cfg->{navtarget} = $self->base_url . '/' . $node_cfg->{subapp};
+			if (defined $node_cfg->{module}) {
+				$cfg->{navtarget} = $self->base_url . '/' . $node_cfg->{module};
 				$cfg->{params} = $node_cfg->{params} if (defined $node_cfg->{params});
 			}
 		},
