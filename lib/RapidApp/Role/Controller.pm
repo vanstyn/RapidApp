@@ -5,9 +5,11 @@ package RapidApp::Role::Controller;
 
 
 use strict;
-use JSON;
+use JSON::PP;
 use Moose::Role;
 with 'RapidApp::Role::Module';
+
+use RapidApp::JSONFunc;
 
 use Term::ANSIColor qw(:constants);
 
@@ -28,6 +30,12 @@ has 'create_module_params' => ( is => 'ro', lazy => 1,	default => sub {
 		c => $self->c
 	};
 });
+
+has 'json' => ( is => 'ro', lazy_build => 1 );
+sub _build_json {
+	my $self = shift;
+	return JSON::PP->new->allow_blessed->convert_blessed;
+}
 
 
 
@@ -96,8 +104,8 @@ sub render_data {
 		ref($data) eq 'HASH'
 	);
 	
-	#use Data::Dumper;
-	#print STDERR YELLOW . Dumper($rendered_data) . CLEAR;
+	use Data::Dumper;
+	print STDERR YELLOW . "\n" . $rendered_data . "\n\n" . CLEAR;
 
 	#for my $i (1..5) {
 	#	print STDERR RED .BOLD . Dumper(caller($i)) . "---\n" . CLEAR;
@@ -113,7 +121,7 @@ sub render_data {
 
 sub JSON_encode {
 	my $self = shift;
-	return JSON::to_json(shift);
+	return $self->json->encode(shift);
 }
 
 

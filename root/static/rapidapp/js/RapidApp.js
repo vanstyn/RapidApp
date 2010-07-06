@@ -602,8 +602,8 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 			layout: 'fit',
 			id: this.gridid,
 			loadMask: true,
-			storeReload: function() {
-				thisG.store.reload();
+			storeReload: function(grid) {
+				grid.store.reload();
 			},
 			
 			// ------- http://extjs.com/forum/showthread.php?p=97676#post97676
