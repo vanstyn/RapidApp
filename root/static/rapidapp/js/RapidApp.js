@@ -2,6 +2,20 @@ Ext.Updater.defaults.disableCaching = true;
 
 
 
+
+Ext.override(Ext.Container, {
+	onRender: function() {
+		Ext.Container.superclass.onRender.apply(this, arguments);
+		if (this.onRender_eval) { eval(this.onRender_eval); }
+	}
+});
+
+
+
+
+
+
+
 Ext.override(Ext.BoxComponent, {
 	initComponent: function() {
 		
@@ -831,11 +845,29 @@ Ext.extend(Ext.ux.JSONSubmitAction, Ext.form.Action.Submit, {
 					 });
 				}
 				
+				var orig_p = this.form.orig_params;
+				var new_p = this.form.getFieldValues();
+				
 				var ajax_params = o.base_params ? o.base_params : {};
-				ajax_params['json_params'] = Ext.util.JSON.encode(this.form.getFieldValues());
-				if (this.form.orig_form_data) { 
-					ajax_params['orig_form_data'] = Ext.util.JSON.encode(this.form.orig_form_data);
+				ajax_params['json_params'] = Ext.util.JSON.encode(new_p);
+				if (this.form.orig_params) { 
+					ajax_params['orig_params'] = Ext.util.JSON.encode(orig_p);
 				}
+				
+				
+				
+
+				
+				
+				//Ext.getCmp('dataview').getStore().reload();
+				
+				//var cmp = this.form.findField('dataview');
+				//alert(cmp.getXtype());
+				
+				//this.cascade(function (cmp) {
+				//	try { if (cmp.getXtype()) { alert(cmp.getXtype()); } } catch(err) {}
+				//});
+				
 				
 				Ext.Ajax.request(Ext.apply(this.createCallback(o), {
 					 //form:this.form.el.dom,  <--- need to remove this line to prevent the form items from being submitted
@@ -867,6 +899,9 @@ Ext.ux.SubmitFormPanel = Ext.extend(Ext.form.FormPanel, {
 
 	initComponent: function() {
 		
+		
+
+		
 		var thisC = this;
 	
 		var config = {
@@ -874,7 +909,32 @@ Ext.ux.SubmitFormPanel = Ext.extend(Ext.form.FormPanel, {
 				thisC.el.unmask();
 				if (action.result.success) {
 					if (thisC.show_result) { Ext.MessageBox.alert('Success',action.result.msg); }
-					if (thisC.onSuccess_eval) { eval(thisC.onSuccess_eval); }
+					if (thisC.onSuccess_eval) { 
+						eval(thisC.onSuccess_eval); 
+						
+						
+						
+						
+						
+						//alert(this.getComponent('itemdataview').getXType());
+						
+						
+						//var store = thisC.getComponent('itemdataview').store;
+						//store.reload;
+						
+						//var store = Ext.getCmp('mydataview').store;
+						//store.reload;
+						
+						//alert(Ext.util.JSON.encode(action.params));
+						//Ext.Msg.alert('blah',Ext.util.JSON.encode(thisC.base_params));
+						
+						//Ext.StoreMgr.each( function(store) { 
+						//	for ( var i in thisC.base_params ) {
+						//		store.setBaseParam(i, thisC.base_params[i]);
+						//	}
+						//	store.reload(); 
+						//});
+					}
 				}
 				else {
 					if (thisC.onFail_eval) { eval(thisC.onFail_eval); }
@@ -886,6 +946,17 @@ Ext.ux.SubmitFormPanel = Ext.extend(Ext.form.FormPanel, {
 				
 				var do_action = this.do_action ? this.do_action : 'submit';
 				var base_params = this.base_params ? this.base_params : {};
+				
+				
+
+
+				
+				//Ext.StoreMgr.each( function(store) { 
+				//	for ( var i in base_params ) {
+				//		store.setBaseParam(i, base_params[i]);
+				//	}
+				//	store.reload(); 
+				//});
 				
 				this.el.mask('Please wait','x-mask-loading');
 				//this.getForm().submit({
@@ -914,14 +985,38 @@ Ext.ux.SubmitFormPanel = Ext.extend(Ext.form.FormPanel, {
 		//	});
 		//}
 		
-		if (this.store_orig_form_data) {
-			this.on('actioncomplete', function(form,action) {
-				if(action.type == 'load') {
-					form.orig_form_data = form.getFieldValues();
+
+		this.on('actioncomplete', function(form,action) {
+			if(action.type == 'load') {
+				form.orig_params = form.getFieldValues();
+				
+				
+				var store = this.getComponent('itemdataview').getStore();
+				//var store = Ext.getCmp('mydataview').getStore();
+				//alert(Ext.util.JSON.encode(store.baseParams));
+				var new_p = this.getForm().getFieldValues();
+				for ( i in store.baseParams ) {
+					if (new_p[i]) { store.setBaseParam(i,new_p[i]); }
 				}
-			});
-		}
+				//alert(Ext.util.JSON.encode(store.baseParams));
+				store.reload();
+				
+				
+			}
+		});
 		
+		this.on('activate', function(form,action) {
+			if (this.action_load) {
+				var action_load = this.action_load;
+				action_load['waitTitle'] = 'Loading';
+				action_load['waitMsg'] = 'Loading data';
+				var form = this.getForm();
+				form.load(action_load);
+			}
+		
+		});
+
+
 		
 		if (this.action_load) {
 			var action_load = this.action_load;
@@ -931,6 +1026,7 @@ Ext.ux.SubmitFormPanel = Ext.extend(Ext.form.FormPanel, {
 			form.load(action_load);
 		}
 	
+		
 		if (this.focus_field_id) {
 			var field = Ext.getCmp(this.focus_field_id);
 			if (field) { field.focus('',10); }
@@ -1178,5 +1274,311 @@ Ext.override(Ext.layout.ColumnLayout, {
 //});
 
 //Ext.ux.Printer.registerRenderer("panel", Ext.ux.Printer.PanelRenderer);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Ext.ux.FloatClear = Ext.extend(Ext.Component, {
+	cls: 'x-clear'
+});
+Ext.reg('float-clear', Ext.ux.FloatClear);
+
+Ext.ux.FloatingFormLayout = Ext.extend(Ext.layout.FormLayout, {
+	getLabelStyle: function(s, field) {
+		var labelStyle = this.labelStyle;
+		if (this.labelAlign !== 'top') {
+			if (field.labelWidth) {
+				labelStyle = 'width:' + field.labelWidth + 'px;';
+			}
+		}
+		var ls = '', items = [labelStyle, s];
+		for (var i = 0, len = items.length; i < len; ++i) {
+			if (items[i]) {
+				ls += items[i];
+				if (ls.substr(-1, 1) != ';') {
+					ls += ';';
+				}
+			}
+		}
+		return ls;
+	},
+
+	getElementStyle: function(field) {
+		if (this.labelAlign === 'top' || !field.labelWidth) {
+			return this.elementStyle;
+		} else {
+			var pad = Ext.isNumber(this.labelPad) ? this.labelPad : 5;
+			return 'padding-left:' + (field.labelWidth + pad) + 'px';
+		}
+	},
+
+	getTemplateArgs: function(field) {
+		var noLabelSep = !field.fieldLabel || field.hideLabel;
+
+		return {
+			id: field.id,
+			label: field.fieldLabel,
+			itemCls: (field.itemCls || this.container.itemCls || '') + (field.hideLabel ? ' x-hide-label' : ''),
+			clearCls: field.clearCls || 'x-form-clear-left',
+			labelStyle: this.getLabelStyle(field.labelStyle, field),
+			elementStyle: this.getElementStyle(field) || '',
+			labelSeparator: noLabelSep ? '' : (Ext.isDefined(field.labelSeparator) ? field.labelSeparator : this.labelSeparator)
+		};
+	}
+});
+Ext.Container.LAYOUTS['floating-form'] = Ext.ux.FloatingFormLayout;
+
+Ext.ux.FloatingFormPanel = Ext.extend(Ext.form.FormPanel, {
+	cls: 'floating-form',
+	layout: 'floating-form',
+	lookupComponent: function(comp) {
+		if (Ext.isString(comp)) {
+			switch (comp) {
+				case "|":
+					comp = new Ext.ux.FloatClear();
+					break;
+			}
+		}
+		return Ext.ux.FloatingFormPanel.superclass.lookupComponent.call(this, comp);
+	}
+});
+Ext.reg('floating-form', Ext.ux.FloatingFormPanel);
+
+
+Ext.ns('Ext.ux');
+Ext.ux.ComponentDataView = Ext.extend(Ext.DataView, {
+    defaultType: 'textfield',
+    initComponent : function(){
+        Ext.ux.ComponentDataView.superclass.initComponent.call(this);
+        this.components = [];
+    },
+    refresh : function(){
+        Ext.destroy(this.components);
+        this.components = [];
+        Ext.ux.ComponentDataView.superclass.refresh.call(this);
+        this.renderItems(0, this.store.getCount() - 1);
+    },
+    onUpdate : function(ds, record){
+        var index = ds.indexOf(record);
+        if(index > -1){
+            this.destroyItems(index);
+        }
+        Ext.ux.ComponentDataView.superclass.onUpdate.apply(this, arguments);
+        if(index > -1){
+            this.renderItems(index, index);
+        }
+    },
+    onAdd : function(ds, records, index){
+        var count = this.all.getCount();
+        Ext.ux.ComponentDataView.superclass.onAdd.apply(this, arguments);
+        if(count !== 0){
+            this.renderItems(index, index + records.length - 1);
+        }
+    },
+    onRemove : function(ds, record, index){
+        this.destroyItems(index);
+        Ext.ux.ComponentDataView.superclass.onRemove.apply(this, arguments);
+    },
+    onDestroy : function(){
+        Ext.ux.ComponentDataView.onDestroy.call(this);
+        Ext.destroy(this.components);
+        this.components = [];
+    },
+    renderItems : function(startIndex, endIndex){
+        var ns = this.all.elements;
+        var args = [startIndex, 0];
+        for(var i = startIndex; i <= endIndex; i++){
+            var r = args[args.length] = [];
+            for(var items = this.items, j = 0, len = items.length, c; j < len; j++){
+                c = items[j].render ?
+                    c = items[j].cloneConfig() :
+                    Ext.create(items[j], this.defaultType);
+                r[j] = c;
+                if(c.renderTarget){
+                    c.render(Ext.DomQuery.selectNode(c.renderTarget, ns[i]));
+                }else if(c.applyTarget){
+                    c.applyToMarkup(Ext.DomQuery.selectNode(c.applyTarget, ns[i]));
+                }else{
+                    c.render(ns[i]);
+                }
+                if(Ext.isFunction(c.setValue) && c.applyValue){
+                    c.setValue(this.store.getAt(i).get(c.applyValue));
+                    c.on('blur', function(f){
+                    	this.store.getAt(this.index).data[this.dataIndex] = f.getValue();
+                    }, {store: this.store, index: i, dataIndex: c.applyValue});
+                }
+            }
+        }
+        this.components.splice.apply(this.components, args);
+    },
+    destroyItems : function(index){
+        Ext.destroy(this.components[index]);
+        this.components.splice(index, 1);
+    }
+});
+Ext.reg('compdataview', Ext.ux.ComponentDataView);
+
+
+
+Ext.ux.ComponentListView = Ext.extend(Ext.ListView, {
+    defaultType: 'textfield',
+    initComponent : function(){
+        Ext.ux.ComponentListView.superclass.initComponent.call(this);
+        this.components = [];
+    },
+    refresh : function(){
+        Ext.destroy(this.components);
+        this.components = [];
+        Ext.ux.ComponentListView.superclass.refresh.apply(this, arguments);
+        this.renderItems(0, this.store.getCount() - 1);
+    },
+    onUpdate : function(ds, record){
+        var index = ds.indexOf(record);
+        if(index > -1){
+            this.destroyItems(index);
+        }
+        Ext.ux.ComponentListView.superclass.onUpdate.apply(this, arguments);
+        if(index > -1){
+            this.renderItems(index, index);
+        }
+    },
+    onAdd : function(ds, records, index){
+        var count = this.all.getCount();
+        Ext.ux.ComponentListView.superclass.onAdd.apply(this, arguments);
+        if(count !== 0){
+            this.renderItems(index, index + records.length - 1);
+        }
+    },
+    onRemove : function(ds, record, index){
+        this.destroyItems(index);
+        Ext.ux.ComponentListView.superclass.onRemove.apply(this, arguments);
+    },
+    onDestroy : function(){
+        Ext.ux.ComponentDataView.onDestroy.call(this);
+        Ext.destroy(this.components);
+        this.components = [];
+    },
+    renderItems : function(startIndex, endIndex){
+        var ns = this.all.elements;
+        var args = [startIndex, 0];
+        for(var i = startIndex; i <= endIndex; i++){
+            var r = args[args.length] = [];
+            for(var columns = this.columns, j = 0, len = columns.length, c; j < len; j++){
+                var component = columns[j].component;
+                c = component.render ?
+                    c = component.cloneConfig() :
+                    Ext.create(component, this.defaultType);
+                r[j] = c;
+                var node = ns[i].getElementsByTagName('dt')[j].firstChild;
+                if(c.renderTarget){
+                    c.render(Ext.DomQuery.selectNode(c.renderTarget, node));
+                }else if(c.applyTarget){
+                    c.applyToMarkup(Ext.DomQuery.selectNode(c.applyTarget, node));
+                }else{
+                    c.render(node);
+                }
+                if(c.applyValue === true){
+                	c.applyValue = columns[j].dataIndex;
+                }
+                if(Ext.isFunction(c.setValue) && c.applyValue){
+                    c.setValue(this.store.getAt(i).get(c.applyValue));
+                    c.on('blur', function(f){
+                    	this.store.getAt(this.index).data[this.dataIndex] = f.getValue();
+                    }, {store: this.store, index: i, dataIndex: c.applyValue});
+                }
+            }
+        }
+        this.components.splice.apply(this.components, args);
+    },
+    destroyItems : function(index){
+        Ext.destroy(this.components[index]);
+        this.components.splice(index, 1);
+    }
+});
+Ext.reg('complistview', Ext.ux.ComponentListView);
+
+
+Ext.override(Ext.ux.ComponentListView, {
+    onDestroy : function(){
+        Ext.ux.ComponentListView.superclass.onDestroy.call(this);
+        Ext.destroy(this.components);
+        this.components = [];
+    },
+});
+
+Ext.override(Ext.ux.ComponentDataView, {
+    onDestroy : function(){
+        Ext.ux.ComponentDataView.superclass.onDestroy.call(this);
+        Ext.destroy(this.components);
+        this.components = [];
+    },
+});
+
+
+Ext.ns('Ext.ux');
+Ext.ux.TplTabPanel = Ext.extend(Ext.TabPanel, {
+    initComponent: function () {
+        //Ext.apply(this,{store:this.store});
+        Ext.ux.TplTabPanel.superclass.initComponent.apply(this, arguments);
+
+        var tb = this;
+        var itemArr = [];
+
+        var cnt = tb.store.getCount();
+
+        Ext.each(this.tabsTpl, function (j) {
+            for (var i = 0; i < tb.store.getCount(); i++) {
+
+
+                var c = j.render ? c = j.cloneConfig() : Ext.ComponentMgr.create(j);
+
+
+                function myfn() {
+                    Ext.apply(this, tb.store.getAt(i).get(this.applyValues));
+                }
+                c.cascade(myfn);
+                Ext.ComponentMgr.register(c);
+
+                tb.items.add(c.id, c);
+
+            }
+        });
+
+    },
+});
+Ext.reg('tabtpl', Ext.ux.TplTabPanel);
 
 

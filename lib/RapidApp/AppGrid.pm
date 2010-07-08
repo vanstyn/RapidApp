@@ -34,7 +34,7 @@ use Term::ANSIColor qw(:constants);
 
 
 has 'gridid' 							=> ( is => 'ro',	required => 1,		isa => 'Str'					);
-
+has 'storeId'							=> ( is => 'ro',	default => undef );
 has 'title' 							=> ( is => 'ro',	default => '',	isa => 'Str'						);
 has 'title_icon_href' 				=> ( is => 'ro',	default => '',	isa => 'Str'						);
 
@@ -200,6 +200,10 @@ has 'MaxColWidth'						=> ( is => 'ro',	required => 0,		default => sub { 300 }		
 has 'enableColumnMove'				=> ( is => 'ro',	required => 0,		default => 0					);
 
 
+
+has 'record_processor_module'	=> ( is => 'ro', default => undef );
+
+
 # -- use_parent_tab_wrapper
 # If this module's parent module has a tabpanel_load_code defined and this 
 # option is on, the edit window will be opened with it instead of the default_action
@@ -219,8 +223,8 @@ sub _build_edit_action_wrapper_code {
 		if (defined $tabcode) {
 			
 			$code = 
-				'var grid_row_params = Ext.util.JSON.decode(urlspec["params"]["grid_row_params"]);' .
-				'urlspec["id"] = "ed-' . $self->gridid . '-" + grid_row_params["' . $self->item_key . '"];' . 
+				'var orig_params = Ext.util.JSON.decode(urlspec["params"]["orig_params"]);' .
+				'urlspec["id"] = "ed-' . $self->gridid . '-" + orig_params["' . $self->item_key . '"];' . 
 				'urlspec["title"] = ' . $self->edit_tab_title_code . ';' . 
 				'urlspec["iconCls"] = "' . $self->edit_label_iconCls . '";' . $tabcode;
 			
@@ -243,7 +247,7 @@ has 'edit_tab_title_code' => ( is => 'ro', lazy_build => 1 );
 sub _build_edit_tab_title_code {
 	my $self = shift;
 	return '"' . $self->edit_label . '"';
-	#return 'grid_row_params["' . $self->item_key . '"]'
+	#return 'orig_params["' . $self->item_key . '"]'
 }
 
 
@@ -413,6 +417,7 @@ sub DynGrid {
 	$config->{celldblclick_eval} = $self->celldblclick_eval if (defined $self->celldblclick_eval);
 
 	$config->{store_config} = {
+		storeId			=> $self->storeId,
 		url				=> $self->suburl('/data'),
 		root				=> 'rows',
 		totalProperty	=> 'totalCount',
@@ -428,6 +433,23 @@ sub DynGrid {
 
 sub _build_dblclick_row_edit_code {
 	my $self = shift;
+	
+	if ($self->record_processor_module and 0) {
+		my $url = $self->suburl('/' . $self->record_processor_module);
+	
+		my $code =
+			"var params = {orig_params: Ext.util.JSON.encode(record.data)};" .
+			"Ext.ux.FetchEval('" . $url . "?" . $self->base_query_string . "',params);";
+			
+		print STDERR BOLD . BLUE . $code . "\n\n" . CLEAR;
+		
+		return $code;
+			
+	
+	}
+	
+	
+	
 	return 'var action = "' . $self->edit_label_iconCls . '";' . $self->rowaction_code;
 }
 
@@ -435,7 +457,7 @@ sub _build_dblclick_row_edit_code {
 sub rowaction_code {
 	my $self = shift;
 	return 
-		"var params = {grid_row_params: Ext.util.JSON.encode(record.data)};" .
+		"var params = {orig_params: Ext.util.JSON.encode(record.data)};" .
 		"Ext.ux.FetchEval('" . $self->base_url . "/action_' + action + '?" . $self->base_query_string . "',params);"
 }
 
@@ -919,9 +941,9 @@ sub add_window_config {
 sub edit_submitform {
 	my $self = shift;
 	
-	my $params = JSON::decode_json($self->c->req->params->{grid_row_params});
+	my $params = JSON::decode_json($self->c->req->params->{orig_params});
 	my $orig_params = $self->c->req->params;
-	$orig_params->{grid_row_params} = $params;
+	$orig_params->{orig_params} = $params;
 	
 	my $config = $self->add_edit_base_submitform;
 	$config->{base_params} = { orig_params => JSON::to_json($orig_params) };
@@ -978,7 +1000,10 @@ sub edit_action_urlspec_code {
 		url 		=> $self->base_url . '/edit_submitform',
 		params	=> $self->c->req->params
 	};
-	return JSON::to_json($urlspec);
+	
+	$urlspec->{url} = $self->suburl('/' . $self->record_processor_module) if ($self->record_processor_module);
+	
+	return $self->json->encode($urlspec);
 }
 
 
@@ -1123,7 +1148,7 @@ sub action_batch_delete {
 ## Single item rowaction delete:
 sub action_icon_delete {
 	my $self = shift;
-	return $self->delete_confirm_window(JSON::decode_json($self->c->req->params->{grid_row_params}));
+	return $self->delete_confirm_window(JSON::decode_json($self->c->req->params->{orig_params}));
 }
 
 sub delete_confirm_window {
@@ -1164,7 +1189,7 @@ sub action_delete {
 	
 	my $code = '';
 	try {
-		my $h = $self->delete_item_coderef->(JSON::decode_json($self->c->req->params->{grid_row_params}));
+		my $h = $self->delete_item_coderef->(JSON::decode_json($self->c->req->params->{orig_params}));
 		if (ref($h) eq 'HASH' and defined $h->{success} and defined $h->{msg}) {
 			unless ($h->{success}) {
 				$h->{msg} =~ s/\r?\n/_/g;

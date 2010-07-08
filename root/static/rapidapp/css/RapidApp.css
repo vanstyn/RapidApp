@@ -270,55 +270,79 @@ html, body { height:100%; }
 }
 
 
+.floating-form .x-form-item
+{
+    display: inline;
+    float:left;
+    padding-right: 5px;
+}
+.floating-form label.x-form-item-label
+{
+    padding-right:0;
+}
+.ext-ie .floating-form .x-form-clear-left
+{
+    clear: none;
+    display:none;
+}
 
 
 
 
+.GreenSheetWrap {
+border: 1px #999999 solid !important;
+margin : 3px !important;
+-moz-border-radius: 12px !important;
+-webkit-border-radius: 12px !important;
+border-radius: 12px !important;
+background-color: #ffffcc !important;
+padding-bottom: 3px !important;
+padding-top: 3px !important;
 
-/*- Menu Tabs 1--------------------------- */ 
+}
+.GreenSheetPN { /* 4 */
+font-weight: bold !important; 
+margin : 3px !important;
+margin-left: 5px !important; 
+font-size: 24px !important; 
+text-decoration: underline !important; 
+color: #333333 !important; 
+} 
+.GStitle {
+margin-left: 5px !important;
+margin-top: 5px !important;
+margin-bottom: 5px !important;
+font-weight: bold !important;
+font-size: 14px !important; 
+padding-top: 3px !important;
+}
+
+.GSrtitle {
+margin-left: 5px !important;
+margin-top: 5px !important;
+margin-bottom: 5px !important;
+font-weight: bold !important;
+font-size: 12px !important; 
+padding-top: 3px !important;
+}
 
 
-    #tabs1 {
-      float:left;
-      width:100%;
-	  background:#F4F7FB;
-      font-size:93%;
-      line-height:normal;
-	  border-top:1px solid #BCD2E6;
-      }
-    #tabs1 ul {
-	  margin:0;
-	  padding:0px 10px 10px 50px;
-	  list-style:none;
-      }
-    #tabs1 li {
-      display:inline;
-      margin:0;
-      padding:0;
-      }
-    #tabs1 a {
-      float:left;
-      background:url("/static/rapidapp/images/tableft1.gif") no-repeat left top;
-      margin:0;
-      padding:0 0 0 4px;
-      text-decoration:none;
-      }
-    #tabs1 a span {
-      float:left;
-      display:block;
-      background:url("/static/rapidapp/images/tabright1.gif") no-repeat right top;
-      padding:5px 15px 4px 6px;
-      color:#627EB7;
-      }
-    /* Commented Backslash Hack hides rule from IE5-Mac \*/
-    #tabs1 a span {float:none;}
-    /* End IE5-Mac hack */
-    #tabs a:hover span {
-      color:#627EB7;
-      }
-    #tabs1 a:hover {
-      background-position:0% -15px;
-      }
-    #tabs1 a:hover span {
-      background-position:100% -15px;
-      }
+.GSdesc {
+font-size: 9px !important; 
+overflow: hidden !important;
+width: 40% !important;
+border: 1px;
+padding: 2px !important;
+border-style: dotted !important;
+vertical-align: bottom !important;
+font-family: sans-serif !important;
+font-style: italic !important;
+color: grey !important;
+}
+
+
+.GSfloatRight {
+float: right !important; 
+margin-right: 20px !important;
+padding-top: 3px !important;
+}

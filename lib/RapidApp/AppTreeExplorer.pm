@@ -25,6 +25,8 @@ our $VERSION = '0.1';
 use SBL::Web::ExtJS;
 use RapidApp::ExtJS::DynGrid;
 
+use RapidApp::JSONFunc;
+
 use RapidApp::Tree;
 
 
@@ -43,6 +45,11 @@ has 'expand_nodes'					=> ( is => 'ro',	default		=> sub { {} }					);
 has 'iconCls' 							=> ( is => 'ro',	default		=> ''								);
 has 'main_id' 							=> ( is => 'ro',	default		=> 'apptreeexplorer'			);
 has 'use_tabs' 						=> ( is => 'ro',	default		=> 0								);
+
+has 'tree_width'				=> ( is => 'ro',	default => 200 );
+has 'tree_resize'				=> ( is => 'ro',	default => 0 );
+has 'tree_collapsible'		=> ( is => 'ro',	default => 0 );
+
 
 #### --------------------- ####
 
@@ -157,17 +164,17 @@ sub nav_tree {
 	$autoLoad->{params} = $params if (defined $params);
 	
 	
-	return {
+	my $cnf =  {
 		region			=> 'west',
 		id					=> $self->navtree_id,
 		xtype				=> 'container',
 		margins			=> '3 3 3 3',
 		layout			=> 'fit',
 		autoEl			=> {},
-		width				=> 200,
+		width				=> $self->tree_width,
 		minSize			=> 200,
 		maxSize			=> 200,
-		collapsible		=> 0,
+		collapsible		=> $self->tree_collapsible,
 		items				=> {
 			id					=> 'navtree_area',
 			xtype				=> 'autopanel',
@@ -176,6 +183,14 @@ sub nav_tree {
 			autoLoad			=> $autoLoad
 		}
 	};
+	
+	unless ($self->tree_resize) {
+		$cnf->{minSize} = $self->tree_width;
+		$cnf->{maxSize} = $self->tree_width;
+
+	}
+	return $cnf;
+	
 }
 
 
@@ -197,6 +212,9 @@ sub tabpanel {
 		defaults => {
 			autoHeight => \0,
 			closable => \1,
+			listeners => {
+				tabchange => RapidApp::JSONFunc->new( raw => 1, func => 'function(tabPanel,newTab){ var thisObj = newTab.getUpdater(); if(thisObj) thisObj.refresh(); }' )
+			},
 		}
 	};
 }
@@ -305,6 +323,12 @@ sub tabpanel_load_code {
 			'if(! Ext.getCmp(cfg.id)) { TabP.add(cfg); new_tab = 1; }' .
 			"TabP.setActiveTab(cfg.id);" .
 			"if (!new_tab) { var dyngrid = Ext.getCmp(cfg.id).findByType('dyngrid'); if (dyngrid[0]) { dyngrid[0].getStore().reload(); }}" .
+			"Ext.StoreMgr.each( function(store) { store.reload(); } );" .
+			#"Ext.ComponentMgr.each( function(cmp) { if ('formpanel' == cmp.getXType()) ; } );"
+			
+			
+			
+			
 		'}';
 	
 	return $code;

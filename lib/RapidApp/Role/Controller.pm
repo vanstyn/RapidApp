@@ -24,6 +24,20 @@ has 'content'					=> ( is => 'ro',	default => '' );
 has 'render_as_json'			=> ( is => 'rw',	default => 1 );
 has 'no_persist'				=> ( is => 'rw',	default => 0 );
 
+has 'render_append'			=> ( is => 'rw', default => '', isa => 'Str' );
+
+sub add_render_append {
+	my $self = shift;
+	my $add or return;
+	die 'ref encountered, string expected' if ref($add);
+	
+	my $cur = $self->render_append;
+	return $self->render_append( $cur . $add );
+}
+
+
+
+
 has 'create_module_params' => ( is => 'ro', lazy => 1,	default => sub {
 	my $self = shift;
 	return {
@@ -101,11 +115,13 @@ sub render_data {
 	my $rendered_data = $data;
 	$rendered_data = $self->JSON_encode($data) if (
 		$self->render_as_json and
-		ref($data) eq 'HASH'
+		ref($data)
 	);
 	
-	use Data::Dumper;
-	print STDERR YELLOW . "\n" . $rendered_data . "\n\n" . CLEAR;
+	#$rendered_data .= $self->render_append;
+	
+	#use Data::Dumper;
+	#print STDERR YELLOW . "\n" . $rendered_data . "\n\n" . CLEAR;
 
 	#for my $i (1..5) {
 	#	print STDERR RED .BOLD . Dumper(caller($i)) . "---\n" . CLEAR;

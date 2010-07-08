@@ -273,7 +273,7 @@ sub _build_edit_item_coderef {
 		my $params = shift;
 		my $orig = shift;
 	
-		my $row = $self->Row_from_hashref($orig->{grid_row_params});
+		my $row = $self->Row_from_hashref($orig->{orig_params});
 		
 		#$row->set_columns($params);
 		$row->update($params) or return {

@@ -47,8 +47,9 @@ BEGIN {
 }
 
 
-has 'function'		=> ( is => 'ro', required => 1, isa => 'Str' );
-has 'config'		=> ( is => 'ro', required => 1 );
+has 'func'		=> ( is => 'ro', required => 1, isa => 'Str' );
+has 'parm'		=> ( is => 'ro', required => 0 );
+has 'raw'		=> ( is => 'ro', default => 0 );
 
 has 'json' => ( is => 'ro', lazy_build => 1 );
 sub _build_json {
@@ -58,7 +59,8 @@ sub _build_json {
 
 sub TO_JSON {
 	my $self = shift;
-	return $self->function . '(' . $self->json->encode($self->config) . ')';
+	return $self->func if ($self->raw);
+	return $self->func . '(' . $self->json->encode($self->parm) . ')';
 }
 
 
