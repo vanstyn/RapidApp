@@ -13,6 +13,7 @@
 
 <script type="text/javascript" src="/static/ext/adapter/ext/ext-base.js"></script>
 <script type="text/javascript" src="/static/ext/ext-all-debug.js"></script>
+<script type="text/javascript" src="/static/ext/src/debug.js"></script>
 
 <script type="text/javascript" src="/static/rapidapp/js/RowExpanderEX.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/Ext.ux.grid.RowActions.js"></script>

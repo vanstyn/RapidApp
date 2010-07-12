@@ -209,15 +209,38 @@ sub tabpanel {
 		deferredRender		=> \0,
 		layoutOnTabChange => \1,
 		enableTabScroll	=> \1,
+#		listeners => {
+#			tabchange => RapidApp::JSONFunc->new( raw => 1, func => 
+#				'function(tabPanel,newTab) {' .
+#					#'try { console.log("tabchange!!"); } catch(err) {}' .
+#					'Ext.log("tabchange");' .
+#
+#					'if(newTab) { ' .
+#						'var thisObj = newTab.getUpdater();' . 
+#						'if(thisObj) thisObj.refresh(); ' .
+#					
+##						'newTab.cascade(function(cmp) {' .
+##							'var xtype = cmp.getXType();' .
+##							'if(xtype == "dyngrid" || xtype == "dataview") {' . 
+##								'console.log(cmp.getXType()); ' .
+##								'try { cmp.getStore().reload(); } catch(err) { console.log(err); } ' .
+##							'}' .
+##						'});' .
+#						
+#						
+#					'}' .
+#				'}' 
+#			)
+#		},
 		defaults => {
 			autoHeight => \0,
 			closable => \1,
-			listeners => {
-				tabchange => RapidApp::JSONFunc->new( raw => 1, func => 'function(tabPanel,newTab){ var thisObj = newTab.getUpdater(); if(thisObj) thisObj.refresh(); }' )
-			},
+			
 		}
 	};
 }
+
+
 
 
 
@@ -309,6 +332,7 @@ sub tabpanel_load_code {
 	};
 	
 	my $code =
+		'Ext.log("tabpanel_load_code called");' . 
 		'var TabP = Ext.getCmp(' . "'" . $self->content_id . "'" . ');' .
 		'if (TabP) { ' .
 			'var attr = ' . $loadcfg . ';' .
@@ -320,10 +344,34 @@ sub tabpanel_load_code {
 			"if(attr.iconCls) { cfg.iconCls = attr.iconCls; }" .
 			"if(attr.params)  { cfg.autoLoad['params'] = attr.params; }" .
 			"var new_tab = 0;" . 
-			'if(! Ext.getCmp(cfg.id)) { TabP.add(cfg); new_tab = 1; }' .
+			'if(! Ext.getCmp(cfg.id)) { ' .
+				'TabP.add(cfg); new_tab = 1; ' .
+			'}' .
+#			'else {'.
+#				'var Panel = Ext.getCmp(cfg.id); ' .
+#				'Panel.load(cfg.autoLoad);' .
+#			'}' .
 			"TabP.setActiveTab(cfg.id);" .
-			"if (!new_tab) { var dyngrid = Ext.getCmp(cfg.id).findByType('dyngrid'); if (dyngrid[0]) { dyngrid[0].getStore().reload(); }}" .
-			"Ext.StoreMgr.each( function(store) { store.reload(); } );" .
+			
+			'if (!new_tab) {' .
+				'var Panel = Ext.getCmp(cfg.id); ' .
+				'Panel.cascade(function(cmp) {' .
+					'var xtype = cmp.getXType();' .
+					'if(xtype == "dyngrid" || xtype == "dataview") {' . 
+						'Ext.log(cmp.getXType()); ' .
+						'try { cmp.getStore().reload(); } catch(err) { Ext.log(err); } ' .
+					'}' .
+				'});' .
+				#'var dyngrid = Panel.findByType("dyngrid");' .
+				#'if (dyngrid[0]) { dyngrid[0].getStore().reload(); }' .
+				
+				
+				
+			'}' .
+			
+			
+			
+			#"Ext.StoreMgr.each( function(store) { store.reload(); } );" .
 			#"Ext.ComponentMgr.each( function(cmp) { if ('formpanel' == cmp.getXType()) ; } );"
 			
 			

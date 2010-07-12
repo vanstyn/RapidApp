@@ -986,9 +986,31 @@ Ext.ux.SubmitFormPanel = Ext.extend(Ext.form.FormPanel, {
 		//}
 		
 
+
+
+		this.on('actioncomplete', function(form,action) {
+			if(action.type == 'load') {
+			// save the orig params so they are available later in the jsonsubmit action
+			form.orig_params = form.getFieldValues();
+				
+				//find any stores within this container and reload them:
+				this.cascade(function(cmp) {
+					var xtype = cmp.getXType(); 
+					if(xtype == "dyngrid" || xtype == "dataview") {
+						Ext.log(cmp.getXType()); 
+						try { cmp.getStore().reload(); } catch(err) { Ext.log(err); } 
+					} 
+				});
+			}
+		});
+
+
+
+/*
 		this.on('actioncomplete', function(form,action) {
 			if(action.type == 'load') {
 				form.orig_params = form.getFieldValues();
+				
 				
 				
 				var store = this.getComponent('itemdataview').getStore();
@@ -1004,7 +1026,11 @@ Ext.ux.SubmitFormPanel = Ext.extend(Ext.form.FormPanel, {
 				
 			}
 		});
-		
+*/
+
+
+
+/*		
 		this.on('activate', function(form,action) {
 			if (this.action_load) {
 				var action_load = this.action_load;
@@ -1015,9 +1041,10 @@ Ext.ux.SubmitFormPanel = Ext.extend(Ext.form.FormPanel, {
 			}
 		
 		});
+*/
 
 
-		
+		// Load the form data: //
 		if (this.action_load) {
 			var action_load = this.action_load;
 			action_load['waitTitle'] = 'Loading';
@@ -1025,7 +1052,7 @@ Ext.ux.SubmitFormPanel = Ext.extend(Ext.form.FormPanel, {
 			var form = this.getForm();
 			form.load(action_load);
 		}
-	
+
 		
 		if (this.focus_field_id) {
 			var field = Ext.getCmp(this.focus_field_id);

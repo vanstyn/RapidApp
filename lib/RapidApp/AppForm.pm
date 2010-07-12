@@ -81,7 +81,7 @@ sub content {
 	
 	my $config = Clone::clone($self->formpanel_config);
 	
-	$config->{id}				= 'appform';
+	$config->{id}				= 'appform-' . time;
 	$config->{xtype} 			= 'submitform';
 	$config->{do_action} 	= 'jsonsubmit';
 	$config->{store_orig_params} = \1;
@@ -191,11 +191,12 @@ sub JsonStore {
 	my $store = RapidApp::JSONFunc->new( 
 		func => 'new Ext.data.JsonStore',
 		parm => {
-			#storeId => 'appform-store-' . $orig_params->{$self->item_key},
+			storeId => 'appform-store-' . $orig_params->{$self->item_key},
 			autoLoad => \1,
 			idProperty => 'id',
 			root => 'rows',
 			totalProperty => 'results',
+			autoDestroy => \1,
 			
 			url => $self->suburl('/store_read'),
 			#api => {
