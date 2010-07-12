@@ -1,7 +1,8 @@
 Ext.Updater.defaults.disableCaching = true;
 
 
-
+Ext.ns('Ext.log');
+Ext.log = function() {}
 
 Ext.override(Ext.Container, {
 	onRender: function() {
@@ -9,9 +10,6 @@ Ext.override(Ext.Container, {
 		if (this.onRender_eval) { eval(this.onRender_eval); }
 	}
 });
-
-
-
 
 
 

@@ -16,11 +16,13 @@ use RapidApp::JSONFunc;
 use Term::ANSIColor qw(:constants);
 
 has 'no_persist'				=> ( is => 'rw',	default => 1 );
-has 'reload_on_save' => ( is => 'ro', default => 0 );
+has 'reload_on_save' 		=> ( is => 'ro', default => 0 );
 
 has 'formpanel_config'		=> ( is => 'ro', required => 1, isa => 'HashRef' );
+
 has 'read_data_coderef'		=> ( is => 'ro', default => undef );
-has 'update_data_coderef'		=> ( is => 'ro', default => undef );
+has 'update_data_coderef'	=> ( is => 'ro', default => undef );
+has 'create_data_coderef'	=> ( is => 'ro', default => undef );
 
 
 
@@ -143,7 +145,7 @@ sub _build_base_params {
 		$params->{$key} = $orig_params->{$key} if (defined $orig_params->{$key});
 	}
 	
-	return $params;
+	return $params;anchor => '95%',
 }
 
 
@@ -177,9 +179,10 @@ has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 	
 	$actions->{read}				= sub { $self->read } if (defined $self->read_data_coderef);
 	$actions->{update}			= sub { $self->update } if (defined $self->update_data_coderef);
+	$actions->{create}			= sub { $self->create } if (defined $self->create_data_coderef);
 	
 	return $actions;
-});
+});$actions->{update}			= sub { $self->update } if (defined $self->update_data_coderef);
 
 has 'formpanel_id' => ( is => 'ro', lazy_build => 1 );
 sub _build_formpanel_id {
@@ -335,16 +338,21 @@ sub update {
 	
 	return {
 		success => \1,
-		msg => 'worked'
+		msg => 'Update Succeeded'
 	} if ($result);
 	
 	return {
 		success => \0,
-		msg => 'failed'
+		msg => 'Update Failed'
 	};
 }
 
 
+sub create {
+	my $self = shift;
+	
+	
+}
 
 sub content {
 	my $self = shift;
