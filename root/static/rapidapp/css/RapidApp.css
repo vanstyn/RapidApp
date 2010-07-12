@@ -30,6 +30,7 @@
 
 .icon-delete { background-image: url(/static/rapidapp/images/cross.png) !important; }
 .icon-edit { background-image: url(/static/rapidapp/images/application_edit.png) !important; }
+.icon-save { background-image: url(/static/rapidapp/images/disk_blue_ok.png) !important; }
 
 .icon-log { background-image: url(/static/rapidapp/images/report.png) !important; }
 .icon-form-add { background-image: url(/static/rapidapp/images/application_form_add.png) !important; }

@@ -1066,6 +1066,17 @@ Ext.reg('submitform',Ext.ux.SubmitFormPanel );
 
 
 
+
+
+
+
+
+
+
+
+
+
+
 // Tweaks to Saki's "CheckTree" (http://checktree.extjs.eu/) -- 2010-03-27 by HV
 Ext.override(Ext.ux.tree.CheckTreePanel, {
 	// This is required in order to get initial checked state:
