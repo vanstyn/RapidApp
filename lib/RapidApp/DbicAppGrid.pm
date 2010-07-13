@@ -30,17 +30,9 @@ use Switch;
 
 has 'db_name'						=> ( is => 'ro',	required => 0,		isa => 'Str'														);
 has 'ResultSource'				=> ( is => 'ro',	required => 1, 	isa => 'DBIx::Class::ResultSource'							);
-has 'ResultSet'					=> ( is => 'ro',	lazy_build => 1,	init_arg => undef, isa => 'DBIx::Class::ResultSet'		);
-has 'source_name'					=> ( is => 'ro',	lazy_build => 1,	init_arg => undef, isa => 'Str'								);
-has 'dsn'							=> ( is => 'ro',	lazy_build => 1,	init_arg => undef													);
-
-has 'DbicExtQuery'				=> ( is => 'ro',	lazy_build => 1,	init_arg => undef, isa => 'RapidApp::DbicExtQuery'		);
-
-has 'pri_keys'						=> ( is => 'ro',	lazy_build => 1,	init_arg => undef, isa => 'ArrayRef'							);
-has 'first_key'					=> ( is => 'ro',	lazy_build => 1,	init_arg => undef, isa => 'Str'								);
 
 has 'row_icon'						=> ( is => 'ro',	lazy_build => 1																			);
-has 'fields'						=> ( is => 'ro',	lazy_build => 1,	init_arg => undef,			isa => 'ArrayRef'					);
+
 has 'init_fields_hash'			=> ( is => 'rw',	default => sub {{}}, init_arg => undef,		isa => 'HashRef'					);
 has 'datafetch_coderef'			=> ( is => 'ro',	lazy_build => 1,	init_arg => undef,			isa => 'CodeRef'					);
 has 'itemfetch_coderef'			=> ( is => 'ro',	lazy_build => 1,	init_arg => undef,			isa => 'CodeRef'					);
@@ -84,18 +76,19 @@ after 'BUILD' => sub {
 	}
 };
 
-
+has 'ResultSet' => ( is => 'ro',	lazy_build => 1,	init_arg => undef, isa => 'DBIx::Class::ResultSet' );
 sub _build_ResultSet {
 	my $self = shift;
 	return $self->ResultSource->resultset;
 }
 
+has 'source_name'	 => ( is => 'ro',	lazy_build => 1,	init_arg => undef, isa => 'Str' );
 sub _build_source_name {
 	my $self = shift;
 	return $self->ResultSource->source_name;
 }
 
-
+has 'dsn' => ( is => 'ro',	lazy_build => 1,	init_arg => undef	);
 sub _build_dsn {
 	my $self = shift;
 	my $connect_info = $self->ResultSource->storage->connect_info;
@@ -105,13 +98,19 @@ sub _build_dsn {
 	return $d;
 }
 
-
+has 'DbicExtQuery' => ( is => 'ro',	lazy_build => 1,	init_arg => undef, isa => 'RapidApp::DbicExtQuery'	 );
 sub _build_DbicExtQuery {
 	my $self = shift;
 	return RapidApp::DbicExtQuery->new( ResultSource => $self->ResultSource );
 }
 
+has 'item_keys' => ( is => 'ro', lazy_build => 1 );
+sub _build_item_keys {
+	my $self = shift;
+	return $self->pri_keys;
+}
 
+has 'pri_keys' => ( is => 'ro', lazy_build => 1,	init_arg => undef, isa => 'ArrayRef' );
 sub _build_pri_keys {
 	my $self = shift;
 	
@@ -121,12 +120,13 @@ sub _build_pri_keys {
 	return $pri_keys;
 }
 
+has 'first_key' => ( is => 'ro',	lazy_build => 1,	init_arg => undef, isa => 'Str' );
 sub _build_first_key {
 	my $self = shift;
 	return $self->pri_keys->[0];
 }
 	
-
+has 'fields' => ( is => 'ro',	lazy_build => 1,	init_arg => undef, isa => 'ArrayRef' );
 sub _build_fields { 
 	my $self = shift;
 
@@ -228,12 +228,7 @@ sub _build_datafetch_coderef {
 		my $params = shift;
 		
 		my $data = $self->DbicExtQuery->data_fetch($params);
-		
-		use Data::Dumper;
-		print STDERR GREEN . Dumper($self->c->req->params) . CLEAR;
-		print STDERR YELLOW . Dumper($params) . CLEAR;
-		
-		
+
 		my $rows = [];
 		foreach my $row (@{$data->{rows}}) {
 			push @$rows, $self->row_to_hash($row);
@@ -273,16 +268,19 @@ sub _build_edit_item_coderef {
 		my $params = shift;
 		my $orig = shift;
 	
-		my $row = $self->Row_from_hashref($orig->{orig_params});
+		#my $row = $self->Row_from_hashref($orig->{orig_params});
+		delete $orig->{source};
+		delete $orig->{db};
+		my $row = $self->Row_from_hashref($orig);
 		
 		#$row->set_columns($params);
 		$row->update($params) or return {
-			success	=> 0,
+			success	=> \0,
 			msg		=> 'Update failed.'
 		};
 
 		return {
-			success	=> 1,
+			success	=> \1,
 			msg		=> 'Success'
 		};
 	};

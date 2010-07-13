@@ -29,15 +29,12 @@ our $VERSION = '0.1';
 #### --------------------- ####
 
 
-has 'base_params' 				=> ( is => 'ro',	lazy_build 	=> 1,		isa => 'HashRef'	);
+has 'base_params' 				=> ( is => 'ro',	lazy => 1, default => sub {{}}	);
 has 'params' 						=> ( is => 'ro',	required 	=> 0,		isa => 'ArrayRef'	);
-has 'base_query_string'			=> ( is => 'ro',	lazy_build 	=> 1,		isa => 'Str'		);
+has 'base_query_string'			=> ( is => 'ro',	default => ''		);
 has 'exception_style' 			=> ( is => 'ro',	required => 0,		default => "color: red; font-weight: bolder;"			);
 # ----------
 
-
-sub _build_base_params {	return {};	}
-sub _build_base_query_string { '' }
 
 
 ###########################################################################################

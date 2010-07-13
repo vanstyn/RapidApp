@@ -37,10 +37,10 @@ sub _build_item_key {
 has 'item_keys' => ( is => 'ro',	lazy_build => 1	);
 sub _build_item_keys {
 	my $self = shift;
-	return 'id';
-	return $self->parent_module->item_key if (
+	#return 'id';
+	return $self->parent_module->item_keys if (
 		defined $self->parent_module and
-		defined $self->parent_module->item_key
+		defined $self->parent_module->item_keys
 	);
 	return 'id';
 }
@@ -48,7 +48,7 @@ sub _build_item_keys {
 has 'item_key_val' => ( is => 'ro',	lazy_build => 1	);
 sub _build_item_key_val {
 	my $self = shift;
-	return $self->base_params->{$self->item_key};
+	return $self->base_params->{$self->item_key} ? $self->base_params->{$self->item_key} : 'item';
 }
 
 
@@ -141,11 +141,11 @@ sub _build_base_params {
 	$orig_params = JSON::from_json($orig_params_enc) if (defined $orig_params_enc);
 	
 	foreach my $key (@$keys) {
-		$params->{$key} = $self->c->req->params->{$key} if (defined $self->c->req->params->{$key});
 		$params->{$key} = $orig_params->{$key} if (defined $orig_params->{$key});
+		$params->{$key} = $self->c->req->params->{$key} if (defined $self->c->req->params->{$key});
 	}
 	
-	return $params;anchor => '95%',
+	return $params;
 }
 
 
@@ -182,7 +182,7 @@ has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 	$actions->{create}			= sub { $self->create } if (defined $self->create_data_coderef);
 	
 	return $actions;
-});$actions->{update}			= sub { $self->update } if (defined $self->update_data_coderef);
+});
 
 has 'formpanel_id' => ( is => 'ro', lazy_build => 1 );
 sub _build_formpanel_id {
@@ -213,17 +213,10 @@ sub _build_form_save_code {
 			'var store = ' . $self->getStore_code . ';' .
 			'var record = store.getAt(0);' .
 			'var form = Ext.getCmp("' . $self->formpanel_id . '").getForm();' .
-			#'var params = form.getFieldValues();' .
 			'record.beginEdit();' .
 			'form.updateRecord(record);' .
-			#'for (i in params) {' .
-			#	'record.set(i,params[i]);' .
-			#'}' .
 			'record.endEdit();' . 
-			#'record.commit();' .
-			
 			'store.save();' .
-			#'store.commitChanges();' .
 		'} catch (err) { Ext.log(err); }';
 }
 
@@ -248,7 +241,9 @@ sub JsonStore {
 					'Ext.log("load event");' . 
 					'try {' .
 						'var form = Ext.getCmp("' . $self->formpanel_id . '").getForm();' .
-						'form.loadRecord(records[0]);' .
+						'var Record = records[0];' .
+						'form.loadRecord(Record);' .
+						'store.setBaseParam("orig_params",Ext.util.JSON.encode(Record.data));' .
 					'} catch(err) { Ext.log(err); }' .
 				'}'
 			),
@@ -329,6 +324,17 @@ sub update {
 	my $params = $self->c->req->params;
 	my $rows = JSON::from_json($params->{rows});
 	delete $params->{rows};
+	
+	if (defined $params->{orig_params}) {
+		my $orig_params = JSON::from_json($params->{orig_params});
+		delete $params->{orig_params};
+		
+		# merge orig_params, preserving real params that are set:
+		foreach my $k (keys %$orig_params) {
+			next if (defined $params->{$k});
+			$params->{$k} = $orig_params->{$k};
+		}
+	}
 	
 	my $result = $self->update_data_coderef->($rows,$params);
 	return $result if (

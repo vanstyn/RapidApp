@@ -13,6 +13,7 @@ use RapidApp::JSONFunc;
 
 use Term::ANSIColor qw(:constants);
 
+
 our $VERSION = '0.1';
 
 
@@ -51,7 +52,10 @@ sub _build_json {
 	return JSON::PP->new->allow_blessed->convert_blessed;
 }
 
-
+sub JSON_encode {
+	my $self = shift;
+	return $self->json->encode(shift);
+}
 
 sub Controller {
 	my $self = shift;
@@ -135,10 +139,7 @@ sub render_data {
 
 
 
-sub JSON_encode {
-	my $self = shift;
-	return $self->json->encode(shift);
-}
+
 
 
 1;
