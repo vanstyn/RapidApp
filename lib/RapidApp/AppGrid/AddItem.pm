@@ -1,4 +1,4 @@
-package RapidApp::AppGrid::EditItem;
+package RapidApp::AppGrid::AddItem;
 
 use strict;
 use warnings;
@@ -11,8 +11,25 @@ use Term::ANSIColor qw(:constants);
 use Try::Tiny;
 
 has 'no_persist'				=> ( is => 'rw', default => 1 );
-has 'reload_on_save'			=> ( is => 'ro', default => 1 );
+has 'reload_on_save'			=> ( is => 'ro', default => 0 );
 
+has 'create_record_msg'	=> ( is => 'ro', lazy_build => 1 );
+sub _build_create_record_msg {
+	my $self = shift;
+	$self->parent_module->item_title . ' added';
+}
+
+
+has 'create_callback_code'	=> ( is => 'ro', lazy_build => 1 );
+sub _build_create_callback_code {
+	my $self = shift;
+	#return 'var activePanel = tabPanelLayout.getActiveTab(); Layout.closeTab(activePanel); ';
+	return 
+		'var panel = Ext.getCmp("' . $self->formpanel_id . '");' . 
+		'var tp = panel.findParentByType("tabpanel");' . 
+		'var tab = tp.getActiveTab();' .
+		'tp.remove(tab);';
+}
 
 has 'write_callback_code'	=> ( is => 'ro', lazy_build => 1 );
 sub _build_write_callback_code {
@@ -21,33 +38,28 @@ sub _build_write_callback_code {
 }
 
 
-has 'read_data_coderef' => ( is => 'ro', lazy_build => 1 );
-sub _build_read_data_coderef {
-	my $self = shift;
-	return sub {
-		my $params = shift; 
-		
-		
-		use Data::Dumper;
-		print STDERR YELLOW . Dumper($params) . CLEAR;
-		
-		return $self->parent_module->itemfetch_coderef->($params);
-	};
-}
-  
 
-has 'update_data_coderef' => ( is => 'ro', lazy_build => 1 );
-sub _build_update_data_coderef {
+has 'store_fields'			=> ( is => 'ro', lazy_build => 1 );
+sub _build_store_fields {
+	my $self = shift;
+	my $fields = [];
+	foreach my $f (@{$self->form_fields}) {
+		push @$fields, { name => $f->{name} };
+	}
+	return $fields;
+}
+
+
+has 'create_data_coderef' => ( is => 'ro', lazy_build => 1 );
+sub _build_create_data_coderef {
 	my $self = shift;
 	return sub {
 		my $params = shift;
-		my $orig_params = shift;
 
 		my $h = {};
 
 		try {
-		
-			my $hash = $self->parent_module->edit_item_coderef->($self->process_submit_params($params),$orig_params);
+			my $hash = $self->parent_module->add_item_coderef->($self->process_submit_params($params));
 			$h = $hash if (ref($hash) eq 'HASH');
 		}
 		catch {
@@ -57,7 +69,7 @@ sub _build_update_data_coderef {
 		};
 		
 		$h->{success} = 0 unless (defined $h->{success});
-		$h->{msg} = 'Update failed - unknown error' unless (defined $h->{msg});
+		$h->{msg} = 'Add failed - unknown error' unless (defined $h->{msg});
 
 		return $h;
 	};
@@ -83,8 +95,8 @@ sub _build_formpanel_config {
 		autoScroll => \1,
 		tbar => [
 			'->',
-			$self->reload_button, 
-			$self->save_button
+			#$self->reload_button, 
+			$self->add_button
 		],
 		items => $self->form_fields
 	};
@@ -93,60 +105,30 @@ sub _build_formpanel_config {
 
 
 
-
-
 sub form_fields {
 	my $self = shift;
 	 
-	 return $self->parent_module->custom_edit_form_items if (defined $self->parent_module->custom_edit_form_items);
+	 return $self->parent_module->custom_add_form_items if (defined $self->parent_module->custom_add_form_items);
 	 
 	 my @list = ();
 
 	foreach my $field (@{$self->parent_module->fields}) {
-		next unless ($field->{edit_allow} or $field->{edit_show});
+		next unless ($field->{addable});
+		$self->set_field_heading($field) if ($field->{heading});
+		
 		my $new_field = Clone::clone($field);
 		
 		$new_field->{anchor} = '95%' unless (defined $new_field->{anchor});
 		
-		if ($new_field->{heading}) {
-			$self->set_field_heading($new_field);
-			push @list, $new_field;
-			next;
-		}
-
-		$new_field->{hidden} = 0;
-		
 		$new_field->{fieldLabel} = $new_field->{header} unless (defined $new_field->{fieldLabel});
-		$new_field->{fieldLabel} = $new_field->{name} unless (defined $new_field->{fieldLabel});
-		
-		if ($field->{edit_show} and not $field->{edit_allow}) {
-			$new_field->{readOnly} = 1;
-			my @style = (
-				'background-color: transparent;',
-				'border-color: transparent;',
-				'background-image: none;'
-			);
-			$new_field->{style} = join('',@style);
-		}
-		
-#		unless (defined $new_field->{viewable} and not $new_field->{viewable}) {
-#			$new_field->{value} = $params->{$new_field->{name}} if (
-#				defined $params->{$new_field->{name}} and
-#				not $self->edit_form_ajax_load
-#			);
-#		}
+		delete $new_field->{width} if (defined $new_field->{width});
 		
 		$self->set_field_combo($new_field) if (
 			defined $new_field->{enum_list} and 
 			ref($new_field->{enum_list}) eq 'ARRAY'
 		);
-	
-		$self->set_field_checkbox($new_field) if ($new_field->{checkbox});
 		
-#		if ($new_field->{checktree} and defined $params->{$new_field->{name}}) {
-#			my $newer_field = $self->set_field_checktree($new_field,$params->{$new_field->{name}});
-#			$new_field = $newer_field;
-#		}
+		$self->set_field_checkbox($new_field) if ($new_field->{checkbox});
 		
 		push @list, $new_field;
 	}

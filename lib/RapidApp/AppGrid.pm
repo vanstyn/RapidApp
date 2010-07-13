@@ -27,6 +27,7 @@ use RapidApp::ExtJS::MsgBox;
 use Try::Tiny;
 
 use RapidApp::AppGrid::EditItem;
+use RapidApp::AppGrid::AddItem;
 
 use Switch;
 
@@ -215,14 +216,17 @@ has 'custom_add_item_code'			=> ( is => 'ro',	lazy_build => 1 );
 
 
 has 'edit_record_class' => ( is => 'ro', default => 'RapidApp::AppGrid::EditItem' );
+has 'add_record_class' => ( is => 'ro', default => 'RapidApp::AppGrid::AddItem' );
 
 has 'modules' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	return {
 		item		=> $self->edit_record_class,
+		add		=> $self->add_record_class,
 	};
 });
 has 'record_processor_module'	=> ( is => 'ro', default => 'item' );
+has 'add_processor_module'	=> ( is => 'ro', default => 'add' );
 
 has 'default_action' => ( is => 'ro', default => 'main' );
 has 'actions' => ( is => 'ro', lazy => 1, default => sub {
@@ -324,30 +328,6 @@ sub tbar_items {
 }
 
 
-sub add_button {
-	my $self = shift;
-
-	return undef unless (defined $self->add_item_coderef);
-
-	return {
-		xtype				=> 'dbutton',
-		text				=> $self->add_label,
-		iconCls			=> $self->add_label_iconCls,
-		handler_func	=> 
-			"var urlspec = {};" .
-			"urlspec['url'] = '" . $self->suburl('/add_submitform') . "';" .
-			$self->custom_add_item_code	
-	};
-}
-
-
-sub _build_custom_add_item_code {
-	my $self = shift;
-	return
-		"urlspec = '" . $self->suburl('/add_window') . "';" . 
-		q~Ext.ux.FetchEval(urlspec);~
-}
-
 
 
 sub DynGrid {
@@ -399,6 +379,45 @@ sub DynGrid {
 	return $DynGrid;
 }
 
+
+sub add_button {
+	my $self = shift;
+
+	return undef unless (defined $self->add_item_coderef);
+	
+	my $urlspec = {
+		id			=> 'add-item-' . time,
+		title		=> $self->add_label,
+		iconCls	=> $self->add_label_iconCls,
+		url 		=> $self->suburl('/' . $self->add_processor_module),
+		params	=> {
+			base_params => $self->json->encode($self->base_params),
+		}
+	};
+	
+	my $code = 
+		"var urlspec = " . $self->json->encode($urlspec) . ";" . 
+		$self->parent_module->tabpanel_load_code('urlspec');
+
+	return {
+		xtype				=> 'dbutton',
+		text				=> $self->add_label,
+		iconCls			=> $self->add_label_iconCls,
+		handler_func	=> $code
+#		handler_func	=> 
+#			"var urlspec = {};" .
+#			"urlspec['url'] = '" . $self->suburl('/add_submitform') . "';" .
+#			$self->custom_add_item_code	
+	};
+}
+
+
+sub _build_custom_add_item_code {
+	my $self = shift;
+	return
+		"urlspec = '" . $self->suburl('/add_window') . "';" . 
+		q~Ext.ux.FetchEval(urlspec);~
+}
 
 
 

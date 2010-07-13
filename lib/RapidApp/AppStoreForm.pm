@@ -23,8 +23,11 @@ has 'formpanel_config'		=> ( is => 'ro', required => 1, isa => 'HashRef' );
 has 'read_data_coderef'		=> ( is => 'ro', default => undef );
 has 'update_data_coderef'	=> ( is => 'ro', default => undef );
 has 'create_data_coderef'	=> ( is => 'ro', default => undef );
+has 'store_fields'			=> ( is => 'ro', default => sub {[]} );
 
-
+has 'create_record_msg'		=> ( is => 'ro', default => 'Record added' );
+has 'create_callback_code'	=> ( is => 'ro', default => '' ); # <-- JS code that gets called when a record is created (added)
+has 'write_callback_code'	=> ( is => 'ro', default => '' ); # <-- JS code that gets called when any store write happens (including create)
 
 has 'item_key' => ( is => 'ro',	lazy_build => 1	);
 sub _build_item_key {
@@ -37,12 +40,10 @@ sub _build_item_key {
 has 'item_keys' => ( is => 'ro',	lazy_build => 1	);
 sub _build_item_keys {
 	my $self = shift;
-	#return 'id';
 	return $self->parent_module->item_keys if (
 		defined $self->parent_module and
 		defined $self->parent_module->item_keys
 	);
-	return 'id';
 }
 
 has 'item_key_val' => ( is => 'ro',	lazy_build => 1	);
@@ -51,37 +52,6 @@ sub _build_item_key_val {
 	return $self->base_params->{$self->item_key} ? $self->base_params->{$self->item_key} : 'item';
 }
 
-
-has 'save_button_text' => ( is => 'ro',	default => ' Save '	);
-has 'save_button_iconCls' => ( is => 'ro',	default => 'icon-save'	);
-
-has 'save_button_id' => ( is => 'ro',	lazy_build => 1	);
-sub _build_save_button_id {
-	my $self = shift;
-	return 'save-button-' . $self->item_key_val . '-' . time;
-}
-
-has 'save_button' => ( is => 'ro',	lazy_build => 1	);
-sub _build_save_button {
-	my $self = shift;
-	return RapidApp::JSONFunc->new(
-		func => 'new Ext.Button', 
-		parm => {
-			text 		=> $self->save_button_text,
-			iconCls	=> $self->save_button_iconCls,
-			id 		=> $self->save_button_id,
-			disabled => \1,
-			style	=> { 
-				'margin-left'	=> '2px',
-				'margin-right'	=> '2px',
-				'font-weight'	=> 'bold',
-			},
-			handler 	=> RapidApp::JSONFunc->new( 
-				raw => 1, 
-				func => 'function() { ' . $self->form_save_code . '; }' 
-			)
-	});
-}
 
 has 'reload_button_text' => ( is => 'ro',	default => ' Reload '	);
 has 'reload_button_iconCls' => ( is => 'ro',	default => 'x-tbar-loading'	);
@@ -112,6 +82,74 @@ sub _build_reload_button {
 			)
 	});
 }
+
+
+
+has 'save_button_text' => ( is => 'ro',	default => ' Save '	);
+has 'save_button_iconCls' => ( is => 'ro',	default => 'icon-save'	);
+
+has 'save_button_id' => ( is => 'ro',	lazy_build => 1	);
+sub _build_save_button_id {
+	my $self = shift;
+	return 'save-button-' . $self->item_key_val . '-' . time;
+}
+
+has 'save_button' => ( is => 'ro',	lazy_build => 1	);
+sub _build_save_button {
+	my $self = shift;
+	return RapidApp::JSONFunc->new(
+		func => 'new Ext.Button', 
+		parm => {
+			text 		=> $self->save_button_text,
+			iconCls	=> $self->save_button_iconCls,
+			id 		=> $self->save_button_id,
+			disabled => \1,
+			style	=> { 
+				'margin-left'	=> '2px',
+				'margin-right'	=> '2px',
+				'font-weight'	=> 'bold',
+			},
+			handler 	=> RapidApp::JSONFunc->new( 
+				raw => 1, 
+				func => 'function(b) { b.disable(); ' . $self->form_save_code . '; }' 
+			)
+	});
+}
+
+
+
+has 'add_button_text' => ( is => 'ro',	default => ' Add '	);
+has 'add_button_iconCls' => ( is => 'ro',	default => 'icon-save'	);
+
+has 'add_button_id' => ( is => 'ro',	lazy_build => 1	);
+sub _build_add_button_id {
+	my $self = shift;
+	return 'add-button-' . $self->item_key_val . '-' . time;
+}
+
+has 'add_button' => ( is => 'ro',	lazy_build => 1	);
+sub _build_add_button {
+	my $self = shift;
+	return RapidApp::JSONFunc->new(
+		func => 'new Ext.Button', 
+		parm => {
+			text 		=> $self->add_button_text,
+			iconCls	=> $self->add_button_iconCls,
+			id 		=> $self->add_button_id,
+			disabled => \1,
+			style	=> { 
+				'margin-left'	=> '2px',
+				'margin-right'	=> '2px',
+				'font-weight'	=> 'bold',
+			},
+			handler 	=> RapidApp::JSONFunc->new( 
+				raw => 1, 
+				func => 'function(b) { b.disable(); ' . $self->form_add_code . '; }' 
+			)
+	});
+}
+
+
 
 
 has 'base_params'			=> ( is => 'ro', lazy_build => 1 );
@@ -150,19 +188,41 @@ sub _build_base_params {
 
 
 
-has 'update_failed_callback' => ( is => 'ro', lazy_build => 1 );
-sub _build_update_failed_callback {
+
+has 'exception_callback' => ( is => 'ro', lazy_build => 1 );
+sub _build_exception_callback {
 	my $self = shift;
 	return RapidApp::JSONFunc->new( raw => 1, func =>
-		'function(message) { ' .
+		'function(DataProxy, type, action, options, response, arg) { ' .
 			RapidApp::ExtJS::MsgBox->new(
-				title => 'Update Failed', 
-				msg => 'message', 
+				title => "ExtJS JsonStore Exception - action: ' + action + ', type: ' + type + '", 
+				msg => 'Ext.util.JSON.decode(response.responseText).msg', 
 				style => $self->exception_style
 			)->code .
 		'}'
 	);
 }
+
+
+has 'write_callback' => ( is => 'ro', lazy_build => 1 );
+sub _build_write_callback {
+	my $self = shift;
+	return RapidApp::JSONFunc->new( raw => 1, func =>
+		'function(store,action,result,res,rs) { ' .
+			'if (action == "create") {' . 
+				RapidApp::ExtJS::MsgBox->new(
+					title => "Success", 
+					msg => '"' . $self->create_record_msg . '"', 
+					style => "color: green; font-weight: bolder;"
+				)->code .
+				$self->create_callback_code .
+			'}' .
+			$self->write_callback_code .
+		'}'
+	);
+}
+
+
 
 
 
@@ -177,7 +237,7 @@ has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 	
 	my $actions = {};
 	
-	$actions->{read}				= sub { $self->read } if (defined $self->read_data_coderef);
+	$actions->{read}				= sub { $self->read };
 	$actions->{update}			= sub { $self->update } if (defined $self->update_data_coderef);
 	$actions->{create}			= sub { $self->create } if (defined $self->create_data_coderef);
 	
@@ -220,17 +280,42 @@ sub _build_form_save_code {
 		'} catch (err) { Ext.log(err); }';
 }
 
+has 'form_add_code' => ( is => 'ro', lazy_build => 1 );
+sub _build_form_add_code {
+	my $self = shift;
+	return 
+		'try {' .
+			'var store = ' . $self->getStore_code . ';' .
+			'var record = new store.recordType();' .
+			'var form = Ext.getCmp("' . $self->formpanel_id . '").getForm();' .
+			'if (record) Ext.log("record created...");' .
+			'record.beginEdit();' .
+			'if (form.updateRecord(record)) Ext.log("record updated with form...");' .
+			'record.endEdit();' . 
+			'store.add(record);' .
+			'store.save();' .
+		'} catch (err) { Ext.log(err); }';
+}
 
 sub JsonStore {
 	my $self = shift;
 	
 	my $config = {
-		update_failed_callback => $self->update_failed_callback,
+		exception_callback => $self->exception_callback,
+		write_callback => $self->write_callback,
 		storeId => $self->storeId,
 		autoLoad => \0,
 		autoSave => \0,
 		loadMask => \1,
 		autoDestroy => \1,
+		
+		root => 'rows',
+		idProperty => $self->item_key,
+		messageProperty => 'msg',
+		successProperty => 'success',
+		totalProperty => 'results',
+		
+		
 		api => {
 			read		=> $self->suburl('/read')
 		},
@@ -242,6 +327,7 @@ sub JsonStore {
 					'try {' .
 						'var form = Ext.getCmp("' . $self->formpanel_id . '").getForm();' .
 						'var Record = records[0];' .
+						'if(!Record) return;' . 
 						'form.loadRecord(Record);' .
 						'store.setBaseParam("orig_params",Ext.util.JSON.encode(Record.data));' .
 					'} catch(err) { Ext.log(err); }' .
@@ -263,29 +349,36 @@ sub JsonStore {
 				'function(store, action, result, res, rs) { ' .
 					'Ext.log("write event");' . 
 					($self->reload_on_save ? 'store.load();' : '') .
+					'store.write_callback.apply(this,arguments);' .
+				'}' 
+			),
+			add => RapidApp::JSONFunc->new( raw => 1, func => 
+				'function(store, batch, data) { ' .
+					'Ext.log("add event");' . 
 				'}' 
 			),
 			exception => RapidApp::JSONFunc->new( raw => 1, func => 
 				'function(DataProxy, type, action, options, response, arg) { ' .
-					'if (action == "update") {' .
+					'Ext.log("exception event -> action: " + action);' .
+					'if (action == "update" || action == "create") {' .
 						'var store = ' . $self->getStore_code . ';' .
 						'store.rejectChanges();' .
-						'store.update_failed_callback(response.message);' .
+						'store.exception_callback.apply(this,arguments);' .
 					'}' .
 				'}' 
 			)
 		}
 	};
 	
-	if (defined $self->actions->{update}) {
-		$config->{writer} = RapidApp::JSONFunc->new( 
-			func => 'new Ext.data.JsonWriter',
-			parm => {
-				encode => \1,
-				writeAllFields => \1
-		});
-		$config->{api}->{update} = $self->suburl('/update');
-	};
+	$config->{writer} = RapidApp::JSONFunc->new( 
+		func => 'new Ext.data.JsonWriter',
+		parm => {
+			encode => \1,
+			writeAllFields => \1
+	}) if (defined $self->actions->{update} or defined $self->actions->{create});
+	
+	$config->{api}->{update} = $self->suburl('/update') if (defined $self->actions->{update});
+	$config->{api}->{create} = $self->suburl('/create') if (defined $self->actions->{create});
 	
 	return RapidApp::JSONFunc->new( 
 		func => 'new Ext.data.JsonStore',
@@ -296,37 +389,60 @@ sub JsonStore {
 sub read {
 	my $self = shift;
 	
-	my $record = $self->fetch_item($self->c->req->params);
+	my $results = 0;
 	my $fields = [];
-	foreach my $k (keys %$record) {
-		push @$fields, { name => $k };
-	}
+	my $rows = [];
 	
+	# If there is no read_data_coderef this will be a add only StoreForm and we'll
+	# return a store with no records.
+	if (defined $self->read_data_coderef) {
+		$results = 1;
+		my $record = $self->fetch_item($self->c->req->params);
+		$fields = $self->hash_to_store_fields($record);
+		$rows = [ $record ];
+	}
+	else {
+		$fields = $self->store_fields;
+	}
+
 	return {
 		metaData => {
-			root => 'rows',
 			fields => $fields,
+			root => 'rows',
 			idProperty => $self->item_key,
 			messageProperty => 'msg',
 			successProperty => 'success',
 			totalProperty => 'results',
 		},
 		success => \1,
-		results => \1,
-		rows => [ $record ]
+		results => $results,
+		rows => $rows
 	};
 }
+
+
+sub hash_to_store_fields {
+	my $self = shift;
+	my $h = shift;
+	my $fields = [];
+	foreach my $k (keys %$h) {
+		push @$fields, { name => $k };
+	}
+	return $fields;
+}
+
+
 
 
 sub update {
 	my $self = shift;
 	
 	my $params = $self->c->req->params;
-	my $rows = JSON::from_json($params->{rows});
+	my $rows = $self->json->decode($params->{rows});
 	delete $params->{rows};
 	
 	if (defined $params->{orig_params}) {
-		my $orig_params = JSON::from_json($params->{orig_params});
+		my $orig_params = $self->json->decode($params->{orig_params});
 		delete $params->{orig_params};
 		
 		# merge orig_params, preserving real params that are set:
@@ -353,11 +469,33 @@ sub update {
 	};
 }
 
-
 sub create {
 	my $self = shift;
 	
+	my $params = $self->c->req->params;
+	my $rows = $self->json->decode($params->{rows});
+	delete $params->{rows};
+		
+	my $result = $self->create_data_coderef->($rows);
 	
+	if ($result and not $result->{success} == 0 ) {
+		return {
+			success => \1,
+			msg => 'Create Succeeded',
+			rows => $rows
+		}
+	}
+	
+	if(ref($result) eq 'HASH') {
+		$result->{success} = \0;
+		$result->{msg} = 'Create Failed' unless (defined $result->{msg});
+		return $result;
+	}
+	
+	return {
+		success => \0,
+		msg => 'Create Failed'
+	};
 }
 
 sub content {
@@ -377,13 +515,15 @@ sub content {
 		clientvalidation => RapidApp::JSONFunc->new( raw => 1, func =>
 			'function(FormPanel, valid) { ' .
 				'if (valid && FormPanel.getForm().isDirty()) { ' .
-					'var button = Ext.getCmp("' . $self->save_button_id . '");' . 
-					'button.enable();' .
+					'var save_btn = Ext.getCmp("' . $self->save_button_id . '");' . 
+					'if(save_btn) save_btn.enable();' .
+					'var add_btn = Ext.getCmp("' . $self->add_button_id . '");' . 
+					'if(add_btn) add_btn.enable();' .
 				'} else {' .
-					'var button = Ext.getCmp("' . $self->save_button_id . '");' . 
-					'if (!button.disabled) {' .
-						'button.disable();' .
-					'}' .
+					'var save_btn = Ext.getCmp("' . $self->save_button_id . '");' . 
+					'if (save_btn && !save_btn.disabled) save_btn.disable();' .
+					'var add_btn = Ext.getCmp("' . $self->add_button_id . '");' . 
+					'if (add_btn && !add_btn.disabled) add_btn.disable();' .
 				'}' .
 			'}'
 		),
