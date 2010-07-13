@@ -81,6 +81,16 @@ sub _build_create_data_coderef {
 ################################################################
 ################################################################
 
+
+has 'formpanel_tbar' => ( is => 'ro', lazy_build => 1 );
+sub _build_formpanel_tbar {
+	my $self = shift;
+	return [
+		'->',
+		$self->add_button
+	];
+}
+
 has 'formpanel_config' => ( is => 'ro', lazy_build => 1 );
 sub _build_formpanel_config {
 	my $self = shift;
@@ -93,11 +103,7 @@ sub _build_formpanel_config {
 		monitorValid => \1,
 		frame => \1,
 		autoScroll => \1,
-		tbar => [
-			'->',
-			#$self->reload_button, 
-			$self->add_button
-		],
+		tbar => $self->formpanel_tbar,
 		items => $self->form_fields
 	};
 }

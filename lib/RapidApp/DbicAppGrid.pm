@@ -51,6 +51,9 @@ has 'edit_window_height' 		=> ( is => 'ro',	default => 500																				);
 has 'edit_window_width' 		=> ( is => 'ro',	default => 580																				);
 
 
+has 'edit_record_class' => ( is => 'ro', default => 'RapidApp::DbicAppGrid::EditItem' );
+has 'add_record_class' => ( is => 'ro', default => 'RapidApp::DbicAppGrid::AddItem' );
+
 sub BUILD {}
 after 'BUILD' => sub {
 	my $self = shift;
