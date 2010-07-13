@@ -478,6 +478,12 @@ sub create {
 		
 	my $result = $self->create_data_coderef->($rows);
 	
+	# we don't actually care about the new record, so we simply give the store back
+	# the row it gave to us. We have to make sure that pk (primary key) is set to 
+	# something or else it will throw an error
+	$rows->{$self->item_key} = 'dummy-key'; 
+	
+	
 	if ($result and not $result->{success} == 0 ) {
 		return {
 			success => \1,

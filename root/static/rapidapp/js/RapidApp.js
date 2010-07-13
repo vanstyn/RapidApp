@@ -1,8 +1,8 @@
 Ext.Updater.defaults.disableCaching = true;
 
 
-//Ext.ns('Ext.log');
-//Ext.log = function() {}
+Ext.ns('Ext.log');
+Ext.log = function() {}
 
 Ext.override(Ext.Container, {
 	onRender: function() {
