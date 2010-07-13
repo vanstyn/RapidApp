@@ -39,16 +39,6 @@ sub _build_write_callback_code {
 
 
 
-has 'store_fields'			=> ( is => 'ro', lazy_build => 1 );
-sub _build_store_fields {
-	my $self = shift;
-	my $fields = [];
-	foreach my $f (@{$self->form_fields}) {
-		push @$fields, { name => $f->{name} };
-	}
-	return $fields;
-}
-
 
 has 'create_data_coderef' => ( is => 'ro', lazy_build => 1 );
 sub _build_create_data_coderef {

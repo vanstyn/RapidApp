@@ -23,7 +23,6 @@ has 'formpanel_config'		=> ( is => 'ro', required => 1, isa => 'HashRef' );
 has 'read_data_coderef'		=> ( is => 'ro', default => undef );
 has 'update_data_coderef'	=> ( is => 'ro', default => undef );
 has 'create_data_coderef'	=> ( is => 'ro', default => undef );
-has 'store_fields'			=> ( is => 'ro', default => sub {[]} );
 
 has 'create_record_msg'		=> ( is => 'ro', default => 'Record added' );
 has 'create_callback_code'	=> ( is => 'ro', default => '' ); # <-- JS code that gets called when a record is created (added)
@@ -286,8 +285,15 @@ sub _build_form_add_code {
 	return 
 		'try {' .
 			'var store = ' . $self->getStore_code . ';' .
-			'var record = new store.recordType();' .
+			#'var record = new store.recordType();' .
 			'var form = Ext.getCmp("' . $self->formpanel_id . '").getForm();' .
+			'var form_data = form.getFieldValues();' .
+			'var store_fields = [];' .
+			'for (i in form_data) {' .
+				'store_fields.push({name: i});' .
+			'}' .
+			'var record_obj = Ext.data.Record.create(store_fields);' .
+			'var record = new record_obj;' .
 			'if (record) Ext.log("record created...");' .
 			'record.beginEdit();' .
 			'if (form.updateRecord(record)) Ext.log("record updated with form...");' .
@@ -392,18 +398,15 @@ sub read {
 	my $results = 0;
 	my $fields = [];
 	my $rows = [];
-	
-	# If there is no read_data_coderef this will be a add only StoreForm and we'll
-	# return a store with no records.
+
 	if (defined $self->read_data_coderef) {
 		$results = 1;
-		my $record = $self->fetch_item($self->c->req->params);
+		my $record = $self->fetch_item;
 		$fields = $self->hash_to_store_fields($record);
 		$rows = [ $record ];
 	}
-	else {
-		$fields = $self->store_fields;
-	}
+	# If there is no read_data_coderef this will be an add-only StoreForm and we'll
+	# return a store with no records.
 
 	return {
 		metaData => {
