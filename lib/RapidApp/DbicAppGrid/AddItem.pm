@@ -10,18 +10,12 @@ extends 'RapidApp::AppGrid::AddItem';
 ################################################################
 ################################################################
 
-has 'formpanel_tbar' => ( is => 'ro', lazy_build => 1 );
-sub _build_formpanel_tbar {
+has 'tbar_icon' => ( is => 'ro', default => '/static/rapidapp/images/table_sql_create_32x32.png' );
+has 'tbar_title' => ( is => 'ro', lazy_build => 1 );
+sub _build_tbar_title {
 	my $self = shift;
-	return [
-		'<div style="font-weight: bolder;">' .
-			'Add new row (' . $self->parent_module->db_name . '/' . $self->parent_module->table . ')' .
-		'</div>',
-		'->',
-		$self->add_button
-	];
+	return 'Add new row (' . $self->parent_module->db_name . '/' . $self->parent_module->table . ')';
 }
-
 
 
 1;

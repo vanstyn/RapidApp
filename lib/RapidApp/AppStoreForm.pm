@@ -52,29 +52,28 @@ sub _build_item_key_val {
 }
 
 
-has 'reload_button_text' => ( is => 'ro',	default => ' Reload '	);
-has 'reload_button_iconCls' => ( is => 'ro',	default => 'x-tbar-loading'	);
 
+############# Buttons #################
+has 'button_text_cls' => ( is => 'ro', default => 'tbar-button-medium' );
+
+has 'reload_button_text' => ( is => 'ro',	default => ' Reload '	);
+#has 'reload_button_iconCls' => ( is => 'ro',	default => 'x-tbar-loading'	);
+has 'reload_button_iconCls' => ( is => 'ro',	default => 'icon-refresh-24x24'	);
 has 'reload_button_id' => ( is => 'ro',	lazy_build => 1	);
 sub _build_reload_button_id {
 	my $self = shift;
 	return 'reload-button-' . $self->item_key_val . '-' . time;
 }
-
 has 'reload_button' => ( is => 'ro',	lazy_build => 1	);
 sub _build_reload_button {
 	my $self = shift;
 	return RapidApp::JSONFunc->new(
 		func => 'new Ext.Button', 
 		parm => {
-			text 		=> $self->reload_button_text,
+			text 		=> '<div class="' . $self->button_text_cls . '">' . $self->reload_button_text . '</div>',
 			iconCls	=> $self->reload_button_iconCls,
 			id 		=> $self->reload_button_id,
-			style	=> { 
-				'margin-left'	=> '2px',
-				'margin-right'	=> '2px',
-				'font-weight'	=> 'bold',
-			},
+			scale		=> 'medium',
 			handler 	=> RapidApp::JSONFunc->new( 
 				raw => 1, 
 				func => 'function() { ' . $self->store_load_code . '; }' 
@@ -82,32 +81,25 @@ sub _build_reload_button {
 	});
 }
 
-
-
 has 'save_button_text' => ( is => 'ro',	default => ' Save '	);
-has 'save_button_iconCls' => ( is => 'ro',	default => 'icon-save'	);
-
+has 'save_button_iconCls' => ( is => 'ro',	default => 'icon-save-24x24'	);
 has 'save_button_id' => ( is => 'ro',	lazy_build => 1	);
 sub _build_save_button_id {
 	my $self = shift;
 	return 'save-button-' . $self->item_key_val . '-' . time;
 }
-
 has 'save_button' => ( is => 'ro',	lazy_build => 1	);
 sub _build_save_button {
 	my $self = shift;
 	return RapidApp::JSONFunc->new(
 		func => 'new Ext.Button', 
 		parm => {
-			text 		=> $self->save_button_text,
+			text 		=> '<div class="' . $self->button_text_cls . '">' . $self->save_button_text . '</div>',
 			iconCls	=> $self->save_button_iconCls,
 			id 		=> $self->save_button_id,
+			scale		=> 'medium',
+			disabledClass => 'item-disabled',
 			disabled => \1,
-			style	=> { 
-				'margin-left'	=> '2px',
-				'margin-right'	=> '2px',
-				'font-weight'	=> 'bold',
-			},
 			handler 	=> RapidApp::JSONFunc->new( 
 				raw => 1, 
 				func => 'function(b) { b.disable(); ' . $self->form_save_code . '; }' 
@@ -116,38 +108,32 @@ sub _build_save_button {
 }
 
 
-
 has 'add_button_text' => ( is => 'ro',	default => ' Add '	);
-has 'add_button_iconCls' => ( is => 'ro',	default => 'icon-save'	);
-
+has 'add_button_iconCls' => ( is => 'ro',	default => 'icon-add-24x24'	);
 has 'add_button_id' => ( is => 'ro',	lazy_build => 1	);
 sub _build_add_button_id {
 	my $self = shift;
 	return 'add-button-' . $self->item_key_val . '-' . time;
 }
-
 has 'add_button' => ( is => 'ro',	lazy_build => 1	);
 sub _build_add_button {
 	my $self = shift;
 	return RapidApp::JSONFunc->new(
 		func => 'new Ext.Button', 
 		parm => {
-			text 		=> $self->add_button_text,
+			text 		=> '<div class="tbar-button-medium">' . $self->add_button_text . '</div>',
 			iconCls	=> $self->add_button_iconCls,
 			id 		=> $self->add_button_id,
+			scale		=> 'medium',
+			disabledClass => 'item-disabled',
 			disabled => \1,
-			style	=> { 
-				'margin-left'	=> '2px',
-				'margin-right'	=> '2px',
-				'font-weight'	=> 'bold',
-			},
 			handler 	=> RapidApp::JSONFunc->new( 
 				raw => 1, 
 				func => 'function(b) { b.disable(); ' . $self->form_add_code . '; }' 
 			)
 	});
 }
-
+###############################################
 
 
 
@@ -559,6 +545,65 @@ sub fetch_item {
 	
 	return $self->read_data_coderef->($params);
 }
+
+
+has 'tbar_icon' => ( is => 'ro', default => undef );
+has 'tbar_title' => ( is => 'ro', default => undef );
+has 'formpanel_items' => ( is => 'ro', default => sub {[]} );
+has 'formpanel_baseconfig' => ( is => 'ro', default => sub {{}} );
+
+has 'formpanel_config' => ( is => 'ro', lazy_build => 1 );
+sub _build_formpanel_config {
+	my $self = shift;
+	
+	my $base = $self->formpanel_baseconfig;
+	
+	my $config = {
+		bodyCssClass 	=> 'panel-borders',
+		id 				=> 'storeform-' . time,
+		monitorValid 	=> \1,
+		frame 			=> \1,
+		autoScroll 		=> \1,
+		tbar 				=> $self->formpanel_tbar,
+		items 			=> $self->formpanel_items
+	};
+	
+	foreach my $k (keys %$base) {
+		$config->{$k} = $base->{$k};
+	}
+	
+	return $config;
+}
+
+has 'formpanel_tbar' => ( is => 'ro', lazy_build => 1 );
+sub _build_formpanel_tbar {
+	my $self = shift;
+	
+	my $items = [];
+		
+	push @$items, '<img src="' . $self->tbar_icon . '">' if (defined $self->tbar_icon);
+	push @$items, '<div class="tbar-title-medium">' . $self->tbar_title . '</div>' if (defined $self->tbar_title);
+	
+	push @$items, '->';
+	
+	push @$items, $self->add_button if (defined $self->create_data_coderef);
+	push @$items, $self->reload_button if (defined $self->read_data_coderef);
+	push @$items, '-' if (defined $self->read_data_coderef and defined $self->update_data_coderef);
+	push @$items, $self->save_button if (defined $self->update_data_coderef);
+	
+	return {
+		items => $items
+	};
+}
+
+
+
+
+
+
+
+
+
 
 
 

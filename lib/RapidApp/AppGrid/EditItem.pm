@@ -69,44 +69,59 @@ sub _build_update_data_coderef {
 ################################################################
 ################################################################
 
-has 'formpanel_tbar' => ( is => 'ro', lazy_build => 1 );
-sub _build_formpanel_tbar {
-	my $self = shift;
-	return [
-		'->',
-		$self->reload_button, 
-		$self->save_button
-	];
-}
+#has 'formpanel_tbar' => ( is => 'ro', lazy_build => 1 );
+#sub _build_formpanel_tbar {
+#	my $self = shift;
+#	return [
+#		'->',
+#		$self->reload_button, 
+#		$self->save_button
+#	];
+#}
+#
+#has 'formpanel_config' => ( is => 'ro', lazy_build => 1 );
+#sub _build_formpanel_config {
+#	my $self = shift;
+#	return {
+#		bodyStyle => 'padding:5px 5px 0',
+#		labelAlign	=> 'left',
+#		anchor => '95%',
+#		autoWidth => \1,
+#		id => 'tab-' . time,
+#		monitorValid => \1,
+#		frame => \1,
+#		autoScroll => \1,
+#		tbar => $self->formpanel_tbar,
+#		items => $self->form_fields
+#	};
+#}
 
-has 'formpanel_config' => ( is => 'ro', lazy_build => 1 );
-sub _build_formpanel_config {
-	my $self = shift;
+
+#has 'tbar_icon' => ( is => 'ro', default => '/static/images/form_green_32x32.png' );
+#has 'tbar_title' => ( is => 'ro', default => 'ADD NEW PROJECT (GREEN SHEET)' );
+
+has 'formpanel_baseconfig' => ( is => 'ro', default => sub { 
 	return {
-		bodyStyle => 'padding:5px 5px 0',
 		labelAlign	=> 'left',
-		anchor => '95%',
-		autoWidth => \1,
-		id => 'tab-' . time,
-		monitorValid => \1,
-		frame => \1,
-		autoScroll => \1,
-		tbar => $self->formpanel_tbar,
-		items => $self->form_fields
+		labelWidth 	=> 120,
+		defaults => {
+			labelStyle	=> 'text-align:right;',
+			xtype 		=> 'textfield',
+		}
 	};
-}
+});
 
 
 
-
-
-
-sub form_fields {
+has 'formpanel_items' => ( is => 'ro', lazy_build => 1 );
+sub _build_formpanel_items {
 	my $self = shift;
 	 
 	 return $self->parent_module->custom_edit_form_items if (defined $self->parent_module->custom_edit_form_items);
 	 
 	 my @list = ();
+	 
+	 push @list, { 'height' => 20, 'xtype' => 'spacer' };
 
 	foreach my $field (@{$self->parent_module->fields}) {
 		next unless ($field->{edit_allow} or $field->{edit_show});
@@ -156,7 +171,7 @@ sub form_fields {
 		
 		push @list, $new_field;
 	}
-
+	unshift @list, { 'height' => 15, 'xtype' => 'spacer' };
 	return \@list;
 	 
 }

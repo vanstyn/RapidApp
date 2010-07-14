@@ -47,7 +47,53 @@
 	padding-top: 9px; 
 	padding-bottom: 3px;
 }
+
+
+.icon-save-24x24 { background-image: url(/static/rapidapp/images/disk_blue_24x24.png) !important; }
+.icon-add-24x24 { background-image: url(/static/rapidapp/images/disk_blue_ok_24x24.png) !important; }
+.icon-refresh-24x24 { background-image: url(/static/rapidapp/images/refresh_24x24.png) !important; }
+.tbar-title-medium { 
+	font-size:175% !important;
+	padding:6px !important;
+	font-weight: bolder !important;
+}
+.tbar-button-medium { 
+	font-size:140% !important;
+	padding-left: 5px !important;
+	font-weight: bolder !important;
+}
+
+.icon-engineering { background-image: url(/static/images/hammer2.png) !important; }
+.icon-sales { background-image: url(/static/images/businessmen.png) !important; }
+.icon-pricing { background-image: url(/static/images/percent.png) !important; }
+
+
+
 /* ----------------------------------- */
+
+/* http://www.sencha.com/forum/showthread.php?45873-tbar-appears-ugly */
+.tbarBottomBorderFix {
+	border-bottom-style: solid !important;
+	border-bottom-color: #D0D0D0 !important;
+	border-bottom-width: 1px !important;
+}
+
+
+.panel-borders {
+	border-style: solid !important;
+	border-color: #D0D0D0 !important;
+	border-width: 1px !important;
+}
+
+
+.item-disabled {
+  opacity: 0.5 !important;
+  filter: alpha(opacity=50) !important;
+  background-color: #f2f2f2 !important; /* this is needed to fix stupid IE opacity bug */
+}
+
+
+
 
 /* This is needed only with gray theme: */
 .x-toolbar .xtb-sep { background-image: url(/static/ext/resources/images/default/grid/grid-split.gif) !important }

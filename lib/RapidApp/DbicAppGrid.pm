@@ -173,6 +173,8 @@ sub _build_custom_edit_form_items {
 	my $self = shift;
 
 	my $form_fields = [];
+	
+	push @$form_fields, { 'height' => 20, 'xtype' => 'spacer' };
 			
 	foreach my $column ($self->ResultSource->columns) {
 		my $col_info = $self->ResultSource->column_info($column);
