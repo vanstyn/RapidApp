@@ -450,7 +450,7 @@ sub _build_edit_action_wrapper_code {
 			
 			$code = 
 				'var orig_params = Ext.util.JSON.decode(urlspec["params"]["orig_params"]);' .
-				'urlspec["id"] = "ed-' . $self->gridid . '-" + orig_params["' . $self->item_key . '"];' . 
+				'urlspec["id"] = "edit-' . $self->gridid . '-" + orig_params["' . $self->item_key . '"];' . 
 				'urlspec["title"] = ' . $self->edit_tab_title_code . ';' . 
 				'urlspec["iconCls"] = "' . $self->edit_label_iconCls . '";' . $tabcode;
 			

@@ -194,19 +194,28 @@ sub _build_write_callback {
 	my $self = shift;
 	return RapidApp::JSONFunc->new( raw => 1, func =>
 		'function(store,action,result,res,rs) { ' .
-			'if (action == "create") {' . 
-				RapidApp::ExtJS::MsgBox->new(
-					title => "Success", 
-					msg => '"' . $self->create_record_msg . '"', 
-					style => "color: green; font-weight: bolder;"
-				)->code .
-				$self->create_callback_code .
-			'}' .
-			$self->write_callback_code .
+			'if (action == "create") store.create_callback.apply(this,arguments);' . # <-- real js callback style
+			$self->write_callback_code . # <-- optional extra raw callback code
 		'}'
 	);
 }
 
+
+has 'create_callback' => ( is => 'ro', lazy_build => 1 );
+sub _build_create_callback {
+	my $self = shift;
+	return RapidApp::JSONFunc->new( raw => 1, func =>
+		'function(store,action,result,res,rs) { ' .
+			#'console.dir(res);' . 
+			RapidApp::ExtJS::MsgBox->new(
+					title => "Success", 
+					msg => '"' . $self->create_record_msg . '"', 
+					style => "color: green; font-weight: bolder;"
+				)->code .
+			$self->create_callback_code . # <-- optional extra raw callback code
+		'}'
+	);
+}
 
 
 
@@ -293,8 +302,9 @@ sub JsonStore {
 	my $self = shift;
 	
 	my $config = {
-		exception_callback => $self->exception_callback,
-		write_callback => $self->write_callback,
+		exception_callback 	=> $self->exception_callback,
+		write_callback 		=> $self->write_callback,
+		create_callback 		=> $self->create_callback,
 		storeId => $self->storeId,
 		autoLoad => \0,
 		autoSave => \0,
@@ -470,7 +480,10 @@ sub create {
 	# we don't actually care about the new record, so we simply give the store back
 	# the row it gave to us. We have to make sure that pk (primary key) is set to 
 	# something or else it will throw an error
-	$rows->{$self->item_key} = 'dummy-key'; 
+	$rows->{$self->item_key} = 'dummy-key';
+	
+	# If the id of the new record was provided in the response, we'll use it:
+	$rows = $result->{rows} if (defined $result->{rows}->{$self->item_key});
 	
 	
 	if ($result and not $result->{success} == 0 ) {
