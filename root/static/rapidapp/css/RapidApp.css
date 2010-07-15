@@ -28,6 +28,8 @@
 .icon-add { background-image: url(/static/rapidapp/images/add.png) !important; }
 .icon-activity { background-image: url(/static/rapidapp/images/table.png) !important; }
 
+.icon-folder { background-image: url(/static/rapidapp/images/folder.png) !important; }
+
 .icon-delete { background-image: url(/static/rapidapp/images/cross.png) !important; }
 .icon-edit { background-image: url(/static/rapidapp/images/application_edit.png) !important; }
 .icon-save { background-image: url(/static/rapidapp/images/disk_blue_ok.png) !important; }
