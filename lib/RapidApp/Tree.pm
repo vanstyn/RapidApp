@@ -13,7 +13,7 @@ use strict;
 use Moose;
 
 
-use SBL::Web::ExtJS;
+use RapidApp::ExtJS;
 use RapidApp::ExtJS::TreeNode;
 use RapidApp::ExtJS::TreePanel;
 

@@ -18,7 +18,7 @@ extends 'RapidApp::AppBase';
 use Try::Tiny;
 use Term::ANSIColor qw(:constants);
 
-use SBL::Web::ExtJS;
+use RapidApp::ExtJS;
 
 use RapidApp::Tree;
 

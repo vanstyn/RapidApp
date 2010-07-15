@@ -22,7 +22,7 @@ use Switch;
 
 our $VERSION = '0.1';
 
-use SBL::Web::ExtJS;
+use RapidApp::ExtJS;
 use RapidApp::ExtJS::DynGrid;
 
 use RapidApp::JSONFunc;
