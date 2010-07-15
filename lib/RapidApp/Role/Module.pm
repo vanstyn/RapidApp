@@ -71,9 +71,11 @@ sub create_module {
 	return $class_name->new($params);
 }
 
-
-
-
+sub topmost_module {
+	my $self = shift;
+	return $self unless (defined $self->parent_module);
+	return $self->parent_module->topmost_module;
+}
 
 
 1;

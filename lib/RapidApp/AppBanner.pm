@@ -13,7 +13,12 @@ has 'height'			=> ( is => 'ro',	default => 50 );
 has 'logo'				=> ( is => 'ro',	default => '/static/images/logo.png' );
 has 'username_key'	=> ( is => 'ro',	default => 'username' );
 
-has 'login_banner'			=> ( is => 'ro',	default => 'Login to the system' );
+has 'login_banner' => ( is => 'ro',	default => sub {
+	my $self = shift;
+	return $self->topmost_module->login_banner if ($self->topmost_module->can('login_banner'));
+	return 'Login to the system';
+});
+
 has 'login_iconCls'			=> ( is => 'ro',	default => 'icon-key' );
 has 'login_logo'				=> ( is => 'ro',	default => '/static/rapidapp/images/sportsrite_tiny.png' );
 has 'login_title'				=> ( is => 'ro',	default => 'Login' );

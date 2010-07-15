@@ -9,6 +9,9 @@
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/js/gridfilters/css/RangeMenu.css" />
 <!--               -->
 
+
+<link rel="stylesheet" type="text/css" href="/static/ext/examples/ux/fileuploadfield/css/fileuploadfield.css" />
+
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/css/tabular-table.css" />
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/css/RapidApp.css" />
 
@@ -37,5 +40,7 @@
 <script type="text/javascript" src="/static/rapidapp/js/gridfilters/filter/NumericFilter.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/gridfilters/filter/BooleanFilter.js"></script>
 <!--               -->
+
+<script type="text/javascript" src="/static/ext/examples/ux/fileuploadfield/FileUploadField.js"></script>
 
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp.js"></script>
