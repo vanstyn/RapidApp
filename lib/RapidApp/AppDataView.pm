@@ -28,15 +28,19 @@ has 'read_records_coderef' => ( is => 'ro', default => sub {
 
 has 'item_template' => ( is => 'ro', default => '' );
 
+has 'xtemplate_cnf' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	return 
+		'<tpl for=".">' .
+		$self->item_template .
+		'</tpl>';
+});
+
 has 'xtemplate' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	return RapidApp::JSONFunc->new(
 		func => 'new Ext.XTemplate',
-		parm => [
-			'<tpl for=".">',
-			$self->item_template,
-			'</tpl>'
-		]
+		parm => [ $self->xtemplate_cnf ]
 	);
 });
 

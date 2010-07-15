@@ -67,6 +67,12 @@
 .icon-sales { background-image: url(/static/images/businessmen.png) !important; }
 .icon-pricing { background-image: url(/static/images/percent.png) !important; }
 
+.icon-history { background-image: url(/static/images/history.png) !important; }
+.icon-history-add { background-image: url(/static/images/history_add.png) !important; }
+.icon-history-24x24 { background-image: url(/static/images/history_24x24.png) !important; }
+.icon-history-add-24x24 { background-image: url(/static/images/history_add_24x24.png) !important; }
+.icon-history-32x32 { background-image: url(/static/images/history_32x32.png) !important; }
+.icon-history-add-32x32 { background-image: url(/static/images/history_add_32x32.png) !important; }
 
 
 /* ----------------------------------- */

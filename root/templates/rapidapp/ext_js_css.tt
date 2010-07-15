@@ -9,6 +9,7 @@
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/js/gridfilters/css/RangeMenu.css" />
 <!--               -->
 
+<link rel="stylesheet" type="text/css" href="/static/rapidapp/css/tabular-table.css" />
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/css/RapidApp.css" />
 
 <script type="text/javascript" src="/static/ext/adapter/ext/ext-base.js"></script>
