@@ -23,7 +23,16 @@ has 'actions'					=> ( is => 'ro', 	default => sub {{}} );
 has 'default_action'			=> ( is => 'ro',	default => undef );
 has 'content'					=> ( is => 'ro',	default => '' );
 has 'render_as_json'			=> ( is => 'rw',	default => 1 );
-has 'no_persist'				=> ( is => 'rw',	default => 0 );
+
+has 'no_persist' => ( is => 'rw', lazy => 1, default => sub {
+	my $self = shift;
+	# inherit the parent's no_persist setting if its set:
+	return $self->parent_module->no_persist if (
+		defined $self->parent_module and 
+		defined $self->parent_module->no_persist
+	);
+	return undef;
+});
 
 has 'render_append'			=> ( is => 'rw', default => '', isa => 'Str' );
 

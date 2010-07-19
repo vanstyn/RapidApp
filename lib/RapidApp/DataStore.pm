@@ -12,7 +12,6 @@ has 'record_pk' 			=> ( is => 'ro', default => undef );
 has 'store_fields' 		=> ( is => 'ro', default => undef );
 has 'storeId' 				=> ( is => 'ro', default => sub { 'datastore-' . time } );
 
-
 has 'base_params' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	return $self->parent_module->base_params;
