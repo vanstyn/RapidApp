@@ -13,6 +13,8 @@ use RapidApp::ExtJS::MsgBox;
 
 use RapidApp::JSONFunc;
 
+use String::Random;
+
 use Term::ANSIColor qw(:constants);
 
 has 'no_persist'				=> ( is => 'rw',	default => 1 );
@@ -55,6 +57,7 @@ sub _build_item_key_val {
 
 ############# Buttons #################
 has 'button_text_cls' => ( is => 'ro', default => 'tbar-button-medium' );
+has 'button_scale' => ( is => 'ro',	default => 'medium'	);
 
 has 'reload_button_text' => ( is => 'ro',	default => ' Reload '	);
 #has 'reload_button_iconCls' => ( is => 'ro',	default => 'x-tbar-loading'	);
@@ -62,7 +65,8 @@ has 'reload_button_iconCls' => ( is => 'ro',	default => 'icon-refresh-24x24'	);
 has 'reload_button_id' => ( is => 'ro',	lazy_build => 1	);
 sub _build_reload_button_id {
 	my $self = shift;
-	return 'reload-button-' . $self->item_key_val . '-' . time;
+	return $self->formpanel_id . '-reload-btn';
+	#return 'reload-button-' . $self->item_key_val . '-' . time;
 }
 has 'reload_button' => ( is => 'ro',	lazy_build => 1	);
 sub _build_reload_button {
@@ -73,7 +77,7 @@ sub _build_reload_button {
 			text 		=> '<div class="' . $self->button_text_cls . '">' . $self->reload_button_text . '</div>',
 			iconCls	=> $self->reload_button_iconCls,
 			id 		=> $self->reload_button_id,
-			scale		=> 'medium',
+			scale		=> $self->button_scale,
 			handler 	=> RapidApp::JSONFunc->new( 
 				raw => 1, 
 				func => 'function() { ' . $self->store_load_code . '; }' 
@@ -86,7 +90,8 @@ has 'save_button_iconCls' => ( is => 'ro',	default => 'icon-save-24x24'	);
 has 'save_button_id' => ( is => 'ro',	lazy_build => 1	);
 sub _build_save_button_id {
 	my $self = shift;
-	return 'save-button-' . $self->item_key_val . '-' . time;
+	return $self->formpanel_id . '-save-btn';
+	#return 'save-button-' . $self->item_key_val . '-' . time;
 }
 has 'save_button' => ( is => 'ro',	lazy_build => 1	);
 sub _build_save_button {
@@ -97,7 +102,7 @@ sub _build_save_button {
 			text 		=> '<div class="' . $self->button_text_cls . '">' . $self->save_button_text . '</div>',
 			iconCls	=> $self->save_button_iconCls,
 			id 		=> $self->save_button_id,
-			scale		=> 'medium',
+			scale		=> $self->button_scale,
 			disabledClass => 'item-disabled',
 			disabled => \1,
 			handler 	=> RapidApp::JSONFunc->new( 
@@ -113,7 +118,8 @@ has 'add_button_iconCls' => ( is => 'ro',	default => 'icon-add-24x24'	);
 has 'add_button_id' => ( is => 'ro',	lazy_build => 1	);
 sub _build_add_button_id {
 	my $self = shift;
-	return 'add-button-' . $self->item_key_val . '-' . time;
+	return $self->formpanel_id . '-add-btn';
+	#return 'add-button-' . $self->item_key_val . '-' . time;
 }
 has 'add_button' => ( is => 'ro',	lazy_build => 1	);
 sub _build_add_button {
@@ -121,10 +127,10 @@ sub _build_add_button {
 	return RapidApp::JSONFunc->new(
 		func => 'new Ext.Button', 
 		parm => {
-			text 		=> '<div class="tbar-button-medium">' . $self->add_button_text . '</div>',
+			text 		=> '<div class="' . $self->button_text_cls . '">' . $self->add_button_text . '</div>',
 			iconCls	=> $self->add_button_iconCls,
 			id 		=> $self->add_button_id,
-			scale		=> 'medium',
+			scale		=> $self->button_scale,
 			disabledClass => 'item-disabled',
 			disabled => \1,
 			handler 	=> RapidApp::JSONFunc->new( 
@@ -220,11 +226,7 @@ sub _build_create_callback {
 
 
 
-has 'getStore_code' => ( is => 'ro', lazy_build => 1 );
-sub _build_getStore_code {
-	my $self = shift;
-	return 'Ext.StoreMgr.lookup("' . $self->storeId . '")';
-}
+
 
 has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
@@ -241,21 +243,35 @@ has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 has 'formpanel_id' => ( is => 'ro', lazy_build => 1 );
 sub _build_formpanel_id {
 	my $self = shift;
-	return 'storeform-' . time;
+	return 'storeform-' . String::Random->new->randregex('[a-z0-9A-Z]{5}');
 }
 
 has 'storeId' => ( is => 'ro', lazy_build => 1 );
 sub _build_storeId {
 	my $self = shift;
+	return $self->formpanel_id . '-store';
 	my $val = $self->item_key_val;
 	$val =~ s/\s+/\-/g; # <-- get rid of spaces
 	return 'appstoreform-store-' . $val;
 }
 
+has 'getStore_code' => ( is => 'ro', lazy_build => 1 );
+sub _build_getStore_code {
+	my $self = shift;
+	return 'Ext.StoreMgr.lookup("' . $self->storeId . '")';
+}
+
 has 'store_load_code' => ( is => 'ro', lazy_build => 1 );
 sub _build_store_load_code {
 	my $self = shift;
-	return 'Ext.StoreMgr.lookup("' . $self->storeId . '").load()';
+	return $self->getStore_code . '.load()';
+}
+
+
+has 'getForm_code' => ( is => 'ro', lazy_build => 1 );
+sub _build_getForm_code {
+	my $self = shift;
+	return 'Ext.getCmp("' . $self->formpanel_id . '").getForm()';
 }
 
 
@@ -266,7 +282,7 @@ sub _build_form_save_code {
 		'try {' .
 			'var store = ' . $self->getStore_code . ';' .
 			'var record = store.getAt(0);' .
-			'var form = Ext.getCmp("' . $self->formpanel_id . '").getForm();' .
+			'var form = ' . $self->getForm_code . ';' .
 			'record.beginEdit();' .
 			'form.updateRecord(record);' .
 			'record.endEdit();' . 
@@ -281,7 +297,7 @@ sub _build_form_add_code {
 		'try {' .
 			'var store = ' . $self->getStore_code . ';' .
 			#'var record = new store.recordType();' .
-			'var form = Ext.getCmp("' . $self->formpanel_id . '").getForm();' .
+			'var form = ' . $self->getForm_code . ';' .
 			'var form_data = form.getFieldValues();' .
 			'var store_fields = [];' .
 			'for (i in form_data) {' .
@@ -588,6 +604,7 @@ sub _build_formpanel_config {
 	return $config;
 }
 
+has 'tbar_title_text_cls' => ( is => 'ro', default => 'tbar-title-medium' );
 has 'formpanel_tbar' => ( is => 'ro', lazy_build => 1 );
 sub _build_formpanel_tbar {
 	my $self = shift;
@@ -595,7 +612,7 @@ sub _build_formpanel_tbar {
 	my $items = [];
 		
 	push @$items, '<img src="' . $self->tbar_icon . '">' if (defined $self->tbar_icon);
-	push @$items, '<div class="tbar-title-medium">' . $self->tbar_title . '</div>' if (defined $self->tbar_title);
+	push @$items, '<div class="' . $self->tbar_title_text_cls . '">' . $self->tbar_title . '</div>' if (defined $self->tbar_title);
 	
 	push @$items, '->';
 	

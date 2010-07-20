@@ -65,6 +65,15 @@
 	font-weight: bolder !important;
 }
 
+.tbar-title-small { 
+	padding:3px !important;
+	font-weight: bolder !important;
+}
+.tbar-button-small { 
+	padding-left: 2px !important;
+	font-weight: bolder !important;
+}
+
 .icon-engineering { background-image: url(/static/images/hammer2.png) !important; }
 .icon-sales { background-image: url(/static/images/businessmen.png) !important; }
 .icon-pricing { background-image: url(/static/images/percent.png) !important; }
