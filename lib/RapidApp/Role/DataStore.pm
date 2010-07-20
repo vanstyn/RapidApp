@@ -1,21 +1,23 @@
-package RapidApp::DataStore;
+package RapidApp::Role::DataStore;
 
 
 use strict;
-use Moose;
+use Moose::Role;
 #with 'RapidApp::Role::Controller';
-extends 'RapidApp::AppBase';
+#extends 'RapidApp::AppBase';
+
+use String::Random;
 
 use Term::ANSIColor qw(:constants);
 
 has 'record_pk' 			=> ( is => 'ro', default => undef );
 has 'store_fields' 		=> ( is => 'ro', default => undef );
-has 'storeId' 				=> ( is => 'ro', default => sub { 'datastore-' . time } );
+has 'storeId' 				=> ( is => 'ro', default => sub { 'datastore-' . String::Random->new->randregex('[a-z0-9A-Z]{5}') } );
 
-has 'base_params' => ( is => 'ro', lazy => 1, default => sub {
-	my $self = shift;
-	return $self->parent_module->base_params;
-});
+#has 'base_params' => ( is => 'ro', lazy => 1, default => sub {
+#	my $self = shift;
+#	return $self->parent_module->base_params;
+#});
 
 
 ## Coderefs ##
@@ -24,21 +26,23 @@ has 'update_records_coderef'	=> ( is => 'ro', default => undef );
 has 'create_records_coderef'	=> ( is => 'ro', default => undef );
 has 'delete_records_coderef'	=> ( is => 'ro', default => undef );
 
-has 'actions' => ( is => 'ro', lazy => 1, default => sub {
+has 'actions' => ( is => 'ro', lazy => 1, default => sub {{}} ); # Dummy placeholder
+around 'actions' => sub {
+	my $orig = shift;
 	my $self = shift;
 	
-	my $actions = {};
+	my $actions = $self->$orig(@_);
 	
-	$actions->{read}		= sub { $self->read };
-	$actions->{update}	= sub { $self->update } if (defined $self->update_records_coderef);
-	$actions->{create}	= sub { $self->create } if (defined $self->create_records_coderef);
-	$actions->{delete}	= sub { $self->delete } if (defined $self->delete_records_coderef);
+	$actions->{read}		= sub { $self->store_read };
+	$actions->{update}	= sub { $self->store_update } if (defined $self->update_records_coderef);
+	$actions->{create}	= sub { $self->store_create } if (defined $self->create_records_coderef);
+	$actions->{delete}	= sub { $self->store_delete } if (defined $self->delete_records_coderef);
 	
 	return $actions;
-});
+};
 #############
 
-sub read {
+sub store_read {
 	my $self = shift;
 	
 	my $results = 0;
@@ -87,9 +91,9 @@ sub store_fields_from_rows {
 
 
 # not implemented yet:
-sub update {}
-sub create {}
-sub delete {}
+sub store_update {}
+sub store_create {}
+sub store_delete {}
 
 
 
@@ -118,57 +122,25 @@ has 'store_api' => ( is => 'ro', lazy => 1, default => sub {
 	return $api;
 });
 
+
+has 'store_load_listener' => ( is => 'ro', default => undef );
+has 'store_update_listener' => ( is => 'ro', default => undef );
+has 'store_save_listener' => ( is => 'ro', default => undef );
+has 'store_write_listener' => ( is => 'ro', default => undef );
+has 'store_add_listener' => ( is => 'ro', default => undef );
+has 'store_exception_listener' => ( is => 'ro', default => undef );
+
 has 'store_listeners' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	
-	my $listeners = {
-		load => RapidApp::JSONFunc->new( raw => 1, func =>
-			'function(store,records,options) { ' .
-				'Ext.log("load event");' . 
-				'try {' .
-					'var form = Ext.getCmp("' . $self->formpanel_id . '").getForm();' .
-					'var Record = records[0];' .
-					'if(!Record) return;' . 
-					'form.loadRecord(Record);' .
-					'store.setBaseParam("orig_params",Ext.util.JSON.encode(Record.data));' .
-				'} catch(err) { Ext.log(err); }' .
-			'}'
-		),
-		update => RapidApp::JSONFunc->new( raw => 1, func => 
-			'function(store, record, operation) { ' .
-				'Ext.log("update event");' . 
-				'Ext.log(operation);' . 
-				#'record.commit();' .
-			'}' 
-		),
-		save => RapidApp::JSONFunc->new( raw => 1, func => 
-			'function(store, batch, data) { ' .
-				'Ext.log("save event");' . 
-			'}' 
-		),
-		write => RapidApp::JSONFunc->new( raw => 1, func => 
-			'function(store, action, result, res, rs) { ' .
-				'Ext.log("write event");' . 
-				($self->reload_on_save ? 'store.load();' : '') .
-				'store.write_callback.apply(this,arguments);' .
-			'}' 
-		),
-		add => RapidApp::JSONFunc->new( raw => 1, func => 
-			'function(store, batch, data) { ' .
-				'Ext.log("add event");' . 
-			'}' 
-		),
-		exception => RapidApp::JSONFunc->new( raw => 1, func => 
-			'function(DataProxy, type, action, options, response, arg) { ' .
-				'Ext.log("exception event -> action: " + action);' .
-				'if (action == "update" || action == "create") {' .
-					'var store = ' . $self->getStore_code . ';' .
-					'store.rejectChanges();' .
-					'store.exception_callback.apply(this,arguments);' .
-				'}' .
-			'}' 
-		)
-	};
+	my $listeners;
+	
+	$listeners->{load} 		= $self->store_load_listener if (defined $self->store_load_listener);
+	$listeners->{update}		= $self->store_update_listener if (defined $self->store_update_listener);
+	$listeners->{save} 		= $self->store_save_listener if (defined $self->store_save_listener);
+	$listeners->{write} 		= $self->store_write_listener if (defined $self->store_write_listener);
+	$listeners->{add} 		= $self->store_add_listener if (defined $self->store_add_listener);
+	$listeners->{exception} = $self->store_exception_listener if (defined $self->store_exception_listener);
 
 	return $listeners;
 });
@@ -193,6 +165,7 @@ has 'store_writer' => ( is => 'ro', lazy => 1, default => sub {
 });
 
 sub JsonStore {
+#has 'JsonStore' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	
 	my $config = {
@@ -202,7 +175,8 @@ sub JsonStore {
 		storeId 					=> $self->storeId,
 		api 						=> $self->store_api,
 		baseParams 				=> $self->base_params,
-		#listeners				=> $self->listeners,
+		listeners				=> $self->store_listeners,
+		writer					=> $self->store_writer,
 		
 		autoLoad => \1,
 		autoSave => \0,
@@ -216,7 +190,9 @@ sub JsonStore {
 		totalProperty => 'results',
 	};
 	
-	$config->{writer} = $self->store_writer if (defined $self->store_writer);
+	foreach my $k (keys %$config) {
+		delete $config->{$k} unless (defined $config->{$k});
+	}
 	
 	my $JsonStore = RapidApp::JSONFunc->new( 
 		func => 'new Ext.data.JsonStore',

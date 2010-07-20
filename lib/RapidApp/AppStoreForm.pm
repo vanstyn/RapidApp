@@ -250,9 +250,9 @@ has 'storeId' => ( is => 'ro', lazy_build => 1 );
 sub _build_storeId {
 	my $self = shift;
 	return $self->formpanel_id . '-store';
-	my $val = $self->item_key_val;
-	$val =~ s/\s+/\-/g; # <-- get rid of spaces
-	return 'appstoreform-store-' . $val;
+	#my $val = $self->item_key_val;
+	#$val =~ s/\s+/\-/g; # <-- get rid of spaces
+	#return 'appstoreform-store-' . $val;
 }
 
 has 'getStore_code' => ( is => 'ro', lazy_build => 1 );
@@ -275,11 +275,15 @@ sub _build_getForm_code {
 }
 
 
+has 'form_prerecord_code' => ( is => 'ro', default => '' );
+
+
 has 'form_save_code' => ( is => 'ro', lazy_build => 1 );
 sub _build_form_save_code {
 	my $self = shift;
 	return 
 		'try {' .
+			$self->form_prerecord_code .
 			'var store = ' . $self->getStore_code . ';' .
 			'var record = store.getAt(0);' .
 			'var form = ' . $self->getForm_code . ';' .
@@ -295,6 +299,7 @@ sub _build_form_add_code {
 	my $self = shift;
 	return 
 		'try {' .
+			$self->form_prerecord_code .
 			'var store = ' . $self->getStore_code . ';' .
 			#'var record = new store.recordType();' .
 			'var form = ' . $self->getForm_code . ';' .

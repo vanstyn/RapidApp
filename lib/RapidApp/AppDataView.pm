@@ -4,27 +4,41 @@ package RapidApp::AppDataView;
 use strict;
 use Moose;
 #with 'RapidApp::Role::Controller';
+with 'RapidApp::Role::DataStore';
 extends 'RapidApp::AppBase';
 
 use RapidApp::JSONFunc;
-use RapidApp::AppDataView::Store;
+#use RapidApp::AppDataView::Store;
 
-has 'datastore_class' => ( is => 'ro', default => 'RapidApp::AppDataView::Store' );
+use String::Random;
 
-has 'modules' => ( is => 'ro', lazy => 1, default => sub {
-	my $self = shift;
-	return {
-		datastore		=> $self->datastore_class,
-	};
-});
+has 'record_pk' => ( is => 'ro', default => 'id' );
+
+
+
+#has 'storeId' => ( is => 'ro', lazy => 1, default => sub {
+#	my $self = shift;
+#	return $self->dv_id . '-store';
+#});
+
+
+
+#has 'datastore_class' => ( is => 'ro', default => 'RapidApp::AppDataView::Store' );
+#
+#has 'modules' => ( is => 'ro', lazy => 1, default => sub {
+#	my $self = shift;
+#	return {
+#		datastore		=> $self->datastore_class,
+#	};
+#});
 
 # stub attribute: should be overridden by subclass
-has 'read_records_coderef' => ( is => 'ro', default => sub {
-	sub {{
-		rows		=> [],
-		results	=> 0
-	}};
-});
+#has 'read_records_coderef' => ( is => 'ro', default => sub {
+#	sub {{
+#		rows		=> [],
+#		results	=> 0
+#	}};
+#});
 
 has 'item_template' => ( is => 'ro', default => '' );
 
@@ -45,7 +59,7 @@ has 'xtemplate' => ( is => 'ro', lazy => 1, default => sub {
 });
 
 
-has 'dv_id' 				=> ( is => 'ro', lazy => 1, default => sub { 'appdv-' . time } );
+has 'dv_id' 				=> ( is => 'ro', lazy => 1, default => sub { 'appdv-' . String::Random->new->randregex('[a-z0-9A-Z]{5}') } );
 has 'dv_itemId' 			=> ( is => 'ro', lazy => 1, default => sub { 'item-' . (shift)->dv_id } );
 has 'dv_itemSelector'	=> ( is => 'ro', default => 'div.dv_selector' );
 has 'dv_baseconfig'		=> ( is => 'ro', default => sub {{}} );
@@ -56,7 +70,8 @@ has 'DataView'  => ( is => 'ro', lazy => 1, default => sub {
 	my $base = $self->dv_baseconfig;
 	
 	my $config = {
-		store				=> $self->Module('datastore')->JsonStore,
+		#store				=> $self->Module('datastore')->JsonStore,
+		store				=> $self->JsonStore,
 		tpl				=> $self->xtemplate,
 		autoHeight		=> \1,
 		#multiSelect	=> \1,
