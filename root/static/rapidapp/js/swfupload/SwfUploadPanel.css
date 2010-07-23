@@ -1,0 +1,15 @@
+.SwfUploadPanel_iconAdd {
+	background-image:url(/static/rapidapp/js/swfupload/images/add.png) !important;
+}
+
+.SwfUploadPanel_iconUpload {
+	background-image:url(/static/rapidapp/js/swfupload/images/arrow_up.png) !important;
+}
+
+.SwfUploadPanel_iconCancel {
+	background-image:url(/static/rapidapp/js/swfupload/images/delete.png) !important;
+}
+
+.SwfUploadPanel_iconDelete {
+	background-image:url(/static/rapidapp/js/swfupload/images/delete.png) !important;
+}

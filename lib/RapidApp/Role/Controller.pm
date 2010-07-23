@@ -20,6 +20,7 @@ our $VERSION = '0.1';
 has 'c'							=> ( is => 'rw' );
 has 'base_url'					=> ( is => 'rw',	default => '' );
 has 'actions'					=> ( is => 'ro', 	default => sub {{}} );
+has 'extra_actions'			=> ( is => 'ro', 	default => sub {{}} );
 has 'default_action'			=> ( is => 'ro',	default => undef );
 has 'content'					=> ( is => 'ro',	default => '' );
 has 'render_as_json'			=> ( is => 'rw',	default => 1 );
@@ -86,7 +87,7 @@ sub Controller {
 		defined $self->parent_module
 	);
 	
-	return $self->process_action($opt,@args)							if (defined $opt and defined $self->actions->{$opt});
+	return $self->process_action($opt,@args)							if (defined $opt and (defined $self->actions->{$opt} or defined $self->extra_actions->{$opt}) );
 	return $self->Module($opt)->Controller($self->c,@args)		if (defined $opt and $self->_load_module($opt));
 	return $self->process_action($self->default_action,@_)		if (defined $self->default_action);
 	return $self->render_data($self->content);
@@ -114,7 +115,10 @@ sub process_action {
 	
 	my $data = '';
 	my $coderef;
-	$coderef = $self->actions->{$opt} if (defined $opt);
+	if (defined $opt) {
+		$coderef = $self->actions->{$opt};
+		$coderef = $self->extra_actions->{$opt} unless (defined $coderef);
+	}
 	$data = $coderef->() if (defined $coderef and ref($coderef) eq 'CODE');
 	
 	return $self->render_data($data);

@@ -9,6 +9,7 @@
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/js/gridfilters/css/RangeMenu.css" />
 <!--               -->
 
+<link rel="stylesheet" type="text/css" href="/static/rapidapp/js/swfupload/SwfUploadPanel.css" />
 
 <link rel="stylesheet" type="text/css" href="/static/ext/examples/ux/fileuploadfield/css/fileuploadfield.css" />
 
@@ -42,5 +43,8 @@
 <!--               -->
 
 <script type="text/javascript" src="/static/ext/examples/ux/fileuploadfield/FileUploadField.js"></script>
+
+<script type="text/javascript" src="/static/rapidapp/js/swfupload/swfupload.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/swfupload/SwfUploadPanel.js"></script>
 
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp.js"></script>
