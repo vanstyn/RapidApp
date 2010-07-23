@@ -186,12 +186,14 @@ body {
 }
 
 */
+
+/*
 td {
   font-family: Tahoma, Geneva, Verdana, Helvetica, sans-serif;
   letter-spacing: 0.1px;
   vertical-align: middle;
 }
-
+*/
 
 img {
   vertical-align: middle;
@@ -353,7 +355,7 @@ html, body { height:100%; }
 
 
 
-.GreenSheetWrap {
+.GreenSheetWrap1 {
 border: 1px #999999 solid !important;
 margin : 3px !important;
 -moz-border-radius: 12px !important;
@@ -362,14 +364,14 @@ border-radius: 12px !important;
 background-color: #ffffcc !important;
 padding-bottom: 3px !important;
 padding-top: 3px !important;
-
 }
+
 .GreenSheetPN { /* 4 */
 font-weight: bold !important; 
 margin : 3px !important;
 margin-left: 5px !important; 
 font-size: 24px !important; 
-text-decoration: underline !important; 
+/*text-decoration: underline !important;  */
 color: #333333 !important; 
 } 
 .GStitle {
@@ -409,4 +411,47 @@ color: grey !important;
 float: right !important; 
 margin-right: 20px !important;
 padding-top: 3px !important;
+}
+
+
+table.GSprop {
+font: "Lucida Grande", "Lucida Sans Unicode", "Trebuchet MS", sans-serif!important;
+padding: 0!important; 
+margin: 0!important; 
+border-collapse: collapse!important; 
+color: #333!important; 
+background: #F3F5F7!important;
+}
+
+table.GSprop a.GSprop {
+color: #3A4856!important; 
+text-decoration: none!important; 
+border-bottom: 1px solid #C6C8CB!important;
+}  
+
+table.GSprop thead.GSprop th.GSprop {
+background: #3A4856!important; padding: 15px 10px!important; color: #fff!important; text-align: right!important; font-weight: bolder!important;
+}
+
+table.GSprop tbody.GSprop, table.GSprop thead.GSprop {border-left: 1px solid #EAECEE!important; border-right: 1px solid #EAECEE!important;}
+
+table.GSprop tbody.GSprop {border-bottom: 1px solid #EAECEE!important;}
+                      
+table.GSprop tbody.GSprop td.GSprop, table.GSprop tbody.GSprop {
+padding: 5px!important; background: url("/static/rapidapp/images/td_back.gif") repeat-x!important; text-align: left!important;
+}
+
+th.GSprop { font-weight: bolder!important; margin: 5px !important; white-space:nowrap !important; padding: 2px!important;}
+th.GSprop.right { text-align: right!important; }
+
+
+
+table.GSprop tbody.GSprop tr.GSprop {background: #F3F5F7!important;}
+
+table.GSprop tbody.GSprop tr.GSprop.odd {background: #F0F2F4!important;}
+
+table.GSprop tbody.GSprop  tr.GSprop:hover {background: #EAECEE!important; color: #111!important;}
+
+table.GSprop tfoot.GSprop td.GSprop, table.GSprop tfoot.GSprop th.GSprop, table.GSprop tfoot.GSprop tr.GSprop {
+text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", "Trebuchet MS", sans-serif!important; text-transform: uppercase!important; background: #fff!important; padding: 10px!important;
 }

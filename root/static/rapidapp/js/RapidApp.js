@@ -4,6 +4,115 @@ Ext.Updater.defaults.disableCaching = true;
 Ext.ns('Ext.log');
 Ext.log = function() {}
 
+
+Ext.ns('Ext.ux.EditRecordField');
+Ext.ux.EditRecordField = function(config) {
+	
+	var rand = Math.floor(Math.random()*100000);
+	var winId = 'win-' + rand;
+	var formId = 'editrec-' + rand;
+	var fieldId = 'field-' + rand;
+	var minFieldWidth = 175;
+	var text = config.Record.data[config.fieldName];
+	
+	var field = {
+		id				: fieldId,
+		xtype			: 'textfield',
+		name			: config.fieldName,
+		width			: minFieldWidth,
+		hideLabel	: true,
+		value			: text
+	};
+	
+	if (config.fieldType) field['xtype'] = config.fieldType;
+	if (config.monitorValid) field['monitorValid'] = config.monitorValid;
+
+	var win = new Ext.Window({
+		id: winId,
+		layout: 'fit',
+		title: config.fieldLabel + ':',
+		autoHeight: true,
+		autoWidth: true,
+		items: {
+			xtype: 'form',
+			autoHeight: true,
+			autoWidth: true,
+			id: formId,
+			frame: true,
+			items: field,
+			buttons: [
+				{
+					text		: 'Save',
+					handler	: function() {
+						var form = Ext.getCmp(formId).getForm();
+						var vals = form.getValues();
+						config.Record.set(config.fieldName,vals[config.fieldName]);
+						config.Record.store.save();
+						Ext.getCmp(winId).close();
+					}
+				},
+				{
+					text		: 'Cancel',
+					handler	: function() {
+						Ext.getCmp(winId).close();
+					}
+				}
+			]
+		},
+
+		listeners: {
+			afterrender: function(win) {
+				var field = Ext.getCmp(fieldId);
+				var TM = Ext.util.TextMetrics.createInstance(field.el);
+				
+				var wid;
+				if (field.getXType() == 'textarea') {
+					wid = 350;
+					field.setHeight(250);
+				}
+				else {
+					wid = TM.getWidth(text) + 20;
+				}
+				
+				if (wid > minFieldWidth) field.setWidth(wid);
+			}
+		}
+	});
+	win.show();
+}
+
+
+
+
+Ext.ns('Ext.ux.Msg.EditRecordField');
+Ext.ux.Msg.EditRecordField = function(config) {
+	
+	var msgCnf = {
+		prompt: true,
+		title: config.fieldLabel + ':',
+		//msg: config.fieldLabel + ':',
+		buttons: Ext.MessageBox.OKCANCEL,
+		fn: function(btn,text) {
+			if (btn == 'ok') {
+				config.Record.set(config.fieldName,text);
+				config.Record.store.save();
+			}
+		},
+		value: config.Record.data[config.fieldName],
+		width: 250
+	}
+	
+	if (config.fieldType == 'textarea') {
+		msgCnf['width'] = 350;
+		msgCnf['multiline'] = 200;
+	}
+	
+	Ext.Msg.show(msgCnf);
+}
+
+
+
+
 Ext.override(Ext.Container, {
 	onRender: function() {
 		Ext.Container.superclass.onRender.apply(this, arguments);
