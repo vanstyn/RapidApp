@@ -30,7 +30,7 @@ has 'ListView'  => ( is => 'ro', lazy => 1, default => sub {
 		autoHeight		=> \1,
 		#multiSelect	=> \1,
 		singleSelect	=> \1,
-		itemSelector	=> $self->lv_itemSelector,
+		#itemSelector	=> $self->lv_itemSelector,
 		emptyText		=> 'No items to display',
 		#style				=> 'overflow:auto; background-color: #FFFFFF;'
 	};

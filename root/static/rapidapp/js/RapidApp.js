@@ -74,6 +74,8 @@ Ext.ux.EditRecordField = function(config) {
 					wid = TM.getWidth(text) + 20;
 				}
 				
+				if (wid > 400) wid = 400;
+				
 				if (wid > minFieldWidth) field.setWidth(wid);
 			}
 		}
