@@ -183,6 +183,21 @@ sub Search_spec {
 
 
 
+sub safe_create_row {
+	my $self = shift;
+	my $params = shift;
+ 
+	my $safe_params = {};
+	foreach my $col ($self->ResultSource->columns) {
+		$safe_params->{$col} = $params->{$col} if (defined $params->{$col});
+	}
+ 
+	return $self->ResultSource->resultset->create($safe_params);
+}
+
+
+
+
 
 no Moose;
 __PACKAGE__->meta->make_immutable;

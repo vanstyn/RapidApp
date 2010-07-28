@@ -14,6 +14,8 @@ has 'record_pk' 			=> ( is => 'ro', default => undef );
 has 'store_fields' 		=> ( is => 'ro', default => undef );
 has 'storeId' 				=> ( is => 'ro', default => sub { 'datastore-' . String::Random->new->randregex('[a-z0-9A-Z]{5}') } );
 
+has 'store_autoLoad'		=> ( is => 'ro', default => sub {\1} );
+
 #has 'base_params' => ( is => 'ro', lazy => 1, default => sub {
 #	my $self = shift;
 #	return $self->parent_module->base_params;
@@ -180,7 +182,8 @@ sub JsonStore {
 		listeners				=> $self->store_listeners,
 		writer					=> $self->store_writer,
 		
-		autoLoad => \1,
+		#autoLoad => \1,
+		autoLoad => $self->store_autoLoad,
 		autoSave => \0,
 		loadMask => \1,
 		autoDestroy => \1,
