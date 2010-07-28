@@ -129,6 +129,8 @@ sub render_data {
 	my $self = shift;
 	my $data = shift;
 	
+	return $data if $self->c->response->has_body;
+	
 	my $rendered_data = $data;
 	$rendered_data = $self->JSON_encode($data) if (
 		$self->render_as_json and
