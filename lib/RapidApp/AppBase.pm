@@ -18,6 +18,7 @@ use Clone;
 
 use Try::Tiny;
 use RapidApp::ExtJS::MsgBox;
+use String::Random;
 
 use Term::ANSIColor qw(:constants);
 
@@ -35,6 +36,12 @@ has 'base_query_string'			=> ( is => 'ro',	default => ''		);
 has 'exception_style' 			=> ( is => 'ro',	required => 0,		default => "color: red; font-weight: bolder;"			);
 # ----------
 
+
+
+has 'instance_id' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	return 'instance-' . String::Random->new->randregex('[a-z0-9A-Z]{5}');
+});
 
 
 ###########################################################################################

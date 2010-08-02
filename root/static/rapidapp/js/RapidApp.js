@@ -2,7 +2,7 @@ Ext.Updater.defaults.disableCaching = true;
 
 
 Ext.ns('Ext.log');
-Ext.log = function() {}
+Ext.log = function() {};
 
 
 Ext.ns('Ext.ux.EditRecordField');
@@ -24,8 +24,8 @@ Ext.ux.EditRecordField = function(config) {
 		value			: text
 	};
 	
-	if (config.fieldType) field['xtype'] = config.fieldType;
-	if (config.monitorValid) field['monitorValid'] = config.monitorValid;
+	if (config.fieldType) { field['xtype'] = config.fieldType; }
+	if (config.monitorValid) { field['monitorValid'] = config.monitorValid; }
 
 	var win = new Ext.Window({
 		id: winId,
@@ -1683,7 +1683,7 @@ Ext.override(Ext.ux.ComponentListView, {
         Ext.ux.ComponentListView.superclass.onDestroy.call(this);
         Ext.destroy(this.components);
         this.components = [];
-    },
+    }
 });
 
 Ext.override(Ext.ux.ComponentDataView, {
@@ -1691,7 +1691,7 @@ Ext.override(Ext.ux.ComponentDataView, {
         Ext.ux.ComponentDataView.superclass.onDestroy.call(this);
         Ext.destroy(this.components);
         this.components = [];
-    },
+    }
 });
 
 
@@ -1724,7 +1724,7 @@ Ext.ux.TplTabPanel = Ext.extend(Ext.TabPanel, {
             }
         });
 
-    },
+    }
 });
 Ext.reg('tabtpl', Ext.ux.TplTabPanel);
 

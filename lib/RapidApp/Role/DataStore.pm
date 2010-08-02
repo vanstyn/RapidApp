@@ -100,6 +100,16 @@ sub store_create {}
 sub store_delete {}
 
 
+has 'getStore' => ( is => 'ro', lazy => 1, default => sub { 
+	my $self = shift;
+	return $self->JsonStore unless ($self->has_JsonStore); # Return the JsonStore constructor if it hasn't been called yet
+	return RapidApp::JSONFunc->new( 
+		raw => 1, 
+		func => $self->getStore_code
+	);
+});
+
+
 
 has 'getStore_code' => ( is => 'ro', lazy_build => 1 );
 sub _build_getStore_code {
@@ -168,8 +178,8 @@ has 'store_writer' => ( is => 'ro', lazy => 1, default => sub {
 	return $writer;
 });
 
-sub JsonStore {
-#has 'JsonStore' => ( is => 'ro', lazy => 1, default => sub {
+#sub JsonStore {
+has 'JsonStore' => ( is => 'ro', lazy => 1, predicate => 'has_JsonStore', default => sub {
 	my $self = shift;
 	
 	my $config = {
@@ -205,7 +215,7 @@ sub JsonStore {
 	);
 	
 	return $JsonStore;
-}
+});
 
 
 
