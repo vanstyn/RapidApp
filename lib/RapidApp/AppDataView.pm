@@ -15,31 +15,6 @@ use String::Random;
 has 'record_pk' => ( is => 'ro', default => 'id' );
 
 
-
-#has 'storeId' => ( is => 'ro', lazy => 1, default => sub {
-#	my $self = shift;
-#	return $self->dv_id . '-store';
-#});
-
-
-
-#has 'datastore_class' => ( is => 'ro', default => 'RapidApp::AppDataView::Store' );
-#
-#has 'modules' => ( is => 'ro', lazy => 1, default => sub {
-#	my $self = shift;
-#	return {
-#		datastore		=> $self->datastore_class,
-#	};
-#});
-
-# stub attribute: should be overridden by subclass
-#has 'read_records_coderef' => ( is => 'ro', default => sub {
-#	sub {{
-#		rows		=> [],
-#		results	=> 0
-#	}};
-#});
-
 has 'item_template' => ( is => 'ro', default => '' );
 
 has 'xtemplate_cnf' => ( is => 'ro', lazy => 1, default => sub {
