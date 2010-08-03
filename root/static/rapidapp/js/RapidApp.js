@@ -13,23 +13,24 @@ Ext.ux.EditRecordField = function(config) {
 	var formId = 'editrec-' + rand;
 	var fieldId = 'field-' + rand;
 	var minFieldWidth = 175;
-	var text = config.Record.data[config.fieldName];
 	
 	var field = {
 		id				: fieldId,
 		xtype			: 'textfield',
-		name			: config.fieldName,
-		anchor		: '100%',
 		hideLabel	: true,
-		value			: text
 	};
 	
-	if (config.fieldType) { 
-		field['xtype'] = config.fieldType;
-		if (config.fieldType == 'textarea') {
-			field['anchor'] = '100% 100%';
-		}
+	if (config.fieldType) { field['xtype'] = config.fieldType; }
+	if (config.fieldName) { field['name'] = config.fieldName; }
+	
+	if (config.field_cnf) { field = field_cnf; } //<-- field_cnf override
+	
+	field['value'] = config.Record.data[config.fieldName];;
+	field['anchor'] = '100%';
+	if (field['xtype'] == 'textarea') {
+		field['anchor'] = '100% 100%';
 	}
+	
 	if (config.monitorValid) { field['monitorValid'] = config.monitorValid; }
 
 	var win = new Ext.Window({
@@ -73,14 +74,14 @@ Ext.ux.EditRecordField = function(config) {
 				if (field.getXType() == 'textarea') {
 					wid = 400;
 					TM.setFixedWidth(wid);
-					var hig = TM.getHeight(text) + 20;
+					var hig = TM.getHeight(field['value']) + 20;
 					if (hig < 300) { hig = 300; }
 					if (hig > 600) { hig = 600; }
 					
 					win.setHeight(hig);
 				}
 				else {
-					wid = TM.getWidth(text) + 50;
+					wid = TM.getWidth(field['value']) + 50;
 				}
 				
 				if (wid > 500) { wid = 500; }

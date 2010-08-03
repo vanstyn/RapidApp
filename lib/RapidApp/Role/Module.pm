@@ -78,4 +78,15 @@ sub topmost_module {
 }
 
 
+sub parent_by_name {
+	my $self = shift;
+	my $name = shift;
+	return $self if (lc($self->module_name) eq lc($name));
+	return undef unless (defined $self->parent_module);
+	return $self->parent_module->parent_by_name($name);
+}
+
+
+
+
 1;
