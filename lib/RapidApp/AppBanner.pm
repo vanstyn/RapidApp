@@ -38,7 +38,7 @@ has 'username_key'			=> ( is => 'ro',	default => 'username' );
 has 'password_key'			=> ( is => 'ro',	default => 'password' );
 
 has 'banner_title'			=> ( is => 'ro',	default => 'RapidApp Application' );
-has 'logo_cls'					=> ( is => 'ro',	default => 'logo' );
+has 'logo_cls'					=> ( is => 'ro',	default => 'noBox' );
 
 has 'modules_params' => (is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
@@ -223,6 +223,75 @@ has 'xtemplate_cnf' => ( is => 'ro', lazy => 1, default => sub {
 	return
 	'<tpl for="."><div class="dv_selector">' .
 	
+'<div id="headerContainer">
+<table border="0" cellpadding="0" cellspacing="0" id="header">
+	<tr>
+		<td width="1%" rowspan="3" class="logo">
+			<div class="' . $self->logo_cls .'">' .
+				#'<div class="topLeft"></div>' .
+				#'<div class="topRight"></div>' .
+				#'<div class="bottomLeft"></div>' .
+				#'<div class="bottomRight"></div>' .
+				'<img src="' . $self->logo .'" />
+			</div>
+		</td>
+		<td width="99%" class="top"></td>
+	</tr>
+	<tr>
+		<td>
+		<div class="middle">
+			<div class="links">
+				<ul>' .
+					#'<li><a href="#" class="first">Change Profile</a></li>' .
+					#'<li><a href="#">Change Password</a></li>' .
+				'</ul>
+			</div>			
+			<div class="title">' . $self->banner_title . '</div>
+			<div class="intellitreeLogo"><a href="http://www.intellitree.com/" target="_blank"><img src="/static/rapidapp/images/intellitreeLogo.png" alt="Intellitree Logo" width="111" height="59" border="0" /></a></div>
+			
+			<div class="tabsContainer">' .
+			
+			
+				#'<div class="tabClick"><a href="#" class="loggedIn">Logout</a></div>' .
+				#'<div class="tabNoClick">' .
+				#	'<span class="username">Username:<p class="name">Stephen Kramer</p></span>' .
+				#'</div>' .
+				
+				
+					'<tpl if="session &gt; 0">' .
+						'<div class="tabClick"><a href="#" class="loggedIn">Logout</a></div>' .
+						'<div class="tabNoClick"><span class="username">{user}</span></div>' .
+					'</tpl>' .
+					
+					'<tpl if="session &lt; 1">' .
+						'<div class="tabClick"><a href="#" class="loggedOut">Login</a></div>' .
+					'</tpl>' .
+				
+				
+				
+			'</div>
+			
+		</div>
+		</td>
+	</tr>
+	<tr>
+		<td class="bottom">&nbsp;</td>
+	</tr>
+</table>
+</div>' .
+
+	'</div></tpl>'
+});
+
+
+
+
+
+has 'xtemplate_cnf_old' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	return
+	'<tpl for="."><div class="dv_selector">' .
+	
 '<table border="0" cellpadding="0" cellspacing="0" id="header">
 	<tr>' .
 		'<td width="15%" rowspan="3" class="logo"><div class="' . $self->logo_cls .'"><img src="' . $self->logo .'" /></div></td>' .
@@ -271,47 +340,6 @@ has 'xtemplate_cnf' => ( is => 'ro', lazy => 1, default => sub {
 	'</div></tpl>'
 });
 
-
-
-
-
-
-has 'xtemplate_cnf_old' => ( is => 'ro', lazy => 1, default => sub {
-	my $self = shift;
-	return
-	'<tpl for=".">' .
-		'<div id="header" class="dv_selector">' .
-			#'<div class="logoWhiteBox"><img src="' . $self->logo .'" width="166" height="115" /></div>' .
-			'<div class="' . $self->logo_cls . '"><img src="' . $self->logo .'"/></div>' .
-			'<div class="title">' . $self->banner_title . '</div>' .
-					
-				'<div class="tabsContainer">' .
-
-					'<tpl if="session &gt; 0">' .
-						'<div class="tab"><a href="#" class="loggedIn">Logout</a></div>' .
-						'<div class="tab"><a href="#" class="username">{user}</a></div>' .
-					'</tpl>' .
-					
-					'<tpl if="session &lt; 1">' .
-						'<div class="tab"><a href="#" class="loggedOut">Login</a></div>' .
-					'</tpl>' .
-				
-				'</div>' .
-			
-			'<div class="intellitreeLogo">' .
-				'<a href="http://www.intellitree.com/">' .
-					'<img src="/static/rapidapp/images/intellitreeLogo.png" alt="Intellitree Logo" width="111" height="59" border="0" />' .
-				'</a>' .
-			'</div>' .
-			'<div class="links">' .
-				'<ul>' .
-					#'<li><a href="#" class="first">Change Profile</a></li>' .
-					#'<li><a href="#">Change Password</a></li>' .
-				'</ul>' .
-			'</div>' .
-		'</div>' .
-	'</tpl>'
-});
 
 
 
