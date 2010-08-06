@@ -137,8 +137,8 @@ sub render_data {
 	
 	#$rendered_data .= $self->render_append;
 	
-	use Data::Dumper;
-	print STDERR YELLOW . "\n" . $rendered_data . "\n\n" . CLEAR;
+	#use Data::Dumper;
+	#print STDERR YELLOW . "\n" . $rendered_data . "\n\n" . CLEAR;
 
 	#for my $i (1..5) {
 	#	print STDERR RED .BOLD . Dumper(caller($i)) . "---\n" . CLEAR;

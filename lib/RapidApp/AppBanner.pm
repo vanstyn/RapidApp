@@ -215,7 +215,68 @@ has 'dv_baseconfig' => ( is => 'ro', lazy => 1, default => sub {
 });
 
 
+
+
+
 has 'xtemplate_cnf' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	return
+	'<tpl for="."><div class="dv_selector">' .
+	
+'<table border="0" cellpadding="0" cellspacing="0" id="header">
+	<tr>' .
+		'<td width="15%" rowspan="3" class="logo"><div class="' . $self->logo_cls .'"><img src="' . $self->logo .'" /></div></td>' .
+		#'<td width="15%" rowspan="3" class="logo"><div class="whiteBox"><img src="' . $self->logo .'" /></div></td>' .
+		'<td width="85%" class="top">
+			<div class="links">
+				<ul>' .
+					'<li><a href="#" class="first">Change Profile</a></li>' .
+					'<li><a href="#">Change Password</a></li>' .
+				'</ul>
+			</div>
+		</td>
+	</tr>
+	<tr>
+		<td class="middle">
+			<div class="title">' . $self->banner_title . '</div>
+			<div class="intellitreeLogo"><a href="http://www.intellitree.com/" target="_blank"><img src="/static/rapidapp/images/intellitreeLogo.png" alt="Intellitree Logo" width="111" height="59" border="0" /></a></div>
+			<div class="tabsContainer">' .
+			
+			
+				#'<div class="tabClick"><a href="#" class="loggedIn">Logout</a></div>' .
+				#'<div class="tabNoClick">' .
+				#	'<span class="username">Username:<p class="name">Stephen Kramer</p></span>' .
+				#'</div>' .
+				
+				
+					'<tpl if="session &gt; 0">' .
+						'<div class="tabClick"><a href="#" class="loggedIn">Logout</a></div>' .
+						'<div class="tabNoClick"><span class="username">{user}</span></div>' .
+					'</tpl>' .
+					
+					'<tpl if="session &lt; 1">' .
+						'<div class="tabClick"><a href="#" class="loggedOut">Login</a></div>' .
+					'</tpl>' .
+				
+				
+				
+			'</div>
+		</td>
+	</tr>
+	<tr>
+		<td class="bottom">&nbsp;</td>
+	</tr>
+</table>' .
+
+	'</div></tpl>'
+});
+
+
+
+
+
+
+has 'xtemplate_cnf_old' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	return
 	'<tpl for=".">' .
