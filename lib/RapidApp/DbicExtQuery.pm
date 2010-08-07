@@ -40,14 +40,17 @@ sub data_fetch {
 	my $self = shift;
 	my $params = shift or return undef;
 
-	my $Attr 	= $self->Attr_spec($params);
-	my $Search 	= $self->Search_spec($params);
+	my $Attr		= $params->{Attr_spec};		# <-- Optional custom Attr_spec override
+	my $Search	= $params->{Search_spec};	# <-- Optional custom Search_spec override
+	
+	$Attr 		= $self->Attr_spec($params) unless (defined $Attr);
+	$Search 		= $self->Search_spec($params) unless (defined $Search);
 	
 	my @rows = $self->ResultSource->resultset->search($Search,$Attr)->all;
 	
 	my $count_Attr = Clone::clone($Attr);
-	delete $count_Attr->{page}; # <-- ##  need to delete page and rows attrs to prevent the
-	delete $count_Attr->{rows}; # <-- ##  totalCount from including only the current page
+	delete $count_Attr->{page} if (defined $count_Attr->{page}); # <-- ##  need to delete page and rows attrs to prevent the
+	delete $count_Attr->{rows} if (defined $count_Attr->{rows}); # <-- ##  totalCount from including only the current page
 	
 	return {
 		totalCount	=> $self->ResultSource->resultset->search($Search,$count_Attr)->count,
@@ -134,12 +137,15 @@ sub Search_spec {
 	my $filter_search = [];
 	#my $set_filters = {};
 	if (defined $params->{filter}) {
-		my $filters = JSON::decode_json($params->{filter});
+		my $filters = $params->{filter};
+		$filters = JSON::decode_json($params->{filter}) unless (ref($filters) eq 'ARRAY');
 		if (defined $filters and ref($filters) eq 'ARRAY') {
 			foreach my $filter (@$filters) {
+				my $field = $filter->{field};
 				# optionally convert table column name to db field name
 				my $dbfName= $self->ExtNamesToDbFields->{$filter->{field}};
-				defined $dbfName or $dbfName= $filter->{field};
+				$field = 'me.' . $field; # <-- http://www.mail-archive.com/dbix-class@lists.scsys.co.uk/msg02386.html
+				defined $dbfName or $dbfName= $field;
 				
 				##
 				## String type filter:
