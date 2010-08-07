@@ -92,8 +92,20 @@ sub fieldMarkup {
 	my $field_name = shift;
 	my $field = $self->field_hash->{$field_name};
 	return $field->{Markup} if (defined $field->{Markup});
-	return '{' . $field->{name} . '} <a href="#" class="' . $field->{name} . '">' . $self->ed_icon . '</a>';
+	
+	my $markup = '{' . $field->{name} . '}';
+	$markup .= ' <a href="#" class="' . $field->{name} . '">' . $self->ed_icon . '</a>' if ($field->{editable});
+	return $markup;
 }
+
+sub fieldLabel {
+	my $self = shift;
+	my $field_name = shift;
+	my $field = $self->field_hash->{$field_name};
+	return $field->{label} if (defined $field->{label});
+	return $field->{name};
+}
+
 
 
 sub fieldTarget {

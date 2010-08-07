@@ -12,6 +12,7 @@ package RapidApp::DbicExtQuery;
 use strict;
 use Moose;
 
+use Clone;
 
 
 our $VERSION = '0.1';
@@ -24,9 +25,9 @@ use Term::ANSIColor qw(:constants);
 
 #### --------------------- ####
 
-has 'ResultSource'				=> ( is => 'ro',	required => 1, 	isa => 'DBIx::Class::ResultSource'							);
-has 'ExtNamesToDbFields'      => ( is => 'ro',	required => 0, 	isa => 'HashRef', default => sub{ return {}; } );
-
+has 'ResultSource'				=> ( is => 'ro',	required => 1, 	isa => 'DBIx::Class::ResultSource'			);
+has 'ExtNamesToDbFields'      => ( is => 'ro',	required => 0, 	isa => 'HashRef', default => sub{ {} } 	);
+has 'joins'    					=> ( is => 'ro',	required => 0, 	isa => 'ArrayRef', default => sub{ [] } 	);
 
 
 ###########################################################################################
@@ -41,8 +42,12 @@ sub data_fetch {
 	
 	my @rows = $self->ResultSource->resultset->search($Search,$Attr)->all;
 	
+	my $count_Attr = Clone::clone($Attr);
+	delete $count_Attr->{page}; # <-- ##  need to delete page and rows attrs to prevent the
+	delete $count_Attr->{rows}; # <-- ##  totalCount from including only the current page
+	
 	return {
-		totalCount	=> $self->ResultSource->resultset->search($Search)->count,
+		totalCount	=> $self->ResultSource->resultset->search($Search,$count_Attr)->count,
 		rows			=> \@rows
 	};
 }
@@ -80,9 +85,23 @@ sub Attr_spec {
 			$attr->{order_by} = { -asc => $dbfName };
 		}
 	}
+	
+	# --
+	# Join attr support:
+	$attr->{join} = $self->joins;
+	
+	$attr->{'+select'} = [];
+	$attr->{'+as'} = [];
+	
+	foreach my $k (keys %{$self->ExtNamesToDbFields}) {
+		push @{$attr->{'+select'}}, $self->ExtNamesToDbFields->{$k};
+		push @{$attr->{'+as'}}, $k;
+	}
+	# --
 
 	return $attr;
 }
+
 
 
 
@@ -173,6 +192,7 @@ sub Search_spec {
 			foreach my $field (@$fields) {
 				# optionally convert table column name to db field name
 				my $dbfName= $self->ExtNamesToDbFields->{$field};
+				$field = 'me.' . $field; # <-- http://www.mail-archive.com/dbix-class@lists.scsys.co.uk/msg02386.html
 				defined $dbfName or $dbfName= $field;
 				
 				#next if ($set_filters->{$field});
