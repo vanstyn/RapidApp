@@ -93,8 +93,8 @@ sub fieldMarkup {
 	my $field = $self->field_hash->{$field_name};
 	return $field->{Markup} if (defined $field->{Markup});
 	
-	my $markup = '{' . $field->{name} . '}';
-	$markup .= ' <a href="#" class="' . $field->{name} . '">' . $self->ed_icon . '</a>' if ($field->{editable});
+	my $markup = $self->fieldTplVal($field_name);
+	$markup .= ' ' . $self->fieldEditTag($field_name) if ($field->{editable});
 	return $markup;
 }
 
@@ -103,9 +103,27 @@ sub fieldLabel {
 	my $field_name = shift;
 	my $field = $self->field_hash->{$field_name};
 	return $field->{label} if (defined $field->{label});
+	return $field->{header} if (defined $field->{header});
 	return $field->{name};
 }
 
+sub fieldEditTag {
+	my $self = shift;
+	my $field_name = shift;
+	my $field = $self->field_hash->{$field_name};
+	return $field->{EditTag} if (defined $field->{EditTag});
+	return '' unless ($field->{editable});
+	return '<a href="#" class="' . $field->{name} . '">' . $self->ed_icon . '</a>'
+}
+
+sub fieldTplVal {
+	my $self = shift;
+	my $field_name = shift;
+	my $field = $self->field_hash->{$field_name};
+	return $field->{TplVal} if (defined $field->{TplVal});
+
+	return '{' . $field->{name} . '}';
+}
 
 
 sub fieldTarget {
@@ -123,11 +141,19 @@ sub defaultCallback {
 	my $func = 'function(){}';
 	if ($field->{editable}) {
 		$func = 'function(rec,fld) {' .
+			'var label = fld["label"];' .
+			'if(!label) { label = fld["label"]; 	}' .
+			'if(!label) { label = fld["header"]; 	}' .
+			'if(!label) { label = fld["name"]; 		}' .
+			
+			'var fieldtype = fld["fieldType"];' .
+			'if(!fieldtype) { fieldtype = "textfield"; 	}' .
+			
 			'Ext.ux.EditRecordField({' . 
 				'Record: rec,' .
 				'fieldName: fld["name"],' .
-				'fieldLabel: fld["label"],' .
-				'fieldType: "textfield"' . 
+				'fieldLabel: label,' .
+				'fieldType: fieldtype' . 
 			'});' .
 		'}';
 	}

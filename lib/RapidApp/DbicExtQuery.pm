@@ -46,6 +46,9 @@ sub data_fetch {
 	$Attr 		= $self->Attr_spec($params) unless (defined $Attr);
 	$Search 		= $self->Search_spec($params) unless (defined $Search);
 	
+	use Data::Dumper;
+	print STDERR BOLD .GREEN . Dumper($Attr) . CLEAR;
+	
 	my @rows = $self->ResultSource->resultset->search($Search,$Attr)->all;
 	
 	my $count_Attr = Clone::clone($Attr);
@@ -95,7 +98,8 @@ sub Attr_spec {
 	# --
 	# Join attr support:
 	$attr->{join} = $self->joins;
-	
+
+=pod
 	if ($self->implied_joins) { # Automatically build/add to join list based on ExtNamesToDbFields (transformed names)
 		my $jhash = {};
 		foreach my $j (@{$attr->{join}}) {
@@ -106,25 +110,112 @@ sub Attr_spec {
 			my ($rel,$field) = split(/\./,$trans_name);
 			next if (defined $jhash->{$rel});
 			next unless (defined $rel and defined $field); # <-- Skip this if the transformed name didn't have a '.' in it
+			#$rel = $self->transformed_name_to_join($trans_name);
 			$jhash->{$rel} = 1;
 			push @{$attr->{join}}, $rel;
 		}
 	}
+=cut
+	
+	#push @{$attr->{join}}, $self->hash_to_join($self->ExtNamesToDbFields);
 	
 	# optional add to prefetch:
-	$attr->{prefetch} = [];
-	foreach my $rel (@{$attr->{join}}) {		push @{$attr->{prefetch}}, $rel;	}
+	#$attr->{prefetch} = [];
+	#foreach my $rel (@{$attr->{join}}) {		push @{$attr->{prefetch}}, $rel;	}
 	
 	$attr->{'+select'} = [];
 	$attr->{'+as'} = [];
 	
 	foreach my $k (keys %{$self->ExtNamesToDbFields}) {
-		push @{$attr->{'+select'}}, $self->ExtNamesToDbFields->{$k};
+		#my @trans = reverse split(/\./,$self->ExtNamesToDbFields->{$k});
+		#my $t = shift @trans;
+		#$t = shift(@trans) . '.' . $t if (scalar @trans > 0);
+		
+		my $t = $self->ExtNamesToDbFields->{$k};
+		if ($self->implied_joins) { 
+			my $j = $self->hash_to_join($t) or next;
+			push @{$attr->{join}}, $j;
+		}
+		push @{$attr->{'+select'}}, $t;
 		push @{$attr->{'+as'}}, $k;
 	}
 	# --
 
 	return $attr;
+}
+
+
+sub hash_to_joinold {
+	my $self = shift;
+	my $hash = shift;
+
+	my $jhash = {};
+	
+	my $join = [];
+	
+	foreach my $k (keys %$hash) {
+		my $trans_name = $hash->{$k};
+		my ($rel,$field);
+		if (ref($trans_name)) {
+			foreach my $key (keys %$trans_name) {
+				$rel = { $key => $self->hash_to_join($trans_name->{$key}) };
+				last;
+			}
+			
+			#return $self->hash_to_join($field);
+		}
+		else {
+
+			($rel,$field) = split(/\./,$trans_name);
+			return $rel unless (defined $rel and defined $field); 
+			#next if (defined $jhash->{$rel});
+			#next unless (defined $rel and defined $field); # <-- Skip this if the transformed name didn't have a '.' in it
+			#$rel = $self->transformed_name_to_join($trans_name);
+			$jhash->{$rel} = 1;
+		}
+		push @$join, $rel;
+	}
+	return $join;
+}
+
+
+
+
+sub hash_to_join {
+	my $self = shift;
+	my $join = shift;
+
+	my ($rel,$field);
+	if (ref($join)) {
+		foreach my $key (keys %$join) {
+			$rel = { $key => $self->hash_to_join($join->{$key}) };
+			last;
+		}
+	}
+	else {
+
+		($rel,$field) = split(/\./,$join);
+		#return undef unless (defined $rel and defined $field); 
+		#next if (defined $jhash->{$rel});
+		#next unless (defined $rel and defined $field); # <-- Skip this if the transformed name didn't have a '.' in it
+		#$rel = $self->transformed_name_to_join($trans_name);
+		#$jhash->{$rel} = 1;
+	}
+	
+	return $rel;
+}
+
+
+
+
+
+sub transformed_name_to_join {
+	my $self = shift;
+	my $trans_name = shift;
+	my @arr = split(/\./,$trans_name);
+	my $rel = shift @arr;
+	return $rel unless (scalar @arr > 1);
+	return { $rel => $self->transformed_name_to_join(join('.',@arr)) };
 }
 
 
