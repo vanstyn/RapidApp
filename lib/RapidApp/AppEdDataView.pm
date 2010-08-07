@@ -11,20 +11,9 @@ use RapidApp::JSONFunc;
 
 use String::Random;
 
-has 'dv_itemSelector' => ( is => 'ro', default => 'div.dv_selector' );
 
 
 has 'item_template' => ( is => 'ro', default => '' );
-
-has 'xtemplate_cnf' => ( is => 'ro', lazy => 1, default => sub {
-	my $self = shift;
-	return 
-		'<tpl for=".">' .
-			'<div class="' . $self->dv_itemSelector . '">' .
-				$self->item_template .
-			'</div>' .
-		'</tpl>';
-});
 
 
 has 'fields' => ( is => 'ro', isa => 'ArrayRef', default => sub {[]} );
@@ -55,20 +44,20 @@ has 'dv_fieldCallbacks' => ( is => 'ro', lazy => 1, default => sub {
 
 
 
-#around 'DataView' => sub {
-#	my $orig = shift;
-#	my $self = shift;
-#	
-#	my $config = $self->$orig(@_)->parm;
-#	$config->{fieldCallbacks} = $self->dv_fieldCallbacks;
-#	
-#	my $DataView = RapidApp::JSONFunc->new( 
-#		func => 'new Ext.DataView',
-#		parm => $config
-#	);
-#	
-#	return $DataView;
-#};
+around 'DataView' => sub {
+	my $orig = shift;
+	my $self = shift;
+	
+	my $config = $self->$orig(@_)->parm;
+	$config->{fieldCallbacks} = $self->dv_fieldCallbacks;
+	
+	my $DataView = RapidApp::JSONFunc->new( 
+		func => 'new Ext.DataView',
+		parm => $config
+	);
+	
+	return $DataView;
+};
 	
 
 has 'listeners' => ( is => 'ro', lazy => 1, default => sub {
@@ -77,7 +66,6 @@ has 'listeners' => ( is => 'ro', lazy => 1, default => sub {
 	my $click = 
 		'function(dv, index, htmlEl, event){ ' .
 			'dv.getEl().repaint();' .
-			'alert("click!!");' .
 			'var Record = dv.getStore().getAt(index);';
 	
 	foreach my $field (@{$self->fields}) {

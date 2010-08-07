@@ -17,11 +17,16 @@ has 'record_pk' => ( is => 'ro', default => 'id' );
 
 has 'item_template' => ( is => 'ro', default => '' );
 
+has 'dv_itemSelectorTag' => ( is => 'ro', default => 'div' );
+has 'dv_itemSelectorClass' => ( is => 'ro', default => 'dv_selector' );
+
 has 'xtemplate_cnf' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	return 
 		'<tpl for=".">' .
-		$self->item_template .
+			'<' . $self->dv_itemSelectorTag . ' id="dv-' . $self->instance_id . '-{' . $self->record_pk . '}" class="' . $self->dv_itemSelectorClass . '">' .
+				$self->item_template .
+			'</' . $self->dv_itemSelectorTag . '>' .
 		'</tpl>';
 });
 
@@ -36,10 +41,10 @@ has 'xtemplate' => ( is => 'ro', lazy => 1, default => sub {
 
 has 'dv_id' 				=> ( is => 'ro', lazy => 1, default => sub { 'appdv-' . String::Random->new->randregex('[a-z0-9A-Z]{5}') } );
 has 'dv_itemId' 			=> ( is => 'ro', lazy => 1, default => sub { 'item-' . (shift)->dv_id } );
-has 'dv_itemSelector'	=> ( is => 'ro', default => 'div.dv_selector' );
 has 'dv_baseconfig'		=> ( is => 'ro', default => sub {{}} );
 
 has 'listeners'			=> ( is => 'ro', default => undef );
+
 
 has 'DataView'  => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
@@ -51,7 +56,7 @@ has 'DataView'  => ( is => 'ro', lazy => 1, default => sub {
 		tpl				=> $self->xtemplate,
 		autoHeight		=> \1,
 		singleSelect	=> \1,
-		itemSelector	=> $self->dv_itemSelector,
+		itemSelector	=> $self->dv_itemSelectorTag . '.' . $self->dv_itemSelectorClass,
 	};
 	
 	$config->{listeners} = $self->listeners if (defined $self->listeners);
