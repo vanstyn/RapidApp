@@ -25,6 +25,7 @@ use Term::ANSIColor qw(:constants);
 #### --------------------- ####
 
 has 'ResultSource'				=> ( is => 'ro',	required => 1, 	isa => 'DBIx::Class::ResultSource'							);
+has 'ExtNamesToDbFields'      => ( is => 'ro',	required => 0, 	isa => 'HashRef', default => sub{ return {}; } );
 
 
 
@@ -68,11 +69,15 @@ sub Attr_spec {
 	};
 	
 	if (defined $params->{sort} and defined $params->{dir}) {
+		# optionally convert table column name to db field name
+		my $dbfName= $self->ExtNamesToDbFields->{$params->{sort}};
+		defined $dbfName or $dbfName= $params->{sort};
+		
 		if (lc($params->{dir}) eq 'desc') {
-			$attr->{order_by} = { -desc => $params->{sort} };
+			$attr->{order_by} = { -desc => $dbfName };
 		}
 		elsif (lc($params->{dir}) eq 'asc') {
-			$attr->{order_by} = { -asc => $params->{sort} };
+			$attr->{order_by} = { -asc => $dbfName };
 		}
 	}
 
@@ -91,12 +96,15 @@ sub Search_spec {
 		my $filters = JSON::decode_json($params->{filter});
 		if (defined $filters and ref($filters) eq 'ARRAY') {
 			foreach my $filter (@$filters) {
-			
+				# optionally convert table column name to db field name
+				my $dbfName= $self->ExtNamesToDbFields->{$filter->{field}};
+				defined $dbfName or $dbfName= $filter->{field};
+				
 				##
 				## String type filter:
 				##
 				if ($filter->{type} eq 'string') {
-					push @$filter_search, { $filter->{field} => { like =>  '%' . $filter->{value} . '%' } };
+					push @$filter_search, { $dbfName => { like =>  '%' . $filter->{value} . '%' } };
 				}
 				##
 				## Date type filter:
@@ -115,16 +123,16 @@ sub Search_spec {
 						my $start_str = $new_dt->ymd . ' ' . $new_dt->hms;
 						$new_dt->add({ days => 1 });
 						my $end_str = $new_dt->ymd . ' ' . $new_dt->hms;
-						push @$filter_search, {$filter->{field} => { '>' =>  $start_str, '<' => $end_str } };
+						push @$filter_search, {$dbfName => { '>' =>  $start_str, '<' => $end_str } };
 					}
 					elsif ($filter->{comparison} eq 'gt') {
 						my $str = $new_dt->ymd . ' ' . $new_dt->hms;
-						push @$filter_search, {$filter->{field} => { '>' =>  $str } };
+						push @$filter_search, {$dbfName => { '>' =>  $str } };
 					}
 					elsif ($filter->{comparison} eq 'lt') {
 						$new_dt->add({ days => 1 });
 						my $str = $new_dt->ymd . ' ' . $new_dt->hms;
-						push @$filter_search, {$filter->{field} => { '<' =>  $str } };
+						push @$filter_search, {$dbfName => { '<' =>  $str } };
 					}
 				}
 				##
@@ -132,13 +140,13 @@ sub Search_spec {
 				##
 				elsif ($filter->{type} eq 'numeric') {
 					if ($filter->{comparison} eq 'eq') {
-						push @$filter_search, {$filter->{field} => { '=' =>  $filter->{value} } };
+						push @$filter_search, {$dbfName => { '=' =>  $filter->{value} } };
 					}
 					elsif ($filter->{comparison} eq 'gt') {
-						push @$filter_search, {$filter->{field} => { '>' =>  $filter->{value} } };
+						push @$filter_search, {$dbfName => { '>' =>  $filter->{value} } };
 					}
 					elsif ($filter->{comparison} eq 'lt') {
-						push @$filter_search, {$filter->{field} => { '<' =>  $filter->{value} } };
+						push @$filter_search, {$dbfName => { '<' =>  $filter->{value} } };
 					}
 				}
 				##
@@ -147,7 +155,7 @@ sub Search_spec {
 				elsif ($filter->{type} eq 'list') {
 					my @enum_or = ();
 					foreach my $val (@{$filter->{value}}) {
-						push @enum_or, {$filter->{field} => { '=' =>  $val } };
+						push @enum_or, {$dbfName => { '=' =>  $val } };
 					}
 					push @$filter_search, { -or => \@enum_or };
 				}
@@ -163,8 +171,12 @@ sub Search_spec {
 		my $fields = JSON::decode_json($params->{fields});
 		if (defined $fields and ref($fields) eq 'ARRAY') {
 			foreach my $field (@$fields) {
+				# optionally convert table column name to db field name
+				my $dbfName= $self->ExtNamesToDbFields->{$field};
+				defined $dbfName or $dbfName= $field;
+				
 				#next if ($set_filters->{$field});
-				push @$search, { $field => { like =>  '%' . $params->{query} . '%' } };
+				push @$search, { $dbfName => { like =>  '%' . $params->{query} . '%' } };
 			}
 		}
 	}
