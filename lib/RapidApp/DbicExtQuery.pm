@@ -26,8 +26,11 @@ use Term::ANSIColor qw(:constants);
 #### --------------------- ####
 
 has 'ResultSource'				=> ( is => 'ro',	required => 1, 	isa => 'DBIx::Class::ResultSource'			);
-has 'ExtNamesToDbFields'      => ( is => 'ro',	required => 0, 	isa => 'HashRef', default => sub{ {} } 	);
-has 'joins'    					=> ( is => 'ro',	required => 0, 	isa => 'ArrayRef', default => sub{ [] } 	);
+has 'ExtNamesToDbFields'      => ( is => 'rw',	required => 0, 	isa => 'HashRef', default => sub{ {} } 	);
+
+# be careful! joins can slow queries considerably
+has 'joins'    					=> ( is => 'rw',	required => 0, 	isa => 'ArrayRef', default => sub{ [] } 	);
+has 'implied_joins'				=> ( is => 'rw', default => 0 );
 
 
 ###########################################################################################
@@ -89,6 +92,25 @@ sub Attr_spec {
 	# --
 	# Join attr support:
 	$attr->{join} = $self->joins;
+	
+	if ($self->implied_joins) { # Automatically build/add to join list based on ExtNamesToDbFields (transformed names)
+		my $jhash = {};
+		foreach my $j (@{$attr->{join}}) {
+			$jhash->{$j} = 1;
+		}
+		foreach my $k (keys %{$self->ExtNamesToDbFields}) {
+			my $trans_name = $self->ExtNamesToDbFields->{$k};
+			my ($rel,$field) = split(/\./,$trans_name);
+			next if (defined $jhash->{$rel});
+			next unless (defined $rel and defined $field); # <-- Skip this if the transformed name didn't have a '.' in it
+			$jhash->{$rel} = 1;
+			push @{$attr->{join}}, $rel;
+		}
+	}
+	
+	# optional add to prefetch:
+	$attr->{prefetch} = [];
+	foreach my $rel (@{$attr->{join}}) {		push @{$attr->{prefetch}}, $rel;	}
 	
 	$attr->{'+select'} = [];
 	$attr->{'+as'} = [];
