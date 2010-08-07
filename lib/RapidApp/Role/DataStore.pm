@@ -16,6 +16,8 @@ has 'storeId' 				=> ( is => 'ro', default => sub { 'datastore-' . String::Rando
 
 has 'store_autoLoad'		=> ( is => 'ro', default => sub {\1} );
 
+has 'reload_on_save' 		=> ( is => 'ro', default => 1 );
+
 #has 'base_params' => ( is => 'ro', lazy => 1, default => sub {
 #	my $self = shift;
 #	return $self->parent_module->base_params;
@@ -92,12 +94,57 @@ sub store_fields_from_rows {
 
 
 
-
+sub store_update {
+	my $self = shift;
+	
+	my $params = $self->c->req->params;
+	my $rows = $self->json->decode($params->{rows});
+	delete $params->{rows};
+	
+	if (defined $params->{orig_params}) {
+		my $orig_params = $self->json->decode($params->{orig_params});
+		delete $params->{orig_params};
+		
+		# merge orig_params, preserving real params that are set:
+		foreach my $k (keys %$orig_params) {
+			next if (defined $params->{$k});
+			$params->{$k} = $orig_params->{$k};
+		}
+	}
+	
+	my $result = $self->update_records_coderef->($rows,$params);
+	return $result if (
+		ref($result) eq 'HASH' and
+		defined $result->{success}
+	);
+	
+	return {
+		success => \1,
+		msg => 'Update Succeeded'
+	} if ($result);
+	
+	return {
+		success => \0,
+		msg => 'Update Failed'
+	};
+}
 
 # not implemented yet:
-sub store_update {}
 sub store_create {}
 sub store_delete {}
+
+
+
+
+
+has 'getStore' => ( is => 'ro', lazy => 1, default => sub { 
+	my $self = shift;
+	return $self->JsonStore unless ($self->has_JsonStore); # Return the JsonStore constructor if it hasn't been called yet
+	return RapidApp::JSONFunc->new( 
+		raw => 1, 
+		func => $self->getStore_code
+	);
+});
 
 
 
@@ -130,9 +177,23 @@ has 'store_api' => ( is => 'ro', lazy => 1, default => sub {
 has 'store_load_listener' => ( is => 'ro', default => undef );
 has 'store_update_listener' => ( is => 'ro', default => undef );
 has 'store_save_listener' => ( is => 'ro', default => undef );
-has 'store_write_listener' => ( is => 'ro', default => undef );
+
 has 'store_add_listener' => ( is => 'ro', default => undef );
 has 'store_exception_listener' => ( is => 'ro', default => undef );
+
+
+
+has 'store_write_listener' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	return RapidApp::JSONFunc->new( raw => 1, func => 
+		'function(store, action, result, res, rs) { ' .
+			'Ext.log("write event");' . 
+			($self->reload_on_save ? 'store.load();' : '') .
+			#'store.write_callback.apply(this,arguments);' .
+		'}'
+	);
+});
+
 
 has 'store_listeners' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
@@ -168,8 +229,8 @@ has 'store_writer' => ( is => 'ro', lazy => 1, default => sub {
 	return $writer;
 });
 
-sub JsonStore {
-#has 'JsonStore' => ( is => 'ro', lazy => 1, default => sub {
+#sub JsonStore {
+has 'JsonStore' => ( is => 'ro', lazy => 1, predicate => 'has_JsonStore', default => sub {
 	my $self = shift;
 	
 	my $config = {
@@ -205,7 +266,7 @@ sub JsonStore {
 	);
 	
 	return $JsonStore;
-}
+});
 
 
 

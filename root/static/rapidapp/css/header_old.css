@@ -1,0 +1,124 @@
+#header {
+	background-image: url(/static/rapidapp/images/bgHeader.png);
+	background-repeat: repeat-x;
+	height: 115px;
+	width: 100%;
+	overflow: hidden;
+	position:relative;
+	font-family:Tahoma, Geneva, sans-serif;
+}
+#header a {
+	text-decoration:none;
+}
+#header a:hover {
+	text-decoration:underline;
+}
+#header .title {
+	text-shadow:0 1px 0 #CCC;
+	font-size: 22px;
+	color: #333;
+	float:left;
+	margin-left: 20px;
+	margin-top:45px;
+	font-weight:bold;
+}
+#header .tabsContainer {
+	height: 59px;
+	position: absolute;
+	top: 28px;
+	right:160px;
+	font-size:12px;
+	background-image: url(/static/rapidapp/images/tabsBorder.png);
+	background-repeat: repeat-y;
+	background-position: right;
+}
+#header .tabsContainer .tab {
+	height:59px;
+	background-image: url(/static/rapidapp/images/tabsBorder.png);
+	background-repeat: repeat-y;
+	background-position: left;
+	float:right;
+}
+#header .tabsContainer .tab a {
+	display:block;
+	height:37px;
+	padding:22px 15px 0px 40px;
+	text-shadow:0 1px 0 #CCC;
+	color: #333;
+}
+#header .tabsContainer .tab a:hover {
+	text-decoration:none;
+	text-shadow:none;
+	color:#CCC;
+}
+#header .tabsContainer .tab:hover {
+	background-image: url(/static/rapidapp/images/bgTabsHover.png);
+	background-repeat: no-repeat;
+	background-position: left top;
+}
+#header .tabsContainer .tab .loggedIn {
+	background-image: url(/static/rapidapp/images/iconLoggedIn.png);
+	background-repeat: no-repeat;
+	background-position: 14px center;
+}
+#header .tabsContainer .tab .loggedOut {
+	background-image: url(/static/rapidapp/images/iconLoggedOut.png);
+	background-repeat: no-repeat;
+	background-position: 14px center;
+}
+#header .tabsContainer .tab .username {
+	background-image: url(/static/rapidapp/images/iconUser.png);
+	background-repeat: no-repeat;
+	background-position: 14px center;
+}
+#header .logo {
+	float: left;
+	margin-left: 25px;
+}
+#header .logo img, #header .logoBlackBox img, #header .logoWhiteBox img {
+	margin-right:auto;
+	margin-left: auto;
+	display: block;
+}
+#header .logoBlackBox {
+	width:209px;
+	float: left;
+	margin-left: 25px;
+	background-image: url(/static/rapidapp/images/bgBlackBox.png);
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+#header .logoWhiteBox {
+	width:209px;
+	float: left;
+	margin-left: 25px;
+	background-image: url(/static/rapidapp/images/bgWhiteBox.png);
+	background-repeat: no-repeat;
+	background-position: center center;
+}
+#header .intellitreeLogo {
+	float: right;
+	margin-right: 30px;
+	margin-top: 33px;
+}
+#header .links {
+	position: absolute;
+	top: 7px;
+	right: 25px;
+	font-size:11px;
+}
+#header .links ul, #header .links li  {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: inline;
+}
+#header .links a {
+	margin: 0;
+	padding: 0px 5px 0px 10px;
+	color:#FFF;
+	border-left: 1px solid #FFF;
+}
+#header .links ul a.first {
+	border-left: none;
+}

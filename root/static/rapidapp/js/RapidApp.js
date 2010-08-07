@@ -2,7 +2,7 @@ Ext.Updater.defaults.disableCaching = true;
 
 
 Ext.ns('Ext.log');
-Ext.log = function() {}
+Ext.log = function() {};
 
 
 Ext.ns('Ext.ux.EditRecordField');
@@ -11,32 +11,51 @@ Ext.ux.EditRecordField = function(config) {
 	var rand = Math.floor(Math.random()*100000);
 	var winId = 'win-' + rand;
 	var formId = 'editrec-' + rand;
-	var fieldId = 'field-' + rand;
 	var minFieldWidth = 175;
-	var text = config.Record.data[config.fieldName];
+	var record_val = config.Record.data[config.fieldName];
+	
+	var win_init_w = 200;
+	var win_init_h = 100;
 	
 	var field = {
-		id				: fieldId,
 		xtype			: 'textfield',
-		name			: config.fieldName,
-		width			: minFieldWidth,
 		hideLabel	: true,
-		value			: text
 	};
 	
-	if (config.fieldType) field['xtype'] = config.fieldType;
-	if (config.monitorValid) field['monitorValid'] = config.monitorValid;
-
+	if (config.fieldType) { field['xtype'] = config.fieldType; }
+	
+	if (config.field_cnf) { //<-- field_cnf override 
+		field = config.field_cnf;
+		if (field['width']) {
+			win_init_w = field['width'] + 50;
+			delete field['width'];
+		}
+	}
+	
+	if (config.fieldType && !field['xtype']) { field['xtype'] = config.fieldType; }
+	if (config.fieldName && !field['name']) { field['name'] = config.fieldName; }
+	if (config.monitorValid && !field['monitorValid']) { field['monitorValid'] = config.monitorValid; }
+	
+	if (!field['id']) { field['id'] = 'field-' + rand; }
+	
+	field['value'] = record_val;
+	if (config.initValue) { field['value'] = config.initValue; } //<-- this is needed for certain combo fields
+	
+	field['anchor'] = '100%';
+	if (field['xtype'] == 'textarea') {
+		field['anchor'] = '100% 100%';
+	}
+	
 	var win = new Ext.Window({
 		id: winId,
+		width: win_init_w,
+		height: win_init_h,
 		layout: 'fit',
 		title: config.fieldLabel + ':',
-		autoHeight: true,
-		autoWidth: true,
+		modal: true,
 		items: {
 			xtype: 'form',
-			autoHeight: true,
-			autoWidth: true,
+			anchor : field['anchor'],
 			id: formId,
 			frame: true,
 			items: field,
@@ -44,9 +63,9 @@ Ext.ux.EditRecordField = function(config) {
 				{
 					text		: 'Save',
 					handler	: function() {
-						var form = Ext.getCmp(formId).getForm();
-						var vals = form.getValues();
-						config.Record.set(config.fieldName,vals[config.fieldName]);
+						var oField = Ext.getCmp(field['id']);
+						var cur_val = oField.getValue();
+						config.Record.set(config.fieldName,cur_val);
 						config.Record.store.save();
 						Ext.getCmp(winId).close();
 					}
@@ -59,24 +78,32 @@ Ext.ux.EditRecordField = function(config) {
 				}
 			]
 		},
-
 		listeners: {
 			afterrender: function(win) {
-				var field = Ext.getCmp(fieldId);
-				var TM = Ext.util.TextMetrics.createInstance(field.el);
-				
-				var wid;
-				if (field.getXType() == 'textarea') {
-					wid = 350;
-					field.setHeight(250);
+				var oField = Ext.getCmp(field['id']);
+				if (!config.field_cnf) { //<-- don't run text metrics if there is a cust field_cnf
+		
+					var TM = Ext.util.TextMetrics.createInstance(oField.el);
+					var wid;
+					if (oField.getXType() == 'textarea') {
+						wid = 400;
+						TM.setFixedWidth(wid);
+						var hig = TM.getHeight(field['value']) + 20;
+						if (hig < 300) { hig = 300; }
+						if (hig > 600) { hig = 600; }
+						
+						win.setHeight(hig);
+					}
+					else {
+						wid = TM.getWidth(field['value']) + 50;
+					}
+					
+					if (wid > 500) { wid = 500; }
+					
+					if (wid > minFieldWidth) {
+						win.setWidth(wid);
+					}
 				}
-				else {
-					wid = TM.getWidth(text) + 20;
-				}
-				
-				if (wid > 400) wid = 400;
-				
-				if (wid > minFieldWidth) field.setWidth(wid);
 			}
 		}
 	});
@@ -1683,7 +1710,7 @@ Ext.override(Ext.ux.ComponentListView, {
         Ext.ux.ComponentListView.superclass.onDestroy.call(this);
         Ext.destroy(this.components);
         this.components = [];
-    },
+    }
 });
 
 Ext.override(Ext.ux.ComponentDataView, {
@@ -1691,7 +1718,7 @@ Ext.override(Ext.ux.ComponentDataView, {
         Ext.ux.ComponentDataView.superclass.onDestroy.call(this);
         Ext.destroy(this.components);
         this.components = [];
-    },
+    }
 });
 
 
@@ -1724,7 +1751,7 @@ Ext.ux.TplTabPanel = Ext.extend(Ext.TabPanel, {
             }
         });
 
-    },
+    }
 });
 Ext.reg('tabtpl', Ext.ux.TplTabPanel);
 

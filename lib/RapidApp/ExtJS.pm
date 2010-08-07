@@ -70,7 +70,8 @@ sub Login_Window_code {
 											q~info_box.fadeIn({ duration: 2 });~ . 
 											q~info_box.fadeOut({ duration: 2 });~,
 			defaults	=> {
-				xtype		=> 'textfield'
+				xtype		=> 'textfield',
+				labelStyle	=> 'text-align:right;',
 			},
 			items		=> [
 				{

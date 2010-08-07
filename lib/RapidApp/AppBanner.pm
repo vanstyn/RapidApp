@@ -3,9 +3,15 @@ package RapidApp::AppBanner;
 use strict;
 use warnings;
 use Moose;
-extends 'RapidApp::AppBase';
+extends 'RapidApp::AppDataView';
 
 use RapidApp::AppAuth;
+
+has 'modules' => (is => 'ro', default => sub {
+	return {
+		auth			=> 'RapidApp::AppAuth'
+	}
+});
 
 has 'no_persist'				=> ( is => 'rw',	default => 1 );
 
@@ -31,11 +37,8 @@ has 'logout_banner'			=> ( is => 'ro',	default => 'Really Logout ?' );
 has 'username_key'			=> ( is => 'ro',	default => 'username' );
 has 'password_key'			=> ( is => 'ro',	default => 'password' );
 
-has 'modules' => (is => 'ro', default => sub {
-	return {
-		auth			=> 'RapidApp::AppAuth'
-	}
-});
+has 'banner_title'			=> ( is => 'ro',	default => 'RapidApp Application' );
+has 'logo_cls'					=> ( is => 'ro',	default => 'logo' );
 
 has 'modules_params' => (is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
@@ -55,10 +58,13 @@ has 'modules_params' => (is => 'ro', lazy => 1, default => sub {
 	}
 });
 
-
 has 'content' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	return $self->DataView;
+});
 
-#sub content {
+
+has 'content_old' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	return {
 		xtype				=> 'container',
@@ -183,6 +189,184 @@ sub change_password_button {
 		handler_func	=> q~Ext.ux.FetchEval('~ . $self->base_url . q~/auth/change_pw_window_window');~
 	};
 }
+
+
+
+
+
+
+has 'storeId' => ( is => 'ro', lazy_build => 1 );
+sub _build_storeId {
+	my $self = shift;
+	return 'banner-store';
+}
+
+
+
+has 'dv_baseconfig' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	return {
+		autoHeight		=> \1,
+		singleSelect	=> \1,
+		itemSelector	=> 'div.dv_selector',
+		emptyText		=> 'Error',
+		listeners		=> $self->listeners,
+	};
+});
+
+
+
+
+
+has 'xtemplate_cnf' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	return
+	'<tpl for="."><div class="dv_selector">' .
+	
+'<table border="0" cellpadding="0" cellspacing="0" id="header">
+	<tr>' .
+		'<td width="15%" rowspan="3" class="logo"><div class="' . $self->logo_cls .'"><img src="' . $self->logo .'" /></div></td>' .
+		#'<td width="15%" rowspan="3" class="logo"><div class="whiteBox"><img src="' . $self->logo .'" /></div></td>' .
+		'<td width="85%" class="top">
+			<div class="links">
+				<ul>' .
+					'<li><a href="#" class="first">Change Profile</a></li>' .
+					'<li><a href="#">Change Password</a></li>' .
+				'</ul>
+			</div>
+		</td>
+	</tr>
+	<tr>
+		<td class="middle">
+			<div class="title">' . $self->banner_title . '</div>
+			<div class="intellitreeLogo"><a href="http://www.intellitree.com/" target="_blank"><img src="/static/rapidapp/images/intellitreeLogo.png" alt="Intellitree Logo" width="111" height="59" border="0" /></a></div>
+			<div class="tabsContainer">' .
+			
+			
+				#'<div class="tabClick"><a href="#" class="loggedIn">Logout</a></div>' .
+				#'<div class="tabNoClick">' .
+				#	'<span class="username">Username:<p class="name">Stephen Kramer</p></span>' .
+				#'</div>' .
+				
+				
+					'<tpl if="session &gt; 0">' .
+						'<div class="tabClick"><a href="#" class="loggedIn">Logout</a></div>' .
+						'<div class="tabNoClick"><span class="username">{user}</span></div>' .
+					'</tpl>' .
+					
+					'<tpl if="session &lt; 1">' .
+						'<div class="tabClick"><a href="#" class="loggedOut">Login</a></div>' .
+					'</tpl>' .
+				
+				
+				
+			'</div>
+		</td>
+	</tr>
+	<tr>
+		<td class="bottom">&nbsp;</td>
+	</tr>
+</table>' .
+
+	'</div></tpl>'
+});
+
+
+
+
+
+
+has 'xtemplate_cnf_old' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	return
+	'<tpl for=".">' .
+		'<div id="header" class="dv_selector">' .
+			#'<div class="logoWhiteBox"><img src="' . $self->logo .'" width="166" height="115" /></div>' .
+			'<div class="' . $self->logo_cls . '"><img src="' . $self->logo .'"/></div>' .
+			'<div class="title">' . $self->banner_title . '</div>' .
+					
+				'<div class="tabsContainer">' .
+
+					'<tpl if="session &gt; 0">' .
+						'<div class="tab"><a href="#" class="loggedIn">Logout</a></div>' .
+						'<div class="tab"><a href="#" class="username">{user}</a></div>' .
+					'</tpl>' .
+					
+					'<tpl if="session &lt; 1">' .
+						'<div class="tab"><a href="#" class="loggedOut">Login</a></div>' .
+					'</tpl>' .
+				
+				'</div>' .
+			
+			'<div class="intellitreeLogo">' .
+				'<a href="http://www.intellitree.com/">' .
+					'<img src="/static/rapidapp/images/intellitreeLogo.png" alt="Intellitree Logo" width="111" height="59" border="0" />' .
+				'</a>' .
+			'</div>' .
+			'<div class="links">' .
+				'<ul>' .
+					#'<li><a href="#" class="first">Change Profile</a></li>' .
+					#'<li><a href="#">Change Password</a></li>' .
+				'</ul>' .
+			'</div>' .
+		'</div>' .
+	'</tpl>'
+});
+
+
+
+
+#has 'read_records_coderef' => ( is => 'ro', lazy => 1, default => sub {
+sub read_records_coderef {
+	my $self = shift;
+	return sub {
+	
+		my $d = {
+			session => 0
+		};
+		
+		if (defined $self->c and $self->c->user_exists) {
+			$d->{session} = 1;
+			$d->{user} = $self->c->user->get($self->username_key);
+		}
+
+		return {
+			rows => [ $d ],
+			results => 1
+		};
+	};
+}
+
+
+
+
+
+has 'listeners' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	return {
+		click => RapidApp::JSONFunc->new( raw => 1, func =>
+			'function(dv, index, htmlEl, event){ ' .
+				'dv.getEl().repaint();' .
+				'var Record = dv.getStore().getAt(index);' . #'console.dir(arguments);' .
+				'if (!Ext.isEmpty(event.getTarget("a.loggedIn"))) {' .
+					q~Ext.ux.FetchEval('~ . $self->base_url . q~/auth/logout_window');~ .
+				'}' .
+				'if (!Ext.isEmpty(event.getTarget("a.loggedOut"))) {' .
+					q~Ext.ux.FetchEval('~ . $self->base_url . q~/auth/login_window');~ .
+				'}' .
+			'}'
+		)
+	};
+});
+
+
+
+
+
+
+
+
+
 
 
 

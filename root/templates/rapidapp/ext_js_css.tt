@@ -16,6 +16,8 @@
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/css/tabular-table.css" />
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/css/RapidApp.css" />
 
+<link rel="stylesheet" type="text/css" href="/static/rapidapp/css/header.css" />
+
 <script type="text/javascript" src="/static/ext/adapter/ext/ext-base.js"></script>
 <script type="text/javascript" src="/static/ext/ext-all-debug.js"></script>
 

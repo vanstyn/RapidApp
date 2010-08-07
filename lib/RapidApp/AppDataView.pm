@@ -15,31 +15,6 @@ use String::Random;
 has 'record_pk' => ( is => 'ro', default => 'id' );
 
 
-
-#has 'storeId' => ( is => 'ro', lazy => 1, default => sub {
-#	my $self = shift;
-#	return $self->dv_id . '-store';
-#});
-
-
-
-#has 'datastore_class' => ( is => 'ro', default => 'RapidApp::AppDataView::Store' );
-#
-#has 'modules' => ( is => 'ro', lazy => 1, default => sub {
-#	my $self = shift;
-#	return {
-#		datastore		=> $self->datastore_class,
-#	};
-#});
-
-# stub attribute: should be overridden by subclass
-#has 'read_records_coderef' => ( is => 'ro', default => sub {
-#	sub {{
-#		rows		=> [],
-#		results	=> 0
-#	}};
-#});
-
 has 'item_template' => ( is => 'ro', default => '' );
 
 has 'xtemplate_cnf' => ( is => 'ro', lazy => 1, default => sub {
@@ -64,22 +39,22 @@ has 'dv_itemId' 			=> ( is => 'ro', lazy => 1, default => sub { 'item-' . (shift
 has 'dv_itemSelector'	=> ( is => 'ro', default => 'div.dv_selector' );
 has 'dv_baseconfig'		=> ( is => 'ro', default => sub {{}} );
 
+has 'listeners'			=> ( is => 'ro', default => undef );
+
 has 'DataView'  => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	
 	my $base = $self->dv_baseconfig;
 	
 	my $config = {
-		#store				=> $self->Module('datastore')->JsonStore,
 		store				=> $self->JsonStore,
 		tpl				=> $self->xtemplate,
 		autoHeight		=> \1,
-		#multiSelect	=> \1,
 		singleSelect	=> \1,
 		itemSelector	=> $self->dv_itemSelector,
-		#emptyText		=> 'No images to display',
-		#style				=> 'overflow:auto; background-color: #FFFFFF;'
 	};
+	
+	$config->{listeners} = $self->listeners if (defined $self->listeners);
 	
 	foreach my $k (keys %$base) {
 		$config->{$k} = $base->{$k};
