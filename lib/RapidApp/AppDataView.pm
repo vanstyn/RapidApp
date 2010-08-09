@@ -4,8 +4,9 @@ package RapidApp::AppDataView;
 use strict;
 use Moose;
 #with 'RapidApp::Role::Controller';
-with 'RapidApp::Role::DataStore';
+
 extends 'RapidApp::AppBase';
+with 'RapidApp::Role::DataStore';
 
 use RapidApp::JSONFunc;
 #use RapidApp::AppDataView::Store;
