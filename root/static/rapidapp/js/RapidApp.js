@@ -14,6 +14,10 @@ Ext.ux.EditRecordField = function(config) {
 	var minFieldWidth = 175;
 	var record_val = config.Record.data[config.fieldName];
 	
+	var save_field_name = config.fieldName;
+	if (config.save_field_name) { save_field_name = config.save_field_name; }
+	
+	
 	var win_init_w = 200;
 	var win_init_h = 100;
 	
@@ -65,7 +69,7 @@ Ext.ux.EditRecordField = function(config) {
 					handler	: function() {
 						var oField = Ext.getCmp(field['id']);
 						var cur_val = oField.getValue();
-						config.Record.set(config.fieldName,cur_val);
+						config.Record.set(save_field_name,cur_val);
 						config.Record.store.save();
 						Ext.getCmp(winId).close();
 					}

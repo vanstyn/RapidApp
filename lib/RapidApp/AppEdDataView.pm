@@ -149,12 +149,29 @@ sub defaultCallback {
 			'var fieldtype = fld["fieldType"];' .
 			'if(!fieldtype) { fieldtype = "textfield"; 	}' .
 			
-			'Ext.ux.EditRecordField({' . 
+			'var EdRecFld_cnf = {' . 
 				'Record: rec,' .
 				'fieldName: fld["name"],' .
 				'fieldLabel: label,' .
 				'fieldType: fieldtype' . 
-			'});' .
+			'};' . 
+			
+			'if(fld["field_cnf"]) {' .
+				'EdRecFld_cnf["field_cnf"] = fld["field_cnf"];' .
+			'}' .
+			
+			'if(fld["initValue"]) {' .
+				'EdRecFld_cnf["initValue"] = fld["initValue"];' .
+			'}' .
+			
+			'if(fld["save_field_name"]) {' .
+				'EdRecFld_cnf["save_field_name"] = fld["save_field_name"];' .
+			'}' .
+			
+			#'console.dir(fld);' .
+			#'console.dir(EdRecFld_cnf);' .
+			
+			'Ext.ux.EditRecordField(EdRecFld_cnf);' .
 		'}';
 	}
 	return RapidApp::JSONFunc->new( raw => 1, func => $func );
