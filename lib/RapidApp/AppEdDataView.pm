@@ -121,6 +121,8 @@ sub fieldTplVal {
 	my $field_name = shift;
 	my $field = $self->field_hash->{$field_name};
 	return $field->{TplVal} if (defined $field->{TplVal});
+	
+	return '{[' . $field->{render_fn} . '(values.' . $field->{name} . ')]}' if (defined $field->{render_fn});
 
 	return '{' . $field->{name} . '}';
 }

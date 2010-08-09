@@ -5,6 +5,22 @@ Ext.ns('Ext.log');
 Ext.log = function() {};
 
 
+Ext.ns('Ext.ux.Bool2yesno');
+Ext.ux.Bool2yesno = function(val) {
+	if (val == null || val === "") { return Ext.ux.showNull(val); }
+	if (val > 0) { return 'Yes'; }
+	return 'No';
+}
+
+
+Ext.ns('Ext.ux.showNull');
+Ext.ux.showNull = function(val) {
+	if (val == null) { return '<span style="color:darkgrey;">(not set)</span>'; }
+	if (val === "") { return '<span style="color:darkgrey;">(empty string)</span>'; }
+	return val;
+}
+
+
 Ext.ns('Ext.ux.EditRecordField');
 Ext.ux.EditRecordField = function(config) {
 	

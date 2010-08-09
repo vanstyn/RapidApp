@@ -630,11 +630,23 @@ sub grid_fields {  # <-- column model
 					'</tpl>'
 				];
 			}
-			
+
 		}
+		
+		# -- Custom Render Function, using XTemplate:
+		if (defined $field->{render_fn}) {
+			$field->{xtype} = 'templatecolumn';
+			$field->{tpl} = '{[' . $field->{render_fn} . '(values.' . $field->{name} . ')]}';
+		}
+		# --
 		
 		push @list, $field;
 	}
+	
+	#use Data::Dumper;
+	#print STDERR BOLD . CYAN . Dumper(\@list) . CLEAR;
+	
+	
 	return \@list;
 }
 
