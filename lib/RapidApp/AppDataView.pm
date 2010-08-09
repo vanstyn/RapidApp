@@ -12,6 +12,8 @@ use RapidApp::JSONFunc;
 
 use String::Random;
 
+has 'no_persist'				=> ( is => 'rw',	default => 1 );
+
 has 'record_pk' => ( is => 'ro', default => 'id' );
 
 
@@ -24,7 +26,8 @@ has 'xtemplate_cnf' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	return 
 		'<tpl for=".">' .
-			'<' . $self->dv_itemSelectorTag . ' id="dv-' . $self->instance_id . '-{' . $self->record_pk . '}" class="' . $self->dv_itemSelectorClass . '">' .
+			#'<' . $self->dv_itemSelectorTag . ' id="dv-' . $self->instance_id . '-{' . $self->record_pk . '}" class="' . $self->dv_itemSelectorClass . '">' .
+			'<' . $self->dv_itemSelectorTag . ' class="' . $self->dv_itemSelectorClass . '">' .
 				$self->item_template .
 			'</' . $self->dv_itemSelectorTag . '>' .
 		'</tpl>';
