@@ -49,7 +49,8 @@ has 'dv_baseconfig'		=> ( is => 'ro', default => sub {{}} );
 has 'listeners'			=> ( is => 'ro', default => undef );
 
 
-has 'DataView'  => ( is => 'ro', lazy => 1, default => sub {
+#has 'DataView'  => ( is => 'ro', lazy => 1, default => sub {
+sub DataView {
 	my $self = shift;
 	
 	my $base = $self->dv_baseconfig;
@@ -69,7 +70,11 @@ has 'DataView'  => ( is => 'ro', lazy => 1, default => sub {
 	}
 	
 	# we don't allow id and itemId to be overridden with baseconfig:
-	$config->{id} 		= $self->dv_id;
+	#$config->{id} 		= $self->dv_id;
+	
+	
+	$config->{id} = 'appdv-' . String::Random->new->randregex('[a-z0-9A-Z]{5}');
+	
 	$config->{itemId}	= $self->dv_itemId;
 	
 	my $DataView = RapidApp::JSONFunc->new( 
@@ -78,7 +83,16 @@ has 'DataView'  => ( is => 'ro', lazy => 1, default => sub {
 	);
 	
 	return $DataView;
-});
+}	
+#});
+
+
+sub content {
+	my $self = shift;
+	return $self->DataView;
+}
+
+
 
 
 #### --------------------- ####
