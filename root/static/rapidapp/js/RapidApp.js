@@ -39,7 +39,7 @@ Ext.ux.EditRecordField = function(config) {
 	
 	var field = {
 		xtype			: 'textfield',
-		hideLabel	: true,
+		hideLabel	: true
 	};
 	
 	if (config.fieldType) { field['xtype'] = config.fieldType; }

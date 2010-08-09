@@ -441,6 +441,10 @@ table.GSprop tbody.GSprop td.GSprop, table.GSprop tbody.GSprop {
 padding: 5px!important; background: url("/static/rapidapp/images/td_back.gif") repeat-x!important; text-align: left!important;
 }
 
+th.GSprop, table.GSprop tbody.GSprop {
+padding: 5px!important; background: url("/static/rapidapp/images/td_back.gif") repeat-x!important;
+}
+
 th.GSprop { font-weight: bolder!important; margin: 5px !important; white-space:nowrap !important; padding: 2px!important;}
 th.GSprop.right { text-align: right!important; }
 
@@ -450,7 +454,7 @@ table.GSprop tbody.GSprop tr.GSprop {background: #F3F5F7!important;}
 
 table.GSprop tbody.GSprop tr.GSprop.odd {background: #F0F2F4!important;}
 
-table.GSprop tbody.GSprop  tr.GSprop:hover {background: #EAECEE!important; color: #111!important;}
+table.GSprop tbody.GSprop tr.GSprop:hover {background: #EAECEE!important; color: #111!important;}
 
 table.GSprop tfoot.GSprop td.GSprop, table.GSprop tfoot.GSprop th.GSprop, table.GSprop tfoot.GSprop tr.GSprop {
 text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", "Trebuchet MS", sans-serif!important; text-transform: uppercase!important; background: #fff!important; padding: 10px!important;

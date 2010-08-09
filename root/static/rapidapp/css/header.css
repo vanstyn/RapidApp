@@ -2,7 +2,7 @@ html, body {
 	height:100%;
 }
 #headerContainer {
-	min-width:980px;
+	min-width:780px;
 	min-height:140px;
 	font-family:Tahoma, Geneva, sans-serif;
 	clear: both;
