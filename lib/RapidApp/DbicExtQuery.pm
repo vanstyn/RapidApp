@@ -27,10 +27,11 @@ use Term::ANSIColor qw(:constants);
 
 has 'ResultSource'				=> ( is => 'ro',	required => 1, 	isa => 'DBIx::Class::ResultSource'			);
 has 'ExtNamesToDbFields'      => ( is => 'rw',	required => 0, 	isa => 'HashRef', default => sub{ {} } 	);
+has 'columns'                 => ( is => 'rw',  required => 0,    isa => 'ArrayRef', default => sub{ [] }   );
 
 # be careful! joins can slow queries considerably
 has 'joins'    					=> ( is => 'rw',	required => 0, 	isa => 'ArrayRef', default => sub{ [] } 	);
-#has 'implied_joins'				=> ( is => 'rw', default => 0 );
+has 'implied_joins'				=> ( is => 'rw',  required => 0,    isa => 'Bool',     default => 0 );
 
 
 ###########################################################################################
@@ -97,97 +98,95 @@ sub Attr_spec {
 	
 	# --
 	# Join attr support:
-	$attr->{join} = $self->joins;
-
-=pod
-	if ($self->implied_joins) { # Automatically build/add to join list based on ExtNamesToDbFields (transformed names)
-		my $jhash = {};
-		foreach my $j (@{$attr->{join}}) {
-			$jhash->{$j} = 1;
-		}
-		foreach my $k (keys %{$self->ExtNamesToDbFields}) {
-			my $trans_name = $self->ExtNamesToDbFields->{$k};
-			my ($rel,$field) = split(/\./,$trans_name);
-			next if (defined $jhash->{$rel});
-			next unless (defined $rel and defined $field); # <-- Skip this if the transformed name didn't have a '.' in it
-			#$rel = $self->transformed_name_to_join($trans_name);
-			$jhash->{$rel} = 1;
-			push @{$attr->{join}}, $rel;
-		}
+	if (scalar(@{$self->joins})) {
+		$attr->{join}= $self->joins;
 	}
-=cut
-	
-	#push @{$attr->{join}}, $self->hash_to_join($self->ExtNamesToDbFields);
+	# implied joins with either use all defined values in the name-hash, or just those associated with desired 'columns'
+	elsif ($self->implied_joins) {
+		my $dbfNames= ();
+		if (scalar(@{$self->columns})) {
+			foreach my $colName (@{$self->columns}) {
+				my $dbfName= $self->ExtNamesToDbFields->{$colName};
+				push @$dbfNames, defined $dbfName? $dbfName : $colName;
+			}
+		}
+		else {
+			$dbfNames= values %{$self->ExtnamesToDbFields};
+		}
+		$attr->{join}= $self->_find_implied_joins($dbfNames);
+	}
 	
 	# optional add to prefetch:
 	#$attr->{prefetch} = [];
 	#foreach my $rel (@{$attr->{join}}) {		push @{$attr->{prefetch}}, $rel;	}
-	
-	$attr->{'+select'} = [];
-	$attr->{'+as'} = [];
-	
-	foreach my $k (keys %{$self->ExtNamesToDbFields}) {
-		#my @trans = reverse split(/\./,$self->ExtNamesToDbFields->{$k});
-		#my $t = shift @trans;
-		#$t = shift(@trans) . '.' . $t if (scalar @trans > 0);
+	if (scalar(@{$self->columns})) {
+		$attr->{'select'} = [];
+		$attr->{'as'} = [];
+		foreach my $extName (@{$self->columns}) {
+			my $dbfName= $self->ExtNamesToDbFields->{$extName};
+			defined $dbfName or $dbfName= $extName;
+			
+			push @{$attr->{'select'}}, $dbfName;
+			push @{$attr->{'as'}}, $extName;
+		}
+	}
+	else {
+		$attr->{'+select'} = [];
+		$attr->{'+as'} = [];
 		
-		my $t = $self->ExtNamesToDbFields->{$k};
-		
-		#if ($self->implied_joins) { 
-		#	my $j = $self->hash_to_join($t) or next;
-		#	push @{$attr->{join}}, $j;
-		#}
-		push @{$attr->{'+select'}}, $t;
-		push @{$attr->{'+as'}}, $k;
+		foreach my $k (keys %{$self->ExtNamesToDbFields}) {
+			#my @trans = reverse split(/\./,$self->ExtNamesToDbFields->{$k});
+			#my $t = shift @trans;
+			#$t = shift(@trans) . '.' . $t if (scalar @trans > 0);
+			
+			my $t = $self->ExtNamesToDbFields->{$k};
+			
+			#if ($self->implied_joins) { 
+			#	my $j = $self->hash_to_join($t) or next;
+			#	push @{$attr->{join}}, $j;
+			#}
+			push @{$attr->{'+select'}}, $t;
+			push @{$attr->{'+as'}}, $k;
+		}
 	}
 	# --
 
 	return $attr;
 }
 
-
-
-
-
-#sub hash_to_join {
-#	my $self = shift;
-#	my $join = shift;
-#
-#	my ($rel,$field);
-#	if (ref($join)) {
-#		foreach my $key (keys %$join) {
-#			$rel = { $key => $self->hash_to_join($join->{$key}) };
-#			last;
-#		}
-#	}
-#	else {
-#
-#		($rel,$field) = split(/\./,$join);
-#		#return undef unless (defined $rel and defined $field); 
-#		#next if (defined $jhash->{$rel});
-#		#next unless (defined $rel and defined $field); # <-- Skip this if the transformed name didn't have a '.' in it
-#		#$rel = $self->transformed_name_to_join($trans_name);
-#		#$jhash->{$rel} = 1;
-#	}
-#	
-#	return $rel;
-#}
-
-
-
-
-
-sub transformed_name_to_join {
-	my $self = shift;
-	my $trans_name = shift;
-	my @arr = split(/\./,$trans_name);
-	my $rel = shift @arr;
-	return $rel unless (scalar @arr > 1);
-	return { $rel => $self->transformed_name_to_join(join('.',@arr)) };
+sub _find_implied_joins {
+	my $self= shift;
+	my $dbfNames= shift;
+	
+	my $joinTree= {};
+	foreach my $dbfName (@$dbfNames) {
+		my @parts = split(/\./, $dbfName);
+		my $curHash= $joinTree;
+		for (my $i=0; $i<$#parts; $i++) { # skip the last part
+			defined $curHash->{$parts[$i]} or $curHash->{$parts[$i]}= {};
+			$curHash= $curHash->{$parts[$i]};
+		}
+	}
+	
+	return $self->_build_join_for_hash($joinTree);
 }
 
-
-
+sub _build_join_for_hash {
+	my $self= shift;
+	my $joinTree= shift;
+	my @result= ();
+	while (my ($reln,$subjoin) = each %$joinTree) {
+		my $subCnt= scalar(keys(%$subjoin));
+		if ($subCnt == 0) {
+			push @result, $reln;
+		}
+		else {
+			push @result, { $reln => $self->_build_join_for_hash($subjoin) };
+		}
+	}
+	return $result[0] if scalar(@result) == 1;
+	return \@result;
+}
 
 sub Search_spec {
 	my $self = shift;
