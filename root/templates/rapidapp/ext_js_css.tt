@@ -20,7 +20,6 @@
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/css/title.css" />
 
 <script type="text/javascript" src="/static/ext/adapter/ext/ext-base.js"></script>
-<!-- [% debug %] [% config_url %] [% title %] -->
 [% IF debug %]
   <script type="text/javascript" src="/static/ext/ext-all-debug.js"></script>
   <script type="text/javascript" src="/static/ext/src/debug.js"></script>
