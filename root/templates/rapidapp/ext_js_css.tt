@@ -20,9 +20,13 @@
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/css/title.css" />
 
 <script type="text/javascript" src="/static/ext/adapter/ext/ext-base.js"></script>
-<script type="text/javascript" src="/static/ext/ext-all-debug.js"></script>
-
-<script type="text/javascript" src="/static/ext/src/debug.js"></script>
+<!-- [% debug %] [% config_url %] [% title %] -->
+[% IF debug %]
+  <script type="text/javascript" src="/static/ext/ext-all-debug.js"></script>
+  <script type="text/javascript" src="/static/ext/src/debug.js"></script>
+[% ELSE %]
+  <script type="text/javascript" src="/static/ext/ext-all.js"></script>
+[% END %]
 
 <script type="text/javascript" src="/static/rapidapp/js/RowExpanderEX.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/Ext.ux.grid.RowActions.js"></script>

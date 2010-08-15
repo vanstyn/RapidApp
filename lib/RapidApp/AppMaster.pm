@@ -36,6 +36,7 @@ sub index :Path {
 	 my ( $c, $opt, @args ) = @_;
 
 	$c->stash->{template} = 'templates/rapidapp/ext_viewport.tt';
+	$c->stash->{debug} = 1 if defined $ENV{'DEBUG'};
 	$c->stash->{config_url} = $c->namespace . '/json_config';
 
 	$c->stash->{title} = $self->app_title;

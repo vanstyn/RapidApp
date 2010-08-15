@@ -38,6 +38,7 @@ sub viewpanel {
 	my $self = shift;
 	
 	$self->c->stash->{template} = 'templates/rapidapp/ext_viewport.tt';
+	$self->c->stash->{debug} = 1 if defined $ENV{'DEBUG'};
 	$self->c->stash->{config_url} = $self->base_url . '/' . $self->default_module;
 
 	$self->c->stash->{title} = $self->app_title;
