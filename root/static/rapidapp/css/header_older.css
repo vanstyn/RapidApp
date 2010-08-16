@@ -1,0 +1,132 @@
+#header {
+	clear: both;
+	width: 100%;
+	background-color:#66883B;
+	background-image: url(/static/rapidapp/images/bgHeader.png);
+	background-repeat: repeat-x;
+	background-position: center center;
+	font-family:Tahoma, Geneva, sans-serif;
+	white-space:nowrap;
+}
+#header .top {
+	height:28px;
+}
+#header .middle {
+	height:59px;
+}
+#header .bottom {
+	height:28px;
+}
+#header a {
+	text-decoration:none;
+}
+#header a:hover {
+	text-decoration:underline;
+}
+#header .links {
+	float:right;
+	font-size:11px;
+	margin:7px 30px 8px 7px;
+}
+#header .links ul, #header .links li {
+	list-style: none;
+	margin: 0;
+	padding: 3px 0px 0px 0px;
+	display: inline;
+}
+#header .links a {
+	margin: 0;
+	padding: 0px 5px 0px 10px;
+	color:#FFF;
+	border-left: 1px solid #FFF;
+}
+#header .links ul a.first {
+	border-left: none;
+}
+#header .logo {
+	padding:10px 10px 10px 30px;
+}
+#header .logo .blackBox {
+	background-color:#000;
+	padding:10px;
+	-moz-border-radius:8px 8px 8px 8px;
+	-webkit-border-radius: 8px;
+	background-image: url(/static/rapidapp/images/black.png);
+	background-repeat: repeat-x;
+	background-position: top;
+}
+#header .logo .whiteBox {
+	background-color:#e1e1e1;
+	padding:10px;
+	-moz-border-radius:8px;
+	-webkit-border-radius: 8px;
+	background-image: url(/static/rapidapp/images/white.png);
+	background-repeat: repeat-x;
+	background-position: top;
+}
+#header .title {
+	font-size: 22px;
+	color: #333;
+	float:left;
+	margin-left: 15px;
+	font-weight:bold;
+	line-height:59px;
+	text-shadow:0 1px 0 #CCC;
+}
+#header .intellitreeLogo {
+	float: right;
+	margin-right: 30px;
+	margin-left:20px;
+	height:59px;
+}
+#header .tabsContainer {
+	height: 59px;
+	font-size:12px;
+	background-image: url(/static/rapidapp/images/tabsBorder.png);
+	background-repeat: repeat-y;
+	background-position: right;
+	float:right;
+}
+#header .tabsContainer p {
+	margin:0;
+	font-weight:bold;
+	color:#000;
+}
+#header .tabsContainer .tabClick, #header .tabsContainer .tabNoClick {
+	height:59px;
+	background-image: url(/static/rapidapp/images/tabsBorder.png);
+	background-repeat: repeat-y;
+	background-position: left;
+	float:right;
+}
+#header .tabsContainer .tabClick:hover {
+	background-image: url(/static/rapidapp/images/bgTabsHover.png);
+	background-repeat: no-repeat;
+	background-position: left top;
+}
+#header .tabsContainer .tabClick a, #header .tabsContainer .tabNoClick span {
+	padding:0px 15px 0px 40px;
+	color: #333;
+	display: table-cell;
+	height:59px;
+	vertical-align:middle;
+}
+#header .tabsContainer .tabClick a:hover {
+	text-decoration:none;
+	color:#FFF;
+}
+#header .tabsContainer .tabClick .loggedIn {
+	background-image: url(/static/rapidapp/images/iconLoggedIn.png);
+	background-repeat: no-repeat;
+	background-position: 14px center;
+}
+#header .tabsContainer .tabClick .loggedOut {
+	background-image: url(/static/rapidapp/images/iconLoggedOut.png);
+	background-repeat: no-repeat;
+	background-position: 14px center;
+}
+#header .tabsContainer .tabNoClick .username {
+	background-image: url(/static/rapidapp/images/iconUser.png);
+	background-repeat: no-repeat;
+	background-position: 14px center;
+}
