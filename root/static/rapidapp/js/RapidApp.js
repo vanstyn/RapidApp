@@ -160,7 +160,7 @@ Ext.ux.EditRecordFieldSet = function(Record,fieldset) {
 		width: win_init_w,
 		height: win_init_h,
 		layout: 'fit',
-		title: 'FIELDSET ' + fieldset.fieldLabel + ':',
+		//title: 'FIELDSET ' + fieldset.fieldLabel + ':',
 		modal: true,
 		items: {
 			xtype: 'form',
