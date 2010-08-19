@@ -28,17 +28,12 @@ Ext.ux.EditRecordField = function(config) {
 	var winId = 'win-' + rand;
 	var formId = 'editrec-' + rand;
 	var minFieldWidth = 175;
-	var record_val = config.Record.data[config.fieldName];
-	
-	var save_field_name = config.fieldName;
-	if (config.save_field_name) { save_field_name = config.save_field_name; }
-	
 	
 	var win_init_w = 200;
 	var win_init_h = 100;
 	
 	var field = {
-		xtype			: 'textfield',
+		xtype		: 'textfield',
 		hideLabel	: true
 	};
 	
@@ -46,11 +41,20 @@ Ext.ux.EditRecordField = function(config) {
 	
 	if (config.field_cnf) { //<-- field_cnf override 
 		field = config.field_cnf;
+		
+		// -----------------
+		if (field['xtype'] == 'fieldset') { return Ext.ux.EditRecordFieldSet(config.Record,field); }
+		// -----------------
+		
 		if (field['width']) {
 			win_init_w = field['width'] + 50;
 			delete field['width'];
 		}
 	}
+	
+	field['value'] = config.Record.data[config.fieldName];
+	field['save_field_name'] = config.fieldName;
+	if (config.save_field_name) { field['save_field_name'] = config.save_field_name; }
 	
 	if (config.fieldType && !field['xtype']) { field['xtype'] = config.fieldType; }
 	if (config.fieldName && !field['name']) { field['name'] = config.fieldName; }
@@ -58,8 +62,8 @@ Ext.ux.EditRecordField = function(config) {
 	
 	if (!field['id']) { field['id'] = 'field-' + rand; }
 	
-	field['value'] = record_val;
-	if (config.initValue) { field['value'] = config.initValue; } //<-- this is needed for certain combo fields
+	//field['value'] = record_val;
+	//if (config.initValue) { field['value'] = config.initValue; } //<-- this is needed for certain combo fields
 	
 	field['anchor'] = '100%';
 	if (field['xtype'] == 'textarea') {
@@ -85,7 +89,7 @@ Ext.ux.EditRecordField = function(config) {
 					handler	: function() {
 						var oField = Ext.getCmp(field['id']);
 						var cur_val = oField.getValue();
-						config.Record.set(save_field_name,cur_val);
+						config.Record.set(field['save_field_name'],cur_val);
 						config.Record.store.save();
 						Ext.getCmp(winId).close();
 					}
@@ -129,6 +133,77 @@ Ext.ux.EditRecordField = function(config) {
 	});
 	win.show();
 }
+
+
+
+Ext.ns('Ext.ux.EditRecordFieldSet');
+Ext.ux.EditRecordFieldSet = function(Record,fieldset) {
+
+	var rand = Math.floor(Math.random()*100000);
+	var winId = 'win-' + rand;
+	var formId = 'editrec-' + rand;
+	var minFieldWidth = 175;
+	
+	var win_init_w = 550;
+	var win_init_h = 200;
+	
+	for (i in fieldset.items) {
+		fieldset.items[i]['value'] = Record.data[fieldset.items[i]['name']];
+		if (!fieldset.items[i]['save_field_name']) { fieldset.items[i]['save_field_name'] = fieldset.items[i]['name']; }
+		if (!fieldset.items[i]['id']) { fieldset.items[i]['id'] = 'field-' + i + '-' + rand; }
+	}
+	
+	fieldset['anchor'] = '100% 100%';
+	
+	var win = new Ext.Window({
+		id: winId,
+		width: win_init_w,
+		height: win_init_h,
+		layout: 'fit',
+		title: 'FIELDSET ' + fieldset.fieldLabel + ':',
+		modal: true,
+		items: {
+			xtype: 'form',
+			anchor : fieldset['anchor'],
+			id: formId,
+			frame: true,
+			items: fieldset,
+			buttons: [
+				{
+					text	: 'Save',
+					handler	: function() {
+					
+						for (i in fieldset.items) {
+					
+							var oField = Ext.getCmp(fieldset.items[i]['id']);
+							if (oField) {
+								try {
+									var cur_val = oField.getValue();
+									if (cur_val != fieldset.items[i]['value']) {
+										Record.set(fieldset.items[i]['save_field_name'],cur_val);
+									}
+								} catch (err) {}
+							}
+						
+						}
+						
+						Record.store.save();
+						Ext.getCmp(winId).close();
+					}
+				},
+				{
+					text		: 'Cancel',
+					handler	: function() {
+						Ext.getCmp(winId).close();
+					}
+				}
+			]
+		}
+	});
+	win.show();
+}
+
+
 
 
 

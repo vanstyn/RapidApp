@@ -162,9 +162,9 @@ sub defaultCallback {
 				'EdRecFld_cnf["field_cnf"] = fld["field_cnf"];' .
 			'}' .
 			
-			'if(fld["initValue"]) {' .
-				'EdRecFld_cnf["initValue"] = fld["initValue"];' .
-			'}' .
+			#'if(fld["initValue"]) {' .
+			#	'EdRecFld_cnf["initValue"] = fld["initValue"];' .
+			#'}' .
 			
 			'if(fld["save_field_name"]) {' .
 				'EdRecFld_cnf["save_field_name"] = fld["save_field_name"];' .

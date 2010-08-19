@@ -14,7 +14,7 @@ has 'valueField' 			=> ( is => 'ro', required => 1, isa => 'Str' );
 has 'fieldLabel' 			=> ( is => 'ro', lazy => 1, default => sub { (shift)->name } );
 has 'combo_id' 			=> ( is => 'ro', lazy => 1, default => sub { 'appcombo-' . String::Random->new->randregex('[a-z0-9A-Z]{5}') } );
 has 'combo_baseconfig' 	=> ( is => 'ro', default => sub {{}} );
-
+has 'listeners' 			=> ( is => 'ro', default => sub {{}} );
 
 sub content {
 	my $self = shift;
@@ -33,6 +33,7 @@ sub content {
 		valueField 		=> $self->valueField,
 		mode 				=> 'remote',
 		typeAhead 		=> \0,
+		listeners		=> $self->listeners,
 	};
 	
 	foreach my $k (keys %$base) {
