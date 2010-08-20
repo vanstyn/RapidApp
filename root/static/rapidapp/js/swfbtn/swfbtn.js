@@ -273,10 +273,9 @@
 			       		serverMessages += "<br><br>";
 				    	if(swffilessent == filestore.getCount()) {
 				    		
-                            // added by HV because this code sucks:
-                            if (cfg.completehandler) { return cfg.completehandler(arguments); }
-                            //
                             
+                            
+                            /*
                             Ext.MessageBox.show({
 				    			title: 'Upload Complete',
 				    			msg: serverMessages,
@@ -286,6 +285,8 @@
 				    				serverMessages = "";
 				    			}
 				    		});
+                            */
+                            
 			    			numfiles = 0;
 			    			totalbytes = 0;
 			    			fileprogressbar.hide();
@@ -300,6 +301,12 @@
 					    		eval(cfg.store+'.reload();');
 					    	}
 					    	if(cfg.hideoncomplete) gridwin.hide();
+                            
+                            // added by HV because this code sucks:
+                            filestore.removeAll();
+                            serverMessages = "";
+                            if (cfg.completehandler) { return cfg.completehandler(arguments); }
+                            //
 				    	}
 				    	cancelupload.disable();
 				    }
@@ -534,7 +541,11 @@
 		});
 
 		var gridwin = new Ext.Window({
+            
+            // Added by HV because this code sucks
             id: cfg.id + '-win',
+            //
+            
 			title: 'File Upload Queue',
 			closeAction: 'hide',
 			autoScroll: true,
