@@ -310,7 +310,7 @@ sub save_search_btn {
 		func => 'new Ext.Button', 
 		parm => {
 			text 		=> 'Save Search',
-			iconCls	=> 'icon-save',
+			iconCls	=> 'icon-save-as',
 			#id 		=> ,
 			#scale		=> $self->button_scale,
 			handler 	=> RapidApp::JSONFunc->new( 
