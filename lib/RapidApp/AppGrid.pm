@@ -317,6 +317,8 @@ sub save_search_btn {
 				raw => 1, 
 				func => 'function(btn) { ' . 
 					'Ext.MessageBox.prompt("Save Search","Name of Search",function(sel,val){' .
+						'if(sel != "ok") return; ' .
+						'if(! val || val == "") return; ' .
 						'var grid = btn.ownerCt.ownerCt;'.
 						'var state = grid.getState();' .
 						'var save_state = {' .
@@ -350,7 +352,7 @@ sub delete_search_btn {
 				func => 'function(btn) { ' . 
 				
 					'Ext.Msg.show({ title: "Delete Search", msg: "Really Delete Search?", buttons: Ext.Msg.YESNO, fn: function(sel){' .
-						'if(! sel == "yes") return; ' .
+						'if(sel != "yes") return; ' .
 						'var grid = btn.ownerCt.ownerCt;'.
 						'var url = "' . $self->suburl('/delete_search') . '";' .
 						'var params = {' . 

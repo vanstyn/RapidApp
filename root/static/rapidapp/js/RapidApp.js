@@ -855,6 +855,7 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 		
 		var config = {
 			stateful: false,
+			enableColumnMove: true,
 			store: store,
 			columns: this.column_model,
 			selModel: sm,
