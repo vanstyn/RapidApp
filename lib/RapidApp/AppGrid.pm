@@ -430,6 +430,7 @@ sub tbar_items {
 	
 	push @{$arrayref}, '<img src="' . $self->title_icon_href . '" />' 		if (defined $self->title_icon_href);
 	push @{$arrayref}, '<b>' . $self->title . '</b>'								if (defined $self->title);
+	push @{$arrayref}, '-' if ($self->delete_search_coderef or $self->save_search_coderef);
 	push @{$arrayref}, $self->delete_search_btn if ($self->delete_search_coderef and $self->c->req->params->{search_id});
 	push @{$arrayref}, $self->save_search_btn if ($self->save_search_coderef);
 	push @{$arrayref}, '->';
