@@ -817,7 +817,7 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 		
 
 	 // ------ Grid Filter --------- //
-		if(this.gridfilter) {
+		//if(this.gridfilter) {
 		
 			var grid_filter_cnf = {
 				encode: true, // json encode the filter query
@@ -841,7 +841,7 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 		
 			if(!this.plugins){ this.plugins = []; }
 			this.plugins.push(GridFilters);    
-		}
+		//}
 	// ---------------------------- //
 
 		var sm = new Ext.grid.RowSelectionModel();
@@ -991,6 +991,14 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 		
 		//myMask.hide(); 
 		
+	},
+	getFilters: function(grid) {
+		for (i in grid.plugins) {
+			if (grid.plugins[i]['filters']) {
+				return grid.plugins[i];
+			}
+		}
+		return null;
 	}
 });
 Ext.reg('dyngrid',Ext.ux.DynGridPanel);

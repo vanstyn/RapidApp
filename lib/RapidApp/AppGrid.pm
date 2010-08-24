@@ -316,13 +316,11 @@ sub save_search_btn {
 			handler 	=> RapidApp::JSONFunc->new( 
 				raw => 1, 
 				func => 'function(btn) { ' . 
-				
 					'Ext.MessageBox.prompt("Save Search","Name of Search",function(sel,val){' .
 						'var grid = btn.ownerCt.ownerCt;'.
 						'var state = grid.getState();' .
 						'var save_state = {' .
-							#'filters: grid.filters.getFilterData()' .'
-							'filters: grid.filters.getState()' .
+							'filters: grid.getFilters(grid).getState()' .
 						'};' .
 						'for (i in state) save_state[i] = state[i];' .
 						'var url = "' . $self->suburl('/save_search') . '";' .
@@ -331,9 +329,6 @@ sub save_search_btn {
 						'};' .
 						'params["grid_state"] = Ext.util.JSON.encode(save_state);' .
 						'Ext.ux.FetchEval(url,params);' .
-						#'console.dir(save_state);' .
-						#'console.dir(grid.initialConfig);' . 
-						#'console.dir(grid.filters.getState())' .
 					'},btn);' .
 				'}' 
 			)
