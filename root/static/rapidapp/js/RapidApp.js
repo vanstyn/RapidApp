@@ -20,6 +20,12 @@ Ext.ux.showNull = function(val) {
 	return val;
 }
 
+Ext.ns('Ext.ux.showNullusMoney');
+Ext.ux.showNullusMoney = function(val) {
+	if (val == null || val === "") { return Ext.ux.showNull(val); }
+	return Ext.util.Format.usMoney(val);
+}
+
 
 Ext.ns('Ext.ux.EditRecordField');
 Ext.ux.EditRecordField = function(config) {
@@ -47,7 +53,7 @@ Ext.ux.EditRecordField = function(config) {
 		// -----------------
 		
 		if (field['width']) {
-			win_init_w = field['width'] + 50;
+			win_init_w = field['width'] + 100;
 			delete field['width'];
 		}
 	}
