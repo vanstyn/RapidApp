@@ -362,6 +362,10 @@ sub delete_search_btn {
 							'search_id: "' . $self->c->req->params->{search_id} . '"' .
 						'};' .
 						'Ext.ux.FetchEval(url,params);' .
+						'var TabP = grid.findParentByType("tabpanel");' .
+						'var activePanel = TabP.getActiveTab();' .
+						'TabP.remove(activePanel);' .
+						#'grid.ownerCt.close();' .
 						#'console.dir(save_state);' .
 						#'console.dir(grid.initialConfig);' . 
 						#'console.dir(grid.filters.getState())' .
