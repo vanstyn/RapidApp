@@ -825,9 +825,22 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 			}
 			
 			if (this.gridfilter_remote) { grid_filter_cnf['local'] = false; }
+			
+			
+			if(this.init_state) { 
+				grid_filter_cnf['init_state'] = this.init_state;
+				//{
+				//	filters: this.init_filters 
+				//};
+				
+				
+				//console.dir(this.init_state);
+			}
+			
+			var GridFilters = new Ext.ux.grid.GridFilters(grid_filter_cnf);
 		
 			if(!this.plugins){ this.plugins = []; }
-			this.plugins.push(new Ext.ux.grid.GridFilters(grid_filter_cnf));    
+			this.plugins.push(GridFilters);    
 		}
 	// ---------------------------- //
 
@@ -841,6 +854,7 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 		// ------------------------------- //
 		
 		var config = {
+			stateful: false,
 			store: store,
 			columns: this.column_model,
 			selModel: sm,
@@ -980,6 +994,70 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 	}
 });
 Ext.reg('dyngrid',Ext.ux.DynGridPanel);
+
+
+
+//var orig_gf_init = Ext.ux.grid.GridFilters.prototype.init;
+
+Ext.override(Ext.ux.grid.GridFilters, {
+
+	initOrig: Ext.ux.grid.GridFilters.prototype.init,
+
+	init: function(grid) {
+		this.initOrig.apply(this, arguments);
+		
+		if (this.init_state) { 
+			
+			for (i in this.init_state.filters) {
+				for (p in this.init_state.filters[i]) {
+					var orig = this.init_state.filters[i][p];
+					if (p == 'before' || p == 'after' || p == 'on') {
+						this.init_state.filters[i][p] = new Date(orig);
+					}
+				}
+			}
+			
+			this.applyState(grid,this.init_state);
+			grid.applyState(this.init_state);
+			//console.dir(this.init_state);
+		}
+	},
+
+	getState: function () {
+		var filters = {};
+		this.filters.each(function (filter) {
+			if (filter.active) {
+				filters[filter.dataIndex] = filter.getValue();
+			}
+		});
+		return filters;
+	}
+});
+
+
+
+
+/*
+Ext.override(Ext.ux.GridFilters, {
+	initComponent: function() {
+
+		var config = {
+			getState: function () {
+				var filters = {};
+				this.filters.each(function (filter) {
+					if (filter.active) {
+						filters[filter.dataIndex] = filter.getValue();
+					}
+				});
+				return filters;
+			}
+		};
+		Ext.apply(this, Ext.apply(this.initialConfig, config));
+		Ext.ux.GridFilters.superclass.initComponent.apply(this, arguments);
+	}
+});
+*/
+
 
 
 

@@ -166,6 +166,21 @@ has 'edit_custom_formfields_coderef' 	=> ( is => 'ro',	default => undef	);
 # Optional coderef called to determine is the user is allowed to delete a given item
 has 'delete_allowed_coderef' 		=> ( is => 'ro',	default => undef	);
 
+
+# -- save_search_coderef
+# Optional coderef to allowing saving the "state" (grid filters, columns, sort)
+has 'save_search_coderef'	=> ( is => 'ro',	default => undef	);
+
+# -- load_search_coderef
+# Optional coderef to load a previously saved "state" (grid filters, columns, sort)
+has 'load_search_coderef'	=> ( is => 'ro',	default => undef	);
+
+# -- delete_search_coderef
+# Optional coderef to delete a previously saved search by search_id
+has 'delete_search_coderef'	=> ( is => 'ro',	default => undef	);
+
+has 'loaded_grid_state' => ( is => 'rw', default => undef );
+
 ####
 ####
 ####
@@ -262,9 +277,99 @@ has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 		}
 	}
 	
+	$actions->{save_search} = sub { $self->action_save_search; } if (defined $self->save_search_coderef);
+	$actions->{delete_search} = sub { $self->action_delete_search; } if (defined $self->delete_search_coderef);
+	
 	return $actions;
 });
 
+
+sub action_save_search {
+	my $self = shift;
+	
+	my $params = $self->c->req->params;
+	my $grid_state = {};
+	$grid_state = $self->json->decode($params->{grid_state});
+	my $search_name = $params->{search_name};
+	return $self->save_search_coderef->($search_name,$grid_state);
+}
+
+
+sub action_delete_search {
+	my $self = shift;
+	
+	my $params = $self->c->req->params;
+	return $self->delete_search_coderef->($params->{search_id});
+}
+
+
+
+sub save_search_btn {
+	my $self = shift;
+	return RapidApp::JSONFunc->new(
+		func => 'new Ext.Button', 
+		parm => {
+			text 		=> 'Save Search',
+			iconCls	=> 'icon-save',
+			#id 		=> ,
+			#scale		=> $self->button_scale,
+			handler 	=> RapidApp::JSONFunc->new( 
+				raw => 1, 
+				func => 'function(btn) { ' . 
+				
+					'Ext.MessageBox.prompt("Save Search","Name of Search",function(sel,val){' .
+						'var grid = btn.ownerCt.ownerCt;'.
+						'var state = grid.getState();' .
+						'var save_state = {' .
+							#'filters: grid.filters.getFilterData()' .'
+							'filters: grid.filters.getState()' .
+						'};' .
+						'for (i in state) save_state[i] = state[i];' .
+						'var url = "' . $self->suburl('/save_search') . '";' .
+						'var params = {' . 
+							'search_name: val' .
+						'};' .
+						'params["grid_state"] = Ext.util.JSON.encode(save_state);' .
+						'Ext.ux.FetchEval(url,params);' .
+						#'console.dir(save_state);' .
+						#'console.dir(grid.initialConfig);' . 
+						#'console.dir(grid.filters.getState())' .
+					'},btn);' .
+				'}' 
+			)
+	});
+}
+
+
+sub delete_search_btn {
+	my $self = shift;
+	return RapidApp::JSONFunc->new(
+		func => 'new Ext.Button', 
+		parm => {
+			text 		=> 'Delete Search',
+			iconCls	=> 'icon-delete',
+			#id 		=> ,
+			#scale		=> $self->button_scale,
+			handler 	=> RapidApp::JSONFunc->new( 
+				raw => 1, 
+				func => 'function(btn) { ' . 
+				
+					'Ext.Msg.show({ title: "Delete Search", msg: "Really Delete Search?", buttons: Ext.Msg.YESNO, fn: function(sel){' .
+						'if(! sel == "yes") return; ' .
+						'var grid = btn.ownerCt.ownerCt;'.
+						'var url = "' . $self->suburl('/delete_search') . '";' .
+						'var params = {' . 
+							'search_id: "' . $self->c->req->params->{search_id} . '"' .
+						'};' .
+						'Ext.ux.FetchEval(url,params);' .
+						#'console.dir(save_state);' .
+						#'console.dir(grid.initialConfig);' . 
+						#'console.dir(grid.filters.getState())' .
+					'},scope: btn});' .
+				'}' 
+			)
+	});
+}
 
 
 
@@ -279,6 +384,10 @@ sub _build_edit_tab_title_code {
 
 has 'gid' => ( is => 'ro',	lazy => 1,	isa => 'Str', default => sub {
 	my $self = shift;
+	
+	return $self->gridid . '-' . time;
+	
+	
 	my $id = $self->gridid . '_' . $self->base_url;
 	$id .= '-' . $self->base_query_string if (defined $self->base_query_string);
 	
@@ -320,6 +429,8 @@ sub tbar_items {
 	
 	push @{$arrayref}, '<img src="' . $self->title_icon_href . '" />' 		if (defined $self->title_icon_href);
 	push @{$arrayref}, '<b>' . $self->title . '</b>'								if (defined $self->title);
+	push @{$arrayref}, $self->delete_search_btn if ($self->delete_search_coderef and $self->c->req->params->{search_id});
+	push @{$arrayref}, $self->save_search_btn if ($self->save_search_coderef);
 	push @{$arrayref}, '->';
 	#push @{$arrayref}, $self->refresh_button;
 	push @{$arrayref}, $self->add_button if (defined $self->add_item_coderef);
@@ -329,14 +440,35 @@ sub tbar_items {
 
 
 
+sub extract_filters {
+	my $self = shift;
+	my $field_list = shift;
+	
+	my $filters = [];
+	foreach my $field (@$field_list) {
+		next unless ($field->{filter});
+		push @$filters, {
+			dataIndex	=> $field->{id},
+			%{$field->{filter}}
+		};
+	}
+	return $filters;
+}
+
 
 sub DynGrid {
 
 	my $self = shift;
 	
+	if (defined $self->load_search_coderef and $self->c->req->params->{search_id}) {
+		$self->loaded_grid_state($self->load_search_coderef->($self->c->req->params->{search_id}));
+	}
+	
+	my $field_list = $self->grid_fields;
+	
 	my $config = {
 		#data_url					=> $self->suburl('/data'),
-		field_list				=> $self->grid_fields,
+		field_list				=> $field_list,
 		layout					=> 'fit',
 		#reload_interval		=> 10000,
 		stripeRows				=> 1,
@@ -374,6 +506,10 @@ sub DynGrid {
 		autoDestroy		=> \1,
 		remoteSort		=> $self->remoteSort,
 	};
+	
+	$config->{init_state} = $self->loaded_grid_state if ($self->loaded_grid_state and $self->c->req->params->{search_id});
+
+	#$config->{init_filters} = $self->extract_filters($field_list);
 
 	my $DynGrid = RapidApp::ExtJS::DynGrid->new($config);
 	return $DynGrid;
@@ -602,6 +738,13 @@ sub grid_fields {  # <-- column model
 	
 	my @list = ();
 	
+	my $loaded_filters = {};
+	$loaded_filters = $self->loaded_grid_state->{filters} if (
+		defined $self->loaded_grid_state and
+		defined $self->loaded_grid_state->{filters}
+	);
+		
+
 	foreach my $field (@{$self->fields}) {
 		next if (defined $field->{viewable} and $field->{viewable} == 0);
 		
@@ -630,7 +773,11 @@ sub grid_fields {  # <-- column model
 					'</tpl>'
 				];
 			}
-
+			
+			
+			
+			
+			
 		}
 		
 		# -- Custom Render Function, using XTemplate:
