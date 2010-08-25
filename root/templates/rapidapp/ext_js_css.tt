@@ -18,6 +18,9 @@
 -->
 
 
+<link rel="stylesheet" type="text/css" href="/static/rapidapp/js/wiz/resources/css/ext-ux-wiz.css" />
+
+
 <link rel="stylesheet" type="text/css" href="/static/ext/examples/ux/fileuploadfield/css/fileuploadfield.css" />
 
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/css/tabular-table.css" />
@@ -68,5 +71,9 @@
 <script type="text/javascript" src="/static/rapidapp/js/swfupload/SwfUploadPanel.js"></script>
 -->
 
+<script type="text/javascript" src="/static/rapidapp/js/wiz/CardLayout.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/wiz/Wizard.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/wiz/Header.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/wiz/Card.js"></script>
 
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp.js"></script>
