@@ -5,6 +5,30 @@ Ext.ns('Ext.log');
 Ext.log = function() {};
 
 
+
+Ext.ns('Ext.ux.iconFromFileName');
+Ext.ux.iconFromFileName = function(name) {
+
+    var parts = name.split('.');
+    var ext = parts.pop().toLowerCase();
+    
+    var icon_file = 'document.png';
+    
+    if(ext == 'pdf') { icon_file = 'page_white_acrobat.png'; }
+    if(ext == 'zip') { icon_file = 'page_white_compressed.png'; }
+    if(ext == 'xls') { icon_file = 'page_white_excel.png'; }
+    if(ext == 'xlsx') { icon_file = 'page_excel.png'; }
+    if(ext == 'ppt') { icon_file = 'page_white_powerpoint.png'; }
+    if(ext == 'txt') { icon_file = 'page_white_text.png'; }
+    if(ext == 'doc') { icon_file = 'page_white_word.png'; }
+    if(ext == 'docx') { icon_file = 'page_word.png'; }
+    if(ext == 'iso') { icon_file = 'page_white_cd.png'; }
+    
+    return icon_file;
+}
+
+
+
 Ext.ns('Ext.ux.Bool2yesno');
 Ext.ux.Bool2yesno = function(val) {
 	if (val == null || val === "") { return Ext.ux.showNull(val); }
