@@ -5,6 +5,8 @@ use warnings;
 use Moose;
 extends 'RapidApp::AppDataView';
 
+use Term::ANSIColor qw(:constants);
+
 use RapidApp::AppAuth;
 
 has 'modules' => (is => 'ro', default => sub {
@@ -58,10 +60,10 @@ has 'modules_params' => (is => 'ro', lazy => 1, default => sub {
 	}
 });
 
-has 'content' => ( is => 'ro', lazy => 1, default => sub {
-	my $self = shift;
-	return $self->DataView;
-});
+#has 'content' => ( is => 'ro', lazy => 1, default => sub {
+#	my $self = shift;
+#	return $self->DataView;
+#});
 
 
 has 'content_old' => ( is => 'ro', lazy => 1, default => sub {
@@ -215,10 +217,167 @@ has 'dv_baseconfig' => ( is => 'ro', lazy => 1, default => sub {
 });
 
 
+#has 'IntelliTree_logo' => ( is => 'ro', default =>
+sub IntelliTree_logo {
+	my $self = shift;
+
+	return 
+		'<div class="intellitreeLogo">' . 
+			'<a href="http://www.intellitree.com/" target="_blank"><img src="/static/rapidapp/images/intellitreeLogo.png" alt="Intellitree Logo" width="111" height="59" border="0" /></a>' .
+		'</div>';
+}
+#);
 
 
 
-has 'xtemplate_cnf' => ( is => 'ro', lazy => 1, default => sub {
+sub item_template {
+	my $self = shift;
+	
+	my $html = join("\n",
+
+	'<div id="headerContainer">
+	<table border="0" cellpadding="0" cellspacing="0" id="header" width="100%">
+		<tr>
+			<td width="1%" class="logo">
+					<div class="' . $self->logo_cls .'">',
+						 '<div class="topLeft"></div>
+						 <div class="topRight"></div>
+						 <div class="bottomLeft"></div>
+						 <div class="bottomRight"></div>',		
+						 '<img src="' . $self->logo . '" />
+					</div>	
+			</td>
+			<td style="vertical-align:middle">
+					<div class="middle">
+						 <table border="0" cellpadding="0" cellspacing="0" >
+							<tr>
+								<td colspan="10">
+										 <div class="links">
+											  <ul>',
+													#'<li><a href="#" class="first">Change Profile</a></li>',
+													#'<li><a href="#">Change Password</a></li>',
+											  '</ul>
+										 </div>                        
+									</td>
+							  </tr>
+							  <tr>',
+									'<td class="title">' . $self->banner_title . '</td>', 
+									'<td width="100%">&nbsp;</td>',
+									
+									'<tpl if="session &gt; 0">',
+					
+										'<td class="tabNoClick"><p class="username">{user}</p></td>',
+										'<td class="tabClick"><a href="#" class="loggedIn">Logout</a></td>',
+									'</tpl>',
+									
+									'<tpl if="session &lt; 1">',
+										'<td class="tabClick"><a href="#" class="loggedOut">Login</a></td>',
+									'</tpl>',
+									
+									
+									#'<td class="tabNoClick"><p class="username">Username:<span class="name">Stephen Kramer</span></p></td>
+									#<td class="tabClick"><a href="#" class="loggedIn">Logout</a></td>',
+									
+									
+									'<td>' . $self->IntelliTree_logo . '</td>
+									
+							  </tr>
+						 </table>
+					</div>
+			</td>
+		</tr>
+	</table>
+	</div>');
+	
+	return $html;
+
+}
+
+
+
+sub item_template_o {
+
+#has 'item_template' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	
+	
+		print STDERR YELLOW . BOLD . '  BANNER item_template!!!!!' . CLEAR . "\n\n\n";
+	
+	
+	my $html = join("\n",
+	#'<tpl for="."><div class="dv_selector">',
+	
+'<div id="headerContainer">
+<table border="0" cellpadding="0" cellspacing="0" id="header">
+	<tr>
+		<td width="1%" rowspan="3" class="logo">
+			<div class="' . $self->logo_cls .'">',
+				'<div class="topLeft"></div>',
+				'<div class="topRight"></div>',
+				'<div class="bottomLeft"></div>',
+				'<div class="bottomRight"></div>',
+				'<img src="' . $self->logo . '" />
+			</div>
+		</td>
+		<td width="99%" class="top"></td>
+	</tr>
+	<tr>
+		<td style="vertical-align:middle">
+		<div class="middle">
+			<div class="links">
+				<ul>' .
+					#'<li><a href="#" class="first">Change Profile</a></li>' .
+					#'<li><a href="#">Change Password</a></li>' .
+				'</ul>
+			</div>' .
+					
+					
+			'<table border="0" cellpadding="0" cellspacing="0" >
+				<tr>
+					<td class="title">' . $self->banner_title . '</td>', 
+					'<td width="100%">&nbsp;</td>',
+					
+					
+					'<tpl if="session &gt; 0">',
+					
+						'<td class="tabNoClick"><p class="username">{user}</p></td>',
+						'<td class="tabClick"><a href="#" class="loggedIn">Logout</a></td>',
+					'</tpl>',
+					
+					'<tpl if="session &lt; 1">',
+						'<td class="tabClick"><a href="#" class="loggedOut">Login</a></td>',
+					'</tpl>',
+										
+					'<td>' . $self->IntelliTree_logo . '</td>
+				</tr>
+			</table>',
+					
+		'</div>
+		</td>
+	</tr>
+	<tr>
+		<td class="bottom">&nbsp;</td>
+	</tr>
+</table>
+</div>'
+
+	#'</div></tpl>'
+	
+	);
+	
+	
+	
+	print STDERR BLUE . BOLD . $html . CLEAR;
+	
+	return $html;
+}
+#});
+
+
+
+
+
+has 'xtemplate_cnf_old' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	return
 	'<tpl for="."><div class="dv_selector">' .
@@ -287,7 +446,7 @@ has 'xtemplate_cnf' => ( is => 'ro', lazy => 1, default => sub {
 
 
 
-has 'xtemplate_cnf_old' => ( is => 'ro', lazy => 1, default => sub {
+has 'xtemplate_cnf_older' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	return
 	'<tpl for="."><div class="dv_selector">' .

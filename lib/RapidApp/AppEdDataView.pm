@@ -26,6 +26,8 @@ has 'field_hash' => ( is => 'ro', lazy => 1, default => sub {
 	return $h;
 });
 
+has 'custom_click_callback_items' => ( is => 'ro', default => undef );
+
 has 'dv_fieldCallbacks' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	
@@ -37,6 +39,12 @@ has 'dv_fieldCallbacks' => ( is => 'ro', lazy => 1, default => sub {
 			next;
 		}
 		$callbacks->{$field->{name}} = $self->defaultCallback($field);
+	}
+	
+	if(defined $self->custom_click_callback_items) {
+		foreach my $item (keys %{ $self->custom_click_callback_items }) {
+			$callbacks->{$item} = $self->custom_click_callback_items->{$item};
+		}
 	}
 	
 	return $callbacks;
@@ -77,6 +85,18 @@ has 'listeners' => ( is => 'ro', lazy => 1, default => sub {
 					'callback(Record,field);' .
 				'}' .
 			'}';
+	}
+	
+	if(defined $self->custom_click_callback_items) {
+		foreach my $item (keys %{ $self->custom_click_callback_items }) {
+			$click .= 
+			'if (!Ext.isEmpty(event.getTarget("a.' . $item . '"))) {' .
+				'if (dv.fieldCallbacks["' . $item . '"]) {' .
+					'var callback = dv.fieldCallbacks["' . $item . '"];' .
+					'callback.apply(this,arguments);' .
+				'}' .
+			'}';
+		}
 	}
 	
 	$click .= '}';
@@ -162,9 +182,9 @@ sub defaultCallback {
 				'EdRecFld_cnf["field_cnf"] = fld["field_cnf"];' .
 			'}' .
 			
-			'if(fld["initValue"]) {' .
-				'EdRecFld_cnf["initValue"] = fld["initValue"];' .
-			'}' .
+			#'if(fld["initValue"]) {' .
+			#	'EdRecFld_cnf["initValue"] = fld["initValue"];' .
+			#'}' .
 			
 			'if(fld["save_field_name"]) {' .
 				'EdRecFld_cnf["save_field_name"] = fld["save_field_name"];' .

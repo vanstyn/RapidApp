@@ -42,6 +42,10 @@
 .icon-form_green { background-image: url(/static/rapidapp/images/form_green.png) !important; }
 .icon-book_green { background-image: url(/static/rapidapp/images/book_green.png) !important; }
 
+.icon-data-view { background-image: url(/static/rapidapp/images/data_view.png) !important; }
+.icon-folder-view { background-image: url(/static/rapidapp/images/folder_view.png) !important; }
+.icon-save-as { background-image: url(/static/rapidapp/images/save_as.png) !important; }
+
 .icon-bullet_key { 
 	background-image: url(/static/rapidapp/images/bullet_key.png) !important; 
 	background-repeat:no-repeat; 

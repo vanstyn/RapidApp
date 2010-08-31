@@ -11,6 +11,8 @@ with 'RapidApp::Role::DataStore';
 use RapidApp::JSONFunc;
 #use RapidApp::AppDataView::Store;
 
+use Term::ANSIColor qw(:constants);
+
 use String::Random;
 
 has 'no_persist'				=> ( is => 'rw',	default => 1 );
@@ -18,7 +20,7 @@ has 'no_persist'				=> ( is => 'rw',	default => 1 );
 has 'record_pk' => ( is => 'ro', default => 'id' );
 
 
-has 'item_template' => ( is => 'ro', default => '' );
+has 'item_template' => ( is => 'ro', lazy => 1, default => '' );
 
 has 'dv_itemSelectorTag' => ( is => 'ro', default => 'div' );
 has 'dv_itemSelectorClass' => ( is => 'ro', default => 'dv_selector' );
@@ -36,6 +38,9 @@ has 'xtemplate_cnf' => ( is => 'ro', lazy => 1, default => sub {
 
 has 'xtemplate' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
+	
+	print STDERR YELLOW . BOLD . '  xtemplate!!!!!' . CLEAR . "\n\n\n";
+	
 	return RapidApp::JSONFunc->new(
 		func => 'new Ext.XTemplate',
 		parm => [ $self->xtemplate_cnf ]

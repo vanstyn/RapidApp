@@ -33,6 +33,7 @@ has 'columns'                 => ( is => 'rw',  required => 0,    isa => 'ArrayR
 has 'joins'    					=> ( is => 'rw',	required => 0, 	isa => 'ArrayRef', default => sub{ [] } 	);
 has 'implied_joins'				=> ( is => 'rw',  required => 0,    isa => 'Bool',     default => 0 );
 
+has 'group_by'    				=> ( is => 'ro',	default => undef	);
 
 ###########################################################################################
 
@@ -150,7 +151,9 @@ sub Attr_spec {
 		}
 	}
 	# --
-
+	
+	$attr->{group_by} = $self->group_by if (defined $self->group_by);
+	
 	return $attr;
 }
 

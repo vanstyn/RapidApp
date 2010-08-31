@@ -9,7 +9,17 @@
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/js/gridfilters/css/RangeMenu.css" />
 <!--               -->
 
+
+<link rel="stylesheet" type="text/css" href="/static/rapidapp/js/swfbtn/swfbtn.css" />
+
+
+<!-- 
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/js/swfupload/SwfUploadPanel.css" />
+-->
+
+
+<link rel="stylesheet" type="text/css" href="/static/rapidapp/js/wiz/resources/css/ext-ux-wiz.css" />
+
 
 <link rel="stylesheet" type="text/css" href="/static/ext/examples/ux/fileuploadfield/css/fileuploadfield.css" />
 
@@ -50,7 +60,20 @@
 
 <script type="text/javascript" src="/static/ext/examples/ux/fileuploadfield/FileUploadField.js"></script>
 
+
+<script type="text/javascript" src="/static/rapidapp/js/swfbtn/swfupload.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/swfbtn/plugins/swfupload.queue.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/swfbtn/swfbtn.js"></script>
+
+
+<!--
 <script type="text/javascript" src="/static/rapidapp/js/swfupload/swfupload.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/swfupload/SwfUploadPanel.js"></script>
+-->
+
+<script type="text/javascript" src="/static/rapidapp/js/wiz/CardLayout.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/wiz/Wizard.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/wiz/Header.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/wiz/Card.js"></script>
 
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp.js"></script>
