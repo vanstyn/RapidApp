@@ -111,7 +111,7 @@ sub Attr_spec {
 			}
 		}
 		else {
-			$dbfNames= values %{$self->ExtnamesToDbFields};
+			$dbfNames= values %{$self->ExtNamesToDbFields};
 		}
 		$attr->{join}= $self->_find_implied_joins($dbfNames);
 	}

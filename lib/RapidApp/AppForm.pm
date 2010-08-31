@@ -186,7 +186,8 @@ sub JsonStore {
 	
 	
 	use Data::Dumper;
-	 print STDERR Dumper($self->store_fields) . CLEAR;
+	$self->c->log->is_debug and
+		print $self->c->log->debug(Dumper($self->store_fields));
 	
 	my $store = RapidApp::JSONFunc->new( 
 		func => 'new Ext.data.JsonStore',
@@ -210,7 +211,8 @@ sub JsonStore {
 	);
 	
 	use Data::Dumper;
-	print STDERR BOLD . Dumper($store) . CLEAR;
+	$self->c->log->is_debug and
+		$self->c->log->debug(Dumper($store));
 	
 	return $store;
 }

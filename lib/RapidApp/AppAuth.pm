@@ -104,7 +104,7 @@ sub login {
 	
 		#$self->c->persist_user;
 	
-		print STDERR BOLD . GREEN ' ---> Login succeeded.' . "\n\n" . CLEAR;
+		$self->c->log->info(' ---> Login succeeded.');
 	
 		return {
 			success	=> 1,
@@ -112,7 +112,7 @@ sub login {
 		};
 	}
 	
-	print STDERR BOLD . RED ' ---> Login failed.' . "\n\n" . CLEAR;
+	$self->c->log->warn(' ---> Login failed.');
 	
 	return{
 		success	=> 0,

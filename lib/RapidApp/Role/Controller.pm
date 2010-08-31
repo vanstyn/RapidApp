@@ -72,9 +72,7 @@ sub Controller {
 	$self->c(shift);
 	my ( $opt, @args ) = @_;
 	
-
-	print STDERR GREEN . '-->' . ref($self) . '  ' . join(' . ',@_) . "\n\n" . CLEAR;
-	
+	$self->c->log->info('-->' . ref($self) . '  ' . join(' . ',@_));
 	
 	if ($self->no_persist) {
 		for my $attr ($self->meta->get_all_attributes) {
@@ -111,7 +109,7 @@ sub process_action {
 	my $self = shift;
 	my ( $opt, @args ) = @_;
 	
-	print STDERR RED . "PROCESS ACTION: " . $opt . "\n" . CLEAR;
+	$self->c->log->info("PROCESS ACTION: " . $opt);
 	
 	my $data = '';
 	my $coderef;

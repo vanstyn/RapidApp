@@ -29,7 +29,8 @@ sub _build_read_data_coderef {
 		
 		
 		use Data::Dumper;
-		print STDERR YELLOW . Dumper($params) . CLEAR;
+		$self->c->log->is_debug and
+			$self->c->log->debug(Dumper($params));
 		
 		return $self->parent_module->itemfetch_coderef->($params);
 	};
