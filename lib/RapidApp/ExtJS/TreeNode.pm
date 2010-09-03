@@ -21,7 +21,7 @@ sub new {
 	my $class = shift;
 	my $self = bless {}, $class;
 	
-	$self->Params(shift) or return undef;
+	$self->Params(shift) or die "invalid parameters";
 	
 	return $self;
 }
