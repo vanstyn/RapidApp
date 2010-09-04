@@ -49,7 +49,7 @@ Ext.ux.showNullusMoney = function(val) {
 	if (val == null || val === "") { return Ext.ux.showNull(val); }
 	return Ext.util.Format.usMoney(val);
 }
-
+ 
 
 /*
 Ext.ux.RapidApp.WinFormPost
