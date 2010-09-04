@@ -306,6 +306,92 @@ sub action_delete_search {
 
 sub save_search_btn {
 	my $self = shift;
+	
+	
+	my $search_field = {
+		name				=> 'search_name',
+		itemId			=> 'search_name_field',
+		labelStyle 	=> 'text-align:right;',
+		fieldLabel 	=> 'New Search Name',
+		xtype	 		=> 'textfield',
+	};
+	
+	my $checkbox = {
+	name => 'create_search',
+	fieldLabel => 'Save-As New Search',
+	'labelStyle' => 'text-align:right;',
+	'xtype' => 'checkbox',
+	listeners => {
+		check => RapidApp::JSONFunc->new( 
+			raw => 1, 
+			func => 'function(cb,checked) { ' .
+					'var search_field = cb.ownerCt.getComponent("search_name_field");' .
+					'if (checked) {' .
+						'if(!search_field) { ' .
+							'cb.ownerCt.add(' . $self->json->encode($search_field) . ');' .
+							'cb.ownerCt.doLayout();' . 
+						'}' .
+					'} else {' .
+						'if(search_field) { search_field.destroy(); }' .
+					'}' .
+				'}'
+			)
+		}
+	};
+	
+	my $items = $checkbox;
+	$items = [ {xtype => 'spacer', height => 15 }, $search_field ] unless ($self->c->req->params->{search_id});
+	
+	my $fieldset = {
+		style 			=> 'border: none',
+		hideBorders 	=> \1,
+		xtype 			=> 'fieldset',
+		labelWidth 		=> 120,
+		border 			=> \0,
+		items 			=> $items
+	};
+	
+	return RapidApp::JSONFunc->new(
+		func => 'new Ext.Button', 
+		parm => {
+			text 		=> 'Save Search',
+			iconCls	=> 'icon-save-as',
+			handler 	=> RapidApp::JSONFunc->new( 
+				raw => 1, 
+				func => 'function(btn) { ' . 
+					
+					'var grid = btn.ownerCt.ownerCt;'.
+					'var state = grid.getState();' .
+					'var save_state = {' .
+						'filters: grid.getFilters(grid).getState()' .
+					'};' .
+					'for (i in state) save_state[i] = state[i];' .
+					
+					'Ext.ux.RapidApp.WinFormPost({' .
+						'title: "Save Search",' .
+						'height: 155,' .
+						'width: 325,' .
+						'url: "' . $self->suburl('/save_search') . '",' .
+						'params: {' .
+							'cur_search_id: "' . $self->c->req->params->{search_id} . '",' .
+							'grid_state: Ext.util.JSON.encode(save_state)' .
+						'},' .
+						'eval_response: true,' .
+						'fieldset: ' . $self->json->encode($fieldset) . #',' .
+						#'success: function(response) { console.dir(response); }' . 
+					
+					'});' .
+				'}' 
+			)
+	});
+}
+
+
+
+
+
+sub save_search_btn_old {
+	my $self = shift;
 	return RapidApp::JSONFunc->new(
 		func => 'new Ext.Button', 
 		parm => {

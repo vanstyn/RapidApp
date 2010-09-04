@@ -51,6 +51,97 @@ Ext.ux.showNullusMoney = function(val) {
 }
 
 
+/*
+Ext.ux.RapidApp.WinFormPost
+
+ * @cfg {String} title Window title
+ * @cfg {String} height Window height
+ * @cfg {String} width Window width
+ * @cfg {Object} fieldset form config
+ * @cfg {String} url URL to post to
+ * @cfg {Object} params base params to submit with
+ * @cfg {Boolean} encode_values true to encode the form data in JSON
+ * @cfg {Object} valuesParamName POST param to store JSON serialized form data in
+ * @cfg {Function} success success callback function
+ * @cfg {Function} failure failure callback function
+ * @cfg {Boolean} eval_response if true the response will be evaled
+
+*/
+Ext.ns('Ext.ux.RapidApp.WinFormPost');
+Ext.ux.RapidApp.WinFormPost = function(cfg) {
+
+	var rand = Math.floor(Math.random()*100000);
+	var winId = 'win-' + rand;
+	var formId = 'winformpost-' + rand;
+	
+	if(! cfg.title)						{ cfg.title = ''; 						}
+	if(! cfg.height)						{ cfg.height = 400; 						}
+	if(! cfg.width)						{ cfg.width = 350; 						}
+	if(! cfg.params)						{ cfg.params = {};					}
+	if(! cfg.valuesParamName)			{ cfg.valuesParamName = 'json_form_data';		}
+	
+	cfg.fieldset['anchor'] = '100% 100%';
+	
+	var win = new Ext.Window({
+		title: cfg.title,
+		id: winId,
+		layout: 'fit',
+		width: cfg.width,
+		height: cfg.height,
+		modal: true,
+		items: {
+			xtype: 'form',
+			anchor : cfg.fieldset['anchor'],
+			id: formId,
+			frame: true,
+			items: cfg.fieldset,
+			buttons: [
+				{
+					text	: 'Save',
+					handler	: function(btn) {
+
+						var form = Ext.getCmp(formId).getForm();
+						var values = form.getValues();
+						
+						var params = cfg.params;
+						if (cfg.encode_values) {
+							params[cfg.valuesParamName] = Ext.util.JSON.encode(values);
+						}
+						else {
+							for (i in values) {
+								if(!params[i]) { params[i] = values[i]; }
+							}
+						}
+						
+						Ext.Ajax.request({
+							url: cfg.url,
+							params: params,
+							success: function(response,options) {
+								Ext.getCmp(winId).close();
+								if (cfg.success) { cfg.success.apply(this,arguments); }
+								if (cfg.eval_response && response.responseText) { return eval(response.responseText); }
+							},
+							failure: function(response,options) {
+								
+								if (cfg.failure) { cfg.failure.apply(this,arguments); }
+							}
+						});
+					}
+				},
+				{
+					text		: 'Cancel',
+					handler	: function() {
+						Ext.getCmp(winId).close();
+					}
+				}
+			]
+		}
+	});
+	win.show();
+}
+
+
+
 Ext.ns('Ext.ux.EditRecordField');
 Ext.ux.EditRecordField = function(config) {
 	
