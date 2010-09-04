@@ -101,7 +101,7 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 					handler	: function(btn) {
 
 						var form = Ext.getCmp(formId).getForm();
-						var values = form.getValues();
+						var values = form.getFieldValues();
 						
 						var params = cfg.params;
 						if (cfg.encode_values) {
