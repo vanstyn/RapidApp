@@ -311,11 +311,14 @@ sub save_search_btn {
 		parm => {
 			text 		=> 'Save Search',
 			iconCls	=> 'icon-save-as',
-			#id 		=> ,
-			#scale		=> $self->button_scale,
 			handler 	=> RapidApp::JSONFunc->new( 
 				raw => 1, 
 				func => 'function(btn) { ' . 
+				
+					'var default_txt = "";' .
+					$self->save_search_default_txt_code .
+				
+				
 					'Ext.MessageBox.prompt("Save Search","Name of Search",function(sel,val){' .
 						'if(sel != "ok") return; ' .
 						'if(! val || val == "") return; ' .
@@ -331,11 +334,27 @@ sub save_search_btn {
 						'};' .
 						'params["grid_state"] = Ext.util.JSON.encode(save_state);' .
 						'Ext.ux.FetchEval(url,params);' .
-					'},btn);' .
+					'},btn,false,default_txt);' .
 				'}' 
 			)
 	});
 }
+
+# This code should be refactored into something more robust:
+# gets the tab title to be the default value in the search box
+sub save_search_default_txt_code {
+	my $self = shift;
+	return '' unless ($self->c->req->params->{search_id}); 
+	
+	return
+		'var grid = btn.ownerCt.ownerCt;' .
+		'var TabP = grid.findParentByType("tabpanel");' .
+		'var activePanel = TabP.getActiveTab();' .
+		'default_txt = activePanel.title;'
+}
+
+
+
 
 
 sub delete_search_btn {
