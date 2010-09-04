@@ -330,7 +330,8 @@ sub save_search_btn {
 						'for (i in state) save_state[i] = state[i];' .
 						'var url = "' . $self->suburl('/save_search') . '";' .
 						'var params = {' . 
-							'search_name: val' .
+							'search_name: val,' .
+							'cur_search_id: "' . $self->c->req->params->{search_id} . '"' .
 						'};' .
 						'params["grid_state"] = Ext.util.JSON.encode(save_state);' .
 						'Ext.ux.FetchEval(url,params);' .
