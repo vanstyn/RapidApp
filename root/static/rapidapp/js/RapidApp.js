@@ -81,7 +81,19 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 	if(! cfg.valuesParamName)			{ cfg.valuesParamName = 'json_form_data';		}
 	
 	cfg.fieldset['anchor'] = '100% 100%';
+    
+    
+	var success_fn = function(response,options) {
+		Ext.getCmp(winId).close();
+		if (cfg.success) { cfg.success.apply(this,arguments); }
+		if (cfg.eval_response && response.responseText) { return eval(response.responseText); }
+	};
 	
+	var failure_fn = function(response,options) {
+		
+		if (cfg.failure) { cfg.failure.apply(this,arguments); }
+	};
+    
 	var win = new Ext.Window({
 		title: cfg.title,
 		id: winId,
@@ -95,37 +107,49 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 			id: formId,
 			frame: true,
 			items: cfg.fieldset,
+			fileUpload: cfg.fileUpload,
+			baseParams: cfg.baseParams,
 			buttons: [
 				{
 					text	: 'Save',
 					handler	: function(btn) {
-
 						var form = Ext.getCmp(formId).getForm();
-						var values = form.getFieldValues();
 						
-						var params = cfg.params;
-						if (cfg.encode_values) {
-							params[cfg.valuesParamName] = Ext.util.JSON.encode(values);
+						if (cfg.useSubmit) {
+							return form.submit({
+								url: cfg.url,
+								params: cfg.params,
+								success: success_fn,
+								failure: failure_fn
+							});
 						}
 						else {
-							for (i in values) {
-								if(!params[i]) { params[i] = values[i]; }
-							}
-						}
 						
-						Ext.Ajax.request({
-							url: cfg.url,
-							params: params,
-							success: function(response,options) {
-								Ext.getCmp(winId).close();
-								if (cfg.success) { cfg.success.apply(this,arguments); }
-								if (cfg.eval_response && response.responseText) { return eval(response.responseText); }
-							},
-							failure: function(response,options) {
-								
-								if (cfg.failure) { cfg.failure.apply(this,arguments); }
+							var values;
+							if (cfg.noRaw) {
+								values = form.getFieldValues();
 							}
-						});
+							else {
+								values = form.getValues();
+							}
+							
+							var params = cfg.params;
+							if (cfg.encode_values) {
+								params[cfg.valuesParamName] = Ext.util.JSON.encode(values);
+							}
+							else {
+								for (i in values) {
+									if(!params[i]) { params[i] = values[i]; }
+								}
+							}
+							
+							return Ext.Ajax.request({
+								url: cfg.url,
+								params: params,
+								success: success_fn,
+								failure: failure_fn
+							});
+						}
 					}
 				},
 				{
