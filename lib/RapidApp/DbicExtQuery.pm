@@ -70,7 +70,7 @@ sub Attr_spec {
 	my $sort = 'id';
 	my $dir = 'asc';
 	my $start = 0;
-	my $count = 10000;
+	my $count = 1000000;
 	
 	if (defined $params->{start} and defined $params->{limit}) {
 		$start = $params->{start};

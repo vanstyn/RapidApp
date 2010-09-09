@@ -891,10 +891,10 @@ sub grid_rows_excel {
 	
 	my $xls = Spreadsheet::WriteExcel->new($fd);
 	$xls->set_properties(
-		title    => 'Exported Projects',
-		company  => 'Clippard Instrument Laboratory',
-		author   => 'GreenSheet by IntelliTree Solutions',
-		comments => 'Export of current database data',
+		title    => 'Exported RapidApp AppGrid Module: ' . ref($self),
+		#company  => 'Clippard Instrument Laboratory',
+		#author   => 'IntelliTree Solutions',
+		#comments => 'Export of current database data',
 	);
 	my $ws = $xls->add_worksheet;
 	my $tw = RapidApp::Spreadsheet::ExcelTableWriter->new(
@@ -903,9 +903,9 @@ sub grid_rows_excel {
 		columns	=> \@headers
 	);
 	
-	$tw->writePreamble('Clippard Instrument Laboratory');
-	$tw->writePreamble('Export of Project Data');
-	$tw->writePreamble();
+	#$tw->writePreamble('Clippard Instrument Laboratory');
+	#$tw->writePreamble('Export of Project Data');
+	#$tw->writePreamble();
 	
 	# This doesn't work do to bug in RapidApp::Spreadsheet::ExcelTableWriter:
 	#foreach my $row (@{ $data->{rows} }) {
@@ -914,15 +914,18 @@ sub grid_rows_excel {
 	
 	use Data::Dumper;
 	
+	my $count = 0;
 	foreach my $row (@{ $data->{rows} }) {
 		my @r = ();
 		foreach my $fname (@fields) {
 			push @r, $row->{$fname};
 		}
 		$tw->writeRow(@r);
+		$count++;
 		#print STDERR GREEN . BOLD . Dumper($row) . CLEAR;
 	}
 	
+	print STDERR GREEN . BOLD . 'Count: ' . $count . "\n" . CLEAR;
 
 	$tw->autosizeColumns();
 	$xls->close();

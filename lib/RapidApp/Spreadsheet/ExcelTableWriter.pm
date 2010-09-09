@@ -145,6 +145,7 @@ sub writeRow {
 	if (ref $_[0] eq 'ARRAY') {
 		$rowData= $_[0];
 	} elsif (ref $_[0] eq 'HASH') {
+		# This is a bug/missing feature because there is no rowHashToArray method (HV):
 		$rowData= $self->rowHashToArray($_[0]);
 	} else {
 		$rowData= [ @_ ];
