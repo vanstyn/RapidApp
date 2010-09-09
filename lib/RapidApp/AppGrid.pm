@@ -339,7 +339,9 @@ sub excel_export_btn {
 									'params[i] = store.lastOptions.params[i];' .
 								'}' .
 							'}' .
-							'document.location.href=url + "?" + Ext.urlEncode(params);' .
+							'Ext.ux.postwith(url,params);' .
+							
+							#'document.location.href=url + "?" + Ext.urlEncode(params);' .
 						'},' .
 						'scope: btn' .
 					'});' .
