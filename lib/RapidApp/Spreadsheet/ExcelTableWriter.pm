@@ -158,7 +158,7 @@ sub writeRow {
 		} else {
 			$self->wsheet->write($self->curRow, $self->colStart + $i, $rowData->[$i]);
 		}
-		$self->columns->[$i]->updateWidest(length $rowData->[$i]);
+		$self->columns->[$i]->updateWidest(length $rowData->[$i]) if (defined $rowData->[$i]);
 	}
 	$self->{_curRow}++;
 }

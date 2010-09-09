@@ -29,6 +29,9 @@ use Try::Tiny;
 use RapidApp::AppGrid::EditItem;
 use RapidApp::AppGrid::AddItem;
 
+use Spreadsheet::WriteExcel;
+use RapidApp::Spreadsheet::ExcelTableWriter;
+
 use Switch;
 
 use Term::ANSIColor qw(:constants);
@@ -181,6 +184,11 @@ has 'delete_search_coderef'	=> ( is => 'ro',	default => undef	);
 
 has 'loaded_grid_state' => ( is => 'rw', default => undef );
 
+
+# -- excel_export
+# Bool: if true, add excel export button
+has 'excel_export'	=> ( is => 'ro',	default => 0	);
+
 ####
 ####
 ####
@@ -261,6 +269,7 @@ has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 		#'add_submit'										=> sub { $self->JSON_encode($self->add_submit);				},
 		#'edit_submit'										=> sub { $self->JSON_encode($self->edit_submit);				},
 		'data'												=> sub { $self->JSON_encode($self->grid_rows($self->c->req->params));	},
+		'dataexcel'											=> sub { $self->grid_rows_excel($self->c->req->params);	},
 		'item_form_load'									=> sub { $self->JSON_encode($self->item_form_load);			},
 	};
 	
@@ -300,6 +309,33 @@ sub action_delete_search {
 	
 	my $params = $self->c->req->params;
 	return $self->delete_search_coderef->($params->{search_id});
+}
+
+
+sub excel_export_btn {
+	my $self = shift;
+	
+	return RapidApp::JSONFunc->new(
+		func => 'new Ext.Button', 
+		parm => {
+			text 		=> 'Excel Export',
+			iconCls	=> 'icon-excel',
+			handler 	=> RapidApp::JSONFunc->new( 
+				raw => 1, 
+				func => 'function(btn) { ' . 
+					'var grid = btn.ownerCt.ownerCt;'.
+					'var store = grid.getStore();' .
+					'var url = "' . $self->suburl('/dataexcel') . '";' .
+					'var params = {};' .
+					'for (i in store.lastOptions.params) {' .
+						'if (i != "start" && i != "limit") {' .
+							'params[i] = store.lastOptions.params[i];' .
+						'}' .
+					'}' .
+					'document.location.href=url + "?" + Ext.urlEncode(params);' .
+				'}' 
+			)
+	});
 }
 
 
@@ -539,6 +575,9 @@ sub tbar_items {
 	push @{$arrayref}, '-' if ($self->delete_search_coderef or $self->save_search_coderef);
 	push @{$arrayref}, $self->delete_search_btn if ($self->delete_search_coderef and $self->c->req->params->{search_id});
 	push @{$arrayref}, $self->save_search_btn if ($self->save_search_coderef);
+	
+	push @{$arrayref}, $self->excel_export_btn if ($self->excel_export);
+	
 	push @{$arrayref}, '->';
 	#push @{$arrayref}, $self->refresh_button;
 	push @{$arrayref}, $self->add_button if (defined $self->add_item_coderef);
@@ -597,7 +636,8 @@ sub DynGrid {
 		gridfilter				=> $self->gridfilter,
 		gridfilter_remote		=> $self->gridfilter_remote,
 		rowactions				=> $self->rowactions,
-		row_checkboxes			=> $self->row_checkboxes
+		row_checkboxes			=> $self->row_checkboxes,
+		store_config			=> $self->store_config
 	};
 	
 	$config->{pageSize} = $self->pageSize if (defined $self->pageSize);
@@ -605,15 +645,6 @@ sub DynGrid {
 	
 	$config->{celldblclick_eval} = $self->dblclick_row_edit_code if ($self->dblclick_row_edit);
 	$config->{celldblclick_eval} = $self->celldblclick_eval if (defined $self->celldblclick_eval);
-
-	$config->{store_config} = {
-		storeId			=> $self->storeId,
-		url				=> $self->suburl('/data'),
-		root				=> 'rows',
-		totalProperty	=> 'totalCount',
-		autoDestroy		=> \1,
-		remoteSort		=> $self->remoteSort,
-	};
 	
 	$config->{init_state} = $self->loaded_grid_state if ($self->loaded_grid_state and $self->c->req->params->{search_id});
 
@@ -622,6 +653,25 @@ sub DynGrid {
 	my $DynGrid = RapidApp::ExtJS::DynGrid->new($config);
 	return $DynGrid;
 }
+
+
+has 'store_config' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	my $cnf = {
+		storeId			=> $self->storeId,
+		url				=> $self->suburl('/data'),
+		root				=> 'rows',
+		totalProperty	=> 'totalCount',
+		autoDestroy		=> \1,
+		remoteSort		=> $self->remoteSort,
+	};
+	
+	$cnf->{listeners} = $self->store_listeners if (defined $self->store_listeners);
+	
+	return $cnf;
+});
+
+has 'store_listeners' => ( is => 'ro', default => undef );
 
 
 sub add_button {
@@ -819,6 +869,101 @@ sub grid_rows {
 	
 	return $data;
 }
+
+
+sub grid_rows_excel {
+	my $self = shift;
+	my $params = shift;
+	
+	my $dlData = '';
+	open my $fd, '>', \$dlData;
+	
+	my $data = $self->datafetch_coderef->($params);
+	
+	my @headers = ();
+	my @fields = ();
+	foreach my $field (@{$self->fields}) {
+		next if ($field->{name} eq 'icon');
+		next unless (defined $field->{header} and defined $field->{name});
+		push @headers, $field->{header};
+		push @fields, $field->{name};
+	}
+	
+	my $xls = Spreadsheet::WriteExcel->new($fd);
+	$xls->set_properties(
+		title    => 'Exported Projects',
+		company  => 'Clippard Instrument Laboratory',
+		author   => 'GreenSheet by IntelliTree Solutions',
+		comments => 'Export of current database data',
+	);
+	my $ws = $xls->add_worksheet;
+	my $tw = RapidApp::Spreadsheet::ExcelTableWriter->new(
+		wbook		=> $xls,
+		wsheet	=> $ws,
+		columns	=> \@headers
+	);
+	
+	$tw->writePreamble('Clippard Instrument Laboratory');
+	$tw->writePreamble('Export of Project Data');
+	$tw->writePreamble();
+	
+	# This doesn't work do to bug in RapidApp::Spreadsheet::ExcelTableWriter:
+	#foreach my $row (@{ $data->{rows} }) {
+	#	$tw->writeRow($row)
+	#}
+	
+	use Data::Dumper;
+	
+	foreach my $row (@{ $data->{rows} }) {
+		my @r = ();
+		foreach my $fname (@fields) {
+			push @r, $row->{$fname};
+		}
+		$tw->writeRow(@r);
+		#print STDERR GREEN . BOLD . Dumper($row) . CLEAR;
+	}
+	
+
+	$tw->autosizeColumns();
+	$xls->close();
+	
+	
+=pod
+	print $fd join(',',@fields) . "\r\n";
+
+	foreach my $row (@{ $data->{rows} }) {
+		foreach my $field (@{$self->fields}) {
+			if (defined $field->{header} and defined $field->{name}) {
+				next if ($field->{name} eq 'icon');
+				print $fd $row->{$field->{name}} if (defined $row->{$field->{name}});
+				print $fd ',';
+			}
+		}
+		print $fd "\r\n";
+	}
+=cut
+	
+
+
+	#use Data::Dumper;
+	
+	#print $fd Dumper($self->fields);
+	
+	$self->render_as_json(0);
+
+	my $h= $self->c->res->headers;
+	$h->content_type('application/x-download');
+	$h->content_length(do { use bytes; length($dlData) });
+	$h->last_modified(time);
+	$h->header('Content-disposition' => "attachment; filename=\"export.xls\"");
+	$h->expires(time());
+	$h->header('Pragma' => 'no-cache');
+	$h->header('Cache-Control' => 'no-cache');
+	
+	return $dlData;
+}
+
+
 
 
 sub filter_gridrow {
