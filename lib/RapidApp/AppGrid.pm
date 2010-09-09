@@ -312,6 +312,7 @@ sub action_delete_search {
 }
 
 
+
 sub excel_export_btn {
 	my $self = shift;
 	
@@ -323,21 +324,30 @@ sub excel_export_btn {
 			handler 	=> RapidApp::JSONFunc->new( 
 				raw => 1, 
 				func => 'function(btn) { ' . 
-					'var grid = btn.ownerCt.ownerCt;'.
-					'var store = grid.getStore();' .
-					'var url = "' . $self->suburl('/dataexcel') . '";' .
-					'var params = {};' .
-					'for (i in store.lastOptions.params) {' .
-						'if (i != "start" && i != "limit") {' .
-							'params[i] = store.lastOptions.params[i];' .
-						'}' .
-					'}' .
-					'document.location.href=url + "?" + Ext.urlEncode(params);' .
+				
+					'Ext.Msg.show({ ' .
+						'title: "Excel Export",' . 
+						'msg: "Export current view to Excel File? <br><br>(This might take up to a few minutes depending on the number of rows)",' .
+						'buttons: Ext.Msg.YESNO, fn: function(sel){' .
+							'if(sel != "yes") return; ' .
+							'var grid = btn.ownerCt.ownerCt;'.
+							'var store = grid.getStore();' .
+							'var url = "' . $self->suburl('/dataexcel') . '";' .
+							'var params = {};' .
+							'for (i in store.lastOptions.params) {' .
+								'if (i != "start" && i != "limit") {' .
+									'params[i] = store.lastOptions.params[i];' .
+								'}' .
+							'}' .
+							'document.location.href=url + "?" + Ext.urlEncode(params);' .
+						'},' .
+						'scope: btn' .
+					'});' .
 				'}' 
 			)
 	});
-}
 
+}
 
 
 sub save_search_btn {
@@ -912,46 +922,20 @@ sub grid_rows_excel {
 	#	$tw->writeRow($row)
 	#}
 	
-	use Data::Dumper;
-	
-	my $count = 0;
+
 	foreach my $row (@{ $data->{rows} }) {
 		my @r = ();
 		foreach my $fname (@fields) {
 			push @r, $row->{$fname};
 		}
 		$tw->writeRow(@r);
-		$count++;
-		#print STDERR GREEN . BOLD . Dumper($row) . CLEAR;
 	}
-	
-	print STDERR GREEN . BOLD . 'Count: ' . $count . "\n" . CLEAR;
+
 
 	$tw->autosizeColumns();
 	$xls->close();
 	
-	
-=pod
-	print $fd join(',',@fields) . "\r\n";
-
-	foreach my $row (@{ $data->{rows} }) {
-		foreach my $field (@{$self->fields}) {
-			if (defined $field->{header} and defined $field->{name}) {
-				next if ($field->{name} eq 'icon');
-				print $fd $row->{$field->{name}} if (defined $row->{$field->{name}});
-				print $fd ',';
-			}
-		}
-		print $fd "\r\n";
-	}
-=cut
-	
-
-
-	#use Data::Dumper;
-	
-	#print $fd Dumper($self->fields);
-	
+		
 	$self->render_as_json(0);
 
 	my $h= $self->c->res->headers;
