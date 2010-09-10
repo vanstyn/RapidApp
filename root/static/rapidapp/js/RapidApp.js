@@ -1075,7 +1075,36 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 		
 		//var myMask = new Ext.LoadMask(Ext.getBody(), {msg:"Loading data, please wait..."});
 		//myMask.show(); 
-					
+
+
+		// ------- Remote Columns -------- //
+		var thisGrid = this;
+		if (this.remote_columns) {
+			this.store.on('beforeload',function(Store,opts) {
+				var columns = thisGrid.getColumnModel().getColumnsBy(function(c){
+					if(c.hidden || c.dataIndex == "" || c.dataIndex == "icon") { return false; }
+					return true;
+				});
+				var colIndexes = [];
+				for (i in columns) {
+					colIndexes.push(columns[i].dataIndex);
+				}
+				//Store.setBaseParam("columns",Ext.encode(colIndexes));
+				Store.baseParams["columns"] = Ext.encode(colIndexes);
+			});
+			this.getColumnModel().on('hiddenchange',function(colmodel) {
+
+				// For some reason I don't understand, reloading the store directly
+				// does not make it see the new non-hidden column names, but calling
+				// the refresh function on the paging toolbar does:
+				var ptbar = thisGrid.getBottomToolbar();
+				ptbar.doRefresh();
+				//var Store = thisGrid.getStore();
+				//Store.reload();
+			});
+		}
+		// ------------------------------- //
+
 		
 		var load_parms = null;
 		if (this.pageSize) {

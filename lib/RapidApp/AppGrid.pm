@@ -189,6 +189,13 @@ has 'loaded_grid_state' => ( is => 'rw', default => undef );
 # Bool: if true, add excel export button
 has 'excel_export'	=> ( is => 'ro',	default => 0	);
 
+# -- remote_columns
+# Bool: if true, non-hidden columns will be sent with all store requests in the "columns" param
+has 'remote_columns'	=> ( is => 'ro',	default => 0	);
+
+
+has 'grid_listeners'	=> ( is => 'ro',	default => 0	);
+
 ####
 ####
 ####
@@ -647,6 +654,7 @@ sub DynGrid {
 		gridsearch_remote		=> $self->gridsearch_remote,
 		gridfilter				=> $self->gridfilter,
 		gridfilter_remote		=> $self->gridfilter_remote,
+		remote_columns			=> $self->remote_columns,
 		rowactions				=> $self->rowactions,
 		row_checkboxes			=> $self->row_checkboxes,
 		store_config			=> $self->store_config
@@ -659,6 +667,8 @@ sub DynGrid {
 	$config->{celldblclick_eval} = $self->celldblclick_eval if (defined $self->celldblclick_eval);
 	
 	$config->{init_state} = $self->loaded_grid_state if ($self->loaded_grid_state and $self->c->req->params->{search_id});
+	
+	$config->{listeners} = $self->grid_listeners if (defined $self->grid_listeners);
 
 	#$config->{init_filters} = $self->extract_filters($field_list);
 

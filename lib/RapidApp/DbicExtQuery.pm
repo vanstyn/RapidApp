@@ -72,6 +72,18 @@ sub Attr_spec {
 	my $start = 0;
 	my $count = 1000000;
 	
+	my @cols = ();
+	push @cols, @{$params->{columns}} if (ref($params->{columns}) eq 'ARRAY');
+	push @cols, @{$self->columns} if (scalar(@{$self->columns}));
+	
+	my $columns = [];
+	# Remove duplicates:
+	my %Seen = ();
+   foreach my $col (@cols) {
+		next if $Seen{$col}++;
+		push @$columns, $col;
+   }
+	
 	if (defined $params->{start} and defined $params->{limit}) {
 		$start = $params->{start};
 		$count = $params->{limit};
@@ -105,14 +117,14 @@ sub Attr_spec {
 	# implied joins with either use all defined values in the name-hash, or just those associated with desired 'columns'
 	elsif ($self->implied_joins) {
 		my $dbfNames= ();
-		if (scalar(@{$self->columns})) {
-			foreach my $colName (@{$self->columns}) {
+		if (scalar(@{$columns})) {
+			foreach my $colName (@{$columns}) {
 				my $dbfName= $self->ExtNamesToDbFields->{$colName};
 				push @$dbfNames, defined $dbfName? $dbfName : $colName;
 			}
 		}
 		else {
-			$dbfNames= values %{$self->ExtNamesToDbFields};
+			$dbfNames= [ values %{$self->ExtNamesToDbFields} ]; 
 		}
 		$attr->{join}= $self->_find_implied_joins($dbfNames);
 	}
@@ -120,16 +132,39 @@ sub Attr_spec {
 	# optional add to prefetch:
 	#$attr->{prefetch} = [];
 	#foreach my $rel (@{$attr->{join}}) {		push @{$attr->{prefetch}}, $rel;	}
-	if (scalar(@{$self->columns})) {
+	if (scalar(@{$columns})) {
 		$attr->{'select'} = [];
 		$attr->{'as'} = [];
-		foreach my $extName (@{$self->columns}) {
-			my $dbfName= $self->ExtNamesToDbFields->{$extName};
-			defined $dbfName or $dbfName= $extName;
+		my $in_use = {};
+		foreach my $extName (@{$columns}) {
+			my $dbfName = $self->ExtNamesToDbFields->{$extName};
+			if (defined $dbfName) {
+				my ($relationship,$ffield) = split(/\./,$dbfName);
+				$in_use->{$relationship} = 1;
+			}
+			else {
+				$dbfName = $extName;
+			}
+			
+			#Set the relationship to "me" if none is specified:
+			$dbfName = 'me.' . $dbfName unless ($dbfName =~ /\./);
 			
 			push @{$attr->{'select'}}, $dbfName;
 			push @{$attr->{'as'}}, $extName;
 		}
+		
+		# Delete unused joins/relationships for performance:
+		my @newjoins = ();
+		foreach my $relation (@{$attr->{join}}) {
+			foreach my $needed (keys %$in_use) {
+				if ($self->multiCheck($needed,$relation)) {
+					push @newjoins, $relation;
+					last;
+				}
+			}
+		}
+		$attr->{join} = \@newjoins;
+		
 	}
 	else {
 		$attr->{'+select'} = [];
@@ -190,6 +225,68 @@ sub _build_join_for_hash {
 	return $result[0] if scalar(@result) == 1;
 	return \@result;
 }
+
+
+sub multiCheck {
+	my $self = shift;
+	my $string = shift;
+	my $test = shift;
+	
+	unless (ref($test)) {
+		return 1 if ($string eq $test);
+		return 0;
+	}
+	
+	if (ref($test) eq 'HASH') {
+		foreach my $i (keys %$test, values %$test) {
+			return 1 if ($self->multiCheck($string,$i));
+		}
+		return 0;
+	}
+	
+	if (ref($test) eq 'ARRAY') {
+		foreach my $i (@$test) {
+			return 1 if ($self->multiCheck($string,$i));
+		}
+		return 0;
+	}
+	
+	return 0;
+}
+
+
+
+
+=pod
+sub addToFlatHashref {
+	my $self = shift;
+	my $hash = shift;
+	my $item = shift;
+	
+	unless (ref($item)) {
+		$hash->{$item} = 1;
+		return $hash;
+	}
+	
+	if (ref($item) eq 'HASH') {
+		foreach my $i (keys %$item, values %$item) {
+			$self->addToFlatHashref($hash,$i);
+		}
+		return $hash;
+	}
+	
+	if (ref($item) eq 'ARRAY') {
+		foreach my $i (@$item) {
+			$self->addToFlatHashref($hash,$i);
+		}
+		return $hash;
+	}
+	
+	return $hash;
+}
+=cut
+
+
 
 sub Search_spec {
 	my $self = shift;
