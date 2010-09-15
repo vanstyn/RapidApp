@@ -561,7 +561,8 @@ sub content {
 				'new Ext.LoadMask(FormPanel.getEl(),{msg: "StoreForm Loading...", store: ' . $self->getStore_code . '});' .
 				'try {' . $self->store_load_code . ';' . '} catch(err) { Ext.log(err); }' .
 			'}'
-		)
+		),
+		%{ $self->formpanel_listeners }
 	};
 
 	return $config;
@@ -608,6 +609,11 @@ sub _build_formpanel_config {
 	
 	return $config;
 }
+
+has 'formpanel_listeners' => ( is => 'ro', default => sub {{}} );
+
+
+
 
 has 'tbar_title_text_cls' => ( is => 'ro', default => 'tbar-title-medium' );
 has 'formpanel_tbar' => ( is => 'ro', lazy_build => 1 );

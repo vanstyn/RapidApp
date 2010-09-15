@@ -696,10 +696,12 @@ has 'store_config' => ( is => 'ro', lazy => 1, default => sub {
 has 'store_listeners' => ( is => 'ro', default => undef );
 
 
-sub add_button {
-	my $self = shift;
 
-	return undef unless (defined $self->add_item_coderef);
+sub add_button_urlspec {
+	my $self = shift;
+	
+	my $extra_params = shift;
+	$extra_params = {} unless (defined $extra_params);
 	
 	my $urlspec = {
 		id			=> 'add-item-' . time,
@@ -708,22 +710,36 @@ sub add_button {
 		url 		=> $self->suburl('/' . $self->add_processor_module),
 		params	=> {
 			base_params => $self->json->encode($self->base_params),
+			%$extra_params
 		}
 	};
 	
-	my $code = 
-		"var urlspec = " . $self->json->encode($urlspec) . ";" . 
+	return $self->json->encode($urlspec);
+}
+
+
+
+
+sub add_button_code {
+	my $self = shift;
+	
+	return
+		"var urlspec = " . $self->add_button_urlspec . ";" . 
 		$self->parent_module->tabpanel_load_code('urlspec');
+}
+
+
+
+sub add_button {
+	my $self = shift;
+
+	return undef unless (defined $self->add_item_coderef);
 
 	return {
 		xtype				=> 'dbutton',
 		text				=> $self->add_label,
 		iconCls			=> $self->add_label_iconCls,
-		handler_func	=> $code
-#		handler_func	=> 
-#			"var urlspec = {};" .
-#			"urlspec['url'] = '" . $self->suburl('/add_submitform') . "';" .
-#			$self->custom_add_item_code	
+		handler_func	=> $self->add_button_code	
 	};
 }
 
