@@ -41,6 +41,14 @@ has 'group_by'    				=> ( is => 'ro',	default => undef	);
 sub data_fetch {
 	my $self = shift;
 	my $params = shift or return undef;
+	
+	# Treat zero length string as if it wasn't defined at all:
+	delete $params->{query} if (defined $params->{query} and $params->{query} eq '');
+	
+	# We can't limit the fields if there is a query (because it needs to be able to search 
+	# in all fields and all relationships:
+	delete $params->{columns} if (defined $params->{query});
+
 
 	my $Attr		= $params->{Attr_spec};		# <-- Optional custom Attr_spec override
 	my $Search	= $params->{Search_spec};	# <-- Optional custom Search_spec override
