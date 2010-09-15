@@ -47,7 +47,11 @@ sub add_render_append {
 }
 
 
-
+has 'no_json_ref_types' => ( is => 'ro', default => sub {
+	return {
+		'IO::File'	=> 1
+	}
+});
 
 has 'create_module_params' => ( is => 'ro', lazy => 1,	default => sub {
 	my $self = shift;
@@ -130,8 +134,15 @@ sub render_data {
 	my $rendered_data = $data;
 	$rendered_data = $self->JSON_encode($data) if (
 		$self->render_as_json and
-		ref($data)
+		ref($data) and
+		not defined $self->no_json_ref_types->{ref($data)}
 	);
+	
+	
+	#use Data::Dumper;
+	#print STDERR YELLOW . Dumper($data) . CLEAR;
+	#print STDERR GREEN . "\n" . $self->render_as_json . "\n" . CLEAR;
+	
 	
 	#$rendered_data .= $self->render_append;
 	
