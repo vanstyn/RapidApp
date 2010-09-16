@@ -24,6 +24,8 @@ has 'extra_actions'			=> ( is => 'ro', 	default => sub {{}} );
 has 'default_action'			=> ( is => 'ro',	default => undef );
 has 'content'					=> ( is => 'ro',	default => '' );
 has 'render_as_json'			=> ( is => 'rw',	default => 1 );
+has 'multi_instance'       => ( is => 'rw',  default => 0 );
+has 'instance_num'         => ( is => 'rw',  default => undef );
 
 has 'no_persist' => ( is => 'rw', lazy => 1, default => sub {
 	my $self = shift;
@@ -71,26 +73,57 @@ sub JSON_encode {
 	return $self->json->encode(shift);
 }
 
+# Initializes variables of the controller based on the details of the current request being handled.
+# This is a stub for 'after's and 'before's and overrides.
+sub prepare_controller {
+}
+
 sub Controller {
-	my $self = shift;
-	$self->c(shift);
-	my ( $opt, @args ) = @_;
+	my ($self, $c, @args) = @_;
 	
-	$self->c->log->info('-->' . ref($self) . '  ' . join(' . ',@_));
-	
+	# clear all lazy attributes, if the user asked for it
 	if ($self->no_persist) {
 		for my $attr ($self->meta->get_all_attributes) {
 			$attr->clear_value($self) if ($attr->is_lazy or $attr->has_clearer);
 		}
 	};
-		
-	$self->base_url($self->c->namespace);
-	$self->base_url($self->parent_module->base_url . '/' . $self->module_name) if (
-		defined $self->parent_module
-	);
 	
-	return $self->process_action($opt,@args)							if (defined $opt and (defined $self->actions->{$opt} or defined $self->extra_actions->{$opt}) );
-	return $self->Module($opt)->Controller($self->c,@args)		if (defined $opt and $self->_load_module($opt));
+	# set up some critical per-request variables needed for the rest of RapidApp's functionality
+	
+	$self->c($c);
+	
+	my $url= defined $self->parent_module? $self->parent_module->base_url . '/' . $self->module_name
+		: $self->c->namespace;
+	
+	if ($self->multi_instance) {
+		if (defined $args[0] && ref $args[0] eq '' && $args[0] =~ /^[0-9]+$/) {
+			$self->instance_num(shift @args);
+		} else {
+			my $sess= $self->c->session;
+			defined $sess->{$url} or $sess->{$url}= { nextInstNum => 0 };
+			$self->instance_num($sess->{$url}->{nextInstNum}++);
+		}
+		$url .= '/' . $self->instance_num;
+	}
+	$self->base_url($url);
+	
+	# run user-defined or mix-in code to get ready to process the action
+	
+	$self->prepare_controller;
+	
+	# dispatch the request to the appropriate handler
+	
+	$self->c->log->info('-->' . ref($self) . '  ' . join(' . ',@args));
+	
+	$self->controller_dispatch(@args);
+}
+
+# This is moved into a separate function so that overridden controllers can re-use this functionality
+sub controller_dispatch {
+	my ($self, $opt, @subargs)= @_;
+	
+	return $self->process_action($opt,@subargs)						if (defined $opt and (defined $self->actions->{$opt} or defined $self->extra_actions->{$opt}) );
+	return $self->Module($opt)->Controller($self->c,@subargs)	if (defined $opt and $self->_load_module($opt));
 	return $self->process_action($self->default_action,@_)		if (defined $self->default_action);
 	return $self->render_data($self->content);
 }
