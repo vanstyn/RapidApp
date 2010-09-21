@@ -50,6 +50,17 @@ sub data_fetch {
 	delete $params->{columns} if (defined $params->{query});
 
 
+	# If there is a filter, we need to make sure that column is included if we have a 
+	# limited set of columns:
+	if($params->{columns} and $params->{filter}) {
+		my $filters = JSON::decode_json($params->{filter});
+		foreach my $filter (@$filters) {
+			push @{$params->{columns}}, $filter->{field} if ($filter->{field});
+		}
+	}
+
+
+
 	my $Attr		= $params->{Attr_spec};		# <-- Optional custom Attr_spec override
 	my $Search	= $params->{Search_spec};	# <-- Optional custom Search_spec override
 	

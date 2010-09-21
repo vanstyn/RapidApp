@@ -39,8 +39,6 @@ has 'xtemplate_cnf' => ( is => 'ro', lazy => 1, default => sub {
 has 'xtemplate' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	
-	print STDERR YELLOW . BOLD . '  xtemplate!!!!!' . CLEAR . "\n\n\n";
-	
 	return RapidApp::JSONFunc->new(
 		func => 'new Ext.XTemplate',
 		parm => [ $self->xtemplate_cnf ]
