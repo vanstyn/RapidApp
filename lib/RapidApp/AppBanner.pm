@@ -301,9 +301,6 @@ sub item_template_o {
 	my $self = shift;
 	
 	
-		print STDERR YELLOW . BOLD . '  BANNER item_template!!!!!' . CLEAR . "\n\n\n";
-	
-	
 	my $html = join("\n",
 	#'<tpl for="."><div class="dv_selector">',
 	
@@ -364,10 +361,6 @@ sub item_template_o {
 	#'</div></tpl>'
 	
 	);
-	
-	
-	
-	print STDERR BLUE . BOLD . $html . CLEAR;
 	
 	return $html;
 }
