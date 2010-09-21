@@ -82,11 +82,8 @@ sub Controller {
 	my ($self, $c, @args) = @_;
 	
 	# clear all lazy attributes, if the user asked for it
-	if ($self->no_persist) {
-		for my $attr ($self->meta->get_all_attributes) {
-			$attr->clear_value($self) if ($attr->is_lazy or $attr->has_clearer);
-		}
-	};
+	$self->clear_attributes if ($self->no_persist);
+
 	
 	# set up some critical per-request variables needed for the rest of RapidApp's functionality
 	
@@ -117,6 +114,16 @@ sub Controller {
 	
 	$self->controller_dispatch(@args);
 }
+
+
+sub clear_attributes {
+	my $self = shift;
+	for my $attr ($self->meta->get_all_attributes) {
+		$attr->clear_value($self) if ($attr->is_lazy or $attr->has_clearer);
+	}
+}
+
+
 
 # This is moved into a separate function so that overridden controllers can re-use this functionality
 sub controller_dispatch {
