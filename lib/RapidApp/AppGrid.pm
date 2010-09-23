@@ -1506,26 +1506,40 @@ sub delete_items_button {
 
 	return undef unless (defined $self->batch_delete);
 
-	return {
-		xtype				=> 'dbutton',
-		text				=> 'delete',
-		iconCls			=> 'icon-bullet_delete',
-		handler_func	=> 
-			q~var grid = Ext.getCmp('~ . $self->gid . q~');~ .
-			q~var selmod = grid.getSelectionModel();~ .
-			q~var records = selmod.getSelections();~ .
-			q~if(records.length > 0) {~ .
-				q~var grid_rows_params = [];~ .
-				q~Ext.each(records, function(r) { ~ .
-					q~grid_rows_params.push(r.data);~ .
-				q~});~ .
-				q~var sel_records = Ext.util.JSON.encode(grid_rows_params);~ .
-				q~var params = {grid_rows_params: sel_records};~ .
-				q~var url = "~ . $self->base_url . q~/batch_delete?~ . $self->base_query_string . q~";~ .
-				q~Ext.ux.FetchEval(url,params);~ .
-			q~}~
-	};
+	return RapidApp::JSONFunc->new(
+		func => 'new Ext.Button', 
+		parm => {
+			text		=> 'delete',
+			iconCls	=> 'icon-bullet_delete',
+			handler	=> RapidApp::JSONFunc->new( raw => 1, func => 
+				'function(btn) { ' . 
+		
+					#q~var grid = Ext.getCmp('~ . $self->gid . q~');~ .
+					'var grid = btn.ownerCt.ownerCt;'.
+					q~var selmod = grid.getSelectionModel();~ .
+					q~var records = selmod.getSelections();~ .
+					q~if(records.length > 0) {~ .
+						q~var grid_rows_params = [];~ .
+						q~Ext.each(records, function(r) { ~ .
+							q~grid_rows_params.push(r.data);~ .
+						q~});~ .
+						q~var sel_records = Ext.util.JSON.encode(grid_rows_params);~ .
+						q~var params = {grid_rows_params: sel_records};~ .
+						q~var url = "~ . $self->base_url . q~/batch_delete?~ . $self->base_query_string . q~";~ .
+						
+						# This is an ugly way to store the id of the grid for later access in batch_delete_confirm_window:
+						# (This entire class needs to be refactored; this is a temporary hack)
+						'Ext.ns("Ext.ux.CurAppGrid_id");' .
+						'Ext.ux.CurAppGrid_id = grid.id;' .
+						
+						q~Ext.ux.FetchEval(url,params);~ .
+					q~}~ .
+				'}'
+			)
+		}
+	);
 }
+
 
 
 sub batch_delete_submit {
@@ -1564,7 +1578,20 @@ sub batch_delete_confirm_window {
 			q~icon: Ext.MessageBox.QUESTION,~ .
 			q~fn: function(buttonId) { if (buttonId=="yes") {~ .
 				q~var params = ~ . JSON::to_json($self->c->req->body_params) . q~;~ .
-				q~Ext.ux.FetchEval('~ . $self->base_url . q~/action_batch_delete?~ . $self->base_query_string . q~',params);~ .
+				
+				# This Ext.Ajax.request replaces the Ext.ux.FetchEval line below:
+				'Ext.Ajax.request({' .
+					'disableCaching: true,' .
+					'url: "' . $self->base_url . '/action_batch_delete?' . $self->base_query_string . '",' .
+					'params: params,' .
+					'success: function(response, opts) {' .
+						'if(response.responseText) { eval(response.responseText); }' .
+						'var grid = Ext.getCmp(Ext.ux.CurAppGrid_id);' .
+						'if(grid){ grid.getBottomToolbar().doRefresh(); }' .
+					'}' .
+				'});' .
+				
+				#q~Ext.ux.FetchEval('~ . $self->base_url . q~/action_batch_delete?~ . $self->base_query_string . q~',params);~ .
 			q~}}~ .
 		q~});~;
 }
@@ -1599,8 +1626,8 @@ sub action_batch_delete {
 		$code = q~var caught = ~ . JSON::to_json({msg => $msg}) . ';' .
 			q~Ext.Msg.alert('Delete failed...','<br><div style="~ . $self->exception_style . q~">' + caught['msg'] + '</div>');~;
 	};
-
-	return $code . $self->reload_store_eval;
+	return $code . ';';
+	#return $code . $self->reload_store_eval;
 }
 ##
 
