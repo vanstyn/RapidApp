@@ -800,12 +800,12 @@ sub _build_edit_action_wrapper_code {
 
 
 
-#sub rowaction_code {
-#	my $self = shift;
-#	return 
-#		"var params = {orig_params: Ext.util.JSON.encode(record.data)};" .
-#		"Ext.ux.FetchEval('" . $self->base_url . "/action_' + action + '?" . $self->base_query_string . "',params);"
-#}
+sub rowaction_code {
+	my $self = shift;
+	return 
+		"var params = {orig_params: Ext.util.JSON.encode(record.data)};" .
+		"Ext.ux.FetchEval('" . $self->base_url . "/action_' + action + '?" . $self->base_query_string . "',params);"
+}
 
 
 
