@@ -515,6 +515,7 @@ sub create {
 	
 	
 	if (ref($result) and defined $result->{success} and defined $result->{msg}) {
+		$result->{rows} = $rows;
 		if ($result->{success}) {
 			$result->{success} = \1;
 		}
@@ -525,7 +526,7 @@ sub create {
 	}
 	
 	
-	if ($result and not $result->{success} == 0 ) {
+	if ($result and not (ref($result) and $result->{success} == 0 )) {
 		return {
 			success => \1,
 			msg => 'Create Succeeded',
