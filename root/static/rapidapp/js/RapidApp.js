@@ -30,9 +30,9 @@ Ext.ux.iconFromFileName = function(name) {
 
     var parts = name.split('.');
     var ext = parts.pop().toLowerCase();
-    
+
     var icon_file = 'document.png';
-    
+
     if(ext == 'pdf') { icon_file = 'page_white_acrobat.png'; }
     if(ext == 'zip') { icon_file = 'page_white_compressed.png'; }
     if(ext == 'xls') { icon_file = 'page_white_excel.png'; }
@@ -42,7 +42,7 @@ Ext.ux.iconFromFileName = function(name) {
     if(ext == 'doc') { icon_file = 'page_white_word.png'; }
     if(ext == 'docx') { icon_file = 'page_word.png'; }
     if(ext == 'iso') { icon_file = 'page_white_cd.png'; }
-    
+
     return icon_file;
 }
 
@@ -68,7 +68,7 @@ Ext.ux.showNullusMoney = function(val) {
 	if (val == null || val === "") { return Ext.ux.showNull(val); }
 	return Ext.util.Format.usMoney(val);
 }
- 
+
 
 /*
 Ext.ux.RapidApp.WinFormPost
@@ -92,27 +92,27 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 	var rand = Math.floor(Math.random()*100000);
 	var winId = 'win-' + rand;
 	var formId = 'winformpost-' + rand;
-	
+
 	if(! cfg.title)						{ cfg.title = ''; 						}
 	if(! cfg.height)						{ cfg.height = 400; 						}
 	if(! cfg.width)						{ cfg.width = 350; 						}
 	if(! cfg.params)						{ cfg.params = {};					}
 	if(! cfg.valuesParamName)			{ cfg.valuesParamName = 'json_form_data';		}
-	
+
 	cfg.fieldset['anchor'] = '100% 100%';
-    
-    
+
+
 	var success_fn = function(response,options) {
 		Ext.getCmp(winId).close();
 		if (cfg.success) { cfg.success.apply(this,arguments); }
 		if (cfg.eval_response && response.responseText) { return eval(response.responseText); }
 	};
-	
+
 	var failure_fn = function(response,options) {
-		
+
 		if (cfg.failure) { cfg.failure.apply(this,arguments); }
 	};
-    
+
 	var win = new Ext.Window({
 		title: cfg.title,
 		id: winId,
@@ -133,7 +133,7 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 					text	: 'Save',
 					handler	: function(btn) {
 						var form = Ext.getCmp(formId).getForm();
-						
+
 						if (cfg.useSubmit) {
 							return form.submit({
 								url: cfg.url,
@@ -143,7 +143,7 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 							});
 						}
 						else {
-						
+
 							var values;
 							if (cfg.noRaw) {
 								values = form.getFieldValues();
@@ -151,7 +151,7 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 							else {
 								values = form.getValues();
 							}
-							
+
 							var params = cfg.params;
 							if (cfg.encode_values) {
 								params[cfg.valuesParamName] = Ext.util.JSON.encode(values);
@@ -161,7 +161,7 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 									if(!params[i]) { params[i] = values[i]; }
 								}
 							}
-							
+
 							return Ext.Ajax.request({
 								url: cfg.url,
 								params: params,
@@ -187,53 +187,53 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 
 Ext.ns('Ext.ux.EditRecordField');
 Ext.ux.EditRecordField = function(config) {
-	
+
 	var rand = Math.floor(Math.random()*100000);
 	var winId = 'win-' + rand;
 	var formId = 'editrec-' + rand;
 	var minFieldWidth = 175;
-	
+
 	var win_init_w = 200;
 	var win_init_h = 100;
-	
+
 	var field = {
 		xtype		: 'textfield',
 		hideLabel	: true
 	};
-	
+
 	if (config.fieldType) { field['xtype'] = config.fieldType; }
-	
-	if (config.field_cnf) { //<-- field_cnf override 
+
+	if (config.field_cnf) { //<-- field_cnf override
 		field = config.field_cnf;
-		
+
 		// -----------------
 		if (field['xtype'] == 'fieldset') { return Ext.ux.EditRecordFieldSet(config.Record,field); }
 		// -----------------
-		
+
 		if (field['width']) {
 			win_init_w = field['width'] + 100;
 			delete field['width'];
 		}
 	}
-	
+
 	field['value'] = config.Record.data[config.fieldName];
 	field['save_field_name'] = config.fieldName;
 	if (config.save_field_name) { field['save_field_name'] = config.save_field_name; }
-	
+
 	if (config.fieldType && !field['xtype']) { field['xtype'] = config.fieldType; }
 	if (config.fieldName && !field['name']) { field['name'] = config.fieldName; }
 	if (config.monitorValid && !field['monitorValid']) { field['monitorValid'] = config.monitorValid; }
-	
+
 	if (!field['id']) { field['id'] = 'field-' + rand; }
-	
+
 	//field['value'] = record_val;
 	//if (config.initValue) { field['value'] = config.initValue; } //<-- this is needed for certain combo fields
-	
+
 	field['anchor'] = '100%';
 	if (field['xtype'] == 'textarea') {
 		field['anchor'] = '100% 100%';
 	}
-	
+
 	var win = new Ext.Window({
 		id: winId,
 		width: win_init_w,
@@ -270,7 +270,7 @@ Ext.ux.EditRecordField = function(config) {
 			afterrender: function(win) {
 				var oField = Ext.getCmp(field['id']);
 				if (!config.field_cnf) { //<-- don't run text metrics if there is a cust field_cnf
-		
+
 					var TM = Ext.util.TextMetrics.createInstance(oField.el);
 					var wid;
 					if (oField.getXType() == 'textarea') {
@@ -279,15 +279,15 @@ Ext.ux.EditRecordField = function(config) {
 						var hig = TM.getHeight(field['value']) + 20;
 						if (hig < 300) { hig = 300; }
 						if (hig > 600) { hig = 600; }
-						
+
 						win.setHeight(hig);
 					}
 					else {
 						wid = TM.getWidth(field['value']) + 50;
 					}
-					
+
 					if (wid > 500) { wid = 500; }
-					
+
 					if (wid > minFieldWidth) {
 						win.setWidth(wid);
 					}
@@ -307,18 +307,18 @@ Ext.ux.EditRecordFieldSet = function(Record,fieldset) {
 	var winId = 'win-' + rand;
 	var formId = 'editrec-' + rand;
 	var minFieldWidth = 175;
-	
+
 	var win_init_w = 550;
 	var win_init_h = 200;
-	
+
 	for (i in fieldset.items) {
 		fieldset.items[i]['value'] = Record.data[fieldset.items[i]['name']];
 		if (!fieldset.items[i]['save_field_name']) { fieldset.items[i]['save_field_name'] = fieldset.items[i]['name']; }
 		if (!fieldset.items[i]['id']) { fieldset.items[i]['id'] = 'field-' + i + '-' + rand; }
 	}
-	
+
 	fieldset['anchor'] = '100% 100%';
-	
+
 	var win = new Ext.Window({
 		id: winId,
 		width: win_init_w,
@@ -336,9 +336,9 @@ Ext.ux.EditRecordFieldSet = function(Record,fieldset) {
 				{
 					text	: 'Save',
 					handler	: function() {
-					
+
 						for (i in fieldset.items) {
-					
+
 							var oField = Ext.getCmp(fieldset.items[i]['id']);
 							if (oField) {
 								try {
@@ -348,9 +348,9 @@ Ext.ux.EditRecordFieldSet = function(Record,fieldset) {
 									}
 								} catch (err) {}
 							}
-						
+
 						}
-						
+
 						Record.store.save();
 						Ext.getCmp(winId).close();
 					}
@@ -374,7 +374,7 @@ Ext.ux.EditRecordFieldSet = function(Record,fieldset) {
 
 Ext.ns('Ext.ux.Msg.EditRecordField');
 Ext.ux.Msg.EditRecordField = function(config) {
-	
+
 	var msgCnf = {
 		prompt: true,
 		title: config.fieldLabel + ':',
@@ -389,12 +389,12 @@ Ext.ux.Msg.EditRecordField = function(config) {
 		value: config.Record.data[config.fieldName],
 		width: 250
 	}
-	
+
 	if (config.fieldType == 'textarea') {
 		msgCnf['width'] = 350;
 		msgCnf['multiline'] = 200;
 	}
-	
+
 	Ext.Msg.show(msgCnf);
 }
 
@@ -413,7 +413,7 @@ Ext.override(Ext.Container, {
 
 Ext.override(Ext.BoxComponent, {
 	initComponent: function() {
-		
+
 
 		// All-purpose override allowing eval code in config
 		var thisB = this;
@@ -427,10 +427,10 @@ Ext.override(Ext.BoxComponent, {
 		}
 		Ext.BoxComponent.superclass.initComponent.apply(this, arguments);
 	}
-	//,afterRender: function() { 
+	//,afterRender: function() {
 		//this.superclass.afterRender.call(this);
 	//	if (this.afterRender_eval) { eval(this.afterRender_eval); }
-		
+
 	//}
 });
 
@@ -441,7 +441,7 @@ Ext.ns('Ext.ux.FindNodebyId');
 Ext.ux.FindNodebyId = function(node,id) {
 	this.node = node;
 	this.id = id;
-	
+
 	alert(this.node.id);
 	if (this.node.id == this.id) { return this.node; }
 	//if (this.node.isLeaf()) { return false; }
@@ -488,7 +488,7 @@ Ext.override(Ext.CompositeElementLite, {
 // -------
 
 
-/* This is crap since 'anchor' exists 
+/* This is crap since 'anchor' exists
 Ext.override(Ext.form.FormPanel, {
 	plugins: [new Ext.ux.form.FieldAutoExpand()]
 });
@@ -497,19 +497,19 @@ Ext.override(Ext.form.FormPanel, {
 /*
 Ext.override(Ext.BoxComponent, {
 	initComponent: function() {
-		
+
 		var thisC = this;
 		if (thisC.autoLoadJsonConf) {
-			
-		
+
+
 			Ext.Ajax.request({
 				disableCaching: true,
 				url: thisC.autoLoadJsonConf['url'],
 				params: thisC.autoLoadJsonConf['params'],
 				success: function(response, opts) {
-				
+
 					alert(response.responseText);
-				
+
 					var imported_data = Ext.util.JSON.decode(response.responseText);
 					//var imported_data = eval('(' + response.responseText + ')');
 					Ext.apply(this, Ext.apply(this.initialConfig, imported_data));
@@ -527,58 +527,58 @@ Ext.override(Ext.BoxComponent, {
 
 Ext.override(Ext.BoxComponent, {
 	initComponent: function() {
-		
+
 		var thisC = this;
-		
+
 		if (Ext.isArray(this.items)) {
 			for (i in this.items) {
 				if(this.items[i]['autoLoadJsonConf']) {
 					var urlspec = this.items[i]['autoLoadJsonConf'];
-			
+
 					Ext.Ajax.request({
 						disableCaching: true,
 						url: urlspec['url'],
 						params: urlspec['params'],
 						success: function(response, opts) {
-						
+
 							alert(response.responseText);
-						
+
 							var imported_data = eval('(' + response.responseText + ')');
 							thisC.insert(i,imported_data);
 							thisC.doLayout();
-							
+
 							Ext.apply(this, Ext.apply(this.initialConfig, imported_data));
 						},
 						failure: function(response, opts) {
 							alert('AJAX autoLoadJsonConf FAILED!!!!!!');
 						}
 					});
-					
+
 					delete this.items[i];
-				
-				
+
+
 				}
 			}
 		}
-		
-		
-		
-		
-		
-		
-		
+
+
+
+
+
+
+
 		var thisC = this;
 		if (thisC.autoLoadJsonConf) {
-			
-		
+
+
 			Ext.Ajax.request({
 				disableCaching: true,
 				url: thisC.autoLoadJsonConf['url'],
 				params: thisC.autoLoadJsonConf['params'],
 				success: function(response, opts) {
-				
+
 					alert(response.responseText);
-				
+
 					var imported_data = Ext.util.JSON.decode(response.responseText);
 					//var imported_data = eval('(' + response.responseText + ')');
 					Ext.apply(this, Ext.apply(this.initialConfig, imported_data));
@@ -596,16 +596,16 @@ Ext.override(Ext.BoxComponent, {
 
 
 Ext.ux.DynContainer = Ext.extend(Ext.Container, {
-	
+
 	initComponent: function() {
-		
+
 		var id = this.id;
 		var imported_data;
 		var thisC = this;
 		//if (thisC.itemsurl) {
 		var config = {
 			loadData: function(loadurl,params) {
-				
+
 				//alert('Loading: ' + loadurl);
 
 				Ext.Ajax.request({
@@ -614,13 +614,13 @@ Ext.ux.DynContainer = Ext.extend(Ext.Container, {
 					url: loadurl,
 					params: params,
 					success: function(response, opts) {
-						
+
 						imported_data = eval('(' + response.responseText + ')');
-						
+
 						thisC.removeAll();
 						thisC.add(imported_data);
 						thisC.doLayout();
-						
+
 					},
 					failure: function(response, opts) {
 						alert('AJAX FAILED!!!!!!');
@@ -652,9 +652,9 @@ Ext.override(Ext.Container, {
 
 			for (i in this.ajaxitems) {
 				if (this.ajaxitems[i]['url']) {
-				
+
 					alert(this.ajaxitems[i]['url']);
-					
+
 					Ext.Ajax.request({
 						disableCaching: true,
 						url: this.ajaxitems[i]['url'],
@@ -693,11 +693,11 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 					disableCaching: true,
 					render: function(el, response, updater, callback) {
 						if (!updater.isUpdating()) {
-							try { 
-								imported_data = eval('(' + response.responseText + ')'); 
-							} 
-							catch(err) { 
-								return eval(response.responseText); 
+							try {
+								imported_data = eval('(' + response.responseText + ')');
+							}
+							catch(err) {
+								return eval(response.responseText);
 							}
 							var container = Ext.getCmp(id);
 							/*
@@ -713,30 +713,30 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 									for (i in fields) {
 										BasicForm.remove(i);
 									}
-								
-								
+
+
 									//try { Forms[f].removeAll(true); Forms[f].destroy(); } catch(err) {}
 								} catch(err) {} }
-								
-								
+
+
 								//if (childForm && typof(childForm) == 'object') { alert("'" + childForm + "'"); }
-								
+
 								//if (childForm && childForm != '')  { alert('"' + eval(typeof(childForm.prototype.destroy)) + '"'); }
-								
+
 								//if (childForm && childForm != '')  { childForm.destroy(); }
-								
+
 								//if (childForm) { alert('"' + Ext.type(childForm) + '"'); }
-								
+
 								//if (childForm) { alert('"' + Ext.util.JSON.encode(childForm) + '"'); }
-								
+
 								//if (childForm) { try { childForm.destroy(); } catch(err) { } }
-								
+
 								//if (childForm) { try { childForm.destroy(); } catch(err) { alert('"' + err + '"'); } }
 							}
 							// ---
 							*/
 							/*
-							
+
 							// --- NEW TRY LINE:
 							try { container.removeAll(true); } catch(err) { try { container.removeAll(true); } catch(err) {} }
 							container.insert(0,imported_data);
@@ -760,7 +760,7 @@ Ext.reg('autopanel',Ext.ux.AutoPanel);
 
 Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 	initComponent: function() {
-		
+
 		var id = this.id;
 		var imported_data;
 			var config = {
@@ -768,11 +768,11 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 					disableCaching: true,
 					render: function(el, response, updater, callback) {
 						if (!updater.isUpdating()) {
-							try { 
-								imported_data = eval('(' + response.responseText + ')'); 
-							} 
-							catch(err) { 
-								return eval(response.responseText); 
+							try {
+								imported_data = eval('(' + response.responseText + ')');
+							}
+							catch(err) {
+								return eval(response.responseText);
 							}
 							var container = Ext.getCmp(id);
 
@@ -797,7 +797,7 @@ Ext.reg('autopanel',Ext.ux.AutoPanel);
 /*
 Ext.ux.JsonAutoPanel = Ext.extend(Ext.Panel, {
 	initComponent: function() {
-		
+
 		var id = this.id;
 		var imported_data;
 			var config = {
@@ -805,15 +805,15 @@ Ext.ux.JsonAutoPanel = Ext.extend(Ext.Panel, {
 					disableCaching: true,
 					render_old: function(el, response, updater, callback) {
 						if (!updater.isUpdating()) {
-							try { 
-								imported_data = eval('(' + response.responseText + ')'); 
-							} 
-							catch(err) { 
-								return eval(response.responseText); 
+							try {
+								imported_data = eval('(' + response.responseText + ')');
+							}
+							catch(err) {
+								return eval(response.responseText);
 							}
 							var container = Ext.getCmp(id);
 
-							
+
 							// --- NEW TRY LINE:
 							try { container.removeAll(true); } catch(err) { try { container.removeAll(true); } catch(err) {} }
 							container.insert(0,imported_data);
@@ -829,24 +829,24 @@ Ext.ux.JsonAutoPanel = Ext.extend(Ext.Panel, {
 							// clear loading text
 							el.dom.innerHTML = '';
 							//var data = Ext.util.JSON.decode(responseText);
-							
-							var data = eval('(' + response.responseText + ')'); 
-							
+
+							var data = eval('(' + response.responseText + ')');
+
 							var pnl = response.argument.options.container || response.argument.scope;
-							
+
 							alert(typeof(pnl));
-							
+
 							if (pnl.add) {
-							
+
 								alert('foo');
-							
+
 								pnl.add(data);
 								pnl.doLayout();
 							}
 							if (callback) {
 								callback(data);
 							}
-							
+
 						//} else {
 							// response is HTML, call regular update
 						//	el.update(response.responseText, updateManager.loadScripts, callback);
@@ -854,19 +854,19 @@ Ext.ux.JsonAutoPanel = Ext.extend(Ext.Panel, {
 					},
 					render: function(el, response, updater, callback) {
 						if (!updater.isUpdating()) {
-							try { 
-								imported_data = eval('(' + response.responseText + ')'); 
-							} 
-							catch(err) { 
-								return eval(response.responseText); 
+							try {
+								imported_data = eval('(' + response.responseText + ')');
+							}
+							catch(err) {
+								return eval(response.responseText);
 							}
 							//var container = Ext.getCmp(id);
 
 							el.dom.innerHTML = '';
 							var newComponent = new Ext.Container(imported_data);
 							newComponent.render(el);
-							
-							
+
+
 							// --- NEW TRY LINE:
 							//try { container.removeAll(true); } catch(err) { try { container.removeAll(true); } catch(err) {} }
 							//container.insert(0,imported_data);
@@ -896,7 +896,7 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 	initComponent: function() {
 
 		var store = new Ext.data.JsonStore(this.store_config);
-		
+
 		var Toolbar = {
 			xtype : 'paging',
 			store : store,
@@ -906,7 +906,7 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 		if(this.pageSize) { Toolbar['pageSize'] = parseFloat(this.pageSize); }
 		if(this.paging_bbar) { Toolbar['items'] = this.paging_bbar; }
 
-	
+
 		// --------- this doesn't work:
 		//var new_column_model = [];
 		//for ( var i in this.column_model ) {
@@ -915,7 +915,7 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 		//	}
 		//}
 		//this.column_model = new_column_model;
-		
+
 		// ----- RowExpander ------ //
 		if (this.expander_template) {
 			var expander_config = {};
@@ -928,11 +928,11 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 			this.expander = expander;
 		}
 		// ----------------------- //
-		
-		
-		
-		
-		
+
+
+
+
+
 
 		// ----- RowActions ------ //
 		var thisG = this;
@@ -952,13 +952,13 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 			this.column_model.push(action);
 		}
 		// ----------------------- //
-		
-		
-		
+
+
+
 		// ---------------------------- //
 		// ------ Grid Search --------- //
 		if (this.gridsearch) {
-			
+
 			var grid_search_cnf = {
 				iconCls:'icon-zoom',
 				//,readonlyIndexes:['note']
@@ -971,52 +971,52 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 				position: 'top'
 				//,menuStyle:'radio'
 			};
-			
+
 			if (this.gridsearch_remote) { grid_search_cnf['mode'] = 'remote'; }
-			
+
 			if(!this.plugins){ this.plugins = []; }
 			this.plugins.push(new Ext.ux.grid.Search(grid_search_cnf));
 		}
 		// ---------------------------- //
-		
+
 
 	 // ------ Grid Filter --------- //
 		//if(this.gridfilter) {
-		
+
 			var grid_filter_cnf = {
 				encode: true, // json encode the filter query
 				local: true   // defaults to false (remote filtering)
 			}
-			
+
 			if (this.gridfilter_remote) { grid_filter_cnf['local'] = false; }
-			
-			
-			if(this.init_state) { 
+
+
+			if(this.init_state) {
 				grid_filter_cnf['init_state'] = this.init_state;
 				//{
-				//	filters: this.init_filters 
+				//	filters: this.init_filters
 				//};
-				
-				
+
+
 				//console.dir(this.init_state);
 			}
-			
+
 			var GridFilters = new Ext.ux.grid.GridFilters(grid_filter_cnf);
-		
+
 			if(!this.plugins){ this.plugins = []; }
-			this.plugins.push(GridFilters);    
+			this.plugins.push(GridFilters);
 		//}
 	// ---------------------------- //
 
 		var sm = new Ext.grid.RowSelectionModel();
-		
+
 		// ------- SelectionModel -------- //
 		if (this.row_checkboxes) {
 			sm = new Ext.grid.CheckboxSelectionModel();
 			this.column_model.unshift(sm);
 		}
 		// ------------------------------- //
-		
+
 		var config = {
 			stateful: false,
 			enableColumnMove: true,
@@ -1029,11 +1029,11 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 			storeReload: function(grid) {
 				grid.store.reload();
 			},
-			
+
 			// ------- http://extjs.com/forum/showthread.php?p=97676#post97676
 			autoSizeColumns: function() {
 				if (this.colModel) {
-					
+
 					this.colModel.suspendEvents();
 					for (var i = 0; i < this.colModel.getColumnCount(); i++) {
 						this.autoSizeColumn(i);
@@ -1049,32 +1049,32 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 				var column = this.colModel.getColumnById(colid);
 				var col = this.view.el.select("td.x-grid3-td-" + colid + " div:first-child");
 				if (col) {
-				
+
 					var add = 6;
 					var w = col.getTextWidth() + Ext.get(col.elements[0]).getFrameWidth('lr') + add;
-					
+
 					if (this.MaxColWidth && w > this.MaxColWidth) { w =  this.MaxColWidth; }
 					if (column.width && w < column.width) { w = column.width; }
-					
+
 					this.colModel.setColumnWidth(c, w);
 					return w;
 				}
 			}
-			// ------------------------		
+			// ------------------------
 		};
-		
+
 		if (Toolbar) { config['bbar'] = Toolbar; }
-		
-		
-		
+
+
+
 		Ext.apply(this, Ext.apply(this.initialConfig, config));
 		Ext.ux.DynGridPanel.superclass.initComponent.apply(this, arguments);
 	},
 
 	onRender: function() {
-		
+
 		//var myMask = new Ext.LoadMask(Ext.getBody(), {msg:"Loading data, please wait..."});
-		//myMask.show(); 
+		//myMask.show();
 
 
 		// ------- Remote Columns -------- //
@@ -1105,7 +1105,7 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 		}
 		// ------------------------------- //
 
-		
+
 		var load_parms = null;
 		if (this.pageSize) {
 			load_parms = {
@@ -1115,21 +1115,21 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 				}
 			};
 		}
-		
+
 		this.store.load(load_parms);
-		
+
 		Ext.ux.DynGridPanel.superclass.onRender.apply(this, arguments);
-		
+
 		var thisC = this;
-		
+
 		function StartReloadInterval(mystore,i) {
 			function ReloadStore() { mystore.reload(); }
 			setInterval(ReloadStore,i);
 		}
 		if (this.reload_interval > 0) {
 			StartReloadInterval(thisC.store,thisC.reload_interval);
-		}	
-		
+		}
+
 		if (this.UseAutoSizeColumns) {
 			//this.store.on('load',thisC.autoSizeColumns,thisC);
 			this.store.on('load',function(grid) {
@@ -1137,10 +1137,10 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 				sizeFunc();
 			});
 		}
-		
-		
-		
-		// ---- this is old: 
+
+
+
+		// ---- this is old:
 		/*
 		this.on('celldblclick',function(grid, rowIndex, columnIndex, e) {
 
@@ -1151,24 +1151,24 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 		});
 		*/
 		// -----------------
-		
+
 		this.on('cellclick',function(grid, rowIndex, columnIndex, e) {
 			var record = grid.getStore().getAt(rowIndex);  // Get the Record
 			var col_model = grid.getColumnModel();
 			var fieldName = col_model.getDataIndex(columnIndex); // Get field name
-			
+
 			if (this.expander && this.expander_click_rows) {
 				if (this.expander_click_rows[columnIndex]) {
 					this.expander.toggleRow(rowIndex);
 				}
 			}
-			
+
 			//var colid = col_model.getColumnId(fieldName);
 			//var column = col_model.getColumnById(colid);
-			
+
 		});
-		
-		
+
+
 		// ------ Cell Doubleclick -------- //
 		if(this.celldblclick_eval) {
 			//alert(thisC.rowbodydblclick_eval);
@@ -1180,11 +1180,11 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 			});
 		}
 		// -------------------------------- //
-		
+
 		//window.busy = false;
-		
-		//myMask.hide(); 
-		
+
+		//myMask.hide();
+
 	},
 	getFilters: function(grid) {
 		for (i in grid.plugins) {
@@ -1207,9 +1207,9 @@ Ext.override(Ext.ux.grid.GridFilters, {
 
 	init: function(grid) {
 		this.initOrig.apply(this, arguments);
-		
-		if (this.init_state) { 
-			
+
+		if (this.init_state) {
+
 			for (i in this.init_state.filters) {
 				for (p in this.init_state.filters[i]) {
 					var orig = this.init_state.filters[i][p];
@@ -1218,7 +1218,7 @@ Ext.override(Ext.ux.grid.GridFilters, {
 					}
 				}
 			}
-			
+
 			this.applyState(grid,this.init_state);
 			grid.applyState(this.init_state);
 			//console.dir(this.init_state);
@@ -1267,7 +1267,7 @@ Ext.override(Ext.ux.GridFilters, {
 Ext.ux.DButton = Ext.extend(Ext.Button, {
 
 	initComponent: function() {
-		
+
 		if (this.handler_func) {
 			var config = {
 				handler: function(btn) { eval(this.handler_func); }
@@ -1313,19 +1313,19 @@ Ext.ux.TreePanelExt = Ext.extend(Ext.tree.TreePanel, {
 	},
 	afterRender: function() {
 		Ext.ux.TreePanelExt.superclass.afterRender.apply(this, arguments);
-		
+
 		if (this.expand) { this.expandAll(); }
-		
+
 		if (this.afterRender_eval) {
-			
+
 			eval(this.afterRender_eval);
-			
+
 			/*
 			var eval_str = this.afterRender_eval;
 			var task = new Ext.util.DelayedTask(function() { eval(eval_str); });
 			task.delay(500);
 			*/
-			
+
 		}
 	}
 });
@@ -1355,31 +1355,31 @@ Ext.extend(Ext.ux.JSONSubmitAction, Ext.form.Action.Submit, {
 						  }
 					 });
 				}
-				
+
 				var orig_p = this.form.orig_params;
 				var new_p = this.form.getFieldValues();
-				
+
 				var ajax_params = o.base_params ? o.base_params : {};
 				ajax_params['json_params'] = Ext.util.JSON.encode(new_p);
-				if (this.form.orig_params) { 
+				if (this.form.orig_params) {
 					ajax_params['orig_params'] = Ext.util.JSON.encode(orig_p);
 				}
-				
-				
-				
 
-				
-				
+
+
+
+
+
 				//Ext.getCmp('dataview').getStore().reload();
-				
+
 				//var cmp = this.form.findField('dataview');
 				//alert(cmp.getXtype());
-				
+
 				//this.cascade(function (cmp) {
 				//	try { if (cmp.getXtype()) { alert(cmp.getXtype()); } } catch(err) {}
 				//});
-				
-				
+
+
 				Ext.Ajax.request(Ext.apply(this.createCallback(o), {
 					 //form:this.form.el.dom,  <--- need to remove this line to prevent the form items from being submitted
 					 url:this.getUrl(isGet),
@@ -1409,41 +1409,41 @@ Ext.form.Action.ACTION_TYPES['jsonsubmit'] = Ext.ux.JSONSubmitAction;
 Ext.ux.SubmitFormPanel = Ext.extend(Ext.form.FormPanel, {
 
 	initComponent: function() {
-		
-		
 
-		
+
+
+
 		var thisC = this;
-	
+
 		var config = {
 			resultProcessor: function(form, action) {
 				thisC.el.unmask();
 				if (action.result.success) {
 					if (thisC.show_result) { Ext.MessageBox.alert('Success',action.result.msg); }
-					if (thisC.onSuccess_eval) { 
-						eval(thisC.onSuccess_eval); 
-						
-						
-						
-						
-						
+					if (thisC.onSuccess_eval) {
+						eval(thisC.onSuccess_eval);
+
+
+
+
+
 						//alert(this.getComponent('itemdataview').getXType());
-						
-						
+
+
 						//var store = thisC.getComponent('itemdataview').store;
 						//store.reload;
-						
+
 						//var store = Ext.getCmp('mydataview').store;
 						//store.reload;
-						
+
 						//alert(Ext.util.JSON.encode(action.params));
 						//Ext.Msg.alert('blah',Ext.util.JSON.encode(thisC.base_params));
-						
-						//Ext.StoreMgr.each( function(store) { 
+
+						//Ext.StoreMgr.each( function(store) {
 						//	for ( var i in thisC.base_params ) {
 						//		store.setBaseParam(i, thisC.base_params[i]);
 						//	}
-						//	store.reload(); 
+						//	store.reload();
 						//});
 					}
 				}
@@ -1452,23 +1452,23 @@ Ext.ux.SubmitFormPanel = Ext.extend(Ext.form.FormPanel, {
 					if (thisC.show_result) { Ext.MessageBox.alert('Failure',action.result.msg); }
 				}
 			},
-			
+
 			submitProcessor: function() {
-				
+
 				var do_action = this.do_action ? this.do_action : 'submit';
 				var base_params = this.base_params ? this.base_params : {};
-				
-				
 
 
-				
-				//Ext.StoreMgr.each( function(store) { 
+
+
+
+				//Ext.StoreMgr.each( function(store) {
 				//	for ( var i in base_params ) {
 				//		store.setBaseParam(i, base_params[i]);
 				//	}
-				//	store.reload(); 
+				//	store.reload();
 				//});
-				
+
 				this.el.mask('Please wait','x-mask-loading');
 				//this.getForm().submit({
 				//this.getForm().doAction('jsonsubmit',{
@@ -1481,13 +1481,13 @@ Ext.ux.SubmitFormPanel = Ext.extend(Ext.form.FormPanel, {
 				});
 			}
 		};
-		
+
 		Ext.apply(this, Ext.apply(this.initialConfig, config));
 		Ext.ux.SubmitFormPanel.superclass.initComponent.apply(this, arguments);
 	},
 
 	afterRender: function() {
-	
+
 		//if (this.map_enter_submit) {
 		//	var map = new Ext.KeyMap(document, {
 		//		key: 13,
@@ -1495,7 +1495,7 @@ Ext.ux.SubmitFormPanel = Ext.extend(Ext.form.FormPanel, {
 		//		fn: function() { alert('enter!'); }
 		//	});
 		//}
-		
+
 
 
 
@@ -1503,14 +1503,14 @@ Ext.ux.SubmitFormPanel = Ext.extend(Ext.form.FormPanel, {
 			if(action.type == 'load') {
 			// save the orig params so they are available later in the jsonsubmit action
 			form.orig_params = form.getFieldValues();
-				
+
 				//find any stores within this container and reload them:
 				this.cascade(function(cmp) {
-					var xtype = cmp.getXType(); 
+					var xtype = cmp.getXType();
 					if(xtype == "dyngrid" || xtype == "dataview") {
-						Ext.log(cmp.getXType()); 
-						try { cmp.getStore().reload(); } catch(err) { Ext.log(err); } 
-					} 
+						Ext.log(cmp.getXType());
+						try { cmp.getStore().reload(); } catch(err) { Ext.log(err); }
+					}
 				});
 			}
 		});
@@ -1521,9 +1521,9 @@ Ext.ux.SubmitFormPanel = Ext.extend(Ext.form.FormPanel, {
 		this.on('actioncomplete', function(form,action) {
 			if(action.type == 'load') {
 				form.orig_params = form.getFieldValues();
-				
-				
-				
+
+
+
 				var store = this.getComponent('itemdataview').getStore();
 				//var store = Ext.getCmp('mydataview').getStore();
 				//alert(Ext.util.JSON.encode(store.baseParams));
@@ -1533,15 +1533,15 @@ Ext.ux.SubmitFormPanel = Ext.extend(Ext.form.FormPanel, {
 				}
 				//alert(Ext.util.JSON.encode(store.baseParams));
 				store.reload();
-				
-				
+
+
 			}
 		});
 */
 
 
 
-/*		
+/*
 		this.on('activate', function(form,action) {
 			if (this.action_load) {
 				var action_load = this.action_load;
@@ -1550,7 +1550,7 @@ Ext.ux.SubmitFormPanel = Ext.extend(Ext.form.FormPanel, {
 				var form = this.getForm();
 				form.load(action_load);
 			}
-		
+
 		});
 */
 
@@ -1564,7 +1564,7 @@ Ext.ux.SubmitFormPanel = Ext.extend(Ext.form.FormPanel, {
 			form.load(action_load);
 		}
 
-		
+
 		if (this.focus_field_id) {
 			var field = Ext.getCmp(this.focus_field_id);
 			if (field) { field.focus('',10); }
@@ -1595,7 +1595,7 @@ Ext.override(Ext.ux.tree.CheckTreePanel, {
 		Ext.ux.tree.CheckTreePanel.superclass.afterRender.apply(this, arguments);
 		this.updateHidden();
 	 },
-	 
+
 	 // This adds unchecked items to the posted list... Unchecked start with '-', checked start with '+'
 	 getValue:function() {
 		var a = [];
@@ -1619,12 +1619,12 @@ Ext.override(Ext.ux.tree.CheckTreePanel, {
 Ext.override(Ext.ux.tree.CheckTreeNodeUI, {
 
 	renderElements:function(n, a, targetNode, bulkRender){
-		
+
 		/* This override was required to support NO checkbox */
 		var checkbox_class = 'x-tree-checkbox';
 		if (n.attributes.checked == null) { checkbox_class = 'x-tree-checkbox-no-checkbox'; }
 		/* ------------------------------------------------- */
-		
+
 		this.indentMarkup = n.parentNode ? n.parentNode.ui.getChildIndent() :'';
 		var checked = n.attributes.checked;
 		var href = a.href ? a.href : Ext.isGecko ? "" :"#";
@@ -2129,5 +2129,41 @@ Ext.ux.TplTabPanel = Ext.extend(Ext.TabPanel, {
     }
 });
 Ext.reg('tabtpl', Ext.ux.TplTabPanel);
+
+
+
+//http://www.sencha.com/forum/showthread.php?77984-Field-help-text-plugin.
+Ext.ux.FieldHelp = Ext.extend(Object, (function(){
+    function syncInputSize(w, h) {
+        this.el.setSize(w, h);
+    }
+
+    function afterFieldRender() {
+        if (!this.wrap) {
+            this.wrap = this.el.wrap({cls: 'x-form-field-wrap'});
+            this.positionEl = this.resizeEl = this.wrap;
+            this.actionMode = 'wrap';
+            this.onResize = this.onResize.createSequence(syncInputSize);
+        }
+        this.wrap[this.helpAlign == 'top' ? 'insertFirst' : 'createChild']({
+            cls: 'x-form-helptext',
+            html: this.helpText
+        });
+    }
+
+    return {
+        constructor: function(t, align) {
+            this.helpText = t.text; // <-- changed from t to t.text (HV)
+            this.align = align;
+        },
+
+        init: function(f) {
+            f.helpAlign = this.align;
+            f.helpText = this.helpText;
+            f.afterRender = f.afterRender.createSequence(afterFieldRender);
+        }
+    };
+})());
+Ext.preg('fieldhelp',Ext.ux.FieldHelp);
 
 

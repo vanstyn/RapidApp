@@ -46,11 +46,11 @@
 .icon-folder-view { background-image: url(/static/rapidapp/images/folder_view.png) !important; }
 .icon-save-as { background-image: url(/static/rapidapp/images/save_as.png) !important; }
 
-.icon-bullet_key { 
-	background-image: url(/static/rapidapp/images/bullet_key.png) !important; 
-	background-repeat:no-repeat; 
-	padding-right: 18px; 
-	padding-top: 9px; 
+.icon-bullet_key {
+	background-image: url(/static/rapidapp/images/bullet_key.png) !important;
+	background-repeat:no-repeat;
+	padding-right: 18px;
+	padding-top: 9px;
 	padding-bottom: 3px;
 }
 
@@ -67,22 +67,22 @@
 
 
 
-.tbar-title-medium { 
+.tbar-title-medium {
 	font-size:175% !important;
 	padding:6px !important;
 	font-weight: bolder !important;
 }
-.tbar-button-medium { 
+.tbar-button-medium {
 	font-size:140% !important;
 	padding-left: 5px !important;
 	font-weight: bolder !important;
 }
 
-.tbar-title-small { 
+.tbar-title-small {
 	padding:3px !important;
 	font-weight: bolder !important;
 }
-.tbar-button-small { 
+.tbar-button-small {
 	padding-left: 2px !important;
 	font-weight: bolder !important;
 }
@@ -233,17 +233,17 @@ img {
 //.x-grid3-hd-inner .x-grid3-hd-PRI_KEY { padding: 0px 0px 0px 0px; }
 //.x-grid3-hd-PRI_KEY { padding: 0px 0px 0px 0px; }
 
-.x-grid3-td-editIcon .x-grid3-cell-inner { 
+.x-grid3-td-editIcon .x-grid3-cell-inner {
 	background-image: url(/static/rapidapp/images/table_edit.png) !important;
 	background-position:center center;
 	background-repeat:no-repeat;
 	padding-left: 2px;
-	padding-right: 2px; 
+	padding-right: 2px;
 	cursor: pointer;
 }
 
 
-.pos-top-right { 
+.pos-top-right {
 	text-align: right;
 	position:absolute;
 	top:0;
@@ -298,13 +298,13 @@ html, body { height:100%; }
 	padding-bottom:10px;
 	overflow:hidden;
 }
- 
+
 /* Simple blue border */
 .form-group .form-group-header {
 	padding:0;
 	border-bottom:1px solid #c3daf9;
 }
- 
+
 /* Position the text element so it appears over the border added above */
 .form-group .form-group-header-text {
 	font-size:11px;
@@ -319,18 +319,18 @@ html, body { height:100%; }
 	border:1px solid #c3daf9;
 	background:#fff url(/static/rapidapp/images/form-collapse-icon.gif) no-repeat 2px 0;
 }
- 
+
 /* Copied from x-plain (for IE + layouts to work) */
 .form-group-body {
     overflow:hidden;
 }
- 
+
 /* Copied from x-plain (for IE + layouts to work) */
 .form-group-bwrap {
     overflow:hidden;
     zoom:1;
 }
- 
+
 /* Change the toggle icon when collapsed */
 .x-panel-collapsed .form-group-header-text {
 	background-position: 2px -15px;
@@ -380,19 +380,19 @@ padding-top: 3px !important;
 }
 
 .GreenSheetPN { /* 4 */
-font-weight: bold !important; 
+font-weight: bold !important;
 margin : 3px !important;
-margin-left: 5px !important; 
-font-size: 24px !important; 
+margin-left: 5px !important;
+font-size: 24px !important;
 /*text-decoration: underline !important;  */
-color: #333333 !important; 
-} 
+color: #333333 !important;
+}
 .GStitle {
 margin-left: 5px !important;
 margin-top: 5px !important;
 margin-bottom: 5px !important;
 font-weight: bold !important;
-font-size: 14px !important; 
+font-size: 14px !important;
 padding-top: 3px !important;
 }
 
@@ -401,13 +401,13 @@ margin-left: 5px !important;
 margin-top: 5px !important;
 margin-bottom: 5px !important;
 font-weight: bold !important;
-font-size: 12px !important; 
+font-size: 12px !important;
 padding-top: 3px !important;
 }
 
 
 .GSdesc {
-font-size: 9px !important; 
+font-size: 9px !important;
 overflow: hidden !important;
 width: 40% !important;
 border: 1px;
@@ -421,7 +421,7 @@ color: grey !important;
 
 
 .GSfloatRight {
-float: right !important; 
+float: right !important;
 margin-right: 20px !important;
 padding-top: 3px !important;
 }
@@ -429,18 +429,18 @@ padding-top: 3px !important;
 
 table.GSprop {
 font: "Lucida Grande", "Lucida Sans Unicode", "Trebuchet MS", sans-serif!important;
-padding: 0!important; 
-margin: 0!important; 
-border-collapse: collapse!important; 
-color: #333!important; 
+padding: 0!important;
+margin: 0!important;
+border-collapse: collapse!important;
+color: #333!important;
 background: #F3F5F7!important;
 }
 
 table.GSprop a.GSprop {
-color: #3A4856!important; 
-text-decoration: none!important; 
+color: #3A4856!important;
+text-decoration: none!important;
 border-bottom: 1px solid #C6C8CB!important;
-}  
+}
 
 table.GSprop thead.GSprop th.GSprop {
 background: #3A4856!important; padding: 15px 10px!important; color: #fff!important; text-align: right!important; font-weight: bolder!important;
@@ -449,7 +449,7 @@ background: #3A4856!important; padding: 15px 10px!important; color: #fff!importa
 table.GSprop tbody.GSprop, table.GSprop thead.GSprop {border-left: 1px solid #EAECEE!important; border-right: 1px solid #EAECEE!important;}
 
 table.GSprop tbody.GSprop {border-bottom: 1px solid #EAECEE!important;}
-                      
+
 table.GSprop tbody.GSprop td.GSprop, table.GSprop tbody.GSprop {
 padding: 5px!important; background: url("/static/rapidapp/images/td_back.gif") repeat-x!important; text-align: left!important;
 }
@@ -472,3 +472,10 @@ table.GSprop tbody.GSprop tr.GSprop:hover {background: #EAECEE!important; color:
 table.GSprop tfoot.GSprop td.GSprop, table.GSprop tfoot.GSprop th.GSprop, table.GSprop tfoot.GSprop tr.GSprop {
 text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", "Trebuchet MS", sans-serif!important; text-transform: uppercase!important; background: #fff!important; padding: 10px!important;
 }
+
+/* http://www.sencha.com/forum/showthread.php?77984-Field-help-text-plugin. */
+.x-form-helptext {
+    font-size: 9px;
+    color: #888;
+}
+
