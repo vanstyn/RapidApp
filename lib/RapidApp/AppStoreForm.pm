@@ -628,7 +628,7 @@ sub _build_formpanel_tbar {
 	push @$items, '->';
 	
 	push @$items, $self->add_button if (defined $self->create_data_coderef);
-	push @$items, $self->reload_button if (defined $self->read_data_coderef);
+	push @$items, $self->reload_button if (defined $self->read_data_coderef and not defined $self->create_data_coderef);
 	push @$items, '-' if (defined $self->read_data_coderef and defined $self->update_data_coderef);
 	push @$items, $self->save_button if (defined $self->update_data_coderef);
 	
@@ -636,13 +636,6 @@ sub _build_formpanel_tbar {
 		items => $items
 	};
 }
-
-
-
-
-
-
-
 
 
 
