@@ -473,10 +473,17 @@ sub update {
 	}
 	
 	my $result = $self->update_data_coderef->($rows,$params);
-	return $result if (
-		ref($result) eq 'HASH' and
-		defined $result->{success}
-	);
+	
+	if (ref($result) and defined $result->{success} and defined $result->{msg}) {
+		if ($result->{success}) {
+			$result->{success} = \1;
+		}
+		else {
+			$result->{success} = \0;
+		}
+		return $result;
+	}
+
 	
 	return {
 		success => \1,
@@ -504,7 +511,18 @@ sub create {
 	$rows->{$self->item_key} = 'dummy-key';
 	
 	# If the id of the new record was provided in the response, we'll use it:
-	$rows = $result->{rows} if (defined $result->{rows}->{$self->item_key});
+	$rows = $result->{rows} if (ref($result) and defined $result->{rows} and defined $result->{rows}->{$self->item_key});
+	
+	
+	if (ref($result) and defined $result->{success} and defined $result->{msg}) {
+		if ($result->{success}) {
+			$result->{success} = \1;
+		}
+		else {
+			$result->{success} = \0;
+		}
+		return $result;
+	}
 	
 	
 	if ($result and not $result->{success} == 0 ) {
