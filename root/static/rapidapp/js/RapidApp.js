@@ -1,8 +1,23 @@
 Ext.Updater.defaults.disableCaching = true;
 
 
+
 Ext.ns('Ext.log');
 Ext.log = function() {};
+
+
+
+Ext.Ajax.on('requestcomplete',function(conn,response,options) {
+    var auth = response.getResponseHeader('X-RapidApp-Authenticated');
+    if (auth) {
+        Ext.ns('Ext.ux.RapidApp');
+        var orig = Ext.ux.RapidApp.Authenticated;
+        Ext.ux.RapidApp.Authenticated = auth;
+        if (orig && orig != auth && auth == '0') {
+            window.location.reload();
+        }
+    }
+},this);
 
 
 
