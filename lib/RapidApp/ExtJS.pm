@@ -11,6 +11,7 @@ package RapidApp::ExtJS;
 
 use strict;
 use JSON::PP;
+use JSON;
 
 use Moose;
 
