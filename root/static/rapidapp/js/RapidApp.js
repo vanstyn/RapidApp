@@ -6,17 +6,25 @@ Ext.log = function() {};
 
 
 Ext.Ajax.on('requestcomplete',function(conn,response,options) {
-	 var auth = response.getResponseHeader('X-RapidApp-Authenticated');
-	 if (auth) {
-		  Ext.ns('Ext.ux.RapidApp');
-		  var orig = Ext.ux.RapidApp.Authenticated;
-		  if (auth != '0') { Ext.ux.RapidApp.Authenticated = auth; }
-		  if (orig && orig != auth && auth == '0') {
-				
+
+	// Need to put this in a try/catch because getResponseHeader() function
+	// does not exist in the response object with file uploads. Need to figure
+	// this out:
+	try {
+		var auth = response.getResponseHeader('X-RapidApp-Authenticated');
+		if (auth) {
+			Ext.ns('Ext.ux.RapidApp');
+			var orig = Ext.ux.RapidApp.Authenticated;
+			if (auth != '0') { Ext.ux.RapidApp.Authenticated = auth; }
+			if (orig && orig != auth && auth == '0') {
+					
 				Ext.ux.RapidApp.ReAuthPrompt();
-				
-		  }
-	 }
+					
+			}
+		 }
+	}
+	catch (err) {}
+	 
 },this);
 
 
