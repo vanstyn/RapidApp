@@ -65,7 +65,7 @@ around 'Controller' => sub {
 		return $self->render_data($self->non_auth_content);
 	}
 	
-	$self->c->res->header('X-RapidApp-Authenticated' => 1);
+	$self->c->res->header('X-RapidApp-Authenticated' => $self->c->user->get('username'));
 	return $self->$orig(@_);
 };
 

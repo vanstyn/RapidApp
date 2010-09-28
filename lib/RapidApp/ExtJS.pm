@@ -10,7 +10,7 @@ package RapidApp::ExtJS;
 
 
 use strict;
-use JSON;
+use JSON::PP;
 
 use Moose;
 
@@ -84,6 +84,7 @@ sub Login_Window_code {
 				
 				},{
 					id				=> 'username_field',
+					itemId		=> 'username_field',
 					name			=> 'username',
 					fieldLabel	=> $Params->{username_label}
 				},{
@@ -108,7 +109,15 @@ sub Login_Window_code {
 					handler_func		=> q~btn.findParentByType('window').close();~
 				}
 			]
-		}
+		},
+		#listeners => {
+		#	afterrender => RapidApp::JSONFunc->new( raw => 1, func =>
+		#		'function(fp) {' .
+		#			'var field = Ext.getComponent("username_field");' . 
+		#			'field.focus("",10);' .
+		#		'}'
+		#	)
+		#}
 	}) . q~var field = Ext.getCmp('username_field'); field.focus('',10); field.focus('',200); field.focus('',500);~,
 
 
