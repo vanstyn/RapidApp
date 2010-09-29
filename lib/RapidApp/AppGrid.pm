@@ -1356,12 +1356,12 @@ sub add_window_config {
 sub edit_submitform {
 	my $self = shift;
 	
-	my $params = JSON::decode_json($self->c->req->params->{orig_params});
+	my $params = JSON::PP::decode_json($self->c->req->params->{orig_params});
 	my $orig_params = $self->c->req->params;
 	$orig_params->{orig_params} = $params;
 	
 	my $config = $self->add_edit_base_submitform;
-	$config->{base_params} = { orig_params => JSON::to_json($orig_params) };
+	$config->{base_params} = { orig_params => JSON::PP::encode_json($orig_params) };
 	
 	my $id = $config->{id};
 
@@ -1432,7 +1432,7 @@ sub add_submit {
 	try {
 	
 		my $json_params = $self->c->req->params->{json_params};
-		my $params = JSON::decode_json($json_params);
+		my $params = JSON::PP::decode_json($json_params);
 	
 		my $hash = $self->add_item_coderef->($self->process_submit_params($params));
 		$h = $hash if (ref($hash) eq 'HASH');
@@ -1459,10 +1459,10 @@ sub edit_submit {
 	try {
 	
 		my $orig_json = $self->c->req->params->{orig_params};
-		my $orig_params = JSON::from_json($orig_json);
+		my $orig_params = JSON::PP::from_json($orig_json);
 	
 		my $json_params = $self->c->req->params->{json_params};
-		my $params = JSON::decode_json($json_params);
+		my $params = JSON::PP::decode_json($json_params);
 	
 		my $hash = $self->edit_item_coderef->($self->process_submit_params($params),$orig_params);
 		$h = $hash if (ref($hash) eq 'HASH');
@@ -1544,7 +1544,7 @@ sub delete_items_button {
 
 sub batch_delete_submit {
 	my $self = shift;
-	return $self->batch_delete_confirm_window(JSON::decode_json($self->c->req->params->{grid_rows_params}));
+	return $self->batch_delete_confirm_window(JSON::PP::decode_json($self->c->req->params->{grid_rows_params}));
 }
 
 sub batch_delete_confirm_window {
@@ -1577,7 +1577,7 @@ sub batch_delete_confirm_window {
 			q~buttons: Ext.Msg.YESNO,~ .
 			q~icon: Ext.MessageBox.QUESTION,~ .
 			q~fn: function(buttonId) { if (buttonId=="yes") {~ .
-				q~var params = ~ . JSON::to_json($self->c->req->body_params) . q~;~ .
+				q~var params = ~ . JSON::PP::encode_json($self->c->req->body_params) . q~;~ .
 				
 				# This Ext.Ajax.request replaces the Ext.ux.FetchEval line below:
 				'Ext.Ajax.request({' .
@@ -1601,7 +1601,7 @@ sub action_batch_delete {
 	
 	my $code = '';
 	try {
-		my $params_list = JSON::decode_json($self->c->req->params->{grid_rows_params});
+		my $params_list = JSON::PP::decode_json($self->c->req->params->{grid_rows_params});
 		foreach my $params (@$params_list) {
 			my $h = $self->delete_item_coderef->($params);
 			next if (ref($h) eq '' and $h); # <-- if the delete_item_coderef just returned true (non-ref)...
@@ -1609,7 +1609,7 @@ sub action_batch_delete {
 				unless ($h->{success}) {
 					$h->{msg} = '' unless (defined $h->{msg});
 					$h->{msg} =~ s/\r?\n/_/g;
-					$code = q~var data = ~ . JSON::to_json([$h->{msg}]) . q~;~;
+					$code = q~var data = ~ . JSON::PP::encode_json([$h->{msg}]) . q~;~;
 					$code .= q~Ext.Msg.alert('Failed to delete item...',data[0]);~;
 					last;
 				}
@@ -1623,7 +1623,7 @@ sub action_batch_delete {
 		my $msg = $_;
 		chomp $msg;
 		
-		$code = q~var caught = ~ . JSON::to_json({msg => $msg}) . ';' .
+		$code = q~var caught = ~ . JSON::PP::encode_json({msg => $msg}) . ';' .
 			q~Ext.Msg.alert('Delete failed...','<br><div style="~ . $self->exception_style . q~">' + caught['msg'] + '</div>');~;
 	};
 	return $code . ';';
@@ -1636,7 +1636,7 @@ sub action_batch_delete {
 ## Single item rowaction delete:
 sub action_icon_delete {
 	my $self = shift;
-	return $self->delete_confirm_window(JSON::decode_json($self->c->req->params->{orig_params}));
+	return $self->delete_confirm_window(JSON::PP::decode_json($self->c->req->params->{orig_params}));
 }
 
 sub delete_confirm_window {
@@ -1666,7 +1666,7 @@ sub delete_confirm_window {
 			q~buttons: Ext.Msg.YESNO,~ .
 			q~icon: Ext.MessageBox.QUESTION,~ .
 			q~fn: function(buttonId) { if (buttonId=="yes") {~ .
-				q~var params = ~ . JSON::to_json($self->c->req->body_params) . q~;~ .
+				q~var params = ~ . JSON::PP::encode_json($self->c->req->body_params) . q~;~ .
 				q~Ext.ux.FetchEval('~ . $self->base_url . q~/action_delete?~ . $self->base_query_string . q~',params);~ .
 			q~}}~ .
 		q~});~;
@@ -1677,11 +1677,11 @@ sub action_delete {
 	
 	my $code = '';
 	try {
-		my $h = $self->delete_item_coderef->(JSON::decode_json($self->c->req->params->{orig_params}));
+		my $h = $self->delete_item_coderef->(JSON::PP::decode_json($self->c->req->params->{orig_params}));
 		if (ref($h) eq 'HASH' and defined $h->{success} and defined $h->{msg}) {
 			unless ($h->{success}) {
 				$h->{msg} =~ s/\r?\n/_/g;
-				$code = q~var data = ~ . JSON::to_json([$h->{msg}]) . q~;~;
+				$code = q~var data = ~ . JSON::PP::encode_json([$h->{msg}]) . q~;~;
 				$code .= q~Ext.Msg.alert('Failed to delete item...',data[0]);~;
 			}
 		}
@@ -1690,7 +1690,7 @@ sub action_delete {
 		my $msg = $_;
 		chomp $msg;
 		
-		$code = q~var caught = ~ . JSON::to_json({msg => $msg}) . ';' .
+		$code = q~var caught = ~ . JSON::PP::encode_json({msg => $msg}) . ';' .
 			q~Ext.Msg.alert('Delete failed...','<br><div style="~ . $self->exception_style . q~">' + caught['msg'] + '</div>');~;
 	};
 

@@ -54,7 +54,7 @@ sub data_fetch {
 	# limited set of columns:
 	if($params->{columns} and $params->{filter}) {
 		my $filters = $params->{filter};
-		$filters = JSON::decode_json($params->{filter}) unless (ref($filters));
+		$filters = JSON::PP::decode_json($params->{filter}) unless (ref($filters));
 		foreach my $filter (@$filters) {
 			push @{$params->{columns}}, $filter->{field} if ($filter->{field});
 		}
@@ -316,7 +316,7 @@ sub Search_spec {
 	#my $set_filters = {};
 	if (defined $params->{filter}) {
 		my $filters = $params->{filter};
-		$filters = JSON::decode_json($params->{filter}) unless (ref($filters) eq 'ARRAY');
+		$filters = JSON::PP::decode_json($params->{filter}) unless (ref($filters) eq 'ARRAY');
 		if (defined $filters and ref($filters) eq 'ARRAY') {
 			foreach my $filter (@$filters) {
 				my $field = $filter->{field};
@@ -393,7 +393,7 @@ sub Search_spec {
 	
 	my $search = [];
 	if (defined $params->{fields} and defined $params->{query} and $params->{query} ne '') {
-		my $fields = JSON::decode_json($params->{fields});
+		my $fields = JSON::PP::decode_json($params->{fields});
 		if (defined $fields and ref($fields) eq 'ARRAY') {
 			foreach my $field (@$fields) {
 				# optionally convert table column name to db field name
