@@ -156,7 +156,7 @@ sub Window_code {
 	}
 	
 	$code .= 'var ' . $Params->{name} . ' = ' . 
-		'new Ext.Window(' . JSON::PP::to_json($Params) . '); ';
+		'new Ext.Window(' . JSON::PP::json_encode($Params) . '); ';
 	
 	$code .= $Params->{name} . '.show();' unless ($no_show);
 	
