@@ -11,7 +11,6 @@ package RapidApp::ExtJS;
 
 use strict;
 use JSON::PP;
-use JSON;
 
 use Moose;
 
@@ -157,7 +156,7 @@ sub Window_code {
 	}
 	
 	$code .= 'var ' . $Params->{name} . ' = ' . 
-		'new Ext.Window(' . JSON::to_json($Params) . '); ';
+		'new Ext.Window(' . JSON::PP::to_json($Params) . '); ';
 	
 	$code .= $Params->{name} . '.show();' unless ($no_show);
 	
