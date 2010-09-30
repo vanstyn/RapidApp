@@ -63,6 +63,19 @@ has 'root_node' => ( is => 'ro', lazy => 1, default => sub {
 });
 
 
+has 'tbar' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	
+	return [
+		'->',
+		'New'
+	
+	];
+
+});
+
+
+
 
 sub content {
 	my $self = shift;
@@ -77,14 +90,8 @@ sub content {
 		containerScroll => \1,
 		autoScroll		=> \1,
 		animate			=> \1,
-		tbar				=> [
-			'->',
-			'New'
+		tbar				=> $self->tbar,
 		
-		]
-		
-	
-	
 	};
 }
 
