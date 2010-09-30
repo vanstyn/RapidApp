@@ -136,34 +136,15 @@ sub add_button {
 			handler 	=> RapidApp::JSONFunc->new( 
 				raw => 1, 
 				func => 'function(btn) { ' . 
-					
 					'var tree = btn.ownerCt.ownerCt;'.
-					'var node = tree.getSelectionModel().getSelectedNode();' .
-					'var id = "root";' .
-					'if(node) id = node.id;' .
+					'Ext.ux.RapidApp.AppTree.add(tree,"' . $self->suburl('/add') . '");' .
 					
-					'Ext.ux.RapidApp.WinFormPost({' .
-						'title: "Add",' .
-						'height: 130,' .
-						'width: 250,' .
-						'url: "' . $self->suburl('/add') . '",' .
-						'params: {' .
-							'node: id' .
-						'},' .
-						
-						'fieldset: ' . $self->json->encode($fieldset) . ',' .
-						'success: function(response) { tree.getLoader().load(node,function(tp){ node.expand(); }); }' . 
-					
-					'});' .
-
-				'}' 
+				'}'
 			)
 	});
 
 
-
 }
-
 
 
 

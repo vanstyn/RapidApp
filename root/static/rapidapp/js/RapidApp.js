@@ -114,6 +114,59 @@ Ext.ux.RapidApp.ReAuthPrompt = function() {
 
 
 
+
+
+Ext.ns('Ext.ux.RapidApp.AppTree');
+Ext.ux.RapidApp.AppTree.add = function(tree,url) {
+
+	var items = [
+		{
+			xtype: 'textfield',
+			name: 'name',
+			fieldLabel: 'Name'
+		}
+	];
+
+	var fieldset = {
+		xtype: 'fieldset',
+		style: 'border: none',
+		hideBorders: true,
+		labelWidth: 60,
+		border: false,
+		items: items
+	};
+
+	var node = tree.getSelectionModel().getSelectedNode();
+	var id = "root";
+	if(node) id = node.id;
+	
+	Ext.ux.RapidApp.WinFormPost({
+		title: "Add",
+		height: 130,
+		width: 250,
+		url: url,
+		params: {
+			node: id
+		},
+		
+		fieldset: fieldset,
+		success: function(response) { 
+			tree.getLoader().load(node,function(tp){ 
+				node.expand(); 
+			}); 
+		}
+	});
+}
+
+
+
+
+
+
+
+
+
+
 /* http://mentaljetsam.wordpress.com/2008/06/02/using-javascript-to-post-data-between-pages/ */
 Ext.ns('Ext.ux.postwith');
 Ext.ux.postwith = function (to,p) {
