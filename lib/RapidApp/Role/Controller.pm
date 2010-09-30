@@ -10,6 +10,7 @@ use Moose::Role;
 with 'RapidApp::Role::Module';
 
 use RapidApp::JSONFunc;
+use Try::Tiny;
 
 use Term::ANSIColor qw(:constants);
 
@@ -129,10 +130,40 @@ sub clear_attributes {
 sub controller_dispatch {
 	my ($self, $opt, @subargs)= @_;
 	
-	return $self->process_action($opt,@subargs)						if (defined $opt and (defined $self->actions->{$opt} or defined $self->extra_actions->{$opt}) );
-	return $self->Module($opt)->Controller($self->c,@subargs)	if (defined $opt and $self->_load_module($opt));
-	return $self->process_action($self->default_action,@_)		if (defined $self->default_action);
-	return $self->render_data($self->content);
+	my $data;
+	
+	try {
+	
+		if (defined $opt and (defined $self->actions->{$opt} or defined $self->extra_actions->{$opt}) ) {
+			$data = $self->process_action($opt,@subargs);
+		
+		}
+		elsif (defined $opt and $self->_load_module($opt)) {
+			$data = $self->Module($opt)->Controller($self->c,@subargs);
+		
+		}
+		elsif (defined $self->default_action) {
+			$data = $self->process_action($self->default_action,@_);
+		}
+		else {
+			$data = $self->render_data($self->content);
+		
+		}
+	}
+	catch {
+		chomp($_);
+		
+		$self->c->log->info(' ---->>> RAPIDAPP EXCEPTION: ' . $_);
+		$self->c->res->header('X-RapidApp-Exception' => 1);
+		
+		$data = $self->render_data({
+			exception	=> \1,
+			success		=> \0,
+			msg			=> $_
+		});
+	};
+	
+	return $data;
 }
 
 around 'Module' => sub {

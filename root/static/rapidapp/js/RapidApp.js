@@ -28,7 +28,16 @@ Ext.override(Ext.data.Connection,{
 				call_orig = false;
 				Ext.ux.RapidApp.ReAuthPrompt(success_callback_repeat);
 			}
-		 }
+		}
+		
+		var exception = response.getResponseHeader('X-RapidApp-Exception');
+		if (exception) {
+			var res = Ext.decode(response.responseText);
+			if (res) {
+				Ext.Msg.alert('Error',res.msg);
+				throw new Error('RapidApp Server side exception: ' + res.msg);
+			}
+		}
 		
 		if(call_orig) {
 			this.handleResponse_orig.apply(this,arguments);
@@ -37,29 +46,6 @@ Ext.override(Ext.data.Connection,{
 });
 
 
-/*
-Ext.Ajax.on('requestcomplete',function(conn,response,options) {
-
-	// Need to put this in a try/catch because getResponseHeader() function
-	// does not exist in the response object with file uploads. Need to figure
-	// this out:
-	try {
-		var auth = response.getResponseHeader('X-RapidApp-Authenticated');
-		if (auth) {
-			Ext.ns('Ext.ux.RapidApp');
-			var orig = Ext.ux.RapidApp.Authenticated;
-			if (auth != '0') { Ext.ux.RapidApp.Authenticated = auth; }
-			if (orig && orig != auth && auth == '0') {
-					
-				Ext.ux.RapidApp.ReAuthPrompt();
-					
-			}
-		 }
-	}
-	catch (err) {}
-	 
-},this);
-*/
 
 Ext.ns('Ext.ux.RapidApp');
 
