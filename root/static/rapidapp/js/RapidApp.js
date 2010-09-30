@@ -5,6 +5,39 @@ Ext.ns('Ext.log');
 Ext.log = function() {};
 
 
+Ext.override(Ext.data.Connection,{
+	handleResponse_orig: Ext.data.Connection.prototype.handleResponse,
+	handleResponse : function(response){
+			
+		var call_orig = true;
+		var options = response.argument.options;
+		
+		var thisConn = this;
+		var success_callback_repeat = function() {
+			call_orig = false;
+			//console.log('repeat');
+			thisConn.request(options);
+		};
+		
+		var auth = response.getResponseHeader('X-RapidApp-Authenticated');
+		if (auth) {
+			Ext.ns('Ext.ux.RapidApp');
+			var orig = Ext.ux.RapidApp.Authenticated;
+			if (auth != '0') { Ext.ux.RapidApp.Authenticated = auth; }
+			if (orig && orig != auth && auth == '0') {
+				call_orig = false;
+				Ext.ux.RapidApp.ReAuthPrompt(success_callback_repeat);
+			}
+		 }
+		
+		if(call_orig) {
+			this.handleResponse_orig.apply(this,arguments);
+		}
+	}
+});
+
+
+/*
 Ext.Ajax.on('requestcomplete',function(conn,response,options) {
 
 	// Need to put this in a try/catch because getResponseHeader() function
@@ -26,14 +59,14 @@ Ext.Ajax.on('requestcomplete',function(conn,response,options) {
 	catch (err) {}
 	 
 },this);
-
+*/
 
 Ext.ns('Ext.ux.RapidApp');
 
 //This is currently set by RapidApp::AppAuth:
 Ext.ux.RapidApp.loginUrl = '/main/banner/auth/login';
 
-Ext.ux.RapidApp.ReAuthPrompt = function() {
+Ext.ux.RapidApp.ReAuthPrompt = function(success_callback) {
 	 
 	 var fieldset = {
 		xtype: 'fieldset',
@@ -97,8 +130,11 @@ Ext.ux.RapidApp.ReAuthPrompt = function() {
 		closable: false,
 		submitBtnText: 'Login',
 		success: function(response,opts) {
-			 var res = Ext.decode(response.responseText);
-			 if (res.success == 0) { Ext.ux.RapidApp.ReAuthPrompt(); }
+			//var res = Ext.decode(response.responseText);
+			//if (res.success == 0) { 
+			//	Ext.ux.RapidApp.ReAuthPrompt(); 
+			//}
+			if(success_callback) return success_callback();
 		},
 		failure: function() {
 			 Ext.ux.RapidApp.ReAuthPrompt();
