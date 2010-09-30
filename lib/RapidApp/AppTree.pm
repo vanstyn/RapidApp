@@ -41,14 +41,23 @@ has 'root_node_name'		=> ( is => 'ro', default => 'root' );
 has 'root_node_text'		=> ( is => 'ro', lazy => 1, default => sub { (shift)->root_node_name; } );
 ##
 
-
+##
+## add_nodes: define as a method to support adding to the tree
+##
 
 has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	
-	return {
-		'nodes'	=> sub { $self->fetch_nodes($self->c->req->params->{node}) }
+	my $node = $self->c->req->params->{node};
+	my $name = $self->c->req->params->{name};
+	
+	my $actions = {
+		'nodes'	=> sub { $self->fetch_nodes($node) }
 	};
+	
+	$actions->{add} = sub { $self->add_node($name,$node) } if ($self->can('add_node'));
+	
+	return $actions;
 });
 
 
@@ -66,12 +75,13 @@ has 'root_node' => ( is => 'ro', lazy => 1, default => sub {
 has 'tbar' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	
-	return [
+	my $tbar = [
 		'->',
-		'New'
-	
 	];
+	
+	push @$tbar, $self->add_button if ($self->can('add_node'));
 
+	return $tbar;
 });
 
 
@@ -90,19 +100,69 @@ sub content {
 		containerScroll => \1,
 		autoScroll		=> \1,
 		animate			=> \1,
+		useArrows		=> \1,
 		tbar				=> $self->tbar,
 		
 	};
 }
 
 
-
-sub nodes_read {
+sub add_button {
 	my $self = shift;
 	
+	my $items = [
+		{
+			xtype		=> 'textfield',
+			name		=> 'name',
+			fieldLabel	=> 'Name'
+		}
+	
+	];
+	
+	my $fieldset = {
+		style 			=> 'border: none',
+		hideBorders 	=> \1,
+		xtype 			=> 'fieldset',
+		labelWidth 		=> 60,
+		border 			=> \0,
+		items 			=> $items,
+	};
+	
+	return RapidApp::JSONFunc->new(
+		func => 'new Ext.Button', 
+		parm => {
+			text 		=> 'Add',
+			iconCls	=> 'icon-add',
+			handler 	=> RapidApp::JSONFunc->new( 
+				raw => 1, 
+				func => 'function(btn) { ' . 
+					
+					'var tree = btn.ownerCt.ownerCt;'.
+					'var node = tree.getSelectionModel().getSelectedNode();' .
+					'var id = "root";' .
+					'if(node) id = node.id;' .
+					
+					'Ext.ux.RapidApp.WinFormPost({' .
+						'title: "Add",' .
+						'height: 130,' .
+						'width: 250,' .
+						'url: "' . $self->suburl('/add') . '",' .
+						'params: {' .
+							'node: id' .
+						'},' .
+						
+						'fieldset: ' . $self->json->encode($fieldset) . ',' .
+						'success: function(response) { tree.getLoader().load(node,function(tp){ node.expand(); }); }' . 
+					
+					'});' .
+
+				'}' 
+			)
+	});
+
+
+
 }
-
-
 
 
 
