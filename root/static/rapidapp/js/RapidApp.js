@@ -34,7 +34,18 @@ Ext.override(Ext.data.Connection,{
 		if (exception) {
 			var res = Ext.decode(response.responseText);
 			if (res) {
+				
 				Ext.Msg.alert('Error',res.msg);
+				var orig_onerror = window.onerror;
+				
+				// Prevent the error from being displaying in browser:
+				window.onerror = function(){ 
+					// Restore original error behavior:
+					window.onerror = orig_onerror;
+					return true; 
+				}
+				
+				// We throw an error here to stop js execution:
 				throw new Error('RapidApp Server side exception: ' + res.msg);
 			}
 		}
