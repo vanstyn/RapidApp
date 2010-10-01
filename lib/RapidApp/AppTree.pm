@@ -95,6 +95,7 @@ sub content {
 
 	return {
 		xtype				=> 'treepanel',
+		id					=> $self->instance_id,
 		dataUrl			=> $self->suburl('/nodes'),
 		rootVisable		=> $self->show_root_node ? \0 : \1,
 		root				=> $self->root_node,
@@ -105,6 +106,10 @@ sub content {
 		animate			=> \1,
 		useArrows		=> \1,
 		tbar				=> $self->tbar,
+		listeners		=> RapidApp::JSONFunc->new( 
+			raw => 1, 
+			func => 'Ext.ux.RapidApp.AppTree.listeners'
+		)
 		
 	};
 }

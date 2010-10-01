@@ -147,12 +147,119 @@ Ext.ux.RapidApp.ReAuthPrompt = function(success_callback) {
 
 
 
+Ext.ns('Ext.ux.RapidApp');
+
+Ext.ux.RapidApp.AppTree_select_handler = function(tree) {
+
+	var node = tree.getSelectionModel().getSelectedNode();
+	
+	return {
+		value: node.id,
+		display: node.attributes.text
+	};
+
+}
+
+Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 
 
+	initComponent: function() {
+		this.setEditable(false);
+	
+		var config = {
+			win_title: this.win_title,
+			win_height: this.win_height,
+			win_width: this.win_width,
+			load_url: this.load_url,
+			select_handler: this.select_handler
+		};
+		Ext.apply(this, Ext.apply(this.initialConfig, config));
+		Ext.ux.RapidApp.CustomPickerField.superclass.initComponent.apply(this, arguments);
+		//}
+	},
+	
+	//setEditable: false,
+
+	getValue: function() {
+		return this.dataValue;
+	},
+
+	onTriggerClick: function() {
+
+		var thisTF = this;
+
+		var win = new Ext.Window({
+			title: this.win_title,
+			layout: 'fit',
+			width: this.win_width,
+			height: this.win_height,
+			closable: true,
+			modal: true,
+			items: {
+				xtype: 'autopanel',
+				itemId: 'app',
+				autoLoad: this.load_url,
+				layout: 'fit'
+				
+			
+			
+			},
+			buttons: [
+				{
+					text: 'Select',
+					handler: function(btn) {
+						var app = btn.ownerCt.ownerCt.getComponent('app').items.first();
+						
+						var data = thisTF.select_handler(app);
+						
+						thisTF.dataValue = data.value;
+						
+						thisTF.setValue(data.display);
+						btn.ownerCt.ownerCt.close();
+						
+						
+						//console.dir(data);
+						
+					
+					}
+				
+				},
+				{
+					text: 'Cancel',
+					handler: function(btn) {
+						btn.ownerCt.ownerCt.close();
+					
+					}
+				
+				}
+			
+			
+			]
+		});
+		
+		win.show();
+	}
+
+
+});
+Ext.reg('custompickerfield',Ext.ux.RapidApp.CustomPickerField);
 
 
 
 Ext.ns('Ext.ux.RapidApp.AppTree');
+
+Ext.ux.RapidApp.AppTree.listeners = {
+	afterrender: function(tree) {
+	
+		var root_node = tree.root;
+		root_node.select();
+		root_node.expand();
+	
+	}
+
+};
+
+
 Ext.ux.RapidApp.AppTree.add = function(tree,url) {
 
 	var items = [
