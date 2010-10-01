@@ -155,6 +155,7 @@ sub controller_dispatch {
 		
 		$self->c->log->info(' ---->>> RAPIDAPP EXCEPTION: ' . $_);
 		$self->c->res->header('X-RapidApp-Exception' => 1);
+		$self->c->res->status(542);
 		
 		$data = $self->render_data({
 			exception	=> \1,

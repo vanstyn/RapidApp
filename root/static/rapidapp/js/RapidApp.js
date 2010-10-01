@@ -5,7 +5,28 @@ Ext.ns('Ext.log');
 Ext.log = function() {};
 
 
+
+Ext.ns('Ext.ux.RapidApp');
+Ext.ux.RapidApp.errMsgHandler = function(msg) {
+	Ext.Msg.alert('Error',msg);
+}
+
+Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
+	var exception = response.getResponseHeader('X-RapidApp-Exception');
+	if (exception) {
+		var res = Ext.decode(response.responseText);
+		if (res) {
+			Ext.ux.RapidApp.errMsgHandler(res.msg);
+		}
+	}
+}
+
+Ext.Ajax.on('requestcomplete',Ext.ux.RapidApp.ajaxCheckException);
+Ext.Ajax.on('requestexception',Ext.ux.RapidApp.ajaxCheckException);
+
+
 Ext.override(Ext.data.Connection,{
+
 	handleResponse_orig: Ext.data.Connection.prototype.handleResponse,
 	handleResponse : function(response){
 			
@@ -30,25 +51,7 @@ Ext.override(Ext.data.Connection,{
 			}
 		}
 		
-		var exception = response.getResponseHeader('X-RapidApp-Exception');
-		if (exception) {
-			var res = Ext.decode(response.responseText);
-			if (res) {
-				
-				Ext.Msg.alert('Error',res.msg);
-				var orig_onerror = window.onerror;
-				
-				// Prevent the error from being displaying in browser:
-				window.onerror = function(){ 
-					// Restore original error behavior:
-					window.onerror = orig_onerror;
-					return true; 
-				}
-				
-				// We throw an error here to stop js execution:
-				throw new Error('RapidApp Server side exception: ' + res.msg);
-			}
-		}
+		if(response.getResponseHeader('X-RapidApp-Exception')) return;
 		
 		if(call_orig) {
 			this.handleResponse_orig.apply(this,arguments);
@@ -178,6 +181,7 @@ Ext.ux.RapidApp.AppTree.add = function(tree,url) {
 		height: 130,
 		width: 250,
 		url: url,
+		useSubmit: true,
 		params: {
 			node: id
 		},
@@ -331,7 +335,7 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 					text	: cfg.submitBtnText,
 					handler	: function(btn) {
 						var form = Ext.getCmp(formId).getForm();
-
+						
 						if (cfg.useSubmit) {
 							return form.submit({
 								url: cfg.url,
