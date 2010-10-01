@@ -151,6 +151,25 @@ Ext.ux.RapidApp.ReAuthPrompt = function(success_callback) {
 
 
 Ext.ns('Ext.ux.RapidApp');
+Ext.ux.RapidApp.validateCsvEmailStr = function(v) {
+	var str = new String(v);
+	var arr = str.split(',');
+	
+	for (i in arr) {
+		var email = arr[i];
+		// For some stupid reason the last arg returned from split is a function! So we have to do this:
+		if(typeof(email) == 'string') {
+			var trimmed = Ext.util.Format.trim(email);
+			var result = Ext.form.VTypes.email(trimmed);
+			if(! result) return false;
+		}
+	}
+	 
+	return true;
+}
+
+
+Ext.ns('Ext.ux.RapidApp');
 
 Ext.ux.RapidApp.AppTree_select_handler = function(tree) {
 
