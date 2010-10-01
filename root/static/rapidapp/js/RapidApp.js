@@ -195,12 +195,72 @@ Ext.ux.RapidApp.AppTree.add = function(tree,url) {
 	});
 }
 
+Ext.ux.RapidApp.AppTree.del = function(tree,url) {
+
+	var node = tree.getSelectionModel().getSelectedNode();
+	var id = "root";
+	if(node) id = node.id;
+	
+	var params = {
+		node: id
+	};
+	
+	var ajaxFunc = function() {
+		Ext.Ajax.request({
+			url: url,
+			params: params,
+			success: function() {
+				var pnode = node.parentNode;
+				tree.getLoader().load(pnode,function(tp){ 
+					pnode.expand(); 
+				}); 
+			}
+		});
+	};
+	
+	var Func = ajaxFunc;
+	
+	if (node.hasChildNodes()) {
+		params['recursive'] = true;
+		Func = function() {
+			Ext.ux.RapidApp.confirmDialogCall(
+				'Confirm Recursive Delete',
+				'"' + node.attributes.text + '" contains child items, they will all be deleted.<br><br>' +
+				 'Are you sure you want to continue ?',
+				ajaxFunc
+			);
+		}
+	}
+	
+	Ext.ux.RapidApp.confirmDialogCall(
+		'Confirm Delete',
+		'Really delete "' + node.attributes.text + '" ?',
+		Func
+	);
+}
 
 
 
 
-
-
+Ext.ns('Ext.ux.RapidApp');
+Ext.ux.RapidApp.confirmDialogCall = function(title,msg,fn,params) {
+	
+	var args = Array.prototype.slice.call(arguments); 
+	
+	var title = args.shift();
+	var msg = args.shift();
+	var fn = args.shift();
+	
+	return Ext.Msg.show({
+		title: title,
+		msg: msg,
+		buttons: Ext.Msg.YESNO, fn: function(sel) {
+			if (sel != 'yes') return;
+			fn(args);
+		},
+		scope: this
+	});
+}
 
 
 
