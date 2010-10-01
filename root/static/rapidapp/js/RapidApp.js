@@ -12,13 +12,16 @@ Ext.ux.RapidApp.errMsgHandler = function(msg) {
 }
 
 Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
-	var exception = response.getResponseHeader('X-RapidApp-Exception');
-	if (exception) {
-		var res = Ext.decode(response.responseText);
-		if (res) {
-			Ext.ux.RapidApp.errMsgHandler(res.msg);
+	try {
+		var exception = response.getResponseHeader('X-RapidApp-Exception');
+		if (exception) {
+			var res = Ext.decode(response.responseText);
+			if (res) {
+				Ext.ux.RapidApp.errMsgHandler(res.msg);
+			}
 		}
 	}
+	catch(err) {}
 }
 
 Ext.Ajax.on('requestcomplete',Ext.ux.RapidApp.ajaxCheckException);
