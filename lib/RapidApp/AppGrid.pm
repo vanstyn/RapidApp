@@ -719,15 +719,21 @@ sub add_button_urlspec {
 	return $self->json->encode($urlspec);
 }
 
-
-
+sub get_tabpanel_module {
+	my $self= shift;
+	my $explorer= $self;
+	while (!$explorer->can('tabpanel_load_code')) {
+		$explorer= $explorer->parent_module;
+		defined $explorer or die "Can't find module responsible for tabpanel";
+	}
+	return $explorer;
+}
 
 sub add_button_code {
 	my $self = shift;
-	
 	return
 		"var urlspec = " . $self->add_button_urlspec . ";" . 
-		$self->parent_module->tabpanel_load_code('urlspec');
+		$self->get_tabpanel_module->tabpanel_load_code('urlspec');
 }
 
 
@@ -779,7 +785,7 @@ sub _build_edit_action_wrapper_code {
 	my $code;
 	
 	if ($self->use_parent_tab_wrapper and defined $self->parent_module) {
-		my $tabcode = $self->parent_module->tabpanel_load_code('urlspec');
+		my $tabcode = $self->get_tabpanel_module->tabpanel_load_code('urlspec');
 		if (defined $tabcode) {
 			
 			$code = 
