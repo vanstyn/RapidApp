@@ -50,12 +50,14 @@ has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 	
 	my $node = $self->c->req->params->{node};
 	my $name = $self->c->req->params->{name};
+	my $recursive = $self->c->req->params->{recursive};
 	
 	my $actions = {
 		'nodes'	=> sub { $self->fetch_nodes($node) }
 	};
 	
 	$actions->{add} = sub { $self->add_node($name,$node) } if ($self->can('add_node'));
+	$actions->{delete} = sub { $self->delete_node($node,$recursive) } if ($self->can('delete_node'));
 	
 	return $actions;
 });
@@ -79,6 +81,7 @@ has 'tbar' => ( is => 'ro', lazy => 1, default => sub {
 		'->',
 	];
 	
+	push @$tbar, $self->delete_button if ($self->can('delete_node'));
 	push @$tbar, $self->add_button if ($self->can('add_node'));
 
 	return $tbar;
@@ -92,6 +95,7 @@ sub content {
 
 	return {
 		xtype				=> 'treepanel',
+		id					=> $self->instance_id,
 		dataUrl			=> $self->suburl('/nodes'),
 		rootVisable		=> $self->show_root_node ? \0 : \1,
 		root				=> $self->root_node,
@@ -102,6 +106,10 @@ sub content {
 		animate			=> \1,
 		useArrows		=> \1,
 		tbar				=> $self->tbar,
+		listeners		=> RapidApp::JSONFunc->new( 
+			raw => 1, 
+			func => 'Ext.ux.RapidApp.AppTree.listeners'
+		)
 		
 	};
 }
@@ -145,6 +153,27 @@ sub add_button {
 
 
 }
+
+
+sub delete_button {
+	my $self = shift;
+	
+	return RapidApp::JSONFunc->new(
+		func => 'new Ext.Button', 
+		parm => {
+			text 		=> 'Delete',
+			iconCls	=> 'icon-delete',
+			handler 	=> RapidApp::JSONFunc->new( 
+				raw => 1, 
+				func => 'function(btn) { ' . 
+					'var tree = btn.ownerCt.ownerCt;'.
+					'Ext.ux.RapidApp.AppTree.del(tree,"' . $self->suburl('/delete') . '");' .
+					
+				'}'
+			)
+	});
+}
+
 
 
 

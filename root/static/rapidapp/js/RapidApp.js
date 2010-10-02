@@ -12,13 +12,16 @@ Ext.ux.RapidApp.errMsgHandler = function(msg) {
 }
 
 Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
-	var exception = response.getResponseHeader('X-RapidApp-Exception');
-	if (exception) {
-		var res = Ext.decode(response.responseText);
-		if (res) {
-			Ext.ux.RapidApp.errMsgHandler(res.msg);
+	try {
+		var exception = response.getResponseHeader('X-RapidApp-Exception');
+		if (exception) {
+			var res = Ext.decode(response.responseText);
+			if (res) {
+				Ext.ux.RapidApp.errMsgHandler(res.msg);
+			}
 		}
 	}
+	catch(err) {}
 }
 
 Ext.Ajax.on('requestcomplete',Ext.ux.RapidApp.ajaxCheckException);
@@ -147,12 +150,138 @@ Ext.ux.RapidApp.ReAuthPrompt = function(success_callback) {
 
 
 
+Ext.ns('Ext.ux.RapidApp');
+Ext.ux.RapidApp.validateCsvEmailStr = function(v) {
+	var str = new String(v);
+	var arr = str.split(',');
+	
+	for (i in arr) {
+		var email = arr[i];
+		// For some stupid reason the last arg returned from split is a function! So we have to do this:
+		if(typeof(email) == 'string') {
+			var trimmed = Ext.util.Format.trim(email);
+			var result = Ext.form.VTypes.email(trimmed);
+			if(! result) return false;
+		}
+	}
+	 
+	return true;
+}
 
 
+Ext.ns('Ext.ux.RapidApp');
+
+Ext.ux.RapidApp.AppTree_select_handler = function(tree) {
+
+	var node = tree.getSelectionModel().getSelectedNode();
+	
+	return {
+		value: node.id,
+		display: node.attributes.text
+	};
+
+}
+
+Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
+
+
+	initComponent: function() {
+		this.setEditable(false);
+	
+		var config = {
+			win_title: this.win_title,
+			win_height: this.win_height,
+			win_width: this.win_width,
+			load_url: this.load_url,
+			select_handler: this.select_handler
+		};
+		Ext.apply(this, Ext.apply(this.initialConfig, config));
+		Ext.ux.RapidApp.CustomPickerField.superclass.initComponent.apply(this, arguments);
+		//}
+	},
+	
+	//setEditable: false,
+
+	getValue: function() {
+		return this.dataValue;
+	},
+
+	onTriggerClick: function() {
+
+		var thisTF = this;
+
+		var win = new Ext.Window({
+			title: this.win_title,
+			layout: 'fit',
+			width: this.win_width,
+			height: this.win_height,
+			closable: true,
+			modal: true,
+			items: {
+				xtype: 'autopanel',
+				itemId: 'app',
+				autoLoad: this.load_url,
+				layout: 'fit'
+				
+			
+			
+			},
+			buttons: [
+				{
+					text: 'Select',
+					handler: function(btn) {
+						var app = btn.ownerCt.ownerCt.getComponent('app').items.first();
+						
+						var data = thisTF.select_handler(app);
+						
+						thisTF.dataValue = data.value;
+						
+						thisTF.setValue(data.display);
+						btn.ownerCt.ownerCt.close();
+						
+						
+						//console.dir(data);
+						
+					
+					}
+				
+				},
+				{
+					text: 'Cancel',
+					handler: function(btn) {
+						btn.ownerCt.ownerCt.close();
+					
+					}
+				
+				}
+			
+			
+			]
+		});
+		
+		win.show();
+	}
+
+
+});
+Ext.reg('custompickerfield',Ext.ux.RapidApp.CustomPickerField);
 
 
 
 Ext.ns('Ext.ux.RapidApp.AppTree');
+
+Ext.ux.RapidApp.AppTree.listeners = {
+	afterrender: function(tree) {
+	
+		var root_node = tree.root;
+		root_node.select();
+		root_node.expand();
+	
+	}
+
+};
+
+
 Ext.ux.RapidApp.AppTree.add = function(tree,url) {
 
 	var items = [
@@ -195,12 +324,72 @@ Ext.ux.RapidApp.AppTree.add = function(tree,url) {
 	});
 }
 
+Ext.ux.RapidApp.AppTree.del = function(tree,url) {
+
+	var node = tree.getSelectionModel().getSelectedNode();
+	var id = "root";
+	if(node) id = node.id;
+	
+	var params = {
+		node: id
+	};
+	
+	var ajaxFunc = function() {
+		Ext.Ajax.request({
+			url: url,
+			params: params,
+			success: function() {
+				var pnode = node.parentNode;
+				tree.getLoader().load(pnode,function(tp){ 
+					pnode.expand(); 
+				}); 
+			}
+		});
+	};
+	
+	var Func = ajaxFunc;
+	
+	if (node.hasChildNodes()) {
+		params['recursive'] = true;
+		Func = function() {
+			Ext.ux.RapidApp.confirmDialogCall(
+				'Confirm Recursive Delete',
+				'"' + node.attributes.text + '" contains child items, they will all be deleted.<br><br>' +
+				 'Are you sure you want to continue ?',
+				ajaxFunc
+			);
+		}
+	}
+	
+	Ext.ux.RapidApp.confirmDialogCall(
+		'Confirm Delete',
+		'Really delete "' + node.attributes.text + '" ?',
+		Func
+	);
+}
 
 
 
 
-
-
+Ext.ns('Ext.ux.RapidApp');
+Ext.ux.RapidApp.confirmDialogCall = function(title,msg,fn,params) {
+	
+	var args = Array.prototype.slice.call(arguments); 
+	
+	var title = args.shift();
+	var msg = args.shift();
+	var fn = args.shift();
+	
+	return Ext.Msg.show({
+		title: title,
+		msg: msg,
+		buttons: Ext.Msg.YESNO, fn: function(sel) {
+			if (sel != 'yes') return;
+			fn(args);
+		},
+		scope: this
+	});
+}
 
 
 
