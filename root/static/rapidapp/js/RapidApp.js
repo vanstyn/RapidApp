@@ -294,7 +294,9 @@ Ext.ux.RapidApp.AppTree_setValue_translator = function(val,tf,url) {
 				//console.dir(response);
 				var res = Ext.decode(response.responseText);
 				//console.log(res.text);
+				tf.dataValue = res.id;
 				tf.setValue(res.text);
+				
 			}
 		
 		
