@@ -217,6 +217,16 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 	onTriggerClick: function() {
 
 		var thisTF = this;
+		
+		var autoLoad = {
+			url: this.load_url,
+		};
+		
+		if (this.dataValue) {
+			autoLoad.params = {
+				node: this.dataValue
+			};
+		}
 
 		var win = new Ext.Window({
 			title: this.win_title,
@@ -228,11 +238,8 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 			items: {
 				xtype: 'autopanel',
 				itemId: 'app',
-				autoLoad: this.load_url,
+				autoLoad: autoLoad,
 				layout: 'fit'
-				
-			
-			
 			},
 			buttons: [
 				{
@@ -313,16 +320,43 @@ Ext.ux.RapidApp.AppTree_setValue_translator = function(val,tf,url) {
 
 
 Ext.ns('Ext.ux.RapidApp.AppTree');
-Ext.ux.RapidApp.AppTree.listeners = {
-	afterrender: function(tree) {
+Ext.ux.RapidApp.AppTree.jump_to_node_id = function(tree,id) {
 	
-		var root_node = tree.root;
-		root_node.select();
-		root_node.expand();
-	
-	}
+	var parents_arr = function(path,arr) {
+		if (!arr) arr = [];
+		if (path.indexOf('/') < 0) {
+			return arr;
+		}
+			
+		var path_arr = path.split('/');
 
+		var item = path_arr.pop();
+		var path_str = path_arr.join('/');
+		arr.push(path_str);
+		return parents_arr(path_str,arr);
+	}
+	
+	var select_child = function(id,parents,lastpass) {
+
+		var par = parents.pop();
+		if(!par) return;
+
+		var node = tree.getNodeById(par);
+		if(!node) return;
+
+		node.loaded = false;
+		node.expand(false,false,function(){ 
+			select_child(id,parents); 
+			node.select();
+		});
+	}
+	
+	var parents = parents_arr(id);
+	parents.unshift(id);
+
+	return select_child(id,parents);
 };
+
 
 
 Ext.ux.RapidApp.AppTree.add = function(tree,url) {

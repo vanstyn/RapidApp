@@ -109,13 +109,29 @@ sub content {
 		animate			=> \1,
 		useArrows		=> \1,
 		tbar				=> $self->tbar,
-		listeners		=> RapidApp::JSONFunc->new( 
-			raw => 1, 
-			func => 'Ext.ux.RapidApp.AppTree.listeners'
-		)
-		
+		listeners		=> $self->listeners
 	};
 }
+
+
+sub listeners {
+	my $self = shift;
+	
+	my $node = $self->root_node_name;
+	$node = $self->c->req->params->{node} if ($self->c->req->params->{node});
+	
+	return {
+		afterrender => RapidApp::JSONFunc->new( raw => 1, func => 
+			'function(tree) {' .
+				'Ext.ux.RapidApp.AppTree.jump_to_node_id(tree,"' . $node . '");' .
+			'}'
+		)
+	}
+}
+
+
+
+
 
 
 sub add_button {
