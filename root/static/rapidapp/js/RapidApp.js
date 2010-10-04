@@ -205,6 +205,14 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 	getValue: function() {
 		return this.dataValue;
 	},
+	
+	setValue: function(val) {
+		var new_val = val;
+		if(this.setValue_translator) {
+			new_val = this.setValue_translator(val,this);
+		}
+		Ext.ux.RapidApp.CustomPickerField.superclass.setValue.call(this, new_val);
+	},
 
 	onTriggerClick: function() {
 
@@ -268,8 +276,41 @@ Ext.reg('custompickerfield',Ext.ux.RapidApp.CustomPickerField);
 
 
 
-Ext.ns('Ext.ux.RapidApp.AppTree');
+Ext.ns('Ext.ux.RapidApp');
 
+
+Ext.ux.RapidApp.AppTree_setValue_translator = function(val,tf,url) {
+	if(val.indexOf('/') > 0) {
+		//console.log(val.indexOf('/'));
+		//console.log(val);
+		//console.log(url);
+		
+		Ext.Ajax.request({
+			url: url,
+			params: {
+				node: val
+			},
+			success: function(response) {
+				//console.dir(response);
+				var res = Ext.decode(response.responseText);
+				//console.log(res.text);
+				tf.setValue(res.text);
+			}
+		
+		
+		});
+	
+		//return val;
+	}
+	else {
+	
+	
+		return val;
+	}
+}
+
+
+Ext.ns('Ext.ux.RapidApp.AppTree');
 Ext.ux.RapidApp.AppTree.listeners = {
 	afterrender: function(tree) {
 	
