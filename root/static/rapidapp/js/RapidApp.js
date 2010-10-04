@@ -219,7 +219,7 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 		var thisTF = this;
 		
 		var autoLoad = {
-			url: this.load_url,
+			url: this.load_url
 		};
 		
 		if (this.dataValue) {
