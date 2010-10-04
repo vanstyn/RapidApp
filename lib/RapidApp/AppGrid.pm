@@ -248,18 +248,21 @@ has 'custom_add_item_code'			=> ( is => 'ro',	lazy_build => 1 );
 has 'edit_record_class' => ( is => 'ro', default => 'RapidApp::AppGrid::EditItem' );
 has 'add_record_class' => ( is => 'ro', default => 'RapidApp::AppGrid::AddItem' );
 
-has 'modules' => ( is => 'ro', lazy => 1, default => sub {
+has 'modules' => ( is => 'ro', lazy_build => 1 );
+sub _build_modules {
 	my $self = shift;
 	return {
 		item		=> $self->edit_record_class,
 		add		=> $self->add_record_class,
 	};
-});
+}
+
 has 'record_processor_module'	=> ( is => 'ro', default => 'item' );
 has 'add_processor_module'	=> ( is => 'ro', default => 'add' );
 
 has 'default_action' => ( is => 'ro', default => 'main' );
-has 'actions' => ( is => 'ro', lazy => 1, default => sub {
+has 'actions' => ( is => 'ro', lazy_build => 1 );
+sub _build_actions {
 	my $self = shift;
 	
 	my $actions = {
@@ -297,8 +300,7 @@ has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 	$actions->{delete_search} = sub { $self->action_delete_search; } if (defined $self->delete_search_coderef);
 	
 	return $actions;
-});
-
+}
 
 sub action_save_search {
 	my $self = shift;
@@ -717,15 +719,21 @@ sub add_button_urlspec {
 	return $self->json->encode($urlspec);
 }
 
-
-
+sub get_tabpanel_module {
+	my $self= shift;
+	my $explorer= $self;
+	while (!$explorer->can('tabpanel_load_code')) {
+		$explorer= $explorer->parent_module;
+		defined $explorer or die "Can't find module responsible for tabpanel";
+	}
+	return $explorer;
+}
 
 sub add_button_code {
 	my $self = shift;
-	
 	return
 		"var urlspec = " . $self->add_button_urlspec . ";" . 
-		$self->parent_module->tabpanel_load_code('urlspec');
+		$self->get_tabpanel_module->tabpanel_load_code('urlspec');
 }
 
 
@@ -777,7 +785,7 @@ sub _build_edit_action_wrapper_code {
 	my $code;
 	
 	if ($self->use_parent_tab_wrapper and defined $self->parent_module) {
-		my $tabcode = $self->parent_module->tabpanel_load_code('urlspec');
+		my $tabcode = $self->get_tabpanel_module->tabpanel_load_code('urlspec');
 		if (defined $tabcode) {
 			
 			$code = 
