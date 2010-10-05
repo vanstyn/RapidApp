@@ -1699,7 +1699,7 @@ Ext.override(Ext.ux.grid.GridFilters, {
 				for (p in this.init_state.filters[i]) {
 					var orig = this.init_state.filters[i][p];
 					if (p == 'before' || p == 'after' || p == 'on') {
-						this.init_state.filters[i][p] = new Date(orig);
+						this.init_state.filters[i][p] = Date.parseDate(orig,"Y-m-d\\TH:i:s");
 					}
 				}
 			}
