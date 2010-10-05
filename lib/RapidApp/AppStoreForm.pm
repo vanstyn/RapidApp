@@ -33,8 +33,11 @@ has 'write_callback_code'	=> ( is => 'ro', default => '' ); # <-- JS code that g
 has 'item_key' => ( is => 'ro',	lazy_build => 1	);
 sub _build_item_key {
 	my $self = shift;
-	return $self->item_keys unless (ref($self->item_keys) eq 'ARRAY');
-	return $self->item_keys->[0];
+	my $key;
+	$key = $self->item_keys->[0] if (defined $self->item_keys and ref($self->item_keys) eq 'ARRAY');
+	$key = $self->item_keys if (not defined $key and defined $self->item_keys);
+	$key = 'id' unless (defined $key);
+	return $key;
 }
 
 
@@ -43,7 +46,8 @@ sub _build_item_keys {
 	my $self = shift;
 	return $self->parent_module->item_keys if (
 		defined $self->parent_module and
-		defined $self->parent_module->item_keys
+		#defined $self->parent_module->item_keys
+		$self->parent_module->can('item_keys')
 	);
 }
 
