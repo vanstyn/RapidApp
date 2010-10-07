@@ -19,7 +19,6 @@ has 'no_persist'				=> ( is => 'rw',	default => 1 );
 
 has 'height'			=> ( is => 'ro',	default => 50 );
 has 'logo'				=> ( is => 'ro',	default => '/static/images/logo.png' );
-has 'username_key'	=> ( is => 'ro',	default => 'username' );
 
 has 'login_banner' => ( is => 'ro',	default => sub {
 	my $self = shift;
