@@ -4,6 +4,39 @@ Ext.Updater.defaults.disableCaching = true;
 Ext.ns('Ext.log');
 Ext.log = function() {};
 
+// --------
+// http://www.sencha.com/forum/showthread.php?33475-Tip-Long-menu-overflow/page2
+Ext.override(Ext.menu.Menu, {
+    // See http://extjs.com/forum/showthread.php?t=33475&page=2
+    showAt : function(xy, parentMenu, /* private: */_e) {
+        this.parentMenu = parentMenu;
+        if (!this.el) {
+            this.render();
+        }
+        if (_e !== false) {
+            this.fireEvent("beforeshow", this);
+            xy = this.el.adjustForConstraints(xy);
+        }
+        this.el.setXY(xy);
+
+        // Start of extra logic to what is in Ext source code...
+        // See http://www.extjs.com/deploy/ext/docs/output/Menu.jss.html
+        // get max height from body height minus y cordinate from this.el
+        var maxHeight = Ext.getBody().getHeight() - xy[1];
+        if (this.el.getHeight() > maxHeight) {
+            // set element with max height and apply vertical scrollbar
+            this.el.setHeight(maxHeight);
+            this.el.applyStyles('overflow-y: auto;');
+        }
+        // .. end of extra logic to what is in Ext source code
+
+        this.el.show();
+        this.hidden = false;
+        this.focus();
+        this.fireEvent("show", this);
+    }
+});  
+// --------
 
 
 Ext.ns('Ext.ux.RapidApp');
