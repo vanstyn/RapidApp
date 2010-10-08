@@ -63,7 +63,9 @@ sub TO_JSON {
 	return $self->func . '(' . $self->json->encode($self->parm) . ')';
 }
 
-
+sub TO_JSON_RAW {
+	return (shift)->TO_JSON;
+}
 
 
 #### --------------------- ####
