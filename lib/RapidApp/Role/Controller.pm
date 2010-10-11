@@ -18,8 +18,7 @@ use Term::ANSIColor qw(:constants);
 our $VERSION = '0.1';
 
 
-has 'c'							=> ( is => 'rw' );
-has 'base_url'					=> ( is => 'rw',	default => '' );
+has 'base_url'					=> ( is => 'rw', lazy => 1, default => sub { $_[0]->c->namespace; }, traits => [ 'RapidApp::Role::PerRequestVar' ] );
 has 'actions'					=> ( is => 'ro', 	default => sub {{}} );
 has 'extra_actions'			=> ( is => 'ro', 	default => sub {{}} );
 has 'default_action'			=> ( is => 'ro',	default => undef );
@@ -27,6 +26,10 @@ has 'content'					=> ( is => 'ro',	default => '' );
 has 'render_as_json'			=> ( is => 'rw',	default => 1 );
 has 'multi_instance'       => ( is => 'rw',  default => 0 );
 has 'instance_num'         => ( is => 'rw',  default => undef );
+
+sub c {
+	return $RapidApp::ScopedGlobals::CatalystInstance;
+}
 
 has 'no_persist' => ( is => 'rw', lazy => 1, default => sub {
 	my $self = shift;
@@ -82,32 +85,16 @@ sub prepare_controller {
 sub Controller {
 	my ($self, $c, @args) = @_;
 	
-	# clear all lazy attributes, if the user asked for it
-	$self->clear_attributes if ($self->no_persist);
-
-	
-	# set up some critical per-request variables needed for the rest of RapidApp's functionality
-	
-	$self->c($c);
-	
-	my $url= defined $self->parent_module? $self->parent_module->base_url . '/' . $self->module_name
-		: $self->c->namespace;
-	
-	if ($self->multi_instance) {
-		if (defined $args[0] && ref $args[0] eq '' && $args[0] =~ /^[0-9]+$/) {
-			$self->instance_num(shift @args);
-		} else {
-			my $sess= $self->c->session;
-			defined $sess->{$url} or $sess->{$url}= { nextInstNum => 0 };
-			$self->instance_num($sess->{$url}->{nextInstNum}++);
-		}
-		$url .= '/' . $self->instance_num;
-	}
-	$self->base_url($url);
+	# base_url has been set by the Module function in the process of getting this module, or it will default to c->namespace
+	# 'c' is now a function that pulls from ScopedGlobals
+	# no_persist attributes are cleared at the end of TopController, rather than
+	#   before each module's controller at the next request. (frees up memory sooner, reduces bugs)
+	# mangling the request path can now be performed by prepare_controller
 	
 	# run user-defined or mix-in code to get ready to process the action
+	# the prepare function can modify the argument list if it so chooses
 	
-	$self->prepare_controller;
+	$self->prepare_controller(\@args);
 	
 	# dispatch the request to the appropriate handler
 	

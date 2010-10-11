@@ -7,17 +7,24 @@ use Data::Dumper;
 use RapidApp::JSON::MixedEncoder;
 use RapidApp::JSON::RawJavascript;
 
-@RapidApp::Sugar::EXPORT = ( 'sessvar', 'asjson', 'rawjs' );
+@RapidApp::Sugar::EXPORT = ( 'sessvar', 'perreq', 'asjson', 'rawjs' );
 
 # Module shortcuts
 #
 
+# a per-session variable, dynamically loaded form the session object on each request
 sub sessvar {
 	my ($name, %attrs)= @_;
 	push @{$attrs{traits}}, 'RapidApp::Role::SessionVar';
 	return ( $name, %attrs );
 }
 
+# a per-request variable, reset to default or cleared at the end of each request execution
+sub perreq {
+	my ($name, %attrs)= @_;
+	push @{$attrs{traits}}, 'RapidApp::Role::PerRequestVar';
+	return ( $name, %attrs );
+}
 
 # JSON shortcuts
 #
