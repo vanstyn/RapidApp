@@ -101,8 +101,7 @@ sub recursive_clear_per_request_vars {
 sub clear_per_request_vars {
 	my $self= shift;
 	
-	# clear all attributes which have the role 'PerRequestVar'
-	my $listmsg= $self->c->log->is_debug? ($self->module_name? $self->module_name : '[root]').': Clearing' : undef;
+	#my $listmsg= $self->c->log->is_debug? ($self->module_name? $self->module_name : '[root]').': Clearing' : undef;
 	
 	# if the no_persist property is true, clear ALL the lazy parameters
 	# note that no_persist is not quite the same as PerRequestVar, because PerRequestVar can also reset non-lazy attributes
@@ -110,20 +109,21 @@ sub clear_per_request_vars {
 		for my $attr ($self->meta->get_all_attributes) {
 			if ($attr->is_lazy or $attr->has_clearer) {
 				$attr->clear_value($self);
-				defined $listmsg and $listmsg.= ' '.$attr->name;
+				#defined $listmsg and $listmsg.= ' '.$attr->name;
 			}
 		}
 	}
 	
+	# clear all attributes which have the role 'PerRequestVar'
 	foreach my $attr (grep { Moose::Util::does_role($_, 'RapidApp::Role::PerRequestVar') } $self->meta->get_all_attributes) {
-		defined $listmsg and $listmsg.= ' '.$attr->name;
+		#defined $listmsg and $listmsg.= ' '.$attr->name;
 		$attr->clear_value($self);
 		# reset the default, if it isn't lazy
 		if (!$attr->is_lazy && $attr->has_default) {
 			$attr->set_initial_value($self, $attr->default($self));
 		}
 	}
-	defined $listmsg and $self->c->log->debug($listmsg);
+	#defined $listmsg and $self->c->log->debug($listmsg);
 }
 
 1;

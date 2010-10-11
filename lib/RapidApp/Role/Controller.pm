@@ -24,8 +24,6 @@ has 'extra_actions'			=> ( is => 'ro', 	default => sub {{}} );
 has 'default_action'			=> ( is => 'ro',	default => undef );
 has 'content'					=> ( is => 'ro',	default => '' );
 has 'render_as_json'			=> ( is => 'rw',	default => 1 );
-has 'multi_instance'       => ( is => 'rw',  default => 0 );
-has 'instance_num'         => ( is => 'rw',  default => undef );
 
 sub c {
 	return $RapidApp::ScopedGlobals::CatalystInstance;
