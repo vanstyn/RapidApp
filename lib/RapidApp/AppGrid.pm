@@ -1059,7 +1059,7 @@ sub grid_fields {  # <-- column model
 		# -- Custom Render Function, using XTemplate:
 		if (defined $field->{render_fn}) {
 			$field->{xtype} = 'templatecolumn';
-			$field->{tpl} = '{[' . $field->{render_fn} . '(values.' . $field->{name} . ')]}';
+			$field->{tpl} = '{[' . $field->{render_fn} . '(values.' . $field->{name} . ',values)]}';
 		}
 		# --
 		
