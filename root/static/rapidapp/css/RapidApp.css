@@ -479,3 +479,12 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
     color: #888;
 }
 
+
+.x-superboxselect-x-flag {
+	background-image: url(/static/ext/resources/images/default/s.gif);
+	background-repeat: no-repeat;
+	background-position:  2px center;
+	text-indent: 17px !important;
+}
+
+

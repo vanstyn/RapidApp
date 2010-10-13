@@ -23,6 +23,10 @@
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/js/htmleditor/resources/css/htmleditorplugins.css" />
 
 
+<link rel="stylesheet" type="text/css" href="/static/rapidapp/js/SuperBoxSelect/superboxselect.css" />
+<link rel="stylesheet" type="text/css" href="/static/rapidapp/js/SuperBoxSelect/superboxselect-gray-extend.css" />
+
+
 <link rel="stylesheet" type="text/css" href="/static/ext/examples/ux/fileuploadfield/css/fileuploadfield.css" />
 
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/css/tabular-table.css" />
@@ -98,5 +102,7 @@
 <script src="/static/rapidapp/js/htmleditor/src/Ext.ux.form.HtmlEditor.Plugins.js"></script>
 <!--                     -->
 
+
+<script src="/static/rapidapp/js/SuperBoxSelect/SuperBoxSelect.js"></script>
 
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp.js"></script>
