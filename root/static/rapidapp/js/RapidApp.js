@@ -39,6 +39,17 @@ Ext.override(Ext.menu.Menu, {
 // --------
 
 
+// Mouse-over/hover fix:
+// http://www.sencha.com/forum/showthread.php?69090-Ext.ux.form.SuperBoxSelect-as-seen-on-facebook-and-hotmail&p=515731#post515731
+Ext.override(Ext.ux.form.SuperBoxSelectItem, {
+	enableElListeners : function() {
+		this.el.on('click', this.onElClick, this, {stopEvent:true});
+		//this.el.addClassOnOver('x-superboxselect-item x-superboxselect-item-hover');
+		this.el.addClassOnOver('x-superboxselect-item-hover');
+	}
+});
+
+
 Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.errMsgHandler = function(msg) {
 	Ext.Msg.alert('Error',msg);
