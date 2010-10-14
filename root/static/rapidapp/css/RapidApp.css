@@ -487,4 +487,44 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 	text-indent: 17px !important;
 }
 
+/*
+.x-superboxselect-item-close {background: url(close.png) no-repeat scroll left 0px; border: none; cursor: default; font-size: 1px; height: 16px;padding:0; position: absolute; right: 0px; top: 2px; width: 13px;display:block;cursor:pointer;}
+*/
+
+
+.x-superboxselect-item-read-only .x-superboxselect-item-close {visibility: hidden; background-image: none; border: none; cursor: default; font-size: 1px; height: 0px;padding:0; position: absolute; right: 0px; top: 2px; width: 0px;display:block;cursor:pointer;}
+
+
+.x-superboxselect-item-read-only 
+{
+	-moz-border-radius:6px 6px 6px 6px !important;
+	background-color:#E7E7E7 !important;
+	border:1px solid #D7D7D7 !important;
+	padding:1px 15px 1px 5px !important;
+	position:relative !important;
+	color: black;
+}
+
+
+.x-superboxselect-input {
+	
+	line-height: 1px;
+}
+
+
+/*
+.x-superboxselect-item-read-only+.x-superboxselect-item-hover,
+.x-superboxselect-item-read-only+.x-superboxselect-item-focus,
+.x-superboxselect-item-read-only+.x-superboxselect-item-focus:active,
+.x-superboxselect-item-read-only+.x-superboxselect-item-focus:hover
+{
+	-moz-border-radius:6px 6px 6px 6px !important;
+	background-color:#E7E7E7 !important;
+	border:1px solid #D7D7D7 !important;
+	padding:1px 15px 1px 5px !important;
+	position:relative !important;
+	color: black;
+}
+*/
+
 
