@@ -4,6 +4,57 @@ Ext.Updater.defaults.disableCaching = true;
 Ext.ns('Ext.log');
 Ext.log = function() {};
 
+
+
+
+
+
+Ext.ns('Ext.ux.form.FormConnectorField');
+Ext.ux.form.FormConnectorField = Ext.extend(Ext.form.Hidden, {
+
+	/**
+	* @cfg {String} connectFormId Id of the Ext.form.FormPanel component this field should link to.
+	*/
+	connectFormId: null,
+
+	/**
+	* @cfg {Function} serializer Function to use to encode form field values into the returned field 
+	* value of this field. Defaults to Ext.encode
+	*/
+	serializer: Ext.encode,
+	
+	deserializer: Ext.decode,
+
+	getConnectedFormHandler: function() {
+		return Ext.getCmp(this.connectFormId).getForm();
+	},
+	
+	getConnectedForm: function() {
+		if(!this.connectedForm) {
+			this.connectedForm = this.getConnectedFormHandler();
+		}
+		return this.connectedForm;
+	},
+	
+	getValue: function() {
+		var data = this.getConnectedForm().getFieldValues();
+		return this.serializer(data);
+	},
+	
+	getRawValue: function() {
+		return this.getValue();
+	},
+	
+	setValue: function(val) {
+		var data = this.deserializer(val);
+		this.getConnectedForm().setValues(data);
+	}
+});
+
+
+
+
+
 // --------
 // http://www.sencha.com/forum/showthread.php?33475-Tip-Long-menu-overflow/page2
 Ext.override(Ext.menu.Menu, {
