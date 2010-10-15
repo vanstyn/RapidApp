@@ -56,7 +56,7 @@ Ext.override(Ext.ux.form.SuperBoxSelect,{
 	initComponent: function () {
 		this.initComponent_orig.apply(this,arguments);
 		this.on('afterrender',function(combo) {
-			if(combo.editable === false) {
+			if(combo.editable === false && combo.hideInput === true) {
 				combo.inputEl.removeClass("x-superboxselect-input");
 				combo.inputEl.setVisible(false);
 			}
