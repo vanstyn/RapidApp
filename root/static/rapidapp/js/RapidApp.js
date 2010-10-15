@@ -50,6 +50,21 @@ Ext.override(Ext.ux.form.SuperBoxSelectItem, {
 });
 
 
+// Override to get rid of the input cursor if editable is false
+Ext.override(Ext.ux.form.SuperBoxSelect,{
+	initComponent_orig: Ext.ux.form.SuperBoxSelect.prototype.initComponent,
+	initComponent: function () {
+		this.initComponent_orig.apply(this,arguments);
+		this.on('afterrender',function(combo) {
+			if(combo.editable === false) {
+				combo.inputEl.removeClass("x-superboxselect-input");
+				combo.inputEl.setVisible(false);
+			}
+		});
+	}
+});
+
+
 Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.errMsgHandler = function(msg) {
 	Ext.Msg.alert('Error',msg);

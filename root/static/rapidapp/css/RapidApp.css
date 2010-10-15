@@ -506,25 +506,3 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 }
 
 
-.x-superboxselect-input {
-	
-	line-height: 1px;
-}
-
-
-/*
-.x-superboxselect-item-read-only+.x-superboxselect-item-hover,
-.x-superboxselect-item-read-only+.x-superboxselect-item-focus,
-.x-superboxselect-item-read-only+.x-superboxselect-item-focus:active,
-.x-superboxselect-item-read-only+.x-superboxselect-item-focus:hover
-{
-	-moz-border-radius:6px 6px 6px 6px !important;
-	background-color:#E7E7E7 !important;
-	border:1px solid #D7D7D7 !important;
-	padding:1px 15px 1px 5px !important;
-	position:relative !important;
-	color: black;
-}
-*/
-
-
