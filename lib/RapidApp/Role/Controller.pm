@@ -11,6 +11,7 @@ with 'RapidApp::Role::Module';
 
 use RapidApp::JSONFunc;
 use Try::Tiny;
+use Scalar::Util 'blessed';
 
 use Term::ANSIColor qw(:constants);
 
@@ -136,16 +137,29 @@ sub controller_dispatch {
 		}
 	}
 	catch {
-		chomp($_);
+		my $msg= ''.$_;
+		chomp($msg);
 		
-		$self->c->log->info(' ---->>> RAPIDAPP EXCEPTION: ' . $_);
+		my $dbgMsg= $msg;
+		if (blessed($_)) {
+			if ($_->can('dump')) { $dbgMsg= $_->dump; }
+			elsif ($_->can('trace')) { $dbgMsg= $_->trace; }
+		}
+		
+		$self->c->log->info(' ---->>> RAPIDAPP EXCEPTION: ' . $dbgMsg);
 		$self->c->res->header('X-RapidApp-Exception' => 1);
 		$self->c->res->status(542);
+		
+		# clean up the message a bit
+		$msg =~ s|\n|<br/>|g;
+		if (length($msg) > 300) {
+			$msg= substr($msg, 0, 300).' ...';
+		}
 		
 		$data = $self->render_data({
 			exception	=> \1,
 			success		=> \0,
-			msg			=> $_
+			msg			=> $msg
 		});
 	};
 	
