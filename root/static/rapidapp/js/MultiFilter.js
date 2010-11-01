@@ -51,11 +51,17 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 	
 	setFields: function() {
 		var fields = [];
+		
+		//console.dir(this.grid.getColumnModel());
+		
+		//console.dir(this.store.fields);
+		
 		this.store.fields.each(function(item,index,length) {
 			fields.push(item.name);
 		});
 		
 		this.Criteria = Ext.extend(Ext.ux.MultiFilter.Criteria,{
+			gridColumns: this.grid.getColumnModel().config,
 			fieldList: fields
 		});
 	},
@@ -158,9 +164,33 @@ Ext.ux.MultiFilter.StaticCombo = Ext.extend(Ext.form.ComboBox,{
 Ext.ux.MultiFilter.defaultConditionMap = {
 
 	'is equal to'				: '=',
-	'is not equal to'			: '!='
+	'is not equal to'			: '!=',
+	'before'						: '<',
+	'after'						: '>'
 
-}
+};
+
+
+Ext.ux.MultiFilter.defaultTypeToConditionMap = {
+
+	'default': {
+		'is equal to'			: '=',
+		'is not equal to'		: '!='
+	},
+	
+	date: {
+		'before'					: '<',
+		'after'					: '>'
+	},
+	
+	number: {
+		'less than'				: '<',
+		'greater than'			: '>',
+		'equal to'				: '=',
+		'not equal to'			: '!='
+	}
+
+};
 
 
 Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
@@ -182,7 +212,13 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		'field4'
 	],
 	
+	gridColumns: null,
+	
+	columnMap: {},
+	
 	conditionMap: Ext.ux.MultiFilter.defaultConditionMap,
+	
+	typeCondMap: Ext.ux.MultiFilter.defaultTypeToConditionMap,
 
 	initComponent: function() {
 	
@@ -190,6 +226,8 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		for (i in this.conditionMap) {
 			this.reverseConditionMap[this.conditionMap[i]] = i;
 		}
+		
+		this.initColumns();
 	
 		this.items = [
 	
@@ -198,7 +236,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 				itemId: 'field_combo',
 				grow: true,
 				width: 170,
-				value_list: this.fieldList/*,
+				value_list: this.fieldList,
 				UpdateWidth: function() {
 					var TM = Ext.util.TextMetrics.createInstance(this.el);
 					this.setWidth(30 + TM.getWidth(this.getRawValue()));
@@ -210,12 +248,17 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 				listeners: {
 					select: function(combo) {
 						combo.UpdateWidth();
+						var criteria = combo.ownerCt;
+						var column = criteria.columnMap[combo.getRawValue()];
+						if (column) {
+							criteria.configSelector(column);
+						}
 					}
 				
 				}
-				*/
 				
-			}),
+				
+			})/*,
 			
 			new Ext.ux.MultiFilter.StaticCombo({
 				name: 'cond_combo',
@@ -236,9 +279,84 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 				itemId: 'datafield',
 				flex	: 1
 			}
+			*/
 		];
+		
+		
+		console.dir(this.initColumns());
 	
 		Ext.ux.MultiFilter.Criteria.superclass.initComponent.call(this);
+	},
+	
+	initColumns: function() {
+		if (! this.gridColumns) { return; }
+		
+		this.columnMap = {};
+		
+		for (var i = 0; i < this.gridColumns.length; i++) {
+			var column = this.gridColumns[i];
+			this.columnMap[column.name] = column;
+		}
+		return this.columnMap;
+	},
+	
+	
+	configSelector: function(column) {
+		var cond = this.getComponent('cond_combo');
+		if (cond) {
+			cond.ownerCt.remove(cond,true);
+		}
+		var val = this.getComponent('datafield');
+		if (val) {
+			val.ownerCt.remove(val,true);
+		}
+		
+		var type = column.filter.type;
+		
+		var colCondCnf = this.typeCondMap[type];
+		if (!colCondCnf) { colCondCnf = this.typeCondMap['default']; }
+		
+		var value_list = [];
+		for (i in colCondCnf) {
+			value_list.push(i);
+		}
+		
+		cond = new Ext.ux.MultiFilter.StaticCombo({
+			name: 'cond_combo',
+			itemId: 'cond_combo',
+			width: 100,
+			value_list: value_list
+		});
+		
+		if (type == 'date') {
+			val = {
+				xtype	: 'datefield',
+				name	: 'datafield',
+				itemId: 'datafield',
+				format: 'Y-m-d H:i:s',
+				flex	: 1
+			};
+		}
+		else if (type == 'number') {
+			val = {
+				xtype	: 'numberfield',
+				name	: 'datafield',
+				itemId: 'datafield',
+				flex	: 1
+			};
+		}
+		else {
+		
+			val = {
+				xtype	: 'textfield',
+				name	: 'datafield',
+				itemId: 'datafield',
+				flex	: 1
+			};
+		}
+		
+		this.add(cond,val);
+		this.doLayout();
 	},
 	
 	getData: function() {
@@ -258,14 +376,10 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 	},
 	
 	loadData: function(data) {
-	
-	
-		//console.dir(data);
-	
+
 		for (i in data) {
 			var field_combo = this.getComponent('field_combo');
 			field_combo.setRawValue(i);
-			//field_combo.UpdateWidth();
 			for (j in data[i]) {
 				var cond = j;
 				if(this.reverseConditionMap[cond]) {
@@ -284,15 +398,11 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 Ext.ux.MultiFilter.Filter = Ext.extend(Ext.Container,{
 
 	layout: 'hbox',
-	cls: 'x-toolbar x-small-editor',
+	cls: 'x-toolbar x-small-editor', // < --- this makes the container look like a toolbar
 	style: {
 		margin: '5px 5px 5px 5px',
-		//'padding-bottom': '0px',
 		'border-width': '1px 1px 1px 1px'
 	},
-	
-	//autoWidth: true,
-	//autoHeight: true,
 	defaults: {
 		flex: 1
 	},
@@ -381,17 +491,7 @@ Ext.ux.MultiFilter.Filter = Ext.extend(Ext.Container,{
 			},
 			
 		];
-		
-		/*
-		this.on('afterrender',function() {
-			if (this.loadWith) {
-				console.dir(this.loadWith);
-				this.loadData(this.loadWith);
-			}
-		
-		});
-		*/
-		
+
 		Ext.ux.MultiFilter.Filter.superclass.initComponent.apply(this,arguments);
 	},
 
@@ -442,10 +542,8 @@ Ext.ux.MultiFilter.Filter = Ext.extend(Ext.Container,{
 	},
 	
 	getData: function() {
-	
 		var data = this.filterSelection.getData();
 		return data;
-	
 	},
 	
 	loadData: function(data) {
@@ -484,76 +582,6 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 			}
 		};
 		
-		var get_data = {
-			xtype: 'button',
-			text: 'Get Data',
-			iconCls: 'icon-add',
-			handler: function(btn) {
-				var set = btn.ownerCt.ownerCt;
-				
-				console.log(Ext.encode(set.getData()));
-				
-				//console.dir();
-				
-			}
-		};
-		
-		var load_data = {
-			xtype: 'button',
-			text: 'Load Data',
-			iconCls: 'icon-add',
-			handler: function(btn) {
-				var set = btn.ownerCt.ownerCt;
-				
-				//var dataStr = '[{"field1":{"=":"h"}}]';
-				//var dataStr = '[{"field1":{"=":"h"}},{"field2":{"is less than":"cvbcvbcvb"}}]';
-				//var dataStr = '[{"-or":[[{"field1":{"=":"h"}},{"field2":{"is less than":"cvbcvbcvb"}}],{"field2":{"is less than":"fhfgh"}}]}]';
-				//var dataStr = '[{"-or":[[[{"field1":{"=":"h"}},{"field2":{"is less than":"cvbcvbcvb"}}],{"field2":{"is less than":"fhfgh"}}],{"field2":{"is less than":"vbnvbn"}}]}]';
-				
-				//var data = Ext.decode(dataStr);
-				
-				//console.dir(data);
-				
-				var data = [
-					 {
-						  "-or": [
-								[
-									 {
-										  "field1": {
-												"=": "fghfgh"
-										  }
-									 },
-									 {
-										  "field2": {
-												"!=": "sdfsd"
-										  }
-									 }
-								],
-								{
-									 "field3": {
-										  "is greater than": "dghgh"
-									 }
-								}
-						  ]
-					 }
-				];
-				
-				//data = [{"field1":{"=":"sdv"}},{"field2":{"!=":"sdvsdvsdvsd"}},{"field3":{"is greater than":"sdvsdv"}}];
-				
-				data = [{"-or":[[[{"field1":{"=":"fghfgh"}},{"field2":{"!=":"sdfsd"}}]],{"field3":{"is greater than":"dghgh"}}]}];
-				data = [{"-or":[[{"-or":[[[{"field1":{"=":"fghfgh"}},{"field2":{"!=":"sdfsd"}}],{"field3":{"is greater than":"dghgh"}}],{"field2":{"is greater than":" dgdth"}}]}],{"field3":{"contains":"gggggggggggggggggg"}}]}];
-				
-				data = [{"-or":[[[{"-or":[[[[{"field1":{"=":"fghfgh"}},{"field2":{"!=":"sdfsd"}}],{"field3":{"is greater than":"dghgh"}}]],{"field2":{"is greater than":" dgdth"}}]}]],{"field3":{"contains":"gggggggggggggggggg"}}]}];
-				
-				data = [{"-or":[[[{"-or":[[[[{"field1":{"=":"fghfgh"}},{"field2":{"!=":"sdfsd"}}],{"field3":{"is greater than":"dghgh"}}]],{"field2":{"is greater than":" dgdth"}}]}]],{"field3":{"contains":"gggggggggggggggggg"}}]}];
-				
-				set.loadData(data);
-				
-				//console.dir();
-				
-			}
-		};
-
 		this.items = {
 			xtype: 'container',
 			layout: 'hbox',
@@ -562,10 +590,7 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 			},
 			items: [
 				add_filter,
-				add_set
-				//get_data
-				//load_data
-			
+				add_set		
 			]
 		};
 	
@@ -605,55 +630,39 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 	
 	addFilterWithData: function(item) {
 
-		//var is_or = false;
 		var filter;
 		var new_item = item;
 		
-
 		if(item['-and']) {
 			new_item = item['-and'];
 		}
 		if(item['-or']) {
 			new_item = item['-or'];
-			//console.log(new_item.length);
 			for (var j = 0; j < new_item.length; j++) {
-				//console.dir(new_item);
 				filter = this.addFilterWithData(new_item[j]);
 				filter.setOr(true);
-				//return filter;
 			}
 			return;
-			
-			//is_or = true;
 		}
 		
 		if(Ext.ux.MultiFilter.RealTypeOf(new_item) == 'object') {
 			filter = this.addFilter();
-			//return filter.addFilterWithData(new_item);
 		}
 		else if(Ext.ux.MultiFilter.RealTypeOf(new_item) == 'array') {
 			filter = this.addFilterSet();
-			//console.log('new_item.length: ' + new_item.length);
 			if(new_item.length == 1) {
 				var only_item = new_item[0];
 				if(Ext.ux.MultiFilter.RealTypeOf(only_item) == 'array') {
 					new_item = only_item;
 				}
 			}
-			//filter.loadData(new_item);
 		}
-		
-		//return filter.addFilterWithData(new_item);
 
 		filter.loadData(new_item);
-		//filter.setOr(is_or);
-	
+
 		return filter;
 	},
-	
-	
-	
-	
+
 	getData: function() {
 	
 		var data = [];
@@ -692,53 +701,11 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 	},
 	
 	loadData: function(data,setOr) {
-		//console.log('loadData()');
-		
 		for (var i = 0; i < data.length; i++) {
 			var item = data[i];
 			this.addFilterWithData(item);
 		}
-		
 		return;
-		
-		
-		/*
-		for (var i = 0; i < data.length; i++) {
-			var item = data[i];
-			var is_or = false;
-			if(setOr && i !== 0) { is_or = setOr; }
-			var filter;
-			//if (item.length == 1) {
-				if(item['-and']) {
-					item = data[i]['-and'];
-				}
-				if(item['-or']) {
-					item = data[i]['-or'];
-					console.log(item.length);
-					for (var j = 0; j < item.length; j++) {
-						console.dir(item[j]);
-						this.loadData(item[j],true);
-						//this.setOr(true);
-					}
-					return;
-					
-					is_or = true;
-				}
-			//}
-
-			if(Ext.ux.MultiFilter.RealTypeOf(item) == 'object') {
-				filter = this.addFilter();
-			}
-			
-			if(Ext.ux.MultiFilter.RealTypeOf(item) == 'array') {
-				filter = this.addFilterSet();
-			}
-			
-			filter.loadData(item);
-			filter.setOr(is_or);
-			
-		}
-		*/
 	}
 });
 Ext.reg('filtersetpanel',Ext.ux.MultiFilter.FilterSetPanel);
@@ -772,122 +739,3 @@ Ext.ux.MultiFilter.movefilter = function(set,filter,indexOffset) {
 	
 	set.bubble(function(){ this.doLayout(); });
 }
-
-
-Ext.ux.MultiFilter.mywindow = function() {
-	
-	var win = new Ext.Window({
-		//id: 'mywin',
-		title: 'MultiFilter',
-		layout: 'anchor',
-		width: 750,
-		height: 600,
-		closable: true,
-		modal: true,
-		
-		autoScroll: true,
-		//autoHeight: true,
-		items: [
-			new Ext.ux.MultiFilter.FilterSetPanel({  
-				anchor: '-26', 
-				frame: true,
-				itemId: 'filSet'
-			})
-		],
-		buttons: [
-		
-			{
-				xtype: 'button',
-				text: 'Get Data',
-				iconCls: 'icon-add',
-				handler: function(btn) {
-					var set = btn.ownerCt.ownerCt.getComponent('filSet');
-					console.log(Ext.encode(set.getData()));
-					
-				}
-			
-			},
-		
-			{
-				xtype: 'button',
-				text: 'Test Data',
-				iconCls: 'icon-add',
-				handler: function(btn) {
-					var set = btn.ownerCt.ownerCt.getComponent('filSet');
-					var curdata = set.getData();
-					
-					var new_win = Ext.ux.MultiFilter.mywindow();
-					var new_set = new_win.getComponent('filSet');
-					
-					new_set.loadData(curdata);
-					
-				}
-			
-			},
-			
-			{
-				xtype: 'button',
-				text: 'Load Data',
-				iconCls: 'icon-add',
-				handler: function(btn) {
-					var set = btn.ownerCt.ownerCt.getComponent('filSet');
-					
-					data = [{"-or":[[[{"field1":{"=":"fghfgh"}},{"field2":{"!=":"sdfsd"}}]],{"field3":{"is greater than":"dghgh"}}]}];
-					data = [{"-or":[[{"-or":[[[{"field1":{"=":"fghfgh"}},{"field2":{"!=":"sdfsd"}}],{"field3":{"is greater than":"dghgh"}}],{"field2":{"is greater than":" dgdth"}}]}],{"field3":{"contains":"gggggggggggggggggg"}}]}];
-					
-					data = [{"-or":[[[{"-or":[[[[{"field1":{"=":"fghfgh"}},{"field2":{"!=":"sdfsd"}}],{"field3":{"is greater than":"dghgh"}}]],{"field2":{"is greater than":" dgdth"}}]}]],{"field3":{"contains":"gggggggggggggggggg"}}]}];
-					
-					data = [{"-or":[[[{"-or":[[[[{"field1":{"=":"fghfgh"}},{"field2":{"!=":"sdfsd"}}],{"field3":{"is greater than":"dghgh"}}]],{"field2":{"is greater than":" dgdth"}}]}]],{"field3":{"contains":"gggggggggggggggggg"}}]}];
-					
-					set.loadData(data);
-					
-					//console.dir();
-					
-				}
-			}
-		
-		]
-		
-	});
-	
-	win.show();
-
-	return win;
-}
-
-
-
-/**
- * <p>Plugin for the Container class which causes removed (but not destroyed)
- * Components to be removed from their place in the DOM, and put into "cold
- * storage" in a hidden Container.</p>
- * <p>Removed Components may be re-added to other Containers later.</p>
- */
-
-/*
-Ext.ns("Ext.ux");
-Ext.ux.ContainerClear = new function() {
-    var bin,
-        afterRemove = function(comp, autoDestroy) {
-            if(!this.autoDestroy || (autoDestroy === false)) {
-                if (!bin) {
-                    bin = new Ext.Container({
-                        id: 'x-bin-container',
-                        cls: 'x-hidden',
-                        renderTo: document.body
-                    });
-                }
-                bin.add(comp);
-                bin.doLayout();
-            }
-        };
-
-    this.init = function(ctr) {
-        ctr.remove = ctr.remove.createSequence(afterRemove);
-    };
-};
-Ext.preg('container-clear', Ext.ux.ContainerClear);
-*/
-
-
-
