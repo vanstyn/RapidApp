@@ -1487,6 +1487,7 @@ Ext.reg('jsonautopanel',Ext.ux.JsonAutoPanel);
 
 
 Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
+
 	border: false,
 	initComponent: function() {
 
@@ -1510,6 +1511,15 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 		//	}
 		//}
 		//this.column_model = new_column_model;
+
+
+		// ----- MultiFilters: ----- //
+		if (this.use_multifilters) {
+			if(!this.plugins){ this.plugins = []; }
+			this.plugins.push(new Ext.ux.MultiFilter.Plugin);
+		}
+		// ------------------------- //
+
 
 		// ----- RowExpander ------ //
 		if (this.expander_template) {

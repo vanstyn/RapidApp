@@ -99,6 +99,28 @@
 .icon-history-add-32x32 { background-image: url(/static/images/history_add_32x32.png) !important; }
 
 
+
+.x-multifilter-not {
+	font-weight: bolder !important;
+	font-size:145% !important;
+	padding-left: 1px !important;
+	padding-right: 1px !important;
+	font-family: Lucida Console !important;
+	color: lightgray  !important;
+}
+
+.x-multifilter-not-on {
+
+	color: red !important;
+	
+}
+
+.x-multifilter-not-off {
+
+	color: lightgray   !important;
+	
+}
+
 /* ----------------------------------- */
 
 /* http://www.sencha.com/forum/showthread.php?45873-tbar-appears-ugly */

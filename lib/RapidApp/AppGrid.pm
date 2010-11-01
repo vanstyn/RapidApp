@@ -64,6 +64,9 @@ has 'gridfilter'			 			=> ( is => 'ro',	required => 0, default => sub { \0 }				
 has 'gridfilter_remote'				=> ( is => 'ro',	required => 0, default => sub { \0 }				);
 #### ---
 
+## Ext.ux.MultiFilters:
+has 'use_multifilters'					=> ( is => 'ro',	required => 0, default => sub { \0 }				);
+
 has 'ExtJS'								=> ( is => 'ro',	default => sub { RapidApp::ExtJS->new }			);
 
 
@@ -649,7 +652,7 @@ sub DynGrid {
 		MaxColWidth				=> $self->MaxColWidth,
 		#enableHdMenu			=> 0,
 		enableColumnMove		=> $self->enableColumnMove,
-		tbar						=> { items => $self->tbar_items },
+		tbar						=> $self->tbar,
 		viewConfig				=> { forceFit => 0, enableRowBody => \1 },
 		#remoteSort				=> $self->remoteSort,
 		gridsearch				=> $self->gridsearch,
@@ -659,6 +662,7 @@ sub DynGrid {
 		remote_columns			=> $self->remote_columns,
 		rowactions				=> $self->rowactions,
 		row_checkboxes			=> $self->row_checkboxes,
+		use_multifilters		=> $self->use_multifilters,
 		store_config			=> $self->store_config
 	};
 	
@@ -677,6 +681,15 @@ sub DynGrid {
 	my $DynGrid = RapidApp::ExtJS::DynGrid->new($config);
 	return $DynGrid;
 }
+
+
+sub tbar {
+	my $self = shift;
+	return  { items => $self->tbar_items };
+}
+
+
+
 
 
 has 'store_config' => ( is => 'ro', lazy => 1, default => sub {

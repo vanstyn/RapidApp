@@ -34,6 +34,7 @@ has 'joins'    					=> ( is => 'rw',	required => 0, 	isa => 'ArrayRef', default 
 has 'implied_joins'				=> ( is => 'rw',  required => 0,    isa => 'Bool',     default => 0 );
 
 has 'group_by'    				=> ( is => 'ro',	default => undef	);
+has 'prefetch'    				=> ( is => 'ro',	default => undef	);
 
 ###########################################################################################
 
@@ -73,6 +74,9 @@ sub data_fetch {
 	
 	my @rows = $self->ResultSource->resultset->search($Search,$Attr)->all;
 	
+	
+	#my $rs = $self->ResultSource->resultset->search($Search,$Attr);
+	
 	my $count_Attr = Clone::clone($Attr);
 	delete $count_Attr->{page} if (defined $count_Attr->{page}); # <-- ##  need to delete page and rows attrs to prevent the
 	delete $count_Attr->{rows} if (defined $count_Attr->{rows}); # <-- ##  totalCount from including only the current page
@@ -80,6 +84,8 @@ sub data_fetch {
 	return {
 		totalCount	=> $self->ResultSource->resultset->search($Search,$count_Attr)->count,
 		rows			=> \@rows
+		#totalCount => $rs->count,
+		#rs => $rs
 	};
 }
 
@@ -206,7 +212,7 @@ sub Attr_spec {
 		}
 	}
 	# --
-	
+	$attr->{prefetch} = $self->prefetch if (defined $self->prefetch);
 	$attr->{group_by} = $self->group_by if (defined $self->group_by);
 	
 	return $attr;
@@ -408,6 +414,12 @@ sub Search_spec {
 	}
 
 	my $Search;
+	
+	if($params->{multifilter}) {
+		my $multifilter = JSON::PP::decode_json($params->{multifilter});
+		push @$filter_search, @$multifilter;
+	}
+	
 	if (scalar @$filter_search > 0) {
 		#unshift @$search, { -and => $filter_search };
 		$Search = { -and => [{ -or => $search },{ -and => $filter_search }] };
