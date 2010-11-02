@@ -63,6 +63,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		this.setFields();
 	
 		var win = new Ext.Window({
+		
 			//id: 'mywin',
 			multifilter: this,
 			title: 'MultiFilter',
@@ -78,6 +79,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 					FilterParams: {
 						criteriaClass: this.Criteria
 					},
+					cls: 'x-toolbar x-small-editor',
 					anchor: '-26', 
 					frame: true,
 					itemId: 'filSet'
@@ -368,11 +370,13 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 Ext.ux.MultiFilter.Filter = Ext.extend(Ext.Container,{
 
 	layout: 'hbox',
+	
 	cls: 'x-toolbar x-small-editor', // < --- this makes the container look like a toolbar
 	style: {
 		margin: '5px 5px 5px 5px',
 		'border-width': '1px 1px 1px 1px'
 	},
+	
 	defaults: {
 		flex: 1
 	},
