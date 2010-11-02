@@ -8,20 +8,16 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 	init: function(grid) {
 		this.grid = grid;
 		grid.multifilter = this;
-		//console.log('init called');
-	
+
 		this.store = grid.getStore();
 		this.store.on('beforeload',function(store,options) {
 			if(store.filterdata) {
 				var encoded = Ext.encode(store.filterdata);
-				//var lastOptions = store.lastOptions;
 				Ext.apply(options.params, {
 					'multifilter': encoded 
 				});
 			}
-			
 			return true;
-		
 		});
 	
 		if (grid.rendered) {
@@ -51,10 +47,6 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 	
 	setFields: function() {
 		var fields = [];
-		
-		//console.dir(this.grid.getColumnModel());
-		
-		//console.dir(this.store.fields);
 		
 		this.store.fields.each(function(item,index,length) {
 			fields.push(item.name);
@@ -196,14 +188,6 @@ Ext.ux.MultiFilter.defaultTypeToConditionMap = {
 Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 
 	layout: 'hbox',
-	/*
-	//autoWidth: true,
-	layoutConfig: {
-		//align: 'stretch'
-	},
-	
-	monitorResize: true,
-	*/
 	
 	fieldList: [
 		'field1',
@@ -228,63 +212,44 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		}
 		
 		this.initColumns();
-	
-		this.items = [
-	
-			new Ext.ux.MultiFilter.StaticCombo({
-				name: 'field_combo',
-				itemId: 'field_combo',
-				grow: true,
-				width: 170,
-				value_list: this.fieldList,
-				UpdateWidth: function() {
-					var TM = Ext.util.TextMetrics.createInstance(this.el);
-					this.setWidth(30 + TM.getWidth(this.getRawValue()));
-					//this.ownerCt.getLayout().calculateChildBoxes();
-					//console.log(this.getXType());
-					//console.dir(this);
-					//this.ownerCt.bubble(function(){ this.syncSize(); this.doLayout(); });
-				},
-				listeners: {
-					select: function(combo) {
-						combo.UpdateWidth();
-						var criteria = combo.ownerCt;
-						var column = criteria.columnMap[combo.getRawValue()];
-						if (column) {
-							criteria.configSelector(column);
-						}
+		
+		this.field_combo_cnf = {
+			name: 'field_combo',
+			itemId: 'field_combo',
+			grow: true,
+			minListWidth: 200,
+			width: 100,
+			value_list: this.fieldList,
+			UpdateWidth: function() {
+				var TM = Ext.util.TextMetrics.createInstance(this.el);
+				var value = this.getRawValue();
+				var new_width = 30 + TM.getWidth(value);
+				this.setWidth(new_width);
+				
+				// This is the only way to get the hbox to properly recalculate.
+				// We update the config object and then recreate all the fields
+				// from scratch on the select event:
+				Ext.apply(this.ownerCt.field_combo_cnf,{
+					width: new_width,
+					value: value
+				});
+
+				//this.ownerCt.bubble(function(){ this.syncSize(); this.doLayout(); });
+			},
+			listeners: {
+				select: function(combo) {
+					combo.UpdateWidth();
+					var criteria = combo.ownerCt;
+					var column = criteria.columnMap[combo.getRawValue()];
+					if (column) {
+						criteria.configSelector(column);
 					}
-				
 				}
-				
-				
-			})/*,
-			
-			new Ext.ux.MultiFilter.StaticCombo({
-				name: 'cond_combo',
-				itemId: 'cond_combo',
-				width: 100,
-				value_list: [
-					'is equal to',
-					'is not equal to',
-					'is greater than',
-					'is less than',
-					'contains'
-				]
-			}),
-			
-			{
-				xtype	: 'textfield',
-				name	: 'datafield',
-				itemId: 'datafield',
-				flex	: 1
 			}
-			*/
-		];
+		};
 		
-		
-		console.dir(this.initColumns());
-	
+		this.items = new Ext.ux.MultiFilter.StaticCombo(this.field_combo_cnf);
+
 		Ext.ux.MultiFilter.Criteria.superclass.initComponent.call(this);
 	},
 	
@@ -299,7 +264,6 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		}
 		return this.columnMap;
 	},
-	
 	
 	configSelector: function(column) {
 		var cond = this.getComponent('cond_combo');
@@ -334,7 +298,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 				name	: 'datafield',
 				itemId: 'datafield',
 				format: 'Y-m-d H:i:s',
-				flex	: 1
+				width: 130
 			};
 		}
 		else if (type == 'number') {
@@ -355,7 +319,14 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			};
 		}
 		
-		this.add(cond,val);
+		// Remove all the fields and add all back in from scratch to
+		// get hbox to set the correct sizes
+		this.removeAll(true);
+		this.add(
+			new Ext.ux.MultiFilter.StaticCombo(this.field_combo_cnf),
+			cond,
+			val
+		);
 		this.doLayout();
 	},
 	
@@ -390,7 +361,6 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			}
 		}
 	}
-	
 });
 
 
@@ -406,6 +376,8 @@ Ext.ux.MultiFilter.Filter = Ext.extend(Ext.Container,{
 	defaults: {
 		flex: 1
 	},
+	
+	autoScroll: true,
 	
 	criteriaClass: Ext.ux.MultiFilter.Criteria,
 	
@@ -626,7 +598,6 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 	
 		return this.addNewItem(new Ext.ux.MultiFilter.Filter(config));
 	},
-	
 	
 	addFilterWithData: function(item) {
 
