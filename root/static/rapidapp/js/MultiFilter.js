@@ -84,6 +84,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 				})
 			],
 			buttons: [
+				
 				{
 					xtype: 'button',
 					text: 'Save and Close',
@@ -101,6 +102,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 						store.reload();
 					}
 				},
+				
 				{
 					xtype: 'button',
 					text: 'Cancel',
@@ -108,9 +110,8 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 					handler: function(btn) {
 						btn.ownerCt.ownerCt.close();
 					}
-				},
+				}
 			]
-			
 		});
 		
 		win.show();
@@ -216,7 +217,6 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		this.field_combo_cnf = {
 			name: 'field_combo',
 			itemId: 'field_combo',
-			grow: true,
 			minListWidth: 200,
 			width: 100,
 			value_list: this.fieldList,
@@ -460,8 +460,7 @@ Ext.ux.MultiFilter.Filter = Ext.extend(Ext.Container,{
 					set.remove(filter,true);
 					set.bubble(function(){ this.doLayout(); });
 				}
-			},
-			
+			}
 		];
 
 		Ext.ux.MultiFilter.Filter.superclass.initComponent.apply(this,arguments);
@@ -529,7 +528,6 @@ Ext.reg('filteritem',Ext.ux.MultiFilter.Filter);
 
 Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 
-	forceLayout: true,
 	autoHeight: true,
 	
 	FilterParams: {},
