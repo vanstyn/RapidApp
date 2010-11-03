@@ -422,21 +422,6 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		},this);
 		
 		this.configSelector();
-		
-		/*
-		for (i in data) {
-			var field_combo = this.getComponent('field_combo');
-			field_combo.setRawValue(i);
-			for (j in data[i]) {
-				var cond = j;
-				if(this.reverseConditionMap[cond]) {
-					cond = this.reverseConditionMap[cond];
-				}
-				this.getComponent('cond_combo').setRawValue(cond);
-				this.getComponent('datafield').setRawValue(data[i][j]);
-			}
-		}
-		*/
 	}
 });
 
@@ -744,16 +729,14 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 			curdata.push(itemdata);
 			
 		});
-		
 		return data;
+		//return { '-and': data };
 	},
 	
 	loadData: function(data,setOr) {
-		for (var i = 0; i < data.length; i++) {
-			var item = data[i];
+		return Ext.each(data,function(item) {
 			this.addFilterWithData(item);
-		}
-		return;
+		},this);
 	}
 });
 Ext.reg('filtersetpanel',Ext.ux.MultiFilter.FilterSetPanel);

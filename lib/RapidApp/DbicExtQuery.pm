@@ -416,8 +416,21 @@ sub Search_spec {
 	my $Search;
 	
 	if($params->{multifilter}) {
+	
+		# Recursive sub to make all lists explicitly '-and' lists:
+		my $add_ands;
+		$add_ands = sub {
+			my $multi = shift;
+			return $multi unless (ref($multi) eq 'ARRAY');
+			
+			foreach my $item (@$multi) {
+				$item = $add_ands->($item);
+			}
+			return { '-and' => $multi };
+		};
+		
 		my $multifilter = JSON::PP::decode_json($params->{multifilter});
-		push @$filter_search, @$multifilter;
+		push @$filter_search, $add_ands->($multifilter);
 	}
 	
 	if (scalar @$filter_search > 0) {
