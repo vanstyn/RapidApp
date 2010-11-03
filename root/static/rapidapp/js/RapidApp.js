@@ -18,33 +18,33 @@ Ext.ux.form.FormConnectorField = Ext.extend(Ext.form.Hidden, {
 	connectFormId: null,
 
 	/**
-	* @cfg {Function} serializer Function to use to encode form field values into the returned field 
+	* @cfg {Function} serializer Function to use to encode form field values into the returned field
 	* value of this field. Defaults to Ext.encode
 	*/
 	serializer: Ext.encode,
-	
+
 	deserializer: Ext.decode,
 
 	getConnectedFormHandler: function() {
 		return Ext.getCmp(this.connectFormId).getForm();
 	},
-	
+
 	getConnectedForm: function() {
 		if(!this.connectedForm) {
 			this.connectedForm = this.getConnectedFormHandler();
 		}
 		return this.connectedForm;
 	},
-	
+
 	getValue: function() {
 		var data = this.getConnectedForm().getFieldValues();
 		return this.serializer(data);
 	},
-	
+
 	getRawValue: function() {
 		return this.getValue();
 	},
-	
+
 	setValue: function(val) {
 		var data = this.deserializer(val);
 		this.getConnectedForm().setValues(data);
@@ -86,7 +86,7 @@ Ext.override(Ext.menu.Menu, {
         this.focus();
         this.fireEvent("show", this);
     }
-});  
+});
 // --------
 
 
@@ -142,17 +142,17 @@ Ext.override(Ext.data.Connection,{
 
 	handleResponse_orig: Ext.data.Connection.prototype.handleResponse,
 	handleResponse : function(response){
-			
+
 		var call_orig = true;
 		var options = response.argument.options;
-		
+
 		var thisConn = this;
 		var success_callback_repeat = function() {
 			call_orig = false;
 			//console.log('repeat');
 			thisConn.request(options);
 		};
-		
+
 		var auth = response.getResponseHeader('X-RapidApp-Authenticated');
 		if (auth) {
 			Ext.ns('Ext.ux.RapidApp');
@@ -163,9 +163,9 @@ Ext.override(Ext.data.Connection,{
 				Ext.ux.RapidApp.ReAuthPrompt(success_callback_repeat);
 			}
 		}
-		
+
 		if(response.getResponseHeader('X-RapidApp-Exception')) return;
-		
+
 		if(call_orig) {
 			this.handleResponse_orig.apply(this,arguments);
 		}
@@ -180,7 +180,7 @@ Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.loginUrl = '/main/banner/auth/login';
 
 Ext.ux.RapidApp.ReAuthPrompt = function(success_callback) {
-	 
+
 	 var fieldset = {
 		xtype: 'fieldset',
 		style: 'border: none',
@@ -206,11 +206,11 @@ Ext.ux.RapidApp.ReAuthPrompt = function(success_callback) {
 				value: Ext.ux.RapidApp.Authenticated,
 				readOnly: true,
 				style: {
-					/*	
+					/*
 						the normal text field has padding-top: 2px which makes the text sit towards
 						the bottom of the field. We set top and bottom here to move one of the px to the
 						bottom so the text will be vertically centered but take up the same vertical
-						size as a normal text field: 
+						size as a normal text field:
 					*/
 					'background-color': 'transparent',
 					'border-color': 'transparent',
@@ -233,7 +233,7 @@ Ext.ux.RapidApp.ReAuthPrompt = function(success_callback) {
 			}
 		]
 	};
-	
+
 	Ext.ux.RapidApp.WinFormPost({
 		title: "Session Expired",
 		height: 200,
@@ -244,8 +244,8 @@ Ext.ux.RapidApp.ReAuthPrompt = function(success_callback) {
 		submitBtnText: 'Login',
 		success: function(response,opts) {
 			//var res = Ext.decode(response.responseText);
-			//if (res.success == 0) { 
-			//	Ext.ux.RapidApp.ReAuthPrompt(); 
+			//if (res.success == 0) {
+			//	Ext.ux.RapidApp.ReAuthPrompt();
 			//}
 			if(success_callback) return success_callback();
 		},
@@ -264,7 +264,7 @@ Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.validateCsvEmailStr = function(v) {
 	var str = new String(v);
 	var arr = str.split(',');
-	
+
 	for (i in arr) {
 		var email = arr[i];
 		// For some stupid reason the last arg returned from split is a function! So we have to do this:
@@ -274,7 +274,7 @@ Ext.ux.RapidApp.validateCsvEmailStr = function(v) {
 			if(! result) return false;
 		}
 	}
-	 
+
 	return true;
 }
 
@@ -284,7 +284,7 @@ Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.AppTree_select_handler = function(tree) {
 
 	var node = tree.getSelectionModel().getSelectedNode();
-	
+
 	return {
 		value: node.id,
 		display: node.attributes.text
@@ -297,7 +297,7 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 
 	initComponent: function() {
 		this.setEditable(false);
-	
+
 		var config = {
 			win_title: this.win_title,
 			win_height: this.win_height,
@@ -309,13 +309,13 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 		Ext.ux.RapidApp.CustomPickerField.superclass.initComponent.apply(this, arguments);
 		//}
 	},
-	
+
 	//setEditable: false,
 
 	getValue: function() {
 		return this.dataValue;
 	},
-	
+
 	setValue: function(val) {
 		var new_val = val;
 		if(this.setValue_translator) {
@@ -327,11 +327,11 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 	onTriggerClick: function() {
 
 		var thisTF = this;
-		
+
 		var autoLoad = {
 			url: this.load_url
 		};
-		
+
 		if (this.dataValue) {
 			autoLoad.params = {
 				node: this.dataValue
@@ -356,34 +356,34 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 					text: 'Select',
 					handler: function(btn) {
 						var app = btn.ownerCt.ownerCt.getComponent('app').items.first();
-						
+
 						var data = thisTF.select_handler(app);
-						
+
 						thisTF.dataValue = data.value;
-						
+
 						thisTF.setValue(data.display);
 						btn.ownerCt.ownerCt.close();
-						
-						
+
+
 						//console.dir(data);
-						
-					
+
+
 					}
-				
+
 				},
 				{
 					text: 'Cancel',
 					handler: function(btn) {
 						btn.ownerCt.ownerCt.close();
-					
+
 					}
-				
+
 				}
-			
-			
+
+
 			]
 		});
-		
+
 		win.show();
 	}
 
@@ -401,7 +401,7 @@ Ext.ux.RapidApp.AppTree_setValue_translator = function(val,tf,url) {
 		//console.log(val.indexOf('/'));
 		//console.log(val);
 		//console.log(url);
-		
+
 		Ext.Ajax.request({
 			url: url,
 			params: {
@@ -413,17 +413,17 @@ Ext.ux.RapidApp.AppTree_setValue_translator = function(val,tf,url) {
 				//console.log(res.text);
 				tf.dataValue = res.id;
 				tf.setValue(res.text);
-				
+
 			}
-		
-		
+
+
 		});
-	
+
 		//return val;
 	}
 	else {
-	
-	
+
+
 		return val;
 	}
 }
@@ -431,13 +431,13 @@ Ext.ux.RapidApp.AppTree_setValue_translator = function(val,tf,url) {
 
 Ext.ns('Ext.ux.RapidApp.AppTree');
 Ext.ux.RapidApp.AppTree.jump_to_node_id = function(tree,id) {
-	
+
 	var parents_arr = function(path,arr) {
 		if (!arr) arr = [];
 		if (path.indexOf('/') < 0) {
 			return arr;
 		}
-			
+
 		var path_arr = path.split('/');
 
 		var item = path_arr.pop();
@@ -445,7 +445,7 @@ Ext.ux.RapidApp.AppTree.jump_to_node_id = function(tree,id) {
 		arr.push(path_str);
 		return parents_arr(path_str,arr);
 	}
-	
+
 	var select_child = function(id,parents,lastpass) {
 
 		var par = parents.pop();
@@ -455,12 +455,12 @@ Ext.ux.RapidApp.AppTree.jump_to_node_id = function(tree,id) {
 		if(!node) return;
 
 		node.loaded = false;
-		node.expand(false,false,function(){ 
-			select_child(id,parents); 
+		node.expand(false,false,function(){
+			select_child(id,parents);
 			node.select();
 		});
 	}
-	
+
 	var parents = parents_arr(id);
 	parents.unshift(id);
 
@@ -491,7 +491,7 @@ Ext.ux.RapidApp.AppTree.add = function(tree,url) {
 	var node = tree.getSelectionModel().getSelectedNode();
 	var id = "root";
 	if(node) id = node.id;
-	
+
 	Ext.ux.RapidApp.WinFormPost({
 		title: "Add",
 		height: 130,
@@ -501,12 +501,12 @@ Ext.ux.RapidApp.AppTree.add = function(tree,url) {
 		params: {
 			node: id
 		},
-		
+
 		fieldset: fieldset,
-		success: function(response) { 
-			tree.getLoader().load(node,function(tp){ 
-				node.expand(); 
-			}); 
+		success: function(response) {
+			tree.getLoader().load(node,function(tp){
+				node.expand();
+			});
 		}
 	});
 }
@@ -516,26 +516,26 @@ Ext.ux.RapidApp.AppTree.del = function(tree,url) {
 	var node = tree.getSelectionModel().getSelectedNode();
 	var id = "root";
 	if(node) id = node.id;
-	
+
 	var params = {
 		node: id
 	};
-	
+
 	var ajaxFunc = function() {
 		Ext.Ajax.request({
 			url: url,
 			params: params,
 			success: function() {
 				var pnode = node.parentNode;
-				tree.getLoader().load(pnode,function(tp){ 
-					pnode.expand(); 
-				}); 
+				tree.getLoader().load(pnode,function(tp){
+					pnode.expand();
+				});
 			}
 		});
 	};
-	
+
 	var Func = ajaxFunc;
-	
+
 	if (node.hasChildNodes()) {
 		params['recursive'] = true;
 		Func = function() {
@@ -547,7 +547,7 @@ Ext.ux.RapidApp.AppTree.del = function(tree,url) {
 			);
 		}
 	}
-	
+
 	Ext.ux.RapidApp.confirmDialogCall(
 		'Confirm Delete',
 		'Really delete "' + node.attributes.text + '" ?',
@@ -560,13 +560,13 @@ Ext.ux.RapidApp.AppTree.del = function(tree,url) {
 
 Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.confirmDialogCall = function(title,msg,fn,params) {
-	
-	var args = Array.prototype.slice.call(arguments); 
-	
+
+	var args = Array.prototype.slice.call(arguments);
+
 	var title = args.shift();
 	var msg = args.shift();
 	var fn = args.shift();
-	
+
 	return Ext.Msg.show({
 		title: title,
 		msg: msg,
@@ -711,7 +711,7 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 					text	: cfg.submitBtnText,
 					handler	: function(btn) {
 						var form = Ext.getCmp(formId).getForm();
-						
+
 						if (cfg.useSubmit) {
 							return form.submit({
 								url: cfg.url,
