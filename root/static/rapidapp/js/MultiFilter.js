@@ -38,16 +38,19 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		}
 	},
 	
-	onRender: function() {
-	
+	filterCountText: function() {
 		var text = 'Filters';
 		var count = this.filterCount();
 		if(count) {
 			text = 'Filters (' + count + ')';
 		}
+		return text;
+	},
+	
+	onRender: function() {
 	
 		this.filtersBtn = new Ext.Button({
-			text: text,
+			text: this.filterCountText(),
 			handler: function(btn) {
 				var win = btn.ownerCt.ownerCt.multifilter.showFilterWindow();
 			}
@@ -116,7 +119,10 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 						store.filterdata = set.getData();
 						
 						//TODO: set the text to bold and count of the active filters
-						win.multifilter.filtersBtn.setText('FILTERS');
+						
+						var filtersBtn = win.multifilter.filtersBtn;
+						var text = win.multifilter.filterCountText();
+						filtersBtn.setText(text);
 						
 						win.close();
 						store.reload();
