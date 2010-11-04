@@ -692,6 +692,12 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 			filter = this.addFilter();
 		}
 		else if(Ext.isArray(new_item)) {
+		
+			// Skip empty filtersets:
+			if(new_item.length == 0) {
+				return;
+			}
+		
 			filter = this.addFilterSet();
 			if(new_item.length == 1) {
 				var only_item = new_item[0];
