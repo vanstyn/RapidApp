@@ -666,6 +666,16 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 		var filter;
 		var new_item = item;
 		
+		if(Ext.isArray(item) && item.length == 1) {
+			new_item = item[0];
+			console.dir(new_item);
+		}
+		
+		if(Ext.isArray(new_item) && new_item.length == 1) {
+			new_item = new_item[0];
+			console.dir(new_item);
+		}
+		
 		if(item['-and']) {
 			new_item = item['-and'];
 		}
@@ -678,14 +688,14 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 			return;
 		}
 		
-		if(Ext.ux.MultiFilter.RealTypeOf(new_item) == 'object') {
+		if(Ext.isObject(new_item)) {
 			filter = this.addFilter();
 		}
-		else if(Ext.ux.MultiFilter.RealTypeOf(new_item) == 'array') {
+		else if(Ext.isArray(new_item)) {
 			filter = this.addFilterSet();
 			if(new_item.length == 1) {
 				var only_item = new_item[0];
-				if(Ext.ux.MultiFilter.RealTypeOf(only_item) == 'array') {
+				if(Ext.isArray(only_item)) {
 					new_item = only_item;
 				}
 			}
@@ -729,8 +739,8 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 			curdata.push(itemdata);
 			
 		});
+		
 		return data;
-		//return { '-and': data };
 	},
 	
 	loadData: function(data,setOr) {
@@ -741,17 +751,6 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 });
 Ext.reg('filtersetpanel',Ext.ux.MultiFilter.FilterSetPanel);
 
-
-Ext.ux.MultiFilter.RealTypeOf = function(v) {
-	if (typeof(v) == "object") {
-		if (v === null) return "null";
-		if (v.constructor == (new Array).constructor) return "array";
-		if (v.constructor == (new Date).constructor) return "date";
-		if (v.constructor == (new RegExp).constructor) return "regex";
-		return "object";
-	}
-	return typeof(v);
-}
 
 
 Ext.ux.MultiFilter.movefilter = function(set,filter,indexOffset) {
