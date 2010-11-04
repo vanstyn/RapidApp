@@ -37,24 +37,19 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			 });
 		}
 	},
-	
-	filterCountText: function() {
-		var text = 'Filters';
-		var count = this.filterCount();
-		if(count) {
-			text = 'Filters (' + count + ')';
-		}
-		return text;
-	},
-	
+		
 	onRender: function() {
 	
 		this.filtersBtn = new Ext.Button({
-			text: this.filterCountText(),
+			//text: this.filterCountText(),
+			
+			text: 'Filters',
 			handler: function(btn) {
 				var win = btn.ownerCt.ownerCt.multifilter.showFilterWindow();
 			}
 		});
+		
+		this.updateFilterBtn();
 		
 		var grid = this.grid;
 		var tbar = this.grid.getTopToolbar();
@@ -72,6 +67,19 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			gridColumns: this.grid.getColumnModel().config,
 			fieldList: fields
 		});
+	},
+	
+	updateFilterBtn: function() {
+		var text = 'Filters';
+		var iconCls = 'icon-funnel';
+		var count = this.filterCount();
+		if(count) {
+			text = 'Filters (' + count + ')';
+			iconCls = 'icon-funnel-edit';
+		}
+		
+		this.filtersBtn.setIconClass(iconCls);
+		this.filtersBtn.setText(text);
 	},
 	
 	filterCount: function() {
@@ -135,11 +143,13 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 						var store = btn.ownerCt.ownerCt.multifilter.store;
 						store.filterdata = set.getData();
 						
+						win.multifilter.updateFilterBtn();
+						
 						//TODO: set the text to bold and count of the active filters
 						
-						var filtersBtn = win.multifilter.filtersBtn;
-						var text = win.multifilter.filterCountText();
-						filtersBtn.setText(text);
+						//var filtersBtn = win.multifilter.filtersBtn;
+						//var text = win.multifilter.filterCountText();
+						//filtersBtn.setText(text);
 						
 						win.close();
 						store.reload();
