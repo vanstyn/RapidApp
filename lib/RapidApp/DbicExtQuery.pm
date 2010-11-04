@@ -416,6 +416,33 @@ sub Search_spec {
 	my $Search;
 	
 	if($params->{multifilter}) {
+		my $multifilter = JSON::PP::decode_json($params->{multifilter});
+	
+		my $map_dbfnames;
+		$map_dbfnames = sub {
+			my $multi = shift;
+			if(ref($multi) eq 'HASH') {
+				return $map_dbfnames->($multi->{'-and'}) if (defined $multi->{'-and'});
+				return $map_dbfnames->($multi->{'-or'}) if (defined $multi->{'-or'});
+				
+				foreach my $f (keys %$multi) {
+					# optionally convert table column name to db field name
+					my $dbfName = $self->ExtNamesToDbFields->{$f};
+					my $field = 'me.' . $f; # <-- http://www.mail-archive.com/dbix-class@lists.scsys.co.uk/msg02386.html
+					defined $dbfName or $dbfName = $field;
+					$multi->{$dbfName} = $multi->{$f};
+					delete $multi->{$f};
+				}
+			}
+			elsif(ref($multi) eq 'ARRAY') {
+				foreach my $item (@$multi) {
+					$map_dbfnames->($item);
+				}
+			}
+		};
+		
+		$map_dbfnames->($multifilter);
+	
 	
 		# Recursive sub to make all lists explicitly '-and' lists:
 		my $add_ands;
@@ -429,7 +456,6 @@ sub Search_spec {
 			return { '-and' => $multi };
 		};
 		
-		my $multifilter = JSON::PP::decode_json($params->{multifilter});
 		push @$filter_search, $add_ands->($multifilter);
 	}
 	
