@@ -75,8 +75,25 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 	},
 	
 	filterCount: function() {
+		
+		var recurseCount = function(item) {
+			if(Ext.isObject(item)) {
+				if (item['-and']) { return recurseCount(item['-and']); }
+				if (item['-or']) { return recurseCount(item['-or']); }
+				return 1;
+			}
+			if(Ext.isArray(item)) {
+				var count = 0;
+				Ext.each(item,function(i) {
+					count = count + recurseCount(i);
+				});
+				return count;
+			}
+			return 0;
+		}
+	
 		if (!this.store.filterdata) { return 0; }
-		return this.store.filterdata.length;
+		return recurseCount(this.store.filterdata);
 	},
 	
 	showFilterWindow: function() {
