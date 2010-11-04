@@ -582,7 +582,6 @@ Ext.ux.MultiFilter.Filter = Ext.extend(Ext.Container,{
 	},
 	
 	loadData: function(data) {
-		//console.dir(data);
 		return this.filterSelection.loadData(data);
 	}
 });
@@ -666,14 +665,12 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 		var filter;
 		var new_item = item;
 		
-		if(Ext.isArray(item) && item.length == 1) {
+		// prune filters out of sets with only 1 filter:
+		if(Ext.isArray(item) && item.length == 1 && ! item[0]['-or']) {
 			new_item = item[0];
-			console.dir(new_item);
 		}
-		
-		if(Ext.isArray(new_item) && new_item.length == 1) {
+		if(Ext.isArray(new_item) && new_item.length == 1  && ! new_item[0]['-or']) {
 			new_item = new_item[0];
-			console.dir(new_item);
 		}
 		
 		if(item['-and']) {
