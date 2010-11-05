@@ -495,7 +495,7 @@ sub save_search_default_txt_code {
 	
 	return
 		'var grid = btn.ownerCt.ownerCt;' .
-		'var TabP = grid.findParentByType("tabpanel");' .
+		'var TabP = grid.findParentByType("tabpanel") || grid.findParentByType("apptabpanel");' .
 		'var activePanel = TabP.getActiveTab();' .
 		'default_txt = activePanel.title;'
 }
@@ -525,7 +525,7 @@ sub delete_search_btn {
 							'search_id: "' . $self->c->req->params->{search_id} . '"' .
 						'};' .
 						'Ext.ux.FetchEval(url,params);' .
-						'var TabP = grid.findParentByType("tabpanel");' .
+						'var TabP = grid.findParentByType("tabpanel") || grid.findParentByType("apptabpanel");' .
 						'var activePanel = TabP.getActiveTab();' .
 						'TabP.remove(activePanel);' .
 						#'grid.ownerCt.close();' .

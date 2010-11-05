@@ -45,6 +45,9 @@ has 'root_node_text'		=> ( is => 'ro', lazy => 1, default => sub { (shift)->root
 ## add_nodes: define as a method to support adding to the tree
 ##
 
+has 'config' => ( is => 'ro', default => sub {{}} );
+
+
 has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	
@@ -80,12 +83,14 @@ has 'root_node' => ( is => 'ro', lazy => 1, default => sub {
 has 'tbar' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	
-	my $tbar = [
-		'->',
-	];
-	
+	my $tbar = [];
+
 	push @$tbar, $self->delete_button if ($self->can('delete_node'));
 	push @$tbar, $self->add_button if ($self->can('add_node'));
+
+	return undef unless (scalar @$tbar > 0);
+
+	unshift @$tbar, '->';
 
 	return $tbar;
 });
@@ -96,11 +101,11 @@ has 'tbar' => ( is => 'ro', lazy => 1, default => sub {
 sub content {
 	my $self = shift;
 
-	return {
+	my $config = {
 		xtype				=> 'treepanel',
 		id					=> $self->instance_id,
 		dataUrl			=> $self->suburl('/nodes'),
-		rootVisable		=> $self->show_root_node ? \0 : \1,
+		rootVisible		=> $self->show_root_node ? \1 : \0,
 		root				=> $self->root_node,
 		border			=> \0,
 		layout			=> 'fit',
@@ -110,6 +115,11 @@ sub content {
 		useArrows		=> \1,
 		tbar				=> $self->tbar,
 		listeners		=> $self->listeners
+	};
+	
+	return {
+		%$config,
+		%{ $self->config }
 	};
 }
 
