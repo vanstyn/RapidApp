@@ -63,9 +63,6 @@ Ext.ux.RapidApp.AppTab.treenav_click = function(node,event) {
 }
 
 Ext.ux.RapidApp.AppTab.treenav_beforerender = function(tree) {
-	tree.loadTargetObj = tree.ownerCt.ownerCt.getComponent('load-target');
-	return;
-	
 	var loadTarget;
 	var parent = tree.findParentBy(function(cmp) {
 		loadTarget = cmp.getComponent('load-target');

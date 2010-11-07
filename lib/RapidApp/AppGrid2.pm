@@ -7,23 +7,28 @@ use Moose;
 extends 'RapidApp::AppTree';
 
 
-
 use RapidApp::JSONFunc;
 #use RapidApp::AppDataView::Store;
 
-use RapidApp::MooseX::ClassAttrSugar;
-
-setup_add_methods_for('listeners');
-
-add_default_listeners(
-	'beforerender'	=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.treenav_beforerender' ),
-	'click' 			=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.treenav_click' )
-);
+use Term::ANSIColor qw(:constants);
 
 
 
 has 'module_scope' => ( is => 'ro', lazy => 1, default => sub { return shift; });
 
+
+around 'listeners' => sub {
+	my $orig = shift;
+	my $self = shift;
+	
+	my $listeners = $self->$orig(@_);
+	
+	$listeners->{click} = RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.treenav_click' );
+	
+	$listeners->{beforerender} = RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.treenav_beforerender' );
+
+	return $listeners;
+};
 
 
 sub fetch_nodes {

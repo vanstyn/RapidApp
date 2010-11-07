@@ -13,6 +13,24 @@ use RapidApp::JSONFunc;
 use Term::ANSIColor qw(:constants);
 
 
+has 'listeners' => (is => 'ro', builder => '_build_listeners', isa => 'HashRef' );
+sub _build_listeners { return {}; }
+
+has 'config' => ( is => 'ro', builder => '_build_config', isa => 'HashRef' );
+sub _build_config { return {} }
+
+
+
+use RapidApp::MooseX::ClassAttrSugar;
+setup_add_methods_for('config');
+setup_add_methods_for('listeners');
+
+
+
+
+
+
+
 
 ##
 ##
@@ -45,7 +63,7 @@ has 'root_node_text'		=> ( is => 'ro', lazy => 1, default => sub { (shift)->root
 ## add_nodes: define as a method to support adding to the tree
 ##
 
-has 'config' => ( is => 'ro', default => sub {{}} );
+
 
 
 has 'actions' => ( is => 'ro', lazy => 1, default => sub {
@@ -98,10 +116,13 @@ has 'tbar' => ( is => 'ro', lazy => 1, default => sub {
 
 
 
+
 sub content {
 	my $self = shift;
-
-	my $config = {
+	
+	$self->set_afterrender;
+	
+	$self->add_config(
 		xtype				=> 'treepanel',
 		id					=> $self->instance_id,
 		dataUrl			=> $self->suburl('/nodes'),
@@ -115,32 +136,28 @@ sub content {
 		useArrows		=> \1,
 		tbar				=> $self->tbar,
 		listeners		=> $self->listeners
-	};
+	);
 	
-	return {
-		%$config,
-		%{ $self->config }
-	};
+	return $self->config;
 }
 
 
-sub listeners {
+
+sub set_afterrender {
 	my $self = shift;
 	
-	my $node = $self->root_node_name;
+	my $node;
+	$node = $self->root_node_name if ($self->show_root_node);
 	$node = $self->c->req->params->{node} if ($self->c->req->params->{node});
 	
-	return {
-		afterrender => RapidApp::JSONFunc->new( raw => 1, func => 
-			'function(tree) {' .
-				'Ext.ux.RapidApp.AppTree.jump_to_node_id(tree,"' . $node . '");' .
-			'}'
-		)
-	}
+	return unless($node);
+	
+	return $self->listeners->{'afterrender'} = RapidApp::JSONFunc->new( raw => 1, func => 
+		'function(tree) {' .
+			'Ext.ux.RapidApp.AppTree.jump_to_node_id(tree,"' . $node . '");' .
+		'}'
+	);
 }
-
-
-
 
 
 
@@ -153,7 +170,6 @@ sub add_button {
 			name		=> 'name',
 			fieldLabel	=> 'Name'
 		}
-	
 	];
 	
 	my $fieldset = {
@@ -179,8 +195,6 @@ sub add_button {
 				'}'
 			)
 	});
-
-
 }
 
 
@@ -209,6 +223,6 @@ sub delete_button {
 #### --------------------- ####
 
 
-no Moose;
+#no Moose;
 #__PACKAGE__->meta->make_immutable;
 1;
