@@ -4,31 +4,28 @@ package RapidApp::AppTree;
 use strict;
 use Moose;
 
-extends 'RapidApp::AppBase';
-
-
-use RapidApp::JSONFunc;
-#use RapidApp::AppDataView::Store;
-
-use Term::ANSIColor qw(:constants);
-
-
-has 'listeners' => (is => 'ro', builder => '_build_listeners', isa => 'HashRef' );
-sub _build_listeners { return {}; }
-
-has 'config' => ( is => 'ro', builder => '_build_config', isa => 'HashRef' );
-sub _build_config { return {} }
-
-
+extends 'RapidApp::AppCnt';
 
 use RapidApp::MooseX::ClassAttrSugar;
 setup_add_methods_for('config');
 setup_add_methods_for('listeners');
 
 
+add_default_config(
+		xtype					=> 'treepanel',
+		border				=> \0,
+		layout				=> 'fit',
+		containerScroll 	=> \1,
+		autoScroll			=> \1,
+		animate				=> \1,
+		useArrows			=> \1
+);
 
 
+use RapidApp::JSONFunc;
+#use RapidApp::AppDataView::Store;
 
+use Term::ANSIColor qw(:constants);
 
 
 
@@ -114,32 +111,19 @@ has 'tbar' => ( is => 'ro', lazy => 1, default => sub {
 });
 
 
-
-
-
-sub content {
+before 'content' => sub {
 	my $self = shift;
 	
 	$self->set_afterrender;
 	
 	$self->add_config(
-		xtype				=> 'treepanel',
-		id					=> $self->instance_id,
-		dataUrl			=> $self->suburl('/nodes'),
-		rootVisible		=> $self->show_root_node ? \1 : \0,
-		root				=> $self->root_node,
-		border			=> \0,
-		layout			=> 'fit',
-		containerScroll => \1,
-		autoScroll		=> \1,
-		animate			=> \1,
-		useArrows		=> \1,
-		tbar				=> $self->tbar,
-		listeners		=> $self->listeners
+		id						=> $self->instance_id,
+		dataUrl				=> $self->suburl('/nodes'),
+		rootVisible			=> $self->show_root_node ? \1 : \0,
+		root					=> $self->root_node,
+		tbar					=> $self->tbar,
 	);
-	
-	return $self->config;
-}
+};
 
 
 
@@ -151,11 +135,13 @@ sub set_afterrender {
 	$node = $self->c->req->params->{node} if ($self->c->req->params->{node});
 	
 	return unless($node);
-	
-	return $self->listeners->{'afterrender'} = RapidApp::JSONFunc->new( raw => 1, func => 
-		'function(tree) {' .
-			'Ext.ux.RapidApp.AppTree.jump_to_node_id(tree,"' . $node . '");' .
-		'}'
+
+	$self->add_listeners( 
+		afterrender => RapidApp::JSONFunc->new( raw => 1, func => 
+			'function(tree) {' .
+				'Ext.ux.RapidApp.AppTree.jump_to_node_id(tree,"' . $node . '");' .
+			'}'
+		)
 	);
 }
 
