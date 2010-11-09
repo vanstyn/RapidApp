@@ -72,3 +72,75 @@ Ext.ux.RapidApp.AppTab.treenav_beforerender = function(tree) {
 	tree.loadTargetObj = loadTarget;
 	//tree.loadTargetObj = tree.ownerCt.ownerCt.getComponent('load-target');
 }
+
+
+
+Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
+
+	initComponent: function() {
+	
+		if(this.pageSize) {
+			this.bbar = {
+				xtype:	'paging',
+				store: this.store,
+				pageSize: this.pageSize,
+				displayInfo : true,
+				prependButtons: true
+			};
+		}
+		
+		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.initComponent.call(this);
+	},
+	
+	onRender: function() {
+		
+		var thisGrid = this;
+		this.store.on('beforeload',function(Store,opts) {
+			
+			var columns = thisGrid.getColumnModel().getColumnsBy(function(c){
+				if(c.hidden || c.dataIndex == "") { return false; }
+				return true;
+			});
+			
+			var colIndexes = [];
+			Ext.each(columns,function(i) {
+				colIndexes.push(i.dataIndex);
+			});
+			
+			//Store.setBaseParam("columns",Ext.encode(colIndexes));
+			Store.baseParams["columns"] = Ext.encode(colIndexes);
+			console.dir(colIndexes);
+		});
+		
+		this.getColumnModel().on('hiddenchange',function(colmodel) {
+
+			// For some reason I don't understand, reloading the store directly
+			// does not make it see the new non-hidden column names, but calling
+			// the refresh function on the paging toolbar does:
+			var ptbar = thisGrid.getBottomToolbar();
+			ptbar.doRefresh();
+			//var Store = thisGrid.getStore();
+			//Store.reload();
+		});
+		
+		
+		var load_parms = {};
+		if (this.pageSize) {
+			load_parms = {
+				params: {
+					start: 0,
+					limit: parseFloat(this.pageSize)
+				}
+			};
+			this.store.load(load_parms);
+		}
+		
+		
+		
+		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.onRender.apply(this, arguments);
+	}
+	
+});
+Ext.reg('appgrid2', Ext.ux.RapidApp.AppTab.AppGrid2);
+
+

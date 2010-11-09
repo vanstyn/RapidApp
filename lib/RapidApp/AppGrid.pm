@@ -679,6 +679,11 @@ sub DynGrid {
 	#$config->{init_filters} = $self->extract_filters($field_list);
 
 	my $DynGrid = RapidApp::ExtJS::DynGrid->new($config);
+	
+	use Data::Dumper;
+	print STDERR BLUE . Dumper($DynGrid) . CLEAR;
+	
+	
 	return $DynGrid;
 }
 

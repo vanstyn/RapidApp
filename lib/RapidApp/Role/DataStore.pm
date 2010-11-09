@@ -23,6 +23,33 @@ has 'reload_on_save' 		=> ( is => 'ro', default => 1 );
 #	return $self->parent_module->base_params;
 #});
 
+has 'store_config' => ( is => 'ro', default => sub {{}}, isa => 'HashRef' );
+
+# Merge/overwrite store_config hash
+sub add_store_config {
+	my $self = shift;
+	my %new = @_;
+	%new = %{ $_[0] } if (ref($_[0]) eq 'HASH');
+	
+	%{ $self->store_config } = (
+		%{ $self->store_config },
+		%new
+	);
+}
+
+
+# Merge in only hash keys that do not already exist:
+sub add_store_configIf {
+	my $self = shift;
+	my %new = @_;
+	%new = %{ $_[0] } if (ref($_[0]) eq 'HASH');
+	
+	foreach my $opt (keys %new) {
+		next if (defined $self->store_config->{$opt});
+		$self->store_config->{$opt} = $new{$opt};
+	}
+}
+
 
 ## Coderefs ##
 has 'read_records_coderef' 	=> ( is => 'ro', default => undef );
@@ -54,8 +81,17 @@ sub store_read {
 	$fields = $self->store_fields if (defined $self->store_fields);
 	my $rows = [];
 
-	if (defined $self->read_records_coderef) {
-		my $data = $self->read_records_coderef->() or die "Failed to read records with read_records_coderef";
+	if (defined $self->read_records_coderef or $self->can('read_records')) {
+		
+		my $data;
+		if ($self->can('read_records')) {
+			$data = $self->read_records;
+		}
+		else {
+			$data = $self->read_records_coderef->() or die "Failed to read records with read_records_coderef";
+		}
+		
+		
 		$rows			= $data->{rows};
 		$fields 		= $self->store_fields_from_rows($rows) unless (defined $self->store_fields);
 		$results 	= $data->{results};
@@ -229,32 +265,30 @@ has 'store_writer' => ( is => 'ro', lazy => 1, default => sub {
 	return $writer;
 });
 
+
+
 #sub JsonStore {
 has 'JsonStore' => ( is => 'ro', lazy => 1, predicate => 'has_JsonStore', default => sub {
 	my $self = shift;
 	
-	my $config = {
-		#exception_callback 	=> $self->exception_callback,
-		#write_callback 		=> $self->write_callback,
-		#create_callback 		=> $self->create_callback,
+	$self->add_store_configIf(
 		storeId 					=> $self->storeId,
 		api 						=> $self->store_api,
 		baseParams 				=> $self->base_params,
 		listeners				=> $self->store_listeners,
 		writer					=> $self->store_writer,
-		
-		#autoLoad => \1,
-		autoLoad => $self->store_autoLoad,
-		autoSave => \0,
-		loadMask => \1,
-		autoDestroy => \1,
-		
-		root => 'rows',
-		idProperty => $self->record_pk,
-		messageProperty => 'msg',
-		successProperty => 'success',
-		totalProperty => 'results',
-	};
+		autoLoad 				=> $self->store_autoLoad,
+		autoSave 				=> \0,
+		loadMask 				=> \1,
+		autoDestroy 			=> \1,
+		root 						=> 'rows',
+		idProperty 				=> $self->record_pk,
+		messageProperty 		=> 'msg',
+		successProperty 		=> 'success',
+		totalProperty 			=> 'results',
+	);
+	
+	my $config = $self->store_config;
 	
 	foreach my $k (keys %$config) {
 		delete $config->{$k} unless (defined $config->{$k});
@@ -267,8 +301,6 @@ has 'JsonStore' => ( is => 'ro', lazy => 1, predicate => 'has_JsonStore', defaul
 	
 	return $JsonStore;
 });
-
-
 
 
 
