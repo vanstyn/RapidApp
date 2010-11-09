@@ -4,7 +4,22 @@ package RapidApp::AppTree;
 use strict;
 use Moose;
 
-extends 'RapidApp::AppBase';
+extends 'RapidApp::AppCnt';
+
+use RapidApp::MooseX::ClassAttrSugar;
+setup_add_methods_for('config');
+setup_add_methods_for('listeners');
+
+
+add_default_config(
+		xtype					=> 'treepanel',
+		border				=> \0,
+		layout				=> 'fit',
+		containerScroll 	=> \1,
+		autoScroll			=> \1,
+		animate				=> \1,
+		useArrows			=> \1
+);
 
 
 use RapidApp::JSONFunc;
@@ -45,6 +60,9 @@ has 'root_node_text'		=> ( is => 'ro', lazy => 1, default => sub { (shift)->root
 ## add_nodes: define as a method to support adding to the tree
 ##
 
+
+
+
 has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	
@@ -80,57 +98,52 @@ has 'root_node' => ( is => 'ro', lazy => 1, default => sub {
 has 'tbar' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	
-	my $tbar = [
-		'->',
-	];
-	
+	my $tbar = [];
+
 	push @$tbar, $self->delete_button if ($self->can('delete_node'));
 	push @$tbar, $self->add_button if ($self->can('add_node'));
+
+	return undef unless (scalar @$tbar > 0);
+
+	unshift @$tbar, '->';
 
 	return $tbar;
 });
 
 
-
-
-sub content {
-	my $self = shift;
-
-	return {
-		xtype				=> 'treepanel',
-		id					=> $self->instance_id,
-		dataUrl			=> $self->suburl('/nodes'),
-		rootVisable		=> $self->show_root_node ? \0 : \1,
-		root				=> $self->root_node,
-		border			=> \0,
-		layout			=> 'fit',
-		containerScroll => \1,
-		autoScroll		=> \1,
-		animate			=> \1,
-		useArrows		=> \1,
-		tbar				=> $self->tbar,
-		listeners		=> $self->listeners
-	};
-}
-
-
-sub listeners {
+before 'content' => sub {
 	my $self = shift;
 	
-	my $node = $self->root_node_name;
+	$self->set_afterrender;
+	
+	$self->add_config(
+		id						=> $self->instance_id,
+		dataUrl				=> $self->suburl('/nodes'),
+		rootVisible			=> $self->show_root_node ? \1 : \0,
+		root					=> $self->root_node,
+		tbar					=> $self->tbar,
+	);
+};
+
+
+
+sub set_afterrender {
+	my $self = shift;
+	
+	my $node;
+	$node = $self->root_node_name if ($self->show_root_node);
 	$node = $self->c->req->params->{node} if ($self->c->req->params->{node});
 	
-	return {
+	return unless($node);
+
+	$self->add_listeners( 
 		afterrender => RapidApp::JSONFunc->new( raw => 1, func => 
 			'function(tree) {' .
 				'Ext.ux.RapidApp.AppTree.jump_to_node_id(tree,"' . $node . '");' .
 			'}'
 		)
-	}
+	);
 }
-
-
-
 
 
 
@@ -143,7 +156,6 @@ sub add_button {
 			name		=> 'name',
 			fieldLabel	=> 'Name'
 		}
-	
 	];
 	
 	my $fieldset = {
@@ -169,8 +181,6 @@ sub add_button {
 				'}'
 			)
 	});
-
-
 }
 
 
@@ -199,6 +209,6 @@ sub delete_button {
 #### --------------------- ####
 
 
-no Moose;
+#no Moose;
 #__PACKAGE__->meta->make_immutable;
 1;

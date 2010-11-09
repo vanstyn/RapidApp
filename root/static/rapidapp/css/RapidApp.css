@@ -46,6 +46,9 @@
 .icon-folder-view { background-image: url(/static/rapidapp/images/folder_view.png) !important; }
 .icon-save-as { background-image: url(/static/rapidapp/images/save_as.png) !important; }
 
+.icon-funnel { background-image: url(/static/rapidapp/images/funnel.png) !important; }
+.icon-funnel-edit { background-image: url(/static/rapidapp/images/funnel_edit.png) !important; }
+
 .icon-bullet_key {
 	background-image: url(/static/rapidapp/images/bullet_key.png) !important;
 	background-repeat:no-repeat;

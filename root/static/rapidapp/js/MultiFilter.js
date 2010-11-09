@@ -10,6 +10,13 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		grid.multifilter = this;
 
 		this.store = grid.getStore();
+		
+		if(grid.init_state && grid.init_state.multifilters) {
+			this.store.filterdata = grid.init_state.multifilters;
+		}
+		
+		
+		
 		this.store.on('beforeload',function(store,options) {
 			if(store.filterdata) {
 				var encoded = Ext.encode(store.filterdata);
@@ -30,15 +37,19 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			 });
 		}
 	},
-	
+		
 	onRender: function() {
 	
 		this.filtersBtn = new Ext.Button({
+			//text: this.filterCountText(),
+			
 			text: 'Filters',
 			handler: function(btn) {
 				var win = btn.ownerCt.ownerCt.multifilter.showFilterWindow();
 			}
 		});
+		
+		this.updateFilterBtn();
 		
 		var grid = this.grid;
 		var tbar = this.grid.getTopToolbar();
@@ -56,6 +67,41 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			gridColumns: this.grid.getColumnModel().config,
 			fieldList: fields
 		});
+	},
+	
+	updateFilterBtn: function() {
+		var text = 'Filters';
+		var iconCls = 'icon-funnel';
+		var count = this.filterCount();
+		if(count) {
+			text = 'Filters (' + count + ')';
+			iconCls = 'icon-funnel-edit';
+		}
+		
+		this.filtersBtn.setIconClass(iconCls);
+		this.filtersBtn.setText(text);
+	},
+	
+	filterCount: function() {
+		
+		var recurseCount = function(item) {
+			if(Ext.isObject(item)) {
+				if (item['-and']) { return recurseCount(item['-and']); }
+				if (item['-or']) { return recurseCount(item['-or']); }
+				return 1;
+			}
+			if(Ext.isArray(item)) {
+				var count = 0;
+				Ext.each(item,function(i) {
+					count = count + recurseCount(i);
+				});
+				return count;
+			}
+			return 0;
+		}
+	
+		if (!this.store.filterdata) { return 0; }
+		return recurseCount(this.store.filterdata);
 	},
 	
 	showFilterWindow: function() {
@@ -97,8 +143,13 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 						var store = btn.ownerCt.ownerCt.multifilter.store;
 						store.filterdata = set.getData();
 						
+						win.multifilter.updateFilterBtn();
+						
 						//TODO: set the text to bold and count of the active filters
-						win.multifilter.filtersBtn.setText('FILTERS');
+						
+						//var filtersBtn = win.multifilter.filtersBtn;
+						//var text = win.multifilter.filterCountText();
+						//filtersBtn.setText(text);
 						
 						win.close();
 						store.reload();
@@ -192,12 +243,8 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 
 	layout: 'hbox',
 	
-	fieldList: [
-		'field1',
-		'field2',
-		'field3',
-		'field4'
-	],
+	// Dummy default list of fields:
+	fieldList: [ 'field1','field2','field3','field4' ],
 	
 	gridColumns: null,
 	
@@ -206,8 +253,93 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 	conditionMap: Ext.ux.MultiFilter.defaultConditionMap,
 	
 	typeCondMap: Ext.ux.MultiFilter.defaultTypeToConditionMap,
-
+	
+	// This is crap that I think shouldn't be required. 
+	// Create an entire hidden version of the field_combo and add it
+	// to the container just to get its Elelment so that Elelment
+	// can be used to create an instance of TextMetrics just so that
+	// we can accurately use it to measure text width:
+	TM: function() {
+		//var scope = this.constructor.prototype;
+		var scope = this;
+		if (!scope.TMinstance) {
+			var cnf = {
+				hidden: true,
+				itemId: 'hidden_field_combo',
+				name: 'hidden_field_combo'
+			};
+			Ext.applyIf(cnf,this.field_combo_cnf);
+			
+			scope.hiddenCombo = new Ext.ux.MultiFilter.StaticCombo(cnf);
+			scope.add(scope.hiddenCombo);
+			scope.doLayout();
+			scope.TMinstance = Ext.util.TextMetrics.createInstance(scope.hiddenCombo.getEl());
+		}
+		return scope.TMinstance;
+	},
+	
+	createFieldCombo: function() {
+		Ext.apply(this.field_combo_cnf,{
+			value_list: this.fieldList
+		});
+		return new Ext.ux.MultiFilter.StaticCombo(this.field_combo_cnf);
+	},
+	
+	condType: 'default',
+	
+	createCondCombo: function() {
+	
+		var colCondCnf = this.typeCondMap[this.condType];
+		if (!colCondCnf) { colCondCnf = this.typeCondMap['default']; }
+		
+		var value_list = [];
+		// Ext.iterate instead of for(key in colCondCnf){...
+		Ext.iterate(colCondCnf,function(key,value){
+			value_list.push(key);
+		});
+		
+		Ext.apply(this.cond_combo_cnf,{
+			value_list: value_list
+		});
+		return new Ext.ux.MultiFilter.StaticCombo(this.cond_combo_cnf);
+	},
+		
 	initComponent: function() {
+	
+		/* These are declared here instead of in the base class above because we 
+		 * modify them later on, and we need to make sure they are attributes
+		 * of the instance and not the class itself
+		**/
+		Ext.applyIf(this,{
+			field_combo_cnf: {
+				name: 'field_combo',
+				itemId: 'field_combo',
+				minListWidth: 200,
+				width: 100,
+				listeners: {
+					// On select, set the value and call configSelector() to recreate the criteria container:
+					select: function(combo) {
+						var criteria = combo.ownerCt;
+						Ext.apply(criteria.field_combo_cnf,{
+							value: combo.getRawValue()
+						});
+						criteria.configSelector();
+					}
+				}
+			},
+			cond_combo_cnf: {
+				name: 'cond_combo',
+				itemId: 'cond_combo',
+				width: 100,
+				value_list: []
+			},
+			datafield_cnf: {
+				xtype	: 'textfield',
+				name	: 'datafield',
+				itemId: 'datafield',
+				flex	: 1
+			}
+		});
 	
 		this.reverseConditionMap = {};
 		for (i in this.conditionMap) {
@@ -215,42 +347,8 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		}
 		
 		this.initColumns();
-		
-		this.field_combo_cnf = {
-			name: 'field_combo',
-			itemId: 'field_combo',
-			minListWidth: 200,
-			width: 100,
-			value_list: this.fieldList,
-			UpdateWidth: function() {
-				var TM = Ext.util.TextMetrics.createInstance(this.el);
-				var value = this.getRawValue();
-				var new_width = 30 + TM.getWidth(value);
-				this.setWidth(new_width);
-				
-				// This is the only way to get the hbox to properly recalculate.
-				// We update the config object and then recreate all the fields
-				// from scratch on the select event:
-				Ext.apply(this.ownerCt.field_combo_cnf,{
-					width: new_width,
-					value: value
-				});
 
-				//this.ownerCt.bubble(function(){ this.syncSize(); this.doLayout(); });
-			},
-			listeners: {
-				select: function(combo) {
-					combo.UpdateWidth();
-					var criteria = combo.ownerCt;
-					var column = criteria.columnMap[combo.getRawValue()];
-					if (column) {
-						criteria.configSelector(column);
-					}
-				}
-			}
-		};
-		
-		this.items = new Ext.ux.MultiFilter.StaticCombo(this.field_combo_cnf);
+		this.items = this.createFieldCombo();
 
 		Ext.ux.MultiFilter.Criteria.superclass.initComponent.call(this);
 	},
@@ -267,67 +365,55 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		return this.columnMap;
 	},
 	
-	configSelector: function(column) {
-		var cond = this.getComponent('cond_combo');
-		if (cond) {
-			cond.ownerCt.remove(cond,true);
-		}
-		var val = this.getComponent('datafield');
-		if (val) {
-			val.ownerCt.remove(val,true);
-		}
+	configSelector: function() {
 		
-		var type = column.filter.type;
+		// reset condType to default:
+		this.condType = 'default';
 		
-		var colCondCnf = this.typeCondMap[type];
-		if (!colCondCnf) { colCondCnf = this.typeCondMap['default']; }
-		
-		var value_list = [];
-		for (i in colCondCnf) {
-			value_list.push(i);
+		if (this.field_combo_cnf.value) {
+			var TM = this.TM();
+			var width = 30 + TM.getWidth(this.field_combo_cnf.value);
+			Ext.apply(this.field_combo_cnf,{
+				width: width
+			});
+			
+			var column = this.columnMap[this.field_combo_cnf.value];
+			if (column && column.filter && column.filter.type) {
+				this.condType = column.filter.type;
+			}
 		}
 		
-		cond = new Ext.ux.MultiFilter.StaticCombo({
-			name: 'cond_combo',
-			itemId: 'cond_combo',
-			width: 100,
-			value_list: value_list
-		});
-		
-		if (type == 'date') {
-			val = {
+		if(this.datafield_cnf.width) { delete this.datafield_cnf.width; }
+
+		if (this.condType == 'date') {
+			Ext.apply(this.datafield_cnf,{
 				xtype	: 'datefield',
-				name	: 'datafield',
-				itemId: 'datafield',
 				format: 'Y-m-d H:i:s',
-				width: 130
-			};
+				width: 130,
+				flex: 0
+			});
 		}
-		else if (type == 'number') {
-			val = {
+		else if(this.condType == 'number') {
+			Ext.apply(this.datafield_cnf,{
 				xtype	: 'numberfield',
-				name	: 'datafield',
-				itemId: 'datafield',
-				flex	: 1
-			};
+				flex: 1
+			});
 		}
 		else {
-		
-			val = {
+			Ext.apply(this.datafield_cnf,{
 				xtype	: 'textfield',
-				name	: 'datafield',
 				itemId: 'datafield',
 				flex	: 1
-			};
+			});
 		}
-		
+
 		// Remove all the fields and add all back in from scratch to
-		// get hbox to set the correct sizes
+		// get hbox to set the correct sizes:
 		this.removeAll(true);
 		this.add(
-			new Ext.ux.MultiFilter.StaticCombo(this.field_combo_cnf),
-			cond,
-			val
+			this.createFieldCombo(),
+			this.createCondCombo(),
+			this.datafield_cnf
 		);
 		this.doLayout();
 	},
@@ -350,18 +436,19 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 	
 	loadData: function(data) {
 
-		for (i in data) {
-			var field_combo = this.getComponent('field_combo');
-			field_combo.setRawValue(i);
-			for (j in data[i]) {
-				var cond = j;
+		Ext.iterate(data,function(k,v) {
+			this.field_combo_cnf.value = k;
+			Ext.iterate(v,function(k2,v2) {
+				var cond = k2;
 				if(this.reverseConditionMap[cond]) {
 					cond = this.reverseConditionMap[cond];
 				}
-				this.getComponent('cond_combo').setRawValue(cond);
-				this.getComponent('datafield').setRawValue(data[i][j]);
-			}
-		}
+				this.cond_combo_cnf.value = cond;
+				this.datafield_cnf.value = v2;
+			},this);
+		},this);
+		
+		this.configSelector();
 	}
 });
 
@@ -522,7 +609,6 @@ Ext.ux.MultiFilter.Filter = Ext.extend(Ext.Container,{
 	},
 	
 	loadData: function(data) {
-		//console.dir(data);
 		return this.filterSelection.loadData(data);
 	}
 });
@@ -606,6 +692,14 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 		var filter;
 		var new_item = item;
 		
+		// prune filters out of sets with only 1 filter:
+		if(Ext.isArray(item) && item.length == 1 && ! item[0]['-or']) {
+			new_item = item[0];
+		}
+		if(Ext.isArray(new_item) && new_item.length == 1  && ! new_item[0]['-or']) {
+			new_item = new_item[0];
+		}
+		
 		if(item['-and']) {
 			new_item = item['-and'];
 		}
@@ -618,14 +712,20 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 			return;
 		}
 		
-		if(Ext.ux.MultiFilter.RealTypeOf(new_item) == 'object') {
+		if(Ext.isObject(new_item)) {
 			filter = this.addFilter();
 		}
-		else if(Ext.ux.MultiFilter.RealTypeOf(new_item) == 'array') {
+		else if(Ext.isArray(new_item)) {
+		
+			// Skip empty filtersets:
+			if(new_item.length == 0) {
+				return;
+			}
+		
 			filter = this.addFilterSet();
 			if(new_item.length == 1) {
 				var only_item = new_item[0];
-				if(Ext.ux.MultiFilter.RealTypeOf(only_item) == 'array') {
+				if(Ext.isArray(only_item)) {
 					new_item = only_item;
 				}
 			}
@@ -674,26 +774,13 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 	},
 	
 	loadData: function(data,setOr) {
-		for (var i = 0; i < data.length; i++) {
-			var item = data[i];
+		return Ext.each(data,function(item) {
 			this.addFilterWithData(item);
-		}
-		return;
+		},this);
 	}
 });
 Ext.reg('filtersetpanel',Ext.ux.MultiFilter.FilterSetPanel);
 
-
-Ext.ux.MultiFilter.RealTypeOf = function(v) {
-	if (typeof(v) == "object") {
-		if (v === null) return "null";
-		if (v.constructor == (new Array).constructor) return "array";
-		if (v.constructor == (new Date).constructor) return "date";
-		if (v.constructor == (new RegExp).constructor) return "regex";
-		return "object";
-	}
-	return typeof(v);
-}
 
 
 Ext.ux.MultiFilter.movefilter = function(set,filter,indexOffset) {
