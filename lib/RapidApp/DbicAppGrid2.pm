@@ -30,6 +30,8 @@ has 'base_search_set' => ( is => 'ro',	default => undef );
 has 'include_columns' => ( is => 'ro', default => sub {[]} );
 has 'exclude_columns' => ( is => 'ro', default => sub {[]} );
 
+has 'fieldname_transforms' => ( is => 'ro', default => sub {{}});
+
 
 has 'include_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
@@ -98,31 +100,6 @@ sub BUILD {
 	$self->add_store_config(
 		remoteSort => \1
 	);
-
-
-
-
-
-	#$self->add_column(
-	#	'status.status' => {
-	#		name	=> 'status.status',
-	#		header	=> 'status_status',
-	#		dataIndex	=> 'status_status',
-	#		width	=> 100
-	#	
-	#	}
-	#);
-
-	
-	#$self->add_column(
-	#	'status' => {
-	#		name	=> 'status',
-	#		header	=> 'status',
-	#		width	=> 100,
-	#		dataIndex => 'status'
-	#	
-	#	}
-	#);
 	
 	my $fieldSub = sub {
 		my ($Source, $column, $colname) = @_;
@@ -192,44 +169,6 @@ sub BUILD {
 	
 	$addColRecurse->($self->ResultSource);
 	
-=pod
-	foreach my $column ($self->ResultSource->columns) {
-		my $field = $fieldSub->($self->ResultSource,$column,$column);
-		
-		$self->add_column(
-			$column => $field
-		);
-	}
-
-	foreach my $rel ($self->ResultSource->relationships) {
-		my $info = $self->ResultSource->relationship_info($rel);
-		next unless ($info->{attrs}->{accessor} eq 'single');
-
-		my $Source = $self->ResultSource->schema->source($info->{class});
-		
-		foreach my $column ($Source->columns) {
-			my $colname = $rel . '_' . $column;
-			
-			$self->fieldname_transforms->{$colname} = $rel . '.' . $column;
-			
-			my $field = $fieldSub->($Source,$column,$colname);
-			
-			$self->add_column(
-				$colname => $field
-			);
-		}
-	}
-=cut
-	
-	use Data::Dumper;
-	#print STDERR BLUE . Dumper($self->fieldname_transforms) . CLEAR;
-	#print STDERR RED . Dumper($self->join_map) . CLEAR;
-	#print STDERR BLUE . Dumper($self->columns) . CLEAR;
-	
-	#print STDERR RED . Dumper($self->store_config) . CLEAR;
-	#
-	
-	
 }
 
 
@@ -281,39 +220,6 @@ sub date_type {
 
 
 
-has 'fieldname_transforms' => ( is => 'ro', default => sub {{}});
-
-=pod
-#has 'fieldname_transforms' => ( is => 'ro', default => sub {{}} );
-has 'fieldname_transforms' => ( is => 'ro', default => sub { return {};
-	{
-		'status'						=> 'status.status',
-		'submitted_username'			=> 'submitted_user.username',
-		'submitted_fullname'			=> 'submitted_user.full_name',
-		'update_username'				=> 'update_user.username',
-		'update_fullname'				=> 'update_user.full_name',
-		'engineer_username'				=> 'engineer_user.username',
-		'engineer_fullname'				=> 'engineer_user.full_name',
-		'pricing_updated_username'		=> 'pricing_updated_user.username',
-		'pricing_updated_fullname'		=> 'pricing_updated_user.full_name',
-		'dist1_name'					=> 'dist1.name',
-		'dist1_salesperson'				=> 'dist1_salesperson.name',
-		'dist2_name'					=> 'dist2.name',
-		'dist2_salesperson'				=> 'dist2_salesperson.name',
-		
-		'rsm_user_fullname'				=> 'rsm_user.full_name',
-		'rsm_user_id'					=> 'rsm_user.id',
-		'product_category'				=> 'product_category.category',
-		'discount'						=> 'discount.discount'
-		
-		#'attachments_count' => { count => 'attachments.id' },
-		
-		#'rsm_user_fullname'				=> 'dist1.rsm_user.full_name',
-	};
-});
-=cut
-
-
 
 
 has 'DbicExtQuery' => ( is => 'ro', lazy_build => 1 );
@@ -345,7 +251,7 @@ sub read_records {
 
 	my $params = $self->c->req->params;
 	
-	#delete $params->{query} if (defined $params->{query} and $params->{query} eq '');
+	delete $params->{query} if (defined $params->{query} and $params->{query} eq '');
 	
 	if(defined $params->{columns} and not ref($params->{columns})) {
 		my $decoded = $self->json->decode($params->{columns});
@@ -359,38 +265,15 @@ sub read_records {
 		
 		# We can't limit the fields if there is a query (because it needs to be able to search 
 		# in all fields and all relationships:
-		#delete $params->{columns} if (defined $params->{query});
+		delete $params->{columns} if (defined $params->{query});
 	};
 	
-	
-	#$params->{columns} = [] unless ($params->{columns});
-	#push @{$params->{columns}}, 'status';
-	
-
-=pod
-	# --- Exclude `deleted`:
-	push @{$params->{columns}}, 'deleted' if (defined $params->{columns});
-	my $filters = [];
-	$filters = $self->json->decode($params->{filter}) if (defined $params->{filter} and $params->{filter} ne '');
-	push @$filters, {
-		field		=> 'deleted',
-		type		=> 'numeric',
-		comparison	=> 'eq',
-		value		=> 0
-	};
-	$params->{filter} = $filters;
-	# ---
-=cut
-
 
 	my $data = $self->DbicExtQuery->data_fetch($params);
 
 	my $rows = [];
 	foreach my $row (@{$data->{rows}}) {
 		my $hash = { $row->get_columns };
-		#$hash->{'status_status'} = $row->status->status;
-		#$hash->{'status_status'} = 'Foo';
-		#$hash->{icon} = '<img src="/static/rapidapp/images/form_green.png">';
 		push @$rows, $hash;
 	}
 	
@@ -398,15 +281,9 @@ sub read_records {
 		results		=> $data->{totalCount},
 		rows		=> $rows
 	};
-	
-	use Data::Dumper;
-	#print STDERR YELLOW . Dumper($result) . CLEAR;
-	
+
 	return $result;
-
 }
-
-
 
 
 

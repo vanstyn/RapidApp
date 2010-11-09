@@ -44,11 +44,6 @@ before 'content' => sub {
 	$self->add_config(columns => $self->column_list);
 	$self->add_config(tbar => $self->tbar_items) if (defined $self->tbar_items);
 
-
-
-	use Data::Dumper;
-	print STDERR CYAN . Dumper($self->config) . CLEAR;
-
 };
 
 
@@ -70,22 +65,40 @@ sub tbar_items {
 
 
 
+
 sub add_column {
 	my $self = shift;
 	my %column = @_;
 	%column = %{$_[0]} if (ref($_[0]) eq 'HASH');
 	
 	foreach my $name (keys %column) {
-		if (defined $self->columns->{$name}) {
-			$self->columns->{$name}->apply_attributes(%{$column{$name}});
-		}
-		else {
-			$self->columns->{$name} = RapidApp::Column->new(%{$column{$name}}, name => $name );
+		unless (defined $self->columns->{$name}) {
+			$self->columns->{$name} = RapidApp::Column->new( name => $name );
 			push @{ $self->column_order }, $name;
 		}
-
+		
+		$self->columns->{$name}->apply_attributes(%{$column{$name}});
 	}
 }
+
+
+
+#sub add_column {
+#	my $self = shift;
+#	my %column = @_;
+#	%column = %{$_[0]} if (ref($_[0]) eq 'HASH');
+#	
+#	foreach my $name (keys %column) {
+#		if (defined $self->columns->{$name}) {
+#			$self->columns->{$name}->apply_attributes(%{$column{$name}});
+#		}
+#		else {
+#			$self->columns->{$name} = RapidApp::Column->new(%{$column{$name}}, name => $name );
+#			push @{ $self->column_order }, $name;
+#		}
+#
+#	}
+#}
 
 
 sub column_list {
@@ -102,10 +115,9 @@ sub column_list {
 
 sub set_all_columns_hidden {
 	my $self = shift;
-	
-	foreach my $column (keys %{ $self->columns } ) {
-		$self->columns->{$column}->hidden(\1);
-	}
+	return $self->apply_to_all_columns(
+		hidden => \1
+	);
 }
 
 
@@ -113,14 +125,34 @@ sub set_columns_visible {
 	my $self = shift;
 	my @cols = @_;
 	@cols = @{ $_[0] } if (ref($_[0]) eq 'ARRAY');
-	
-	foreach my $column (@cols) {
-		$self->columns->{$column}->hidden(\0);
-	}
+	return $self->apply_columns(\@cols,{
+		hidden => \0
+	});
 }
 
 
+sub apply_to_all_columns {
+	my $self = shift;
+	my %opt = @_;
+	%opt = %{$_[0]} if (ref($_[0]) eq 'HASH');
+	
+	foreach my $column (keys %{ $self->columns } ) {
+		$self->columns->{$column}->apply_attributes(%opt);
+	}
+}
 
+sub apply_columns {
+	my $self = shift;
+	my $cols = shift;
+	my %opt = @_;
+	%opt = %{$_[0]} if (ref($_[0]) eq 'HASH');
+	
+	die "type of arg 1 must be ArrayRef" unless (ref($cols) eq 'ARRAY');
+	
+	foreach my $column (@$cols) {
+		$self->columns->{$column}->apply_attributes(%opt);
+	}
+}
 
 
 

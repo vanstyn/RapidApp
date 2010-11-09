@@ -48,7 +48,42 @@ has 'width' => (
 );
 
 
+has 'tpl' => ( 
+	is => 'rw', lazy => 1, 
+	default => undef,
+	traits => [ 'RapidApp::Role::GridColParam' ] 
+);
+
+has 'xtype' => ( 
+	is => 'rw', lazy => 1, 
+	default => undef,
+	traits => [ 'RapidApp::Role::GridColParam' ] 
+);
+
 has 'data_type'	=> ( is => 'rw', default => undef );
+
+
+
+
+has 'render_fn' => ( 
+	is => 'rw', lazy => 1, 
+	default => undef,
+	traits => [ 'RapidApp::Role::GridColParam' ],
+	trigger => \&_set_render_fn,
+);
+
+sub _set_render_fn {
+	my ($self,$new,$old) = @_;
+	return unless ($new);
+	
+	#use Data::Dumper;
+	#print STDERR YELLOW . BOLD . Dumper
+	
+	$self->xtype('templatecolumn');
+	$self->tpl('{[' . $new . '(values.' . $self->name . ',values)]}');
+}
+
+
 
 
 
