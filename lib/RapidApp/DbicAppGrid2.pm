@@ -379,6 +379,7 @@ sub read_records {
 	# ---
 =cut
 
+
 	my $data = $self->DbicExtQuery->data_fetch($params);
 
 	my $rows = [];

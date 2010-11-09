@@ -7,6 +7,7 @@ use Moose;
 extends 'RapidApp::AppCnt';
 with 'RapidApp::Role::DataStore';
 
+use RapidApp::Column;
 
 use RapidApp::JSONFunc;
 #use RapidApp::AppDataView::Store;
@@ -49,21 +50,40 @@ before 'content' => sub {
 };
 
 
+#sub add_column {
+#	my $self = shift;
+#	my %column = @_;
+#	%column = %{$_[0]} if (ref($_[0]) eq 'HASH');
+#	
+#	foreach my $name (keys %column) {
+#		unless (defined $self->columns->{$name}) {
+#			$self->columns->{$name} = {};
+#			push @{ $self->column_order }, $name;
+#		}
+#		
+#		%{ $self->columns->{$name} } = (
+#			%{ $self->columns->{$name} },
+#			%{ $column{$name} }
+#		);
+#	}
+#}
+
+
+
 sub add_column {
 	my $self = shift;
 	my %column = @_;
 	%column = %{$_[0]} if (ref($_[0]) eq 'HASH');
 	
 	foreach my $name (keys %column) {
-		unless (defined $self->columns->{$name}) {
-			$self->columns->{$name} = {};
+		if (defined $self->columns->{$name}) {
+			$self->columns->{$name}->apply_attributes(%{$column{$name}});
+		}
+		else {
+			$self->columns->{$name} = RapidApp::Column->new(%{$column{$name}}, name => $name );
 			push @{ $self->column_order }, $name;
 		}
-		
-		%{ $self->columns->{$name} } = (
-			%{ $self->columns->{$name} },
-			%{ $column{$name} }
-		);
+
 	}
 }
 
@@ -73,7 +93,7 @@ sub column_list {
 	
 	my @list = ();
 	foreach my $name (@{ $self->column_order }) {
-		push @list, $self->columns->{$name};
+		push @list, $self->columns->{$name}->get_grid_config;
 	}
 	
 	return \@list;
@@ -84,7 +104,7 @@ sub set_all_columns_hidden {
 	my $self = shift;
 	
 	foreach my $column (keys %{ $self->columns } ) {
-		$self->columns->{$column}->{hidden} = \1;
+		$self->columns->{$column}->hidden(\1);
 	}
 }
 
@@ -95,7 +115,7 @@ sub set_columns_visible {
 	@cols = @{ $_[0] } if (ref($_[0]) eq 'ARRAY');
 	
 	foreach my $column (@cols) {
-		$self->columns->{$column}->{hidden} = \0;
+		$self->columns->{$column}->hidden(\0);
 	}
 }
 
