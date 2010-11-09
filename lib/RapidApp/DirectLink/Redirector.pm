@@ -1,4 +1,4 @@
-package HOPS::DirectLink::Redirector;
+package RapidApp::DirectLink::Redirector;
 
 use strict;
 use warnings;
@@ -103,7 +103,7 @@ sub redirectToLink($$) {
 
 sub _directLink_handleLink($$$) {
 	my ($self, $c, $link, $redirect)= @_;
-	$c->isa('Catalyst') && $link->isa('HOPS::DirectLink::Link') or die "invalid params";
+	$c->isa('Catalyst') && $link->isa('RapidApp::DirectLink::Link') or die "invalid params";
 	
 	my $ret= $self->directLink_handleAuth($c, $link);
 	$ret->{success} or return $ret;

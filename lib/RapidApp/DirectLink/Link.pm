@@ -1,4 +1,4 @@
-package HOPS::DirectLink::Link;
+package RapidApp::DirectLink::Link;
 
 use strict;
 use warnings;
@@ -11,7 +11,7 @@ use Scalar::Util 'blessed';
 
 =head1 NAME
 
-HOPS::DirectLink::Link
+RapidApp::DirectLink::Link
 
 =head1 SYNOPSIS
 
@@ -23,7 +23,7 @@ HOPS::DirectLink::Link
     sess_params => {SpecialSetting => 'blah blah'},
   };
   
-  my $link= HOPS::DirectLink::Link->new($linkParams);
+  my $link= RapidApp::DirectLink::Link->new($linkParams);
   $self->c->model('DB')->createDirectLink($link);
   - or -
   my $link= $self->c->model('DB')->createDirectLink($linkParams);
@@ -38,7 +38,7 @@ HOPS::DirectLink::Link
   
   # retrieving a link from the database
   my $uid= $self->c->request->params->{id};
-  my $link= HOPS::DirectLink::Link->new(linkUid => $uid); # parse the id string into a date and hash
+  my $link= RapidApp::DirectLink::Link->new(linkUid => $uid); # parse the id string into a date and hash
   my $row= $self->c->model("DB::direct_link")->find( # get the other parameters from the database
     createDate => $link->createDate,
     randomHash => $link->randomhash
@@ -289,11 +289,9 @@ sub paramsJson {
 
 =head1 SEE ALSO
 
-HOPS::DirectLink::LinkFactory
+RapidApp::DirectLink::LinkFactory
 
-HOPS::DirectLink::SessionLoader
-
-HOPS::ContactUserStore
+RapidApp::DirectLink::Redirector
 
 =cut
 

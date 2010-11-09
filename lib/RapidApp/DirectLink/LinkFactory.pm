@@ -1,11 +1,11 @@
-package HOPS::DirectLink::LinkFactory;
+package RapidApp::DirectLink::LinkFactory;
 
 use strict;
 use warnings;
 use Moose;
 
 use DateTime;
-use HOPS::DirectLink::Link;
+use RapidApp::DirectLink::Link;
 use Scalar::Util 'blessed';
 use Data::Dumper;
 use Try::Tiny;
@@ -115,7 +115,7 @@ sub genRandHash {
 sub createLink {
 	my $self= shift;
 	
-	my $link= (blessed($_[0]) && $_[0]->isa('HOPS::DirectLink::Link'))? $_[0] : HOPS::DirectLink::Link->new(@_);
+	my $link= (blessed($_[0]) && $_[0]->isa('RapidApp::DirectLink::Link'))? $_[0] : RapidApp::DirectLink::Link->new(@_);
 	
 	$link->has_creationDate or $link->creationDate(DateTime->now);
 	
@@ -159,11 +159,11 @@ sub loadByUid {
 	my ($self, $uid)= @_;
 	
 	my $rs= $self->_getDirectLinkSource();
-	my $date= HOPS::DirectLink::Link->dateFromLinkUid($uid);
-	my $hash= HOPS::DirectLink::Link->hashFromLinkUid($uid);
+	my $date= RapidApp::DirectLink::Link->dateFromLinkUid($uid);
+	my $hash= RapidApp::DirectLink::Link->hashFromLinkUid($uid);
 	my $rec= $rs->resultset->find({ create_date => $date, random_hash => $hash });
 	
-	return HOPS::DirectLink::Link->new(creationDate => $date, randomHash => $hash, params => $rec->params);
+	return RapidApp::DirectLink::Link->new(creationDate => $date, randomHash => $hash, params => $rec->params);
 }
 
 sub deleteLink {
