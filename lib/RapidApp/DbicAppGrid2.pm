@@ -26,6 +26,70 @@ add_default_config(
 
 );
 
+has 'include_columns' => ( is => 'ro', default => sub {[]} );
+has 'exclude_columns' => ( is => 'ro', default => sub {[]} );
+
+
+has 'include_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	my $hash = {};
+	foreach my $col (@{$self->include_columns}) {
+		$hash->{$col} = 1;
+	}
+	return $hash;
+});
+
+has 'exclude_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	my $hash = {};
+	foreach my $col (@{$self->exclude_columns}) {
+		$hash->{$col} = 1;
+	}
+	return $hash;
+});
+
+
+
+has 'join_map' => ( is => 'rw', lazy => 1, builder => '_build_join_map', isa => 'HashRef' );
+sub _build_join_map {
+	my $self = shift;
+	
+	my $map = {};
+	my $recurse;
+	$recurse = sub {
+		my $Source = shift;
+		my $join = shift;
+		
+		if (ref($join)) {
+			if (ref($join) eq 'ARRAY') {
+				foreach my $sub (@$join) {
+					$recurse->($Source,$sub);
+				}
+			}
+			
+			if (ref($join) eq 'HASH') {
+				foreach my $rel (keys %$join) {
+					my $info = $Source->relationship_info($rel);
+					my $subSource = $Source->schema->source($info->{class});
+					$recurse->($subSource,$join->{$rel});
+				}
+			}
+		
+		}
+		else {
+			$map->{$Source->source_name}->{$join} = 1;
+		
+		}
+	};
+	
+	$recurse->($self->ResultSource,$self->joins);
+	
+	return $map;
+}
+
+
+
+
 
 sub BUILD {
 	my $self = shift;
@@ -33,6 +97,9 @@ sub BUILD {
 	$self->add_store_config(
 		remoteSort => \1
 	);
+
+
+
 
 
 	#$self->add_column(
@@ -86,7 +153,45 @@ sub BUILD {
 		return $field;
 	};
 	
+	my $addColRecurse;
+	$addColRecurse = sub {
+		my $Source = shift;
+		my $rel_name = shift;
+		my $prefix = shift;
+		
+		foreach my $column ($Source->columns) {
+			
+			my $colname = $column;
+			$colname = $prefix . '_' . $column if ($prefix);
+			
+			next unless ($self->valid_colname($colname));
+			
+			$self->fieldname_transforms->{$colname} = $rel_name . '.' . $column unless ($colname eq $column);
+			
+			my $field = $fieldSub->($Source,$column,$colname);
+			
+			$self->add_column(
+				$colname => $field
+			);
+		}
+
+		foreach my $rel ($Source->relationships) {
+			next unless (defined $self->join_map->{$Source->source_name}->{$rel});
+		
+			my $info = $Source->relationship_info($rel);
+			#next unless ($info->{attrs}->{accessor} eq 'single');
+
+			my $subSource = $Source->schema->source($info->{class});
+			my $new_prefix = $rel;
+			$new_prefix = $prefix . '_' . $rel if ($prefix);
+			$addColRecurse->($subSource,$rel,$new_prefix);
+			
+		}
+	};
 	
+	$addColRecurse->($self->ResultSource);
+	
+=pod
 	foreach my $column ($self->ResultSource->columns) {
 		my $field = $fieldSub->($self->ResultSource,$column,$column);
 		
@@ -113,16 +218,37 @@ sub BUILD {
 			);
 		}
 	}
-	
+=cut
 	
 	use Data::Dumper;
 	#print STDERR BLUE . Dumper($self->fieldname_transforms) . CLEAR;
-	#print STDERR RED . Dumper($self->columns) . CLEAR;
+	#print STDERR RED . Dumper($self->join_map) . CLEAR;
+	#print STDERR BLUE . Dumper($self->columns) . CLEAR;
 	
-	print STDERR RED . Dumper($self->store_config) . CLEAR;
+	#print STDERR RED . Dumper($self->store_config) . CLEAR;
+	#
 	
 	
 }
+
+
+sub valid_colname {
+	my $self = shift;
+	my $name = shift;
+	
+	if (scalar @{$self->exclude_columns} > 0) {
+		return 0 if (defined $self->exclude_columns_hash->{$name});
+	}
+	
+	if (scalar @{$self->include_columns} > 0) {
+		return 0 unless (defined $self->include_columns_hash->{$name});
+	}
+	
+	return 1;
+}
+
+
+
 
 
 sub numeric_type {
@@ -153,6 +279,10 @@ sub date_type {
 
 
 
+
+has 'fieldname_transforms' => ( is => 'ro', default => sub {{}});
+
+=pod
 #has 'fieldname_transforms' => ( is => 'ro', default => sub {{}} );
 has 'fieldname_transforms' => ( is => 'ro', default => sub { return {};
 	{
@@ -180,31 +310,8 @@ has 'fieldname_transforms' => ( is => 'ro', default => sub { return {};
 		#'rsm_user_fullname'				=> 'dist1.rsm_user.full_name',
 	};
 });
+=cut
 
-
-has 'joins' => ( is => 'ro', default => sub { 
-	[
-		'status',
-		'engineer_user',
-		'update_user',
-		'pricing_updated_user',
-		'submitted_user',
-		'dist1',
-		'dist1_salesperson',
-		'dist2',
-		'dist2_salesperson',
-		'submitted_user',
-		'pricing_updated_user',
-		'update_user',
-		'engineer_user',
-		{
-			'dist1' => 'rsm_user'
-		},
-		'product_category',
-		'discount',
-		#'attachments'
-	]
-});
 
 
 
