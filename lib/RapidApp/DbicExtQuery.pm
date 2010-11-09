@@ -36,7 +36,21 @@ has 'implied_joins'				=> ( is => 'rw',  required => 0,    isa => 'Bool',     de
 has 'group_by'    				=> ( is => 'ro',	default => undef	);
 has 'prefetch'    				=> ( is => 'ro',	default => undef	);
 
+has 'base_search_set'    		=> ( is => 'ro',	default => undef );
+
 ###########################################################################################
+
+
+has 'base_search_set_list' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	return undef unless (defined $self->base_search_set and $self->base_search_set ne '');
+	return $self->base_search_set if (
+		ref($self->base_search_set) eq 'ARRAY' and 
+		scalar @{$self->base_search_set} > 0
+	);
+	return [ $self->base_search_set ];
+});
+
 
 
 sub data_fetch {
@@ -458,6 +472,8 @@ sub Search_spec {
 		
 		push @$filter_search, $add_ands->($multifilter);
 	}
+	
+	push @$filter_search, @{ $self->base_search_set_list } if (defined $self->base_search_set_list);
 	
 	if (scalar @$filter_search > 0) {
 		#unshift @$search, { -and => $filter_search };

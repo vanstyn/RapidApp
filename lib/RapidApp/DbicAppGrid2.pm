@@ -18,13 +18,14 @@ setup_add_methods_for('config');
 setup_add_methods_for('listeners');
 
 
-
-
 add_default_config(
 	remote_columns		=> \1,
 	loadMask				=> \1
 
 );
+
+
+has 'base_search_set' => ( is => 'ro',	default => undef );
 
 has 'include_columns' => ( is => 'ro', default => sub {[]} );
 has 'exclude_columns' => ( is => 'ro', default => sub {[]} );
@@ -321,11 +322,13 @@ sub _build_DbicExtQuery {
 	
 	my $cnf = {
 		ResultSource			=> $self->ResultSource,
-		ExtNamesToDbFields 		=> $self->fieldname_transforms,
+		ExtNamesToDbFields 	=> $self->fieldname_transforms,
 		joins 					=> $self->joins,
 		#implied_joins			=> 1
 		#group_by				=> [ 'me.id' ],
 	};
+	
+	$cnf->{base_search_set} = $self->base_search_set if (defined $self->base_search_set);
 	
 	#$cnf->{columns} = $self->json->decode($self->c->req->params->{columns}) if (
 	#	defined $self->c->req->params->{columns}
