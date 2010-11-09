@@ -52,15 +52,19 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		this.updateFilterBtn();
 		
 		var grid = this.grid;
-		var tbar = this.grid.getTopToolbar();
-		tbar.add(this.filtersBtn);
+		var add_to_cmp = this.grid.getBottomToolbar() || this.grid.getTopToolbar();
+		if(add_to_cmp) { add_to_cmp.add('-',this.filtersBtn) };
 	},
 	
 	setFields: function() {
 		var fields = [];
 		
-		this.store.fields.each(function(item,index,length) {
-			fields.push(item.name);
+		//this.store.fields.each(function(item,index,length) {
+		//	fields.push(item.name);
+		//});
+		
+		Ext.each(this.grid.getColumnModel().config,function(item) {
+			fields.push(item.dataIndex);
 		});
 		
 		this.Criteria = Ext.extend(Ext.ux.MultiFilter.Criteria,{

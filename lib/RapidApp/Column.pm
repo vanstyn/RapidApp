@@ -52,7 +52,6 @@ has 'data_type'	=> ( is => 'rw', default => undef );
 
 
 
-
 sub apply_attributes {
 	my $self = shift;
 	my %new = @_;
@@ -75,20 +74,32 @@ sub apply_attributes {
 
 sub get_grid_config {
 	my $self = shift;
+	return $self->get_config_for_traits('RapidApp::Role::GridColParam');
+}
+
+
+# returns hashref for all attributes with defined values that 
+# match any of the list of passed traits
+sub get_config_for_traits {
+	my $self = shift;
+	my @traits = @_;
+	@traits = @{ $_[0] } if (ref($_[0]) eq 'ARRAY');
 	
 	my $config = {};
 	
 	foreach my $attr ($self->meta->get_all_attributes) {
-		next unless $attr->does('RapidApp::Role::GridColParam');
-		my $val = $attr->get_value($self) or next;
-		$config->{$attr->name} = $val;
+		foreach my $trait (@traits) {
+			if ($attr->does($trait)) {
+				my $val = $attr->get_value($self);
+				last unless (defined $val);
+				$config->{$attr->name} = $val;
+				last;
+			}
+		}
 	}
 		
 	return $config;
 }
-
-
-
 
 
 

@@ -18,18 +18,20 @@ use RapidApp::MooseX::ClassAttrSugar;
 setup_add_methods_for('config');
 setup_add_methods_for('listeners');
 
-
-
-
 add_default_config(
-	xtype			=> 'appgrid2',
-	pageSize		=> 25
-
+	xtype						=> 'appgrid2',
+	pageSize					=> 25,
+	stripeRows				=> \1,
+	columnLines				=> \1,
+	use_multifilters		=> \1,
+	gridsearch				=> \1,
+	gridsearch_remote		=> \1
 );
 
 has 'columns' => ( is => 'rw', default => sub {{}} );
 has 'column_order' => ( is => 'rw', default => sub {[]} );
-
+has 'title' => ( is => 'ro', default => undef );
+has 'title_icon_href' => ( is => 'ro', default => undef );
 
 # autoLoad needs to be false for the paging toolbar to not load the whole
 # data set
@@ -39,34 +41,32 @@ before 'content' => sub {
 	my $self = shift;
 	
 	$self->add_config(store => $self->JsonStore);
-	#$self->add_config(columns => $self->grid_columns) if ($self->can('grid_columns'));
 	$self->add_config(columns => $self->column_list);
+	$self->add_config(tbar => $self->tbar_items) if (defined $self->tbar_items);
 
 
 
 	use Data::Dumper;
-	#print STDERR CYAN . Dumper($self->config) . CLEAR;
+	print STDERR CYAN . Dumper($self->config) . CLEAR;
 
 };
 
 
-#sub add_column {
-#	my $self = shift;
-#	my %column = @_;
-#	%column = %{$_[0]} if (ref($_[0]) eq 'HASH');
-#	
-#	foreach my $name (keys %column) {
-#		unless (defined $self->columns->{$name}) {
-#			$self->columns->{$name} = {};
-#			push @{ $self->column_order }, $name;
-#		}
-#		
-#		%{ $self->columns->{$name} } = (
-#			%{ $self->columns->{$name} },
-#			%{ $column{$name} }
-#		);
-#	}
-#}
+
+sub tbar_items {
+	my $self = shift;
+	
+	my $arrayref = [];
+	
+	push @{$arrayref}, '<img src="' . $self->title_icon_href . '" />' 		if (defined $self->title_icon_href);
+	push @{$arrayref}, '<b>' . $self->title . '</b>'								if (defined $self->title);
+
+	return undef unless (scalar @{$arrayref} > 0);
+
+	push @{$arrayref}, '->';
+
+	return $arrayref;
+}
 
 
 

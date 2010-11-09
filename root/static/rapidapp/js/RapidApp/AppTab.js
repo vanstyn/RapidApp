@@ -89,6 +89,34 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 			};
 		}
 		
+		// ----- MultiFilters: ----- //
+		if (this.use_multifilters) {
+			if(!this.plugins){ this.plugins = []; }
+			this.plugins.push(new Ext.ux.MultiFilter.Plugin);
+		}
+		// ------------------------- //
+		
+		
+		// ------ Grid Search --------- //
+		if (this.gridsearch && this.tbar) {
+
+			var grid_search_cnf = {
+				iconCls:'icon-zoom',
+				autoFocus:false,
+				mode: 'local', // local or remote
+				width: 300,
+				position: 'top'
+			};
+
+			if (this.gridsearch_remote) { grid_search_cnf['mode'] = 'remote'; }
+
+			if(!this.plugins){ this.plugins = []; }
+			this.plugins.push(new Ext.ux.grid.Search(grid_search_cnf));
+		}
+		// ---------------------------- //
+		
+		
+		
 		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.initComponent.call(this);
 	},
 	
@@ -109,7 +137,6 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 			
 			//Store.setBaseParam("columns",Ext.encode(colIndexes));
 			Store.baseParams["columns"] = Ext.encode(colIndexes);
-			console.dir(colIndexes);
 		});
 		
 		this.getColumnModel().on('hiddenchange',function(colmodel) {
