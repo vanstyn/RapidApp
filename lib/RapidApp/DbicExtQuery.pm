@@ -189,7 +189,7 @@ sub Attr_spec {
 				}
 			}
 		}
-		#$attr->{join} = \@newjoins;
+		$attr->{join} = \@newjoins;
 		
 	}
 	else {
