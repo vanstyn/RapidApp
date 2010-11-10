@@ -75,12 +75,14 @@ around 'actions' => sub {
 
 sub store_read {
 	my $self = shift;
-	
-	my $results = 0;
-	my $fields = [];
-	$fields = $self->store_fields if (defined $self->store_fields);
-	my $rows = [];
+	my $data = $self->store_read_raw;
+	return $self->store_meta_json_packet($data);
+}
 
+
+sub store_read_raw {
+	my $self = shift;
+	
 	if (defined $self->read_records_coderef or $self->can('read_records')) {
 		
 		my $data;
@@ -91,28 +93,46 @@ sub store_read {
 			$data = $self->read_records_coderef->() or die "Failed to read records with read_records_coderef";
 		}
 		
+		die "unexpected data returned in store_read_raw" unless (
+			ref($data) eq 'HASH' and 
+			defined $data->{results} and
+			ref($data->{rows}) eq 'ARRAY'
+		);
 		
-		$rows			= $data->{rows};
-		$fields 		= $self->store_fields_from_rows($rows) unless (defined $self->store_fields);
-		$results 	= $data->{results};
+		# data should be a hash with rows (arrayref) and results (number):
+		return $data;
 	}
-	# If there is no read_data_coderef this will be an add-only StoreForm and we'll
-	# return a store with no records.
-
+	
+	# empty set of data:
 	return {
-		metaData => {
-			fields => $fields,
+		results	=> 0,
+		rows		=> []
+	};
+}
+
+
+sub store_meta_json_packet {
+	my $self = shift;
+	my %opt = @_;
+	%opt = %{ $_[0] } if (ref($_[0]) eq 'HASH');
+	
+	return {
+		metaData	=> {
 			root => 'rows',
 			idProperty => $self->record_pk,
 			messageProperty => 'msg',
 			successProperty => 'success',
 			totalProperty => 'results',
+			fields => defined $self->store_fields ? $self->store_fields : $self->store_fields_from_rows($opt{rows})
 		},
-		success => \1,
-		results => $results,
-		rows => $rows
+		success	=> \1,
+		%opt
 	};
 }
+
+
+
+
 
 sub store_fields_from_rows {
 	my $self = shift;

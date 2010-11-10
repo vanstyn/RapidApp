@@ -221,9 +221,9 @@ sub read_records {
 		$params->{columns} = $decoded;
 		
 		# If custom columns have been provided, we have to make sure that the record_pk is among them.
-		# This is required to properly support the "Project" page which is opened by double-clicking
+		# This is required to properly support the "item" page which is opened by double-clicking
 		# a grid row. The id field must be loaded in the Ext Record because this is used by the
-		# Project page to query the database for the given project:
+		# item page to query the database for the given id:
 		push @{$params->{columns}}, $self->record_pk if (defined $self->record_pk);
 		
 		# We can't limit the fields if there is a query (because it needs to be able to search 

@@ -79,6 +79,27 @@ sub BUILD {
 
 
 
+around 'store_read_raw' => sub {
+	my $orig = shift;
+	my $self = shift;
+	
+	my $result = $self->$orig(@_);
+
+	if (defined $self->open_record_class) {
+		foreach my $record (@{$result->{rows}}) {
+			$record->{BLAH} = 'fooooooo';
+		
+		}
+	}
+	
+	use Data::Dumper;
+	print STDERR YELLOW . Dumper($result) . CLEAR;
+
+	return $result;
+};
+
+
+
 
 
 has 'include_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
