@@ -19,7 +19,16 @@ use Term::ANSIColor qw(:constants);
 our $VERSION = '0.1';
 
 
-has 'base_url'					=> ( is => 'rw', lazy => 1, default => sub { $_[0]->c->namespace; }, traits => [ 'RapidApp::Role::PerRequestVar' ] );
+has 'base_url' => ( 
+	is => 'rw', lazy => 1, default => sub { 
+		my $self = shift;
+		
+		my $url = $self->c->namespace;
+		$url = $self->parent_module->base_url . '/' . $self->{module_name} if (defined  $self->parent_module); 
+		return $url;
+	},
+	traits => [ 'RapidApp::Role::PerRequestVar' ] 
+);
 has 'actions'					=> ( is => 'ro', 	default => sub {{}} );
 has 'extra_actions'			=> ( is => 'ro', 	default => sub {{}} );
 has 'default_action'			=> ( is => 'ro',	default => undef );
@@ -29,6 +38,8 @@ has 'render_as_json'			=> ( is => 'rw',	default => 1 );
 sub c {
 	return $RapidApp::ScopedGlobals::CatalystInstance;
 }
+
+
 
 has 'no_persist' => ( is => 'rw', lazy => 1, default => sub {
 	my $self = shift;
@@ -166,6 +177,7 @@ sub controller_dispatch {
 	return $data;
 }
 
+=pod
 around 'Module' => sub {
 	my $orig = shift;
 	my $self = shift;
@@ -178,7 +190,7 @@ around 'Module' => sub {
 	
 	return $Module;
 };
-
+=cut
 
 sub process_action {
 	my $self = shift;
@@ -243,13 +255,19 @@ sub render_data {
 # add or replace actions (i.e. as passed to the action param of the constructor):
 sub apply_actions {
 	my $self = shift;
-	my %new = @_;
-	%new = %{ $_[0] } if (ref($_[0]) eq 'HASH');
-	
-	%{ $self->actions } = (
+	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+
+	my $new_actions = {
 		%{ $self->actions },
 		%new
-	);
+	};
+
+	my $attr = $self->meta->find_attribute_by_name('actions');
+	$attr->set_value($self,$new_actions);
+	
+	#%{ $self->actions } = (
+		
+	#);
 }
 
 

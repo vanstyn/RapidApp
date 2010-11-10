@@ -147,19 +147,34 @@ sub BUILD {
 	
 	$addColRecurse->($self->ResultSource);
 	
-	
 	if($self->can('delete_rows')) {
 	
-		$self->destroy_records_coderef(sub {
-			use Data::Dumper;
-			print STDERR RED . BOLD . "\n\n ---> delete_records_coderef \n\n" . CLEAR;
-		});
+		my $act_name = 'delete_rows';
+		$self->apply_actions($act_name => 'action_delete_rows');
+		$self->apply_config(delete_url => $self->suburl($act_name));
 	
+
 	}
+
 	
 	
 }
 
+before 'content' => sub {
+
+
+
+
+};
+
+
+sub action_delete_rows {
+	my $self = shift;
+	
+	use Data::Dumper;
+	print STDERR RED . BOLD . Dumper($self->c->req->params) . CLEAR;
+	 
+}
 
 
 

@@ -130,7 +130,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 		}
 		// ---------------------------- //
 		
-		
+		/*
 		// ---- Delete support:
 		if (this.store.api.destroy) {
 			this.sm = new Ext.grid.CheckboxSelectionModel();
@@ -155,7 +155,53 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 				deleteBtn,
 				'-'
 			];
+		}
+		*/
+		// ---- Delete support:
+		if (this.delete_url) {
+			this.sm = new Ext.grid.CheckboxSelectionModel();
+			this.columns.unshift(this.sm);
+			var storeId = this.store.storeId;
+			var deleteBtn = new Ext.Button({
+				text: 'delete',
+				iconCls: 'icon-bullet_delete',
+				handler: function(btn) {
+					var grid = btn.ownerCt.ownerCt;
+					var Records = grid.getSelectionModel().getSelections();
+					var rows = [];
+					Ext.each(Records,function(item) {
+						rows.push(item.data);
+					});
+					
+					console.dir(grid);
+					
+					Ext.Ajax.request({
+						url: grid.delete_url,
+						params: {
+							rows: Ext.encode(rows)
+						},
+						callback: function(response) {
+							grid.getStore().reload();
+						}
+					
+					
+					});
+
+					
+					
+					//var Store = Ext.StoreMgr.get(storeId);
+					//var store = grid.getStore();
+					//store.remove(Records);
+					//store.save();
+					//console.dir(Records);
+				}
 			
+			});
+			this.bbar.items = [
+				'Selection:',
+				deleteBtn,
+				'-'
+			];
 		}
 		
 		//console.dir(this.store);
