@@ -147,6 +147,17 @@ sub BUILD {
 	
 	$addColRecurse->($self->ResultSource);
 	
+	
+	if($self->can('delete_rows')) {
+	
+		$self->destroy_records_coderef(sub {
+			use Data::Dumper;
+			print STDERR RED . BOLD . "\n\n ---> delete_records_coderef \n\n" . CLEAR;
+		});
+	
+	}
+	
+	
 }
 
 

@@ -92,8 +92,6 @@ Ext.ux.RapidApp.AppTab.gridrow_nav = function(grid,index,e) {
 
 Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 
-	baseLoadContentCnf: {},
-
 	initComponent: function() {
 	
 		if(this.pageSize) {
@@ -133,7 +131,35 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 		// ---------------------------- //
 		
 		
+		// ---- Delete support:
+		if (this.store.api.destroy) {
+			this.sm = new Ext.grid.CheckboxSelectionModel();
+			this.columns.unshift(this.sm);
+			var storeId = this.store.storeId;
+			var deleteBtn = new Ext.Button({
+				text: 'delete',
+				iconCls: 'icon-bullet_delete',
+				handler: function(btn) {
+					var grid = btn.ownerCt.ownerCt;
+					var Records = grid.getSelectionModel().getSelections();
+					//var Store = Ext.StoreMgr.get(storeId);
+					var store = grid.getStore();
+					store.remove(Records);
+					store.save();
+					//console.dir(Records);
+				}
+			
+			});
+			this.bbar.items = [
+				'Selection:',
+				deleteBtn,
+				'-'
+			];
+			
+		}
 		
+		//console.dir(this.store);
+
 		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.initComponent.call(this);
 	},
 	

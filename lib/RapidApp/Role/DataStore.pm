@@ -52,10 +52,10 @@ sub add_store_configIf {
 
 
 ## Coderefs ##
-has 'read_records_coderef' 	=> ( is => 'ro', default => undef );
-has 'update_records_coderef'	=> ( is => 'ro', default => undef );
-has 'create_records_coderef'	=> ( is => 'ro', default => undef );
-has 'delete_records_coderef'	=> ( is => 'ro', default => undef );
+has 'read_records_coderef' 	=> ( is => 'rw', default => undef );
+has 'update_records_coderef'	=> ( is => 'rw', default => undef );
+has 'create_records_coderef'	=> ( is => 'rw', default => undef );
+has 'destroy_records_coderef'	=> ( is => 'rw', default => undef );
 
 has 'actions' => ( is => 'ro', lazy => 1, default => sub {{}} ); # Dummy placeholder
 around 'actions' => sub {
@@ -64,10 +64,11 @@ around 'actions' => sub {
 	
 	my $actions = $self->$orig(@_);
 	
-	$actions->{read}		= sub { $self->store_read };
+	#$actions->{read}		= sub { $self->store_read };
+	$actions->{read}		= 'store_read';
 	$actions->{update}	= sub { $self->store_update } if (defined $self->update_records_coderef);
 	$actions->{create}	= sub { $self->store_create } if (defined $self->create_records_coderef);
-	$actions->{delete}	= sub { $self->store_delete } if (defined $self->delete_records_coderef);
+	$actions->{destroy}	= sub { $self->store_destroy } if (defined $self->destroy_records_coderef);
 	
 	return $actions;
 };
@@ -112,8 +113,7 @@ sub store_read_raw {
 
 sub store_meta_json_packet {
 	my $self = shift;
-	my %opt = @_;
-	%opt = %{ $_[0] } if (ref($_[0]) eq 'HASH');
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	# this "metaData" packet allows the store to be "reconfigured" on
 	# any request. Uuseful for things such as changing the fields, which
@@ -190,9 +190,9 @@ sub store_create {}
 
 
 
-sub store_delete {
+sub store_destroy {
 	my $self = shift;
-	return undef unless ($self->can('delete_records'));
+	#return undef unless ($self->can('delete_records'));
 	
 	my $params = $self->c->req->params;
 	
@@ -234,10 +234,10 @@ has 'store_api' => ( is => 'ro', lazy => 1, default => sub {
 	
 	my $api = {};
 	
-	$api->{read}	= $self->suburl('/read')		if (defined $self->actions->{read});
-	$api->{update}	= $self->suburl('/update')		if (defined $self->actions->{update});
-	$api->{create}	= $self->suburl('/create')		if (defined $self->actions->{create});
-	$api->{delete}	= $self->suburl('/delete')		if (defined $self->actions->{delete});
+	$api->{read}		= $self->suburl('/read')		if (defined $self->actions->{read});
+	$api->{update}		= $self->suburl('/update')		if (defined $self->actions->{update});
+	$api->{create}		= $self->suburl('/create')		if (defined $self->actions->{create});
+	$api->{destroy}	= $self->suburl('/destroy')	if (defined $self->actions->{destroy});
 	
 	return $api;
 });
@@ -285,7 +285,7 @@ has 'store_writer' => ( is => 'ro', lazy => 1, default => sub {
 	return undef unless (
 		defined $self->actions->{update} or 
 		defined $self->actions->{create} or
-		defined $self->actions->{delete}
+		defined $self->actions->{destroy}
 	);
 	
 	my $writer = RapidApp::JSONFunc->new( 

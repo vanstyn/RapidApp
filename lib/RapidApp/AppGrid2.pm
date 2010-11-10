@@ -43,6 +43,19 @@ has 'exclude_columns' => ( is => 'ro', default => sub {[]} );
 # data set
 has 'store_autoLoad' => ( is => 'ro', default => sub {\0} );
 
+
+# get_record_loadContentCnf is used on a per-row basis to set the 
+# options used to load the row in a tab when double-clicked
+# This should be overridden in the subclass:
+sub get_record_loadContentCnf {
+	my ($self, $record) = @_;
+	
+	return {
+		title	=> $self->record_pk . ': ' . $record->{$self->record_pk}
+	};
+}
+
+
 before 'content' => sub {
 	my $self = shift;
 	
@@ -72,7 +85,6 @@ sub BUILD {
 		);
 	
 	}
-	
 	
 	$self->apply_modules( add 	=> $self->add_record_class	) if (defined $self->add_record_class);
 }
@@ -111,16 +123,6 @@ around 'store_read_raw' => sub {
 	return $result;
 };
 
-# This should be overridden in subclasses:
-sub get_record_loadContentCnf {
-	my $self = shift;
-	my $record = shift;
-	
-	return {
-		title	=> $self->record_pk . ': ' . $record->{$self->record_pk}
-	
-	};
-}
 
 
 

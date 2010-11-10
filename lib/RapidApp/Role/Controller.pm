@@ -192,7 +192,16 @@ sub process_action {
 		$coderef = $self->actions->{$opt};
 		$coderef = $self->extra_actions->{$opt} unless (defined $coderef);
 	}
-	$data = $coderef->() if (defined $coderef and ref($coderef) eq 'CODE');
+	if (defined $coderef) {
+		if(ref($coderef) eq 'CODE') {
+			$data = $coderef->();
+		}
+		else {
+			# New: if $coderef is not actually a coderef, we assume its a string representing an 
+			# object method and we call it directly:
+			$data = $self->$coderef;
+		}
+	}
 	
 	return $self->render_data($data);
 }
