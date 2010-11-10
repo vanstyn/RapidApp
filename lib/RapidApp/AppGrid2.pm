@@ -15,10 +15,10 @@ use RapidApp::JSONFunc;
 use Term::ANSIColor qw(:constants);
 
 use RapidApp::MooseX::ClassAttrSugar;
-setup_add_methods_for('config');
-setup_add_methods_for('listeners');
+setup_apply_methods_for('config');
+setup_apply_methods_for('listeners');
 
-add_default_config(
+apply_default_config(
 	xtype						=> 'appgrid2',
 	pageSize					=> 25,
 	stripeRows				=> \1,
@@ -46,9 +46,9 @@ has 'store_autoLoad' => ( is => 'ro', default => sub {\0} );
 before 'content' => sub {
 	my $self = shift;
 	
-	$self->add_config(store => $self->JsonStore);
-	$self->add_config(columns => $self->column_list);
-	$self->add_config(tbar => $self->tbar_items) if (defined $self->tbar_items);
+	$self->apply_config(store => $self->JsonStore);
+	$self->apply_config(columns => $self->column_list);
+	$self->apply_config(tbar => $self->tbar_items) if (defined $self->tbar_items);
 
 };
 
@@ -58,15 +58,15 @@ sub BUILD {
 	
 	# The record_pk is forced to be added/included as a column:
 	if (defined $self->record_pk) {
-		$self->add_column( $self->record_pk => {} );
+		$self->apply_columns( $self->record_pk => {} );
 		push @{ $self->include_columns }, $self->record_pk if (scalar @{ $self->include_columns } > 0);
 		$self->meta->find_attribute_by_name('include_columns_hash')->clear_value($self);
 	}
 	
 	if (defined $self->open_record_class) {
-		$self->add_modules( item => $self->open_record_class	);
+		$self->apply_modules( item => $self->open_record_class	);
 		
-		$self->add_listeners(
+		$self->apply_listeners(
 			beforerender => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' ),
 			rowdblclick => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.gridrow_nav' )
 		);
@@ -74,7 +74,7 @@ sub BUILD {
 	}
 	
 	
-	$self->add_modules( add 	=> $self->add_record_class	) if (defined $self->add_record_class);
+	$self->apply_modules( add 	=> $self->add_record_class	) if (defined $self->add_record_class);
 }
 
 
@@ -121,7 +121,7 @@ sub tbar_items {
 
 
 
-sub add_column {
+sub apply_columns {
 	my $self = shift;
 	my %column = @_;
 	%column = %{$_[0]} if (ref($_[0]) eq 'HASH');

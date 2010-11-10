@@ -127,7 +127,7 @@ sub clear_per_request_vars {
 }
 
 # add or replace modules (i.e. as passed to the modules param of the constructor):
-sub add_modules {
+sub apply_modules {
 	my $self = shift;
 	my %new = @_;
 	%new = %{ $_[0] } if (ref($_[0]) eq 'HASH');

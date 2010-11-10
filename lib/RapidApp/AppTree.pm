@@ -7,11 +7,11 @@ use Moose;
 extends 'RapidApp::AppCnt';
 
 use RapidApp::MooseX::ClassAttrSugar;
-setup_add_methods_for('config');
-setup_add_methods_for('listeners');
+setup_apply_methods_for('config');
+setup_apply_methods_for('listeners');
 
 
-add_default_config(
+apply_default_config(
 		xtype					=> 'treepanel',
 		border				=> \0,
 		layout				=> 'fit',
@@ -116,7 +116,7 @@ before 'content' => sub {
 	
 	$self->set_afterrender;
 	
-	$self->add_config(
+	$self->apply_config(
 		id						=> $self->instance_id,
 		dataUrl				=> $self->suburl('/nodes'),
 		rootVisible			=> $self->show_root_node ? \1 : \0,
@@ -136,7 +136,7 @@ sub set_afterrender {
 	
 	return unless($node);
 
-	$self->add_listeners( 
+	$self->apply_listeners( 
 		afterrender => RapidApp::JSONFunc->new( raw => 1, func => 
 			'function(tree) {' .
 				'Ext.ux.RapidApp.AppTree.jump_to_node_id(tree,"' . $node . '");' .

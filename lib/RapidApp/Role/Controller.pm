@@ -232,7 +232,7 @@ sub render_data {
 
 
 # add or replace actions (i.e. as passed to the action param of the constructor):
-sub add_actions {
+sub apply_actions {
 	my $self = shift;
 	my %new = @_;
 	%new = %{ $_[0] } if (ref($_[0]) eq 'HASH');

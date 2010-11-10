@@ -20,8 +20,8 @@ MooseX::ClassAttrSugar - Create add methods for merging defaults of HashRef attr
   extends 'MyApp::Parent';
   
   use MooseX::ClassAttrSugar;
-  setup_add_methods_for('foo_configs');
-  add_default_foo_configs(
+  setup_apply_methods_for('foo_configs');
+  apply_default_foo_configs(
     setting2  => 'Some other data',
     setting3  => 'Some more data'
   );
@@ -38,7 +38,7 @@ MooseX::ClassAttrSugar - Create add methods for merging defaults of HashRef attr
   #   setting3       => 'Some more data'
   # }
   
-  $obj->add_foo_configs(
+  $obj->apply_foo_configs(
     setting4         => 'blah',
     setting5         => 'baz'
   );
@@ -70,15 +70,15 @@ use Moose;
 use Moose::Exporter;
 
 Moose::Exporter->setup_import_methods(
-	with_meta => [ 'setup_add_methods_for' ]
+	with_meta => [ 'setup_apply_methods_for' ]
 );
 
 
-# Create a 'add_default_$attr_name' method to be called in class (not object) context
+# Create a 'apply_default_$attr_name' method to be called in class (not object) context
 # that will allow merging in hash data into the attribute's already existing 
-# default value (as set by a builder method, not 'default'). Also create add_$attr_name
+# default value (as set by a builder method, not 'default'). Also create apply_$attr_name
 # which can be called in object context
-sub setup_add_methods_for {
+sub setup_apply_methods_for {
 	my $meta = shift;
 	my $attr_name = shift;
 	
@@ -89,11 +89,11 @@ sub setup_add_methods_for {
 	my $builder = $attr->builder;
 	#$class->can($builder) or die $builder . ' builder method does not exist';
 	
-	my $add_default_method = 'add_default_' . $attr_name;
-	my $add_method = 'add_' . $attr_name;
+	my $apply_default_method = 'apply_default_' . $attr_name;
+	my $apply_method = 'apply_' . $attr_name;
 	
 	# Class context:
-	$meta->add_method($add_default_method => sub { 
+	$meta->add_method($apply_default_method => sub { 
 		my @to_add = @_;
 		@to_add = %{$to_add[0]} if (ref($to_add[0]) eq 'HASH');
 		$meta->add_around_method_modifier(
@@ -109,7 +109,7 @@ sub setup_add_methods_for {
 	});
 		
 	# Object context:
-	$meta->add_method($add_method => sub { 
+	$meta->add_method($apply_method => sub { 
 		
 		if(ref($_[0]) && $_[0]->can($attr_name)) {
 			my $obj = shift;

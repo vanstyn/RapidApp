@@ -14,11 +14,11 @@ use RapidApp::JSONFunc;
 use Term::ANSIColor qw(:constants);
 
 use RapidApp::MooseX::ClassAttrSugar;
-setup_add_methods_for('config');
-setup_add_methods_for('listeners');
+setup_apply_methods_for('config');
+setup_apply_methods_for('listeners');
 
 
-add_default_config(
+apply_default_config(
 	remote_columns		=> \1,
 	loadMask				=> \1
 
@@ -126,7 +126,7 @@ sub BUILD {
 			
 			my $field = $fieldSub->($Source,$column,$colname);
 			
-			$self->add_column(
+			$self->apply_columns(
 				$colname => $field
 			);
 		}

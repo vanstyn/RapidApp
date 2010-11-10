@@ -21,14 +21,14 @@ sub _build_config { return {} }
 
 
 use RapidApp::MooseX::ClassAttrSugar;
-setup_add_methods_for('config');
+setup_apply_methods_for('config');
 
 
 
 sub content {
 	my $self = shift;
 	
-	$self->add_config(listeners => $self->listeners) if (keys %{$self->listeners});
+	$self->apply_config(listeners => $self->listeners) if (keys %{$self->listeners});
 	
 	return $self->config;
 }
