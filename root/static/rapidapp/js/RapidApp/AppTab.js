@@ -26,8 +26,13 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		
 		Ext.applyIf(cnf.autoLoad, {
 			text: 'Loading...',
-			nocache: true
+			nocache: true,
+			params: {}
 		});
+		
+		if (cnf.params) {
+			Ext.apply(cnf.autoLoad.params,cnf.params);
+		}
 		
 		// Check if this Tab is already loaded, and set active and return if it is:
 		var existTab = this.getComponent(cnf.itemId);
@@ -38,9 +43,6 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		// --- Backwards compat with AppTreeExplorer/AppGrid:
 		if (!cnf.autoLoad.url) {
 			if (cnf.url) { cnf.autoLoad.url = cnf.url; }
-		}
-		if (!cnf.autoLoad.params) {
-			if (cnf.params) { cnf.autoLoad.params = cnf.params; }
 		}
 		// ---
 		
@@ -75,12 +77,22 @@ Ext.ux.RapidApp.AppTab.cnt_init_loadTarget = function(cnt) {
 
 
 Ext.ux.RapidApp.AppTab.gridrow_nav = function(grid,index,e) {
+	var loadTarget = grid.loadTargetObj;
 	var Record = grid.getStore().getAt(index);
-	console.dir(Record.data);
+	
+	var loadCfg = Ext.decode(Record.data.loadContentCnf);
+	delete Record.data.loadContentCnf;
+	
+	if (!loadCfg.params) { loadCfg.params = {}; }
+	Ext.apply(loadCfg.params,{ orig_params: Ext.encode(Record.data) });
+	
+	return loadTarget.loadContent(loadCfg);
 }
 
 
 Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
+
+	baseLoadContentCnf: {},
 
 	initComponent: function() {
 	

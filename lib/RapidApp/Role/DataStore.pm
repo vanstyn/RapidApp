@@ -79,7 +79,6 @@ sub store_read {
 	return $self->store_meta_json_packet($data);
 }
 
-
 sub store_read_raw {
 	my $self = shift;
 	
@@ -116,6 +115,10 @@ sub store_meta_json_packet {
 	my %opt = @_;
 	%opt = %{ $_[0] } if (ref($_[0]) eq 'HASH');
 	
+	# this "metaData" packet allows the store to be "reconfigured" on
+	# any request. Uuseful for things such as changing the fields, which
+	# we compute dynamically here from the first row of the data that was
+	# returned (see store_fields_from_rows)
 	return {
 		metaData	=> {
 			root => 'rows',
@@ -131,9 +134,6 @@ sub store_meta_json_packet {
 }
 
 
-
-
-
 sub store_fields_from_rows {
 	my $self = shift;
 	my $rows = shift;
@@ -147,7 +147,6 @@ sub store_fields_from_rows {
 	}
 	return $fields;
 }
-
 
 
 sub store_update {

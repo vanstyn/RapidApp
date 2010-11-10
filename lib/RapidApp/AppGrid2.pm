@@ -84,20 +84,43 @@ around 'store_read_raw' => sub {
 	my $self = shift;
 	
 	my $result = $self->$orig(@_);
-
+	
+	# Add a 'loadContentCnf' field to store if open_record_class is defined.
+	# This data is used when a row is double clicked on to open the open_record_class
+	# module in the loadContent handler (JS side object). This is currently AppTab
+	# but could be other JS classes that support the same API
 	if (defined $self->open_record_class) {
 		foreach my $record (@{$result->{rows}}) {
-			$record->{BLAH} = 'fooooooo';
-		
+			my $loadCfg = {};
+			# support merging from existing loadContentCnf already contained in the record data:
+			$loadCfg = $self->json->decode($record->{loadContentCnf}) if (defined $record->{loadContentCnf});
+			
+			%{ $loadCfg } = (
+				%{ $self->get_record_loadContentCnf($record) },
+				%{ $loadCfg }
+			);
+			
+			$loadCfg->{autoLoad} = {} unless (defined $loadCfg->{autoLoad});
+			$loadCfg->{autoLoad}->{url} = $self->Module('item')->base_url unless (defined $loadCfg->{autoLoad}->{url});
+			
+			
+			$record->{loadContentCnf} = $self->json->encode($loadCfg);
 		}
 	}
-	
-	use Data::Dumper;
-	print STDERR YELLOW . Dumper($result) . CLEAR;
 
 	return $result;
 };
 
+# This should be overridden in subclasses:
+sub get_record_loadContentCnf {
+	my $self = shift;
+	my $record = shift;
+	
+	return {
+		title	=> $self->record_pk . ': ' . $record->{$self->record_pk}
+	
+	};
+}
 
 
 
