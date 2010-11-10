@@ -33,6 +33,12 @@ has 'column_order' => ( is => 'rw', default => sub {[]} );
 has 'title' => ( is => 'ro', default => undef );
 has 'title_icon_href' => ( is => 'ro', default => undef );
 
+has 'open_record_class' => ( is => 'ro', default => undef );
+has 'add_record_class' => ( is => 'ro', default => undef );
+
+has 'include_columns' => ( is => 'ro', default => sub {[]} );
+has 'exclude_columns' => ( is => 'ro', default => sub {[]} );
+
 # autoLoad needs to be false for the paging toolbar to not load the whole
 # data set
 has 'store_autoLoad' => ( is => 'ro', default => sub {\0} );
@@ -45,6 +51,55 @@ before 'content' => sub {
 	$self->add_config(tbar => $self->tbar_items) if (defined $self->tbar_items);
 
 };
+
+
+sub BUILD {
+	my $self = shift;
+	
+	# The record_pk is forced to be added/included as a column:
+	if (defined $self->record_pk) {
+		$self->add_column( $self->record_pk => {} );
+		push @{ $self->include_columns }, $self->record_pk if (scalar @{ $self->include_columns } > 0);
+		$self->meta->find_attribute_by_name('include_columns_hash')->clear_value($self);
+	}
+	
+	if (defined $self->open_record_class) {
+		$self->add_modules( item => $self->open_record_class	);
+		
+		$self->add_listeners(
+			beforerender => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' ),
+			rowdblclick => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.gridrow_nav' )
+		);
+	
+	}
+	
+	
+	$self->add_modules( add 	=> $self->add_record_class	) if (defined $self->add_record_class);
+}
+
+
+
+
+
+has 'include_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	my $hash = {};
+	foreach my $col (@{$self->include_columns}) {
+		$hash->{$col} = 1;
+	}
+	return $hash;
+});
+
+has 'exclude_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	my $hash = {};
+	foreach my $col (@{$self->exclude_columns}) {
+		$hash->{$col} = 1;
+	}
+	return $hash;
+});
+
+
 
 
 
@@ -72,6 +127,9 @@ sub add_column {
 	%column = %{$_[0]} if (ref($_[0]) eq 'HASH');
 	
 	foreach my $name (keys %column) {
+	
+		next unless ($self->valid_colname($name));
+	
 		unless (defined $self->columns->{$name}) {
 			$self->columns->{$name} = RapidApp::Column->new( name => $name );
 			push @{ $self->column_order }, $name;
@@ -125,7 +183,7 @@ sub set_columns_visible {
 	my $self = shift;
 	my @cols = @_;
 	@cols = @{ $_[0] } if (ref($_[0]) eq 'ARRAY');
-	return $self->apply_columns(\@cols,{
+	return $self->apply_columns_list(\@cols,{
 		hidden => \0
 	});
 }
@@ -141,7 +199,7 @@ sub apply_to_all_columns {
 	}
 }
 
-sub apply_columns {
+sub apply_columns_list {
 	my $self = shift;
 	my $cols = shift;
 	my %opt = @_;
@@ -152,6 +210,25 @@ sub apply_columns {
 	foreach my $column (@$cols) {
 		$self->columns->{$column}->apply_attributes(%opt);
 	}
+}
+
+
+
+
+
+sub valid_colname {
+	my $self = shift;
+	my $name = shift;
+	
+	if (scalar @{$self->exclude_columns} > 0) {
+		return 0 if (defined $self->exclude_columns_hash->{$name});
+	}
+	
+	if (scalar @{$self->include_columns} > 0) {
+		return 0 unless (defined $self->include_columns_hash->{$name});
+	}
+	
+	return 1;
 }
 
 

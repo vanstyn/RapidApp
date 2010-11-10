@@ -167,7 +167,21 @@ sub store_update {
 
 # not implemented yet:
 sub store_create {}
-sub store_delete {}
+
+
+
+
+sub store_delete {
+	my $self = shift;
+	return undef unless ($self->can('delete_records'));
+	
+	my $params = $self->c->req->params;
+	
+	use Data::Dumper;
+	print STDERR CYAN . BOLD . Dumper($params) . CLEAR;
+
+
+}
 
 
 

@@ -26,30 +26,8 @@ add_default_config(
 
 
 has 'base_search_set' => ( is => 'ro',	default => undef );
-
-has 'include_columns' => ( is => 'ro', default => sub {[]} );
-has 'exclude_columns' => ( is => 'ro', default => sub {[]} );
-
 has 'fieldname_transforms' => ( is => 'ro', default => sub {{}});
 
-
-has 'include_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
-	my $self = shift;
-	my $hash = {};
-	foreach my $col (@{$self->include_columns}) {
-		$hash->{$col} = 1;
-	}
-	return $hash;
-});
-
-has 'exclude_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
-	my $self = shift;
-	my $hash = {};
-	foreach my $col (@{$self->exclude_columns}) {
-		$hash->{$col} = 1;
-	}
-	return $hash;
-});
 
 
 
@@ -172,21 +150,6 @@ sub BUILD {
 }
 
 
-sub valid_colname {
-	my $self = shift;
-	my $name = shift;
-	
-	if (scalar @{$self->exclude_columns} > 0) {
-		return 0 if (defined $self->exclude_columns_hash->{$name});
-	}
-	
-	if (scalar @{$self->include_columns} > 0) {
-		return 0 unless (defined $self->include_columns_hash->{$name});
-	}
-	
-	return 1;
-}
-
 
 
 
@@ -257,11 +220,11 @@ sub read_records {
 		my $decoded = $self->json->decode($params->{columns});
 		$params->{columns} = $decoded;
 		
-		# If custom columns have been provided, we have to make sure that "id" is among them.
+		# If custom columns have been provided, we have to make sure that the record_pk is among them.
 		# This is required to properly support the "Project" page which is opened by double-clicking
 		# a grid row. The id field must be loaded in the Ext Record because this is used by the
 		# Project page to query the database for the given project:
-		#push @{$params->{columns}}, 'id';
+		push @{$params->{columns}}, $self->record_pk if (defined $self->record_pk);
 		
 		# We can't limit the fields if there is a query (because it needs to be able to search 
 		# in all fields and all relationships:

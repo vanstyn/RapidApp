@@ -62,17 +62,22 @@ Ext.ux.RapidApp.AppTab.treenav_click = function(node,event) {
 	return loadTarget.loadContent(node.attributes.loadContentCnf);
 }
 
-Ext.ux.RapidApp.AppTab.treenav_beforerender = function(tree) {
+Ext.ux.RapidApp.AppTab.cnt_init_loadTarget = function(cnt) {
 	var loadTarget;
-	var parent = tree.findParentBy(function(cmp) {
+	var parent = cnt.findParentBy(function(cmp) {
 		loadTarget = cmp.getComponent('load-target');
 		if(loadTarget) { return true; }
 		return false;
 	});
-	tree.loadTargetObj = loadTarget;
+	cnt.loadTargetObj = loadTarget;
 	//tree.loadTargetObj = tree.ownerCt.ownerCt.getComponent('load-target');
 }
 
+
+Ext.ux.RapidApp.AppTab.gridrow_nav = function(grid,index,e) {
+	var Record = grid.getStore().getAt(index);
+	console.dir(Record.data);
+}
 
 
 Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{

@@ -126,4 +126,19 @@ sub clear_per_request_vars {
 	#defined $listmsg and $self->c->log->debug($listmsg);
 }
 
+# add or replace modules (i.e. as passed to the modules param of the constructor):
+sub add_modules {
+	my $self = shift;
+	my %new = @_;
+	%new = %{ $_[0] } if (ref($_[0]) eq 'HASH');
+	
+	%{ $self->modules } = (
+		%{ $self->modules },
+		%new
+	);
+}
+
+
+
+
 1;
