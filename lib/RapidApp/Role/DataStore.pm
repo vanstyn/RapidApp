@@ -304,7 +304,7 @@ has 'store_writer' => ( is => 'ro', lazy => 1, default => sub {
 has 'JsonStore' => ( is => 'ro', lazy => 1, predicate => 'has_JsonStore', default => sub {
 	my $self = shift;
 	
-	$self->add_store_configIf(
+	$self->add_store_config(
 		storeId 					=> $self->storeId,
 		api 						=> $self->store_api,
 		baseParams 				=> $self->base_params,
