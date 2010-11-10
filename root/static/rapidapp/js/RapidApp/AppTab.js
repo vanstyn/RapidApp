@@ -173,7 +173,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 						rows.push(item.data);
 					});
 					
-					console.dir(grid);
+					//console.dir(grid);
 					
 					Ext.Ajax.request({
 						url: grid.delete_url,

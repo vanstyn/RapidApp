@@ -117,6 +117,7 @@ sub Controller {
 sub clear_attributes {
 	my $self = shift;
 	for my $attr ($self->meta->get_all_attributes) {
+		next if ($attr->name eq 'actions');
 		$attr->clear_value($self) if ($attr->is_lazy or $attr->has_clearer);
 	}
 }
@@ -257,17 +258,18 @@ sub apply_actions {
 	my $self = shift;
 	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 
-	my $new_actions = {
+	#my $new_actions = {
+	#	%{ $self->actions },
+	#	%new
+	#};
+
+	#my $attr = $self->meta->find_attribute_by_name('actions');
+	#$attr->set_value($self,$new_actions);
+	
+	%{ $self->actions } = (
 		%{ $self->actions },
 		%new
-	};
-
-	my $attr = $self->meta->find_attribute_by_name('actions');
-	$attr->set_value($self,$new_actions);
-	
-	#%{ $self->actions } = (
-		
-	#);
+	);
 }
 
 

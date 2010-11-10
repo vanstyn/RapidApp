@@ -57,6 +57,20 @@ has 'update_records_coderef'	=> ( is => 'rw', default => undef );
 has 'create_records_coderef'	=> ( is => 'rw', default => undef );
 has 'destroy_records_coderef'	=> ( is => 'rw', default => undef );
 
+
+sub BUILD {}
+after 'BUILD' => sub {
+	my $self = shift;
+	
+	$self->apply_actions( read		=> 'store_read' );
+	$self->apply_actions( update	=> 'store_update' ) if (defined $self->update_records_coderef);
+	$self->apply_actions( create	=> 'store_create' ) if (defined $self->create_records_coderef);
+	$self->apply_actions( destroy	=> 'store_destroy' ) if (defined $self->destroy_records_coderef);
+};
+
+
+
+=pod
 has 'actions' => ( is => 'ro', lazy => 1, default => sub {{}} ); # Dummy placeholder
 around 'actions' => sub {
 	my $orig = shift;
@@ -72,6 +86,8 @@ around 'actions' => sub {
 	
 	return $actions;
 };
+=cut
+
 #############
 
 sub store_read {

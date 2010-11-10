@@ -169,8 +169,7 @@ sub tbar_items {
 
 sub apply_columns {
 	my $self = shift;
-	my %column = @_;
-	%column = %{$_[0]} if (ref($_[0]) eq 'HASH');
+	my %column = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	foreach my $name (keys %column) {
 	

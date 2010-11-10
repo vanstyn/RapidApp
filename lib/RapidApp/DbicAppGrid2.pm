@@ -27,7 +27,38 @@ apply_default_config(
 
 has 'base_search_set' => ( is => 'ro',	default => undef );
 has 'fieldname_transforms' => ( is => 'ro', default => sub {{}});
+has 'primary_columns' => ( is => 'rw', default => sub {[]}, isa => 'ArrayRef');
 
+sub apply_primary_columns {
+	my $self = shift;
+	my @cols = (ref($_[0]) eq 'ARRAY') ? @{ $_[0] } : @_; # <-- arg as array or arrayref
+	
+	my %cur = ();
+	foreach my $col (@{$self->primary_columns},@cols) {
+		$cur{$col}++;
+	}
+	
+	return $self->primary_columns([ keys %cur ]);
+}
+
+
+sub remove_primary_columns {
+	my $self = shift;
+	my @cols = (ref($_[0]) eq 'ARRAY') ? @{ $_[0] } : @_; # <-- arg as array or arrayref
+	
+	my %remove = ();
+	foreach my $rem (@cols) {
+		$remove{$rem}++;
+	}
+	
+	my %cur = ();
+	foreach my $col (@{$self->primary_columns}) {
+		next if ($remove{$col});
+		$cur{$col}++;
+	}
+	
+	return $self->primary_columns([ keys %cur ]);
+}
 
 
 
@@ -74,6 +105,9 @@ sub _build_join_map {
 
 sub BUILD {
 	my $self = shift;
+	
+	$self->apply_primary_columns($self->record_pk); # <-- should be redundant
+	$self->apply_primary_columns($self->ResultSource->primary_columns);
 	
 	$self->add_store_config(
 		remoteSort => \1
@@ -148,32 +182,38 @@ sub BUILD {
 	$addColRecurse->($self->ResultSource);
 	
 	if($self->can('delete_rows')) {
-	
 		my $act_name = 'delete_rows';
-		$self->apply_actions($act_name => 'action_delete_rows');
+		$self->apply_actions($act_name => 'action_delete_rows' );
 		$self->apply_config(delete_url => $self->suburl($act_name));
-	
-
 	}
 
-	
-	
 }
 
-before 'content' => sub {
 
-
-
-
-};
 
 
 sub action_delete_rows {
 	my $self = shift;
 	
-	use Data::Dumper;
-	print STDERR RED . BOLD . Dumper($self->c->req->params) . CLEAR;
-	 
+	die "delete_rows method does not exist" unless ($self->can('delete_rows'));
+	
+	my $recs = $self->json->decode($self->c->req->params->{rows});
+	
+	my @Rows = ();
+	foreach my $rec (@$recs) {
+		my $search = {};
+		foreach my $col (@{$self->primary_columns}) {
+			$search->{$col} = $rec->{$col} if (defined $rec->{$col});
+		}
+		push @Rows, $self->ResultSource->resultset->single($search);
+	}
+	
+	my $result = $self->delete_rows(@Rows);
+	
+	return {
+		success => \1,
+		msg => 'success'
+	};
 }
 
 
