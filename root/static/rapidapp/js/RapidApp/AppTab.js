@@ -83,14 +83,23 @@ Ext.ux.RapidApp.AppTab.gridrow_nav = function(grid,index,e) {
 	var loadCfg = Ext.decode(Record.data.loadContentCnf);
 	delete Record.data.loadContentCnf;
 	
+	var orig_params = grid.filteredRecordData(Record.data);
+	
 	if (!loadCfg.params) { loadCfg.params = {}; }
-	Ext.apply(loadCfg.params,{ orig_params: Ext.encode(Record.data) });
+	Ext.apply(loadCfg.params,{ orig_params: Ext.encode(orig_params) });
 	
 	return loadTarget.loadContent(loadCfg);
 }
 
 
 Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
+
+	filteredRecordData: function(data) {
+		// Return data as-is if primary_columns is not set:
+		if(! Ext.isArray(this.primary_columns) ) { return data; }
+		// Return a new object filtered to keys of primary_columns
+		return Ext.copyTo({},data,this.primary_columns);
+	},
 
 	initComponent: function() {
 	
@@ -170,32 +179,27 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 					var Records = grid.getSelectionModel().getSelections();
 					var rows = [];
 					Ext.each(Records,function(item) {
-						rows.push(item.data);
+						rows.push(grid.filteredRecordData(item.data));
 					});
 					
-					//console.dir(grid);
-					
-					Ext.Ajax.request({
-						url: grid.delete_url,
-						params: {
-							rows: Ext.encode(rows)
-						},
-						callback: function(response) {
-							grid.getStore().reload();
-						}
-					
-					
-					});
+					// Don't do anything if no records are selected:
+					if(rows.length == 0) { return; }
 
-					
-					
-					//var Store = Ext.StoreMgr.get(storeId);
-					//var store = grid.getStore();
-					//store.remove(Records);
-					//store.save();
-					//console.dir(Records);
+					Ext.ux.RapidApp.confirmDialogCall(
+						'Confirm delete', 'Really delete ' + rows.length + ' selected records?',
+						function() {
+							Ext.Ajax.request({
+								url: grid.delete_url,
+								params: {
+									rows: Ext.encode(rows)
+								},
+								success: function(response) {
+									grid.getStore().reload();
+								}
+							});
+						}
+					);
 				}
-			
 			});
 			this.bbar.items = [
 				'Selection:',
@@ -203,8 +207,6 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 				'-'
 			];
 		}
-		
-		//console.dir(this.store);
 
 		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.initComponent.call(this);
 	},
@@ -260,3 +262,17 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 Ext.reg('appgrid2', Ext.ux.RapidApp.AppTab.AppGrid2);
 
 
+Ext.ns('Ext.ux.RapidApp');
+Ext.ux.RapidApp.confirmDialogCall = function(title,msg,fn) {
+	Ext.Msg.show({
+			title: title,
+			msg: msg,
+			buttons: Ext.Msg.YESNO,
+			icon: Ext.MessageBox.QUESTION,
+			fn: function(buttonId) { 
+				if (buttonId=="yes") {
+					return fn();
+				}
+			}
+	});
+}

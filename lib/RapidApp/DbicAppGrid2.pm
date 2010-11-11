@@ -109,6 +109,8 @@ sub BUILD {
 	$self->apply_primary_columns($self->record_pk); # <-- should be redundant
 	$self->apply_primary_columns($self->ResultSource->primary_columns);
 	
+	$self->apply_config(primary_columns => $self->primary_columns);
+	
 	$self->add_store_config(
 		remoteSort => \1
 	);
