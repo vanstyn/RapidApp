@@ -94,15 +94,18 @@ Ext.override(Ext.TabPanel, {
 		
 		this.on('beforetabchange', function(tabPanel, newTab, currentTab) {
 			if (newTab && currentTab && !this.internalTabChange) {
-				Ext.ux.RapidApp.AutoHistory.recordHistEvent(tabPanel.id, currentTab? currentTab.id : "", newTab.id);
+				Ext.ux.RapidApp.AutoHistory.recordHistEvent(tabPanel.id, currentTab.id, newTab.id);
 			}
 			this.internalTabChange= 0;
 			return true;
 		});
 	},
 	setNavState: function(navVal) {
-		this.internalTabChange= 1;
-		this.setActiveTab(Ext.getCmp(navVal));
+		var newTab= Ext.getCmp(navVal);
+		if (newTab) {
+			this.internalTabChange= 1;
+			this.setActiveTab(newTab);
+		}
 	},
 	getNavState: function() { return this.getActiveTab()? this.getActiveTab().id : ""; }
 });
