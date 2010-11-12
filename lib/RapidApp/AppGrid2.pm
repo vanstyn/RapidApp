@@ -28,6 +28,9 @@ apply_default_config(
 	gridsearch_remote		=> \1
 );
 
+
+
+
 has 'columns' => ( is => 'rw', default => sub {{}} );
 has 'column_order' => ( is => 'rw', default => sub {[]} );
 has 'title' => ( is => 'ro', default => undef );
@@ -56,18 +59,25 @@ sub get_record_loadContentCnf {
 }
 
 
-before 'content' => sub {
+after 'ONREQUEST' => sub {
 	my $self = shift;
 	
 	$self->apply_config(store => $self->JsonStore);
 	$self->apply_config(columns => $self->column_list);
 	$self->apply_config(tbar => $self->tbar_items) if (defined $self->tbar_items);
-
+	
+	if($self->can('action_delete_records') and $self->get_module_option('delete_records')) {
+		my $act_name = 'delete_rows';
+		$self->apply_actions($act_name => 'action_delete_records' );
+		$self->apply_config(delete_url => $self->suburl($act_name));
+	}
 };
 
 
 sub BUILD {
 	my $self = shift;
+	
+	print STDERR YELLOW . "AppGrid2 BUILD\n" . CLEAR;
 	
 	# The record_pk is forced to be added/included as a column:
 	if (defined $self->record_pk) {
@@ -226,8 +236,7 @@ sub set_all_columns_hidden {
 
 sub set_columns_visible {
 	my $self = shift;
-	my @cols = @_;
-	@cols = @{ $_[0] } if (ref($_[0]) eq 'ARRAY');
+	my @cols = (ref($_[0]) eq 'ARRAY') ? @{ $_[0] } : @_; # <-- arg as array or arrayref
 	return $self->apply_columns_list(\@cols,{
 		hidden => \0
 	});
@@ -236,8 +245,7 @@ sub set_columns_visible {
 
 sub apply_to_all_columns {
 	my $self = shift;
-	my %opt = @_;
-	%opt = %{$_[0]} if (ref($_[0]) eq 'HASH');
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	foreach my $column (keys %{ $self->columns } ) {
 		$self->columns->{$column}->apply_attributes(%opt);
@@ -247,8 +255,7 @@ sub apply_to_all_columns {
 sub apply_columns_list {
 	my $self = shift;
 	my $cols = shift;
-	my %opt = @_;
-	%opt = %{$_[0]} if (ref($_[0]) eq 'HASH');
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	die "type of arg 1 must be ArrayRef" unless (ref($cols) eq 'ARRAY');
 	

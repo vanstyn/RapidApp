@@ -2,7 +2,7 @@ package RapidApp::Role::Module;
 #
 # -------------------------------------------------------------- #
 #
-
+use Term::ANSIColor qw(:constants);
 
 use strict;
 use Moose::Role;
@@ -18,6 +18,9 @@ has 'default_module'					=> ( is => 'ro',	default => 'default_module' );
 has 'create_module_params'			=> ( is => 'ro',	default => sub { {} } );
 has 'content'							=> ( is => 'ro',	default => sub { {} } );
 has 'modules_params'					=> ( is => 'ro',	default => sub { {} } );
+
+# All purpose options:
+has 'module_options' => ( is => 'ro', lazy => 1, default => sub {{}}, traits => [ 'RapidApp::Role::PerRequestVar' ] );
 
 sub BUILD {}
 before 'BUILD' => sub {
@@ -154,13 +157,43 @@ sub clear_per_request_vars {
 # add or replace modules (i.e. as passed to the modules param of the constructor):
 sub apply_modules {
 	my $self = shift;
-	my %new = @_;
-	%new = %{ $_[0] } if (ref($_[0]) eq 'HASH');
+	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	%{ $self->modules } = (
 		%{ $self->modules },
 		%new
 	);
+}
+
+
+sub applyIf_module_options {
+	my $self = shift;
+	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	my %unset = ();
+	foreach my $opt (keys %new) {
+		next if (defined $self->module_options->{$opt});
+		$unset{$opt} = $new{$opt};
+	}
+	
+	return $self->apply_module_options(%unset);
+}
+
+
+sub apply_module_options {
+	my $self = shift;
+	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+		
+	%{ $self->module_options } = (
+		%{ $self->module_options },
+		%new
+	);
+}
+
+sub get_module_option {
+	my $self = shift;
+	my $opt = shift;
+	return $self->module_options->{$opt};
 }
 
 

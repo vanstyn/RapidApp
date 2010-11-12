@@ -183,18 +183,16 @@ sub BUILD {
 	
 	$addColRecurse->($self->ResultSource);
 	
-	if($self->can('delete_rows')) {
-		my $act_name = 'delete_rows';
-		$self->apply_actions($act_name => 'action_delete_rows' );
-		$self->apply_config(delete_url => $self->suburl($act_name));
-	}
-
+	
 }
 
 
+before 'ONREQUEST' => sub {
+	my $self = shift;
+	$self->applyIf_module_options( delete_records => 1 ) if($self->can('delete_rows'));
+};
 
-
-sub action_delete_rows {
+sub action_delete_records {
 	my $self = shift;
 	
 	die "delete_rows method does not exist" unless ($self->can('delete_rows'));
