@@ -23,13 +23,12 @@ has 'reload_on_save' 		=> ( is => 'ro', default => 1 );
 #	return $self->parent_module->base_params;
 #});
 
-has 'store_config' => ( is => 'ro', default => sub {{}}, isa => 'HashRef' );
+has 'store_config' => ( is => 'ro', default => sub {{}}, isa => 'HashRef', traits => ['RapidApp::Role::PerRequestBuildDefReset'] );
 
 # Merge/overwrite store_config hash
-sub add_store_config {
+sub apply_store_config {
 	my $self = shift;
-	my %new = @_;
-	%new = %{ $_[0] } if (ref($_[0]) eq 'HASH');
+	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	%{ $self->store_config } = (
 		%{ $self->store_config },
@@ -39,10 +38,9 @@ sub add_store_config {
 
 
 # Merge in only hash keys that do not already exist:
-sub add_store_configIf {
+sub applyIf_store_config {
 	my $self = shift;
-	my %new = @_;
-	%new = %{ $_[0] } if (ref($_[0]) eq 'HASH');
+	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	foreach my $opt (keys %new) {
 		next if (defined $self->store_config->{$opt});
@@ -320,7 +318,7 @@ has 'store_writer' => ( is => 'ro', lazy => 1, default => sub {
 has 'JsonStore' => ( is => 'ro', lazy => 1, predicate => 'has_JsonStore', default => sub {
 	my $self = shift;
 	
-	$self->add_store_config(
+	$self->apply_store_config(
 		storeId 					=> $self->storeId,
 		api 						=> $self->store_api,
 		baseParams 				=> $self->base_params,

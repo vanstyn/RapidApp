@@ -111,7 +111,7 @@ sub BUILD {
 	
 	$self->apply_config(primary_columns => $self->primary_columns);
 	
-	$self->add_store_config(
+	$self->apply_store_config(
 		remoteSort => \1
 	);
 	
