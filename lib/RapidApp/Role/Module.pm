@@ -7,6 +7,8 @@ use Term::ANSIColor qw(:constants);
 use strict;
 use Moose::Role;
 
+use Clone qw(clone);
+
 our $VERSION = '0.1';
 
 
@@ -22,6 +24,9 @@ has 'modules_params'					=> ( is => 'ro',	default => sub { {} } );
 # All purpose options:
 has 'module_options' => ( is => 'ro', lazy => 1, default => sub {{}}, traits => [ 'RapidApp::Role::PerRequestVar' ] );
 
+
+has 'per_request_attr_build_defaults' => ( is => 'ro', default => sub {{}}, isa => 'HashRef' );
+
 sub BUILD {}
 before 'BUILD' => sub {
 	my $self = shift;
@@ -35,6 +40,24 @@ before 'BUILD' => sub {
 has 'ONREQUEST_called' => ( is => 'rw', lazy => 1, default => 0, traits => [ 'RapidApp::Role::PerRequestVar' ] );
 sub ONREQUEST {
 	my $self = shift;
+	
+	foreach my $attr ($self->meta->get_all_attributes) {
+		if ($attr->does('RapidApp::Role::PerRequestBuildDefReset')) {
+			# Reset to default:
+			if(defined $self->per_request_attr_build_defaults->{$attr->name}) {
+				my $val = $self->per_request_attr_build_defaults->{$attr->name};
+				$val = clone($val) if (ref($val));
+				$attr->set_value($self,$val);
+			}
+			# Initialize default:
+			else {
+				my $val = $attr->get_value($self);
+				$val = clone($val) if (ref($val));
+				$self->per_request_attr_build_defaults->{$attr->name} = $val;
+			}
+		}
+	}
+	
 	$self->ONREQUEST_called(1);
 	return $self;
 }
