@@ -86,6 +86,9 @@ after 'ONREQUEST' => sub {
 		$self->apply_actions($act_name => 'action_delete_records' );
 		$self->apply_config(delete_url => $self->suburl($act_name));
 	}
+	
+	
+	$self->load_saved_search if ($self->can('load_saved_search'));
 };
 
 
@@ -310,6 +313,20 @@ sub set_sort {
 }
 
 
+sub batch_apply_opts {
+	my $self = shift;
+	my %opts = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	foreach my $opt (keys %opts) {
+		if ($opt eq 'columns') {				$self->apply_columns($opts{$opt});				}
+		elsif ($opt eq 'column_order') {		$self->set_columns_order(0,$opts{$opt});		}
+		elsif ($opt eq 'sort') {				$self->set_sort($opts{$opt});						}
+		else { die "invalid option '$opt' passed to batch_apply_opts";							}
+	}
+}
+
+
+
 
 
 sub valid_colname {
@@ -332,7 +349,7 @@ sub valid_colname {
 sub set_columns_order {
 	my $self = shift;
 	my $offset = shift;
-	my @cols = @_;
+	my @cols = (ref($_[0]) eq 'ARRAY' and not defined $_[1]) ? @{ $_[0] } : @_; # <-- arg as list or arrayref
 	
 	my %cols_hash = ();
 	foreach my $col (@cols) {

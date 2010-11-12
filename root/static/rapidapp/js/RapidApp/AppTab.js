@@ -206,6 +206,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 				if(sort) { view_config.sort = sort; }
 				
 				console.dir(view_config);
+				console.log(Ext.encode(view_config));
 				//console.dir(grid.getState());
 			}
 		});
