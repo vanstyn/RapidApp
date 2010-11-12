@@ -2704,19 +2704,19 @@ Ext.override(Ext.ux.ComponentDataView, {
 Ext.ns('Ext.ux.RapidApp.History');
 Ext.ux.RapidApp.History.recordHistEvent=
 	function(id, oldval, newval) {
-		var nextIdx= Ext.History.eventIdx < 9? Ext.History.eventIdx+1 : 0;
+		var nextIdx= Ext.ux.RapidApp.History.eventIdx < 9? Ext.ux.RapidApp.History.eventIdx+1 : 0;
 		var eventText= ''+nextIdx+':'+id+':'+oldval+':'+newval;
-		if (oldval && eventText != Ext.History.ignoreEvent) {
-			//console.log('recordHistEvent '+eventText);
-			Ext.History.newestEvent= eventText;
-			Ext.History.eventIdx= nextIdx;
+		if (oldval && eventText != Ext.ux.RapidApp.History.ignoreEvent) {
+			console.log('recordHistEvent '+eventText);
+			Ext.ux.RapidApp.History.newestEvent= eventText;
+			Ext.ux.RapidApp.History.eventIdx= nextIdx;
 			Ext.History.add(eventText);
 		}
 		else {
-			//console.log('recordHistEvent '+eventText+' (ignored)');
-			if (!Ext.History.newestEvent) {
-				Ext.History.newestEvent= ''+Ext.History.eventIdx+':::';
-				Ext.History.add(Ext.History.newestEvent);
+			console.log('recordHistEvent '+eventText+' (ignored)');
+			if (!Ext.ux.RapidApp.History.newestEvent) {
+				Ext.ux.RapidApp.History.newestEvent= ''+Ext.ux.RapidApp.History.eventIdx+':::';
+				Ext.History.add(Ext.ux.RapidApp.History.newestEvent);
 			}
 		}
 	};
@@ -2725,21 +2725,21 @@ Ext.ux.RapidApp.History.eventIdx= 0;
 Ext.ux.RapidApp.History.ignoreEvent= '';
 Ext.ux.RapidApp.History.handleHistChange=
 	function(token) {
-		Ext.History.ignoreEvent= '';
-		//console.log('onChange: '+Ext.History.newestEvent+' => '+token);
-		if (Ext.History.newestEvent != token) {
+		Ext.ux.RapidApp.History.ignoreEvent= '';
+		console.log('onChange: '+Ext.ux.RapidApp.History.newestEvent+' => '+token);
+		if (Ext.ux.RapidApp.History.newestEvent != token) {
 			var parts= token? token.split(':') : [ ];
-			var newIdx= token? parseInt(parts[0]) : Ext.History.eventIdx;
+			var newIdx= token? parseInt(parts[0]) : Ext.ux.RapidApp.History.eventIdx;
 			var nextIdx= newIdx < 9? newIdx+1 : 0;
-			var diff= token? newIdx - Ext.History.eventIdx : -1;
-			var prevEvent= Ext.History.newestEvent;
-			Ext.History.newestEvent= token;
-			Ext.History.eventIdx= newIdx;
+			var diff= token? newIdx - Ext.ux.RapidApp.History.eventIdx : -1;
+			var prevEvent= Ext.ux.RapidApp.History.newestEvent;
+			Ext.ux.RapidApp.History.newestEvent= token;
+			Ext.ux.RapidApp.History.eventIdx= newIdx;
 			
 			if (diff <= -5 || (diff > 0 && diff < 5)) { // navigating forward
 				if (parts[1] && parts[2] && parts[3]) {
 					var tabPanel= Ext.getCmp(parts[1]);
-					Ext.History.ignoreEvent= ''+nextIdx+':'+parts[1]+':'+parts[2]+':'+parts[3];
+					Ext.ux.RapidApp.History.ignoreEvent= ''+nextIdx+':'+parts[1]+':'+parts[2]+':'+parts[3];
 					tabPanel.setActiveTab(parts[3]);
 				}
 			}
@@ -2747,16 +2747,16 @@ Ext.ux.RapidApp.History.handleHistChange=
 				parts= prevEvent.split(':');
 				if (parts[1] && parts[2] && parts[3]) {
 					var tabPanel= Ext.getCmp(parts[1]);
-					Ext.History.ignoreEvent= ''+nextIdx+':'+parts[1]+':'+parts[3]+':'+parts[2];
+					Ext.ux.RapidApp.History.ignoreEvent= ''+nextIdx+':'+parts[1]+':'+parts[3]+':'+parts[2];
 					tabPanel.setActiveTab(parts[2]);
 				}
 			}
 		}
 		if (!token) {
-			Ext.History.newestEvent= ''+Ext.History.eventIdx+':::';
-			Ext.History.add(Ext.History.newestEvent);
+			Ext.ux.RapidApp.History.newestEvent= ''+Ext.ux.RapidApp.History.eventIdx+':::';
+			Ext.History.add(Ext.ux.RapidApp.History.newestEvent);
 		}
-		//console.log('  newest='+Ext.History.newestEvent+' ign='+Ext.History.ignoreEvent+' idx='+Ext.History.eventIdx);
+		console.log('  newest='+Ext.ux.RapidApp.History.newestEvent+' ign='+Ext.ux.RapidApp.History.ignoreEvent+' idx='+Ext.ux.RapidApp.History.eventIdx);
 	};
 
 Ext.onReady(function() {

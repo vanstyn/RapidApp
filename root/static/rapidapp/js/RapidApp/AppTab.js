@@ -213,6 +213,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 	
 	onRender: function() {
 		
+		//console.dir(this);
+		
 		var thisGrid = this;
 		this.store.on('beforeload',function(Store,opts) {
 			
