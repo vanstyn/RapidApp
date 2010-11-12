@@ -32,8 +32,8 @@ apply_default_config(
 
 
 
-has 'columns' => ( is => 'rw', default => sub {{}} );
-has 'column_order' => ( is => 'rw', default => sub {[]} );
+has 'columns' => ( is => 'rw', default => sub {{}}, isa => 'HashRef', traits => ['RapidApp::Role::PerRequestBuildDefReset'] );
+has 'column_order' => ( is => 'rw', default => sub {[]}, isa => 'ArrayRef', traits => ['RapidApp::Role::PerRequestBuildDefReset'] );
 has 'title' => ( is => 'ro', default => undef );
 has 'title_icon_href' => ( is => 'ro', default => undef );
 
@@ -77,8 +77,11 @@ sub get_record_loadContentCnf {
 after 'ONREQUEST' => sub {
 	my $self = shift;
 	
+	$self->load_saved_search if ($self->can('load_saved_search'));
+	
+	
+	
 	$self->apply_config(store => $self->JsonStore);
-	$self->apply_config(columns => $self->column_list);
 	$self->apply_config(tbar => $self->tbar_items) if (defined $self->tbar_items);
 	
 	if($self->can('action_delete_records') and $self->get_module_option('delete_records')) {
@@ -87,8 +90,6 @@ after 'ONREQUEST' => sub {
 		$self->apply_config(delete_url => $self->suburl($act_name));
 	}
 	
-	
-	$self->load_saved_search if ($self->can('load_saved_search'));
 };
 
 
@@ -233,6 +234,8 @@ sub apply_columns {
 		
 		$self->columns->{$name}->apply_attributes(%{$column{$name}});
 	}
+	
+	return $self->apply_config(columns => $self->column_list);
 }
 
 
@@ -291,6 +294,8 @@ sub apply_to_all_columns {
 	foreach my $column (keys %{ $self->columns } ) {
 		$self->columns->{$column}->apply_attributes(%opt);
 	}
+	
+	return $self->apply_config(columns => $self->column_list);
 }
 
 sub apply_columns_list {
@@ -303,6 +308,8 @@ sub apply_columns_list {
 	foreach my $column (@$cols) {
 		$self->columns->{$column}->apply_attributes(%opt);
 	}
+	
+	return $self->apply_config(columns => $self->column_list);
 }
 
 
@@ -375,7 +382,7 @@ sub set_columns_order {
 	
 	@{ $self->column_order } = @pruned;
 	
-	return 1;
+	return $self->apply_config(columns => $self->column_list);
 }
 
 
