@@ -3,6 +3,7 @@ package RapidApp::Column;
 # -------------------------------------------------------------- #
 #
 
+use Term::ANSIColor qw(:constants);
 
 use strict;
 use warnings;
@@ -89,8 +90,7 @@ sub _set_render_fn {
 
 sub apply_attributes {
 	my $self = shift;
-	my %new = @_;
-	%new = %{ $_[0] } if (ref($_[0]) eq 'HASH');
+	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	foreach my $attr ($self->meta->get_all_attributes) {
 		next unless (defined $new{$attr->name});

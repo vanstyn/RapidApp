@@ -46,6 +46,20 @@ has 'exclude_columns' => ( is => 'ro', default => sub {[]} );
 # data set
 has 'store_autoLoad' => ( is => 'ro', default => sub {\0} );
 
+has 'add_loadContentCnf' => ( is => 'ro', default => sub {
+	{
+		title		=> 'Add',
+		iconCls	=> 'icon-add'
+	}
+});
+
+has 'add_button_cnf' => ( is => 'ro', default => sub {
+	{
+		text		=> 'Add',
+		iconCls	=> 'icon-add'
+	}
+});
+
 
 # get_record_loadContentCnf is used on a per-row basis to set the 
 # options used to load the row in a tab when double-clicked
@@ -84,14 +98,22 @@ sub BUILD {
 		$self->meta->find_attribute_by_name('include_columns_hash')->clear_value($self);
 	}
 	
+	if (defined $self->open_record_class or defined $self->add_record_class) {
+		$self->apply_listeners(
+			beforerender => RapidApp::JSONFunc->new( raw => 1, func => 
+				'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' 
+			)
+		);
+	}
+	
 	if (defined $self->open_record_class) {
-		$self->apply_modules( item => $self->open_record_class	);
+		$self->apply_modules( item => $self->open_record_class );
 		
 		$self->apply_listeners(
-			beforerender => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' ),
-			rowdblclick => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.gridrow_nav' )
+			rowdblclick => RapidApp::JSONFunc->new( raw => 1, func => 
+				'Ext.ux.RapidApp.AppTab.gridrow_nav' 
+			)
 		);
-	
 	}
 	
 	$self->apply_modules( add 	=> $self->add_record_class	) if (defined $self->add_record_class);
@@ -165,14 +187,30 @@ sub tbar_items {
 	push @{$arrayref}, '<img src="' . $self->title_icon_href . '" />' 		if (defined $self->title_icon_href);
 	push @{$arrayref}, '<b>' . $self->title . '</b>'								if (defined $self->title);
 
-	return undef unless (scalar @{$arrayref} > 0);
-
 	push @{$arrayref}, '->';
+	
+	push @{$arrayref}, $self->add_button if (defined $self->add_record_class);
 
-	return $arrayref;
+	return (scalar @{$arrayref} > 1) ? $arrayref : undef;
 }
 
-
+sub add_button {
+	my $self = shift;
+	
+	my $loadCfg = {
+		url => $self->suburl('add'),
+		%{ $self->add_loadContentCnf }
+	};
+	
+	my $handler = RapidApp::JSONFunc->new( raw => 1, func =>
+		'function(btn) { btn.ownerCt.ownerCt.loadTargetObj.loadContent(' . $self->json->encode($loadCfg) . '); }'
+	);
+	
+	return RapidApp::JSONFunc->new( func => 'new Ext.Button', parm => {
+		handler => $handler,
+		%{ $self->add_button_cnf }
+	});
+}
 
 
 sub apply_columns {

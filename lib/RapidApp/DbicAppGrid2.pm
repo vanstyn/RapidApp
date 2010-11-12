@@ -136,10 +136,10 @@ sub BUILD {
 		}
 		elsif ($type eq 'enum') {
 			$field->{data_type} = 'list';
-			$field->{filter} = { 
-				type		=> 'list', 
-				options	=> $col_info->{extra}->{list}
-			};
+			#$field->{filter} = { 
+			#	type		=> 'list', 
+			#	options	=> $col_info->{extra}->{list}
+			#};
 		}
 		
 		return $field;
