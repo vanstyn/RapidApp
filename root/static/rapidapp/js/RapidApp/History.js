@@ -82,6 +82,7 @@ Ext.ux.RapidApp.AutoHistory= {
 Ext.onReady(function() {
 	Ext.History.init();
 	Ext.History.on('change', function(token) { Ext.ux.RapidApp.AutoHistory.handleHistChange(token); });
+	Ext.ux.RapidApp.AutoHistory.installSafeguard();
 });
 
 Ext.override(Ext.TabPanel, {
@@ -92,7 +93,7 @@ Ext.override(Ext.TabPanel, {
 		this.internalTabChange= 0;
 		
 		this.on('beforetabchange', function(tabPanel, newTab, currentTab) {
-			if (newTab && !this.internalTabChange) {
+			if (newTab && currentTab && !this.internalTabChange) {
 				Ext.ux.RapidApp.AutoHistory.recordHistEvent(tabPanel.id, currentTab? currentTab.id : "", newTab.id);
 			}
 			this.internalTabChange= 0;
