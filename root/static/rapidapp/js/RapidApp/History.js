@@ -36,7 +36,7 @@ Ext.ux.RapidApp.AutoHistory= {
 		
 		this.navIdx= this.wrapIdx(this.navIdx+1);
 		this.currentNav= ''+this.navIdx+':'+id+':'+oldval+':'+newval;
-		console.log('recordHistEvent '+this.currentNav);
+		//console.log('recordHistEvent '+this.currentNav);
 		
 		Ext.History.add(this.currentNav);
 	},
@@ -46,7 +46,7 @@ Ext.ux.RapidApp.AutoHistory= {
 		if (!newVal) return;
 		var target= Ext.getCmp(id);
 		if (!target) return;
-		console.log('AutoHistory.performNav: '+id+'->setNav '+newVal);
+		//console.log('AutoHistory.performNav: '+id+'->setNav '+newVal);
 		target.setNavState(newVal);
 	},
 	
@@ -63,7 +63,7 @@ Ext.ux.RapidApp.AutoHistory= {
 		
 		// ignore events caused by recordHistEvent
 		if (navTarget != this.currentNav) {
-			console.log('AutoHistory.handleHistChange: '+this.currentNav+' => '+navTarget);
+			//console.log('AutoHistory.handleHistChange: '+this.currentNav+' => '+navTarget);
 			var parts= navTarget.split(':');
 			var navTargetIdx= parseInt(parts[0]);
 			if (this.isForwardNav(this.navIdx, navTargetIdx)) {
