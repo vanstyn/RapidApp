@@ -77,8 +77,6 @@ after 'ONREQUEST' => sub {
 sub BUILD {
 	my $self = shift;
 	
-	print STDERR YELLOW . "AppGrid2 BUILD\n" . CLEAR;
-	
 	# The record_pk is forced to be added/included as a column:
 	if (defined $self->record_pk) {
 		$self->apply_columns( $self->record_pk => {} );
@@ -282,6 +280,42 @@ sub valid_colname {
 	
 	return 1;
 }
+
+
+
+sub set_columns_order {
+	my $self = shift;
+	my $offset = shift;
+	my @cols = @_;
+	
+	my %cols_hash = ();
+	foreach my $col (@cols) {
+		die $col . " specified more than once" if ($cols_hash{$col}++);
+	}
+	
+	my @pruned = ();
+	foreach my $col (@{ $self->column_order }) {
+		if ($cols_hash{$col}) {
+			delete $cols_hash{$col};
+		}
+		else {
+			push @pruned, $col;
+		}
+	}
+	
+	my @remaining = keys %cols_hash;
+	if(@remaining > 0) {
+		die "can't set the order of columns that do not already exist (" . join(',',@remaining) . ')';
+	}
+	
+	splice(@pruned,$offset,0,@cols);
+	
+	@{ $self->column_order } = @pruned;
+	
+	return 1;
+}
+
+
 
 
 
