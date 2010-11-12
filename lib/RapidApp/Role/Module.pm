@@ -11,7 +11,7 @@ our $VERSION = '0.1';
 
 
 has 'module_name'						=> ( is => 'ro',	default => undef );
-has 'parent_module'					=> ( is => 'ro',	default => undef );
+has 'parent_module_ref'					=> ( is => 'ro',	default => undef );
 has 'modules'							=> ( is => 'ro', 	default => sub {{}} );
 has 'modules_obj'						=> ( is => 'ro', 	default => sub {{}} );
 has 'default_module'					=> ( is => 'ro',	default => 'default_module' );
@@ -36,6 +36,12 @@ sub ONREQUEST {
 	return $self;
 }
 
+sub THIS_MODULE {
+	my $self = shift;
+	return $self->ONREQUEST unless ($self->ONREQUEST_called);
+	return $self;
+}
+
 
 sub Module {
 	my $self = shift;
@@ -43,10 +49,7 @@ sub Module {
 	
 	$self->_load_module($name) or die "Failed to load Module '$name'";
 	
-	my $Module = $self->modules_obj->{$name};
-	
-	return $Module->ONREQUEST unless ($Module->ONREQUEST_called);
-	return $Module;
+	return $self->modules_obj->{$name}->THIS_MODULE;
 }
 
 
@@ -79,13 +82,19 @@ sub create_module {
 	}
 	
 	$params->{module_name} = $name;
-	$params->{parent_module} = $self;
+	$params->{parent_module_ref} = $self;
 	
 	my $Object = $class_name->new($params) or die "Failed to create module instance ($class_name)";
 	die "$class_name is not a valid RapidApp Module" unless ($Object->does('RapidApp::Role::Module'));
 	
 	return $Object;
 }
+
+sub parent_module {
+	my $self = shift;
+	return $self->parent_module_ref ? $self->parent_module_ref->THIS_MODULE : undef;
+}
+
 
 sub topmost_module {
 	my $self = shift;
