@@ -19,12 +19,21 @@ has 'create_module_params'			=> ( is => 'ro',	default => sub { {} } );
 has 'content'							=> ( is => 'ro',	default => sub { {} } );
 has 'modules_params'					=> ( is => 'ro',	default => sub { {} } );
 
-
-sub BUILD {
+sub BUILD {}
+before 'BUILD' => sub {
 	my $self = shift;
 	foreach my $class (values %{$self->modules}) {
 		eval "use $class";
 	};
+};
+
+# 'ONREQUEST' is called once per web request. Add before modifiers to any classes that
+# need to run code at this time
+has 'ONREQUEST_called' => ( is => 'rw', lazy => 1, default => 0, traits => [ 'RapidApp::Role::PerRequestVar' ] );
+sub ONREQUEST {
+	my $self = shift;
+	$self->ONREQUEST_called(1);
+	return $self;
 }
 
 
@@ -33,7 +42,11 @@ sub Module {
 	my $name = shift;
 	
 	$self->_load_module($name) or die "Failed to load Module '$name'";
-	return $self->modules_obj->{$name};
+	
+	my $Module = $self->modules_obj->{$name};
+	
+	return $Module->ONREQUEST unless ($Module->ONREQUEST_called);
+	return $Module;
 }
 
 
@@ -68,7 +81,10 @@ sub create_module {
 	$params->{module_name} = $name;
 	$params->{parent_module} = $self;
 	
-	return $class_name->new($params);
+	my $Object = $class_name->new($params) or die "Failed to create module instance ($class_name)";
+	die "$class_name is not a valid RapidApp Module" unless ($Object->does('RapidApp::Role::Module'));
+	
+	return $Object;
 }
 
 sub topmost_module {
