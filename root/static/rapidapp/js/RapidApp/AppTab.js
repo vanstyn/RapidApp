@@ -109,7 +109,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 				store: this.store,
 				pageSize: this.pageSize,
 				displayInfo : true,
-				prependButtons: true
+				prependButtons: true,
+				items: []
 			};
 		}
 		
@@ -139,33 +140,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 		}
 		// ---------------------------- //
 		
-		/*
-		// ---- Delete support:
-		if (this.store.api.destroy) {
-			this.sm = new Ext.grid.CheckboxSelectionModel();
-			this.columns.unshift(this.sm);
-			var storeId = this.store.storeId;
-			var deleteBtn = new Ext.Button({
-				text: 'delete',
-				iconCls: 'icon-bullet_delete',
-				handler: function(btn) {
-					var grid = btn.ownerCt.ownerCt;
-					var Records = grid.getSelectionModel().getSelections();
-					//var Store = Ext.StoreMgr.get(storeId);
-					var store = grid.getStore();
-					store.remove(Records);
-					store.save();
-					//console.dir(Records);
-				}
-			
-			});
-			this.bbar.items = [
-				'Selection:',
-				deleteBtn,
-				'-'
-			];
-		}
-		*/
+
 		// ---- Delete support:
 		if (this.delete_url) {
 			this.sm = new Ext.grid.CheckboxSelectionModel();
@@ -201,12 +176,41 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 					);
 				}
 			});
-			this.bbar.items = [
+			this.bbar.items.push(
 				'Selection:',
 				deleteBtn,
 				'-'
-			];
+			);
 		}
+		
+		var testBtn = new Ext.Button({
+			text: 'testBtn',
+			handler: function(btn) {
+				var grid = btn.ownerCt.ownerCt;
+				var colModel = grid.getColumnModel();
+								
+				var columns = {};
+				var column_order = [];
+				Ext.each(colModel.config,function(item) {
+					if (item.name) {
+						columns[item.name] = Ext.copyTo({},item,grid.column_allow_save_properties);
+						column_order.push(item.name);
+					}
+				});
+				
+				var view_config = {
+					columns: columns,
+					column_order: column_order
+				};
+				var sort = grid.getState().sort;
+				if(sort) { view_config.sort = sort; }
+				
+				console.dir(view_config);
+				//console.dir(grid.getState());
+			}
+		});
+		
+		this.bbar.items.push(testBtn);
 
 		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.initComponent.call(this);
 	},
@@ -244,18 +248,23 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 		});
 		
 		
-		var load_parms = {};
-		if (this.pageSize) {
-			load_parms = {
-				params: {
-					start: 0,
-					limit: parseFloat(this.pageSize)
-				}
-			};
-			this.store.load(load_parms);
+		var store_load_parms = {};
+		
+		if (this.sort) {
+			Ext.apply(store_load_parms,{
+				sort: this.sort
+			});
+			this.applyState({ sort: this.sort });
 		}
 		
+		if (this.pageSize) {
+			Ext.apply(store_load_parms,{
+				start: 0,
+				limit: parseFloat(this.pageSize)
+			});
+		}
 		
+		this.store.load({ params: store_load_parms });
 		
 		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.onRender.apply(this, arguments);
 	}

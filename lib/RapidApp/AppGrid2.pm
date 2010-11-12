@@ -25,7 +25,8 @@ apply_default_config(
 	columnLines				=> \1,
 	use_multifilters		=> \1,
 	gridsearch				=> \1,
-	gridsearch_remote		=> \1
+	gridsearch_remote		=> \1,
+	column_allow_save_properties => [ 'width','hidden' ]
 );
 
 
@@ -117,6 +118,7 @@ sub BUILD {
 	}
 	
 	$self->apply_modules( add 	=> $self->add_record_class	) if (defined $self->add_record_class);
+	
 }
 
 
@@ -300,6 +302,12 @@ sub apply_columns_list {
 	}
 }
 
+
+sub set_sort {
+	my $self = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	return $self->apply_config( sort => { %opt } );
+}
 
 
 
