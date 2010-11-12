@@ -3,6 +3,10 @@ Ext.ns('Ext.ux.RapidApp.AppTab');
 
 Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 
+	//initComponent: function() {
+	//	Ext.ux.RapidApp.AppTab.TabPanel.superclass.call(this);
+	//},
+
 	itemId: 'load-target',
 
 	layoutOnTabChange: true,
@@ -205,8 +209,12 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 				var sort = grid.getState().sort;
 				if(sort) { view_config.sort = sort; }
 				
+				var filterdata = grid.getStore().filterdata;
+				if(filterdata) { view_config.filterdata = filterdata; }
+				
 				console.dir(view_config);
-				console.log(Ext.encode(view_config));
+				//console.log(Ext.encode(view_config));
+				console.dir(grid);
 				//console.dir(grid.getState());
 			}
 		});

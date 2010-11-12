@@ -87,6 +87,7 @@ Ext.onReady(function() {
 Ext.override(Ext.TabPanel, {
 	initComponent_orig: Ext.TabPanel.prototype.initComponent,
 	initComponent: function() {
+		//this.constructor.prototype.initComponent.call(this);
 		this.initComponent_orig.apply(this,arguments);
 		this.internalTabChange= 0;
 		
@@ -100,7 +101,7 @@ Ext.override(Ext.TabPanel, {
 	},
 	setNavState: function(navVal) {
 		this.internalTabChange= 1;
-		this.setActiveTab(navVal);
+		this.setActiveTab(Ext.getCmp(navVal));
 	},
 	getNavState: function() { return this.getActiveTab()? this.getActiveTab().id : ""; }
 });
