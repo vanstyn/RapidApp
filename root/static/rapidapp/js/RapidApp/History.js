@@ -76,7 +76,7 @@ Ext.ux.RapidApp.AutoHistory= {
 			this.currentNav= navTarget;
 			this.navIdx= navTargetIdx;
 		}
-	},
+	}
 };
 
 Ext.onReady(function() {
