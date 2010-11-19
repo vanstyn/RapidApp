@@ -85,6 +85,9 @@ Ext.ux.RapidApp.AppTab.treenav_click = function(node,event) {
 	// an app needs to tell us to reload (such as in the case of saving AppGrid2 searches
 	loadTarget.setNavsource(tree);
 	
+	// Do nothing if the node has no loadContentCnf
+	if (! node.attributes.loadContentCnf) { return; }
+	
 	return loadTarget.loadContent(node.attributes.loadContentCnf);
 }
 
