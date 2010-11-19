@@ -12,6 +12,17 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 	layoutOnTabChange: true,
 	enableTabScroll: true,
 	
+	// "navsource" property is meant to be used to store a reference to the navsource
+	// container (i.e. AppTree) that calls "loadContent". This needs to be set by the
+	// navsource itself
+	navsource: null,
+	setNavsource: function(cmp) {
+		this.navsource = cmp;
+	},
+	getNavsource: function() {
+		return this.navsource;
+	},
+	
 	loadContent: function() {
 		this.loadTab.apply(this,arguments);
 	},
@@ -52,6 +63,11 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		
 		var new_tab = this.add(cnf);
 		return this.activate(new_tab);
+	},
+	
+	closeActive: function() {
+		var activePanel = this.getActiveTab();
+		this.remove(activePanel);
 	}
 	
 });
@@ -64,6 +80,10 @@ Ext.reg('apptabpanel', Ext.ux.RapidApp.AppTab.TabPanel);
 Ext.ux.RapidApp.AppTab.treenav_click = function(node,event) {
 	var tree = node.getOwnerTree();
 	var loadTarget = tree.loadTargetObj;
+	
+	// Update the loadTarget with a refernece back to us. This is needed in case
+	// an app needs to tell us to reload (such as in the case of saving AppGrid2 searches
+	loadTarget.setNavsource(tree);
 	
 	return loadTarget.loadContent(node.attributes.loadContentCnf);
 }
@@ -103,6 +123,33 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 		if(! Ext.isArray(this.primary_columns) ) { return data; }
 		// Return a new object filtered to keys of primary_columns
 		return Ext.copyTo({},data,this.primary_columns);
+	},
+	
+	// Function to get the current grid state needed to save a search
+	getCurSearchData: function () {
+		var grid = this;
+		var colModel = grid.getColumnModel();
+						
+		var columns = {};
+		var column_order = [];
+		Ext.each(colModel.config,function(item) {
+			if (item.name) {
+				columns[item.name] = Ext.copyTo({},item,grid.column_allow_save_properties);
+				column_order.push(item.name);
+			}
+		});
+		
+		var view_config = {
+			columns: columns,
+			column_order: column_order
+		};
+		var sort = grid.getState().sort;
+		if(sort) { view_config.sort = sort; }
+		
+		var filterdata = grid.getStore().filterdata;
+		if(filterdata) { view_config.filterdata = filterdata; }
+		
+		return view_config;
 	},
 
 	initComponent: function() {
