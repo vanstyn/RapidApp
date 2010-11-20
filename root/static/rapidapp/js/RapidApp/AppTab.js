@@ -236,48 +236,12 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 				'-'
 			);
 		}
-		
-		var testBtn = new Ext.Button({
-			text: 'testBtn',
-			handler: function(btn) {
-				var grid = btn.ownerCt.ownerCt;
-				var colModel = grid.getColumnModel();
-								
-				var columns = {};
-				var column_order = [];
-				Ext.each(colModel.config,function(item) {
-					if (item.name) {
-						columns[item.name] = Ext.copyTo({},item,grid.column_allow_save_properties);
-						column_order.push(item.name);
-					}
-				});
-				
-				var view_config = {
-					columns: columns,
-					column_order: column_order
-				};
-				var sort = grid.getState().sort;
-				if(sort) { view_config.sort = sort; }
-				
-				var filterdata = grid.getStore().filterdata;
-				if(filterdata) { view_config.filterdata = filterdata; }
-				
-				console.dir(view_config);
-				//console.log(Ext.encode(view_config));
-				console.dir(grid);
-				//console.dir(grid.getState());
-			}
-		});
-		
-		this.bbar.items.push(testBtn);
 
 		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.initComponent.call(this);
 	},
 	
 	onRender: function() {
-		
-		//console.dir(this);
-		
+
 		var thisGrid = this;
 		this.store.on('beforeload',function(Store,opts) {
 			

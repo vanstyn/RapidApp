@@ -7,6 +7,8 @@ use Moose;
 extends 'RapidApp::AppCnt';
 with 'RapidApp::Role::DataStore';
 
+use Try::Tiny;
+
 use RapidApp::Column;
 
 use RapidApp::JSONFunc;
@@ -74,16 +76,47 @@ sub get_record_loadContentCnf {
 }
 
 
+
+sub run_load_saved_search {
+	my $self = shift;
+	
+	return unless ($self->can('load_saved_search'));
+	
+	#return $self->load_saved_search;
+	
+	
+	try {
+		$self->load_saved_search;
+	}
+	catch {
+		my $err = $_;
+		$self->set_response_warning({
+			title	=> 'Error loading search',
+			msg	=> 'An error occured while trying to load the saved search'
+		});
+		
+		#die $err;
+	
+	};
+	
+	
+}
+
+
+
+
+
+
 after 'ONREQUEST' => sub {
 	my $self = shift;
 	
-	$self->load_saved_search if ($self->can('load_saved_search'));
+	$self->run_load_saved_search;
 	
 	$self->apply_config(store => $self->JsonStore);
 	$self->apply_config(tbar => $self->tbar_items) if (defined $self->tbar_items);
 	
 	# This is set in ONREQUEST instead of BUILD because it can change depending on the
-	# user that is logged in (really need a "NEWSESSION" sub to hook to)
+	# user that is logged in
 	if($self->can('action_delete_records') and $self->get_module_option('delete_records')) {
 		my $act_name = 'delete_rows';
 		$self->apply_actions($act_name => 'action_delete_records' );

@@ -273,5 +273,23 @@ sub apply_actions {
 }
 
 
+sub set_response_warning {
+	my $self = shift;
+	my $warn = shift;
+	
+	$warn = {
+		title	=> 'Warning',
+		msg	=> $warn
+	} unless (ref($warn));
+	
+	die "Invalid argument passed to set_response_warning" unless (ref($warn) eq 'HASH' and defined $warn->{msg});
+	
+	return $self->c->response->header('X-RapidApp-Warning' => $self->json->encode($warn));
+}
+
+
+
+
+
 
 1;
