@@ -82,9 +82,6 @@ sub run_load_saved_search {
 	
 	return unless ($self->can('load_saved_search'));
 	
-	#return $self->load_saved_search;
-	
-	
 	try {
 		$self->load_saved_search;
 	}
@@ -92,14 +89,12 @@ sub run_load_saved_search {
 		my $err = $_;
 		$self->set_response_warning({
 			title	=> 'Error loading search',
-			msg	=> 'An error occured while trying to load the saved search'
+			msg	=> 
+				'An error occured while trying to load the saved search. The default view has been loaded.' . "\n\n" . 
+				'DETAIL:' . "\n\n" .
+				'<pre>' . $err . '</pre>'
 		});
-		
-		#die $err;
-	
 	};
-	
-	
 }
 
 
@@ -388,7 +383,7 @@ sub batch_apply_opts {
 	my %opts = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	foreach my $opt (keys %opts) {
-		if ($opt eq 'columns') {				$self->apply_columns($opts{$opt});				}
+		if ($opt eq 'columns' and ref($opts{$opt}) eq 'HASH') {				$self->apply_columns($opts{$opt});				}
 		elsif ($opt eq 'column_order') {		$self->set_columns_order(0,$opts{$opt});		}
 		elsif ($opt eq 'sort') {				$self->set_sort($opts{$opt});						}
 		elsif ($opt eq 'filterdata') {		$self->apply_store_config($opt => $opts{$opt});		}

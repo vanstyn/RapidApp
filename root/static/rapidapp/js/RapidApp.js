@@ -118,7 +118,7 @@ Ext.override(Ext.ux.form.SuperBoxSelect,{
 
 Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.errMsgHandler = function(title,msg) {
-	Ext.Msg.alert(title,msg);
+	Ext.Msg.alert(title,Ext.util.Format.nl2br(msg));
 }
 
 Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
