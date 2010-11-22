@@ -7,6 +7,8 @@ use Moose;
 extends 'RapidApp::AppCnt';
 with 'RapidApp::Role::DataStore';
 
+use Try::Tiny;
+
 use RapidApp::Column;
 
 use RapidApp::JSONFunc;
@@ -74,16 +76,42 @@ sub get_record_loadContentCnf {
 }
 
 
+
+sub run_load_saved_search {
+	my $self = shift;
+	
+	return unless ($self->can('load_saved_search'));
+	
+	try {
+		$self->load_saved_search;
+	}
+	catch {
+		my $err = $_;
+		$self->set_response_warning({
+			title	=> 'Error loading search',
+			msg	=> 
+				'An error occured while trying to load the saved search. The default view has been loaded.' . "\n\n" . 
+				'DETAIL:' . "\n\n" .
+				'<pre>' . $err . '</pre>'
+		});
+	};
+}
+
+
+
+
+
+
 after 'ONREQUEST' => sub {
 	my $self = shift;
 	
-	$self->load_saved_search if ($self->can('load_saved_search'));
-	
-	
+	$self->run_load_saved_search;
 	
 	$self->apply_config(store => $self->JsonStore);
 	$self->apply_config(tbar => $self->tbar_items) if (defined $self->tbar_items);
 	
+	# This is set in ONREQUEST instead of BUILD because it can change depending on the
+	# user that is logged in
 	if($self->can('action_delete_records') and $self->get_module_option('delete_records')) {
 		my $act_name = 'delete_rows';
 		$self->apply_actions($act_name => 'action_delete_records' );
@@ -122,6 +150,10 @@ sub BUILD {
 	}
 	
 	$self->apply_modules( add 	=> $self->add_record_class	) if (defined $self->add_record_class);
+	
+	
+	$self->apply_actions( save_search => 'save_search' ) if ( $self->can('save_search') );
+	$self->apply_actions( delete_search => 'delete_search' ) if ( $self->can('delete_search') );
 	
 }
 
@@ -184,6 +216,29 @@ has 'exclude_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
 
 
 
+sub options_menu_items {
+	my $self = shift;
+	return undef;
+}
+
+
+sub options_menu {
+	my $self = shift;
+	
+	my $items = $self->options_menu_items or return undef;
+	return undef unless (ref($items) eq 'ARRAY');
+	
+	return {
+		xtype		=> 'button',
+		text		=> 'Options',
+		iconCls	=> 'icon-gears',
+		menu => {
+			items	=> $items
+		}
+	};
+}
+
+
 
 sub tbar_items {
 	my $self = shift;
@@ -193,6 +248,9 @@ sub tbar_items {
 	push @{$arrayref}, '<img src="' . $self->title_icon_href . '" />' 		if (defined $self->title_icon_href);
 	push @{$arrayref}, '<b>' . $self->title . '</b>'								if (defined $self->title);
 
+	my $menu = $self->options_menu;
+	push @{$arrayref}, ' ', '-',$menu if (defined $menu); 
+	
 	push @{$arrayref}, '->';
 	
 	push @{$arrayref}, $self->add_button if (defined $self->add_record_class);
@@ -325,7 +383,7 @@ sub batch_apply_opts {
 	my %opts = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	foreach my $opt (keys %opts) {
-		if ($opt eq 'columns') {				$self->apply_columns($opts{$opt});				}
+		if ($opt eq 'columns' and ref($opts{$opt}) eq 'HASH') {				$self->apply_columns($opts{$opt});				}
 		elsif ($opt eq 'column_order') {		$self->set_columns_order(0,$opts{$opt});		}
 		elsif ($opt eq 'sort') {				$self->set_sort($opts{$opt});						}
 		elsif ($opt eq 'filterdata') {		$self->apply_store_config($opt => $opts{$opt});		}

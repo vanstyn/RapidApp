@@ -346,10 +346,6 @@ has 'JsonStore' => ( is => 'ro', lazy => 1, predicate => 'has_JsonStore', defaul
 		parm => $config
 	);
 	
-	
-	use Data::Dumper;
-	print STDERR BOLD . CYAN . Dumper($JsonStore) . CLEAR;
-	
 	return $JsonStore;
 #}
 });

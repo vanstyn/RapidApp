@@ -48,7 +48,7 @@ sub fetch_nodes {
 			my $autoLoad = {};
 			$autoLoad->{params} = $item->{params} if ($item->{params});
 			
-			my $module = $item->{module};
+			my $module = $item->{module} or next; # <-- Don't build a loadContentCnf if there is no module
 			if ($module) {
 				$module = $self->module_scope->Module($item->{module}) unless(ref($module));
 				$autoLoad->{url} = $module->base_url;

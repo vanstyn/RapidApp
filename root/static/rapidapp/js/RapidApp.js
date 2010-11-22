@@ -117,8 +117,8 @@ Ext.override(Ext.ux.form.SuperBoxSelect,{
 
 
 Ext.ns('Ext.ux.RapidApp');
-Ext.ux.RapidApp.errMsgHandler = function(msg) {
-	Ext.Msg.alert('Error',msg);
+Ext.ux.RapidApp.errMsgHandler = function(title,msg) {
+	Ext.Msg.alert(title,Ext.util.Format.nl2br(msg));
 }
 
 Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
@@ -127,7 +127,18 @@ Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
 		if (exception) {
 			var res = Ext.decode(response.responseText);
 			if (res) {
-				Ext.ux.RapidApp.errMsgHandler(res.msg);
+				var title = res.title || 'Error';
+				var msg = res.msg || 'unknown error - Ext.ux.RapidApp.ajaxCheckException';
+				Ext.ux.RapidApp.errMsgHandler(title,msg);
+			}
+		}
+		else {
+			var warning = response.getResponseHeader('X-RapidApp-Warning');
+			if (warning) {
+				var data = Ext.decode(warning);
+				var title = data.title || 'Warning';
+				var msg = data.msg || 'Unknown (X-RapidApp-Warning)';
+				Ext.ux.RapidApp.errMsgHandler(title,msg);
 			}
 		}
 	}
@@ -681,6 +692,7 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 
 	var success_fn = function(response,options) {
 		Ext.getCmp(winId).close();
+		// Call the success function if it was passed in the cfg:
 		if (cfg.success) { cfg.success.apply(this,arguments); }
 		if (cfg.eval_response && response.responseText) { return eval(response.responseText); }
 	};
