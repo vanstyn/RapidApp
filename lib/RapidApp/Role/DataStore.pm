@@ -208,12 +208,9 @@ sub store_destroy {
 	my $self = shift;
 	#return undef unless ($self->can('delete_records'));
 	
-	my $params = $self->c->req->params;
-	
 	use Data::Dumper;
-	print STDERR CYAN . BOLD . Dumper($params) . CLEAR;
-
-
+	my $params = $self->c->req->params;
+	$self->c->is_debug and $self->c->log->debug(CYAN . BOLD . Dumper($params) . CLEAR);
 }
 
 

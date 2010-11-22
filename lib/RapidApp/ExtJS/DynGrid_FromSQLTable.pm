@@ -67,7 +67,7 @@ sub fields_old_old {
 	my $sql = 'select * from ' . $self->table . ' limit 1';
 	
 	
-	print STDERR  'fields(): ' . YELLOW . BOLD . $sql . CLEAR . "\n";
+	$self->log->debug('fields(): ' . YELLOW . BOLD . $sql . CLEAR);
 	
 	my $a = [];
 	
@@ -155,7 +155,7 @@ sub table_rows {
 	
 	my $sql = 'select * from ' . $self->table . ' limit 200';
 	
-	print STDERR  'table_rows(): ' . YELLOW . BOLD . $sql . CLEAR . "\n";
+	$self->log->debug('table_rows(): ' . YELLOW . BOLD . $sql . CLEAR);
 	
 	my $a = $self->dbh->selectall_arrayref($sql, { Slice => {} }) or return ();
 	
