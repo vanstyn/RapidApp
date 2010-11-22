@@ -49,6 +49,12 @@ sub _build_item_keys {
 		#defined $self->parent_module->item_keys
 		$self->parent_module->can('item_keys')
 	);
+	
+	return $self->parent_module->record_pk if (
+		defined $self->parent_module and
+		#defined $self->parent_module->item_keys
+		$self->parent_module->can('record_pk')
+	);
 }
 
 has 'item_key_val' => ( is => 'ro',	lazy_build => 1	);
