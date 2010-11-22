@@ -17,4 +17,12 @@ use warnings;
 our $CatalystInstance= undef;
 our $Log= undef;
 
+sub catalystInstance {
+	return $CatalystInstance;
+}
+
+sub log {
+	return $Log;
+}
+
 1;
