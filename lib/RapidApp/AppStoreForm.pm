@@ -44,15 +44,16 @@ sub _build_item_key {
 has 'item_keys' => ( is => 'ro',	lazy_build => 1	);
 sub _build_item_keys {
 	my $self = shift;
+	
+	# Compat with AppGrid:
 	return $self->parent_module->item_keys if (
 		defined $self->parent_module and
-		#defined $self->parent_module->item_keys
 		$self->parent_module->can('item_keys')
 	);
 	
+	# Compat with AppGrid2:
 	return $self->parent_module->record_pk if (
 		defined $self->parent_module and
-		#defined $self->parent_module->item_keys
 		$self->parent_module->can('record_pk')
 	);
 }
