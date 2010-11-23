@@ -84,10 +84,15 @@ sub _load_module {
 	my $name = shift or return 0;
 	
 	my $class_name = $self->modules->{$name} or return 0;
+	my $params;
+	if (ref($class_name) eq 'HASH') {
+		$params = $class_name->{params};
+		$class_name = $class_name->{class} or die "Missing required parameter 'class'";
+	}
 
 	return 1 if (defined $self->modules_obj->{$name} and ref($self->modules_obj->{$name}) eq $class_name);
 	
-	my $Object = $self->create_module($name,$class_name) or die "Failed to create new $class_name object";
+	my $Object = $self->create_module($name,$class_name,$params) or die "Failed to create new $class_name object";
 
 	$self->modules_obj->{$name} = $Object;
 
@@ -98,8 +103,9 @@ sub create_module {
 	my $self = shift;
 	my $name = shift;
 	my $class_name = shift;
+	my $params = shift;
 	
-	my $params = $self->create_module_params;
+	$params = $self->create_module_params unless (defined $params);
 	
 	if (defined $self->modules_params->{$name}) {
 		foreach my $k (keys %{$self->modules_params->{$name}}) {
