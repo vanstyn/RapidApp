@@ -108,9 +108,11 @@ Ext.ux.RapidApp.AppTab.gridrow_nav = function(grid,index,e) {
 	var Record = grid.getStore().getAt(index);
 	
 	var loadCfg = Ext.decode(Record.data.loadContentCnf);
-	delete Record.data.loadContentCnf;
+	var rec_data = {};
+	Ext.apply(rec_data,Record.data);
+	delete rec_data.loadContentCnf;
 	
-	var orig_params = grid.filteredRecordData(Record.data);
+	var orig_params = grid.filteredRecordData(rec_data);
 	
 	if (!loadCfg.params) { loadCfg.params = {}; }
 	Ext.apply(loadCfg.params,{ orig_params: Ext.encode(orig_params) });

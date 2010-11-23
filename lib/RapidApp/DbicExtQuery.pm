@@ -116,6 +116,36 @@ sub Attr_spec {
 	push @cols, @{$params->{columns}} if (ref($params->{columns}) eq 'ARRAY');
 	push @cols, @{$self->columns} if (scalar(@{$self->columns}));
 	
+	
+	# -- Extract cols from multifilters:
+	# Most of this logic is duplicated in the Search_spec method. Would be nice to find a 
+	# better way to handle this:
+	if($params->{multifilter}) {
+		my $multifilter = JSON::PP::decode_json($params->{multifilter});
+
+		my $multi_dbfnames;
+		$multi_dbfnames = sub {
+			my $multi = shift;
+			if(ref($multi) eq 'HASH') {
+				return $multi_dbfnames->($multi->{'-and'}) if (defined $multi->{'-and'});
+				return $multi_dbfnames->($multi->{'-or'}) if (defined $multi->{'-or'});
+				
+				foreach my $f (keys %$multi) {
+					push @cols, $f
+				}
+			}
+			elsif(ref($multi) eq 'ARRAY') {
+				foreach my $item (@$multi) {
+					$multi_dbfnames->($item);
+				}
+			}
+		};
+		$multi_dbfnames->($multifilter);
+	}
+	# --
+	
+	
+	
 	my $columns = [];
 	# Remove duplicates:
 	my %Seen = ();
