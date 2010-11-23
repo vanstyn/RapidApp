@@ -6,6 +6,8 @@ use Moose;
 
 extends 'RapidApp::AppGrid2';
 
+use RapidApp::DbicAppCombo;
+
 use Switch;
 
 use RapidApp::JSONFunc;
@@ -152,12 +154,34 @@ sub BUILD {
 			$self->apply_columns(
 				$colname => $field
 			);
+			
+			# -- Build combos (dropdowns) for every related field (for use in multifilters currently):
+			if ($prefix) {
+				$self->c->log->debug(MAGENTA . BOLD . $colname . ' (' . $rel_name . ')' . CLEAR);
+				
+				my $module_name = 'combo_' . $colname;
+				$self->apply_modules({ 
+					$module_name => {
+						class	=> 'RapidApp::DbicAppCombo',
+						params	=> {
+							name				=> $column,
+							ResultSource	=> $Source
+						}
+					}
+				});
+				
+				$self->apply_columns(
+					$colname => { field_cnf => $self->Module($module_name)->content }
+				);
+			}
+			# --
 		}
 
 		foreach my $rel ($Source->relationships) {
 			next unless (defined $self->join_map->{$Source->source_name}->{$rel});
 		
 			my $info = $Source->relationship_info($rel);
+			
 			#next unless ($info->{attrs}->{accessor} eq 'single');
 
 			my $subSource = $Source->schema->source($info->{class});
