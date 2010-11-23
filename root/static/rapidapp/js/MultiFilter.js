@@ -257,6 +257,9 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 	
 	columnMap: {},
 	
+	fieldNameMap: {},
+	reverseFieldNameMap: {},
+	
 	conditionMap: Ext.ux.MultiFilter.defaultConditionMap,
 	
 	typeCondMap: Ext.ux.MultiFilter.defaultTypeToConditionMap,
@@ -286,8 +289,17 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 	},
 	
 	createFieldCombo: function() {
+		var val_list = [];
+		Ext.each(this.fieldList,function(item,index) {
+			var val = item;
+			if(this.reverseFieldNameMap[val]) {
+				val = this.reverseFieldNameMap[val];
+			}
+			val_list.push(val);
+		},this);
 		Ext.apply(this.field_combo_cnf,{
-			value_list: this.fieldList
+			//value_list: this.fieldList
+			value_list: val_list
 		});
 		return new Ext.ux.MultiFilter.StaticCombo(this.field_combo_cnf);
 	},
@@ -313,6 +325,17 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		
 	initComponent: function() {
 	
+		this.reverseConditionMap = {};
+		//for (i in this.conditionMap) {
+		//	this.reverseConditionMap[this.conditionMap[i]] = i;
+		//}
+		Ext.iterate(this.conditionMap,function(key,val) {
+			this.reverseConditionMap[val] = key;
+		},this);
+		
+		this.initColumns();
+		
+		
 		/* These are declared here instead of in the base class above because we 
 		 * modify them later on, and we need to make sure they are attributes
 		 * of the instance and not the class itself
@@ -327,8 +350,14 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 					// On select, set the value and call configSelector() to recreate the criteria container:
 					select: function(combo) {
 						var criteria = combo.ownerCt;
+						
+						var val = combo.getRawValue();
+						//if(criteria.fieldNameMap[val]) {
+						//	val = criteria.fieldNameMap[val];
+						//}
+						
 						Ext.apply(criteria.field_combo_cnf,{
-							value: combo.getRawValue()
+							value: val
 						});
 						criteria.configSelector();
 					}
@@ -348,12 +377,6 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			}
 		});
 	
-		this.reverseConditionMap = {};
-		for (i in this.conditionMap) {
-			this.reverseConditionMap[this.conditionMap[i]] = i;
-		}
-		
-		this.initColumns();
 
 		this.items = this.createFieldCombo();
 
@@ -364,11 +387,24 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		if (! this.gridColumns) { return; }
 		
 		this.columnMap = {};
-		
-		for (var i = 0; i < this.gridColumns.length; i++) {
-			var column = this.gridColumns[i];
+		//for (var i = 0; i < this.gridColumns.length; i++) {
+		//	var column = this.gridColumns[i];
+		//	this.columnMap[column.name] = column;
+		//}
+		Ext.each(this.gridColumns,function(item,index) {
+			var column = item;
 			this.columnMap[column.name] = column;
-		}
+			if (column.header) {
+				this.fieldNameMap[column.header] = column.name;
+			}
+		},this);
+		
+		this.reverseFieldNameMap = {};
+		Ext.iterate(this.fieldNameMap,function(key,val) {
+			this.reverseFieldNameMap[val] = key;
+		},this);
+		
+		
 		return this.columnMap;
 	},
 	
@@ -386,7 +422,11 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 				width: width
 			});
 			
-			var column = this.columnMap[this.field_combo_cnf.value];
+			var fval = this.field_combo_cnf.value;
+			if(this.fieldNameMap[fval]) {
+				fval = this.fieldNameMap[fval];
+			}
+			var column = this.columnMap[fval];
 			// Get the type from the filter.type property of the column model:
 			if (column && column.filter && column.filter.type) {
 				this.condType = column.filter.type;
@@ -443,6 +483,11 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		var cond = this.getComponent('cond_combo').getRawValue();
 		var val = this.getComponent('datafield').getRawValue();
 		
+		//field combo
+		if(this.fieldNameMap[field]) {
+			field = this.fieldNameMap[field];
+		}
+		
 		if(this.conditionMap[cond]) {
 			cond = this.conditionMap[cond];
 		}
@@ -457,6 +502,12 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 	loadData: function(data) {
 
 		Ext.iterate(data,function(k,v) {
+			
+			//field combo
+			if(this.reverseFieldNameMap[k]) {
+				k = this.reverseFieldNameMap[k];
+			}
+			
 			this.field_combo_cnf.value = k;
 			Ext.iterate(v,function(k2,v2) {
 				var cond = k2;
