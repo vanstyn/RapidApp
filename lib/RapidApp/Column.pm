@@ -63,7 +63,7 @@ has 'xtype' => (
 
 has 'data_type'	=> ( is => 'rw', default => undef );
 
-
+has 'filter'	=> ( is => 'rw', default => undef, traits => [ 'RapidApp::Role::GridColParam' ]  );
 
 
 has 'render_fn' => ( 

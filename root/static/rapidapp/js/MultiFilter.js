@@ -382,6 +382,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			});
 			
 			var column = this.columnMap[this.field_combo_cnf.value];
+			// Get the type from the filter.type property of the column model:
 			if (column && column.filter && column.filter.type) {
 				this.condType = column.filter.type;
 			}

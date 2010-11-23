@@ -6,7 +6,7 @@ use Moose;
 
 extends 'RapidApp::AppGrid2';
 
-
+use Switch;
 
 use RapidApp::JSONFunc;
 #use RapidApp::AppDataView::Store;
@@ -126,21 +126,8 @@ sub BUILD {
 		};
 		
 		my $col_info = $Source->column_info($column);
-		my $type = $col_info->{data_type};
-		
-		if ($self->numeric_type($type)) {
-			$field->{data_type} = 'numeric';
-		}
-		elsif($self->date_type($type)) {
-			$field->{data_type} = 'date';
-		}
-		elsif ($type eq 'enum') {
-			$field->{data_type} = 'list';
-			#$field->{filter} = { 
-			#	type		=> 'list', 
-			#	options	=> $col_info->{extra}->{list}
-			#};
-		}
+		my $type = $self->dbic_to_ext_type($col_info->{data_type});
+		$field->{filter}->{type} = $type if ($type);
 		
 		return $field;
 	};
@@ -182,8 +169,6 @@ sub BUILD {
 	};
 	
 	$addColRecurse->($self->ResultSource);
-	
-	
 }
 
 
@@ -218,35 +203,22 @@ sub action_delete_records {
 
 
 
-
-
-sub numeric_type {
+sub dbic_to_ext_type {
 	my $self = shift;
 	my $type = shift;
 	
 	$type = lc($type);
 	
-	return 1 if (
-		$type =~ /int/ or
-		$type =~ /float/
-	);
-	return 0;
+	switch ($type) {
+		case (/int/ or /float/) {
+			return 'number';
+		}
+		case ('datetime' or 'timestamp') {
+			return 'date';
+		}
+	}
+	return undef;
 }
-
-sub date_type {
-	my $self = shift;
-	my $type = shift;
-	
-	$type = lc($type);
-	
-	return 1 if (
-		$type eq 'datetime' or
-		$type eq 'timestamp'
-	);
-	return 0;
-}
-
-
 
 
 
