@@ -30,6 +30,10 @@ has 'per_request_attr_build_defaults' => ( is => 'ro', default => sub {{}}, isa 
 sub BUILD {}
 before 'BUILD' => sub {
 	my $self = shift;
+	
+	# Init ONREQUEST_called to true to prevent ONREQUEST from running during BUILD:
+	$self->ONREQUEST_called(1);
+	
 	foreach my $class (values %{$self->modules}) {
 		eval "use $class";
 	};
