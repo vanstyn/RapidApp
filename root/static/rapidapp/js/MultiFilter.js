@@ -193,10 +193,13 @@ Ext.ux.MultiFilter.StaticCombo = Ext.extend(Ext.form.ComboBox,{
 	initComponent: function() {
 		if (this.value_list) {
 			var data = [];
-			for (i in this.value_list) {
-				data.push([i,this.value_list[i]]);
-			}
-			data.pop();
+			Ext.each(this.value_list,function(item,index){
+				data.push([index,item]);
+			});
+			//for (i in this.value_list) {
+			//	data.push([i,this.value_list[i]]);
+			//}
+			//data.pop();
 			this.store = new Ext.data.ArrayStore({
 				fields: [
 					this.valueField,
