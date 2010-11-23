@@ -65,6 +65,7 @@ has 'data_type'	=> ( is => 'rw', default => undef );
 
 has 'filter'	=> ( is => 'rw', default => undef, traits => [ 'RapidApp::Role::GridColParam' ]  );
 
+has 'field_cnf'	=> ( is => 'rw', default => undef, traits => [ 'RapidApp::Role::GridColParam' ]  );
 
 has 'render_fn' => ( 
 	is => 'rw', lazy => 1, 

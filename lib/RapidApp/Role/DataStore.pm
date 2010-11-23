@@ -14,6 +14,8 @@ has 'record_pk' 			=> ( is => 'ro', default => undef );
 has 'store_fields' 		=> ( is => 'ro', default => undef );
 has 'storeId' 				=> ( is => 'ro', default => sub { 'datastore-' . String::Random->new->randregex('[a-z0-9A-Z]{5}') } );
 
+has 'store_use_xtype'	=> ( is => 'ro', default => 0 );
+
 has 'store_autoLoad'		=> ( is => 'ro', default => sub {\1} );
 
 has 'reload_on_save' 		=> ( is => 'ro', default => 1 );
@@ -336,6 +338,11 @@ has 'JsonStore' => ( is => 'ro', lazy => 1, predicate => 'has_JsonStore', defaul
 	
 	foreach my $k (keys %$config) {
 		delete $config->{$k} unless (defined $config->{$k});
+	}
+	
+	if ($self->store_use_xtype) {
+		$config->{xtype} = 'jsonstore';
+		return $config;
 	}
 	
 	my $JsonStore = RapidApp::JSONFunc->new( 

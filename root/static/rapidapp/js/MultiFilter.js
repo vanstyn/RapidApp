@@ -374,6 +374,8 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		// reset condType to default:
 		this.condType = 'default';
 		
+		var cust_dfield_cnf = null;
+		
 		if (this.field_combo_cnf.value) {
 			var TM = this.TM();
 			var width = 30 + TM.getWidth(this.field_combo_cnf.value);
@@ -386,11 +388,21 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			if (column && column.filter && column.filter.type) {
 				this.condType = column.filter.type;
 			}
+			
+			if (column && column.field_cnf) {
+				cust_dfield_cnf = {};
+				Ext.apply(cust_dfield_cnf,column.field_cnf);
+				delete cust_dfield_cnf.id;
+				delete cust_dfield_cnf.width;
+			}
 		}
 		
 		if(this.datafield_cnf.width) { delete this.datafield_cnf.width; }
 
-		if (this.condType == 'date') {
+		if(cust_dfield_cnf) {
+			Ext.apply(this.datafield_cnf,cust_dfield_cnf);
+		}
+		else if (this.condType == 'date') {
 			Ext.apply(this.datafield_cnf,{
 				xtype	: 'datefield',
 				format: 'Y-m-d H:i:s',
