@@ -312,12 +312,10 @@ has 'store_writer' => ( is => 'ro', lazy => 1, default => sub {
 });
 
 
-
-#sub JsonStore {
-has 'JsonStore' => ( is => 'ro', lazy => 1, predicate => 'has_JsonStore', default => sub {
+sub JsonStore_config_apply {
 	my $self = shift;
 	
-	$self->apply_store_config(
+	return $self->apply_store_config(
 		storeId 					=> $self->storeId,
 		api 						=> $self->store_api,
 		baseParams 				=> $self->base_params,
@@ -333,6 +331,15 @@ has 'JsonStore' => ( is => 'ro', lazy => 1, predicate => 'has_JsonStore', defaul
 		successProperty 		=> 'success',
 		totalProperty 			=> 'results',
 	);
+}
+
+
+
+#sub JsonStore {
+has 'JsonStore' => ( is => 'ro', lazy => 1, predicate => 'has_JsonStore', default => sub {
+	my $self = shift;
+	
+	$self->JsonStore_config_apply;
 	
 	my $config = $self->store_config;
 	

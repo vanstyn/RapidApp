@@ -180,9 +180,13 @@ sub BUILD {
 		}
 
 		foreach my $rel ($Source->relationships) {
+			
 			next unless (defined $self->join_map->{$Source->source_name}->{$rel});
 		
 			my $info = $Source->relationship_info($rel);
+			
+			use Data::Dumper;
+			$self->c->log->debug(YELLOW . BOLD . Dumper($info) . CLEAR);
 			
 			#next unless ($info->{attrs}->{accessor} eq 'single');
 
