@@ -31,6 +31,8 @@ has 'base_search_set' => ( is => 'ro',	default => undef );
 has 'fieldname_transforms' => ( is => 'ro', default => sub {{}});
 has 'primary_columns' => ( is => 'rw', default => sub {[]}, isa => 'ArrayRef');
 
+has 'always_fetch_columns' => ( is => 'ro', default => undef );
+
 sub apply_primary_columns {
 	my $self = shift;
 	my @cols = (ref($_[0]) eq 'ARRAY') ? @{ $_[0] } : @_; # <-- arg as array or arrayref
@@ -287,6 +289,8 @@ sub read_records {
 		# a grid row. The id field must be loaded in the Ext Record because this is used by the
 		# item page to query the database for the given id:
 		push @{$params->{columns}}, $self->record_pk if (defined $self->record_pk);
+		
+		push @{$params->{columns}}, @{$self->always_fetch_columns} if (defined $self->always_fetch_columns);
 		
 		# We can't limit the fields if there is a query (because it needs to be able to search 
 		# in all fields and all relationships:
