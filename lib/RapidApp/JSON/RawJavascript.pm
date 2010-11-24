@@ -9,7 +9,7 @@ has 'js' => ( is => 'rw', isa => 'Str' );
 around BUILDARGS => sub {
 	my $orig= shift;
 	my $class= shift;
-	if (@_ == 1 && !ref $_[0]) {
+	if (scalar(@_) == 1 && !ref $_[0]) {
 		return $class->$orig( js => $_[0] ); # interpret single-param as a javascript fragment
 	} else {
 		return $class->$orig(@_);
