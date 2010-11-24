@@ -32,6 +32,17 @@ has 'fieldname_transforms' => ( is => 'ro', default => sub {{}});
 has 'primary_columns' => ( is => 'rw', default => sub {[]}, isa => 'ArrayRef');
 
 has 'always_fetch_columns' => ( is => 'ro', default => undef );
+has 'never_fetch_columns' => ( is => 'ro', default => sub {[]}, isa => 'ArrayRef');
+
+has 'never_fetch_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	return {} unless (defined $self->never_fetch_columns);
+	my $h = {};
+	foreach my $col (@{$self->never_fetch_columns}) {
+		$h->{$col} = 1;
+	}
+	return $h;
+});
 
 sub apply_primary_columns {
 	my $self = shift;
@@ -106,7 +117,6 @@ sub _build_join_map {
 
 
 
-
 sub BUILD {
 	my $self = shift;
 	
@@ -118,23 +128,6 @@ sub BUILD {
 	$self->apply_store_config(
 		remoteSort => \1
 	);
-	
-	my $fieldSub = sub {
-		my ($Source, $column, $colname) = @_;
-		my $field = { 
-			name 			=> $colname,	
-			header 		=> $colname, 
-			dataIndex	=> $colname, 
-			sortable		=> \1,
-			width 		=> 70 
-		};
-		
-		my $col_info = $Source->column_info($column);
-		my $type = $self->dbic_to_ext_type($col_info->{data_type});
-		$field->{filter}->{type} = $type if ($type);
-		
-		return $field;
-	};
 	
 	my $addColRecurse;
 	$addColRecurse = sub {
@@ -151,11 +144,12 @@ sub BUILD {
 			
 			$self->fieldname_transforms->{$colname} = $rel_name . '.' . $column unless ($colname eq $column);
 			
-			my $field = $fieldSub->($Source,$column,$colname);
+			my $opts = { name => $colname };
+			my $col_info = $Source->column_info($column);
+			my $type = $self->dbic_to_ext_type($col_info->{data_type});
+			$opts->{filter}->{type} = $type if ($type);
 			
-			$self->apply_columns(
-				$colname => $field
-			);
+			$self->apply_columns( $colname => $opts );
 			
 			# -- Build combos (dropdowns) for every related field (for use in multifilters currently):
 			if ($prefix) {
@@ -295,6 +289,16 @@ sub read_records {
 		push @{$params->{columns}}, $self->record_pk if (defined $self->record_pk);
 		
 		push @{$params->{columns}}, @{$self->always_fetch_columns} if (defined $self->always_fetch_columns);
+		
+		
+		my %seen = ();
+		my $newcols = [];
+		foreach my $col (@{$params->{columns}}) {
+			next if ($seen{$col}++);
+			next if ($self->never_fetch_columns_hash->{$col});
+		}
+		
+		$params->{columns} = $newcols;
 		
 		# We can't limit the fields if there is a query (because it needs to be able to search 
 		# in all fields and all relationships:
