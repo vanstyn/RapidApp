@@ -26,6 +26,7 @@ apply_default_config(
 
 );
 
+has 'joins' => ( is => 'ro', default => sub {[]} );
 
 has 'base_search_set' => ( is => 'ro',	default => undef );
 has 'fieldname_transforms' => ( is => 'ro', default => sub {{}});
