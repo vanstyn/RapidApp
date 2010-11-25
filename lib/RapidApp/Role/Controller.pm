@@ -34,6 +34,7 @@ has 'extra_actions'			=> ( is => 'ro', 	default => sub {{}} );
 has 'default_action'			=> ( is => 'ro',	default => undef );
 has 'content'					=> ( is => 'ro',	default => '' );
 has 'render_as_json'			=> ( is => 'rw',	default => 1 );
+has 'auto_viewport'			=> ( is => 'rw',	default => 1 );
 
 sub c {
 	return $RapidApp::ScopedGlobals::CatalystInstance;
@@ -108,7 +109,7 @@ sub Controller {
 	
 	# dispatch the request to the appropriate handler
 	
-	$self->c->log->info('-->' . ref($self) . '  ' . join(' . ',@args));
+	$self->c->log->info('--> ' . GREEN . BOLD . ref($self) . CLEAR . '  ' . join(' . ',@args));
 	
 	$self->controller_dispatch(@args);
 }
@@ -128,54 +129,31 @@ sub clear_attributes {
 sub controller_dispatch {
 	my ($self, $opt, @subargs)= @_;
 	
-	my $data;
-	
-	try {
-	
-		if (defined $opt and (defined $self->actions->{$opt} or defined $self->extra_actions->{$opt}) ) {
-			$data = $self->process_action($opt,@subargs);
-		
+	if (defined $opt and (defined $self->actions->{$opt} or defined $self->extra_actions->{$opt}) ) {
+		return $self->process_action($opt,@subargs);
+	}
+	elsif (defined $opt and $self->_load_module($opt)) {
+		return $self->Module($opt)->Controller($self->c,@subargs);
+	}
+	elsif (defined $self->default_action) {
+		return $self->process_action($self->default_action,@_);
+	}
+	else {
+		# if there were unprocessed arguments which were not an action, and there was no default action, generate a 404
+		if (defined $opt) {
+			$self->c->log->info("--> " . RED . BOLD . "unknown action: $opt" . CLEAR);
+			$self->c->stash->{current_view} = 'HTTP404';  # default to an error page
+			return undef;
 		}
-		elsif (defined $opt and $self->_load_module($opt)) {
-			$data = $self->Module($opt)->Controller($self->c,@subargs);
-		
-		}
-		elsif (defined $self->default_action) {
-			$data = $self->process_action($self->default_action,@_);
+		elsif ($self->c->stash->{reqContentType} ne 'JSON' && $self->auto_viewport) {
+			$self->c->log->info("--> " . GREEN . BOLD . "[viewport]" . CLEAR . ". (no action)");
+			return $self->viewport;
 		}
 		else {
-			$data = $self->render_data($self->content);
-		
+			$self->c->log->info("--> " . GREEN . BOLD . "[content]" . CLEAR . ". (no action)");
+			return $self->render_data($self->content);
 		}
 	}
-	catch {
-		my $msg= ''.$_;
-		chomp($msg);
-		
-		my $dbgMsg= $msg;
-		if (blessed($_)) {
-			if ($_->can('dump')) { $dbgMsg= $_->dump; }
-			elsif ($_->can('trace')) { $dbgMsg= $_->trace; }
-		}
-		
-		$self->c->log->info(' ---->>> RAPIDAPP EXCEPTION: ' . $dbgMsg);
-		$self->c->res->header('X-RapidApp-Exception' => 1);
-		$self->c->res->status(542);
-		
-		# clean up the message a bit
-		$msg =~ s|\n|<br/>|g;
-		if (length($msg) > 300) {
-			$msg= substr($msg, 0, 300).' ...';
-		}
-		
-		$data = $self->render_data({
-			exception	=> \1,
-			success		=> \0,
-			msg			=> $msg
-		});
-	};
-	
-	return $data;
 }
 
 =pod
@@ -197,72 +175,64 @@ sub process_action {
 	my $self = shift;
 	my ( $opt, @args ) = @_;
 	
-	$self->c->log->info("PROCESS ACTION: " . $opt);
+	$self->c->log->info("--> " . GREEN . BOLD . "action{ " . $opt . " }");
 	
-	my $data = '';
-	my $coderef;
-	if (defined $opt) {
-		$coderef = $self->actions->{$opt};
-		$coderef = $self->extra_actions->{$opt} unless (defined $coderef);
-	}
-	if (defined $coderef) {
-		if(ref($coderef) eq 'CODE') {
-			$data = $coderef->();
-		}
-		else {
-			# New: if $coderef is not actually a coderef, we assume its a string representing an 
-			# object method and we call it directly:
-			$data = $self->$coderef;
-		}
-	}
+	defined $opt or die "No action specified";
 	
-	return $self->render_data($data);
+	my $coderef = $self->actions->{$opt} || $self->extra_actions->{$opt};
+	defined $coderef or die "No action named $opt";
+	
+	# New: if $coderef is not actually a coderef, we assume its a string representing an 
+	# object method and we call it directly:
+	return $self->render_data( ref($coderef) eq 'CODE'? $coderef->() : $self->$coderef );
 }
 
 
 sub render_data {
-	my $self = shift;
-	my $data = shift;
+	my ($self, $data)= @_;
 	
-	my $rendered_data = $data;
-	$rendered_data = $self->JSON_encode($data) if (
-		$self->render_as_json and
-		ref($data) and
-		not defined $self->no_json_ref_types->{ref($data)}
-	);
+	# do nothing if the body has been set
+	return undef if defined $self->c->response->body;
 	
+	# do nothing if the view has been configured
+	return $data if defined $self->c->stash->{current_view};
 	
-	#use Data::Dumper;
-	#print STDERR YELLOW . Dumper($data) . CLEAR;
-	#print STDERR GREEN . "\n" . $self->render_as_json . "\n" . CLEAR;
-	
-	
-	#$rendered_data .= $self->render_append;
-	
-	#use Data::Dumper;
-	#print STDERR YELLOW . "\n" . $rendered_data . "\n\n" . CLEAR;
-
-	#for my $i (1..5) {
-	#	print STDERR RED .BOLD . Dumper(caller($i)) . "---\n" . CLEAR;
-	#}
-	
-	
-	$self->c->response->header('Cache-Control' => 'no-cache');
-	return $self->c->response->body( $rendered_data );
+	# if we want auto-json rendering, use the JSON view
+	if ($self->render_as_json && ref($data) && !defined $self->no_json_ref_types->{ref($data)}) {
+		$self->c->stash->{current_view} = 'RapidApp::JSON';
+		return $data;
+	}
+	# else set the body directly and use no view
+	else {
+		$self->c->response->header('Cache-Control' => 'no-cache');
+		return $self->c->response->body( $data );
+	}
 }
 
-
+sub viewport {
+	my $self= shift;
+	$self->c->stash->{current_view} = 'RapidApp::TT';
+	$self->c->stash->{template} = 'templates/rapidapp/ext_viewport.tt';
+	$self->c->stash->{title} = $self->module_name;
+	$self->c->stash->{config_url} = $self->base_url;
+	my %params= %{$self->c->req->params};
+	use Data::Dumper;
+	$self->c->log->debug(Dumper(\%params));
+	if (scalar keys %params) {
+		$self->c->stash->{config_params} = RapidApp::JSON::MixedEncoder::encode_json(\%params);
+	}
+}
 
 # add or replace actions (i.e. as passed to the action param of the constructor):
 sub apply_actions {
 	my $self = shift;
 	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-
+	
 	#my $new_actions = {
 	#	%{ $self->actions },
 	#	%new
 	#};
-
+	
 	#my $attr = $self->meta->find_attribute_by_name('actions');
 	#$attr->set_value($self,$new_actions);
 	
@@ -286,10 +256,6 @@ sub set_response_warning {
 	
 	return $self->c->response->header('X-RapidApp-Warning' => $self->json->encode($warn));
 }
-
-
-
-
 
 
 1;
