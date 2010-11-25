@@ -298,6 +298,111 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 Ext.reg('appgrid2', Ext.ux.RapidApp.AppTab.AppGrid2);
 
 
+Ext.ns('Ext.ux.RapidApp.AppTab.AppGrid2');
+
+Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu = Ext.extend(Ext.menu.Menu,{
+
+	url: null,
+	//text: 'Excel Export',
+	//iconCls: 'icon-excel',
+
+	
+	initComponent: function() {
+	
+		this.items = [
+			{
+				text: 'This Page, Active Columns',
+				handler: function(item) {
+					var cmp = item.ownerCt;
+					Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler(cmp,cmp.url,false,false);
+				}
+			},
+			{
+				text: 'This Page, All Columns',
+				handler: function(item) {
+					var cmp = item.ownerCt;
+					Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler(cmp,cmp.url,false,true);
+				}
+			},
+			{
+				text: 'All Pages, Active Columns',
+				handler: function(item) {
+					var cmp = item.ownerCt;
+					Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler(cmp,cmp.url,true,false);
+				}
+			},
+			{
+				text: 'All Pages, All Columns',
+				handler: function(item) {
+					var cmp = item.ownerCt;
+					Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler(cmp,cmp.url,true,true);
+				}
+			}
+		];
+		
+		Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu.superclass.initComponent.call(this);
+	}
+	
+	
+
+});
+
+
+
+Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler = function(cmp,url,all_pages,all_columns) {
+
+	var grid = cmp.findParentByType("appgrid2");
+			
+	Ext.Msg.show({
+		title: "Excel Export",
+		msg: "Export current view to Excel File? <br><br>(This might take up to a few minutes depending on the number of rows)",
+		buttons: Ext.Msg.YESNO, fn: function(sel){
+			if(sel != "yes") return; 
+			
+			var store = grid.getStore();
+			//var params = {};
+			
+			// -- Get the params that the store last used to fetch from the server
+			// There is no built-in method to get this info, so this logic is basically
+			// copied from the load method of Ext.data.Store:
+			var options = Ext.apply({}, store.lastOptions);
+			if(store.sortInfo && store.remoteSort){
+				var pn = store.paramNames;
+				options.params = Ext.apply({}, options.params);
+				options.params[pn.sort] = store.sortInfo.field;
+				options.params[pn.dir] = store.sortInfo.direction;
+			}
+			// --
+			Ext.apply(options.params,store.baseParams);
+			
+			if(all_pages) { 
+				if (options.params.limit) { delete options.params.limit; } 
+				if (options.params.start) { delete options.params.start; } 
+			}
+			
+			if(all_columns && options.params.columns) { delete options.params.columns; }
+			
+			return Ext.ux.postwith(url,options.params);
+			
+			/*
+			for (i in store.lastOptions.params) {
+				if (i != "start" && i != "limit") {
+					params[i] = store.lastOptions.params[i];
+				}
+			}
+			//Ext.ux.postwith(url,params);
+			
+			console.dir(store);
+			*/
+			
+			
+			//document.location.href=url + "?" + Ext.urlEncode(params);
+		},
+		scope: cmp
+	});
+}
+
+
 Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.confirmDialogCall = function(title,msg,fn) {
 	Ext.Msg.show({

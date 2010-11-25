@@ -33,7 +33,7 @@ has 'actions'					=> ( is => 'ro', 	default => sub {{}} );
 has 'extra_actions'			=> ( is => 'ro', 	default => sub {{}} );
 has 'default_action'			=> ( is => 'ro',	default => undef );
 has 'content'					=> ( is => 'ro',	default => '' );
-has 'render_as_json'			=> ( is => 'rw',	default => 1 );
+has 'render_as_json'			=> ( is => 'rw',	default => 1, traits => [ 'RapidApp::Role::PerRequestVar' ]  );
 
 sub c {
 	return $RapidApp::ScopedGlobals::CatalystInstance;
