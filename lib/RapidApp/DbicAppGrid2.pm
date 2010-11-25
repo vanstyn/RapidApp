@@ -297,6 +297,7 @@ sub read_records {
 		foreach my $col (@{$params->{columns}}) {
 			next if ($seen{$col}++);
 			next if ($self->never_fetch_columns_hash->{$col});
+			push @$newcols, $col;
 		}
 		
 		$params->{columns} = $newcols;
