@@ -93,6 +93,11 @@ sub JSON_encode {
 sub prepare_controller {
 }
 
+=head2 Controller( $catalyst, @pathArguments )
+
+This method handles a request.
+
+=cut
 sub Controller {
 	my ($self, $c, @args) = @_;
 	
@@ -124,8 +129,36 @@ sub clear_attributes {
 }
 
 
+=head2 controller_dispatch( @args )
 
-# This is moved into a separate function so that overridden controllers can re-use this functionality
+controller_dispatch performs the standard RapidApp dispatch processing for a Module.
+
+=over
+
+=item *
+
+If the first argument names an action, the action is executed.
+
+=item *
+
+If the first argument names a sub-module, the processing is passed to the sub-module.
+
+=item *
+
+If the first argument does not match anything, then the default action is called, if specified,
+otherwise a 404 is returned to the user.
+
+=item *
+
+If there are no arguments, and the client was not requesting JSON, the viewport is executed.
+
+=item *
+
+Else, content is called, and its return value is passed to render_data.
+
+=back
+
+=cut
 sub controller_dispatch {
 	my ($self, $opt, @subargs)= @_;
 	
@@ -156,21 +189,13 @@ sub controller_dispatch {
 	}
 }
 
-=pod
-around 'Module' => sub {
-	my $orig = shift;
-	my $self = shift;
-	
-	my $Module = $self->$orig(@_) or return undef;
-	
-	$Module->base_url($self->base_url . '/' . $Module->module_name) if (
-		$Module->does('RapidApp::Role::Controller')
-	);
-	
-	return $Module;
-};
-=cut
+=head2 process_action( $actionName, [optional @args] )
 
+This routine handles the execution of a selected action.  The action must exist.
+For actions that map to coderefs, the coderef is executed.
+For actions that map to strings, a method of that name is called on $self.
+
+=cut
 sub process_action {
 	my $self = shift;
 	my ( $opt, @args ) = @_;
@@ -187,15 +212,48 @@ sub process_action {
 	return $self->render_data( ref($coderef) eq 'CODE'? $coderef->() : $self->$coderef );
 }
 
+=head2 render_data( $data )
 
+This is a very DWIM sort of routine that takes its parameter (likely the return value of
+content or an action) and picks an appropriate view for it, possibly ignoring it altogether.
+
+=over
+
+=item *
+
+If the action generated a body, no view is needed, and the parameter is ignored.
+
+=item *
+
+If the action chose its own view, no further processing is done, and the parameter is returned.
+
+=item *
+
+If the controller is configured to render json (the default) and the parameter isn't blacklisted
+in no_json_ref_types, and the parameter isn't a plain string, the RapidApp::JSON view is chosen.
+The parameter is returned (as-is) to get passed back to TopController who passes it to the view.
+
+=item *
+
+Else, the data is treated as an explicit string for the body.  The body is assigned, and returned.
+
+=back
+
+=cut
 sub render_data {
 	my ($self, $data)= @_;
 	
 	# do nothing if the body has been set
-	return undef if defined $self->c->response->body;
+	if (defined $self->c->response->body && length $self->c->response->body) {
+		$self->c->log->debug("(body set by user)");
+		return undef;
+	}
 	
 	# do nothing if the view has been configured
-	return $data if defined $self->c->stash->{current_view};
+	if (defined $self->c->stash->{current_view} || defined $self->c->stash->{current_view_instance}) {
+		$self->c->log->debug("(view set by user)");
+		return $data;
+	}
 	
 	# if we want auto-json rendering, use the JSON view
 	if ($self->render_as_json && ref($data) && !defined $self->no_json_ref_types->{ref($data)}) {
@@ -215,11 +273,8 @@ sub viewport {
 	$self->c->stash->{template} = 'templates/rapidapp/ext_viewport.tt';
 	$self->c->stash->{title} = $self->module_name;
 	$self->c->stash->{config_url} = $self->base_url;
-	my %params= %{$self->c->req->params};
-	use Data::Dumper;
-	$self->c->log->debug(Dumper(\%params));
-	if (scalar keys %params) {
-		$self->c->stash->{config_params} = RapidApp::JSON::MixedEncoder::encode_json(\%params);
+	if (scalar keys %{$self->c->req->params}) {
+		$self->c->stash->{config_params} = RapidApp::JSON::MixedEncoder::encode_json(%{$self->c->req->params});
 	}
 }
 

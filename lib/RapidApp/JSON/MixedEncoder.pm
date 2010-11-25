@@ -19,7 +19,11 @@ sub decode_json ($) { # decode
 
 sub object_to_json {
 	my ($self, $obj)= @_;
-	return (blessed($obj) && $obj->can('TO_JSON_RAW'))? $obj->TO_JSON_RAW : $self->SUPER::object_to_json($obj);
+	if (blessed($obj)) {
+		my $method= $obj->can('TO_JSON_RAW');
+		return $method->($obj) if defined $method;
+	}
+	return $self->SUPER::object_to_json($obj);
 }
 
 1;

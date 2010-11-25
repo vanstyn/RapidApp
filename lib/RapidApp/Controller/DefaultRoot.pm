@@ -18,9 +18,7 @@ sub BUILD {
 }
 
 sub approot :Path {
-	my $self = shift;
-	my ( $c, $opt ) = @_;
-	return $self->Controller(@_);
+	(shift)->Controller(@_);
 }
 
 sub end : ActionClass('RenderView') {}

@@ -145,8 +145,14 @@ Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
 	catch(err) {}
 }
 
+Ext.ux.RapidApp.ajaxRequestContentType = function(conn,options) {
+	if (!options.headers) { options.headers= {}; }
+	options.headers['X-RapidApp-RequestContentType']= 'JSON';
+};
+
 Ext.Ajax.on('requestcomplete',Ext.ux.RapidApp.ajaxCheckException);
 Ext.Ajax.on('requestexception',Ext.ux.RapidApp.ajaxCheckException);
+Ext.Ajax.on('beforerequest',Ext.ux.RapidApp.ajaxRequestContentType);
 
 
 Ext.override(Ext.data.Connection,{
