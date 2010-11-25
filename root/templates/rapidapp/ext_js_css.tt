@@ -114,5 +114,6 @@
 
 <script type="text/javascript" src="/static/rapidapp/js/MultiFilter.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp/AppTab.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/RapidApp/AppTree.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp/History.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp.js"></script>
