@@ -303,10 +303,7 @@ Ext.ns('Ext.ux.RapidApp.AppTab.AppGrid2');
 Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu = Ext.extend(Ext.menu.Menu,{
 
 	url: null,
-	//text: 'Excel Export',
-	//iconCls: 'icon-excel',
 
-	
 	initComponent: function() {
 	
 		this.items = [
@@ -342,9 +339,6 @@ Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu = Ext.extend(Ext.menu.Menu,{
 		
 		Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu.superclass.initComponent.call(this);
 	}
-	
-	
-
 });
 
 
@@ -383,20 +377,6 @@ Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler = function(cmp,url,all_pages,
 			if(all_columns && options.params.columns) { delete options.params.columns; }
 			
 			return Ext.ux.postwith(url,options.params);
-			
-			/*
-			for (i in store.lastOptions.params) {
-				if (i != "start" && i != "limit") {
-					params[i] = store.lastOptions.params[i];
-				}
-			}
-			//Ext.ux.postwith(url,params);
-			
-			console.dir(store);
-			*/
-			
-			
-			//document.location.href=url + "?" + Ext.urlEncode(params);
 		},
 		scope: cmp
 	});

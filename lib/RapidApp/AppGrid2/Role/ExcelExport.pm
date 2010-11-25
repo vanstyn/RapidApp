@@ -16,48 +16,6 @@ before 'BUILD' => sub {
 	$self->apply_actions( excel_read => 'excel_read' );
 };
 
-#around 'options_menu_items' => sub {
-#	my $orig = shift;
-#	my $self = shift;
-#	
-#	my $items = $self->$orig(@_);
-#	$items = [] unless (defined $items);
-#	
-#	push @$items, {
-#		text		=> 'Excel Export',
-#		iconCls	=> 'icon-excel',
-#		handler	=>  RapidApp::JSONFunc->new( 
-#			raw => 1, 
-#			func => 'function(cmp) { ' . 
-#				'var grid = cmp.findParentByType("appgrid2");' .
-#			
-#				'Ext.Msg.show({ ' .
-#					'title: "Excel Export",' . 
-#					'msg: "Export current view to Excel File? <br><br>(This might take up to a few minutes depending on the number of rows)",' .
-#					'buttons: Ext.Msg.YESNO, fn: function(sel){' .
-#						'if(sel != "yes") return; ' .
-#						
-#						'var store = grid.getStore();' .
-#						'var url = "' . $self->suburl('/excel_read') . '";' .
-#						'var params = {};' .
-#						'for (i in store.lastOptions.params) {' .
-#							'if (i != "start" && i != "limit") {' .
-#								'params[i] = store.lastOptions.params[i];' .
-#							'}' .
-#						'}' .
-#						'Ext.ux.postwith(url,params);' .
-#						
-#						#'document.location.href=url + "?" + Ext.urlEncode(params);' .
-#					'},' .
-#					'scope: cmp' .
-#				'});' .
-#			'}' 
-#		)
-#	};
-#	
-#	return $items;
-#};
-
 
 around 'options_menu_items' => sub {
 	my $orig = shift;
@@ -65,25 +23,6 @@ around 'options_menu_items' => sub {
 	
 	my $items = $self->$orig(@_);
 	$items = [] unless (defined $items);
-	
-	
-	
-#	push @$items, RapidApp::JSONFunc->new( func => 'new Ext.menu.Item',
-#		parm => {
-#			text		=> 'Excel Export',
-#			iconCls	=> 'icon-excel',
-#			handler	=>  RapidApp::JSONFunc->new( 
-#				raw => 1, 
-#				func => 'function(cmp) { ' . 
-#					'Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler(cmp,"' . $self->suburl('/excel_read') . '");' .
-#				'}'
-#			)
-#		}
-#	);
-	
-
-	
-	
 	
 	push @$items, {
 		text		=> 'Excel Export',
@@ -95,66 +34,6 @@ around 'options_menu_items' => sub {
 		)
 	};
 	
-	
-	
-#	push @$items, RapidApp::JSONFunc->new( func => 'new Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu',
-#		parm => {
-#			url	=> $self->suburl('/excel_read')
-#		}
-#	);
-	
-	
-#	push @$items, {
-#		text		=> 'Excel Export',
-#		iconCls	=> 'icon-excel',
-#		handler	=>  RapidApp::JSONFunc->new( 
-#			raw => 1, 
-#			func => 'function(cmp) { ' . 
-#				'Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler(cmp,"' . $self->suburl('/excel_read') . '");' .
-#			'}'
-#		)
-#	};
-	
-	
-#	push @$items, {
-#		text		=> 'Excel Export',
-#		iconCls	=> 'icon-excel',
-#		menu => RapidApp::JSONFunc->new( func => 'new Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu',
-#			parm => {
-#				url	=> $self->suburl('/excel_read')
-#			}
-#		)
-#	};
-	
-	
-#	push @$items, {
-#		text		=> 'Excel Export',
-#		iconCls	=> 'icon-excel',
-#		menu => RapidApp::JSONFunc->new( func => 'new Ext.menu.Menu',
-#			parm => {
-#				#xtype	=> 'menu',
-#				items	=> [
-#					{
-#						text	=> 'This Page, Active Columns',
-#						handler => RapidApp::JSONFunc->new( 
-#							raw => 1, 
-#							func => 'function(cmp) { ' . 
-#								'Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler(cmp,"' . $self->suburl('/excel_read') . '");' .
-#							'}'
-#						)
-#					
-#					}
-#				
-#				]
-#			
-#			}
-#		)
-#	};
-	
-
-
-	#use Data::Dumper;
-	#$self->c->log->debug(RED . BOLD . Dumper($items) . CLEAR);
 	return $items;
 };
 
