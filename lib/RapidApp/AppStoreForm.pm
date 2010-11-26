@@ -30,6 +30,35 @@ has 'create_record_msg'		=> ( is => 'ro', default => 'Record added' );
 has 'create_callback_code'	=> ( is => 'ro', default => '' ); # <-- JS code that gets called when a record is created (added)
 has 'write_callback_code'	=> ( is => 'ro', default => '' ); # <-- JS code that gets called when any store write happens (including create)
 
+
+
+sub BUILD {
+	my $self = shift;
+	
+	$self->apply_actions( read => 'read' );
+	$self->apply_actions( update => 'update' ) if (defined $self->update_data_coderef);
+	$self->apply_actions( create => 'create' ) if (defined $self->create_data_coderef);
+}
+
+
+
+
+#has 'actions' => ( is => 'ro', lazy => 1, default => sub {
+#	my $self = shift;
+#	
+#	my $actions = {};
+#	
+#	$actions->{read}				= sub { $self->read };
+#	$actions->{update}			= sub { $self->update } if (defined $self->update_data_coderef);
+#	$actions->{create}			= sub { $self->create } if (defined $self->create_data_coderef);
+#	
+#	return $actions;
+#});
+
+
+
+
+
 has 'item_key' => ( is => 'ro',	lazy_build => 1	);
 sub _build_item_key {
 	my $self = shift;
@@ -236,20 +265,6 @@ sub _build_create_callback {
 
 
 
-
-
-
-has 'actions' => ( is => 'ro', lazy => 1, default => sub {
-	my $self = shift;
-	
-	my $actions = {};
-	
-	$actions->{read}				= sub { $self->read };
-	$actions->{update}			= sub { $self->update } if (defined $self->update_data_coderef);
-	$actions->{create}			= sub { $self->create } if (defined $self->create_data_coderef);
-	
-	return $actions;
-});
 
 has 'formpanel_id' => ( is => 'ro', lazy_build => 1 );
 sub _build_formpanel_id {

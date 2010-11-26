@@ -30,7 +30,7 @@ has 'base_url' => (
 	traits => [ 'RapidApp::Role::PerRequestVar' ] 
 );
 has 'actions'					=> ( is => 'ro', 	default => sub {{}} );
-has 'extra_actions'			=> ( is => 'ro', 	default => sub {{}} );
+#has 'extra_actions'			=> ( is => 'ro', 	default => sub {{}} );
 has 'default_action'			=> ( is => 'ro',	default => undef );
 has 'content'					=> ( is => 'ro',	default => '' );
 has 'render_as_json'			=> ( is => 'rw',	default => 1, traits => [ 'RapidApp::Role::PerRequestVar' ]  );
@@ -132,7 +132,8 @@ sub controller_dispatch {
 	
 	try {
 	
-		if (defined $opt and (defined $self->actions->{$opt} or defined $self->extra_actions->{$opt}) ) {
+		#if (defined $opt and (defined $self->actions->{$opt} or defined $self->extra_actions->{$opt}) ) {
+		if ( defined $opt and defined $self->actions->{$opt} ) {
 			$data = $self->process_action($opt,@subargs);
 		
 		}
@@ -203,7 +204,7 @@ sub process_action {
 	my $coderef;
 	if (defined $opt) {
 		$coderef = $self->actions->{$opt};
-		$coderef = $self->extra_actions->{$opt} unless (defined $coderef);
+		#$coderef = $self->extra_actions->{$opt} unless (defined $coderef);
 	}
 	if (defined $coderef) {
 		if(ref($coderef) eq 'CODE') {
