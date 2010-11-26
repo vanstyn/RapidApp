@@ -18,7 +18,7 @@ after 'BUILD' => sub {
 };
 
 
-before 'ONREQUEST' => sub {
+after 'ONREQUEST' => sub {
 	my $self = shift;
 	
 	$self->apply_store_listeners( load 			=> $self->store_load_listener ) if (defined $self->store_load_listener);

@@ -108,8 +108,12 @@ sub _build_join_map {
 
 
 
-sub BUILD {
+sub BUILD {}
+around 'BUILD' => sub {
+	my $orig = shift;
 	my $self = shift;
+	
+	$self->$orig(@_);
 	
 	$self->apply_primary_columns($self->record_pk); # <-- should be redundant
 	$self->apply_primary_columns($self->ResultSource->primary_columns);
@@ -184,7 +188,7 @@ sub BUILD {
 	};
 	
 	$addColRecurse->($self->ResultSource);
-}
+};
 
 
 before 'ONREQUEST' => sub {

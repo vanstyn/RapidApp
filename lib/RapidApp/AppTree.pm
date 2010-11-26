@@ -6,12 +6,24 @@ use Moose;
 
 extends 'RapidApp::AppCmp';
 
-use RapidApp::MooseX::ClassAttrSugar;
-setup_apply_methods_for('config');
-setup_apply_methods_for('listeners');
+#use RapidApp::MooseX::ClassAttrSugar;
+#setup_apply_methods_for('config');
+#setup_apply_methods_for('listeners');
+
+#apply_default_config(
+#		xtype					=> 'treepanel',
+#		border				=> \0,
+#		layout				=> 'fit',
+#		containerScroll 	=> \1,
+#		autoScroll			=> \1,
+#		animate				=> \1,
+#		useArrows			=> \1
+#);
 
 
-apply_default_config(
+sub BUILD {
+	my $self = shift;
+	$self->apply_config(
 		xtype					=> 'treepanel',
 		border				=> \0,
 		layout				=> 'fit',
@@ -19,7 +31,9 @@ apply_default_config(
 		autoScroll			=> \1,
 		animate				=> \1,
 		useArrows			=> \1
-);
+	);
+}
+
 
 
 use RapidApp::JSONFunc;

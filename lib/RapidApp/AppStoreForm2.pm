@@ -1,10 +1,13 @@
 package RapidApp::AppStoreForm2;
 
+### IN PROGRESS, DO NOT USE ###
+
 
 use strict;
 use Moose;
-#with 'RapidApp::Role::Controller';
-extends 'RapidApp::AppBase';
+
+extends 'RapidApp::AppCnt';
+with 'RapidApp::Role::DataStore';
 
 use Clone;
 use Try::Tiny;

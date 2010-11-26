@@ -16,20 +16,20 @@ use RapidApp::JSONFunc;
 
 use Term::ANSIColor qw(:constants);
 
-use RapidApp::MooseX::ClassAttrSugar;
-setup_apply_methods_for('config');
-setup_apply_methods_for('listeners');
+#use RapidApp::MooseX::ClassAttrSugar;
+#setup_apply_methods_for('config');
+#setup_apply_methods_for('listeners');
 
-apply_default_config(
-	xtype						=> 'appgrid2',
-	pageSize					=> 25,
-	stripeRows				=> \1,
-	columnLines				=> \1,
-	use_multifilters		=> \1,
-	gridsearch				=> \1,
-	gridsearch_remote		=> \1,
-	column_allow_save_properties => [ 'width','hidden' ]
-);
+#apply_default_config(
+#	xtype						=> 'appgrid2',
+#	pageSize					=> 25,
+#	stripeRows				=> \1,
+#	columnLines				=> \1,
+#	use_multifilters		=> \1,
+#	gridsearch				=> \1,
+#	gridsearch_remote		=> \1,
+#	column_allow_save_properties => [ 'width','hidden' ]
+#);
 
 
 has 'title' => ( is => 'ro', default => undef );
@@ -93,6 +93,17 @@ after 'ONREQUEST' => sub {
 
 sub BUILD {
 	my $self = shift;
+	
+	$self->apply_config(
+		xtype						=> 'appgrid2',
+		pageSize					=> 25,
+		stripeRows				=> \1,
+		columnLines				=> \1,
+		use_multifilters		=> \1,
+		gridsearch				=> \1,
+		gridsearch_remote		=> \1,
+		column_allow_save_properties => [ 'width','hidden' ]
+	);
 	
 	# The record_pk is forced to be added/included as a column:
 	if (defined $self->record_pk) {

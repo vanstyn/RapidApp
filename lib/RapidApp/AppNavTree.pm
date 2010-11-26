@@ -11,14 +11,25 @@ extends 'RapidApp::AppTree';
 use RapidApp::JSONFunc;
 #use RapidApp::AppDataView::Store;
 
-use RapidApp::MooseX::ClassAttrSugar;
-setup_apply_methods_for('listeners');
-setup_apply_methods_for('config');
+#use RapidApp::MooseX::ClassAttrSugar;
+#setup_apply_methods_for('listeners');
+#setup_apply_methods_for('config');
 
-apply_default_listeners(
-	'beforerender'	=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' ),
-	'click' 			=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.treenav_click' )
-);
+#apply_default_listeners(
+#	'beforerender'	=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' ),
+#	'click' 			=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.treenav_click' )
+#);
+
+sub BUILD {
+	my $self = shift;
+	
+	$self->apply_listeners (
+		'beforerender'	=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' ),
+		'click' 			=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.treenav_click' )
+	
+	);
+	
+}
 
 
 

@@ -3,8 +3,9 @@ package RapidApp::AppListView;
 
 use strict;
 use Moose;
-with 'RapidApp::Role::DataStore';
 extends 'RapidApp::AppBase';
+with 'RapidApp::Role::DataStore';
+
 
 use RapidApp::JSONFunc;
 use String::Random;
