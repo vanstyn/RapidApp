@@ -1,4 +1,4 @@
-package RapidApp::AppCnt;
+package RapidApp::AppCmp;
 
 
 use strict;

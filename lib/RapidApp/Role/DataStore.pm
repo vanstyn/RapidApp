@@ -1,24 +1,57 @@
 package RapidApp::Role::DataStore;
-
+use Moose::Role;
 
 use strict;
-use Moose::Role;
-#with 'RapidApp::Role::Controller';
-#extends 'RapidApp::AppBase';
 
 use String::Random;
 
 use Term::ANSIColor qw(:constants);
 
+sub BUILD {}
+after 'BUILD' => sub {
+	my $self = shift;
+	
+	$self->apply_actions( read		=> 'store_read' );
+	$self->apply_actions( update	=> 'store_update' ) if (defined $self->update_records_coderef);
+	$self->apply_actions( create	=> 'store_create' ) if (defined $self->create_records_coderef);
+	$self->apply_actions( destroy	=> 'store_destroy' ) if (defined $self->destroy_records_coderef);
+};
+
+
+before 'ONREQUEST' => sub {
+	my $self = shift;
+	
+	$self->apply_store_listeners( load 			=> $self->store_load_listener ) if (defined $self->store_load_listener);
+	$self->apply_store_listeners( update 		=> $self->store_update_listener ) if (defined $self->store_update_listener);
+	$self->apply_store_listeners( save 			=> $self->store_save_listener ) if (defined $self->store_save_listener);
+	
+	$self->apply_store_listeners( add 			=> $self->store_add_listener ) if (defined $self->store_add_listener);
+	$self->apply_store_listeners( exception	=> $self->store_exception_listener ) if (defined $self->store_exception_listener);
+	
+	$self->apply_store_listeners( write => RapidApp::JSONFunc->new( raw => 1, func => 
+		'function(store, action, result, res, rs) { ' .
+			'Ext.log("write event");' . 
+			($self->reload_on_save ? 'store.load();' : '') .
+		'}'
+	));
+	
+};
+
+has 'store_listeners' => ( is => 'ro', default => sub {{}}, isa => 'HashRef', traits => ['RapidApp::Role::PerRequestBuildDefReset'] );
+
+has 'store_load_listener' => ( is => 'ro', default => undef );
+has 'store_update_listener' => ( is => 'ro', default => undef );
+has 'store_save_listener' => ( is => 'ro', default => undef );
+has 'store_add_listener' => ( is => 'ro', default => undef );
+has 'store_exception_listener' => ( is => 'ro', default => undef );
+
 has 'record_pk' 			=> ( is => 'ro', default => undef );
 has 'store_fields' 		=> ( is => 'ro', default => undef );
 has 'storeId' 				=> ( is => 'ro', default => sub { 'datastore-' . String::Random->new->randregex('[a-z0-9A-Z]{5}') } );
-
 has 'store_use_xtype'	=> ( is => 'ro', default => 0 );
-
 has 'store_autoLoad'		=> ( is => 'ro', default => sub {\1} );
-
 has 'reload_on_save' 		=> ( is => 'ro', default => 1 );
+
 
 # -- Moved from AppGrid2:
 has 'columns' => ( is => 'rw', default => sub {{}}, isa => 'HashRef', traits => ['RapidApp::Role::PerRequestBuildDefReset'] );
@@ -172,7 +205,6 @@ sub set_columns_order {
 	return $self->apply_config(columns => $self->column_list);
 }
 
-
 # --
 
 
@@ -213,36 +245,6 @@ has 'update_records_coderef'	=> ( is => 'rw', default => undef );
 has 'create_records_coderef'	=> ( is => 'rw', default => undef );
 has 'destroy_records_coderef'	=> ( is => 'rw', default => undef );
 
-
-sub BUILD {}
-after 'BUILD' => sub {
-	my $self = shift;
-	
-	$self->apply_actions( read		=> 'store_read' );
-	$self->apply_actions( update	=> 'store_update' ) if (defined $self->update_records_coderef);
-	$self->apply_actions( create	=> 'store_create' ) if (defined $self->create_records_coderef);
-	$self->apply_actions( destroy	=> 'store_destroy' ) if (defined $self->destroy_records_coderef);
-};
-
-
-
-=pod
-has 'actions' => ( is => 'ro', lazy => 1, default => sub {{}} ); # Dummy placeholder
-around 'actions' => sub {
-	my $orig = shift;
-	my $self = shift;
-	
-	my $actions = $self->$orig(@_);
-	
-	#$actions->{read}		= sub { $self->store_read };
-	$actions->{read}		= 'store_read';
-	$actions->{update}	= sub { $self->store_update } if (defined $self->update_records_coderef);
-	$actions->{create}	= sub { $self->store_create } if (defined $self->create_records_coderef);
-	$actions->{destroy}	= sub { $self->store_destroy } if (defined $self->destroy_records_coderef);
-	
-	return $actions;
-};
-=cut
 
 #############
 
@@ -358,21 +360,7 @@ sub store_update {
 
 # not implemented yet:
 sub store_create {}
-
-
-
-
-sub store_destroy {
-	my $self = shift;
-	#return undef unless ($self->can('delete_records'));
-	
-	use Data::Dumper;
-	my $params = $self->c->req->params;
-	$self->c->is_debug and $self->c->log->debug(CYAN . BOLD . Dumper($params) . CLEAR);
-}
-
-
-
+sub store_destroy {}
 
 
 has 'getStore' => ( is => 'ro', lazy => 1, default => sub { 
@@ -383,7 +371,6 @@ has 'getStore' => ( is => 'ro', lazy => 1, default => sub {
 		func => $self->getStore_code
 	);
 });
-
 
 
 has 'getStore_code' => ( is => 'ro', lazy_build => 1 );
@@ -412,41 +399,28 @@ has 'store_api' => ( is => 'ro', lazy => 1, default => sub {
 });
 
 
-has 'store_load_listener' => ( is => 'ro', default => undef );
-has 'store_update_listener' => ( is => 'ro', default => undef );
-has 'store_save_listener' => ( is => 'ro', default => undef );
-
-has 'store_add_listener' => ( is => 'ro', default => undef );
-has 'store_exception_listener' => ( is => 'ro', default => undef );
-
-
-
-has 'store_write_listener' => ( is => 'ro', lazy => 1, default => sub {
+# Merge/overwrite store_listeners hash
+sub apply_store_listeners {
 	my $self = shift;
-	return RapidApp::JSONFunc->new( raw => 1, func => 
-		'function(store, action, result, res, rs) { ' .
-			'Ext.log("write event");' . 
-			($self->reload_on_save ? 'store.load();' : '') .
-			#'store.write_callback.apply(this,arguments);' .
-		'}'
+	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	%{ $self->store_listeners } = (
+		%{ $self->store_listeners },
+		%new
 	);
-});
+}
 
-
-has 'store_listeners' => ( is => 'ro', lazy => 1, default => sub {
+# Merge in only hash keys that do not already exist:
+sub applyIf_store_listeners {
 	my $self = shift;
+	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
-	my $listeners;
-	
-	$listeners->{load} 		= $self->store_load_listener if (defined $self->store_load_listener);
-	$listeners->{update}		= $self->store_update_listener if (defined $self->store_update_listener);
-	$listeners->{save} 		= $self->store_save_listener if (defined $self->store_save_listener);
-	$listeners->{write} 		= $self->store_write_listener if (defined $self->store_write_listener);
-	$listeners->{add} 		= $self->store_add_listener if (defined $self->store_add_listener);
-	$listeners->{exception} = $self->store_exception_listener if (defined $self->store_exception_listener);
+	foreach my $opt (keys %new) {
+		next if (defined $self->store_listeners->{$opt});
+		$self->store_listeners->{$opt} = $new{$opt};
+	}
+}
 
-	return $listeners;
-});
 
 has 'store_writer' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;

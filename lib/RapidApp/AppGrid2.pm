@@ -4,7 +4,7 @@ package RapidApp::AppGrid2;
 use strict;
 use Moose;
 
-extends 'RapidApp::AppCnt';
+extends 'RapidApp::AppCmp';
 with 'RapidApp::Role::DataStore';
 
 use Try::Tiny;

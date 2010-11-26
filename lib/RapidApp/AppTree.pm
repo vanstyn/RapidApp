@@ -4,7 +4,7 @@ package RapidApp::AppTree;
 use strict;
 use Moose;
 
-extends 'RapidApp::AppCnt';
+extends 'RapidApp::AppCmp';
 
 use RapidApp::MooseX::ClassAttrSugar;
 setup_apply_methods_for('config');
