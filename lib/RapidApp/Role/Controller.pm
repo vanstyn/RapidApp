@@ -29,11 +29,25 @@ has 'base_url' => (
 	},
 	traits => [ 'RapidApp::Role::PerRequestVar' ] 
 );
-has 'actions'					=> ( is => 'ro', 	default => sub {{}} );
+
 #has 'extra_actions'			=> ( is => 'ro', 	default => sub {{}} );
 has 'default_action'			=> ( is => 'ro',	default => undef );
 has 'content'					=> ( is => 'ro',	default => '' );
 has 'render_as_json'			=> ( is => 'rw',	default => 1, traits => [ 'RapidApp::Role::PerRequestVar' ]  );
+
+
+has 'actions' => (
+	traits	=> ['Hash'],
+	is        => 'ro',
+	isa       => 'HashRef',
+	default   => sub { {} },
+	handles   => {
+		 apply_actions	=> 'set',
+		 get_action		=> 'get',
+		 has_action		=> 'exists'
+	}
+);
+
 
 sub c {
 	return $RapidApp::ScopedGlobals::CatalystInstance;
@@ -133,7 +147,7 @@ sub controller_dispatch {
 	try {
 	
 		#if (defined $opt and (defined $self->actions->{$opt} or defined $self->extra_actions->{$opt}) ) {
-		if ( defined $opt and defined $self->actions->{$opt} ) {
+		if ( defined $opt and $self->has_action($opt) ) {
 			$data = $self->process_action($opt,@subargs);
 		
 		}
@@ -203,7 +217,7 @@ sub process_action {
 	my $data = '';
 	my $coderef;
 	if (defined $opt) {
-		$coderef = $self->actions->{$opt};
+		$coderef = $self->get_action($opt);
 		#$coderef = $self->extra_actions->{$opt} unless (defined $coderef);
 	}
 	if (defined $coderef) {
@@ -252,26 +266,6 @@ sub render_data {
 	return $self->c->response->body( $rendered_data );
 }
 
-
-
-# add or replace actions (i.e. as passed to the action param of the constructor):
-sub apply_actions {
-	my $self = shift;
-	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-
-	#my $new_actions = {
-	#	%{ $self->actions },
-	#	%new
-	#};
-
-	#my $attr = $self->meta->find_attribute_by_name('actions');
-	#$attr->set_value($self,$new_actions);
-	
-	%{ $self->actions } = (
-		%{ $self->actions },
-		%new
-	);
-}
 
 
 sub set_response_warning {

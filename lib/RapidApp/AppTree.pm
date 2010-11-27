@@ -32,6 +32,12 @@ sub BUILD {
 		animate				=> \1,
 		useArrows			=> \1
 	);
+	
+	$self->apply_actions( nodes 	=> 'call_fetch_nodes' );
+	$self->apply_actions( node 	=> 'call_fetch_node' ) if ($self->can('fetch_node'));
+	$self->apply_actions( add 		=> 'call_add_node' ) if ($self->can('add_node'));
+	$self->apply_actions( delete 	=> 'call_delete_node' ) if ($self->can('delete_node'));
+	
 }
 
 
@@ -76,7 +82,7 @@ has 'root_node_text'		=> ( is => 'ro', lazy => 1, default => sub { (shift)->root
 
 
 
-
+=pod
 has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	
@@ -96,6 +102,38 @@ has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 	
 	return $actions;
 });
+=cut
+
+
+
+sub call_fetch_nodes {
+	my $self = shift;
+	my $node = $self->c->req->params->{node};
+	return $self->fetch_nodes($node);
+}
+
+sub call_fetch_node {
+	my $self = shift;
+	my $node = $self->c->req->params->{node};
+	return $self->fetch_node($node);
+}
+
+sub call_add_node {
+	my $self = shift;
+	my $name = $self->c->req->params->{name};
+	my $node = $self->c->req->params->{node};
+	return $self->add_node($name,$node);
+}
+
+sub call_delete_node {
+	my $self = shift;
+	my $name = $self->c->req->params->{name};
+	my $node = $self->c->req->params->{node};
+	my $recursive = $self->c->req->params->{recursive};
+	return $self->delete_node($node,$recursive);
+}
+
+
 
 
 has 'root_node' => ( is => 'ro', lazy => 1, default => sub {
