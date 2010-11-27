@@ -12,9 +12,17 @@ with 'RapidApp::Role::Module';
 use RapidApp::JSONFunc;
 use Try::Tiny;
 use Scalar::Util 'blessed';
+use Data::Dumper;
 
 use Term::ANSIColor qw(:constants);
 
+use RapidApp::Error;
+use Exception::Class (
+	'RapidApp::Role::Controller::UnknownAction' => {
+		isa => 'RapidApp::Error',
+		fields => [ 'unknown_arg' ]
+	}
+);
 
 our $VERSION = '0.1';
 
@@ -32,9 +40,8 @@ has 'base_url' => (
 has 'actions'					=> ( is => 'ro', 	default => sub {{}} );
 has 'extra_actions'			=> ( is => 'ro', 	default => sub {{}} );
 has 'default_action'			=> ( is => 'ro',	default => undef );
-has 'content'					=> ( is => 'ro',	default => '' );
 has 'render_as_json'			=> ( is => 'rw',	default => 1 );
-has 'auto_viewport'			=> ( is => 'rw',	default => 1 );
+has 'auto_viewport'			=> ( is => 'rw',	default => 0 );
 
 sub c {
 	return $RapidApp::ScopedGlobals::CatalystInstance;
@@ -80,7 +87,7 @@ has 'create_module_params' => ( is => 'ro', lazy => 1,	default => sub {
 has 'json' => ( is => 'ro', lazy_build => 1 );
 sub _build_json {
 	my $self = shift;
-	return JSON::PP->new->allow_blessed->convert_blessed;
+	return RapidApp::JSON::MixedEncoder->new;
 }
 
 sub JSON_encode {
@@ -175,10 +182,16 @@ sub controller_dispatch {
 		# if there were unprocessed arguments which were not an action, and there was no default action, generate a 404
 		if (defined $opt) {
 			$self->c->log->info("--> " . RED . BOLD . "unknown action: $opt" . CLEAR);
-			$self->c->stash->{current_view} = 'HTTP404';  # default to an error page
-			return undef;
+			if ($self->c->stash->{requestContentType} ne 'JSON') {
+				$self->c->stash->{current_view} = 'RapidApp::HttpStatus';
+				$self->c->res->status(404);
+				return undef;
+			} else {
+				die RapidApp::Role::Controller::UnknownAction->new(message => "Unknown module or action", unknown_arg => $opt);
+			}
 		}
-		elsif ($self->c->stash->{reqContentType} ne 'JSON' && $self->auto_viewport) {
+		elsif ($self->c->stash->{requestContentType} ne 'JSON' && $self->auto_viewport) {
+			$self->c->log->debug(Dumper($self));
 			$self->c->log->info("--> " . GREEN . BOLD . "[viewport]" . CLEAR . ". (no action)");
 			return $self->viewport;
 		}
@@ -243,6 +256,9 @@ Else, the data is treated as an explicit string for the body.  The body is assig
 sub render_data {
 	my ($self, $data)= @_;
 	
+	#use Data::Dumper;
+	#$self->c->log->debug(Dumper($data));
+	
 	# do nothing if the body has been set
 	if (defined $self->c->response->body && length $self->c->response->body) {
 		$self->c->log->debug("(body set by user)");
@@ -269,12 +285,11 @@ sub render_data {
 
 sub viewport {
 	my $self= shift;
-	$self->c->stash->{current_view} = 'RapidApp::TT';
-	$self->c->stash->{template} = 'templates/rapidapp/ext_viewport.tt';
+	$self->c->stash->{current_view} = 'RapidApp::Viewport';
 	$self->c->stash->{title} = $self->module_name;
 	$self->c->stash->{config_url} = $self->base_url;
 	if (scalar keys %{$self->c->req->params}) {
-		$self->c->stash->{config_params} = RapidApp::JSON::MixedEncoder::encode_json(%{$self->c->req->params});
+		$self->c->stash->{config_params} = { %{$self->c->req->params} };
 	}
 }
 

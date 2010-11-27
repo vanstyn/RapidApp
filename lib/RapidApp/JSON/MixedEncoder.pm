@@ -11,10 +11,14 @@ use base 'JSON::PP';
 # copied from JSON::PP
 my $JSON; # cache
 sub encode_json ($) { # encode
-	($JSON ||= __PACKAGE__->new->utf8->allow_blessed)->encode($_[0]);
+	($JSON ||= __PACKAGE__->new)->encode($_[0]);
 }
 sub decode_json ($) { # decode
-	($JSON ||= __PACKAGE__->new->utf8->allow_blessed)->decode($_[0]);
+	($JSON ||= __PACKAGE__->new)->decode($_[0]);
+}
+
+sub new {
+	return bless JSON::PP->new->utf8->allow_blessed->convert_blessed, __PACKAGE__;
 }
 
 sub object_to_json {

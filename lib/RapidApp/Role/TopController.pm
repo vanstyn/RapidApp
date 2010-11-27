@@ -19,10 +19,12 @@ our $VERSION = '0.1';
 
 has 'app_title' 						=> ( is => 'ro',	default => 'RapidApp Application'		);
 
-sub BUILD {
+sub BUILD {}
+
+after 'BUILD' => sub {
 	my $self= shift;
 	$self->auto_viewport(1);
-}
+};
 
 around 'Controller' => sub {
 	my $orig = shift;
@@ -40,7 +42,7 @@ around 'Controller' => sub {
 	
 	try {
 		# provide hints for our controllers on what contect type is expected
-		$c->stash->{reqContentType}=
+		$c->stash->{requestContentType}=
 			$c->req->header('X-RapidApp-RequestContentType')
 			|| $c->req->param('RequestContentType')
 			|| '';
@@ -49,6 +51,9 @@ around 'Controller' => sub {
 		$c->stash->{controllerResult} = $result = $self->$orig($c, @args);
 	}
 	catch {
+		#if ($self->storeExceptions) {
+		#}
+		
 		$c->stash->{exception}= $_;
 		my $msg= ''.$_;
 		chomp($msg);
@@ -58,6 +63,15 @@ around 'Controller' => sub {
 				if ($_->can('dump')) { $c->log->debug($_->dump); }
 				elsif ($_->can('trace')) { $c->log->debug($_->trace); }
 			}
+		}
+		
+		# on exceptions, we either generate a 503, or a JSON response to the same effect
+		if ($self->c->stash->{requestContentType} eq 'JSON') {
+			$c->stash->{current_view}= 'RapidApp::JSON';
+		}
+		else {
+			$c->stash->{current_view}= 'RapidApp::HTTP';
+			$c->res->status(404);
 		}
 	};
 	

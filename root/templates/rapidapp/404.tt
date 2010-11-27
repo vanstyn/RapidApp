@@ -1,0 +1,12 @@
+<html>
+<head>
+	<title> [% title %] - Page not found</title>
+	<style type="text/css">
+		* { font-face: "Arial", sans-serif; }
+	</style>
+</head>
+<body>
+	<h2>HTTP [% status %]</h2>
+	The resource "[% attemptedUrl %]" does not exist.
+</body>
+</html>

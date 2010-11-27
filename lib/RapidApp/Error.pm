@@ -25,7 +25,7 @@ sub dump {
 	my $self= shift;
 	
 	# start with the readable messages
-	my $result= $self->full_message;
+	my $result= $self->full_message."\n";
 	$result.= 'Diag: '.$self->full_diag."\n" if length($self->diag) || defined($self->full_diag_fn);
 	
 	# dump any misc properties
