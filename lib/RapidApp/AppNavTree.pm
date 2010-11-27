@@ -23,12 +23,16 @@ use RapidApp::JSONFunc;
 sub BUILD {
 	my $self = shift;
 	
-	$self->apply_listeners (
-		'beforerender'	=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' ),
-		'click' 			=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.treenav_click' )
-	
+#	$self->apply_listeners (
+#		'beforerender'	=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' ),
+#		'click' 			=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.treenav_click' )
+#	
+#	);
+
+	$self->add_event_handlers (
+		[ 'beforerender', RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' ) ],
+		[ 'click', RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.treenav_click' ) ]
 	);
-	
 }
 
 

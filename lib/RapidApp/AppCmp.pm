@@ -11,6 +11,16 @@ use RapidApp::JSONFunc;
 use Term::ANSIColor qw(:constants);
 
 
+sub BUILD {
+	my $self = shift;
+	
+	# Add the Ext.ux.RapidApp.Plugin.EventHandlers plugin to all AppCmp
+	# based objects:
+	$self->add_plugin({ ptype => 'rappeventhandlers' });
+}
+
+
+
 sub content {
 	my $self = shift;
 	
@@ -72,7 +82,11 @@ has 'listeners' => (
 
 
 has 'plugins' => (
-	traits    => ['Array','RapidApp::Role::PerRequestBuildDefReset'],
+	traits    => [
+		'Array',
+		'RapidApp::Role::AppCmpConfigParam',
+		'RapidApp::Role::PerRequestBuildDefReset',
+	],
 	is        => 'ro',
 	isa       => 'ArrayRef',
 	default   => sub { [] },
@@ -83,8 +97,29 @@ has 'plugins' => (
 	}
 );
 
-
-
+# event_handlers do basically the same thing as "listeners" except it is
+# setup as a list instead of a hash, allowing multiple handlers to be
+# defined for the same event. Items should be added as ArrayRefs, with
+# the first element defining a string representing the event name, and the
+# remaining elements representing 1 or more handlers (RapidApp::JSONFunc
+# objects). Unlike "listeners" which is a built-in config param associated
+# with all Ext.Observable objects, "event_handlers" is a custom param that
+# is processed in the Ext.ux.RapidApp.Plugin.EventHandlers plugin which is
+# also setup in AppCmp
+has 'event_handlers' => (
+	traits    => [
+		'Array',
+		'RapidApp::Role::AppCmpConfigParam',
+		'RapidApp::Role::PerRequestBuildDefReset',
+	],
+	is        => 'ro',
+	isa       => 'ArrayRef[ArrayRef]',
+	default   => sub { [] },
+	handles => {
+		add_event_handlers		=> 'push',
+		has_no_event_handlers	=> 'is_empty',
+	}
+);
 
 #### --------------------- ####
 
