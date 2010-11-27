@@ -37,16 +37,29 @@ has 'base_url' => (
 	},
 	traits => [ 'RapidApp::Role::PerRequestVar' ] 
 );
-has 'actions'					=> ( is => 'ro', 	default => sub {{}} );
-has 'extra_actions'			=> ( is => 'ro', 	default => sub {{}} );
+
+#has 'extra_actions'			=> ( is => 'ro', 	default => sub {{}} );
 has 'default_action'			=> ( is => 'ro',	default => undef );
-has 'render_as_json'			=> ( is => 'rw',	default => 1 );
+has 'render_as_json'			=> ( is => 'rw',	default => 1, traits => [ 'RapidApp::Role::PerRequestVar' ]  );
 has 'auto_viewport'			=> ( is => 'rw',	default => 0 );
+
+
+has 'actions' => (
+	traits	=> ['Hash'],
+	is        => 'ro',
+	isa       => 'HashRef',
+	default   => sub { {} },
+	handles   => {
+		 apply_actions	=> 'set',
+		 get_action		=> 'get',
+		 has_action		=> 'exists'
+	}
+);
+
 
 sub c {
 	return $RapidApp::ScopedGlobals::CatalystInstance;
 }
-
 
 
 has 'no_persist' => ( is => 'rw', lazy => 1, default => sub {
@@ -169,7 +182,7 @@ Else, content is called, and its return value is passed to render_data.
 sub controller_dispatch {
 	my ($self, $opt, @subargs)= @_;
 	
-	if (defined $opt and (defined $self->actions->{$opt} or defined $self->extra_actions->{$opt}) ) {
+	if ( defined $opt and $self->has_action($opt) ) {
 		return $self->process_action($opt,@subargs);
 	}
 	elsif (defined $opt and $self->_load_module($opt)) {
@@ -217,7 +230,7 @@ sub process_action {
 	
 	defined $opt or die "No action specified";
 	
-	my $coderef = $self->actions->{$opt} || $self->extra_actions->{$opt};
+	my $coderef = $self->get_action($opt);
 	defined $coderef or die "No action named $opt";
 	
 	# New: if $coderef is not actually a coderef, we assume its a string representing an 
@@ -292,26 +305,6 @@ sub viewport {
 		$self->c->stash->{config_params} = { %{$self->c->req->params} };
 	}
 }
-
-# add or replace actions (i.e. as passed to the action param of the constructor):
-sub apply_actions {
-	my $self = shift;
-	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-	
-	#my $new_actions = {
-	#	%{ $self->actions },
-	#	%new
-	#};
-	
-	#my $attr = $self->meta->find_attribute_by_name('actions');
-	#$attr->set_value($self,$new_actions);
-	
-	%{ $self->actions } = (
-		%{ $self->actions },
-		%new
-	);
-}
-
 
 sub set_response_warning {
 	my $self = shift;

@@ -171,6 +171,9 @@ sub Attr_spec {
 		my $dbfName= $self->ExtNamesToDbFields->{$params->{sort}};
 		defined $dbfName or $dbfName= $params->{sort};
 		
+		#Set the relationship to "me" if none is specified:
+		$dbfName = 'me.' . $dbfName unless ($dbfName =~ /\./);
+		
 		if (lc($params->{dir}) eq 'desc') {
 			$attr->{order_by} = { -desc => $dbfName };
 		}

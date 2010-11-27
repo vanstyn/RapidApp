@@ -250,6 +250,8 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 
 	layout: 'hbox',
 	
+	autoEl: {},
+	
 	// Dummy default list of fields:
 	fieldList: [ 'field1','field2','field3','field4' ],
 	
@@ -529,11 +531,16 @@ Ext.ux.MultiFilter.Filter = Ext.extend(Ext.Container,{
 
 	layout: 'hbox',
 	
+	
+	
 	cls: 'x-toolbar x-small-editor', // < --- this makes the container look like a toolbar
+	//cls: 'x-toolbar', // < --- this makes the container look like a toolbar
 	style: {
 		margin: '5px 5px 5px 5px',
 		'border-width': '1px 1px 1px 1px'
 	},
+	
+	//height: 40,
 	
 	defaults: {
 		flex: 1

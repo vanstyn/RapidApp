@@ -4,14 +4,26 @@ package RapidApp::AppTree;
 use strict;
 use Moose;
 
-extends 'RapidApp::AppCnt';
+extends 'RapidApp::AppCmp';
 
-use RapidApp::MooseX::ClassAttrSugar;
-setup_apply_methods_for('config');
-setup_apply_methods_for('listeners');
+#use RapidApp::MooseX::ClassAttrSugar;
+#setup_apply_methods_for('config');
+#setup_apply_methods_for('listeners');
+
+#apply_default_config(
+#		xtype					=> 'treepanel',
+#		border				=> \0,
+#		layout				=> 'fit',
+#		containerScroll 	=> \1,
+#		autoScroll			=> \1,
+#		animate				=> \1,
+#		useArrows			=> \1
+#);
 
 
-apply_default_config(
+sub BUILD {
+	my $self = shift;
+	$self->apply_config(
 		xtype					=> 'treepanel',
 		border				=> \0,
 		layout				=> 'fit',
@@ -19,7 +31,15 @@ apply_default_config(
 		autoScroll			=> \1,
 		animate				=> \1,
 		useArrows			=> \1
-);
+	);
+	
+	$self->apply_actions( nodes 	=> 'call_fetch_nodes' );
+	$self->apply_actions( node 	=> 'call_fetch_node' ) if ($self->can('fetch_node'));
+	$self->apply_actions( add 		=> 'call_add_node' ) if ($self->can('add_node'));
+	$self->apply_actions( delete 	=> 'call_delete_node' ) if ($self->can('delete_node'));
+	
+}
+
 
 
 use RapidApp::JSONFunc;
@@ -62,7 +82,7 @@ has 'root_node_text'		=> ( is => 'ro', lazy => 1, default => sub { (shift)->root
 
 
 
-
+=pod
 has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	
@@ -82,6 +102,38 @@ has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 	
 	return $actions;
 });
+=cut
+
+
+
+sub call_fetch_nodes {
+	my $self = shift;
+	my $node = $self->c->req->params->{node};
+	return $self->fetch_nodes($node);
+}
+
+sub call_fetch_node {
+	my $self = shift;
+	my $node = $self->c->req->params->{node};
+	return $self->fetch_node($node);
+}
+
+sub call_add_node {
+	my $self = shift;
+	my $name = $self->c->req->params->{name};
+	my $node = $self->c->req->params->{node};
+	return $self->add_node($name,$node);
+}
+
+sub call_delete_node {
+	my $self = shift;
+	my $name = $self->c->req->params->{name};
+	my $node = $self->c->req->params->{node};
+	my $recursive = $self->c->req->params->{recursive};
+	return $self->delete_node($node,$recursive);
+}
+
+
 
 
 has 'root_node' => ( is => 'ro', lazy => 1, default => sub {

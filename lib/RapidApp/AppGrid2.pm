@@ -4,7 +4,7 @@ package RapidApp::AppGrid2;
 use strict;
 use Moose;
 
-extends 'RapidApp::AppCnt';
+extends 'RapidApp::AppCmp';
 with 'RapidApp::Role::DataStore';
 
 use Try::Tiny;
@@ -16,34 +16,29 @@ use RapidApp::JSONFunc;
 
 use Term::ANSIColor qw(:constants);
 
-use RapidApp::MooseX::ClassAttrSugar;
-setup_apply_methods_for('config');
-setup_apply_methods_for('listeners');
+#use RapidApp::MooseX::ClassAttrSugar;
+#setup_apply_methods_for('config');
+#setup_apply_methods_for('listeners');
 
-apply_default_config(
-	xtype						=> 'appgrid2',
-	pageSize					=> 25,
-	stripeRows				=> \1,
-	columnLines				=> \1,
-	use_multifilters		=> \1,
-	gridsearch				=> \1,
-	gridsearch_remote		=> \1,
-	column_allow_save_properties => [ 'width','hidden' ]
-);
-
-
+#apply_default_config(
+#	xtype						=> 'appgrid2',
+#	pageSize					=> 25,
+#	stripeRows				=> \1,
+#	columnLines				=> \1,
+#	use_multifilters		=> \1,
+#	gridsearch				=> \1,
+#	gridsearch_remote		=> \1,
+#	column_allow_save_properties => [ 'width','hidden' ]
+#);
 
 
-has 'columns' => ( is => 'rw', default => sub {{}}, isa => 'HashRef', traits => ['RapidApp::Role::PerRequestBuildDefReset'] );
-has 'column_order' => ( is => 'rw', default => sub {[]}, isa => 'ArrayRef', traits => ['RapidApp::Role::PerRequestBuildDefReset'] );
 has 'title' => ( is => 'ro', default => undef );
 has 'title_icon_href' => ( is => 'ro', default => undef );
 
 has 'open_record_class' => ( is => 'ro', default => undef );
 has 'add_record_class' => ( is => 'ro', default => undef );
 
-has 'include_columns' => ( is => 'ro', default => sub {[]} );
-has 'exclude_columns' => ( is => 'ro', default => sub {[]} );
+
 
 # autoLoad needs to be false for the paging toolbar to not load the whole
 # data set
@@ -77,36 +72,11 @@ sub get_record_loadContentCnf {
 
 
 
-sub run_load_saved_search {
-	my $self = shift;
-	
-	return unless ($self->can('load_saved_search'));
-	
-	try {
-		$self->load_saved_search;
-	}
-	catch {
-		my $err = $_;
-		$self->set_response_warning({
-			title	=> 'Error loading search',
-			msg	=> 
-				'An error occured while trying to load the saved search. The default view has been loaded.' . "\n\n" . 
-				'DETAIL:' . "\n\n" .
-				'<pre>' . $err . '</pre>'
-		});
-	};
-}
-
-
-
-
 
 
 after 'ONREQUEST' => sub {
 	my $self = shift;
-	
-	$self->run_load_saved_search;
-	
+		
 	$self->apply_config(store => $self->JsonStore);
 	$self->apply_config(tbar => $self->tbar_items) if (defined $self->tbar_items);
 	
@@ -123,6 +93,17 @@ after 'ONREQUEST' => sub {
 
 sub BUILD {
 	my $self = shift;
+	
+	$self->apply_config(
+		xtype						=> 'appgrid2',
+		pageSize					=> 25,
+		stripeRows				=> \1,
+		columnLines				=> \1,
+		use_multifilters		=> \1,
+		gridsearch				=> \1,
+		gridsearch_remote		=> \1,
+		column_allow_save_properties => [ 'width','hidden' ]
+	);
 	
 	# The record_pk is forced to be added/included as a column:
 	if (defined $self->record_pk) {
@@ -193,29 +174,6 @@ around 'store_read_raw' => sub {
 
 
 
-
-
-has 'include_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
-	my $self = shift;
-	my $hash = {};
-	foreach my $col (@{$self->include_columns}) {
-		$hash->{$col} = 1;
-	}
-	return $hash;
-});
-
-has 'exclude_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
-	my $self = shift;
-	my $hash = {};
-	foreach my $col (@{$self->exclude_columns}) {
-		$hash->{$col} = 1;
-	}
-	return $hash;
-});
-
-
-
-
 sub options_menu_items {
 	my $self = shift;
 	return undef;
@@ -277,55 +235,6 @@ sub add_button {
 }
 
 
-sub apply_columns {
-	my $self = shift;
-	my %column = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-	
-	foreach my $name (keys %column) {
-	
-		next unless ($self->valid_colname($name));
-	
-		unless (defined $self->columns->{$name}) {
-			$self->columns->{$name} = RapidApp::Column->new( name => $name );
-			push @{ $self->column_order }, $name;
-		}
-		
-		$self->columns->{$name}->apply_attributes(%{$column{$name}});
-	}
-	
-	return $self->apply_config(columns => $self->column_list);
-}
-
-
-
-#sub add_column {
-#	my $self = shift;
-#	my %column = @_;
-#	%column = %{$_[0]} if (ref($_[0]) eq 'HASH');
-#	
-#	foreach my $name (keys %column) {
-#		if (defined $self->columns->{$name}) {
-#			$self->columns->{$name}->apply_attributes(%{$column{$name}});
-#		}
-#		else {
-#			$self->columns->{$name} = RapidApp::Column->new(%{$column{$name}}, name => $name );
-#			push @{ $self->column_order }, $name;
-#		}
-#
-#	}
-#}
-
-
-sub column_list {
-	my $self = shift;
-	
-	my @list = ();
-	foreach my $name (@{ $self->column_order }) {
-		push @list, $self->columns->{$name}->get_grid_config;
-	}
-	
-	return \@list;
-}
 
 
 sub set_all_columns_hidden {
@@ -343,108 +252,6 @@ sub set_columns_visible {
 		hidden => \0
 	});
 }
-
-
-sub apply_to_all_columns {
-	my $self = shift;
-	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-	
-	foreach my $column (keys %{ $self->columns } ) {
-		$self->columns->{$column}->apply_attributes(%opt);
-	}
-	
-	return $self->apply_config(columns => $self->column_list);
-}
-
-sub apply_columns_list {
-	my $self = shift;
-	my $cols = shift;
-	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-	
-	die "type of arg 1 must be ArrayRef" unless (ref($cols) eq 'ARRAY');
-	
-	foreach my $column (@$cols) {
-		$self->columns->{$column}->apply_attributes(%opt);
-	}
-	
-	return $self->apply_config(columns => $self->column_list);
-}
-
-
-sub set_sort {
-	my $self = shift;
-	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-	return $self->apply_config( sort => { %opt } );
-}
-
-
-sub batch_apply_opts {
-	my $self = shift;
-	my %opts = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-	
-	foreach my $opt (keys %opts) {
-		if ($opt eq 'columns' and ref($opts{$opt}) eq 'HASH') {				$self->apply_columns($opts{$opt});				}
-		elsif ($opt eq 'column_order') {		$self->set_columns_order(0,$opts{$opt});		}
-		elsif ($opt eq 'sort') {				$self->set_sort($opts{$opt});						}
-		elsif ($opt eq 'filterdata') {		$self->apply_store_config($opt => $opts{$opt});		}
-		else { die "invalid option '$opt' passed to batch_apply_opts";							}
-	}
-}
-
-
-
-
-
-sub valid_colname {
-	my $self = shift;
-	my $name = shift;
-	
-	if (scalar @{$self->exclude_columns} > 0) {
-		return 0 if (defined $self->exclude_columns_hash->{$name});
-	}
-	
-	if (scalar @{$self->include_columns} > 0) {
-		return 0 unless (defined $self->include_columns_hash->{$name});
-	}
-	
-	return 1;
-}
-
-
-
-sub set_columns_order {
-	my $self = shift;
-	my $offset = shift;
-	my @cols = (ref($_[0]) eq 'ARRAY' and not defined $_[1]) ? @{ $_[0] } : @_; # <-- arg as list or arrayref
-	
-	my %cols_hash = ();
-	foreach my $col (@cols) {
-		die $col . " specified more than once" if ($cols_hash{$col}++);
-	}
-	
-	my @pruned = ();
-	foreach my $col (@{ $self->column_order }) {
-		if ($cols_hash{$col}) {
-			delete $cols_hash{$col};
-		}
-		else {
-			push @pruned, $col;
-		}
-	}
-	
-	my @remaining = keys %cols_hash;
-	if(@remaining > 0) {
-		die "can't set the order of columns that do not already exist (" . join(',',@remaining) . ')';
-	}
-	
-	splice(@pruned,$offset,0,@cols);
-	
-	@{ $self->column_order } = @pruned;
-	
-	return $self->apply_config(columns => $self->column_list);
-}
-
-
 
 
 
