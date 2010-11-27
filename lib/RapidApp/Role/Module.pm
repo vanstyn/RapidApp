@@ -14,7 +14,6 @@ our $VERSION = '0.1';
 
 has 'module_name'						=> ( is => 'ro',	default => undef );
 has 'parent_module_ref'					=> ( is => 'ro',	default => undef );
-has 'modules'							=> ( is => 'ro', 	default => sub {{}} );
 has 'modules_obj'						=> ( is => 'ro', 	default => sub {{}} );
 has 'default_module'					=> ( is => 'ro',	default => 'default_module' );
 has 'create_module_params'			=> ( is => 'ro',	default => sub { {} } );
@@ -23,6 +22,19 @@ has 'modules_params'					=> ( is => 'ro',	default => sub { {} } );
 
 # All purpose options:
 has 'module_options' => ( is => 'ro', lazy => 1, default => sub {{}}, traits => [ 'RapidApp::Role::PerRequestVar' ] );
+
+has 'modules' => (
+	traits	=> ['Hash'],
+	is        => 'ro',
+	isa       => 'HashRef',
+	default   => sub { {} },
+	handles   => {
+		 apply_modules			=> 'set',
+		 get_module				=> 'get',
+		 has_module				=> 'exists',
+		 module_class_list	=> 'values'
+	}
+);
 
 
 has 'per_request_attr_build_defaults' => ( is => 'ro', default => sub {{}}, isa => 'HashRef' );
@@ -34,7 +46,9 @@ before 'BUILD' => sub {
 	# Init ONREQUEST_called to true to prevent ONREQUEST from running during BUILD:
 	$self->ONREQUEST_called(1);
 	
-	foreach my $class (values %{$self->modules}) {
+	#foreach my $class (values %{$self->modules}) {
+	foreach my $class ($self->module_class_list) {
+		$class = $class->{class} if (ref($class) eq 'HASH');
 		eval "use $class";
 	};
 };
@@ -86,8 +100,10 @@ sub Module {
 sub _load_module {
 	my $self = shift;
 	my $name = shift or return 0;
+	return 0 unless ($self->has_module($name));
 	
-	my $class_name = $self->modules->{$name} or return 0;
+	#my $class_name = $self->modules->{$name} or return 0;
+	my $class_name = $self->get_module($name);
 	my $params;
 	if (ref($class_name) eq 'HASH') {
 		$params = $class_name->{params};
@@ -185,17 +201,6 @@ sub clear_per_request_vars {
 		}
 	}
 	#defined $listmsg and $self->c->log->debug($listmsg);
-}
-
-# add or replace modules (i.e. as passed to the modules param of the constructor):
-sub apply_modules {
-	my $self = shift;
-	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-	
-	%{ $self->modules } = (
-		%{ $self->modules },
-		%new
-	);
 }
 
 

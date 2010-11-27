@@ -151,7 +151,7 @@ around 'BUILD' => sub {
 				$self->c->log->debug(MAGENTA . BOLD . $colname . ' (' . $rel_name . ')' . CLEAR);
 				
 				my $module_name = 'combo_' . $colname;
-				$self->apply_modules({ 
+				$self->apply_modules(
 					$module_name => {
 						class	=> 'RapidApp::DbicAppCombo',
 						params	=> {
@@ -159,7 +159,7 @@ around 'BUILD' => sub {
 							ResultSource	=> $Source
 						}
 					}
-				});
+				);
 				
 				$self->apply_columns(
 					$colname => { field_cnf => $self->Module($module_name)->content }
