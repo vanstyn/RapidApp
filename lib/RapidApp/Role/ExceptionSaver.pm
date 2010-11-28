@@ -82,28 +82,21 @@ into.  At the moment, only DBIC tables are supported.  We might extend this in t
 sub saveException {
 	my $self= shift;
 	my $params= ref $_[0]? $_[0] : { @_ };
-	my $msg= $params->{msg};
 	my $err= $params->{err};
+	my $msg= $params->{msg};
+	my $srcLoc= $params->{srcLoc};
 	my $c= RapidApp::ScopedGlobals->catalystInstance;
 	
-	my ($what, $where);
-	if ($msg =~ /^(.*?) at ([^ ]+.p[ml](?: line [0-9]+)?).*/) {
-		$what= $1;
-		$where= $2;
-		$where =~ s|.*?/lib/||;
-	}
-	else {
-		$what= $msg;
-	}
 	# truncate strings which actually go into varchar columns
-	defined $where && length($where) < 64 or $where= substr($where,0,64);
-	length($what) < 64 or $what= substr($what,0,60).'...';
+	!defined($srcLoc) || length($srcLoc) < 64 or $srcLoc= substr($srcLoc,0,64);
+	length($msg) < 64 or $msg= substr($msg,0,60).'...';
 	
 	my $now= DateTime->now;
 	$now->set_time_zone('UTC');
 	
 	local $Storable::forgive_me= 1; # ignore non-storable things
 	my $serialized= freeze( { err => $err, req => $c->request, user => $c->user } );
+	$self->c->log->debug("Froze ".length($serialized)." bytes");
 	
 	if ($self->exceptionModel) {
 		try {
@@ -112,9 +105,9 @@ sub saveException {
 			
 			my $row= $rs->create({
 				who   => defined $c->user? $c->user->id : undef,
-				what  => $what,
+				what  => $msg,
 				when  => $now,
-				where => $where,
+				where => $srcLoc,
 				why   => $serialized,
 			});
 			$c->stash->{exceptionLogId}= $row->id;

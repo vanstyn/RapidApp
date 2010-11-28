@@ -6,6 +6,7 @@ use Exception::Class;
 use base 'Exception::Class::Base';
 
 use Data::Dumper;
+use Devel::StackTrace::WithLexicals;
 
 BEGIN {
 	my @newFields= qw{cause diag full_message_fn full_diag_fn};
@@ -17,6 +18,25 @@ BEGIN {
 	eval $code;
 }
 
+sub dieConverter {
+	if (ref $_[0] eq '') {
+		my $msg= join ' ', @_;
+		$msg =~ s/ at [^ ]+.p[lm] line.*//;
+		die RapidApp::Error->new(message => $msg);
+	}
+}
+
+sub new {
+	my $self= Exception::Class::Base::new(@_);
+	
+	# if catalyst is in debug mode, we capture a FULL stack trace
+	my $c= RapidApp::ScopedGlobals->catalystInstance;
+	#if (defined $c && $c->debug) {
+	#	$self->{trace}= Devel::StackTrace::WithLexicals->new(ignore_class => [ __PACKAGE__ ]);
+	#}
+	return $self;
+}
+
 sub dump_ignore_fields {
 	return qw{message diag cause full_message_fn trace};
 }
@@ -26,7 +46,10 @@ sub dump {
 	
 	# start with the readable messages
 	my $result= $self->full_message."\n";
-	$result.= 'Diag: '.$self->full_diag."\n" if length($self->diag) || defined($self->full_diag_fn);
+	
+	if ((defined($self->diag) && length($self->diag)) || defined($self->full_diag_fn)) {
+		$result.= 'Diag: '.$self->full_diag."\n" ;
+	}
 	
 	# dump any misc properties
 	my %ignore= map { $_ => 1 } $self->dump_ignore_fields;

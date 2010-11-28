@@ -19,15 +19,15 @@ pre {
 <body>
 	[% IF ex.error %]
 	<h2>Failed to load exception [% ex.id | html %]:</h2>
-	<h3>[% ex.error | html %]</h3>
+	<pre>[% ex.error | html %]</pre>
 	[% ELSE %]
 	<h2>[% name %] Exception Report</h2>
 	<table class="attrs">
-	<tr><td class='k'>Exception ID</td><td>[% ex.id | html %]</td></tr>
-	<tr><td class='k'>User ID</td><td>[% ex.who or "(none)" | html %]</td></tr>
+	<tr><td class='k'>Exception&nbsp;ID</td><td>[% ex.id | html %]</td></tr>
+	<tr><td class='k'>User&nbsp;ID</td><td>[% ex.who or "(none)" | html %]</td></tr>
 	<tr><td class='k'>Date</td><td>[% ex.when.ymd _ " " _ ex.when.hms _ " " _ ex.when.time_zone_short_name | html %]</td></tr>
 	<tr><td class='k'>Summary</td><td>[% ex.what | html | html_line_break %]</td></tr>
-	<tr><td class='k'>Source Loc</td><td>[% ex.where | html | html_line_break %]</td></tr>
+	<tr><td class='k'>Source&nbsp;Loc</td><td>[% ex.where | html | html_line_break %]</td></tr>
 	<tr><td class='k'>Request</td><td><pre>[% Dumper.dump(ex.req) | html %]</pre></td></tr>
 	<tr><td class='k'>User</td><td><pre>[% Dumper.dump(ex.user) | html %]</pre></td></tr>
 	<tr><td class='k'>Exception</td><td>

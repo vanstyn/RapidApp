@@ -25,21 +25,35 @@ sub process {
 	$c->res->header('Cache-Control' => 'no-cache');
 	
 	if ($c->stash->{exception}) {
+		my $err= $c->stash->{exception};
+		
 		$c->res->header('X-RapidApp-Exception' => 1);
 		$c->res->status(542);
 		
-		# clean up the message a bit
-		my $msg= ''.$c->stash->{exception};
-		$msg =~ s|\n|<br/>|g;
-		if (length($msg) > 300) {
-			$msg= substr($msg, 0, 300).' ...';
+		my $msg;
+		if (blessed($err) and $err->isa('RapidApp::UserError')) {
+			$msg= $err->message;
+			$msg =~ s|\n|<br/>|g;
+			$msg =~ s|&|&amp;|g;
+			$msg =~ s|<|&lt;|g;
+			$msg =~ s|>|&gt;|g;
+			$msg =~ s|"|&quot;|g;
 		}
-		
-		if (defined $c->stash->{exceptionLogId}) {
-			my $id= $c->stash->{exceptionLogId};
-			$msg .= length($id)?
-				"<br/><br/>The details of this error have been kept for debugging.<br/>Reference number $id"
-				: "<br/>The details of this error could not be saved.";
+		else {
+			$msg= 'An internal error occured<br/>';
+			if (defined $c->stash->{exceptionLogId}) {
+				my $id= $c->stash->{exceptionLogId};
+				$msg .= 'The details of this error have been kept for analysis<br/>'
+					.'Reference number ';
+				if ($c->debug) {
+					$msg .= '<a href="/exception?id='.$id.'" target="_blank">'.$id.'</a>';
+				} else {
+					$msg .= $id;
+				}
+			}
+			else {
+				$msg .= "The details of this error could not be saved.";
+			}
 		}
 		
 		$jsonStr= $self->encoder->encode({

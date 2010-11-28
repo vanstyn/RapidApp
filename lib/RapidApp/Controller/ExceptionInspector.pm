@@ -31,7 +31,9 @@ sub viewport {
 		$self->c->stash->{ex}= $info;
 	}
 	catch {
-		$self->c->stash->{ex}= { error => $_ };
+		use Data::Dumper;
+		$self->c->log->debug(Dumper(keys %$_));
+		$self->c->stash->{ex}= { id => $id, error => $_ };
 	};
 	$self->c->stash->{current_view}= 'RapidApp::TT';
 	$self->c->stash->{template}= 'templates/rapidapp/exception.tt';
@@ -57,7 +59,7 @@ sub loadExceptionInfo {
 	my $rs= $self->c->model($self->exceptionModel);
 	my $row= $rs->find($id);
 	defined $row or die "No excption exists for id $id";
-	my $infoHash= thaw $row->why;
+	my $infoHash= thaw($row->why) || {};
 	
 	my $result= {
 		$row->get_inflated_columns,

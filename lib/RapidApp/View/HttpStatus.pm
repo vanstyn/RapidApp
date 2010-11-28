@@ -5,7 +5,12 @@ use warnings;
 
 use base 'Catalyst::View::TT';
 
-__PACKAGE__->config(TEMPLATE_EXTENSION => '.tt');
+my $codes = {
+	500 => {
+		short => 'Internal Server Error',
+		long  => 'An error occured while processing this request',
+	},
+};
 
 sub process {
 	my ($self, $c)= @_;
@@ -13,19 +18,21 @@ sub process {
 	$c->response->header('Cache-Control' => 'no-cache');
 	defined $c->response->status || $c->response->status(500);
 	
-	# TODO: XXX select a template based on the status
-	$c->stash->{template} = 'templates/rapidapp/404.tt';
-	$c->stash->{title} ||= $c->config->{name};
-	$c->stash->{statusCode}= $c->response->status;
+	my $stat= $c->response->status;
+	$c->stash->{statusCode}= $stat;
+	$c->stash->{shortStatusText}= $codes->{$stat}->{short};
+	$c->stash->{longStatusText}=  $codes->{$stat}->{long};
 	
-	# TODO: XXX select message details based on status code
-	$c->stash->{attemptedUrl}= $c->req->path;
+	if ($c->response->status == 404) {
+		$c->stash->{template} = 'templates/rapidapp/http-404.tt';
+		$c->stash->{attemptedUrl}= $c->req->path;
+	}
+	else {
+		$c->stash->{template} = 'templates/rapidapp/http-status.tt';
+	}
 	
-	if (defined $c->stash->{exceptionLogId}) {
-		my $id= $c->stash->{exceptionLogId};
-		$c->stash->{message} .= length($id)?
-			"\n\nThe details of this error have been kept for debugging.\nReference number $id"
-			: "\n\nThe details of this error could not be saved.";
+	if (defined $c->stash->{exceptionLogId} and !length $c->stash->{exceptionLogId}) {
+		$c->stash->{exceptionLogFailure}= 1;
 	}
 	
 	$self->SUPER::process($c);
