@@ -204,7 +204,6 @@ sub controller_dispatch {
 			}
 		}
 		elsif ($self->c->stash->{requestContentType} ne 'JSON' && $self->auto_viewport) {
-			$self->c->log->debug(Dumper($self));
 			$self->c->log->info("--> " . GREEN . BOLD . "[viewport]" . CLEAR . ". (no action)");
 			return $self->viewport;
 		}
@@ -269,7 +268,6 @@ Else, the data is treated as an explicit string for the body.  The body is assig
 sub render_data {
 	my ($self, $data)= @_;
 	
-	#use Data::Dumper;
 	#$self->c->log->debug(Dumper($data));
 	
 	# do nothing if the body has been set

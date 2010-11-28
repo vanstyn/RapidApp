@@ -20,8 +20,13 @@ sub process {
 	
 	# TODO: XXX select message details based on status code
 	$c->stash->{attemptedUrl}= $c->req->path;
-	$c->stash->{attemptedUrl} =~ s/</&lt;/g;
-	$c->stash->{attemptedUrl} =~ s/>/&gt;/g;
+	
+	if (defined $c->stash->{exceptionLogId}) {
+		my $id= $c->stash->{exceptionLogId};
+		$c->stash->{message} .= length($id)?
+			"\n\nThe details of this error have been kept for debugging.\nReference number $id"
+			: "\n\nThe details of this error could not be saved.";
+	}
 	
 	$self->SUPER::process($c);
 }

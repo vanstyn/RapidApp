@@ -35,6 +35,13 @@ sub process {
 			$msg= substr($msg, 0, 300).' ...';
 		}
 		
+		if (defined $c->stash->{exceptionLogId}) {
+			my $id= $c->stash->{exceptionLogId};
+			$msg .= length($id)?
+				"<br/><br/>The details of this error have been kept for debugging.<br/>Reference number $id"
+				: "<br/>The details of this error could not be saved.";
+		}
+		
 		$jsonStr= $self->encoder->encode({
 			exception	=> \1,
 			success		=> \0,

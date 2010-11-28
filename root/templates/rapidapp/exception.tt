@@ -1,0 +1,54 @@
+[% USE Dumper %]
+<html>
+<head><title>Exception [% ex.id %]</title></head>
+<style type="text/css">
+*, html, body {
+	font-face: Arial;
+	font-family: sans-serif;
+	font-size: 10pt;
+}
+.attrs .k {
+	font-weight: bold;
+	color: blue;
+	vertical-align: top;
+}
+pre {
+	font-size: 9pt;
+}
+</style>
+<body>
+	[% IF ex.error %]
+	<h2>Failed to load exception [% ex.id | html %]:</h2>
+	<h3>[% ex.error | html %]</h3>
+	[% ELSE %]
+	<h2>[% name %] Exception Report</h2>
+	<table class="attrs">
+	<tr><td class='k'>Exception ID</td><td>[% ex.id | html %]</td></tr>
+	<tr><td class='k'>User ID</td><td>[% ex.who or "(none)" | html %]</td></tr>
+	<tr><td class='k'>Date</td><td>[% ex.when.ymd _ " " _ ex.when.hms _ " " _ ex.when.time_zone_short_name | html %]</td></tr>
+	<tr><td class='k'>Summary</td><td>[% ex.what | html | html_line_break %]</td></tr>
+	<tr><td class='k'>Source Loc</td><td>[% ex.where | html | html_line_break %]</td></tr>
+	<tr><td class='k'>Request</td><td><pre>[% Dumper.dump(ex.req) | html %]</pre></td></tr>
+	<tr><td class='k'>User</td><td><pre>[% Dumper.dump(ex.user) | html %]</pre></td></tr>
+	<tr><td class='k'>Exception</td><td>
+		[% IF ex.err.can("dump") %]
+			<pre>[% ex.err.dump | html %]</pre>
+		[% ELSE %]
+			<pre>[% Dumper.dump(ex.err) | html %]</pre>
+		[% END %]
+	</td></tr>
+	[% IF ex.err %]
+		[% IF ex.err.can("trace") and !ex.err.can("dump") %]
+			<tr><td class='k'>Stack</td><td>
+				[% IF ex.err.trace.can("as_html") %]
+					[% ex.err.trace.as_html %]
+				[% ELSE %]
+					<pre>[% ex.err.trace.as_string | html %]</pre>
+				[% END %]
+			</td></tr>
+		[% END %]
+	[% END %]
+	</table>
+	[% END %]
+</body>
+</html>
