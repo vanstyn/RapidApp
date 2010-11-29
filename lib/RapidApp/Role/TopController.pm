@@ -85,6 +85,7 @@ sub extractFieldsFromException {
 	my ($self, $err)= @_;
 	
 	my ($msg, $srcLoc);
+	my $isUserError= 0;
 	
 	if (ref $err) {
 		$err->can('message') and $msg= $err->message;
@@ -93,6 +94,8 @@ sub extractFieldsFromException {
 		$err->can('file') and $srcLoc= $err->file . ($err->can('line')? ' line ' . $err->line : '');
 		$srcLoc ||= $err->{file};
 		$srcLoc =~ s|.*?/lib/||;
+		
+		$isUserError= $err->can('userMessage') && length ($err->userMessage);
 	}
 	$msg ||= ''.$err;
 	chomp($msg);
@@ -103,7 +106,7 @@ sub extractFieldsFromException {
 		$srcLoc =~ s|.*?/lib/||;
 	}
 	
-	return { err => $err, msg => $msg, srcLoc => $srcLoc };
+	return { err => $err, msg => $msg, srcLoc => $srcLoc, isUserError => $isUserError };
 }
 
 =head2 onException( { err => $exeptionObject, msg => $textOfError, srcLoc => $fileAndLine } )
@@ -119,22 +122,29 @@ sub onException {
 	my $params= ref $_[0]? $_[0] : { @_ };
 	my $err= $params->{err};
 	my $msg= $params->{msg};
+	my $srcLoc= $params->{srcLoc};
+	my $isUserError= $params->{isUserError};
 	
 	my $c= $self->c;
 	my $log= $c->log;
 	$c->stash->{exception}= $err;
+	$c->stash->{isUserError}= $isUserError;
 	
-	$log->error("RapidApp Exception: ".$msg);
-	#if ($log->is_debug) {
-	#	if (blessed($err)) {
-	#		if ($err->can('dump')) { $log->debug($err->dump); }
-	#		elsif ($err->can('trace')) { $log->debug($err->trace); }
-	#	}
-	#}
+	if ($isUserError)  {
+		$log->info("User usage error: ".$err->userMessage);
+	}
+	else {
+		$log->error("RapidApp Exception: ".$msg);
+	}
 	
 	# on exceptions, we either generate a 503, or a JSON response to the same effect
 	if ($c->stash->{requestContentType} eq 'JSON') {
 		$c->stash->{current_view}= 'RapidApp::JSON';
+	}
+	elsif ($isUserError) {
+		# TODO: change this to an actual view
+		length($c->response->body) > 0
+			or $c->response->body("Error : " . $err->userMessage);
 	}
 	else {
 		$c->stash->{current_view}= 'RapidApp::HttpStatus';

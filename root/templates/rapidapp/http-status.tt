@@ -9,12 +9,12 @@
 	<h2>HTTP [% statusCode %]</h2>
 	<h4>[% longStatusText | html %]</h4>
 	
-	[% IF exceptionLogFailure %]
+	[% IF exceptionRefFailure %]
 	<p>The details of this error could not be saved.</p>
-	[% ELSIF exceptionLogId %]
+	[% ELSIF exceptionRefId %]
 	<p>The details of this error have been kept for analysis.<br/>
 	Reference number
-	[% IF debug %]<a href="/exception?id=[% exceptionLogId %]" target="_blank">[% exceptionLogId %]</a>[% ELSE %][% exceptionLogId %][% END %]
+	[% IF debug %]<a href="/exception?id=[% exceptionRefId %]" target="_blank">[% exceptionRefId %]</a>[% ELSE %][% exceptionRefId %][% END %]
 	</p>
 	[% END %]
 </body>

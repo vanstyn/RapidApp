@@ -16,6 +16,9 @@ RapidApp::Role::ExceptionSaver;
 
 has 'exceptionModel' => ( is => 'rw', isa => 'Str', default => 'DB::exception' );
 
+has 'saveUserErrors' => ( is => 'rw', isa => 'Bool', default => 1 );
+has 'reportIdForUserErrors' => ( is => 'rw', isa => 'Bool', default => 0 );
+
 =head1 ATTRIBUTES
 
 =over
@@ -85,7 +88,14 @@ sub saveException {
 	my $err= $params->{err};
 	my $msg= $params->{msg};
 	my $srcLoc= $params->{srcLoc};
+	my $isUserError= $params->{isUserError};
 	my $c= RapidApp::ScopedGlobals->catalystInstance;
+	
+	# don't save the error if it is a user-error and not configured to save them
+	my $isUserErr= $err->can('userMessage') && length ($err->userMessage);
+	if (!$self->saveUserErrors && $isUserErr) {
+		return;
+	}
 	
 	# truncate strings which actually go into varchar columns
 	!defined($srcLoc) || length($srcLoc) < 64 or $srcLoc= substr($srcLoc,0,64);
@@ -98,6 +108,7 @@ sub saveException {
 	my $serialized= freeze( { err => $err, req => $c->request, user => $c->user } );
 	$self->c->log->debug("Froze ".length($serialized)." bytes");
 	
+	my $refId;
 	if ($self->exceptionModel) {
 		try {
 			my $rs= $c->model($self->exceptionModel);
@@ -110,12 +121,17 @@ sub saveException {
 				where => $srcLoc,
 				why   => $serialized,
 			});
-			$c->stash->{exceptionLogId}= $row->id;
+			$refId= $row->id;
+			$c->log->info("Exception saved as refId ".$refId);
 		}
 		catch {
 			$c->log->error("Failed to save exception to database: ".$_);
-			$c->stash->{exceptionLogId}= '';
+			$refId= '';
 		};
+	}
+	
+	if (defined $refId && ($self->reportIdForUserErrors || !$isUserErr)) {
+		$c->stash->{exceptionRefId}= $refId;
 	}
 }
 

@@ -31,8 +31,8 @@ sub process {
 		$c->res->status(542);
 		
 		my $msg;
-		if (blessed($err) and $err->isa('RapidApp::UserError')) {
-			$msg= $err->message;
+		if ($c->stash->{isUserError}) {
+			$msg= $err->userMessage;
 			$msg =~ s|\n|<br/>|g;
 			$msg =~ s|&|&amp;|g;
 			$msg =~ s|<|&lt;|g;
@@ -41,19 +41,20 @@ sub process {
 		}
 		else {
 			$msg= 'An internal error occured<br/>';
-			if (defined $c->stash->{exceptionLogId}) {
-				my $id= $c->stash->{exceptionLogId};
-				$msg .= 'The details of this error have been kept for analysis<br/>'
-					.'Reference number ';
-				if ($c->debug) {
-					$msg .= '<a href="/exception?id='.$id.'" target="_blank">'.$id.'</a>';
-				} else {
-					$msg .= $id;
-				}
+		}
+		
+		if ($c->stash->{exceptionRefId}) {
+			my $id= $c->stash->{exceptionRefId};
+			$msg .= 'The details of this error have been kept for analysis<br/>'
+				.'Reference number ';
+			if ($c->debug) {
+				$msg .= '<a href="/exception?id='.$id.'" target="_blank">'.$id.'</a>';
+			} else {
+				$msg .= $id;
 			}
-			else {
-				$msg .= "The details of this error could not be saved.";
-			}
+		}
+		elsif (defined $c->stash->{exceptionRefId}) {
+			$msg .= "The details of this error could not be saved.";
 		}
 		
 		$jsonStr= $self->encoder->encode({

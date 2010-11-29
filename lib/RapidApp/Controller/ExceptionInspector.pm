@@ -7,6 +7,7 @@ use Try::Tiny;
 use Storable qw(freeze thaw);
 use Data::Dumper;
 use RapidApp::Error;
+use RapidApp::UserError;
 
 # make sure the as_html method gets loaded into StackTrace, which might get deserialized
 use Devel::StackTrace;
@@ -18,7 +19,7 @@ has 'exceptionModel' => ( is => 'rw', isa => 'Str', default => 'DB::exception' )
 sub BUILD {
 	my $self= shift;
 	$self->auto_viewport(1);
-	$self->apply_actions(justdie => 'justdie', diefancy => 'diefancy');
+	$self->apply_actions(justdie => 'justdie', diefancy => 'diefancy', usererror => 'usererror');
 }
 
 sub viewport {
@@ -45,6 +46,10 @@ sub justdie {
 
 sub diefancy {
 	die RapidApp::Error->new("Generating an exception using the RapidApp::Error class");
+}
+
+sub usererror {
+	die RapidApp::UserError->new("PEBKAC");
 }
 
 =head2 loadExceptionInfo($id)
