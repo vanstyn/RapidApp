@@ -6,6 +6,7 @@ use Exporter qw( import );
 use Data::Dumper;
 use RapidApp::JSON::MixedEncoder;
 use RapidApp::JSON::RawJavascript;
+use RapidApp::UserError;
 
 @RapidApp::Sugar::EXPORT = ( 'sessvar', 'perreq', 'asjson', 'rawjs' );
 
@@ -37,6 +38,12 @@ sub asjson {
 sub rawjs {
 	scalar(@_) == 1 && ref $_[0] eq '' or die "Expected single string argument";
 	return RapidApp::JSON::RawJavascript->new(js=>$_[0]);
+}
+
+# Exception constructors
+
+sub usererr {
+	return RapidApp::UserError->new(@_);
 }
 
 1;
