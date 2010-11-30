@@ -8,7 +8,7 @@ use RapidApp::JSON::MixedEncoder;
 use RapidApp::JSON::RawJavascript;
 use RapidApp::UserError;
 
-@RapidApp::Sugar::EXPORT = ( 'sessvar', 'perreq', 'asjson', 'rawjs' );
+our @EXPORT = qw(sessvar perreq asjson rawjs usererr);
 
 # Module shortcuts
 #

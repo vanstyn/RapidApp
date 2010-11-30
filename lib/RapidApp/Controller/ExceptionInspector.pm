@@ -3,11 +3,8 @@ package RapidApp::Controller::ExceptionInspector;
 use Moose;
 extends 'RapidApp::AppBase';
 
-use Try::Tiny;
+use RapidApp::Include qw(perlutil sugar);
 use Storable qw(freeze thaw);
-use Data::Dumper;
-use RapidApp::Error;
-use RapidApp::UserError;
 
 # make sure the as_html method gets loaded into StackTrace, which might get deserialized
 use Devel::StackTrace;
@@ -49,7 +46,7 @@ sub diefancy {
 }
 
 sub usererror {
-	die RapidApp::UserError->new("PEBKAC");
+	die usererr "PEBKAC";
 }
 
 =head2 loadExceptionInfo($id)
