@@ -225,7 +225,7 @@ sub process_action {
 	my $self = shift;
 	my ( $opt, @args ) = @_;
 	
-	$self->c->log->info("--> " . GREEN . BOLD . "action{ " . $opt . " }");
+	$self->c->log->info("--> " . GREEN . BOLD . "action{ " . $opt . " }" . CLEAR);
 	
 	defined $opt or die "No action specified";
 	

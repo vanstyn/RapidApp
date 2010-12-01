@@ -52,6 +52,22 @@ before 'BUILD' => sub {
 	};
 };
 
+
+# Does the same thing as apply_modules but also init/loads the modules
+sub apply_init_modules {
+	my $self = shift;
+	my %mods = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	$self->apply_modules(%mods);
+	foreach my $module (keys %mods) {
+		# Initialize every module that we just added and set ONREQUEST_called back to false:
+		$self->Module($module)->ONREQUEST_called(0);
+	}
+}
+
+
+
+
 # 'ONREQUEST' is called once per web request. Add before modifiers to any classes that
 # need to run code at this time
 has 'ONREQUEST_called' => ( is => 'rw', lazy => 1, default => 0, traits => [ 'RapidApp::Role::PerRequestVar' ] );

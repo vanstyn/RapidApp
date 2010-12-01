@@ -9,11 +9,14 @@ use Term::ANSIColor qw(:constants);
 
 use RapidApp::AppAuth;
 
-has 'modules' => (is => 'ro', default => sub {
-	return {
-		auth			=> 'RapidApp::AppAuth'
-	}
-});
+
+sub BUILD {
+	my $self = shift;
+	$self->apply_init_modules(
+		auth => 'RapidApp::AppAuth'
+	);
+}
+
 
 has 'no_persist'				=> ( is => 'rw',	default => 1 );
 
