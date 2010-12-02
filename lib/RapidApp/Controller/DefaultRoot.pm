@@ -14,6 +14,7 @@ __PACKAGE__->config(
 
 has 'saveExceptions' => ( is => 'rw', isa => 'Bool', default => 1 );
 
+=pod
 sub BUILD {
 	my $self= shift;
 	
@@ -21,6 +22,8 @@ sub BUILD {
 		die "You have not configured the top module for RapidApp.\n".
 			"See perldoc -f RapidApp/DefaultRootController.pm";
 }
+=cut
+
 
 sub approot :Path {
 	my $self= shift;

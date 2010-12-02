@@ -24,12 +24,8 @@ has 'save_data_coderef'		=> ( is => 'ro', default => undef );
 
 has 'reload_on_save' 		=> ( is => 'ro', default => 0 );
 
-
-
-#has 'default_action' => ( is => 'ro', default => 'main' );
-has 'actions' => ( is => 'ro', lazy => 1, default => sub {
+sub BUILD {
 	my $self = shift;
-	
 	my $actions = {};
 	
 	$actions->{save}				= sub { $self->save } if (defined $self->save_data_coderef);
@@ -38,8 +34,10 @@ has 'actions' => ( is => 'ro', lazy => 1, default => sub {
 	$actions->{store_read}	= sub { $self->store_read } if (defined $self->load_data_coderef);
 	$actions->{store_write}	= sub { $self->store_write } if (defined $self->save_data_coderef);
 	
-	return $actions;
-});
+	$self->apply_actions(%$actions);
+}
+
+
 
 has 'item_key' => ( is => 'ro',	lazy_build => 1, isa => 'Str'			);
 sub _build_item_key {

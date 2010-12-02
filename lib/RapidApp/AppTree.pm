@@ -82,28 +82,6 @@ has 'root_node_text'		=> ( is => 'ro', lazy => 1, default => sub { (shift)->root
 
 
 
-=pod
-has 'actions' => ( is => 'ro', lazy => 1, default => sub {
-	my $self = shift;
-	
-	my $node = $self->c->req->params->{node};
-	my $name = $self->c->req->params->{name};
-	my $recursive = $self->c->req->params->{recursive};
-	
-	my $actions = {
-		'nodes'	=> sub { $self->fetch_nodes($node) }
-	};
-	
-	$actions->{add} = sub { $self->add_node($name,$node) } if ($self->can('add_node'));
-	$actions->{delete} = sub { $self->delete_node($node,$recursive) } if ($self->can('delete_node'));
-	
-	# Fetch a single node rather than an array of its children
-	$actions->{node} = sub { $self->fetch_node($node) } if ($self->can('fetch_node'));
-	
-	return $actions;
-});
-=cut
-
 
 
 sub call_fetch_nodes {
