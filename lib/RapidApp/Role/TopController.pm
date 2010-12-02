@@ -139,6 +139,11 @@ sub onException {
 		$log->error("RapidApp Exception: ".$msg);
 	}
 	
+	# XXX integrate this
+	if (defined $refId && ($self->reportIdForUserErrors || !$isUserErr)) {
+		$c->stash->{exceptionRefId}= $refId;
+	}
+	
 	# on exceptions, we either generate a 503, or a JSON response to the same effect
 	if ($c->stash->{requestContentType} eq 'JSON') {
 		$c->stash->{current_view}= 'RapidApp::JSON';

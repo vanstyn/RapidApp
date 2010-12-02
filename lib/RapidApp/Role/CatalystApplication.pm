@@ -5,30 +5,42 @@ use RapidApp::Include 'perlutil';
 
 use CatalystX::InjectComponent;
 
-#sub r { (shift)->rapidApp } # handy alias
-#has 'rapidApp' => ( is => 'ro', isa => 'RapidApp::RapidApp', lazy_build => 1 );
-#sub _build_rapidapp {
-#	my $self= shift;
-#	return RapidApp::RapidApp->new($self->config->{'RapidApp'});
-#}
+after 'BUILD' => sub {
+	my $self= shift;
+	# access root module, forcing it to get built now, instead of on the first request
+	
+	RapidApp::ScopedGlobals->applyForSub(
+		{ catalystInstance => $self },
+		sub { $self->rapidApp->rootModule },
+	);
+}
 
-#sub module {
-#	my ($self, @path)= @_;
-#	if (scalar(@path) == 1) { # if path is a string, break it into its components
-#		@path= split('/', $path[0]);
-#	}
-#	@path= grep /.+/, @path;  # ignore empty strings
-#	
-#	my $m= $self->rapidApp->rootModule;
-#	foreach $part (@path) {
-#		$m= $m->module($part) or die "No such module: ".join('/',@path);
-#	}
-#	return $m;
-#}
+sub r { (shift)->rapidApp } # handy alias
+has 'rapidApp' => ( is => 'ro', isa => 'RapidApp::RapidApp', lazy_build => 1 );
+sub _build_rapidApp {
+	my $self= shift;
+	return RapidApp::RapidApp->new($self->config->{'RapidApp'});
+}
+
+sub module {
+	my ($self, @path)= @_;
+	if (scalar(@path) == 1) { # if path is a string, break it into its components
+		@path= split('/', $path[0]);
+	}
+	@path= grep /.+/, @path;  # ignore empty strings
+	
+	my $m= $self->rapidApp->rootModule;
+	foreach $part (@path) {
+		$m= $m->module($part) or die "No such module: ".join('/',@path);
+	}
+	return $m;
+}
 
 our $catClass;
 our $log;
 after 'setup_components' => sub {
+	# At this point, we don't have a catalyst instance yet, just the package name.
+	# Catalyst has an amazing number of package methods that masquerade as instance methods later on.
 	local $catClass= shift;
 	local $log= $catClass->log;
 	

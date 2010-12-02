@@ -1,7 +1,8 @@
 package RapidApp::Controller::ExceptionInspector;
 
 use Moose;
-extends 'RapidApp::AppBase';
+use namespace::autoclean;
+BEGIN { extends 'Catalyst::Controller'; }
 
 use RapidApp::Include qw(perlutil sugar);
 use Storable qw(freeze thaw);
@@ -11,15 +12,11 @@ use Devel::StackTrace;
 use Devel::StackTrace::WithLexicals;
 use Devel::StackTrace::AsHTML;
 
-has 'exceptionModel' => ( is => 'rw', isa => 'Str', default => 'DB::exception' );
+__PACKAGE__->config( namespace => '/exception' );
 
-sub BUILD {
-	my $self= shift;
-	$self->auto_viewport(1);
-	$self->apply_actions(justdie => 'justdie', diefancy => 'diefancy', usererror => 'usererror');
-}
+has 'exceptionStore' => ( is => 'rw' ); # either a store object, or a Model name
 
-sub viewport {
+sub view :Local {
 	my $self= shift;
 	
 	my $id= $self->c->req->params->{id};
@@ -37,15 +34,15 @@ sub viewport {
 	$self->c->stash->{template}= 'templates/rapidapp/exception.tt';
 }
 
-sub justdie {
+sub justdie :Local {
 	die "Deliberately generating an exception";
 }
 
-sub diefancy {
+sub diefancy :Local {
 	die RapidApp::Error->new("Generating an exception using the RapidApp::Error class");
 }
 
-sub usererror {
+sub usererror :Local {
 	die usererr "PEBKAC";
 }
 

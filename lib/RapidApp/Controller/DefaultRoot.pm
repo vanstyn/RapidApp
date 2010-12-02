@@ -57,28 +57,11 @@ features could also be easily plugged into a custom top controller.
 
 =cut
 
-use RapidApp::Controller::ExceptionInspector;
-
 __PACKAGE__->config( namespace => '' );
-
-=pod
-sub BUILD {
-	my $self= shift;
-	
-	$self->modules && scalar(keys %{$self->modules})>0 or
-		die "You have not configured the top module for RapidApp.\n".
-			"See perldoc -f lib/RapidApp/Controller/DefaultRoot.pm";
-}
-=cut
-
 
 sub approot :Path {
 	my ($self, $c, @args)= @_;
 	
-	# support for RapidApp features
-	if ($c->debug) {
-		$self->apply_modules(exception => 'RapidApp::Controller::ExceptionInspector');
-	}
 	$self->Controller(@_);
 }
 
