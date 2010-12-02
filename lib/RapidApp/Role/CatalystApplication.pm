@@ -1,19 +1,64 @@
 package RapidApp::Role::CatalystApplication;
 
-use strict;
-use warnings;
 use Moose::Role;
+use RapidApp::Include 'perlutil';
 
 use CatalystX::InjectComponent;
 
+#sub r { (shift)->rapidApp } # handy alias
+#has 'rapidApp' => ( is => 'ro', isa => 'RapidApp::RapidApp', lazy_build => 1 );
+#sub _build_rapidapp {
+#	my $self= shift;
+#	return RapidApp::RapidApp->new($self->config->{'RapidApp'});
+#}
+
+#sub module {
+#	my ($self, @path)= @_;
+#	if (scalar(@path) == 1) { # if path is a string, break it into its components
+#		@path= split('/', $path[0]);
+#	}
+#	@path= grep /.+/, @path;  # ignore empty strings
+#	
+#	my $m= $self->rapidApp->rootModule;
+#	foreach $part (@path) {
+#		$m= $m->module($part) or die "No such module: ".join('/',@path);
+#	}
+#	return $m;
+#}
+
+our $catClass;
+our $log;
 after 'setup_components' => sub {
-	my $class= shift;
+	local $catClass= shift;
+	local $log= $catClass->log;
 	
-	CatalystX::InjectComponent->inject( into => $class, component => 'RapidApp::Controller::DefaultRoot', as => 'RapidApp::Root' );
-	CatalystX::InjectComponent->inject( into => $class, component => 'Catalyst::View::TT', as => 'RapidApp::TT' );
-	CatalystX::InjectComponent->inject( into => $class, component => 'RapidApp::View::Viewport', as => 'RapidApp::Viewport' );
-	CatalystX::InjectComponent->inject( into => $class, component => 'RapidApp::View::JSON', as => 'RapidApp::JSON' );
-	CatalystX::InjectComponent->inject( into => $class, component => 'RapidApp::View::HttpStatus', as => 'RapidApp::HttpStatus' );
+	my @names= keys %{ $catClass->components };
+	my @controllers= grep /[^:]+::Controller.*/, @names;
+	my $haveRoot= 0;
+	foreach my $ctlr (@controllers) {
+		if ($ctlr->DOES('RapidApp::Role::TopController')) {
+			$log->info("RapidApp: Found $ctlr which implements TopController.");
+			$haveRoot= 1;
+		}
+	}
+	if (!$haveRoot) {
+		$log->info("RapidApp: No TopController found, using default");
+		injectUnlessExist( 'RapidApp::Controller::DefaultRoot', 'Controller::RapidApp::Root' );
+	}
+	
+	# for each view, inject it if it doens't exist
+	injectUnlessExist( 'Catalyst::View::TT', 'View::RapidApp::TT' );
+	injectUnlessExist( 'RapidApp::View::Viewport', 'View::RapidApp::Viewport' );
+	injectUnlessExist( 'RapidApp::View::JSON', 'View::RapidApp::JSON' );
+	injectUnlessExist( 'RapidApp::View::HttpStatus', 'View::RapidApp::HttpStatus' );
 };
+
+sub injectUnlessExist {
+	my ($actual, $virtual)= @_;
+	if (!$catClass->components->{$virtual}) {
+		$log->debug("RapidApp: Installing virtual $virtual");
+		CatalystX::InjectComponent->inject( into => $catClass, component => $actual, as => $virtual );
+	}
+}
 
 1;
