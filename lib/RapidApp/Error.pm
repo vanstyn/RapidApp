@@ -1,84 +1,137 @@
 package RapidApp::Error;
 
-use strict;
-use warnings;
-use Exception::Class;
-use base 'Exception::Class::Base';
+use Moose;
 
+use overload '""' => \&as_string; # to-string operator overload
 use Data::Dumper;
+use DateTime;
 use Devel::StackTrace::WithLexicals;
 
-BEGIN {
-	my @newFields= qw{cause diag full_message_fn full_diag_fn};
-	
-	my $code= 'sub Fields { return ( $_[0]->SUPER::Fields, "'.(join '","',@newFields).'" ); };';
-	for my $f (@newFields) {
-		$code.= 'sub '.$f.' { defined $_[1] and $_[0]->{'.$f.'}= $_[1]; return $_[0]->{'.$f.'}; };';
-	}
-	eval $code;
-}
-
 sub dieConverter {
-	if (ref $_[0] eq '') {
-		my $msg= join ' ', @_;
-		$msg =~ s/ at [^ ]+.p[lm] line.*//;
-		die RapidApp::Error->new(message => $msg);
+	die ref $_[0]? $_[0] : capture(join ' ', @_);
+}
+
+=head2 $err= capture( $something )
+
+This function attempts to capture the details of some other exception object (or just a string)
+and pull them into the fields of a RapidApp::Error.  This allows all code in RapidApp to convert
+anything that happens to get caught into a Error object so that the handy methods like "trace"
+and "isUserError" can be used.
+
+=cut
+sub capture {
+	my $errObj= shift;
+	if (blessed($errObj)) {
+		return $errObj if $errObj->isa('RapidApp::Error');
+		
+		# TODO: come up with more comprehensive data collection from unknown classes
+		my $hash= {};
+		$hash->{message} ||= $errObj->message if $errObj->can('message');
+		$hash->{trace}   ||= $errObj->trace   if $errObj->can('trace');
+		return RapidApp::Error->new($hash);
+	}
+	else if (ref $errObj eq 'HASH') {
+		# TODO: more processing here...  but not sure when we'd make use of this anyway
+		return RapidApp::Error->new($errObj);
+	}
+	else {
+		my $msg= ''.$errObj;
+		my @lines= split /[\n\r]/, $msg;
+		if ($lines[0] =~ /^(.*?) at ([^ ]+\.p[lm].*)/) {
+			$msg= $1;
+			# TODO: we might want to build a fake StackTrace object using $2... but only if it is more relevant than our current stack
+		}
+		return RapidApp::Error->new({ message => $msg });
 	}
 }
 
-sub new {
-	my $self= Exception::Class::Base::new(@_);
-	
+has 'message_fn' => ( is => 'rw', isa => 'CodeRef' );
+has 'message' => ( is => 'rw', isa => 'Str', lazy_build => 1 );
+sub _build_message {
+	my $self= shift;
+	return $self->message_fn;
+}
+
+has 'userMessage_fn' => ( is => 'rw', isa => 'CodeRef' );
+has 'userMessage' => ( is => 'rw', isa => 'Str', lazy_build => 1 );
+sub _build_userMessage {
+	my $self= shift;
+	return defined $self->userMessage_fn? $self->userMessage_fn->() : undef;
+}
+
+sub isUserError {
+	return defined $self->userMessage || defined $self->userMessage_fn;
+}
+
+has 'timestamp' => ( is => 'rw', isa => 'Int', default => sub { time } );
+has 'dateTime' => ( is => 'rw', isa => 'DateTime', lazy_build => 1 );
+sub _build_dateTime {
+	my $self= shift;
+	my $d= DateTime->new($self->timestamp);
+	$d->set_time_zone('UTC');
+	return $d;
+}
+
+has 'srcLoc' => ( is => 'rw', lazy_build => 1 );
+sub _build_srcLoc {
+	my $self= shift;
+	my $frame= $self->trace->frame(0);
+	return defined $frame? $frame->filename . ' line ' . $frame->line : undef;
+}
+
+has 'data' => ( is => 'rw', isa => 'HashRef' );
+has 'cause' => ( is => 'rw' );
+
+has 'trace' => ( is => 'rw' );
+sub _build_trace {
 	# if catalyst is in debug mode, we capture a FULL stack trace
-	my $c= RapidApp::ScopedGlobals->catalystInstance;
+	#my $c= RapidApp::ScopedGlobals->catalystInstance;
 	#if (defined $c && $c->debug) {
 	#	$self->{trace}= Devel::StackTrace::WithLexicals->new(ignore_class => [ __PACKAGE__ ]);
 	#}
-	return $self;
+	return Devel::StackTrace->new(ignore_class => [__PACKAGE__]);
 }
 
-sub dump_ignore_fields {
-	return qw{message diag cause full_message_fn trace};
+around 'BUILDARGS' => sub {
+	my ($orig, $class, @args)= @_;
+	my $params= ref $args[0] eq 'HASH'? $args[0]
+		: (scalar(@args) == 1? { message => $args[0] } : { @args } );
+	
+	return $class->$orig($params);
+}
+
+sub BUILD {
+	my $self= shift;
+	defined $self->message_fn || $self->has_message or die "Require one of message or message_fn";
+	$params->trace # can't wait for this one to be lazy
 }
 
 sub dump {
 	my $self= shift;
 	
 	# start with the readable messages
-	my $result= $self->full_message."\n";
+	my $result= $self->message."\n";
+	defined $self->userMessage
+		and $result.= "User Message: ".$self->userMessage."\n";
 	
-	if ((defined($self->diag) && length($self->diag)) || defined($self->full_diag_fn)) {
-		$result.= 'Diag: '.$self->full_diag."\n" ;
-	}
+	$result.= ' on '.$self->dateTime->ymd.' '.$self->dateTime->hms."\n";
 	
-	# dump any misc properties
-	my %ignore= map { $_ => 1 } $self->dump_ignore_fields;
-	while ( my ($key, $val)= each %{$self} ) {
-		next if $ignore{$key};
-		$result.= "$key: ".(ref $val? Dumper($val) : "$val")."\n";
-	}
+	defined $self->data
+		and $result.= Dumper([$self->data], ["Data"])."\n";
 	
-	$result.= 'Stack: '.$self->trace."\n" if defined $self->trace;
-	if (defined $self->cause) {
-		$result.= 'Caused by: '.($self->cause->can('dump')? $self->cause->dump : ''.$self->cause);
-	}
+	defined $self->trace
+		and $result.= 'Stack: '.$self->trace."\n";
+	
+	defined $self->cause
+		and $result.= 'Caused by: '.(blessed $self->cause && $self->cause->can('dump')? $self->cause->dump : ''.$self->cause);
+	
 	return $result;
-}
-
-sub full_message {
-	my $self= shift;
-	defined $self->full_message_fn and return $self->full_message_fn->($self);
-	return $self->SUPER::full_message;
-}
-
-sub full_diag {
-	my $self= shift;
-	defined $self->full_diag_fn and return $self->full_diag_fn->($self);
-	return $self->diag;
 }
 
 sub as_string {
 	return (shift)->message;
 }
 
+no Moose;
+__PACKAGE__->meta->make_immutable;
 1;
