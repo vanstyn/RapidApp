@@ -572,6 +572,7 @@ Ext.ux.MultiFilter.Filter = Ext.extend(Ext.Container,{
 				]
 			}),
 		
+			/* TODO: Get "not" button implemented and working 
 			{
 				xtype: 'button',
 				text: '!',
@@ -592,6 +593,7 @@ Ext.ux.MultiFilter.Filter = Ext.extend(Ext.Container,{
 					}
 				}
 			},
+			*/
 	
 			this.filterSelection,
 			
