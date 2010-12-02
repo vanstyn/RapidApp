@@ -79,6 +79,30 @@ has 'exclude_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
 });
 
 
+# Does the same thing as apply_columns, but the order is also set 
+# (offset should be the first arg). Unlike apply_columns, column data
+# must be passed as a normal Hash (not Hashref). This is required 
+# because the order cannot be known
+sub apply_columns_ordered {
+	my $self = shift;
+	my $offset = shift;
+	
+	die "invalid options passed to apply_columns_ordered" if (
+		ref($offset) or
+		ref($_[0])
+	);
+	
+	my %columns = @_;
+	
+	# Get even indexed items from array (i.e. hash keys)
+	my @col_names = @_[map { $_ * 2 } 0 .. int($#_ / 2)];
+	
+	$self->apply_columns(%columns);
+	return $self->set_columns_order($offset,@col_names);
+}
+
+
+
 sub apply_columns {
 	my $self = shift;
 	my %column = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref

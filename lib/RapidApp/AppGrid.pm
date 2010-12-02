@@ -251,22 +251,13 @@ has 'custom_add_item_code'			=> ( is => 'ro',	lazy_build => 1 );
 has 'edit_record_class' => ( is => 'ro', default => 'RapidApp::AppGrid::EditItem' );
 has 'add_record_class' => ( is => 'ro', default => 'RapidApp::AppGrid::AddItem' );
 
-has 'modules' => ( is => 'ro', lazy_build => 1 );
-sub _build_modules {
+
+sub BUILD {
 	my $self = shift;
-	return {
+	$self->apply_modules(
 		item		=> $self->edit_record_class,
 		add		=> $self->add_record_class,
-	};
-}
-
-has 'record_processor_module'	=> ( is => 'ro', default => 'item' );
-has 'add_processor_module'	=> ( is => 'ro', default => 'add' );
-
-has 'default_action' => ( is => 'ro', default => 'main' );
-has 'actions' => ( is => 'ro', lazy_build => 1 );
-sub _build_actions {
-	my $self = shift;
+	);
 	
 	my $actions = {
 		'main'												=> sub { $self->JSON_encode($self->DynGrid->Params);		},
@@ -302,8 +293,16 @@ sub _build_actions {
 	$actions->{save_search} = sub { $self->action_save_search; } if (defined $self->save_search_coderef);
 	$actions->{delete_search} = sub { $self->action_delete_search; } if (defined $self->delete_search_coderef);
 	
-	return $actions;
+	$self->apply_actions(%$actions);
 }
+
+
+
+has 'record_processor_module'	=> ( is => 'ro', default => 'item' );
+has 'add_processor_module'	=> ( is => 'ro', default => 'add' );
+
+has 'default_action' => ( is => 'ro', default => 'main' );
+
 
 sub action_save_search {
 	my $self = shift;

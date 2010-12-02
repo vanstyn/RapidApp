@@ -61,6 +61,7 @@ use RapidApp::Controller::ExceptionInspector;
 
 __PACKAGE__->config( namespace => '' );
 
+=pod
 sub BUILD {
 	my $self= shift;
 	
@@ -68,6 +69,8 @@ sub BUILD {
 		die "You have not configured the top module for RapidApp.\n".
 			"See perldoc -f lib/RapidApp/Controller/DefaultRoot.pm";
 }
+=cut
+
 
 sub approot :Path {
 	my ($self, $c, @args)= @_;

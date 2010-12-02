@@ -28,15 +28,16 @@ has 'password_key'			=> ( is => 'ro',	default => 'password' );
 
 has 'ExtJS'			=> ( is => 'rw', lazy => 1, default => sub { RapidApp::ExtJS->new } );
 
-has 'actions' => ( is => 'ro', default => sub {
+
+sub BUILD {
 	my $self = shift;
-	return {
-		login				=> sub { $self->login				},
-		logout			=> sub { $self->logout			},
-		login_window	=> sub { $self->login_window	},
-		logout_window	=> sub { $self->logout_window	},
-	};
-});
+	$self->apply_actions(
+		login				=> 'login',
+		logout			=> 'logout',
+		login_window	=> 'login_window',
+		logout_window	=> 'logout_window',
+	);
+}
 
 
 

@@ -43,22 +43,6 @@ sub BUILD {
 
 
 
-#has 'actions' => ( is => 'ro', lazy => 1, default => sub {
-#	my $self = shift;
-#	
-#	my $actions = {};
-#	
-#	$actions->{read}				= sub { $self->read };
-#	$actions->{update}			= sub { $self->update } if (defined $self->update_data_coderef);
-#	$actions->{create}			= sub { $self->create } if (defined $self->create_data_coderef);
-#	
-#	return $actions;
-#});
-
-
-
-
-
 has 'item_key' => ( is => 'ro',	lazy_build => 1	);
 sub _build_item_key {
 	my $self = shift;
