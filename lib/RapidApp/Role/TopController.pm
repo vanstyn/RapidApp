@@ -126,6 +126,8 @@ sub onException {
 	my $isUserError= $params->{isUserError};
 	
 	my $c= $self->c;
+	use Devel::StackTrace;
+	print Devel::StackTrace->new()->as_string;
 	my $log= $c->log;
 	$c->stash->{exception}= $err;
 	$c->stash->{isUserError}= $isUserError;
