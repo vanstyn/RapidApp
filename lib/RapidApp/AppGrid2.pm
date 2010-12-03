@@ -109,7 +109,8 @@ sub BUILD {
 	if (defined $self->record_pk) {
 		$self->apply_columns( $self->record_pk => {} );
 		push @{ $self->include_columns }, $self->record_pk if (scalar @{ $self->include_columns } > 0);
-		$self->meta->find_attribute_by_name('include_columns_hash')->clear_value($self);
+		#$self->meta->find_attribute_by_name('include_columns_hash')->clear_value($self);
+		%{ $self->include_columns_hash } = ();
 	}
 	
 	if (defined $self->open_record_class or defined $self->add_record_class) {
