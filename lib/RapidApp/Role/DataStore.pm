@@ -12,14 +12,28 @@ sub BUILD {}
 before 'BUILD' => sub {
 	my $self = shift;
 	
+#	my $params = {};
+#	foreach my $attr ($self->meta->get_all_attributes) {
+#		$params->{$attr->name} = $attr->get_value($self);
+#	}
+#	
+#	$self->c->log->debug(BOLD . BLUE . ref($self) . ': ' . Dumper($params) . CLEAR);
+	
+	print STDERR BOLD . BLUE . ref($self) . ': ' . $self->dump(1) . CLEAR;
+	
+	
 	# Note: DO NOT call apply_init_modules here:
 	$self->apply_modules( store => {
 		class	=> 'RapidApp::DataStore',
 		params	=> {
+			#%$params,
 			store_read_obj => $self,
 			record_pk	=> $self->record_pk,
+			item_key		=> $self->record_pk,
+			item_keys	=> [$self->record_pk],
 			store_autoLoad => $self->store_autoLoad,
 			read_records_coderef => sub { return $self->read_records_link; },
+			update_records_coderef => sub { return $self->update_records_link; },
 		}
 	});
 	
@@ -92,8 +106,16 @@ sub read_records_link {
 	return $self->read_records_coderef->();
 }
 
+sub update_records_link {
+	my $self = shift;
+	return $self->update_records if ($self->can('update_records'));
+	return $self->update_records_coderef->();
+}
+
 
 has 'record_pk' 			=> ( is => 'ro', default => undef );
+#sub item_key { (shift)->record_pk(@_) }
+
 has 'store_autoLoad'		=> ( is => 'ro', default => sub {\1} );
 
 has 'store_load_listener' => ( is => 'ro', default => undef );
@@ -101,6 +123,9 @@ has 'store_update_listener' => ( is => 'ro', default => undef );
 has 'store_save_listener' => ( is => 'ro', default => undef );
 has 'store_add_listener' => ( is => 'ro', default => undef );
 has 'store_exception_listener' => ( is => 'ro', default => undef );
+
+
+
 
 
 no Moose;
