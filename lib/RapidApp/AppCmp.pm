@@ -54,6 +54,7 @@ has 'config' => (
 	handles   => {
 		 apply_config			=> 'set',
 		 get_config_param		=> 'get',
+		 has_config_param		=> 'exists',
 		 has_no_config 		=> 'is_empty',
 		 num_config_params	=> 'count',
 		 delete_config_param	=> 'delete'

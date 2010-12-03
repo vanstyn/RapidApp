@@ -238,8 +238,6 @@ has 'store_read_obj' => ( is => 'ro', default => undef );
 sub store_read {
 	my $self = shift;
 	
-	$self->c->log->debug(BOLD . YELLOW . '(' . ref($self->store_read_obj) . ') RapidApp::DataStore --> store_read()' . CLEAR);
-	
 	my $obj = $self->store_read_obj ? $self->store_read_obj : $self;
 	
 	my $data = $obj->store_read_raw;
@@ -251,8 +249,6 @@ sub store_read {
 
 sub store_read_raw {
 	my $self = shift;
-	
-	$self->c->log->debug(BOLD . 'RapidApp::DataStore --> store_read_raw()' . CLEAR);
 	
 	if (defined $self->read_records_coderef or $self->can('read_records')) {
 		
@@ -420,10 +416,15 @@ has 'store_writer' => ( is => 'ro', lazy => 1, default => sub {
 sub JsonStore_config_apply {
 	my $self = shift;
 	
+	$self->apply_config( baseParams => $self->base_params ) if (
+		defined $self->base_params and
+		scalar keys %{ $self->base_params } > 0
+	);
+	
 	return $self->apply_config(
 		storeId 					=> $self->storeId,
 		api 						=> $self->store_api,
-		baseParams 				=> $self->base_params,
+		#baseParams 				=> $self->base_params,
 		writer					=> $self->store_writer,
 		autoLoad 				=> $self->store_autoLoad,
 		autoSave 				=> \0,

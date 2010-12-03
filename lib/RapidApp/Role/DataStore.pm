@@ -19,7 +19,7 @@ before 'BUILD' => sub {
 			store_read_obj => $self,
 			record_pk	=> $self->record_pk,
 			store_autoLoad => $self->store_autoLoad,
-			read_records_coderef => sub { return $self->read_records_link; }
+			read_records_coderef => sub { return $self->read_records_link; },
 		}
 	});
 	
@@ -82,10 +82,8 @@ has 'DataStore' => (
 
 sub store_read_raw {
 	my $self = shift;
-	$self->c->log->debug(BOLD . 'RapidApp::Role::DataStore --> store_read_raw()' . CLEAR);
 	return $self->Module('store')->store_read_raw(@_);
 }
-
 
 
 sub read_records_link {
