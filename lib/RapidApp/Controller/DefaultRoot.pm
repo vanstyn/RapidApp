@@ -2,8 +2,7 @@ package RapidApp::Controller::DefaultRoot;
 
 use Moose;
 use namespace::autoclean;
-BEGIN { extends 'Catalyst::Controller'; }
-with 'RapidApp::Role::TopController';
+BEGIN { extends 'Catalyst::Controller', 'RapidApp::ModuleDispatcher'; }
 
 =head1 NAME
 
@@ -11,8 +10,8 @@ RapidApp::Controller::DefaultRoot
 
 =head1 DESCRIPTION
 
-This module is injected into the user's application unless they define a different controller
-that extends TopController.  This is merely the default, if they didn't specify one.
+This controller is injected into the user's application unless they define a different controller
+that extends ModuleDispatcher.  This is merely the default, if they didn't specify one.
 
 =head1 CONFIGURATION
 
@@ -35,14 +34,13 @@ as easily write your own controller which inherits from TopController:
   
   use Moose;
   use namespace::autoclean;
-  BEGIN { extends 'Catalyst::Controller'; }
-  with 'RapidApp::Role::TopController';
+  BEGIN { extends 'Catalyst::Controller', 'RapidApp::ModuleDispatcher'; }
   
   __PACKAGE__->config( namespace => '' );
   
   sub approot :Path {
     my ($self, $c, @args)= @_;
-    $self->Controller($c, @args);
+    $self->dispatch($c, @args);
   }
   
   sub end : ActionClass('RenderView') {}
@@ -61,8 +59,7 @@ __PACKAGE__->config( namespace => '' );
 
 sub approot :Path {
 	my ($self, $c, @args)= @_;
-	
-	$self->Controller(@_);
+	$self->dispatch($c, @args);
 }
 
 sub end : ActionClass('RenderView') {}
