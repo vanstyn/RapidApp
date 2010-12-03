@@ -16,6 +16,7 @@ before 'BUILD' => sub {
 	$self->apply_modules( store => {
 		class	=> 'RapidApp::DataStore',
 		params	=> {
+			store_read_obj => $self,
 			record_pk	=> $self->record_pk,
 			store_autoLoad => $self->store_autoLoad,
 			read_records_coderef => sub { return $self->read_records_link; }
@@ -52,7 +53,7 @@ has 'DataStore' => (
 		JsonStore					=> 'JsonStore',
 		JsonStore_config_apply	=> 'JsonStore_config_apply',
 		store_read					=> 'store_read',
-		store_read_raw				=> 'store_read_raw',
+		#store_read_raw				=> 'store_read_raw',
 		columns						=> 'columns',
 		column_order				=> 'column_order',
 		include_columns			=> 'include_columns',
@@ -78,6 +79,13 @@ has 'DataStore' => (
 	
 	}
 );
+
+sub store_read_raw {
+	my $self = shift;
+	$self->c->log->debug(BOLD . 'RapidApp::Role::DataStore --> store_read_raw()' . CLEAR);
+	return $self->Module('store')->store_read_raw(@_);
+}
+
 
 
 sub read_records_link {

@@ -107,6 +107,8 @@ Ext.ux.RapidApp.AppTab.gridrow_nav = function(grid,index,e) {
 	var loadTarget = grid.loadTargetObj;
 	var Record = grid.getStore().getAt(index);
 	
+	console.dir(Record);
+	
 	var loadCfg = Ext.decode(Record.data.loadContentCnf);
 	var rec_data = {};
 	Ext.apply(rec_data,Record.data);

@@ -31,6 +31,9 @@ after 'ONREQUEST' => sub {
 };
 
 
+
+
+
 has 'record_pk' 			=> ( is => 'ro', default => undef );
 has 'store_fields' 		=> ( is => 'ro', default => undef );
 has 'storeId' 				=> ( is => 'ro', default => sub { 'datastore-' . String::Random->new->randregex('[a-z0-9A-Z]{5}') } );
@@ -228,14 +231,28 @@ has 'destroy_records_coderef'	=> ( is => 'rw', default => undef );
 
 #############
 
+#has 'store_read_obj' => ( is => 'ro', lazy => 1, default => sub { shift } );
+
+has 'store_read_obj' => ( is => 'ro', default => undef );
+
 sub store_read {
 	my $self = shift;
-	my $data = $self->store_read_raw;
+	
+	$self->c->log->debug(BOLD . YELLOW . '(' . ref($self->store_read_obj) . ') RapidApp::DataStore --> store_read()' . CLEAR);
+	
+	my $obj = $self->store_read_obj ? $self->store_read_obj : $self;
+	
+	my $data = $obj->store_read_raw;
+	#my $data = $self->store_read_raw;
 	return $self->store_meta_json_packet($data);
 }
 
+
+
 sub store_read_raw {
 	my $self = shift;
+	
+	$self->c->log->debug(BOLD . 'RapidApp::DataStore --> store_read_raw()' . CLEAR);
 	
 	if (defined $self->read_records_coderef or $self->can('read_records')) {
 		
