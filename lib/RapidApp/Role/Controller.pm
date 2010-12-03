@@ -58,7 +58,7 @@ has 'actions' => (
 
 
 sub c {
-	return $RapidApp::ScopedGlobals::CatalystInstance;
+	return RapidApp::ScopedGlobals->catalystInstance;
 }
 
 
