@@ -1,24 +1,17 @@
 package RapidApp::AppStoreForm2;
-
-### IN PROGRESS, DO NOT USE ###
-
+use Moose;
+extends 'RapidApp::AppCmp';
 
 use strict;
-use Moose;
 
-extends 'RapidApp::AppCnt';
-with 'RapidApp::Role::DataStore';
+use RapidApp::Include qw(sugar perlutil);
 
-use Clone;
-use Try::Tiny;
 
-use RapidApp::ExtJS::MsgBox;
 
-use RapidApp::JSONFunc;
 
-use String::Random;
+# In progress .............
 
-use Term::ANSIColor qw(:constants);
+
 
 has 'no_persist'				=> ( is => 'rw',	default => 1 );
 has 'reload_on_save' 		=> ( is => 'ro', default => 0 );
@@ -33,39 +26,6 @@ has 'create_record_msg'		=> ( is => 'ro', default => 'Record added' );
 has 'create_callback_code'	=> ( is => 'ro', default => '' ); # <-- JS code that gets called when a record is created (added)
 has 'write_callback_code'	=> ( is => 'ro', default => '' ); # <-- JS code that gets called when any store write happens (including create)
 
-has 'item_key' => ( is => 'ro',	lazy_build => 1	);
-sub _build_item_key {
-	my $self = shift;
-	my $key;
-	$key = $self->item_keys->[0] if (defined $self->item_keys and ref($self->item_keys) eq 'ARRAY');
-	$key = $self->item_keys if (not defined $key and defined $self->item_keys);
-	$key = 'id' unless (defined $key);
-	return $key;
-}
-
-
-has 'item_keys' => ( is => 'ro',	lazy_build => 1	);
-sub _build_item_keys {
-	my $self = shift;
-	
-	# Compat with AppGrid:
-	return $self->parent_module->item_keys if (
-		defined $self->parent_module and
-		$self->parent_module->can('item_keys')
-	);
-	
-	# Compat with AppGrid2:
-	return $self->parent_module->record_pk if (
-		defined $self->parent_module and
-		$self->parent_module->can('record_pk')
-	);
-}
-
-has 'item_key_val' => ( is => 'ro',	lazy_build => 1	);
-sub _build_item_key_val {
-	my $self = shift;
-	return $self->base_params->{$self->item_key} ? $self->base_params->{$self->item_key} : 'item';
-}
 
 
 
