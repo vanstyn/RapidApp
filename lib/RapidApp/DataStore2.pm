@@ -28,10 +28,53 @@ after 'ONREQUEST' => sub {
 			'}'
 		)
 	]);
+	
+
+	
+	$self->apply_extconfig( baseParams => $self->base_params ) if (
+		defined $self->base_params and
+		scalar keys %{ $self->base_params } > 0
+	);
+	
+	$self->apply_extconfig(
+		storeId 					=> $self->storeId,
+		api 						=> $self->store_api,
+		#baseParams 				=> $self->base_params,
+		writer					=> $self->store_writer,
+		autoLoad 				=> $self->store_autoLoad,
+		autoSave 				=> \0,
+		loadMask 				=> \1,
+		autoDestroy 			=> \1,
+		root 						=> 'rows',
+		idProperty 				=> $self->record_pk,
+		messageProperty 		=> 'msg',
+		successProperty 		=> 'success',
+		totalProperty 			=> 'results',
+	);
+
+
+	
 };
 
 
+sub JsonStore {
+	my $self = shift;
+	return RapidApp::JSONFunc->new( 
+		func => 'new Ext.data.JsonStore',
+		parm => $self->content
+	);
+}
 
+
+has 'read_handler' => ( is => 'ro' );
+
+#has 'read_handler' => ( is => 'ro', lazy => 1, isa => 'RapidApp::Handler', default => sub {
+#	my $self = shift;
+#	return RapidApp::Handler->new(
+#		scope		=> $self,
+#		method	=> 'read_records'
+#	);
+#});
 
 
 has 'record_pk' 			=> ( is => 'ro', default => undef );
@@ -231,17 +274,14 @@ has 'destroy_records_coderef'	=> ( is => 'rw', default => undef );
 
 #############
 
-#has 'store_read_obj' => ( is => 'ro', lazy => 1, default => sub { shift } );
-
-has 'store_read_obj' => ( is => 'ro', default => undef );
 
 sub store_read {
 	my $self = shift;
+
+	my $data = $self->store_read_raw;
 	
-	my $obj = $self->store_read_obj ? $self->store_read_obj : $self;
+	$self->c->log->debug(RED . BOLD . Dumper($data) . CLEAR);
 	
-	my $data = $obj->store_read_raw;
-	#my $data = $self->store_read_raw;
 	return $self->store_meta_json_packet($data);
 }
 
@@ -250,31 +290,27 @@ sub store_read {
 sub store_read_raw {
 	my $self = shift;
 	
-	if (defined $self->read_records_coderef or $self->can('read_records')) {
-		
-		my $data;
-		if ($self->can('read_records')) {
-			$data = $self->read_records;
-		}
-		else {
-			$data = $self->read_records_coderef->() or die "Failed to read records with read_records_coderef";
-		}
-		
-		die "unexpected data returned in store_read_raw" unless (
-			ref($data) eq 'HASH' and 
-			defined $data->{results} and
-			ref($data->{rows}) eq 'ARRAY'
-		);
-		
-		# data should be a hash with rows (arrayref) and results (number):
-		return $data;
-	}
+	return $self->read_handler->call;
 	
-	# empty set of data:
-	return {
-		results	=> 0,
-		rows		=> []
-	};
+#	if (defined $self->read_records_coderef or $self->can('read_records')) {
+#		
+#		my $data = $self->read_handler->call;
+#		
+#		die "unexpected data returned in store_read_raw" unless (
+#			ref($data) eq 'HASH' and 
+#			defined $data->{results} and
+#			ref($data->{rows}) eq 'ARRAY'
+#		);
+#		
+#		# data should be a hash with rows (arrayref) and results (number):
+#		return $data;
+#	}
+#	
+#	# empty set of data:
+#	return {
+#		results	=> 0,
+#		rows		=> []
+#	};
 }
 
 
@@ -413,58 +449,58 @@ has 'store_writer' => ( is => 'ro', lazy => 1, default => sub {
 });
 
 
-sub JsonStore_config_apply {
-	my $self = shift;
-	
-	$self->apply_config( baseParams => $self->base_params ) if (
-		defined $self->base_params and
-		scalar keys %{ $self->base_params } > 0
-	);
-	
-	return $self->apply_config(
-		storeId 					=> $self->storeId,
-		api 						=> $self->store_api,
-		#baseParams 				=> $self->base_params,
-		writer					=> $self->store_writer,
-		autoLoad 				=> $self->store_autoLoad,
-		autoSave 				=> \0,
-		loadMask 				=> \1,
-		autoDestroy 			=> \1,
-		root 						=> 'rows',
-		idProperty 				=> $self->record_pk,
-		messageProperty 		=> 'msg',
-		successProperty 		=> 'success',
-		totalProperty 			=> 'results',
-	);
-}
-
-
-
-#sub JsonStore {
-has 'JsonStore' => ( is => 'ro', lazy => 1, predicate => 'has_JsonStore', default => sub {
-	my $self = shift;
-	
-	$self->JsonStore_config_apply;
-	
-	my $config = $self->config;
-	
-	foreach my $k (keys %$config) {
-		delete $config->{$k} unless (defined $config->{$k});
-	}
-	
-	if ($self->store_use_xtype) {
-		$config->{xtype} = 'jsonstore';
-		return $config;
-	}
-	
-	my $JsonStore = RapidApp::JSONFunc->new( 
-		func => 'new Ext.data.JsonStore',
-		parm => $config
-	);
-	
-	return $JsonStore;
+#sub JsonStore_config_apply {
+#	my $self = shift;
+#	
+#	$self->apply_config( baseParams => $self->base_params ) if (
+#		defined $self->base_params and
+#		scalar keys %{ $self->base_params } > 0
+#	);
+#	
+#	return $self->apply_config(
+#		storeId 					=> $self->storeId,
+#		api 						=> $self->store_api,
+#		#baseParams 				=> $self->base_params,
+#		writer					=> $self->store_writer,
+#		autoLoad 				=> $self->store_autoLoad,
+#		autoSave 				=> \0,
+#		loadMask 				=> \1,
+#		autoDestroy 			=> \1,
+#		root 						=> 'rows',
+#		idProperty 				=> $self->record_pk,
+#		messageProperty 		=> 'msg',
+#		successProperty 		=> 'success',
+#		totalProperty 			=> 'results',
+#	);
 #}
-});
+#
+#
+#
+##sub JsonStore {
+#has 'JsonStore' => ( is => 'ro', lazy => 1, predicate => 'has_JsonStore', default => sub {
+#	my $self = shift;
+#	
+#	$self->JsonStore_config_apply;
+#	
+#	my $config = $self->config;
+#	
+#	foreach my $k (keys %$config) {
+#		delete $config->{$k} unless (defined $config->{$k});
+#	}
+#	
+#	if ($self->store_use_xtype) {
+#		$config->{xtype} = 'jsonstore';
+#		return $config;
+#	}
+#	
+#	my $JsonStore = RapidApp::JSONFunc->new( 
+#		func => 'new Ext.data.JsonStore',
+#		parm => $config
+#	);
+#	
+#	return $JsonStore;
+##}
+#});
 
 
 

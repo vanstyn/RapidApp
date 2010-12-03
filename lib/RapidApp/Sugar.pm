@@ -7,6 +7,7 @@ use Data::Dumper;
 use RapidApp::JSON::MixedEncoder;
 use RapidApp::JSON::RawJavascript;
 use RapidApp::UserError;
+use RapidApp::Handler;
 
 our @EXPORT = qw(sessvar perreq asjson rawjs usererr);
 
