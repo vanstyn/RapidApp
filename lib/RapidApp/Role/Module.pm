@@ -8,6 +8,7 @@ use strict;
 use Moose::Role;
 
 use Clone qw(clone);
+use Time::HiRes qw(gettimeofday);
 
 our $VERSION = '0.1';
 
@@ -127,7 +128,10 @@ sub _load_module {
 
 	return 1 if (defined $self->modules_obj->{$name} and ref($self->modules_obj->{$name}) eq $class_name);
 	
+	my ($sec0, $msec0)= gettimeofday;
 	my $Object = $self->create_module($name,$class_name,$params) or die "Failed to create new $class_name object";
+	my ($sec1, $msec1)= gettimeofday;
+	RapdApp::ScopedGlobals->log->debug(sprintf("Loaded RapidApp module $class_name: $.3 s", ($sec1-$sec0)*1000000+($msec1-$msec0)));
 
 	$self->modules_obj->{$name} = $Object;
 
