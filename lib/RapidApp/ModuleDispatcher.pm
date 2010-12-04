@@ -43,6 +43,8 @@ sub dispatch {
 		|| $c->req->param('RequestContentType')
 		|| '';
 	
+	my $result;
+	
 	# special die handler to make sure we don't throw plain strings.
 	local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
 	RapidApp::ScopedGlobals->applyForSub(
@@ -51,7 +53,7 @@ sub dispatch {
 			my $targetModule;
 			try {
 				# get the root module (or sub-module, if we've been configured that way)
-				$targetModule= $c->rapidApp->module($self->dispatchTarget)
+				$targetModule= $c->rapidApp->module($self->dispatchTarget);
 				
 				# now run the controller
 				$result = $targetModule->Controller($c, @args);
