@@ -14,10 +14,11 @@ has 'record_pk'			=> ( is => 'ro', default => 'id' );
 sub BUILD {
 	my $self = shift;
 	
-	my $store_params = {
-		record_pk		=> $self->record_pk,
-		read_handler	=> RapidApp::Handler->new(	scope => $self, method => 'read_records' )
-	};
+	my $store_params = { record_pk => $self->record_pk };
+	$store_params->{create_handler}	= RapidApp::Handler->new( scope => $self, method => 'create_records' ) if ($self->can('create_records'));
+	$store_params->{read_handler}		= RapidApp::Handler->new( scope => $self, method => 'read_records' ) if ($self->can('read_records'));
+	$store_params->{update_handler}	= RapidApp::Handler->new( scope => $self, method => 'update_records' ) if ($self->can('update_records'));
+	$store_params->{destroy_handler}	= RapidApp::Handler->new( scope => $self, method => 'destroy_records' ) if ($self->can('destroy_records'));
 	
 	$self->apply_modules( store => {
 		class		=> 'RapidApp::DataStore2',
@@ -39,6 +40,7 @@ sub BUILD {
 
 	$self->apply_extconfig(
 		xtype		=> 'appstoreform2',
+		trackResetOnLoad => \1
 	);
 
 	$self->apply_listeners(
@@ -177,9 +179,10 @@ sub _build_formpanel_tbar {
 	
 	push @$items, '->';
 	
-	push @$items, $self->add_button;
-	push @$items, $self->reload_button;
-	push @$items, $self->save_button;
+	push @$items, $self->add_button if (defined $self->Module('store',1)->create_handler);
+	push @$items, $self->reload_button if (defined $self->Module('store',1)->read_handler and not defined $self->Module('store',1)->create_handler);
+	push @$items, '-' if (defined $self->Module('store',1)->read_handler and defined $self->Module('store',1)->update_handler);
+	push @$items, $self->save_button if (defined $self->Module('store',1)->update_handler);
 	
 	return {
 		items => $items

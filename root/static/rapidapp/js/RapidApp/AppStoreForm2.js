@@ -5,9 +5,9 @@ Ext.ux.RapidApp.AppStoreForm2.FormPanel = Ext.extend(Ext.form.FormPanel,{
 	// Defaults:
 	bodyCssClass: 'panel-borders',
 	monitorValid: true,
+	trackResetOnLoad: true, // <-- for some reason this default doesn't work and has to be set in the constructor
 	frame: true,
 	autoScroll: true,
-	trackResetOnLoad: true,
 	
 	initComponent: function() {
 		this.store.formpanel = this;
@@ -54,15 +54,18 @@ Ext.ux.RapidApp.AppStoreForm2.add_handler = function(cmp) {
 };
 
 Ext.ux.RapidApp.AppStoreForm2.clientvalidation_handler = function(FormPanel, valid) {
+	
+	var tbar = FormPanel.getTopToolbar();
+	if (! tbar) { return; }
 	if (valid && FormPanel.getForm().isDirty()) { 
-		var save_btn = FormPanel.getComponent("save-btn");
+		var save_btn = tbar.getComponent("save-btn");
 		if(save_btn) save_btn.enable();
-		var add_btn = FormPanel.getComponent("add-btn");
+		var add_btn = tbar.getComponent("add-btn");
 		if(add_btn) add_btn.enable();
 	} else {
-		var save_btn = FormPanel.getComponent("save-btn");
+		var save_btn = tbar.getComponent("save-btn");
 		if (save_btn && !save_btn.disabled) save_btn.disable();
-		var add_btn = FormPanel.getComponent("add-btn");
+		var add_btn = tbar.getComponent("add-btn");
 		if (add_btn && !add_btn.disabled) add_btn.disable();
 	}
 };
