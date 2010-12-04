@@ -71,7 +71,7 @@ In SQL DDL:
 
 =head1 METHODS
 
-=head2 saveException( $err )
+=head2 $id= $store->saveException( $err )
 
 Writes out a new record in the table, saving this exception object.
 
@@ -113,6 +113,22 @@ sub saveException {
 		$refId= undef;
 	};
 	return $refId;
+}
+
+=head2 $err= $store->loadException( $id )
+
+=cut
+sub loadException {
+	my ($self, $id)= @_;
+	
+	my $rs= $self->resultSource;
+	defined $rs or die "Missing ResultSource";
+	
+	my $row= $rs->find($id);
+	defined $row or die "No excption exists for id $id";
+	
+	my $err= thaw($row->why);
+	return $err;
 }
 
 1;
