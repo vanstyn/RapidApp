@@ -329,6 +329,25 @@ after 'ONREQUEST' => sub {
 };
 
 
+# All purpose flags (true/false) settings
+has 'flags' => (
+	traits    => [
+		'Hash',
+		'RapidApp::Role::PerRequestBuildDefReset'
+	],
+	is        => 'ro',
+	isa       => 'HashRef[Bool]',
+	default   => sub { {} },
+	handles   => {
+		 apply_flags	=> 'set',
+		 has_flag		=> 'get',
+		 delete_flag	=> 'delete',
+		 flag_defined	=> 'exists',
+		 all_flags		=> 'elements'
+	},
+);
+
+
 
 
 1;

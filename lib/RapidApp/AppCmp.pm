@@ -26,6 +26,8 @@ sub content {
 	
 	$self->apply_all_extconfig_attrs;
 	
+	$self->call_rapidapp_handlers($self->all_ONCONTENT_calls);
+	
 	return $self->extconfig;
 }
 
@@ -41,6 +43,22 @@ sub apply_all_extconfig_attrs {
 		$self->apply_extconfig( $attr->name => $attr->get_value($self) );
 	}
 }
+
+
+has 'ONCONTENT_calls' => (
+	traits    => [ 'Array' ],
+	is        => 'ro',
+	isa       => 'ArrayRef[RapidApp::Handler]',
+	default   => sub { [] },
+	handles => {
+		all_ONCONTENT_calls		=> 'elements',
+		add_ONCONTENT_calls		=> 'push',
+		has_no_ONCONTENT_calls	=> 'is_empty',
+	}
+);
+around 'add_ONCONTENT_calls' => __PACKAGE__->add_ONREQUEST_calls_modifier;
+
+
 
 
 has 'extconfig' => (
