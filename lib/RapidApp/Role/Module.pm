@@ -74,6 +74,8 @@ has 'ONREQUEST_called' => ( is => 'rw', lazy => 1, default => 0, traits => [ 'Ra
 sub ONREQUEST {
 	my $self = shift;
 	
+	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls);
+	
 	foreach my $attr ($self->meta->get_all_attributes) {
 		if ($attr->does('RapidApp::Role::PerRequestBuildDefReset')) {
 			# Reset to default:
@@ -248,6 +250,81 @@ sub get_module_option {
 	my $opt = shift;
 	return $self->module_options->{$opt};
 }
+
+
+has 'ONREQUEST_calls' => (
+	traits    => [ 'Array' ],
+	is        => 'ro',
+	isa       => 'ArrayRef[RapidApp::Handler]',
+	default   => sub { [] },
+	handles => {
+		all_ONREQUEST_calls		=> 'elements',
+		add_ONREQUEST_calls		=> 'push',
+		has_no_ONREQUEST_calls	=> 'is_empty',
+	}
+);
+around 'add_ONREQUEST_calls' => __PACKAGE__->add_ONREQUEST_calls_modifier;
+
+has 'ONREQUEST_calls_early' => (
+	traits    => [ 'Array' ],
+	is        => 'ro',
+	isa       => 'ArrayRef[RapidApp::Handler]',
+	default   => sub { [] },
+	handles => {
+		all_ONREQUEST_calls_early		=> 'elements',
+		add_ONREQUEST_calls_early		=> 'push',
+		has_no_ONREQUEST_calls_early	=> 'is_empty',
+	}
+);
+around 'add_ONREQUEST_calls_early' => __PACKAGE__->add_ONREQUEST_calls_modifier;
+
+has 'ONREQUEST_calls_late' => (
+	traits    => [ 'Array' ],
+	is        => 'ro',
+	isa       => 'ArrayRef[RapidApp::Handler]',
+	default   => sub { [] },
+	handles => {
+		all_ONREQUEST_calls_late		=> 'elements',
+		add_ONREQUEST_calls_late		=> 'push',
+		has_no_ONREQUEST_calls_late	=> 'is_empty',
+	}
+);
+around 'add_ONREQUEST_calls_late' => __PACKAGE__->add_ONREQUEST_calls_modifier;
+
+sub add_ONREQUEST_calls_modifier { 
+	return sub {
+		my $orig = shift;
+		my $self = shift;
+		return $self->$orig(@_) if (ref($_[0]));
+		
+		my @new = ();
+		foreach my $item (@_) {
+			push @new, RapidApp::Handler->new(
+				method	=> $item,
+				scope		=> $self
+			);
+		}
+		return $self->$orig(@new);
+	}; 
+}
+
+sub call_rapidapp_handlers {
+	my $self = shift;
+	foreach my $Handler (@_) {
+		die 'not a RapidApp::Handler' unless (ref($Handler) eq 'RapidApp::Handler');
+		$Handler->call;
+	}
+}
+
+before 'ONREQUEST' => sub {
+	my $self = shift;
+	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_early);
+};
+
+after 'ONREQUEST' => sub {
+	my $self = shift;
+	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_late);
+};
 
 
 
