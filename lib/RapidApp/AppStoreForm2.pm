@@ -50,14 +50,14 @@ sub BUILD {
 }
 
 
-after 'ONREQUEST' => sub {
+before 'ONREQUEST' => sub {
 	my $self = shift;
 	$self->Module('store',1)->apply_extconfig( baseParams => $self->get_store_base_params );
 	$self->apply_extconfig( 
 		id 		=> $self->instance_id,
-		store		=> $self->Module('store')->JsonStore,
 		tbar 		=> $self->formpanel_tbar,
-		items 	=> $self->formpanel_items
+		items 	=> $self->formpanel_items,
+		store		=> $self->Module('store')->JsonStore,
 	);
 };
 
@@ -163,13 +163,15 @@ sub _build_add_button {
 
 
 has 'tbar_icon' => ( is => 'ro', default => undef );
-has 'tbar_title' => ( is => 'ro', default => undef );
+#has 'tbar_title' => ( is => 'ro', default => undef );
 has 'formpanel_items' => ( is => 'ro', default => sub {[]} );
 
 
 has 'tbar_title_text_cls' => ( is => 'ro', default => 'tbar-title-medium' );
-has 'formpanel_tbar' => ( is => 'ro', lazy_build => 1 );
-sub _build_formpanel_tbar {
+#has 'formpanel_tbar' => ( is => 'ro', lazy_build => 1 );
+#sub _build_formpanel_tbar {
+sub formpanel_tbar {
+
 	my $self = shift;
 	
 	my $items = [];
