@@ -28,6 +28,16 @@ sub BUILD {
 	$self->apply_actions( update	=> 'update' ) if (defined $self->update_handler);
 	$self->apply_actions( create	=> 'create' ) if (defined $self->create_handler);
 	$self->apply_actions( destroy	=> 'destroy' ) if (defined $self->destroy_handler);
+	
+	$self->apply_listeners( exception => RapidApp::JSONFunc->new( raw => 1, func => 
+			'function(DataProxy, type, action, options, response, arg) { ' .
+				'if (action == "update" || action == "create") {' .
+					'var store = ' . $self->getStore_code . ';' .
+					'store.rejectChanges();' .
+				'}' .
+			'}' 
+		)
+	);
 };
 
 
@@ -267,7 +277,7 @@ sub read {
 sub read_raw {
 	my $self = shift;
 	
-	if (defined $self->read_handler) {
+	if (defined $self->read_handler and $self->has_flag('can_read')) {
 		
 		my $params = $self->c->req->params;
 		$params = $self->json->decode($self->c->req->params->{orig_params}) if (defined $self->c->req->params->{orig_params});
@@ -366,8 +376,63 @@ sub update {
 	};
 }
 
+
+
+
+sub create {
+	my $self = shift;
+	
+	my $params = $self->c->req->params;
+	my $rows = $self->json->decode($params->{rows});
+	delete $params->{rows};
+		
+	my $result = $self->create_handler->call($rows);
+	
+	# we don't actually care about the new record, so we simply give the store back
+	# the row it gave to us. We have to make sure that pk (primary key) is set to 
+	# something or else it will throw an error
+	$rows->{$self->record_pk} = 'dummy-key';
+	
+	# If the id of the new record was provided in the response, we'll use it:
+	$rows = $result->{rows} if (ref($result) and defined $result->{rows} and defined $result->{rows}->{$self->record_pk});
+	
+	
+	if (ref($result) and defined $result->{success} and defined $result->{msg}) {
+		$result->{rows} = $rows;
+		if ($result->{success}) {
+			$result->{success} = \1;
+		}
+		else {
+			$result->{success} = \0;
+		}
+		return $result;
+	}
+	
+	
+	if ($result and not (ref($result) and $result->{success} == 0 )) {
+		return {
+			success => \1,
+			msg => 'Create Succeeded',
+			rows => $rows
+		}
+	}
+	
+	if(ref($result) eq 'HASH') {
+		$result->{success} = \0;
+		$result->{msg} = 'Create Failed' unless (defined $result->{msg});
+		return $result;
+	}
+	
+	return {
+		success => \0,
+		msg => 'Create Failed'
+	};
+}
+
+
+
+
 # not implemented yet:
-sub create {}
 sub destroy {}
 
 
