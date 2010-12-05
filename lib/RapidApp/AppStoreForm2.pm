@@ -47,10 +47,12 @@ sub BUILD {
 		clientvalidation	=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.clientvalidation_handler' ),
 		afterrender			=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.afterrender_handler' )
 	);
+	
+	$self->add_ONREQUEST_calls('init_onrequest');
 }
 
 
-before 'ONREQUEST' => sub {
+sub init_onrequest {
 	my $self = shift;
 	$self->Module('store',1)->apply_extconfig( baseParams => $self->get_store_base_params );
 	$self->apply_extconfig( 
@@ -59,7 +61,7 @@ before 'ONREQUEST' => sub {
 		items 	=> $self->formpanel_items,
 		store		=> $self->Module('store')->JsonStore,
 	);
-};
+}
 
 
 
