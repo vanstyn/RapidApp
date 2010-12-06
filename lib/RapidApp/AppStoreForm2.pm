@@ -16,7 +16,6 @@ sub BUILD {
 	$self->Module('store',1)->add_listener( load => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.store_load_handler' ));	
 	$self->Module('store',1)->add_listener( write => RapidApp::JSONFunc->new( raw => 1, func =>  'function(store) { store.load(); }' )) if ($self->reload_on_save); 
 
-
 	$self->apply_extconfig(
 		xtype		=> 'appstoreform2',
 		trackResetOnLoad => \1
@@ -28,56 +27,15 @@ sub BUILD {
 	$self->add_ONREQUEST_calls('init_onrequest');
 }
 
-
 sub init_onrequest {
 	my $self = shift;
-	$self->Module('store',1)->apply_extconfig( baseParams => $self->get_store_base_params );
+	
 	$self->apply_extconfig( 
 		id 		=> $self->instance_id,
 		tbar 		=> $self->formpanel_tbar,
 		items 	=> $self->formpanel_items,
-		store		=> $self->Module('store')->JsonStore,
 	);
 }
-
-
-
-sub get_store_base_params {
-	my $self = shift;
-	
-	my $params = {};
-
-	my $encoded = $self->c->req->params->{base_params};
-	if (defined $encoded) {
-		my $decoded = $self->json->decode($encoded) or die "Failed to decode base_params JSON";
-		foreach my $k (keys %$decoded) {
-			$params->{$k} = $decoded->{$k};
-		}
-	}
-	
-	my $keys = [];
-#	if (ref($self->item_keys) eq 'ARRAY') {
-#		$keys = $self->item_keys;
-#	}
-#	else {
-#		push @$keys, $self->item_keys;
-#	}
-	
-	push @$keys, $self->record_pk;
-	
-	my $orig_params = {};
-	my $orig_params_enc = $self->c->req->params->{orig_params};
-	$orig_params = $self->json->decode($orig_params_enc) if (defined $orig_params_enc);
-	
-	foreach my $key (@$keys) {
-		$params->{$key} = $orig_params->{$key} if (defined $orig_params->{$key});
-		$params->{$key} = $self->c->req->params->{$key} if (defined $self->c->req->params->{$key});
-	}
-	
-	return $params;
-}
-
-
 
 
 ############# Buttons #################

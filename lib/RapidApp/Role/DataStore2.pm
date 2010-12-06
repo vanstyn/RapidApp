@@ -45,11 +45,54 @@ before 'BUILD' => sub {
 	#init the store with all of our flags:
 	$self->Module('store',1)->apply_flags($self->all_flags);
 	
-
-
+	$self->add_ONREQUEST_calls('store_init_onrequest');
 };
 
 
+sub store_init_onrequest {
+	my $self = shift;
+	my $params = $self->get_store_base_params;
+	$self->Module('store',1)->apply_extconfig( baseParams => $params ) if (defined $params);
+	$self->apply_extconfig( store => $self->Module('store')->JsonStore );
+}
+
+
+
+sub get_store_base_params {
+	my $self = shift;
+	
+	my $params = {};
+
+	my $encoded = $self->c->req->params->{base_params};
+	if (defined $encoded) {
+		my $decoded = $self->json->decode($encoded) or die "Failed to decode base_params JSON";
+		foreach my $k (keys %$decoded) {
+			$params->{$k} = $decoded->{$k};
+		}
+	}
+	
+	my $keys = [];
+#	if (ref($self->item_keys) eq 'ARRAY') {
+#		$keys = $self->item_keys;
+#	}
+#	else {
+#		push @$keys, $self->item_keys;
+#	}
+	
+	push @$keys, $self->record_pk;
+	
+	my $orig_params = {};
+	my $orig_params_enc = $self->c->req->params->{orig_params};
+	$orig_params = $self->json->decode($orig_params_enc) if (defined $orig_params_enc);
+	
+	foreach my $key (@$keys) {
+		$params->{$key} = $orig_params->{$key} if (defined $orig_params->{$key});
+		$params->{$key} = $self->c->req->params->{$key} if (defined $self->c->req->params->{$key});
+	}
+	
+	return undef unless (scalar keys %$params > 0);
+	return $params;
+}
 
 
 
