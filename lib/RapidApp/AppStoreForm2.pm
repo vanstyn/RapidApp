@@ -46,28 +46,35 @@ sub BUILD {
 	#init the store with all of our flags:
 	$self->Module('store',1)->apply_flags($self->all_flags);
 	
-	$self->Module('store',1)->apply_listeners(
+	$self->Module('store',1)->add_listener( load => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.store_load_handler' ));	
+	$self->Module('store',1)->add_listener( write => RapidApp::JSONFunc->new( raw => 1, func =>  'function(store) { store.load(); }' )) if ($self->reload_on_save); 
 
-		load => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.store_load_handler' ),
+	
+#	$self->Module('store',1)->apply_listeners(
+#
+#		load => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.store_load_handler' ),
+#
+#		write => RapidApp::JSONFunc->new( raw => 1, func => 
+#			'function(store, action, result, res, rs) { ' .
+#				'console.log("write event");' . 
+#				($self->reload_on_save ? 'store.load();' : '') .
+#			'}' 
+#		)
+#	);
 
-		write => RapidApp::JSONFunc->new( raw => 1, func => 
-			'function(store, action, result, res, rs) { ' .
-				'Ext.log("write event");' . 
-				($self->reload_on_save ? 'store.load();' : '') .
-			'}' 
-		)
-
-	);
 
 	$self->apply_extconfig(
 		xtype		=> 'appstoreform2',
 		trackResetOnLoad => \1
 	);
 
-	$self->apply_listeners(
-		clientvalidation	=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.clientvalidation_handler' ),
-		afterrender			=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.afterrender_handler' )
-	);
+	$self->add_listener( clientvalidation	=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.clientvalidation_handler' ) );
+	$self->add_listener( afterrender			=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.afterrender_handler' ) );
+
+#	$self->apply_listeners(
+#		clientvalidation	=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.clientvalidation_handler' ),
+#		afterrender			=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.afterrender_handler' )
+#	);
 	
 	$self->add_ONREQUEST_calls('init_onrequest');
 }
