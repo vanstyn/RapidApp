@@ -24,10 +24,18 @@ after 'setup_components' => sub {
 	my ($class) = @_;
 	# At this point, we don't have a catalyst instance yet, just the package name.
 	# Catalyst has an amazing number of package methods that masquerade as instance methods later on.
-	RapidApp::ScopedGlobals->applyForSub(
-		{ catalystClass => $class, log => $class->log },
-		sub { $class->setupRapidApp }
-	);
+	local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
+	try {
+		RapidApp::ScopedGlobals->applyForSub(
+			{ catalystClass => $class, log => $class->log },
+			sub { $class->setupRapidApp }
+		);
+	}
+	catch {
+		my $err= RapidApp::Error::capture($_);
+		$class->log->error($err->dump);
+		die $err;
+	};
 };
 
 sub setupRapidApp {
@@ -64,5 +72,21 @@ sub injectUnlessExist {
 		CatalystX::InjectComponent->inject( into => $catClass, component => $actual, as => $virtual );
 	}
 }
+
+after 'setup_finalize' => sub {
+	my $app= shift;
+	local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
+	try {
+		RapidApp::ScopedGlobals->applyForSub(
+			{ catalystClass => $app, log => $app->log },
+			sub { $app->rapidApp->_setup_finalize }
+		);
+	}
+	catch {
+		my $err= RapidApp::Error::capture($_);
+		$app->log->error($err->dump);
+		die $err;
+	};
+};
 
 1;
