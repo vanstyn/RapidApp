@@ -5,39 +5,26 @@ use strict;
 use Moose;
 
 extends 'RapidApp::AppCmp';
+
+use RapidApp::Include qw(sugar perlutil);
+
+#use RapidApp::DataStore2;
+
 with 'RapidApp::Role::DataStore';
 
 use Try::Tiny;
 
 use RapidApp::Column;
 
-use RapidApp::JSONFunc;
-#use RapidApp::AppDataView::Store;
-
-use Term::ANSIColor qw(:constants);
-
-#use RapidApp::MooseX::ClassAttrSugar;
-#setup_apply_methods_for('config');
-#setup_apply_methods_for('listeners');
-
-#apply_default_config(
-#	xtype						=> 'appgrid2',
-#	pageSize					=> 25,
-#	stripeRows				=> \1,
-#	columnLines				=> \1,
-#	use_multifilters		=> \1,
-#	gridsearch				=> \1,
-#	gridsearch_remote		=> \1,
-#	column_allow_save_properties => [ 'width','hidden' ]
-#);
+has 'record_pk'			=> ( is => 'ro', default => 'id' );
+has 'DataStore_class'	=> ( is => 'ro', default => 'RapidApp::DataStore2', isa => 'ClassName' );
 
 
 has 'title' => ( is => 'ro', default => undef );
 has 'title_icon_href' => ( is => 'ro', default => undef );
 
-has 'open_record_class' => ( is => 'ro', default => undef );
-has 'add_record_class' => ( is => 'ro', default => undef );
-
+has 'open_record_class' => ( is => 'ro', default => undef, isa => 'Maybe[ClassName]' );
+has 'add_record_class' => ( is => 'ro', default => undef, isa => 'Maybe[ClassName]' );
 
 
 # autoLoad needs to be false for the paging toolbar to not load the whole
