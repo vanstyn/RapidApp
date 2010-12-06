@@ -2,47 +2,58 @@ package RapidApp::Role::CatalystApplication;
 
 use Moose::Role;
 use RapidApp::Include 'perlutil';
+use RapidApp::RapidApp;
 
 use CatalystX::InjectComponent;
 
-#sub r { (shift)->rapidApp } # handy alias
-#has 'rapidApp' => ( is => 'ro', isa => 'RapidApp::RapidApp', lazy_build => 1 );
-#sub _build_rapidapp {
-#	my $self= shift;
-#	return RapidApp::RapidApp->new($self->config->{'RapidApp'});
-#}
-
-#sub module {
-#	my ($self, @path)= @_;
-#	if (scalar(@path) == 1) { # if path is a string, break it into its components
-#		@path= split('/', $path[0]);
-#	}
-#	@path= grep /.+/, @path;  # ignore empty strings
-#	
-#	my $m= $self->rapidApp->rootModule;
-#	foreach $part (@path) {
-#		$m= $m->module($part) or die "No such module: ".join('/',@path);
-#	}
-#	return $m;
-#}
-
-our $catClass;
-our $log;
-after 'setup_components' => sub {
-	local $catClass= shift;
-	local $log= $catClass->log;
+after 'BUILD' => sub {
+	my $self= shift;
+	# access root module, forcing it to get built now, instead of on the first request
 	
-	my @names= keys %{ $catClass->components };
+	RapidApp::ScopedGlobals->applyForSub(
+		{ catalystInstance => $self, log => $self->log },
+		sub { $self->rapidApp->rootModule },
+	);
+};
+
+sub r        { (shift)->rapidApp } # handy alias
+sub rapidApp { (shift)->model("RapidApp"); }
+sub module   { (shift)->model("RapidApp")->module(@_); }
+
+after 'setup_components' => sub {
+	my ($class) = @_;
+	# At this point, we don't have a catalyst instance yet, just the package name.
+	# Catalyst has an amazing number of package methods that masquerade as instance methods later on.
+	local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
+	try {
+		RapidApp::ScopedGlobals->applyForSub(
+			{ catalystClass => $class, log => $class->log },
+			sub { $class->setupRapidApp }
+		);
+	}
+	catch {
+		my $err= RapidApp::Error::capture($_);
+		$class->log->error($err->dump);
+		die $err;
+	};
+};
+
+sub setupRapidApp {
+	my $app= shift;
+	my $log= RapidApp::ScopedGlobals->log;
+	injectUnlessExist('RapidApp::RapidApp', 'RapidApp');
+	
+	my @names= keys %{ $app->components };
 	my @controllers= grep /[^:]+::Controller.*/, @names;
 	my $haveRoot= 0;
 	foreach my $ctlr (@controllers) {
-		if ($ctlr->DOES('RapidApp::Role::TopController')) {
-			$log->info("RapidApp: Found $ctlr which implements TopController.");
+		if ($ctlr->isa('RapidApp::ModuleDispatcher')) {
+			$log->info("RapidApp: Found $ctlr which implements ModuleDispatcher.");
 			$haveRoot= 1;
 		}
 	}
 	if (!$haveRoot) {
-		$log->info("RapidApp: No TopController found, using default");
+		$log->info("RapidApp: No Controller extending ModuleDispatcher found, using default");
 		injectUnlessExist( 'RapidApp::Controller::DefaultRoot', 'Controller::RapidApp::Root' );
 	}
 	
@@ -55,10 +66,27 @@ after 'setup_components' => sub {
 
 sub injectUnlessExist {
 	my ($actual, $virtual)= @_;
+	my $catClass= RapidApp::ScopedGlobals->catalystClass;
 	if (!$catClass->components->{$virtual}) {
-		$log->debug("RapidApp: Installing virtual $virtual");
+		RapidApp::ScopedGlobals->log->debug("RapidApp: Installing virtual $virtual");
 		CatalystX::InjectComponent->inject( into => $catClass, component => $actual, as => $virtual );
 	}
 }
+
+after 'setup_finalize' => sub {
+	my $app= shift;
+	local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
+	try {
+		RapidApp::ScopedGlobals->applyForSub(
+			{ catalystClass => $app, log => $app->log },
+			sub { $app->rapidApp->_setup_finalize }
+		);
+	}
+	catch {
+		my $err= RapidApp::Error::capture($_);
+		$app->log->error($err->dump);
+		die $err;
+	};
+};
 
 1;

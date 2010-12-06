@@ -8,6 +8,8 @@ use strict;
 use Moose::Role;
 
 use Clone qw(clone);
+use Time::HiRes qw(gettimeofday);
+use Catalyst::Utils;
 
 our $VERSION = '0.1';
 
@@ -38,6 +40,21 @@ has 'modules' => (
 
 has 'per_request_attr_build_defaults' => ( is => 'ro', default => sub {{}}, isa => 'HashRef' );
 
+sub timed_new {
+	my ($class, @args)= @_;
+	my ($sec0, $msec0)= gettimeofday;
+	my $result= $class->new(@args);
+	my ($sec1, $msec1)= gettimeofday;
+	my $elapsed= ($sec1-$sec0)+($msec1-$msec0)*.000001;
+	if (RapidApp::ScopedGlobals->varExists("RapidAppModuleLoadTimeTracker")) {
+		RapidApp::ScopedGlobals->RapidAppModuleLoadTimeTracker->{$result->base_url}= { module => ref $result, loadTime => $elapsed };
+	}
+	elsif (RapidApp::ScopedGlobals->varExists("log")) {
+		RapidApp::ScopedGlobals->log->debug(sprintf("Loaded RapidApp module ".(ref $result).": %0.3f s", $elapsed));
+	}
+	return $result;
+};
+
 sub BUILD {}
 before 'BUILD' => sub {
 	my $self = shift;
@@ -45,10 +62,9 @@ before 'BUILD' => sub {
 	# Init ONREQUEST_called to true to prevent ONREQUEST from running during BUILD:
 	$self->ONREQUEST_called(1);
 	
-	#foreach my $class (values %{$self->modules}) {
-	foreach my $class ($self->module_class_list) {
-		$class = $class->{class} if (ref($class) eq 'HASH');
-		eval "use $class";
+	foreach my $mod ($self->module_class_list) {
+		my $class= ref($mod) eq ''? $mod : ref $mod eq 'HASH'? $mod->{class} : undef;
+		Catalyst::Utils::ensure_class_loaded($class) if defined $class;
 	};
 };
 
@@ -64,9 +80,6 @@ sub apply_init_modules {
 		$self->Module($module)->ONREQUEST_called(0);
 	}
 }
-
-
-
 
 # 'ONREQUEST' is called once per web request. Add before modifiers to any classes that
 # need to run code at this time
@@ -132,9 +145,9 @@ sub _load_module {
 	return 1 if (defined $self->modules_obj->{$name} and ref($self->modules_obj->{$name}) eq $class_name);
 	
 	my $Object = $self->create_module($name,$class_name,$params) or die "Failed to create new $class_name object";
-
+	
 	$self->modules_obj->{$name} = $Object;
-
+	
 	return 1;
 }
 
@@ -155,7 +168,7 @@ sub create_module {
 	$params->{module_name} = $name;
 	$params->{parent_module_ref} = $self;
 	
-	my $Object = $class_name->new($params) or die "Failed to create module instance ($class_name)";
+	my $Object = $class_name->timed_new($params) or die "Failed to create module instance ($class_name)";
 	die "$class_name is not a valid RapidApp Module" unless ($Object->does('RapidApp::Role::Module'));
 	
 	return $Object;

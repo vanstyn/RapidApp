@@ -31,9 +31,8 @@ has 'base_url' => (
 	is => 'rw', lazy => 1, default => sub { 
 		my $self = shift;
 		
-		my $url = $self->c->namespace;
-		$url = $self->parent_module->base_url . '/' . $self->{module_name} if (defined  $self->parent_module); 
-		return $url;
+		my $parentUrl= defined $self->parent_module? $self->parent_module->base_url.'/' : '';
+		return $parentUrl . $self->{module_name};
 	},
 	traits => [ 'RapidApp::Role::PerRequestVar' ] 
 );
@@ -58,7 +57,7 @@ has 'actions' => (
 
 
 sub c {
-	return $RapidApp::ScopedGlobals::CatalystInstance;
+	return RapidApp::ScopedGlobals->catalystInstance;
 }
 
 
@@ -90,12 +89,7 @@ has 'no_json_ref_types' => ( is => 'ro', default => sub {
 	}
 });
 
-has 'create_module_params' => ( is => 'ro', lazy => 1,	default => sub {
-	my $self = shift;
-	return {
-		c => $self->c
-	};
-});
+has 'create_module_params' => ( is => 'ro', lazy => 1, default => sub {{}} );
 
 has 'json' => ( is => 'ro', lazy_build => 1 );
 sub _build_json {
