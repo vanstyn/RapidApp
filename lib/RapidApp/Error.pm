@@ -8,7 +8,7 @@ use DateTime;
 use Devel::StackTrace::WithLexicals;
 
 sub dieConverter {
-	die ref $_[0]? $_[0] : capture(join ' ', @_);
+	die ref $_[0]? $_[0] : &capture(join ' ', @_);
 }
 
 =head2 $err= capture( $something )
@@ -30,7 +30,7 @@ sub capture {
 		$hash->{trace}   ||= $errObj->trace   if $errObj->can('trace');
 		return RapidApp::Error->new($hash);
 	}
-	else if (ref $errObj eq 'HASH') {
+	elsif (ref $errObj eq 'HASH') {
 		# TODO: more processing here...  but not sure when we'd make use of this anyway
 		return RapidApp::Error->new($errObj);
 	}
@@ -60,6 +60,7 @@ sub _build_userMessage {
 }
 
 sub isUserError {
+	my $self= shift;
 	return defined $self->userMessage || defined $self->userMessage_fn;
 }
 
@@ -67,8 +68,7 @@ has 'timestamp' => ( is => 'rw', isa => 'Int', default => sub { time } );
 has 'dateTime' => ( is => 'rw', isa => 'DateTime', lazy_build => 1 );
 sub _build_dateTime {
 	my $self= shift;
-	my $d= DateTime->new($self->timestamp);
-	$d->set_time_zone('UTC');
+	my $d= DateTime->from_epoch(epoch => $self->timestamp, time_zone => 'UTC');
 	return $d;
 }
 
@@ -82,14 +82,21 @@ sub _build_srcLoc {
 has 'data' => ( is => 'rw', isa => 'HashRef' );
 has 'cause' => ( is => 'rw' );
 
-has 'trace' => ( is => 'rw' );
+has 'trace' => ( is => 'rw', builder => '_build_trace' );
 sub _build_trace {
 	# if catalyst is in debug mode, we capture a FULL stack trace
 	#my $c= RapidApp::ScopedGlobals->catalystInstance;
 	#if (defined $c && $c->debug) {
 	#	$self->{trace}= Devel::StackTrace::WithLexicals->new(ignore_class => [ __PACKAGE__ ]);
 	#}
-	return Devel::StackTrace->new(ignore_class => [__PACKAGE__]);
+	return Devel::StackTrace->new(frame_filter => \&ignoreSelfFrameFilter);
+}
+sub ignoreSelfFrameFilter {
+	my $params= shift;
+	my ($from, $calledPkg)= (''.$params->{caller}->[0], ''.$params->{caller}->[3]);
+	return 0 if substr($from, 0, 15) eq 'RapidApp::Error';
+	return 0 if substr($from, 0, 10) eq 'Class::MOP' && substr($calledPkg, 0, 15) eq 'RapidApp::Error';
+	return 1;
 }
 
 around 'BUILDARGS' => sub {
@@ -98,12 +105,11 @@ around 'BUILDARGS' => sub {
 		: (scalar(@args) == 1? { message => $args[0] } : { @args } );
 	
 	return $class->$orig($params);
-}
+};
 
 sub BUILD {
 	my $self= shift;
 	defined $self->message_fn || $self->has_message or die "Require one of message or message_fn";
-	$params->trace # can't wait for this one to be lazy
 }
 
 sub dump {
