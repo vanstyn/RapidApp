@@ -5,11 +5,7 @@ use Moose;
 
 extends 'RapidApp::AppBase';
 
-use RapidApp::JSONFunc;
-#use RapidApp::AppDataView::Store;
-
-use Term::ANSIColor qw(:constants);
-
+use RapidApp::Include qw(sugar perlutil);
 
 sub BUILD {
 	my $self = shift;
@@ -26,6 +22,8 @@ sub content {
 	
 	$self->apply_all_extconfig_attrs;
 	
+	$self->call_rapidapp_handlers($self->all_ONCONTENT_calls);
+	
 	return $self->extconfig;
 }
 
@@ -41,6 +39,22 @@ sub apply_all_extconfig_attrs {
 		$self->apply_extconfig( $attr->name => $attr->get_value($self) );
 	}
 }
+
+
+has 'ONCONTENT_calls' => (
+	traits    => [ 'Array' ],
+	is        => 'ro',
+	isa       => 'ArrayRef[RapidApp::Handler]',
+	default   => sub { [] },
+	handles => {
+		all_ONCONTENT_calls		=> 'elements',
+		add_ONCONTENT_calls		=> 'push',
+		has_no_ONCONTENT_calls	=> 'is_empty',
+	}
+);
+around 'add_ONCONTENT_calls' => __PACKAGE__->add_ONREQUEST_calls_modifier;
+
+
 
 
 has 'extconfig' => (
@@ -74,23 +88,6 @@ sub delete_config_param		{ (shift)->delete_extconfig_param(@_) }
 sub apply_all_config_attrs	{ (shift)->apply_all_extconfig_attrs(@_) }
 
 
-has 'listeners' => (
-	traits    => [
-		'Hash',
-		'RapidApp::Role::AppCmpConfigParam',
-		'RapidApp::Role::PerRequestBuildDefReset'
-	],
-	is        => 'ro',
-	isa       => 'HashRef',
-	default   => sub { {} },
-	handles   => {
-		 apply_listeners	=> 'set',
-		 get_listener		=> 'get',
-		 has_no_listeners => 'is_empty',
-		 num_listeners		=> 'count',
-		 delete_listeners	=> 'delete'
-	},
-);
 
 
 has 'plugins' => (
@@ -132,6 +129,87 @@ has 'event_handlers' => (
 		has_no_event_handlers	=> 'is_empty',
 	}
 );
+
+
+
+has 'listeners' => (
+	traits    => [
+		'Hash',
+		'RapidApp::Role::AppCmpConfigParam',
+		'RapidApp::Role::PerRequestBuildDefReset'
+	],
+	is        => 'ro',
+	isa       => 'HashRef',
+	default   => sub { {} },
+	handles   => {
+		 apply_listeners	=> 'set',
+		 get_listener		=> 'get',
+		 has_no_listeners => 'is_empty',
+		 num_listeners		=> 'count',
+		 delete_listeners	=> 'delete'
+	},
+);
+
+
+
+has 'listener_callbacks' => (
+	traits    => [
+		'Hash',
+		'RapidApp::Role::AppCmpConfigParam',
+		'RapidApp::Role::PerRequestBuildDefReset'
+	],
+	is        => 'ro',
+	isa       => 'HashRef[ArrayRef[RapidApp::JSONFunc]]',
+	default   => sub { {} },
+	handles   => {
+		 apply_listener_callbacks	=> 'set',
+		 get_listener_callbacks		=> 'get',
+		 has_listener_callbacks		=> 'exists'
+	},
+);
+sub add_listener_callbacks {
+	my $self = shift;
+	my $event = shift;
+	
+	my $list = [];
+	$list = $self->get_listener_callbacks($event) if ($self->has_listener_callbacks($event));
+	
+	push @$list, @_;
+	
+	return $self->apply_listener_callbacks( $event => $list );	
+}
+
+
+
+sub add_listener {
+	my $self = shift;
+	my $event = shift;
+	
+	$self->add_listener_callbacks($event,@_);
+	
+	my $handler = RapidApp::JSONFunc->new( raw => 1, func =>
+		'function(scope) {' .
+			'var args = arguments;' .
+			'var list = scope.listener_callbacks["' . $event . '"];' .
+			'if(Ext.isArray(list)) {' .
+				'Ext.each(list,function(fn) {' .
+					'fn.apply(this,args);' .
+				'},scope);' .
+			'}' .
+		'}'
+	);
+	
+	return $self->apply_listeners( $event => $handler );
+}
+
+
+
+
+
+
+
+
+
 
 #### --------------------- ####
 

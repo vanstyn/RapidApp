@@ -120,9 +120,11 @@ sub THIS_MODULE {
 sub Module {
 	my $self = shift;
 	my $name = shift;
+	my $no_onreq = shift;
 	
 	$self->_load_module($name) or die "Failed to load Module '$name'";
 	
+	return $self->modules_obj->{$name} if ($no_onreq);
 	return $self->modules_obj->{$name}->THIS_MODULE;
 }
 
@@ -338,6 +340,25 @@ after 'ONREQUEST' => sub {
 	my $self = shift;
 	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_late);
 };
+
+
+# All purpose flags (true/false) settings
+has 'flags' => (
+	traits    => [
+		'Hash',
+		'RapidApp::Role::PerRequestBuildDefReset'
+	],
+	is        => 'ro',
+	isa       => 'HashRef[Bool]',
+	default   => sub { {} },
+	handles   => {
+		 apply_flags	=> 'set',
+		 has_flag		=> 'get',
+		 delete_flag	=> 'delete',
+		 flag_defined	=> 'exists',
+		 all_flags		=> 'elements'
+	},
+);
 
 
 

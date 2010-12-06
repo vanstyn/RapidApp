@@ -6,13 +6,38 @@ use strict;
 use RapidApp::Include qw(sugar perlutil);
 use String::Random;
 
+
+has 'create_handler'		=> ( is => 'ro', default => undef,	isa => 'Maybe[RapidApp::Handler]' );
+has 'read_handler'		=> ( is => 'ro', default => undef,	isa => 'Maybe[RapidApp::Handler]' );
+has 'update_handler'		=> ( is => 'ro', default => undef,	isa => 'Maybe[RapidApp::Handler]' );
+has 'destroy_handler'	=> ( is => 'ro', default => undef,	isa => 'Maybe[RapidApp::Handler]' );
+
+
+has 'record_pk' 			=> ( is => 'ro', default => undef );
+has 'store_fields' 		=> ( is => 'ro', default => undef );
+has 'storeId' 				=> ( is => 'ro', default => sub { 'datastore-' . String::Random->new->randregex('[a-z0-9A-Z]{5}') } );
+has 'store_use_xtype'	=> ( is => 'ro', default => 0 );
+has 'store_autoLoad'		=> ( is => 'ro', default => sub {\1} );
+has 'reload_on_save' 	=> ( is => 'ro', default => 1 );
+
+
 sub BUILD {
 	my $self = shift;
 	
-	$self->apply_actions( read		=> 'store_read' );
-	$self->apply_actions( update	=> 'store_update' ) if (defined $self->update_records_coderef);
-	$self->apply_actions( create	=> 'store_create' ) if (defined $self->create_records_coderef);
-	$self->apply_actions( destroy	=> 'store_destroy' ) if (defined $self->destroy_records_coderef);
+	$self->apply_actions( read		=> 'read' );
+	$self->apply_actions( update	=> 'update' ) if (defined $self->update_handler);
+	$self->apply_actions( create	=> 'create' ) if (defined $self->create_handler);
+	$self->apply_actions( destroy	=> 'destroy' ) if (defined $self->destroy_handler);
+	
+	$self->apply_listeners( exception => RapidApp::JSONFunc->new( raw => 1, func => 
+			'function(DataProxy, type, action, options, response, arg) { ' .
+				'if (action == "update" || action == "create") {' .
+					'var store = ' . $self->getStore_code . ';' .
+					'store.rejectChanges();' .
+				'}' .
+			'}' 
+		)
+	);
 };
 
 
@@ -21,25 +46,42 @@ after 'ONREQUEST' => sub {
 		
 	$self->add_event_handlers([ 
 		'write', 
-		RapidApp::JSONFunc->new( raw => 1, func => 
-			'function(store, action, result, res, rs) { ' .
-				'Ext.log("write event");' . 
-				($self->reload_on_save ? 'store.load();' : '') .
-			'}'
-		)
-	]);
+		RapidApp::JSONFunc->new( raw => 1, func => 'function(store, action, result, res, rs) { store.load(); }' )
+	]) if ($self->reload_on_save);
+	
+	$self->apply_extconfig( baseParams => $self->base_params ) if (
+		defined $self->base_params and
+		scalar keys %{ $self->base_params } > 0
+	);
+	
+	$self->apply_extconfig(
+		storeId 					=> $self->storeId,
+		api 						=> $self->store_api,
+		#baseParams 				=> $self->base_params,
+		writer					=> $self->store_writer,
+		autoLoad 				=> $self->store_autoLoad,
+		autoSave 				=> \0,
+		loadMask 				=> \1,
+		autoDestroy 			=> \1,
+		root 						=> 'rows',
+		idProperty 				=> $self->record_pk,
+		messageProperty 		=> 'msg',
+		successProperty 		=> 'success',
+		totalProperty 			=> 'results',
+	);
 };
 
 
+sub JsonStore {
+	my $self = shift;
+	return RapidApp::JSONFunc->new( 
+		func => 'new Ext.data.JsonStore',
+		parm => $self->content
+	);
+}
 
 
 
-has 'record_pk' 			=> ( is => 'ro', default => undef );
-has 'store_fields' 		=> ( is => 'ro', default => undef );
-has 'storeId' 				=> ( is => 'ro', default => sub { 'datastore-' . String::Random->new->randregex('[a-z0-9A-Z]{5}') } );
-has 'store_use_xtype'	=> ( is => 'ro', default => 0 );
-has 'store_autoLoad'		=> ( is => 'ro', default => sub {\1} );
-has 'reload_on_save' 		=> ( is => 'ro', default => 1 );
 
 
 # -- Moved from AppGrid2:
@@ -89,8 +131,6 @@ sub apply_columns_ordered {
 	$self->apply_columns(%columns);
 	return $self->set_columns_order($offset,@col_names);
 }
-
-
 
 sub apply_columns {
 	my $self = shift;
@@ -222,45 +262,29 @@ sub set_columns_order {
 
 
 
-## Coderefs ##
-has 'read_records_coderef' 	=> ( is => 'rw', default => undef );
-has 'update_records_coderef'	=> ( is => 'rw', default => undef );
-has 'create_records_coderef'	=> ( is => 'rw', default => undef );
-has 'destroy_records_coderef'	=> ( is => 'rw', default => undef );
-
-
 #############
 
-#has 'store_read_obj' => ( is => 'ro', lazy => 1, default => sub { shift } );
 
-has 'store_read_obj' => ( is => 'ro', default => undef );
-
-sub store_read {
+sub read {
 	my $self = shift;
-	
-	my $obj = $self->store_read_obj ? $self->store_read_obj : $self;
-	
-	my $data = $obj->store_read_raw;
-	#my $data = $self->store_read_raw;
-	return $self->store_meta_json_packet($data);
+
+	my $data = $self->read_raw;
+	return $self->meta_json_packet($data);
 }
 
 
 
-sub store_read_raw {
+sub read_raw {
 	my $self = shift;
 	
-	if (defined $self->read_records_coderef or $self->can('read_records')) {
+	if (defined $self->read_handler and $self->has_flag('can_read')) {
 		
-		my $data;
-		if ($self->can('read_records')) {
-			$data = $self->read_records;
-		}
-		else {
-			$data = $self->read_records_coderef->() or die "Failed to read records with read_records_coderef";
-		}
+		my $params = $self->c->req->params;
+		$params = $self->json->decode($self->c->req->params->{orig_params}) if (defined $self->c->req->params->{orig_params});
 		
-		die "unexpected data returned in store_read_raw" unless (
+		my $data = $self->read_handler->call($params);
+		
+		die "unexpected data returned in read_raw" unless (
 			ref($data) eq 'HASH' and 
 			defined $data->{results} and
 			ref($data->{rows}) eq 'ARRAY'
@@ -278,7 +302,7 @@ sub store_read_raw {
 }
 
 
-sub store_meta_json_packet {
+sub meta_json_packet {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
@@ -316,7 +340,7 @@ sub store_fields_from_rows {
 }
 
 
-sub store_update {
+sub update {
 	my $self = shift;
 	
 	my $params = $self->c->req->params;
@@ -334,7 +358,8 @@ sub store_update {
 		}
 	}
 	
-	my $result = $self->update_records_coderef->($rows,$params);
+	#my $result = $self->update_records_coderef->($rows,$params);
+	my $result = $self->update_handler->call($rows,$params);
 	return $result if (
 		ref($result) eq 'HASH' and
 		defined $result->{success}
@@ -351,9 +376,64 @@ sub store_update {
 	};
 }
 
+
+
+
+sub create {
+	my $self = shift;
+	
+	my $params = $self->c->req->params;
+	my $rows = $self->json->decode($params->{rows});
+	delete $params->{rows};
+		
+	my $result = $self->create_handler->call($rows);
+	
+	# we don't actually care about the new record, so we simply give the store back
+	# the row it gave to us. We have to make sure that pk (primary key) is set to 
+	# something or else it will throw an error
+	$rows->{$self->record_pk} = 'dummy-key';
+	
+	# If the id of the new record was provided in the response, we'll use it:
+	$rows = $result->{rows} if (ref($result) and defined $result->{rows} and defined $result->{rows}->{$self->record_pk});
+	
+	
+	if (ref($result) and defined $result->{success} and defined $result->{msg}) {
+		$result->{rows} = $rows;
+		if ($result->{success}) {
+			$result->{success} = \1;
+		}
+		else {
+			$result->{success} = \0;
+		}
+		return $result;
+	}
+	
+	
+	if ($result and not (ref($result) and $result->{success} == 0 )) {
+		return {
+			success => \1,
+			msg => 'Create Succeeded',
+			rows => $rows
+		}
+	}
+	
+	if(ref($result) eq 'HASH') {
+		$result->{success} = \0;
+		$result->{msg} = 'Create Failed' unless (defined $result->{msg});
+		return $result;
+	}
+	
+	return {
+		success => \0,
+		msg => 'Create Failed'
+	};
+}
+
+
+
+
 # not implemented yet:
-sub store_create {}
-sub store_destroy {}
+sub destroy {}
 
 
 has 'getStore' => ( is => 'ro', lazy => 1, default => sub { 
@@ -383,10 +463,10 @@ has 'store_api' => ( is => 'ro', lazy => 1, default => sub {
 	
 	my $api = {};
 	
-	$api->{read}		= $self->suburl('/read')		if (defined $self->actions->{read});
-	$api->{update}		= $self->suburl('/update')		if (defined $self->actions->{update});
-	$api->{create}		= $self->suburl('/create')		if (defined $self->actions->{create});
-	$api->{destroy}	= $self->suburl('/destroy')	if (defined $self->actions->{destroy});
+	$api->{read}		= $self->suburl('/read')		if (defined $self->read_handler);
+	$api->{update}		= $self->suburl('/update')		if (defined $self->update_handler);
+	$api->{create}		= $self->suburl('/create')		if (defined $self->create_handler);
+	$api->{destroy}	= $self->suburl('/destroy')	if (defined $self->destroy_handler);
 	
 	return $api;
 });
@@ -397,9 +477,9 @@ has 'store_writer' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	
 	return undef unless (
-		defined $self->actions->{update} or 
-		defined $self->actions->{create} or
-		defined $self->actions->{destroy}
+		defined $self->update_handler or 
+		defined $self->create_handler or
+		defined $self->destroy_handler
 	);
 	
 	my $writer = RapidApp::JSONFunc->new( 
@@ -412,59 +492,6 @@ has 'store_writer' => ( is => 'ro', lazy => 1, default => sub {
 	return $writer;
 });
 
-
-sub JsonStore_config_apply {
-	my $self = shift;
-	
-	$self->apply_config( baseParams => $self->base_params ) if (
-		defined $self->base_params and
-		scalar keys %{ $self->base_params } > 0
-	);
-	
-	return $self->apply_config(
-		storeId 					=> $self->storeId,
-		api 						=> $self->store_api,
-		#baseParams 				=> $self->base_params,
-		writer					=> $self->store_writer,
-		autoLoad 				=> $self->store_autoLoad,
-		autoSave 				=> \0,
-		loadMask 				=> \1,
-		autoDestroy 			=> \1,
-		root 						=> 'rows',
-		idProperty 				=> $self->record_pk,
-		messageProperty 		=> 'msg',
-		successProperty 		=> 'success',
-		totalProperty 			=> 'results',
-	);
-}
-
-
-
-#sub JsonStore {
-has 'JsonStore' => ( is => 'ro', lazy => 1, predicate => 'has_JsonStore', default => sub {
-	my $self = shift;
-	
-	$self->JsonStore_config_apply;
-	
-	my $config = $self->config;
-	
-	foreach my $k (keys %$config) {
-		delete $config->{$k} unless (defined $config->{$k});
-	}
-	
-	if ($self->store_use_xtype) {
-		$config->{xtype} = 'jsonstore';
-		return $config;
-	}
-	
-	my $JsonStore = RapidApp::JSONFunc->new( 
-		func => 'new Ext.data.JsonStore',
-		parm => $config
-	);
-	
-	return $JsonStore;
-#}
-});
 
 
 
