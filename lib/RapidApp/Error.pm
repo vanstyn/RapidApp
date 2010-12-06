@@ -53,7 +53,7 @@ sub _build_message {
 }
 
 has 'userMessage_fn' => ( is => 'rw', isa => 'CodeRef' );
-has 'userMessage' => ( is => 'rw', isa => 'Str', lazy_build => 1 );
+has 'userMessage' => ( is => 'rw', lazy_build => 1 );
 sub _build_userMessage {
 	my $self= shift;
 	return defined $self->userMessage_fn? $self->userMessage_fn->() : undef;
@@ -82,14 +82,17 @@ sub _build_srcLoc {
 has 'data' => ( is => 'rw', isa => 'HashRef' );
 has 'cause' => ( is => 'rw' );
 
+has 'traceFilter' => ( is => 'rw' );
 has 'trace' => ( is => 'rw', builder => '_build_trace' );
 sub _build_trace {
+	my $self= shift;
 	# if catalyst is in debug mode, we capture a FULL stack trace
 	#my $c= RapidApp::ScopedGlobals->catalystInstance;
 	#if (defined $c && $c->debug) {
 	#	$self->{trace}= Devel::StackTrace::WithLexicals->new(ignore_class => [ __PACKAGE__ ]);
 	#}
-	return Devel::StackTrace->new(frame_filter => \&ignoreSelfFrameFilter);
+	my $filter= $self->traceFilter || \&ignoreSelfFrameFilter;
+	return Devel::StackTrace->new(frame_filter => $filter);
 }
 sub ignoreSelfFrameFilter {
 	my $params= shift;
@@ -117,7 +120,7 @@ sub dump {
 	
 	# start with the readable messages
 	my $result= $self->message."\n";
-	defined $self->userMessage
+	$self->has_userMessage
 		and $result.= "User Message: ".$self->userMessage."\n";
 	
 	$result.= ' on '.$self->dateTime->ymd.' '.$self->dateTime->hms."\n";
