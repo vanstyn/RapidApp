@@ -14,10 +14,10 @@ use Catalyst::Utils;
 our $VERSION = '0.1';
 
 
-has 'module_name'						=> ( is => 'ro',	default => undef );
+has 'module_name'						=> ( is => 'rw',	isa => 'Str', required => 1 );
 has 'parent_module_ref'					=> ( is => 'ro',	default => undef );
 has 'modules_obj'						=> ( is => 'ro', 	default => sub {{}} );
-has 'default_module'					=> ( is => 'ro',	default => 'default_module' );
+has 'default_module'					=> ( is => 'rw',	default => 'default_module' );
 has 'create_module_params'			=> ( is => 'ro',	default => sub { {} } );
 has 'modules_params'					=> ( is => 'ro',	default => sub { {} } );
 
@@ -50,7 +50,7 @@ sub timed_new {
 		RapidApp::ScopedGlobals->RapidAppModuleLoadTimeTracker->{$result->base_url}= { module => ref $result, loadTime => $elapsed };
 	}
 	elsif (RapidApp::ScopedGlobals->varExists("log")) {
-		RapidApp::ScopedGlobals->log->debug(sprintf("Loaded RapidApp module ".(ref $result).": %0.3f s", $elapsed));
+		RapidApp::ScopedGlobals->log->debug(sprintf("Loaded RapidApp module ".(ref $result)." at ".$result->base_url.": %0.3f s", $elapsed));
 	}
 	return $result;
 };

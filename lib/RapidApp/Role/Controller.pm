@@ -56,10 +56,21 @@ has 'actions' => (
 );
 
 
+# In catalyst terminology, "c" is the catalyst instance, embodying a request.
 sub c {
 	return RapidApp::ScopedGlobals->catalystInstance;
 }
 
+# In catalyst terminology, "app" is the package name of the class that extends catalyst
+# Many catalyst methods can be called from the package level
+sub app {
+	return RapidApp::ScopedGlobals->catalystClass;
+}
+
+# The current logger object, probably the same as ->c->log, but maybe not.
+sub log {
+	return RapidApp::ScopedGlobals->log;
+}
 
 has 'no_persist' => ( is => 'rw', lazy => 1, default => sub {
 	my $self = shift;
