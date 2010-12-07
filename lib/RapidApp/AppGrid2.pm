@@ -10,7 +10,7 @@ use RapidApp::Include qw(sugar perlutil);
 
 #use RapidApp::DataStore2;
 
-with 'RapidApp::Role::DataStore';
+with 'RapidApp::Role::DataStore2';
 
 use Try::Tiny;
 
@@ -64,7 +64,7 @@ sub get_record_loadContentCnf {
 after 'ONREQUEST' => sub {
 	my $self = shift;
 		
-	$self->apply_config(store => $self->JsonStore);
+	#$self->apply_config(store => $self->JsonStore);
 	$self->apply_config(tbar => $self->tbar_items) if (defined $self->tbar_items);
 	
 	# This is set in ONREQUEST instead of BUILD because it can change depending on the
@@ -74,6 +74,8 @@ after 'ONREQUEST' => sub {
 		$self->apply_actions($act_name => 'action_delete_records' );
 		$self->apply_config(delete_url => $self->suburl($act_name));
 	}
+	
+	$self->apply_extconfig( columns => $self->DataStore->column_list );
 	
 };
 

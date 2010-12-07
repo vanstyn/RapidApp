@@ -10,6 +10,44 @@ use RapidApp::DataStore2;
 has 'record_pk'			=> ( is => 'ro', default => 'id' );
 has 'DataStore_class'	=> ( is => 'ro', default => 'RapidApp::DataStore2' );
 
+has 'DataStore' => (
+	is			=> 'rw',
+	isa		=> 'RapidApp::DataStore2',
+	handles => {
+		JsonStore					=> 'JsonStore',
+#		store_read					=> 'store_read',
+		store_read_raw				=> 'store_read_raw',
+		columns						=> 'columns',
+		column_order				=> 'column_order',
+		include_columns			=> 'include_columns',
+		exclude_columns			=> 'exclude_columns',
+		include_columns_hash		=> 'include_columns_hash',
+		exclude_columns_hash		=> 'exclude_columns_hash',
+		apply_columns				=> 'apply_columns',
+		column_list					=> 'column_list',
+		apply_to_all_columns		=> 'apply_to_all_columns',
+		apply_columns_list		=> 'apply_columns_list',
+		set_sort						=> 'set_sort',
+		batch_apply_opts			=> 'batch_apply_opts',
+		set_columns_order			=> 'set_columns_order',
+#		record_pk					=> 'record_pk',
+		getStore						=> 'getStore',
+		getStore_code				=> 'getStore_code',
+		store_load_code			=> 'store_load_code',
+		store_listeners			=> 'listeners',
+		apply_store_listeners	=> 'apply_listeners',
+		apply_store_config		=> 'apply_extconfig',
+		valid_colname				=> 'valid_colname',
+		apply_columns_ordered	=> 'apply_columns_ordered',
+		
+	
+	}
+);
+
+# legacy: REMOVE ME:
+sub JsonStore_config_apply {}
+
+
 
 sub BUILD {}
 before 'BUILD' => sub {
@@ -41,9 +79,10 @@ before 'BUILD' => sub {
 		class		=> $self->DataStore_class,
 		params	=> $store_params
 	});
+	$self->DataStore($self->Module('store',1));
 	
 	#init the store with all of our flags:
-	$self->Module('store',1)->apply_flags($self->all_flags);
+	$self->DataStore->apply_flags($self->all_flags);
 	
 	$self->add_ONREQUEST_calls('store_init_onrequest');
 };
@@ -52,8 +91,9 @@ before 'BUILD' => sub {
 sub store_init_onrequest {
 	my $self = shift;
 	my $params = $self->get_store_base_params;
-	$self->Module('store',1)->apply_extconfig( baseParams => $params ) if (defined $params);
+	$self->DataStore->apply_extconfig( baseParams => $params ) if (defined $params);
 	$self->apply_extconfig( store => $self->Module('store')->JsonStore );
+	#$self->apply_extconfig( columns => $self->column_list );
 }
 
 

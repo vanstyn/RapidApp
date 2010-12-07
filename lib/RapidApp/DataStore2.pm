@@ -17,7 +17,7 @@ has 'record_pk' 			=> ( is => 'ro', default => undef );
 has 'store_fields' 		=> ( is => 'ro', default => undef );
 has 'storeId' 				=> ( is => 'ro', default => sub { 'datastore-' . String::Random->new->randregex('[a-z0-9A-Z]{5}') } );
 has 'store_use_xtype'	=> ( is => 'ro', default => 0 );
-has 'store_autoLoad'		=> ( is => 'ro', default => sub {\1} );
+has 'store_autoLoad'		=> ( is => 'ro', default => sub {\0} );
 has 'reload_on_save' 	=> ( is => 'ro', default => 1 );
 
 
@@ -29,7 +29,7 @@ sub BUILD {
 	$self->apply_actions( create	=> 'create' ) if (defined $self->create_handler);
 	$self->apply_actions( destroy	=> 'destroy' ) if (defined $self->destroy_handler);
 	
-	$self->apply_listeners( exception => RapidApp::JSONFunc->new( raw => 1, func => 
+	$self->add_listener( exception => RapidApp::JSONFunc->new( raw => 1, func => 
 			'function(DataProxy, type, action, options, response, arg) { ' .
 				'if (action == "update" || action == "create") {' .
 					'var store = ' . $self->getStore_code . ';' .
@@ -38,12 +38,14 @@ sub BUILD {
 			'}' 
 		)
 	);
+	
+	$self->add_ONREQUEST_calls_late('store_init_onrequest');
 };
 
 
-after 'ONREQUEST' => sub {
+sub store_init_onrequest {
 	my $self = shift;
-		
+
 	$self->add_event_handlers([ 
 		'write', 
 		RapidApp::JSONFunc->new( raw => 1, func => 'function(store, action, result, res, rs) { store.load(); }' )
@@ -69,7 +71,7 @@ after 'ONREQUEST' => sub {
 		successProperty 		=> 'success',
 		totalProperty 			=> 'results',
 	);
-};
+}
 
 
 sub JsonStore {
