@@ -8,7 +8,7 @@ use RapidApp::Include 'perlutil';
 BEGIN { use RapidApp::Error; }
 
 # the package name of the catalyst application, i.e. "GreenSheet" or "HOPS"
-has 'packageNamespace' => ( is => 'rw', isa => 'Str', required => 1 );
+has 'catalystAppClass' => ( is => 'rw', isa => 'Str', required => 1 );
 
 # the class name of the root module
 has 'rootModuleClass' => ( is => 'rw', isa => 'Str', lazy_build => 1 );
@@ -18,7 +18,7 @@ sub _build_rootModuleClass {
 
 # the default root module class name
 sub defaultRootModuleClass {
-	return (shift)->packageNamespace . '::Modules::Root';
+	return (shift)->catalystAppClass . '::Modules::Root';
 }
 
 # the config hash for the modules
@@ -33,7 +33,7 @@ has 'rootModule' => ( is => 'rw', lazy_build => 1 );
 around 'BUILDARGS' => sub {
 	my ($orig, $class, @args)= @_;
 	my $result= $class->$orig(@args);
-	$result->{packageNamespace} ||= RapidApp::ScopedGlobals->catalystClass;
+	$result->{catalystAppClass} ||= RapidApp::ScopedGlobals->catalystClass;
 	return $result;
 };
 
@@ -96,12 +96,15 @@ sub displayLoadTimes {
 	
 	my $bar= '--------------------------------------------------------------------------------------';
 	my $summary= "Loaded RapidApp Modules:\n";
-	my @colWid= ( 30, 45, 7 );
+	my @colWid= ( 25, 50, 7 );
 	$summary.= sprintf(".%.*s+%.*s+%.*s.\n",     $colWid[0],      $bar,  $colWid[1],    $bar,  $colWid[2],   $bar);
 	$summary.= sprintf("|%*s|%*s|%*s|\n",       -$colWid[0], ' Module', -$colWid[1], ' Path', -$colWid[2], ' Time');
 	$summary.= sprintf("+%.*s+%.*s+%.*s+\n",     $colWid[0],      $bar,  $colWid[1],    $bar,  $colWid[2],   $bar);
+	my @prevPath= ();
 	for my $key (sort keys %$loadTimes) {
 		my ($path, $module, $time)= ($key, $loadTimes->{$key}->{module}, $loadTimes->{$key}->{loadTime});
+		$path=~ s|[^/]*?/| /|g;
+		$path=~ s|^ /|/|;
 		$module =~ s/^(.*::)//; # trim the leading portion of the package name
 		$module = substr($module, -$colWid[0]);  # cut of the front of the string if necesary
 		$path= substr($path, -$colWid[1]);
@@ -111,6 +114,11 @@ sub displayLoadTimes {
 	$summary.= "\n";
 	
 	RapidApp::ScopedGlobals->log->debug($summary);
+}
+
+sub largestCommonPrefix {
+	my ($a, $b)= @_;
+	my $i= 0;
 }
 
 sub module {

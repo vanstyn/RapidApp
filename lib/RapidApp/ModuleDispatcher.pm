@@ -48,7 +48,10 @@ sub dispatch {
 	# special die handler to make sure we don't throw plain strings.
 	local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
 	RapidApp::ScopedGlobals->applyForSub(
-		{ catalystInstance => $c, log => $c->log, },
+		{ catalystInstance => $c,
+		  catalystClass => $c->rapidApp->catalystAppClass,
+		  log => $c->log,
+		},
 		sub {
 			my $targetModule;
 			try {

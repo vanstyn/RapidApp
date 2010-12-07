@@ -148,7 +148,7 @@ around 'BUILD' => sub {
 			
 			# -- Build combos (dropdowns) for every related field (for use in multifilters currently):
 			if ($prefix) {
-				$self->c->log->debug(MAGENTA . BOLD . $colname . ' (' . $rel_name . ')' . CLEAR);
+				$self->log->debug(MAGENTA . BOLD . $colname . ' (' . $rel_name . ')' . CLEAR);
 				
 				my $module_name = 'combo_' . $colname;
 				$self->apply_modules(
@@ -175,7 +175,7 @@ around 'BUILD' => sub {
 			my $info = $Source->relationship_info($rel);
 			
 			use Data::Dumper;
-			$self->c->log->debug(YELLOW . BOLD . Dumper($info) . CLEAR);
+			$self->log->debug(YELLOW . BOLD . Dumper($info) . CLEAR);
 			
 			#next unless ($info->{attrs}->{accessor} eq 'single');
 
