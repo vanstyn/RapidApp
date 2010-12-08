@@ -497,7 +497,7 @@ has 'store_api' => ( is => 'ro', lazy => 1, default => sub {
 	
 	my $api = {};
 	
-	$api->{read}		= $self->suburl('/read')		if (defined $self->read_handler);
+	$api->{read}		= $self->suburl('/read');
 	$api->{update}		= $self->suburl('/update')		if (defined $self->update_handler);
 	$api->{create}		= $self->suburl('/create')		if (defined $self->create_handler);
 	$api->{destroy}	= $self->suburl('/destroy')	if (defined $self->destroy_handler);

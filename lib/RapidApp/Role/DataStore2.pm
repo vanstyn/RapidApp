@@ -44,8 +44,6 @@ has 'DataStore' => (
 	}
 );
 
-# legacy: REMOVE ME:
-#sub JsonStore_config_apply {}
 
 has 'DataStore_build_params' => ( is => 'ro', default => undef, isa => 'Maybe[HashRef]' );
 
