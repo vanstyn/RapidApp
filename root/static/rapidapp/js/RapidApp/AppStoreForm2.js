@@ -86,5 +86,14 @@ Ext.ux.RapidApp.AppStoreForm2.store_load_handler = function(store,records,option
 	form.loadRecord(Record);
 	store.setBaseParam("orig_params",Ext.util.JSON.encode(Record.data));
 }
-			
+
+Ext.ux.RapidApp.AppStoreForm2.store_create_closetab = function(store,action,result,res,rs) {
+	if(action != "create"){ return; }
+				
+	// close the current tab:
+	var panel = store.formpanel;
+	var tp = panel.findParentByType("apptabpanel");
+	var tab = tp.getActiveTab();
+	tp.remove(tab);
+}
 			

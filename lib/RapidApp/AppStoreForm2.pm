@@ -8,13 +8,15 @@ use strict;
 use RapidApp::Include qw(sugar perlutil);
 
 
-has 'reload_on_save' 	=> ( is => 'ro', default => 0 );
+has 'reload_on_save' 		=> ( is => 'ro', default => 0 );
+has 'closetab_on_create'	=> ( is => 'ro', default => 0 );
 
 sub BUILD {
 	my $self = shift;
 	
 	$self->Module('store',1)->add_listener( load => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.store_load_handler' ));	
-	$self->Module('store',1)->add_listener( write => RapidApp::JSONFunc->new( raw => 1, func =>  'function(store) { store.load(); }' )) if ($self->reload_on_save); 
+	$self->Module('store',1)->add_listener( write => RapidApp::JSONFunc->new( raw => 1, func =>  'function(store) { store.load(); }' )) if ($self->reload_on_save);
+	$self->Module('store',1)->add_listener( write => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.store_create_closetab' )) if ($self->closetab_on_create);	
 
 	$self->apply_extconfig(
 		xtype		=> 'appstoreform2',
