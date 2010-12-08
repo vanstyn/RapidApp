@@ -58,28 +58,6 @@ sub get_record_loadContentCnf {
 }
 
 
-
-
-
-after 'ONREQUEST' => sub {
-	my $self = shift;
-		
-	#$self->apply_config(store => $self->JsonStore);
-	$self->apply_config(tbar => $self->tbar_items) if (defined $self->tbar_items);
-	
-	# This is set in ONREQUEST instead of BUILD because it can change depending on the
-	# user that is logged in
-	if($self->can('action_delete_records') and $self->get_module_option('delete_records')) {
-		my $act_name = 'delete_rows';
-		$self->apply_actions($act_name => 'action_delete_records' );
-		$self->apply_config(delete_url => $self->suburl($act_name));
-	}
-	
-	$self->apply_extconfig( columns => $self->DataStore->column_list );
-	
-};
-
-
 sub BUILD {
 	my $self = shift;
 	
@@ -122,14 +100,34 @@ sub BUILD {
 	
 	$self->apply_init_modules( add 	=> $self->add_record_class	) if (defined $self->add_record_class);
 	
-	
 	$self->apply_actions( save_search => 'save_search' ) if ( $self->can('save_search') );
 	$self->apply_actions( delete_search => 'delete_search' ) if ( $self->can('delete_search') );
 	
-	
 	$self->DataStore->read_raw_munger(RapidApp::Handler->new( scope => $self, method => 'add_loadContentCnf_read_munger' ));
 	
+	$self->add_ONREQUEST_calls('init_onrequest');
 }
+
+
+sub init_onrequest {
+	my $self = shift;
+		
+	#$self->apply_config(store => $self->JsonStore);
+	$self->apply_config(tbar => $self->tbar_items) if (defined $self->tbar_items);
+	
+	# This is set in ONREQUEST instead of BUILD because it can change depending on the
+	# user that is logged in
+	if($self->can('action_delete_records') and $self->get_module_option('delete_records')) {
+		my $act_name = 'delete_rows';
+		$self->apply_actions($act_name => 'action_delete_records' );
+		$self->apply_config(delete_url => $self->suburl($act_name));
+	}
+	
+	$self->apply_extconfig( columns => $self->DataStore->column_list );
+	
+}
+
+
 
 
 
