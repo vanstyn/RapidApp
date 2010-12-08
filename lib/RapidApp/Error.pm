@@ -20,7 +20,11 @@ and "isUserError" can be used.
 
 =cut
 sub capture {
+	# allow leniency if we're called as a package method
+	shift if !ref $_[0] && $_[0] eq __PACKAGE__;
+	die "Too many arguments to capture (it is a plain function, not a package emthod)" if scalar(@_) != 1;
 	my $errObj= shift;
+	
 	if (blessed($errObj)) {
 		return $errObj if $errObj->isa('RapidApp::Error');
 		
@@ -35,13 +39,14 @@ sub capture {
 		return RapidApp::Error->new($errObj);
 	}
 	else {
-		my $msg= ''.$errObj;
-		my @lines= split /[\n\r]/, $msg;
-		if ($lines[0] =~ /^(.*?) at ([^ ]+\.p[lm].*)/) {
-			$msg= $1;
-			# TODO: we might want to build a fake StackTrace object using $2... but only if it is more relevant than our current stack
+		my $args= { message => ''.$errObj };
+		my @lines= split /[\n\r]/, $args->{message};
+		chomp(@lines);
+		if ($lines[0] =~ /^(.*?) at (.+?) line ([0-9]+).*/) {
+			$args->{message}= $1;
+			$args->{firstStackFrame}= [ '', $2, $3, '', 0, undef, undef, undef, 0, '', undef ];
 		}
-		return RapidApp::Error->new({ message => $msg });
+		return RapidApp::Error->new($args);
 	}
 }
 
@@ -82,6 +87,8 @@ sub _build_srcLoc {
 has 'data' => ( is => 'rw', isa => 'HashRef' );
 has 'cause' => ( is => 'rw' );
 
+has 'firstStackFrame' => ( is => 'ro', isa => 'ArrayRef' );
+
 has 'traceFilter' => ( is => 'rw' );
 has 'trace' => ( is => 'rw', builder => '_build_trace' );
 sub _build_trace {
@@ -92,7 +99,12 @@ sub _build_trace {
 	#	$self->{trace}= Devel::StackTrace::WithLexicals->new(ignore_class => [ __PACKAGE__ ]);
 	#}
 	my $filter= $self->traceFilter || \&ignoreSelfFrameFilter;
-	return Devel::StackTrace->new(frame_filter => $filter);
+	my $args= { frame_filter => $filter };
+	defined $self->firstStackFrame
+		and $args->{raw}= [ { caller => $self->firstStackFrame, args => [] } ];
+	
+	my $result= Devel::StackTrace->new(%$args);
+	return $result;
 }
 sub ignoreSelfFrameFilter {
 	my $params= shift;
@@ -106,6 +118,7 @@ around 'BUILDARGS' => sub {
 	my ($orig, $class, @args)= @_;
 	my $params= ref $args[0] eq 'HASH'? $args[0]
 		: (scalar(@args) == 1? { message => $args[0] } : { @args } );
+	
 	
 	return $class->$orig($params);
 };
