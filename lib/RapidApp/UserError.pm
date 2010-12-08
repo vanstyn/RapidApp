@@ -6,10 +6,10 @@ extends 'RapidApp::Error';
 around 'BUILDARGS' => sub {
 	my ($orig, $class, @args)= @_;
 	my $params= ref $args[0] eq 'HASH'? $args[0]
-		: (scalar(@args) == 1? { userMessage => $args[0] } : { @args } );
+		: (scalar(@args) == 1? { message_fn => sub { (shift)->userMessage }, userMessage => $args[0] } : { @args } );
 	
 	return $class->$orig($params);
-}
+};
 
 sub userMessage {
 	my $self= shift;

@@ -60,14 +60,14 @@ has 'message_fn' => ( is => 'rw', isa => 'CodeRef' );
 has 'message' => ( is => 'rw', isa => 'Str', lazy_build => 1 );
 sub _build_message {
 	my $self= shift;
-	return $self->message_fn;
+	return $self->message_fn->($self);
 }
 
 has 'userMessage_fn' => ( is => 'rw', isa => 'CodeRef' );
 has 'userMessage' => ( is => 'rw', lazy_build => 1 );
 sub _build_userMessage {
 	my $self= shift;
-	return defined $self->userMessage_fn? $self->userMessage_fn->() : undef;
+	return defined $self->userMessage_fn? $self->userMessage_fn->($self) : undef;
 }
 
 sub isUserError {
