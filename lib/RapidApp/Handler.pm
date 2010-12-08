@@ -24,18 +24,9 @@ sub call {
 	
 	my @args = @_;
 	
-	# Temp code until mike fixes broken exception handling:
-	try {
-	
 	return $self->_call_coderef(@args) if (defined $self->code);
 	my $method = $self->method;
 	return $self->scope->$method(@args);
-	
-	} catch {
-		RapidApp::ScopedGlobals->catalystInstance->log->debug(
-			RED . BOLD . 'Mike: fix Exception handling then remove this: ' . "\n\n" . Dumper($_) . CLEAR
-		);
-	};
 }
 
 sub _call_coderef {
