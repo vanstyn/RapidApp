@@ -103,7 +103,7 @@ sub BUILD {
 	$self->apply_actions( save_search => 'save_search' ) if ( $self->can('save_search') );
 	$self->apply_actions( delete_search => 'delete_search' ) if ( $self->can('delete_search') );
 	
-	$self->DataStore->read_raw_munger(RapidApp::Handler->new( scope => $self, method => 'add_loadContentCnf_read_munger' ));
+	$self->DataStore->add_read_raw_mungers(RapidApp::Handler->new( scope => $self, method => 'add_loadContentCnf_read_munger' ));
 	
 	$self->add_ONREQUEST_calls('init_onrequest');
 }

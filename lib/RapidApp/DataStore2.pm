@@ -21,8 +21,19 @@ has 'store_autoLoad'		=> ( is => 'ro', default => sub {\0} );
 has 'reload_on_save' 	=> ( is => 'ro', default => 1 );
 
 
-has 'read_raw_munger' => ( is => 'rw', default => undef, isa => 'Maybe[RapidApp::Handler]' );
+#has 'read_raw_munger' => ( is => 'rw', default => undef, isa => 'Maybe[RapidApp::Handler]' );
 
+has 'read_raw_mungers' => (
+	traits    => [ 'Array' ],
+	is        => 'ro',
+	isa       => 'ArrayRef[RapidApp::Handler]',
+	default   => sub { [] },
+	handles => {
+		all_read_raw_mungers		=> 'elements',
+		add_read_raw_mungers		=> 'push',
+		has_no_read_raw_mungers => 'is_empty',
+	}
+);
 
 
 sub BUILD {
@@ -276,7 +287,13 @@ sub read {
 	my $self = shift;
 
 	my $data = $self->read_raw;
-	$self->read_raw_munger->call($data) if (defined $self->read_raw_munger);
+	
+	unless ($self->has_no_read_raw_mungers) {
+		foreach my $Handler ($self->all_read_raw_mungers) {
+			$Handler->call($data);
+		}
+	}
+	
 	return $self->meta_json_packet($data);
 }
 
