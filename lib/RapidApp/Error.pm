@@ -41,10 +41,16 @@ sub capture {
 	else {
 		my $args= { message => ''.$errObj };
 		my @lines= split /[\n\r]/, $args->{message};
-		chomp(@lines);
+		
 		if ($lines[0] =~ /^(.*?) at (.+?) line ([0-9]+).*/) {
-			$args->{message}= $1;
-			$args->{firstStackFrame}= [ '', $2, $3, '', 0, undef, undef, undef, 0, '', undef ];
+			if (scalar(@lines) > 1) {
+				# for multi-line messages where the first line ends with "at FILE line ###" we leave the message untouched
+			}
+			else {
+				# else we strip off the line number, and call it part of our stack trace
+				$args->{message}= $1;
+				$args->{firstStackFrame}= [ '', $2, $3, '', 0, undef, undef, undef, 0, '', undef ];
+			}
 		}
 		return RapidApp::Error->new($args);
 	}
@@ -54,14 +60,14 @@ has 'message_fn' => ( is => 'rw', isa => 'CodeRef' );
 has 'message' => ( is => 'rw', isa => 'Str', lazy_build => 1 );
 sub _build_message {
 	my $self= shift;
-	return $self->message_fn;
+	return $self->message_fn->($self);
 }
 
 has 'userMessage_fn' => ( is => 'rw', isa => 'CodeRef' );
 has 'userMessage' => ( is => 'rw', lazy_build => 1 );
 sub _build_userMessage {
 	my $self= shift;
-	return defined $self->userMessage_fn? $self->userMessage_fn->() : undef;
+	return defined $self->userMessage_fn? $self->userMessage_fn->($self) : undef;
 }
 
 sub isUserError {

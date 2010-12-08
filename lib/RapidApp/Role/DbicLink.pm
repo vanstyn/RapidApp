@@ -4,16 +4,13 @@ package RapidApp::Role::DbicLink;
 use strict;
 use Moose::Role;
 
+use RapidApp::Include qw(sugar perlutil);
 
 use RapidApp::DbicAppCombo;
 
 use Switch;
 
-use RapidApp::JSONFunc;
-#use RapidApp::AppDataView::Store;
-
-use Term::ANSIColor qw(:constants);
-
+use Moose::Util::TypeConstraints;
 
 
 has 'joins' => ( is => 'ro', default => sub {[]} );
@@ -113,6 +110,9 @@ around 'BUILD' => sub {
 	my $orig = shift;
 	my $self = shift;
 	
+	role_type('RapidApp::Role::DataStore2')->assert_valid($self);
+	
+	
 	$self->$orig(@_);
 	
 	$self->apply_primary_columns($self->record_pk); # <-- should be redundant
@@ -188,13 +188,16 @@ around 'BUILD' => sub {
 	};
 	
 	$addColRecurse->($self->ResultSource);
+	
+	$self->add_ONREQUEST_calls('check_can_delete_rows');
 };
 
 
-before 'ONREQUEST' => sub {
+sub check_can_delete_rows {
 	my $self = shift;
 	$self->applyIf_module_options( delete_records => 1 ) if($self->can('delete_rows'));
-};
+}
+
 
 sub action_delete_records {
 	my $self = shift;

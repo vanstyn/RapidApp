@@ -5,39 +5,26 @@ use strict;
 use Moose;
 
 extends 'RapidApp::AppCmp';
-with 'RapidApp::Role::DataStore';
+
+use RapidApp::Include qw(sugar perlutil);
+
+#use RapidApp::DataStore2;
+
+with 'RapidApp::Role::DataStore2';
 
 use Try::Tiny;
 
 use RapidApp::Column;
 
-use RapidApp::JSONFunc;
-#use RapidApp::AppDataView::Store;
-
-use Term::ANSIColor qw(:constants);
-
-#use RapidApp::MooseX::ClassAttrSugar;
-#setup_apply_methods_for('config');
-#setup_apply_methods_for('listeners');
-
-#apply_default_config(
-#	xtype						=> 'appgrid2',
-#	pageSize					=> 25,
-#	stripeRows				=> \1,
-#	columnLines				=> \1,
-#	use_multifilters		=> \1,
-#	gridsearch				=> \1,
-#	gridsearch_remote		=> \1,
-#	column_allow_save_properties => [ 'width','hidden' ]
-#);
+has 'record_pk'			=> ( is => 'ro', default => 'id' );
+has 'DataStore_class'	=> ( is => 'ro', default => 'RapidApp::DataStore2', isa => 'ClassName' );
 
 
 has 'title' => ( is => 'ro', default => undef );
 has 'title_icon_href' => ( is => 'ro', default => undef );
 
-has 'open_record_class' => ( is => 'ro', default => undef );
-has 'add_record_class' => ( is => 'ro', default => undef );
-
+has 'open_record_class' => ( is => 'ro', default => undef, isa => 'Maybe[ClassName]' );
+has 'add_record_class' => ( is => 'ro', default => undef, isa => 'Maybe[ClassName]' );
 
 
 # autoLoad needs to be false for the paging toolbar to not load the whole
@@ -71,26 +58,6 @@ sub get_record_loadContentCnf {
 }
 
 
-
-
-
-after 'ONREQUEST' => sub {
-	my $self = shift;
-		
-	$self->apply_config(store => $self->JsonStore);
-	$self->apply_config(tbar => $self->tbar_items) if (defined $self->tbar_items);
-	
-	# This is set in ONREQUEST instead of BUILD because it can change depending on the
-	# user that is logged in
-	if($self->can('action_delete_records') and $self->get_module_option('delete_records')) {
-		my $act_name = 'delete_rows';
-		$self->apply_actions($act_name => 'action_delete_records' );
-		$self->apply_config(delete_url => $self->suburl($act_name));
-	}
-	
-};
-
-
 sub BUILD {
 	my $self = shift;
 	
@@ -114,33 +81,97 @@ sub BUILD {
 	}
 	
 	if (defined $self->open_record_class or defined $self->add_record_class) {
-		$self->apply_listeners(
-			beforerender => RapidApp::JSONFunc->new( raw => 1, func => 
-				'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' 
-			)
-		);
+		$self->add_listener(	beforerender => RapidApp::JSONFunc->new( raw => 1, func => 
+			'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' 
+		));
 	}
 	
 	if (defined $self->open_record_class) {
 		$self->apply_init_modules( item => $self->open_record_class );
 		
-		$self->apply_listeners(
-			rowdblclick => RapidApp::JSONFunc->new( raw => 1, func => 
-				'Ext.ux.RapidApp.AppTab.gridrow_nav' 
-			)
+		# reach into the new sub-module and add a write listener to its store to
+		# make it call our store.load() whenever it changes:
+		$self->Module('item',1)->DataStore->add_listener( write => $self->DataStore->store_load_fn ) if (
+			$self->Module('item',1)->does('RapidApp::Role::DataStore2')
+		);
+		
+		$self->add_listener( rowdblclick => RapidApp::JSONFunc->new( raw => 1, func => 
+			'Ext.ux.RapidApp.AppTab.gridrow_nav' 
+		));
+	}
+	
+	if (defined $self->add_record_class) {
+		$self->apply_init_modules( add => $self->add_record_class );
+		
+		# reach into the new sub-module and add a write listener to its store to
+		# make it call our store.load() whenever it changes:
+		$self->Module('add',1)->DataStore->add_listener( write => $self->DataStore->store_load_fn ) if (
+			$self->Module('add',1)->does('RapidApp::Role::DataStore2')
 		);
 	}
 	
-	$self->apply_init_modules( add 	=> $self->add_record_class	) if (defined $self->add_record_class);
-	
-	
 	$self->apply_actions( save_search => 'save_search' ) if ( $self->can('save_search') );
 	$self->apply_actions( delete_search => 'delete_search' ) if ( $self->can('delete_search') );
+	
+	$self->DataStore->add_read_raw_mungers(RapidApp::Handler->new( scope => $self, method => 'add_loadContentCnf_read_munger' ));
+	
+	$self->add_ONREQUEST_calls('init_onrequest');
+}
+
+
+sub init_onrequest {
+	my $self = shift;
+		
+	#$self->apply_config(store => $self->JsonStore);
+	$self->apply_config(tbar => $self->tbar_items) if (defined $self->tbar_items);
+	
+	# This is set in ONREQUEST instead of BUILD because it can change depending on the
+	# user that is logged in
+	if($self->can('action_delete_records') and $self->get_module_option('delete_records')) {
+		my $act_name = 'delete_rows';
+		$self->apply_actions($act_name => 'action_delete_records' );
+		$self->apply_config(delete_url => $self->suburl($act_name));
+	}
+	
+	$self->apply_extconfig( columns => $self->DataStore->column_list );
 	
 }
 
 
 
+
+
+sub add_loadContentCnf_read_munger {
+	my $self = shift;
+	my $result = shift;
+	
+	# Add a 'loadContentCnf' field to store if open_record_class is defined.
+	# This data is used when a row is double clicked on to open the open_record_class
+	# module in the loadContent handler (JS side object). This is currently AppTab
+	# but could be other JS classes that support the same API
+	if (defined $self->open_record_class) {
+		foreach my $record (@{$result->{rows}}) {
+			my $loadCfg = {};
+			# support merging from existing loadContentCnf already contained in the record data:
+			$loadCfg = $self->json->decode($record->{loadContentCnf}) if (defined $record->{loadContentCnf});
+			
+			%{ $loadCfg } = (
+				%{ $self->get_record_loadContentCnf($record) },
+				%{ $loadCfg }
+			);
+			
+			$loadCfg->{autoLoad} = {} unless (defined $loadCfg->{autoLoad});
+			$loadCfg->{autoLoad}->{url} = $self->Module('item')->base_url unless (defined $loadCfg->{autoLoad}->{url});
+			
+			
+			$record->{loadContentCnf} = $self->json->encode($loadCfg);
+		}
+	}
+}
+
+
+
+=pod
 around 'store_read_raw' => sub {
 	my $orig = shift;
 	my $self = shift;
@@ -172,7 +203,7 @@ around 'store_read_raw' => sub {
 
 	return $result;
 };
-
+=cut
 
 
 sub options_menu_items {

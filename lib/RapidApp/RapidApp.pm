@@ -7,6 +7,8 @@ extends 'Catalyst::Model';
 use RapidApp::Include 'perlutil';
 BEGIN { use RapidApp::Error; }
 
+use RapidApp::ScopedGlobals 'sEnv';
+
 # the package name of the catalyst application, i.e. "GreenSheet" or "HOPS"
 has 'catalystAppClass' => ( is => 'rw', isa => 'Str', required => 1 );
 
@@ -35,7 +37,7 @@ has 'enableDirectLink' => ( is => 'rw', isa => 'Bool', default => 0 );
 around 'BUILDARGS' => sub {
 	my ($orig, $class, @args)= @_;
 	my $result= $class->$orig(@args);
-	$result->{catalystAppClass} ||= RapidApp::ScopedGlobals->catalystClass;
+	$result->{catalystAppClass} ||= sEnv->catalystClass;
 	return $result;
 };
 
@@ -52,7 +54,7 @@ sub _build_rootModule {
 	my $self= shift;
 	
 	# if we're doing this at runtime, just load the module.
-	if (RapidApp::ScopedGlobals->varExists('catalystInstance')) {
+	if (sEnv->varExists('catalystInstance')) {
 		return $self->_load_root_module;
 	}
 	# else, we're preloading, and we want diagnostics
@@ -64,6 +66,10 @@ sub _build_rootModule {
 
 sub _load_root_module {
 	my $self= shift;
+	
+	sEnv->log->debug("Running require on root module ".$self->rootModuleClass);
+	Catalyst::Utils::ensure_class_loaded($self->rootModuleClass);
+	
 	my $mParams= $self->rootModuleConfig || {};
 	return $self->rootModule($self->rootModuleClass->timed_new($mParams));
 }
@@ -71,20 +77,10 @@ sub _load_root_module {
 sub performModulePreload {
 	my $self= shift;
 	
-	# turn off our trace-enabled die handling, becuase it doesn't play well with ensure_class_loaded
-	my $dieHdlr= $SIG{__DIE__};
-	$SIG{__DIE__}= undef;
-	
-	# load the package of the root module
-	RapidApp::ScopedGlobals->log->debug("Running require on root module ".$self->rootModuleClass);
-	Catalyst::Utils::ensure_class_loaded($self->rootModuleClass);
-	
-	$SIG{__DIE__}= $dieHdlr;
-	
 	# Access the root module, causing it to get built
 	# We set RapidAppModuleLoadTimeTracker to instruct the modules to record their load times.
 	my $loadTimes= {};
-	RapidApp::ScopedGlobals->applyForSub(
+	sEnv->applyForSub(
 		{ RapidAppModuleLoadTimeTracker => $loadTimes },
 		sub { $self->rootModule($self->_load_root_module) }
 	);
@@ -114,7 +110,7 @@ sub displayLoadTimes {
 	$summary.= sprintf("'%.*s+%.*s+%.*s'\n",     $colWid[0],      $bar,  $colWid[1],    $bar,  $colWid[2],   $bar);
 	$summary.= "\n";
 	
-	RapidApp::ScopedGlobals->log->debug($summary);
+	sEnv->log->debug($summary);
 }
 
 sub largestCommonPrefix {
