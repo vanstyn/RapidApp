@@ -47,7 +47,7 @@ has 'DataStore' => (
 # legacy: REMOVE ME:
 sub JsonStore_config_apply {}
 
-
+has 'DataStore_build_params' => ( is => 'ro', default => undef, isa => 'Maybe[HashRef]' );
 
 sub BUILD {}
 before 'BUILD' => sub {
@@ -74,6 +74,11 @@ before 'BUILD' => sub {
 		$self->apply_flags( can_destroy => 1 ) unless ($self->flag_defined('can_destroy'));
 		$store_params->{destroy_handler}	= RapidApp::Handler->new( scope => $self, method => 'destroy_records' ) if ($self->has_flag('can_destroy'));
 	}
+	
+	$store_params = {
+		%$store_params,
+		%{ $self->DataStore_build_params }
+	} if (defined $self->DataStore_build_params);
 	
 	$self->apply_modules( store => {
 		class		=> $self->DataStore_class,

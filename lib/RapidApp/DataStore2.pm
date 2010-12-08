@@ -21,8 +21,6 @@ has 'store_autoLoad'		=> ( is => 'ro', default => sub {\0} );
 has 'reload_on_save' 	=> ( is => 'ro', default => 1 );
 
 
-#has 'read_raw_munger' => ( is => 'rw', default => undef, isa => 'Maybe[RapidApp::Handler]' );
-
 has 'read_raw_mungers' => (
 	traits    => [ 'Array' ],
 	is        => 'ro',
@@ -34,7 +32,6 @@ has 'read_raw_mungers' => (
 		has_no_read_raw_mungers => 'is_empty',
 	}
 );
-
 
 sub BUILD {
 	my $self = shift;
@@ -54,7 +51,7 @@ sub BUILD {
 		)
 	);
 	
-	# If this isn't in late, get a deep recursion error:
+	# If this isn't in late we get a deep recursion error:
 	$self->add_ONREQUEST_calls_late('store_init_onrequest');
 };
 
