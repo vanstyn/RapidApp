@@ -22,6 +22,7 @@ sub process {
 	$c->stash->{statusCode}= $stat;
 	$c->stash->{shortStatusText}= $codes->{$stat}->{short};
 	$c->stash->{longStatusText}=  $codes->{$stat}->{long};
+	$c->stash->{errorViewPath}= $c->rapidApp->errorViewPath;
 	
 	if ($c->response->status == 404) {
 		$c->stash->{template} = 'templates/rapidapp/http-404.tt';

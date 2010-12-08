@@ -30,6 +30,8 @@ has 'preloadModules' => ( is => 'rw', isa => 'Bool', default => 1 );
 # the root model instance
 has 'rootModule' => ( is => 'rw', lazy_build => 1 );
 
+has 'enableDirectLink' => ( is => 'rw', isa => 'Bool', default => 0 );
+
 around 'BUILDARGS' => sub {
 	my ($orig, $class, @args)= @_;
 	my $result= $class->$orig(@args);
@@ -39,9 +41,6 @@ around 'BUILDARGS' => sub {
 
 sub BUILD {
 	my $self= shift;
-	
-	RapidApp::ScopedGlobals->log->debug("Running require on root module ".$self->rootModuleClass);
-	Catalyst::Utils::ensure_class_loaded($self->rootModuleClass);
 }
 
 sub _setup_finalize {
@@ -71,24 +70,26 @@ sub _load_root_module {
 
 sub performModulePreload {
 	my $self= shift;
-	# set up friendly debugging messages
-	local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
-	try {
-		# Access the root module, causing it to get built
-		# We set RapidAppModuleLoadTimeTracker to instruct the modules to record their load times.
-		my $loadTimes= {};
-		RapidApp::ScopedGlobals->applyForSub(
-			{ RapidAppModuleLoadTimeTracker => $loadTimes },
-			sub { $self->rootModule($self->_load_root_module) }
-		);
-		scalar(keys %$loadTimes)
-			and $self->displayLoadTimes($loadTimes);
-	}
-	catch {
-		my $err= RapidApp::Error::capture($_);
-		$err->message($err->dump); # expose the whole mess in the error message
-		die $err;
-	};
+	
+	# turn off our trace-enabled die handling, becuase it doesn't play well with ensure_class_loaded
+	my $dieHdlr= $SIG{__DIE__};
+	$SIG{__DIE__}= undef;
+	
+	# load the package of the root module
+	RapidApp::ScopedGlobals->log->debug("Running require on root module ".$self->rootModuleClass);
+	Catalyst::Utils::ensure_class_loaded($self->rootModuleClass);
+	
+	$SIG{__DIE__}= $dieHdlr;
+	
+	# Access the root module, causing it to get built
+	# We set RapidAppModuleLoadTimeTracker to instruct the modules to record their load times.
+	my $loadTimes= {};
+	RapidApp::ScopedGlobals->applyForSub(
+		{ RapidAppModuleLoadTimeTracker => $loadTimes },
+		sub { $self->rootModule($self->_load_root_module) }
+	);
+	scalar(keys %$loadTimes)
+		and $self->displayLoadTimes($loadTimes);
 }
 
 sub displayLoadTimes {

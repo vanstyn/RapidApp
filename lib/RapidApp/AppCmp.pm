@@ -15,18 +15,22 @@ sub BUILD {
 	$self->add_plugin({ ptype => 'rappeventhandlers' });
 }
 
-
-
 sub content {
 	my $self = shift;
-	
+	return $self->get_complete_extconfig;
+}
+
+sub get_complete_extconfig {
+	my $self = shift;
 	$self->apply_all_extconfig_attrs;
-	
 	$self->call_rapidapp_handlers($self->all_ONCONTENT_calls);
-	
 	return $self->extconfig;
 }
 
+sub get_complete_web1config {
+	my $self= shift;
+	return $self->get_complete_extconfig;
+}
 
 sub apply_all_extconfig_attrs {
 	my $self = shift;

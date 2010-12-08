@@ -47,8 +47,8 @@ sub process {
 			my $id= $c->stash->{exceptionRefId};
 			$msg .= 'The details of this error have been kept for analysis<br/>'
 				.'Reference number ';
-			if ($c->debug) {
-				$msg .= '<a href="/exception?id='.$id.'" target="_blank">'.$id.'</a>';
+			if ($c->debug && $c->r->errorViewPath) {
+				$msg .= '<a href="/'.$c->r->errorViewPath.'/view?id='.$id.'" target="_blank">'.$id.'</a>';
 			} else {
 				$msg .= $id;
 			}

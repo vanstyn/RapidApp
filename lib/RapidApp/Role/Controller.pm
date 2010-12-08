@@ -40,8 +40,7 @@ has 'base_url' => (
 #has 'extra_actions'			=> ( is => 'ro', 	default => sub {{}} );
 has 'default_action'			=> ( is => 'ro',	default => undef );
 has 'render_as_json'			=> ( is => 'rw',	default => 1, traits => [ 'RapidApp::Role::PerRequestVar' ]  );
-has 'auto_viewport'			=> ( is => 'rw',	default => 0 );
-
+has 'auto_web1'				=> ( is => 'rw',	default => 0 );
 
 has 'actions' => (
 	traits	=> ['Hash'],
@@ -54,23 +53,6 @@ has 'actions' => (
 		 has_action		=> 'exists'
 	}
 );
-
-
-# In catalyst terminology, "c" is the catalyst instance, embodying a request.
-sub c {
-	return RapidApp::ScopedGlobals->catalystInstance;
-}
-
-# In catalyst terminology, "app" is the package name of the class that extends catalyst
-# Many catalyst methods can be called from the package level
-sub app {
-	return RapidApp::ScopedGlobals->catalystClass;
-}
-
-# The current logger object, probably the same as ->c->log, but maybe not.
-sub log {
-	return RapidApp::ScopedGlobals->log;
-}
 
 has 'no_persist' => ( is => 'rw', lazy => 1, default => sub {
 	my $self = shift;
@@ -105,12 +87,29 @@ has 'create_module_params' => ( is => 'ro', lazy => 1, default => sub {{}} );
 has 'json' => ( is => 'ro', lazy_build => 1 );
 sub _build_json {
 	my $self = shift;
+	$self->log->warn((ref $self)."->json still being used");
 	return RapidApp::JSON::MixedEncoder->new;
 }
 
 sub JSON_encode {
 	my $self = shift;
 	return $self->json->encode(shift);
+}
+
+# In catalyst terminology, "c" is the catalyst instance, embodying a request.
+sub c {
+	return RapidApp::ScopedGlobals->catalystInstance;
+}
+
+# In catalyst terminology, "app" is the package name of the class that extends catalyst
+# Many catalyst methods can be called from the package level
+sub app {
+	return RapidApp::ScopedGlobals->catalystClass;
+}
+
+# The current logger object, probably the same as ->c->log, but maybe not.
+sub log {
+	return RapidApp::ScopedGlobals->log;
 }
 
 # Initializes variables of the controller based on the details of the current request being handled.
@@ -208,8 +207,8 @@ sub controller_dispatch {
 				die RapidApp::Role::Controller::UnknownAction->new(message => "Unknown module or action", unknown_arg => $opt);
 			}
 		}
-		elsif ($self->c->stash->{requestContentType} ne 'JSON' && $self->auto_viewport) {
-			$self->c->log->info("--> " . GREEN . BOLD . "[viewport]" . CLEAR . ". (no action)");
+		elsif ($self->c->stash->{requestContentType} ne 'JSON' && $self->auto_web1) {
+			$self->c->log->info("--> " . GREEN . BOLD . "[web1_content]" . CLEAR . ". (no action)");
 			return $self->viewport;
 		}
 		else {
@@ -299,14 +298,12 @@ sub render_data {
 	}
 }
 
-sub viewport {
-	my $self= shift;
-	$self->c->stash->{current_view} = 'RapidApp::Viewport';
-	$self->c->stash->{title} = $self->module_name;
-	$self->c->stash->{config_url} = $self->base_url;
-	if (scalar keys %{$self->c->req->params}) {
-		$self->c->stash->{config_params} = { %{$self->c->req->params} };
-	}
+sub content {
+	die RapidApp::Error->new("Unimplemented");
+}
+
+sub web1_content {
+	die RapidApp::Error->new("Unimplemented");
 }
 
 sub set_response_warning {
