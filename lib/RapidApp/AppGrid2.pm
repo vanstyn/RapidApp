@@ -126,10 +126,44 @@ sub BUILD {
 	$self->apply_actions( save_search => 'save_search' ) if ( $self->can('save_search') );
 	$self->apply_actions( delete_search => 'delete_search' ) if ( $self->can('delete_search') );
 	
+	
+	$self->DataStore->read_raw_munger(RapidApp::Handler->new( scope => $self, method => 'add_loadContentCnf_read_munger' ));
+	
 }
 
 
 
+sub add_loadContentCnf_read_munger {
+	my $self = shift;
+	my $result = shift;
+	
+	# Add a 'loadContentCnf' field to store if open_record_class is defined.
+	# This data is used when a row is double clicked on to open the open_record_class
+	# module in the loadContent handler (JS side object). This is currently AppTab
+	# but could be other JS classes that support the same API
+	if (defined $self->open_record_class) {
+		foreach my $record (@{$result->{rows}}) {
+			my $loadCfg = {};
+			# support merging from existing loadContentCnf already contained in the record data:
+			$loadCfg = $self->json->decode($record->{loadContentCnf}) if (defined $record->{loadContentCnf});
+			
+			%{ $loadCfg } = (
+				%{ $self->get_record_loadContentCnf($record) },
+				%{ $loadCfg }
+			);
+			
+			$loadCfg->{autoLoad} = {} unless (defined $loadCfg->{autoLoad});
+			$loadCfg->{autoLoad}->{url} = $self->Module('item')->base_url unless (defined $loadCfg->{autoLoad}->{url});
+			
+			
+			$record->{loadContentCnf} = $self->json->encode($loadCfg);
+		}
+	}
+}
+
+
+
+=pod
 around 'store_read_raw' => sub {
 	my $orig = shift;
 	my $self = shift;
@@ -161,7 +195,7 @@ around 'store_read_raw' => sub {
 
 	return $result;
 };
-
+=cut
 
 
 sub options_menu_items {

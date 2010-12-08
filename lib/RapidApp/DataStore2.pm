@@ -21,6 +21,10 @@ has 'store_autoLoad'		=> ( is => 'ro', default => sub {\0} );
 has 'reload_on_save' 	=> ( is => 'ro', default => 1 );
 
 
+has 'read_raw_munger' => ( is => 'rw', default => undef, isa => 'Maybe[RapidApp::Handler]' );
+
+
+
 sub BUILD {
 	my $self = shift;
 	
@@ -271,6 +275,7 @@ sub read {
 	my $self = shift;
 
 	my $data = $self->read_raw;
+	$self->read_raw_munger->call($data) if (defined $self->read_raw_munger);
 	return $self->meta_json_packet($data);
 }
 
