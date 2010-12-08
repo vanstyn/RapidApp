@@ -16,7 +16,7 @@ has 'DataStore' => (
 	handles => {
 		JsonStore					=> 'JsonStore',
 #		store_read					=> 'store_read',
-		store_read_raw				=> 'store_read_raw',
+#		store_read_raw				=> 'store_read_raw',
 		columns						=> 'columns',
 		column_order				=> 'column_order',
 		include_columns			=> 'include_columns',
@@ -45,7 +45,7 @@ has 'DataStore' => (
 );
 
 # legacy: REMOVE ME:
-sub JsonStore_config_apply {}
+#sub JsonStore_config_apply {}
 
 has 'DataStore_build_params' => ( is => 'ro', default => undef, isa => 'Maybe[HashRef]' );
 
