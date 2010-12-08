@@ -81,24 +81,34 @@ sub BUILD {
 	}
 	
 	if (defined $self->open_record_class or defined $self->add_record_class) {
-		$self->apply_listeners(
-			beforerender => RapidApp::JSONFunc->new( raw => 1, func => 
-				'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' 
-			)
-		);
+		$self->add_listener(	beforerender => RapidApp::JSONFunc->new( raw => 1, func => 
+			'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' 
+		));
 	}
 	
 	if (defined $self->open_record_class) {
 		$self->apply_init_modules( item => $self->open_record_class );
 		
-		$self->apply_listeners(
-			rowdblclick => RapidApp::JSONFunc->new( raw => 1, func => 
-				'Ext.ux.RapidApp.AppTab.gridrow_nav' 
-			)
+		# reach into the new sub-module and add a write listener to its store to
+		# make it call our store.load() whenever it changes:
+		$self->Module('item',1)->DataStore->add_listener( write => $self->DataStore->store_load_fn ) if (
+			$self->Module('item',1)->does('RapidApp::Role::DataStore2')
 		);
+		
+		$self->add_listener( rowdblclick => RapidApp::JSONFunc->new( raw => 1, func => 
+			'Ext.ux.RapidApp.AppTab.gridrow_nav' 
+		));
 	}
 	
-	$self->apply_init_modules( add 	=> $self->add_record_class	) if (defined $self->add_record_class);
+	if (defined $self->add_record_class) {
+		$self->apply_init_modules( add => $self->add_record_class );
+		
+		# reach into the new sub-module and add a write listener to its store to
+		# make it call our store.load() whenever it changes:
+		$self->Module('add',1)->DataStore->add_listener( write => $self->DataStore->store_load_fn ) if (
+			$self->Module('add',1)->does('RapidApp::Role::DataStore2')
+		);
+	}
 	
 	$self->apply_actions( save_search => 'save_search' ) if ( $self->can('save_search') );
 	$self->apply_actions( delete_search => 'delete_search' ) if ( $self->can('delete_search') );

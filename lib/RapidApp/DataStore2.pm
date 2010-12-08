@@ -480,6 +480,18 @@ sub _build_store_load_code {
 	return $self->getStore_code . '.load()';
 }
 
+has 'store_load_fn' => ( is => 'ro', isa => 'RapidApp::JSONFunc', lazy => 1, default => sub {
+	my $self = shift;
+	return RapidApp::JSONFunc->new( raw => 1, func =>
+		'function() {' .
+			'var storeId = "' . $self->storeId . '";' .
+			'var store = Ext.StoreMgr.lookup(storeId);' .
+			'store.load();' .
+		'}'
+	);
+});
+
+
 has 'store_api' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	
