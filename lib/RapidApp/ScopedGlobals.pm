@@ -2,6 +2,9 @@ package RapidApp::ScopedGlobals;
 
 use strict;
 use warnings;
+use Exporter 'import';
+
+our @EXPORT_OK= qw( sEnv );
 
 =head1 NAME
 
@@ -13,12 +16,14 @@ RapidApp::ScopedGlobals
   sub foo_0 {
     RapidApp::ScopedGlobals->applyForSub({ x => 1 }, \&foo_1 );
   }
+  
+  use RapidApp::ScopedGlobals qw( sEnv );
   sub foo_1 {
-    RapidApp::ScopedGlobals->applyForSub({ x => 2 }, \&foo_2 );
-    print RapidApp::ScopedGlobals->x;
+    sEnv->applyForSub({ x => 2 }, \&foo_2 );
+    print sEnv->x;
   }
   sub foo_2 {
-    print RapidApp::ScopedGlobals->x, ",";
+    print sEnv->x, ",";
   }
   
   # calling foo_0 prints "2,1"
@@ -41,6 +46,15 @@ to pass those parameters to an inner module or method.
 =cut
 
 our $_vals= {};
+
+=head2 sEnv
+
+This is a very simple sugar constant which returns "RapidApp::ScopedGlobals".
+
+It makes it easy to call methods on this package.
+
+=cut
+use constant sEnv => __PACKAGE__;
 
 =head2 applyForSub( \%,  \CODE )
 
