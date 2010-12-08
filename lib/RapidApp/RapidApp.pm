@@ -7,6 +7,8 @@ extends 'Catalyst::Model';
 use RapidApp::Include 'perlutil';
 BEGIN { use RapidApp::Error; }
 
+use RapidApp::ScopedGlobals 'sEnv';
+
 # the package name of the catalyst application, i.e. "GreenSheet" or "HOPS"
 has 'catalystAppClass' => ( is => 'rw', isa => 'Str', required => 1 );
 
@@ -33,15 +35,12 @@ has 'rootModule' => ( is => 'rw', lazy_build => 1 );
 around 'BUILDARGS' => sub {
 	my ($orig, $class, @args)= @_;
 	my $result= $class->$orig(@args);
-	$result->{catalystAppClass} ||= RapidApp::ScopedGlobals->catalystClass;
+	$result->{catalystAppClass} ||= sEnv->catalystClass;
 	return $result;
 };
 
 sub BUILD {
 	my $self= shift;
-	
-	RapidApp::ScopedGlobals->log->debug("Running require on root module ".$self->rootModuleClass);
-	Catalyst::Utils::ensure_class_loaded($self->rootModuleClass);
 }
 
 sub _setup_finalize {
@@ -53,7 +52,7 @@ sub _build_rootModule {
 	my $self= shift;
 	
 	# if we're doing this at runtime, just load the module.
-	if (RapidApp::ScopedGlobals->varExists('catalystInstance')) {
+	if (sEnv->varExists('catalystInstance')) {
 		return $self->_load_root_module;
 	}
 	# else, we're preloading, and we want diagnostics
@@ -65,30 +64,26 @@ sub _build_rootModule {
 
 sub _load_root_module {
 	my $self= shift;
+	
+	sEnv->log->debug("Running require on root module ".$self->rootModuleClass);
+	Catalyst::Utils::ensure_class_loaded($self->rootModuleClass);
+	
 	my $mParams= $self->rootModuleConfig || {};
 	return $self->rootModule($self->rootModuleClass->timed_new($mParams));
 }
 
 sub performModulePreload {
 	my $self= shift;
-	# set up friendly debugging messages
-	local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
-	try {
-		# Access the root module, causing it to get built
-		# We set RapidAppModuleLoadTimeTracker to instruct the modules to record their load times.
-		my $loadTimes= {};
-		RapidApp::ScopedGlobals->applyForSub(
-			{ RapidAppModuleLoadTimeTracker => $loadTimes },
-			sub { $self->rootModule($self->_load_root_module) }
-		);
-		scalar(keys %$loadTimes)
-			and $self->displayLoadTimes($loadTimes);
-	}
-	catch {
-		my $err= RapidApp::Error::capture($_);
-		$err->message($err->dump); # expose the whole mess in the error message
-		die $err;
-	};
+	
+	# Access the root module, causing it to get built
+	# We set RapidAppModuleLoadTimeTracker to instruct the modules to record their load times.
+	my $loadTimes= {};
+	sEnv->applyForSub(
+		{ RapidAppModuleLoadTimeTracker => $loadTimes },
+		sub { $self->rootModule($self->_load_root_module) }
+	);
+	scalar(keys %$loadTimes)
+		and $self->displayLoadTimes($loadTimes);
 }
 
 sub displayLoadTimes {
@@ -113,7 +108,7 @@ sub displayLoadTimes {
 	$summary.= sprintf("'%.*s+%.*s+%.*s'\n",     $colWid[0],      $bar,  $colWid[1],    $bar,  $colWid[2],   $bar);
 	$summary.= "\n";
 	
-	RapidApp::ScopedGlobals->log->debug($summary);
+	sEnv->log->debug($summary);
 }
 
 sub largestCommonPrefix {
