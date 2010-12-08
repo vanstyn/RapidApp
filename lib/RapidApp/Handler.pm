@@ -1,6 +1,8 @@
 package RapidApp::Handler;
 use Moose;
 
+use RapidApp::Include qw(sugar perlutil);
+
 has 'scope'		=> ( is => 'ro', default => undef, isa => 'Maybe[Object]' );
 has 'method'	=> ( is => 'ro', default => undef, isa => 'Maybe[Str]' );
 has 'code'		=> ( is => 'ro', default => undef, isa => 'Maybe[CodeRef]' );
@@ -19,9 +21,21 @@ sub BUILD {
 
 sub call {
 	my $self = shift;
-	return $self->_call_coderef(@_) if (defined $self->code);
+	
+	my @args = @_;
+	
+	# Temp code until mike fixes broken exception handling:
+	try {
+	
+	return $self->_call_coderef(@args) if (defined $self->code);
 	my $method = $self->method;
-	return $self->scope->$method(@_);
+	return $self->scope->$method(@args);
+	
+	} catch {
+		RapidApp::ScopedGlobals->catalystInstance->log->debug(
+			RED . BOLD . 'Mike: fix Exception handling then remove this: ' . "\n\n" . Dumper($_) . CLEAR
+		);
+	};
 }
 
 sub _call_coderef {

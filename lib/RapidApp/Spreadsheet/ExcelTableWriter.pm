@@ -82,7 +82,7 @@ use Spreadsheet::ParseExcel;
 use RapidApp::Spreadsheet::ParseExcelExt;
 
 has 'wbook'    => ( is => 'ro', isa => 'Spreadsheet::WriteExcel::Workbook', required => 1 );
-has 'wsheet'   => ( is => 'ro', isa => 'Spreadsheet::WriteExcel::Worksheet', required => 1 );
+has 'wsheets'  => ( is => 'ro', isa => 'ArrayRef', required => 1 );
 has 'columns'  => ( is => 'rw', isa => 'ArrayRef', required => 1 );
 has 'rowStart' => ( is => 'rw', isa => 'Int', required => 1, default => 0 );
 has 'colStart' => ( is => 'rw', isa => 'Int', required => 1, default => 0 );
@@ -98,8 +98,29 @@ sub colCount {
 	return scalar(@{$self->columns});
 }
 
+around 'BUILDARGS' => sub {
+	my $orig= shift;
+	my $class= shift;
+	my $args= $class->$orig(@_);
+	if (defined $args->{wsheet}) {
+		$args->{wsheets}= [ $args->{wsheet} ];
+		delete $args->{wsheet};
+	}
+	return $args;
+};
+
+sub numWsRequired($) {
+	my ($unused, $numCols)= @_;
+	use integer;
+	return ($numCols+255) / 256;
+}
+
 sub BUILD {
 	my $self= shift;
+	
+	my $numWsNeeded= $self->numWsRequired(scalar(@{$self->columns}));
+	$numWsNeeded <= scalar(@{$self->wsheets})
+		or die "Not enough worksheets allocated for ExcelTableWriter (got ".scalar(@{$self->wsheets}).", require $numWsNeeded)";
 	
 	for (my $i= 0; $i < scalar(@{$self->columns}); $i++) {
 		my $val= $self->columns->[$i];
@@ -132,25 +153,24 @@ has '_dataStarted' => ( is => 'rw' );
 =head2 excelColIdxToLetter
 
   print RapidApp::Spreadsheet::ExcelTableWriter->excelColIdxToLetter(35);
-  # prints JB
+  # prints AM
   print $tableWriter->excelColIdxToLetter(0);
   # prints A
 
 =cut
 
+use Spreadsheet::ParseExcel::Utility 'int2col';
+
 sub excelColIdxToLetter($) {
-	my $self= shift;
-	my $colNum= shift;
-	my $colName= '';
-	{
-		use integer;
-		while ($colNum > 0) {
-			$colName.= chr(($colNum % 26) + 65);
-			$colNum/= 26;
-		}
-	}
-	length($colName) == 0 and $colName= 'A';
-	return $colName;
+	my ($ignored, $colNum)= @_;
+	return int2col($colNum);
+}
+
+sub sheetForCol {
+	my ($self, $colIdx)= @_;
+	use integer;
+	$colIdx+= $self->colStart;
+	return $self->wsheets->[$colIdx / 256], $colIdx%256;
 }
 
 sub _applyColumnFormats {
@@ -159,8 +179,9 @@ sub _applyColumnFormats {
 	for (my $i=0; $i < $self->colCount; $i++) {
 		my $fmt= $self->columns->[$i]->format;
 		my $wid= $self->columns->[$i]->width eq 'auto'? undef : $self->columns->[$i]->width;
-		my $xls_col= $self->colStart+$i;
-		$self->wsheet->set_column($xls_col, $xls_col, $wid, $fmt);
+		
+		my ($wsheet, $sheetCol)= $self->sheetForCol($i);
+		$wsheet->set_column($sheetCol, $sheetCol, $wid, $fmt);
 	}
 }
 
@@ -183,11 +204,14 @@ various bits of text at the start of the worksheet.
 =cut
 
 sub writePreamble {
-	my $self= shift;
+	my ($self, @args)= @_;
 	!$self->_dataStarted or die 'Preamble must come before headers and data';
 	
 	$self->_documentStarted or $self->prepareDocument;
-	$self->wsheet->write_row($self->curRow, $self->colStart, \@_);
+	for (my $i=0; $i < scalar(@args); $i++) {
+		my ($ws, $wsCol)= $self->sheetForCol($i);
+		$ws->write($self->curRow, $wsCol, $args[$i]);
+	}
 	$self->{_curRow}++;
 }
 
@@ -206,7 +230,8 @@ sub writeHeaders {
 	
 	$self->_documentStarted or $self->prepareDocument;
 	for (my $i=0; $i < $self->colCount; $i++) {
-		$self->wsheet->write_string($self->curRow, $self->colStart + $i, $self->columns->[$i]->label, $self->headerFormat);
+		my ($ws, $wsCol)= $self->sheetForCol($i);
+		$ws->write_string($self->curRow, $wsCol, $self->columns->[$i]->label, $self->headerFormat);
 		$self->columns->[$i]->updateWidest(length($self->columns->[$i]->label)*1.2);
 	}
 	$self->_dataStarted(1);
@@ -248,10 +273,11 @@ sub writeRow {
 	$self->_dataStarted or $self->writeHeaders;
 	
 	for (my $i=0; $i < $self->colCount; $i++) {
+		my ($ws, $wsCol)= $self->sheetForCol($i);
 		if ($self->columns->[$i]->isString) {
-			$self->wsheet->write_string($self->curRow, $self->colStart + $i, $rowData->[$i]);
+			$ws->write_string($self->curRow, $wsCol, $rowData->[$i]);
 		} else {
-			$self->wsheet->write($self->curRow, $self->colStart + $i, $rowData->[$i]);
+			$ws->write($self->curRow, $wsCol, $rowData->[$i]);
 		}
 		$self->columns->[$i]->updateWidest(length $rowData->[$i]) if (defined $rowData->[$i]);
 	}
@@ -297,8 +323,8 @@ sub autosizeColumns {
 	my $self= shift;
 	for (my $i=0; $i < $self->colCount; $i++) {
 		if ($self->columns->[$i]->width eq 'auto') {
-			my $xls_col= $self->colStart + $i;
-			$self->wsheet->set_column($xls_col, $xls_col, $self->columns->[$i]->widest+.5);
+			my ($ws, $wsCol)= $self->sheetForCol($i);
+			$ws->set_column($wsCol, $wsCol, $self->columns->[$i]->widest+.5);
 		}
 	}
 }

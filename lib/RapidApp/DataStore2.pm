@@ -17,9 +17,21 @@ has 'record_pk' 			=> ( is => 'ro', default => undef );
 has 'store_fields' 		=> ( is => 'ro', default => undef );
 has 'storeId' 				=> ( is => 'ro', default => sub { 'datastore-' . String::Random->new->randregex('[a-z0-9A-Z]{5}') } );
 has 'store_use_xtype'	=> ( is => 'ro', default => 0 );
-has 'store_autoLoad'		=> ( is => 'ro', default => sub {\1} );
+has 'store_autoLoad'		=> ( is => 'ro', default => sub {\0} );
 has 'reload_on_save' 	=> ( is => 'ro', default => 1 );
 
+
+has 'read_raw_mungers' => (
+	traits    => [ 'Array' ],
+	is        => 'ro',
+	isa       => 'ArrayRef[RapidApp::Handler]',
+	default   => sub { [] },
+	handles => {
+		all_read_raw_mungers		=> 'elements',
+		add_read_raw_mungers		=> 'push',
+		has_no_read_raw_mungers => 'is_empty',
+	}
+);
 
 sub BUILD {
 	my $self = shift;
@@ -29,7 +41,7 @@ sub BUILD {
 	$self->apply_actions( create	=> 'create' ) if (defined $self->create_handler);
 	$self->apply_actions( destroy	=> 'destroy' ) if (defined $self->destroy_handler);
 	
-	$self->apply_listeners( exception => RapidApp::JSONFunc->new( raw => 1, func => 
+	$self->add_listener( exception => RapidApp::JSONFunc->new( raw => 1, func => 
 			'function(DataProxy, type, action, options, response, arg) { ' .
 				'if (action == "update" || action == "create") {' .
 					'var store = ' . $self->getStore_code . ';' .
@@ -38,12 +50,15 @@ sub BUILD {
 			'}' 
 		)
 	);
+	
+	# If this isn't in late we get a deep recursion error:
+	$self->add_ONREQUEST_calls_late('store_init_onrequest');
 };
 
 
-after 'ONREQUEST' => sub {
+sub store_init_onrequest {
 	my $self = shift;
-		
+
 	$self->add_event_handlers([ 
 		'write', 
 		RapidApp::JSONFunc->new( raw => 1, func => 'function(store, action, result, res, rs) { store.load(); }' )
@@ -69,7 +84,7 @@ after 'ONREQUEST' => sub {
 		successProperty 		=> 'success',
 		totalProperty 			=> 'results',
 	);
-};
+}
 
 
 sub JsonStore {
@@ -269,6 +284,13 @@ sub read {
 	my $self = shift;
 
 	my $data = $self->read_raw;
+	
+	unless ($self->has_no_read_raw_mungers) {
+		foreach my $Handler ($self->all_read_raw_mungers) {
+			$Handler->call($data);
+		}
+	}
+	
 	return $self->meta_json_packet($data);
 }
 
@@ -458,12 +480,24 @@ sub _build_store_load_code {
 	return $self->getStore_code . '.load()';
 }
 
+has 'store_load_fn' => ( is => 'ro', isa => 'RapidApp::JSONFunc', lazy => 1, default => sub {
+	my $self = shift;
+	return RapidApp::JSONFunc->new( raw => 1, func =>
+		'function() {' .
+			'var storeId = "' . $self->storeId . '";' .
+			'var store = Ext.StoreMgr.lookup(storeId);' .
+			'store.load();' .
+		'}'
+	);
+});
+
+
 has 'store_api' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	
 	my $api = {};
 	
-	$api->{read}		= $self->suburl('/read')		if (defined $self->read_handler);
+	$api->{read}		= $self->suburl('/read');
 	$api->{update}		= $self->suburl('/update')		if (defined $self->update_handler);
 	$api->{create}		= $self->suburl('/create')		if (defined $self->create_handler);
 	$api->{destroy}	= $self->suburl('/destroy')	if (defined $self->destroy_handler);
