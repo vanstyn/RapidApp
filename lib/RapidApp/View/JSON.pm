@@ -20,7 +20,7 @@ sub process {
 	my $jsonStr;
 	
 	my $encoding= $c->stash->{encoding} || $self->encoding;
-	$c->res->content_type("application/json; charset=$encoding");
+	#$c->res->content_type("application/json; charset=$encoding");
 	
 	$c->res->header('Cache-Control' => 'no-cache');
 	
