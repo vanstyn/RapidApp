@@ -58,7 +58,7 @@ has 'actions' => (
 
 # In catalyst terminology, "c" is the catalyst instance, embodying a request.
 sub c {
-	return RapidApp::ScopedGlobals->catalystInstance;
+	return RapidApp::ScopedGlobals->get('catalystInstance');
 }
 
 # In catalyst terminology, "app" is the package name of the class that extends catalyst
