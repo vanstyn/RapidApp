@@ -31,6 +31,7 @@ views to display the exceptions.
 It also is responsible for cleaning temporary values from the Modules after the request is over.
 
 =cut
+our $globalDispatchCount= 0;
 sub dispatch {
 	my ($self, $c, @args)= @_;
 	
@@ -42,6 +43,9 @@ sub dispatch {
 		$c->req->header('X-RapidApp-RequestContentType')
 		|| $c->req->param('RequestContentType')
 		|| '';
+	
+	# provide a unique identifier for this request instance
+	$c->stash->{rapidapp_request_id}= ++$globalDispatchCount;
 	
 	my $result;
 	
