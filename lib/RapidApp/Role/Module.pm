@@ -132,7 +132,7 @@ sub ONREQUEST {
 sub THIS_MODULE {
 	my $self = shift;
 	#return $self->ONREQUEST unless ($self->ONREQUEST_called);
-	return $self->ONREQUEST if (defined $self->c && $self->c->stash->{rapidapp_request_id} != $self->_lastRequestApplied);# == RapidApp::ScopedGlobals->currentRequestId);
+	return $self->ONREQUEST if (defined $self->c && $self->c->stash->{rapidapp_request_id} != $self->_lastRequestApplied);
 	return $self;
 }
 
