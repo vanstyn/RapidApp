@@ -49,7 +49,6 @@ around 'BUILDARGS' => sub {
 sub as_string {
 	return (shift)->captured;
 }
-#use overload '""' => \&as_string; # to-string operator overload
 
 no Moose;
 __PACKAGE__->meta->make_immutable;

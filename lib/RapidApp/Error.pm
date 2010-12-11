@@ -11,19 +11,23 @@ sub dieConverter {
 	die ref $_[0]? $_[0] : &capture(join(' ', @_), { lateTrace => 0 });
 }
 
-=head2 $err= capture( context => $context, err => $something )
+=head2 $err= capture( $someError, \%constructorArgs )
 
 This function attempts to capture the details of some other exception object (or just a string)
-and pull them into the fields of a RapidApp::Error.  This allows all code in RapidApp to convert
-anything that happens to get caught into a Error object so that the handy methods like "trace"
-and "isUserError" can be used.
+and pull them into the fields of a RapidApp::Error::WrappedError.  This allows all code in
+RapidApp to convert anything that happens to get caught into a Error object so that the handy
+methods like "trace" and "isUserError" can be used.
+
+The second (optional) parameter specifies additional arguments to RapidApp::Error::WrappedError->new.
+If the object is already a RapidApp::Error derivative, the arguments are ignored.
 
 =cut
 sub capture {
 	# allow leniency if we're called as a package method
 	shift if !ref $_[0] && $_[0] eq __PACKAGE__;
 	my ($errObj, $ctorArgs)= @_;
-	die "Incorrect arguments to capture" if !defined $errObj || ref $ctorArgs ne 'HASH';
+	$ctorArgs ||= {};
+	exists $ctorArgs->{lateTrace} or $ctorArgs->{lateTrace}= 1;
 	
 	blessed($errObj) && $errObj->isa('RapidApp::Error')
 		and return $errObj;
