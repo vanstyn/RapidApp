@@ -4,6 +4,7 @@ use Moose::Role;
 use RapidApp::Include 'perlutil';
 use RapidApp::RapidApp;
 use RapidApp::ScopedGlobals 'sEnv';
+use Scalar::Util 'blessed';
 
 use CatalystX::InjectComponent;
 
@@ -15,7 +16,7 @@ after 'setup_components' => sub {
 	my ($app) = @_;
 	# At this point, we don't have a catalyst instance yet, just the package name.
 	# Catalyst has an amazing number of package methods that masquerade as instance methods later on.
-	local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
+	#local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
 	try {
 		RapidApp::ScopedGlobals->applyForSub(
 			{ catalystClass => $app, log => $app->log },
@@ -23,9 +24,8 @@ after 'setup_components' => sub {
 		);
 	}
 	catch {
-		my $err= RapidApp::Error::capture($_);
-		print STDERR $err->dump;
-		die $err;
+		print STDERR $_->dump if (blessed($_) && $_->can('dump'));
+		die $_;
 	};
 };
 
@@ -70,7 +70,7 @@ sub injectUnlessExist {
 
 after 'setup_finalize' => sub {
 	my $app= shift;
-	local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
+	#local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
 	try {
 		RapidApp::ScopedGlobals->applyForSub(
 			{ catalystClass => $app, log => $app->log },
@@ -78,9 +78,8 @@ after 'setup_finalize' => sub {
 		);
 	}
 	catch {
-		my $err= RapidApp::Error::capture($_);
-		print STDERR $err->dump;
-		die $err;
+		print STDERR $_->dump if (blessed($_) && $_->can('dump'));
+		die $_;
 	};
 };
 
