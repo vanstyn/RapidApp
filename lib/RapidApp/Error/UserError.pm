@@ -1,4 +1,4 @@
-package RapidApp::UserError;
+package RapidApp::Error::UserError;
 
 use Moose;
 extends 'RapidApp::Error';
