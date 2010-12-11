@@ -14,7 +14,8 @@
 	[% ELSIF exceptionRefId %]
 	<p>The details of this error have been kept for analysis.<br/>
 	Reference number
-	[% IF debug %]<a href="/exception?id=[% exceptionRefId %]" target="_blank">[% exceptionRefId %]</a>[% ELSE %][% exceptionRefId %][% END %]
+	
+	[% IF debug && errorViewPath %]<a href="/[% errorViewPath %]/view?id=[% exceptionRefId %]" target="_blank">[% exceptionRefId %]</a>[% ELSE %][% exceptionRefId %][% END %]
 	</p>
 	[% END %]
 </body>

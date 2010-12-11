@@ -1,4 +1,4 @@
-package RapidApp::UserError;
+package RapidApp::Error::UserError;
 
 use Moose;
 extends 'RapidApp::Error';
@@ -6,8 +6,10 @@ extends 'RapidApp::Error';
 around 'BUILDARGS' => sub {
 	my ($orig, $class, @args)= @_;
 	my $params= ref $args[0] eq 'HASH'? $args[0]
-		: (scalar(@args) == 1? { message_fn => sub { (shift)->userMessage }, userMessage => $args[0] } : { @args } );
+		: (scalar(@args) == 1? { userMessage => $args[0] } : { @args } );
 	
+	defined $params->{message_fn} or $params->{message_fn} ||= sub { (shift)->userMessage };
+	exists $params->{trace} or $params->{trace}= undef;
 	return $class->$orig($params);
 };
 

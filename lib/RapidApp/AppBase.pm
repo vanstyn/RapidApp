@@ -34,6 +34,8 @@ has 'base_params' 				=> ( is => 'ro',	lazy => 1, default => sub {{}}	);
 has 'params' 						=> ( is => 'ro',	required 	=> 0,		isa => 'ArrayRef'	);
 has 'base_query_string'			=> ( is => 'ro',	default => ''		);
 has 'exception_style' 			=> ( is => 'ro',	required => 0,		default => "color: red; font-weight: bolder;"			);
+has 'auto_viewport'				=> ( is => 'rw',	default => 0 );
+
 # ----------
 
 
@@ -45,9 +47,6 @@ has 'instance_id' => ( is => 'ro', lazy => 1, default => sub {
 
 
 ###########################################################################################
-
-
-
 
 sub suburl {
 	my $self = shift;
@@ -82,6 +81,21 @@ sub urlparams {
 	return $new;
 }
 
+sub web1_content {
+	my $self= shift;
+	return $self->viewport if $self->auto_viewport;
+	return $self->SUPER::web1_content;
+}
+
+sub viewport {
+	my $self= shift;
+	$self->c->stash->{current_view} = 'RapidApp::Viewport';
+	$self->c->stash->{title} = $self->module_name;
+	$self->c->stash->{config_url} = $self->base_url;
+	if (scalar keys %{$self->c->req->params}) {
+		$self->c->stash->{config_params} = { %{$self->c->req->params} };
+	}
+}
 
 no Moose;
 __PACKAGE__->meta->make_immutable;

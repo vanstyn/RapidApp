@@ -48,7 +48,8 @@ sub import {
 sub calleruse {
 	my ($usePkg, @usePkgArgs)= @_;
 	local $USEARGS= \@usePkgArgs;
-	eval "require $usePkg; package $CALLER; $usePkg->import( ".'@$'.__PACKAGE__."::USEARGS );";
+	my $ret= eval "require $usePkg; package $CALLER; $usePkg->import( ".'@$'.__PACKAGE__."::USEARGS ); 1;";
+	defined $ret or die $@;
 }
 
 sub perlutil {
@@ -65,7 +66,7 @@ sub perlutil {
 
 sub rapidapp_base {
 	calleruse 'RapidApp::Error';
-	calleruse 'RapidApp::UserError';
+	calleruse 'RapidApp::Error::UserError';
 	calleruse 'RapidApp::ScopedGlobals';
 	calleruse 'RapidApp::JSONFunc';
 	calleruse 'RapidApp::JSON::MixedEncoder';

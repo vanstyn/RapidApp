@@ -5,7 +5,6 @@ use namespace::autoclean;
 extends 'Catalyst::Model';
 
 use RapidApp::Include 'perlutil';
-BEGIN { use RapidApp::Error; }
 
 use RapidApp::ScopedGlobals 'sEnv';
 
@@ -31,6 +30,8 @@ has 'preloadModules' => ( is => 'rw', isa => 'Bool', default => 1 );
 
 # the root model instance
 has 'rootModule' => ( is => 'rw', lazy_build => 1 );
+
+has 'enableDirectLink' => ( is => 'rw', isa => 'Bool', default => 0 );
 
 around 'BUILDARGS' => sub {
 	my ($orig, $class, @args)= @_;

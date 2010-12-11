@@ -3,33 +3,24 @@ package RapidApp::Role::CatalystApplication;
 use Moose::Role;
 use RapidApp::Include 'perlutil';
 use RapidApp::RapidApp;
+use RapidApp::ScopedGlobals 'sEnv';
 use Scalar::Util 'blessed';
 
 use CatalystX::InjectComponent;
-
-after 'BUILD' => sub {
-	my $self= shift;
-	# access root module, forcing it to get built now, instead of on the first request
-	
-	RapidApp::ScopedGlobals->applyForSub(
-		{ catalystInstance => $self, log => $self->log },
-		sub { $self->rapidApp->rootModule },
-	);
-};
 
 sub r        { (shift)->rapidApp } # handy alias
 sub rapidApp { (shift)->model("RapidApp"); }
 sub module   { (shift)->model("RapidApp")->module(@_); }
 
 after 'setup_components' => sub {
-	my ($class) = @_;
+	my ($app) = @_;
 	# At this point, we don't have a catalyst instance yet, just the package name.
 	# Catalyst has an amazing number of package methods that masquerade as instance methods later on.
 	#local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
 	try {
 		RapidApp::ScopedGlobals->applyForSub(
-			{ catalystClass => $class, log => $class->log },
-			sub { $class->setupRapidApp }
+			{ catalystClass => $app, log => $app->log },
+			sub { $app->setupRapidApp }
 		);
 	}
 	catch {
@@ -57,6 +48,10 @@ sub setupRapidApp {
 		injectUnlessExist( 'RapidApp::Controller::DefaultRoot', 'Controller::RapidApp::Root' );
 	}
 	
+	# Enable the DirectLink feature, if asked for
+	$app->rapidApp->enableDirectLink
+		and injectUnlessExist( 'RapidApp::Controller::DirectLink', 'Controller::RapidApp::DirectLink' );
+	
 	# for each view, inject it if it doens't exist
 	injectUnlessExist( 'Catalyst::View::TT', 'View::RapidApp::TT' );
 	injectUnlessExist( 'RapidApp::View::Viewport', 'View::RapidApp::Viewport' );
@@ -66,10 +61,10 @@ sub setupRapidApp {
 
 sub injectUnlessExist {
 	my ($actual, $virtual)= @_;
-	my $catClass= RapidApp::ScopedGlobals->catalystClass;
-	if (!$catClass->components->{$virtual}) {
-		RapidApp::ScopedGlobals->log->debug("RapidApp: Installing virtual $virtual");
-		CatalystX::InjectComponent->inject( into => $catClass, component => $actual, as => $virtual );
+	my $app= RapidApp::ScopedGlobals->catalystClass;
+	if (!$app->components->{$virtual}) {
+		sEnv->log->debug("RapidApp: Installing virtual $virtual");
+		CatalystX::InjectComponent->inject( into => $app, component => $actual, as => $virtual );
 	}
 }
 
