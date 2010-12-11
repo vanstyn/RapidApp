@@ -460,7 +460,8 @@ sub destroy {}
 
 has 'getStore' => ( is => 'ro', lazy => 1, default => sub { 
 	my $self = shift;
-	return $self->JsonStore unless ($self->has_JsonStore); # Return the JsonStore constructor if it hasn't been called yet
+	return $self->JsonStore;
+	#return $self->JsonStore unless ($self->has_JsonStore); # Return the JsonStore constructor if it hasn't been called yet
 	return RapidApp::JSONFunc->new( 
 		raw => 1, 
 		func => $self->getStore_code

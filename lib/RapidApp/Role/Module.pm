@@ -77,11 +77,23 @@ has 'cached_per_req_attr_list' => ( is => 'ro', lazy => 1, default => sub {
 	
 	my $attrs = [];
 	foreach my $attr ($self->meta->get_all_attributes) {
-		#push @$attrs, $attr if ($attr->does('RapidApp::Role::PerRequestBuildDefReset'));
-		push @$attrs, $attr if ($attr->does('RapidApp::Role::PerRequestBuildDefReset') or $attr->does('RapidApp::Role::PerRequestVar'));
+		push @$attrs, $attr if ($self->should_clear_per_req($attr));
 	}
 	return $attrs;
 });
+
+sub should_clear_per_req {
+	my $self = shift;
+	my $attr = shift;
+	
+	return 1 if (
+		$attr->does('RapidApp::Role::PerRequestBuildDefReset') or 
+		$attr->does('RapidApp::Role::PerRequestVar')
+	);
+	
+	return 0;
+}
+
 
 # Does the same thing as apply_modules but also init/loads the modules
 sub apply_init_modules {
@@ -137,6 +149,9 @@ sub new_clear_per_req_attrs {
 			$self->per_request_attr_build_defaults->{$attr->name} = $val;
 		}
 	}
+	
+	# Legacy:
+	$self->clear_attributes if ($self->no_persist);
 }
 
 
