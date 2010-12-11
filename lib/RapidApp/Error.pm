@@ -75,14 +75,18 @@ has 'cause' => ( is => 'rw' );
 has 'traceArgs' => ( is => 'ro' );
 sub collectTraceArgs {
 	my $self= shift;
-#	return { frame_filter => \&ignoreSelfFrameFilter, $self->traceArgs? %{$self->traceArgs} : () }
-	return {};
+	return { frame_filter => \&ignoreSelfFrameFilter, $self->traceArgs? %{$self->traceArgs} : () }
 }
 has 'trace' => ( is => 'rw', builder => '_build_trace' );
 sub _build_trace {
 	my $self= shift;
-	
-	my $result= Devel::StackTrace->new(%{$self->collectTraceArgs});
+	my $args= $self->collectTraceArgs;
+	my $class= 'Devel::StackTrace';
+	if (exists $args->{TRACE_CLASS}) {
+		$class= $args->{TRACE_CLASS};
+		delete $args->{TRACE_CLASS};
+	}
+	my $result= $class->new(%$args);
 	return $result;
 }
 sub ignoreSelfFrameFilter {

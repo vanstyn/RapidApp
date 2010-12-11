@@ -102,8 +102,29 @@ sub dieConversion {
 	done_testing;
 }
 
+sub foo {
+	$_[0]->new($_[1]);
+}
+sub bar {
+	foo(@_);
+}
+sub baz {
+	bar(@_);
+}
+sub traceCollection {
+	my $err;
+	my $msg= 'Died Here';
+	$err= baz('RapidApp::Error', { message => $msg });
+	#diag(Dumper($err->trace->frame(0)));
+	like($err->trace->frame(0)->subroutine, qr/RapidApp::Error::new/, 'first reported frame');
+	like($err->trace->frame(1)->subroutine, qr/.*::foo/, 'second reported frame');
+	
+	done_testing;
+}
+
 subtest 'Constructor Tests' => \&constructor;
 subtest 'User Error Constructor Tests' => \&userErrorConstructor;
 subtest 'Stringification' => \&stringification;
 subtest 'Die Conversion' => \&dieConversion;
+subtest 'Trace Collection' => \&traceCollection;
 done_testing;
