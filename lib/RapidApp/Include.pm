@@ -66,7 +66,7 @@ sub perlutil {
 
 sub rapidapp_base {
 	calleruse 'RapidApp::Error';
-	calleruse 'RapidApp::UserError';
+	calleruse 'RapidApp::Error::UserError';
 	calleruse 'RapidApp::ScopedGlobals';
 	calleruse 'RapidApp::JSONFunc';
 	calleruse 'RapidApp::JSON::MixedEncoder';
