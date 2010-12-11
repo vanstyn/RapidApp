@@ -77,7 +77,8 @@ has 'cached_per_req_attr_list' => ( is => 'ro', lazy => 1, default => sub {
 	
 	my $attrs = [];
 	foreach my $attr ($self->meta->get_all_attributes) {
-		push @$attrs, $attr if ($attr->does('RapidApp::Role::PerRequestBuildDefReset'));
+		#push @$attrs, $attr if ($attr->does('RapidApp::Role::PerRequestBuildDefReset'));
+		push @$attrs, $attr if ($attr->does('RapidApp::Role::PerRequestBuildDefReset') or $attr->does('RapidApp::Role::PerRequestVar'));
 	}
 	return $attrs;
 });
@@ -96,18 +97,37 @@ sub apply_init_modules {
 
 # 'ONREQUEST' is called once per web request. Add before modifiers to any classes that
 # need to run code at this time
-has 'ONREQUEST_called' => ( is => 'rw', lazy => 1, default => 0, traits => [ 'RapidApp::Role::PerRequestVar' ] );
+#has 'ONREQUEST_called' => ( is => 'rw', lazy => 1, default => 0, traits => [ 'RapidApp::Role::PerRequestVar' ] );
+
+has 'ONREQUEST_called' => ( is => 'rw', lazy => 1, default => 0 );
 
 has '_lastRequestApplied' => ( is => 'rw', default => 0 );
 
 sub ONREQUEST {
 	my $self = shift;
 	
-	$self->_lastRequestApplied($self->c->stash->{rapidapp_request_id});
+	$self->_lastRequestApplied($self->c->stash->{rapidapp_request_id}) if (defined $self->c);
+	
+	my $id = '(no req)';
+	$id = $self->c->stash->{rapidapp_request_id}  if (defined $self->c);
+	$self->app->log->debug(BOLD . ' --------------> ONREQUEST: ' . ref($self) . ': ' . $id . CLEAR);
 	
 	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls);
 	
 	#foreach my $attr ($self->meta->get_all_attributes) {
+	
+	$self->new_clear_per_req_attrs;
+	
+	
+	$self->ONREQUEST_called(1);
+	return $self;
+}
+
+sub new_clear_per_req_attrs {
+	my $self = shift;
+	
+	#$self->ONREQUEST_called(0);
+	
 	foreach my $attr (@{$self->cached_per_req_attr_list}) {
 		#if ($attr->does('RapidApp::Role::PerRequestBuildDefReset')) {
 			# Reset to default:
@@ -125,13 +145,20 @@ sub ONREQUEST {
 		#}
 	}
 	
-	$self->ONREQUEST_called(1);
-	return $self;
 }
+
+
+
 
 sub THIS_MODULE {
 	my $self = shift;
-	#return $self->ONREQUEST unless ($self->ONREQUEST_called);
+	return $self unless (defined $self->c);
+	
+#	unless ($self->_lastRequestApplied) {
+#		return $self->ONREQUEST unless ($self->ONREQUEST_called);
+#		return $self;
+#	}
+	
 	return $self->ONREQUEST if (defined $self->c && $self->c->stash->{rapidapp_request_id} != $self->_lastRequestApplied);
 	return $self;
 }
