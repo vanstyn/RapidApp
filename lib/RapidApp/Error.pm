@@ -2,16 +2,16 @@ package RapidApp::Error;
 
 use Moose;
 
-use overload '""' => \&as_string; # to-string operator overload
+use overload '""' => \&_stringify_object; # to-string operator overload
 use Data::Dumper;
 use DateTime;
 use Devel::StackTrace::WithLexicals;
 
 sub dieConverter {
-	die ref $_[0]? $_[0] : &capture(join ' ', @_);
+	die ref $_[0]? $_[0] : &capture(join(' ', @_), { lateTrace => 0 });
 }
 
-=head2 $err= capture( $something )
+=head2 $err= capture( context => $context, err => $something )
 
 This function attempts to capture the details of some other exception object (or just a string)
 and pull them into the fields of a RapidApp::Error.  This allows all code in RapidApp to convert
@@ -22,38 +22,13 @@ and "isUserError" can be used.
 sub capture {
 	# allow leniency if we're called as a package method
 	shift if !ref $_[0] && $_[0] eq __PACKAGE__;
-	die "Too many arguments to capture (it is a plain function, not a package emthod)" if scalar(@_) != 1;
-	my $errObj= shift;
+	my ($errObj, $ctorArgs)= @_;
+	die "Incorrect arguments to capture" if !defined $errObj || ref $ctorArgs ne 'HASH';
 	
-	if (blessed($errObj)) {
-		return $errObj if $errObj->isa('RapidApp::Error');
-		
-		# TODO: come up with more comprehensive data collection from unknown classes
-		my $hash= {};
-		$hash->{message} ||= $errObj->message if $errObj->can('message');
-		$hash->{trace}   ||= $errObj->trace   if $errObj->can('trace');
-		return RapidApp::Error->new($hash);
-	}
-	elsif (ref $errObj eq 'HASH') {
-		# TODO: more processing here...  but not sure when we'd make use of this anyway
-		return RapidApp::Error->new($errObj);
-	}
-	else {
-		my $args= { message => ''.$errObj };
-		my @lines= split /[\n\r]/, $args->{message};
-		
-		if ($lines[0] =~ /^(.*?) at (.+?) line ([0-9]+).*/) {
-			if (scalar(@lines) > 1) {
-				# for multi-line messages where the first line ends with "at FILE line ###" we leave the message untouched
-			}
-			else {
-				# else we strip off the line number, and call it part of our stack trace
-				$args->{message}= $1;
-				$args->{firstStackFrame}= [ '', $2, $3, '', 0, undef, undef, undef, 0, '', undef ];
-			}
-		}
-		return RapidApp::Error->new($args);
-	}
+	blessed($errObj) && $errObj->isa('RapidApp::Error')
+		and return $errObj;
+	
+	return RapidApp::Error::WrappedError->new(captured => $errObj, %$ctorArgs);
 }
 
 has 'message_fn' => ( is => 'rw', isa => 'CodeRef' );
@@ -93,23 +68,17 @@ sub _build_srcLoc {
 has 'data' => ( is => 'rw', isa => 'HashRef' );
 has 'cause' => ( is => 'rw' );
 
-has 'firstStackFrame' => ( is => 'ro', isa => 'ArrayRef' );
-
-has 'traceFilter' => ( is => 'rw' );
+has 'traceArgs' => ( is => 'ro' );
+sub collectTraceArgs {
+	my $self= shift;
+#	return { frame_filter => \&ignoreSelfFrameFilter, $self->traceArgs? %{$self->traceArgs} : () }
+	return {};
+}
 has 'trace' => ( is => 'rw', builder => '_build_trace' );
 sub _build_trace {
 	my $self= shift;
-	# if catalyst is in debug mode, we capture a FULL stack trace
-	#my $c= RapidApp::ScopedGlobals->catalystInstance;
-	#if (defined $c && $c->debug) {
-	#	$self->{trace}= Devel::StackTrace::WithLexicals->new(ignore_class => [ __PACKAGE__ ]);
-	#}
-	my $filter= $self->traceFilter || \&ignoreSelfFrameFilter;
-	my $args= { frame_filter => $filter };
-	defined $self->firstStackFrame
-		and $args->{raw}= [ { caller => $self->firstStackFrame, args => [] } ];
 	
-	my $result= Devel::StackTrace->new(%$args);
+	my $result= Devel::StackTrace->new(%{$self->collectTraceArgs});
 	return $result;
 }
 sub ignoreSelfFrameFilter {
@@ -125,13 +94,12 @@ around 'BUILDARGS' => sub {
 	my $params= ref $args[0] eq 'HASH'? $args[0]
 		: (scalar(@args) == 1? { message => $args[0] } : { @args } );
 	
-	
 	return $class->$orig($params);
 };
 
 sub BUILD {
 	my $self= shift;
-	defined $self->message_fn || $self->has_message or die "Require one of message or message_fn";
+	defined($self->message_fn) || $self->has_message or die "Require one of message or message_fn";
 }
 
 sub dump {
@@ -160,6 +128,14 @@ sub as_string {
 	return (shift)->message;
 }
 
+# called by Perl, on this package only (not a method lookup)
+sub _stringify_object {
+	return (shift)->as_string;
+}
+
 no Moose;
 __PACKAGE__->meta->make_immutable;
+
+require RapidApp::Error::WrappedError;
+
 1;

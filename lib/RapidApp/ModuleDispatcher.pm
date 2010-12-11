@@ -66,7 +66,7 @@ sub dispatch {
 				$targetModule->recursive_clear_per_request_vars;
 			}
 			catch {
-				$result= $self->onException(RapidApp::Error::capture($_));
+				$result= $self->onException(RapidApp::Error::capture($_, {lateTrace => 1}));
 				
 				# redundant, but we need to make sure it happens if the request dies
 				# we want to leave the other one in the try block so we can catch errors conveniently

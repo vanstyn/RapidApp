@@ -5,7 +5,6 @@ use namespace::autoclean;
 extends 'Catalyst::Model';
 
 use RapidApp::Include 'perlutil';
-BEGIN { use RapidApp::Error; }
 
 use RapidApp::ScopedGlobals 'sEnv';
 
