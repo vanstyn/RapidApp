@@ -50,7 +50,7 @@ sub dispatch {
 	my $result;
 	
 	# special die handler to make sure we don't throw plain strings.
-	local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
+	local $SIG{__DIE__}= \&dieConverter;
 	RapidApp::ScopedGlobals->applyForSub(
 		{ catalystInstance => $c,
 		  catalystClass => $c->rapidApp->catalystAppClass,
@@ -135,6 +135,22 @@ sub onException {
 		$c->stash->{current_view}= 'RapidApp::HttpStatus';
 		$c->res->status(500);
 	}
+}
+
+sub dieConverter {
+	die $_[0] if ref $_[0];
+	my $stopTrace= 0;
+	die &RapidApp::Error::capture(
+		join(' ', @_),
+		{ lateTrace => 0, traceArgs => { frame_filter => sub { noCatalystFrameFilter(\$stopTrace, @_) } } }
+	);
+}
+
+sub noCatalystFrameFilter {
+	my ($stopTrace, $params)= @_;
+	return 0 if ($$stopTrace);
+	$$stopTrace= $params->{caller}->[3] eq 'RapidApp::ModuleDispatcher::dispatch';
+	return RapidApp::Error::ignoreSelfFrameFilter($params);
 }
 
 1;

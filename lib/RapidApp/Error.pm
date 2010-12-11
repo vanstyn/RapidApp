@@ -72,12 +72,12 @@ sub _build_srcLoc {
 has 'data' => ( is => 'rw', isa => 'HashRef' );
 has 'cause' => ( is => 'rw' );
 
-has 'traceArgs' => ( is => 'ro' );
+has 'traceArgs' => ( is => 'ro', lazy => 1, default => sub {{ frame_filter => \&ignoreSelfFrameFilter }} );
 sub collectTraceArgs {
 	my $self= shift;
-	return { frame_filter => \&ignoreSelfFrameFilter, $self->traceArgs? %{$self->traceArgs} : () }
+	return $self->traceArgs;
 }
-has 'trace' => ( is => 'rw', builder => '_build_trace' );
+has 'trace' => ( is => 'rw', lazy => 1, builder => '_build_trace' );
 sub _build_trace {
 	my $self= shift;
 	my $args= $self->collectTraceArgs;
@@ -107,6 +107,7 @@ around 'BUILDARGS' => sub {
 
 sub BUILD {
 	my $self= shift;
+	$self->trace; # activate the trace
 	defined($self->message_fn) || $self->has_message or die "Require one of message or message_fn";
 }
 
