@@ -52,7 +52,7 @@ sub BUILD {
 	);
 	
 	# If this isn't in late we get a deep recursion error:
-	$self->add_ONREQUEST_calls_late('store_init_onrequest');
+	$self->add_ONREQUEST_calls('store_init_onrequest');
 };
 
 

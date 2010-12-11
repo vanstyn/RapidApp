@@ -108,9 +108,11 @@ sub ONREQUEST {
 	
 	$self->_lastRequestApplied($self->c->stash->{rapidapp_request_id});
 	
+	$self->new_clear_per_req_attrs;
+	
 	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls);
 	
-	$self->new_clear_per_req_attrs;
+	
 	
 	$self->ONREQUEST_called(1);
 	return $self;

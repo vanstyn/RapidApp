@@ -93,6 +93,10 @@ before 'BUILD' => sub {
 
 sub store_init_onrequest {
 	my $self = shift;
+	
+	# Simulate direct ONREQUEST:
+	$self->Module('store');
+	
 	my $params = $self->get_store_base_params;
 	$self->DataStore->apply_extconfig( baseParams => $params ) if (defined $params);
 	$self->apply_extconfig( store => $self->Module('store')->JsonStore );
