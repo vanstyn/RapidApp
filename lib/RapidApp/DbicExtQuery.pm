@@ -479,6 +479,35 @@ sub Search_spec {
 					defined $dbfName or $dbfName = $field;
 					$multi->{$dbfName} = $multi->{$f};
 					delete $multi->{$f};
+					
+					# --- translate special content conditions to "LIKE" conditions
+					if (defined $multi->{$dbfName}->{contains}) {
+						$multi->{$dbfName}->{like} = '%' . $multi->{$dbfName}->{contains} . '%';
+						delete $multi->{$dbfName}->{contains};
+					}
+					
+					if (defined $multi->{$dbfName}->{starts_with}) {
+						$multi->{$dbfName}->{like} = $multi->{$dbfName}->{starts_with} . '%';
+						delete $multi->{$dbfName}->{starts_with};
+					}
+					
+					if (defined $multi->{$dbfName}->{ends_with}) {
+						$multi->{$dbfName}->{like} = '%' . $multi->{$dbfName}->{ends_with};
+						delete $multi->{$dbfName}->{ends_with};
+					}
+					
+					if (defined $multi->{$dbfName}->{not_contain}) {
+						$multi->{$dbfName}->{'not like'} = '%' . $multi->{$dbfName}->{not_contain} . '%';
+						delete $multi->{$dbfName}->{not_contain};
+					}
+					# ---
+					
+					# -- Add '%' characters to "like" searches: (disabled in favor of special content conditions above)
+					#if (defined $multi->{$dbfName}->{like} and not $multi->{$dbfName}->{like} =~ /\%/) {
+					#	$multi->{$dbfName}->{like} = '%' . $multi->{$dbfName}->{like} . '%';
+					#}
+					# --
+
 				}
 			}
 			elsif(ref($multi) eq 'ARRAY') {

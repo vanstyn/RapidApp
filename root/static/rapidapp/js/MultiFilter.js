@@ -219,7 +219,12 @@ Ext.ux.MultiFilter.defaultConditionMap = {
 	'is equal to'				: '=',
 	'is not equal to'			: '!=',
 	'before'						: '<',
-	'after'						: '>'
+	'after'						: '>',
+	
+	'contains'					: 'contains',
+	'starts with'				: 'starts_with',
+	'ends with'					: 'ends_with',
+	"doesn't contain"			: 'not_contain'
 
 };
 
@@ -228,7 +233,11 @@ Ext.ux.MultiFilter.defaultTypeToConditionMap = {
 
 	'default': {
 		'is equal to'			: '=',
-		'is not equal to'		: '!='
+		'is not equal to'		: '!=',
+		'contains'				: 'contains',
+		'starts with'			: 'starts_with',
+		'ends with'				: 'ends_with',
+		"doesn't contain"		: 'not_contain'
 	},
 	
 	date: {
