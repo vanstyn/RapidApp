@@ -27,6 +27,7 @@ RootModule enables the auto_viewport capability of Controller by default.
 =cut
 sub BUILD {
 	my $self= shift;
+	$self->auto_web1(1);
 	$self->auto_viewport(1);
 }
 
