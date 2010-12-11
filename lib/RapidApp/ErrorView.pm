@@ -1,4 +1,4 @@
-package RapidApp::Controller::ExceptionInspector;
+package RapidApp::ErrorView;
 
 use Moose;
 extends 'RapidApp::AppStoreForm2';
@@ -42,19 +42,19 @@ sub viewport {
 	
 	# Generating an exception while trying to view exceptions wouldn't be too useful
 	#   so we trap and display exceptions specially in this module.
+	my $id;
 	try {
-		my $id= $self->c->req->params->{id};
+		$id= $self->c->req->params->{id};
 		defined $id or die "No ID specified";
 		
 		my $store= $self->exceptionStore;
 		defined $store or die "No ExceptionStore configured";
-		ref $store or $store= $c->model($store);
+		ref $store or $store= $self->c->model($store);
 		
 		my $err= $store->loadException($id);
 		$self->c->stash->{ex}= $err;
 	}
 	catch {
-		use Data::Dumper;
 		$self->c->log->debug(Dumper(keys %$_));
 		$self->c->stash->{ex}= { id => $id, error => $_ };
 	};

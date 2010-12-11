@@ -40,6 +40,10 @@ around 'BUILDARGS' => sub {
 	return $result;
 };
 
+# Path to the error viewer, needed for debug mode hyperlinks
+# The first loaded ErrorView module will set this path to itself automatically, if not set to something else.
+has 'errorViewPath' => ( is => 'rw', isa => 'Str' );
+
 sub BUILD {
 	my $self= shift;
 }
