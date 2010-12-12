@@ -45,6 +45,18 @@ has 'DataStore' => (
 );
 
 
+has 'store_base_keys' => (
+	traits    => [	'Array' ],
+	is        => 'ro',
+	isa       => 'ArrayRef',
+	default   => sub { [] },
+	handles => {
+		add_store_base_keys	=> 'push',
+		store_base_keys_list	=> 'uniq'
+	}
+);
+
+
 has 'DataStore_build_params' => ( is => 'ro', default => undef, isa => 'Maybe[HashRef]' );
 
 sub BUILD {}
@@ -86,6 +98,8 @@ before 'BUILD' => sub {
 	
 	#init the store with all of our flags:
 	$self->DataStore->apply_flags($self->all_flags);
+	
+	$self->add_store_base_keys($self->record_pk);
 	
 	$self->add_ONREQUEST_calls('store_init_onrequest');
 	$self->add_ONREQUEST_calls_late('apply_store_to_extconfig');
@@ -134,13 +148,14 @@ sub get_store_base_params {
 #		push @$keys, $self->item_keys;
 #	}
 	
-	push @$keys, $self->record_pk;
+	#push @$keys, $self->record_pk;
 	
 	my $orig_params = {};
 	my $orig_params_enc = $self->c->req->params->{orig_params};
 	$orig_params = $self->json->decode($orig_params_enc) if (defined $orig_params_enc);
 	
-	foreach my $key (@$keys) {
+	#foreach my $key (@$keys) {
+	foreach my $key ($self->store_base_keys_list) {
 		$params->{$key} = $orig_params->{$key} if (defined $orig_params->{$key});
 		$params->{$key} = $self->c->req->params->{$key} if (defined $self->c->req->params->{$key});
 	}
