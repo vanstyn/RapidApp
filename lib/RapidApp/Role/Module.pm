@@ -122,9 +122,9 @@ sub ONREQUEST {
 	
 	$self->new_clear_per_req_attrs;
 	
+	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_early);
 	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls);
-	
-	
+	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_late);
 	
 	$self->ONREQUEST_called(1);
 	return $self;
@@ -341,15 +341,15 @@ sub call_rapidapp_handlers {
 	}
 }
 
-before 'ONREQUEST' => sub {
-	my $self = shift;
-	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_early);
-};
-
-after 'ONREQUEST' => sub {
-	my $self = shift;
-	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_late);
-};
+#before 'ONREQUEST' => sub {
+#	my $self = shift;
+#	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_early);
+#};
+#
+#after 'ONREQUEST' => sub {
+#	my $self = shift;
+#	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_late);
+#};
 
 
 # All purpose flags (true/false) settings

@@ -83,6 +83,7 @@ sub store_init_onrequest {
 		messageProperty 		=> 'msg',
 		successProperty 		=> 'success',
 		totalProperty 			=> 'results',
+		#columns 					=> $self->column_list
 	);
 }
 
@@ -208,7 +209,7 @@ sub apply_columns_list {
 sub set_sort {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-	return $self->apply_config( sort => { %opt } );
+	return $self->apply_config( sort_spec => { %opt } );
 }
 
 

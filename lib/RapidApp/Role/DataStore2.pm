@@ -88,6 +88,7 @@ before 'BUILD' => sub {
 	$self->DataStore->apply_flags($self->all_flags);
 	
 	$self->add_ONREQUEST_calls('store_init_onrequest');
+	$self->add_ONREQUEST_calls_late('apply_store_to_extconfig');
 };
 
 
@@ -99,8 +100,15 @@ sub store_init_onrequest {
 	
 	my $params = $self->get_store_base_params;
 	$self->DataStore->apply_extconfig( baseParams => $params ) if (defined $params);
+	
+	$self->apply_extconfig( columns => $self->DataStore->column_list );
+	$self->apply_extconfig( sort => $self->DataStore->get_extconfig_param('sort_spec') );
+}
+
+
+sub apply_store_to_extconfig {
+	my $self = shift;
 	$self->apply_extconfig( store => $self->Module('store')->JsonStore );
-	#$self->apply_extconfig( columns => $self->column_list );
 }
 
 

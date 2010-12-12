@@ -133,8 +133,7 @@ sub init_onrequest {
 		$self->apply_config(delete_url => $self->suburl($act_name));
 	}
 	
-	$self->apply_extconfig( columns => $self->DataStore->column_list );
-	
+
 }
 
 
