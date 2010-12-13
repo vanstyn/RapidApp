@@ -21,7 +21,7 @@ has 'default_module'					=> ( is => 'rw',	default => 'default_module' );
 has 'create_module_params'			=> ( is => 'ro',	default => sub { {} } );
 has 'modules_params'					=> ( is => 'ro',	default => sub { {} } );
 
-has 'print_rapidapp_handlers_call_debug' => ( is => 'ro', default => 0 );
+has 'print_rapidapp_handlers_call_debug' => ( is => 'rw', isa => 'Bool', default => 0 );
 
 
 # All purpose options:
