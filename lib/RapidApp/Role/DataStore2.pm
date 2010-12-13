@@ -45,16 +45,6 @@ has 'DataStore' => (
 );
 
 
-has 'store_base_keys' => (
-	traits    => [	'Array' ],
-	is        => 'ro',
-	isa       => 'ArrayRef',
-	default   => sub { [] },
-	handles => {
-		add_store_base_keys	=> 'push',
-		store_base_keys_list	=> 'uniq'
-	}
-);
 
 
 has 'DataStore_build_params' => ( is => 'ro', default => undef, isa => 'Maybe[HashRef]' );
@@ -99,8 +89,6 @@ before 'BUILD' => sub {
 	#init the store with all of our flags:
 	$self->DataStore->apply_flags($self->all_flags);
 	
-	$self->add_store_base_keys($self->record_pk);
-	
 	$self->add_ONREQUEST_calls('store_init_onrequest');
 	$self->add_ONREQUEST_calls_late('apply_store_to_extconfig');
 };
@@ -112,8 +100,7 @@ sub store_init_onrequest {
 	# Simulate direct ONREQUEST:
 	$self->Module('store');
 	
-	my $params = $self->get_store_base_params;
-	$self->DataStore->apply_extconfig( baseParams => $params ) if (defined $params);
+
 	
 	$self->apply_extconfig( columns => $self->DataStore->column_list );
 	$self->apply_extconfig( sort => $self->DataStore->get_extconfig_param('sort_spec') );
@@ -126,43 +113,6 @@ sub apply_store_to_extconfig {
 }
 
 
-
-sub get_store_base_params {
-	my $self = shift;
-	
-	my $params = {};
-
-	my $encoded = $self->c->req->params->{base_params};
-	if (defined $encoded) {
-		my $decoded = $self->json->decode($encoded) or die "Failed to decode base_params JSON";
-		foreach my $k (keys %$decoded) {
-			$params->{$k} = $decoded->{$k};
-		}
-	}
-	
-	my $keys = [];
-#	if (ref($self->item_keys) eq 'ARRAY') {
-#		$keys = $self->item_keys;
-#	}
-#	else {
-#		push @$keys, $self->item_keys;
-#	}
-	
-	#push @$keys, $self->record_pk;
-	
-	my $orig_params = {};
-	my $orig_params_enc = $self->c->req->params->{orig_params};
-	$orig_params = $self->json->decode($orig_params_enc) if (defined $orig_params_enc);
-	
-	#foreach my $key (@$keys) {
-	foreach my $key ($self->store_base_keys_list) {
-		$params->{$key} = $orig_params->{$key} if (defined $orig_params->{$key});
-		$params->{$key} = $self->c->req->params->{$key} if (defined $self->c->req->params->{$key});
-	}
-	
-	return undef unless (scalar keys %$params > 0);
-	return $params;
-}
 
 
 

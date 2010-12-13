@@ -33,6 +33,31 @@ has 'read_raw_mungers' => (
 	}
 );
 
+
+has 'base_params_mungers' => (
+	traits    => [ 'Array' ],
+	is        => 'ro',
+	isa       => 'ArrayRef[RapidApp::Handler]',
+	default   => sub { [] },
+	handles => {
+		all_base_params_mungers		=> 'elements',
+		add_base_params_mungers		=> 'push',
+		has_no_base_params_mungers => 'is_empty',
+	}
+);
+
+has 'base_keys' => (
+	traits    => [	'Array' ],
+	is        => 'ro',
+	isa       => 'ArrayRef',
+	default   => sub { [] },
+	handles => {
+		add_base_keys	=> 'push',
+		base_keys_list	=> 'uniq'
+	}
+);
+
+
 sub BUILD {
 	my $self = shift;
 	
@@ -50,6 +75,8 @@ sub BUILD {
 			'}' 
 		)
 	);
+	
+	$self->add_base_keys($self->record_pk);
 	
 	# If this isn't in late we get a deep recursion error:
 	$self->add_ONREQUEST_calls('store_init_onrequest');
@@ -85,6 +112,10 @@ sub store_init_onrequest {
 		totalProperty 			=> 'results',
 		#columns 					=> $self->column_list
 	);
+	
+	my $params = $self->get_store_base_params;
+	$self->apply_extconfig( baseParams => $params ) if (defined $params);
+	
 }
 
 
@@ -94,6 +125,44 @@ sub JsonStore {
 		func => 'new Ext.data.JsonStore',
 		parm => $self->content
 	);
+}
+
+
+sub get_store_base_params {
+	my $self = shift;
+	
+	my $params = {};
+
+	my $encoded = $self->c->req->params->{base_params};
+	if (defined $encoded) {
+		my $decoded = $self->json->decode($encoded) or die "Failed to decode base_params JSON";
+		foreach my $k (keys %$decoded) {
+			$params->{$k} = $decoded->{$k};
+		}
+	}
+	
+	my $keys = [];
+#	if (ref($self->item_keys) eq 'ARRAY') {
+#		$keys = $self->item_keys;
+#	}
+#	else {
+#		push @$keys, $self->item_keys;
+#	}
+	
+	#push @$keys, $self->record_pk;
+	
+	my $orig_params = {};
+	my $orig_params_enc = $self->c->req->params->{orig_params};
+	$orig_params = $self->json->decode($orig_params_enc) if (defined $orig_params_enc);
+	
+	#foreach my $key (@$keys) {
+	foreach my $key ($self->base_keys_list) {
+		$params->{$key} = $orig_params->{$key} if (defined $orig_params->{$key});
+		$params->{$key} = $self->c->req->params->{$key} if (defined $self->c->req->params->{$key});
+	}
+	
+	return undef unless (scalar keys %$params > 0);
+	return $params;
 }
 
 
