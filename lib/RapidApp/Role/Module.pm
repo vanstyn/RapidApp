@@ -1,11 +1,12 @@
 package RapidApp::Role::Module;
+use Moose::Role;
+use strict;
 #
 # -------------------------------------------------------------- #
 #
-use Term::ANSIColor qw(:constants);
 
-use strict;
-use Moose::Role;
+use RapidApp::Include qw(sugar perlutil);
+
 
 use Clone qw(clone);
 use Time::HiRes qw(gettimeofday);
@@ -42,6 +43,7 @@ has 'modules' => (
 
 
 has 'per_request_attr_build_defaults' => ( is => 'ro', default => sub {{}}, isa => 'HashRef' );
+has 'per_request_attr_build_not_set' => ( is => 'ro', default => sub {{}}, isa => 'HashRef' );
 
 sub timed_new {
 	my ($class, @args)= @_;
@@ -149,7 +151,13 @@ sub init_per_req_attrs {
 	my $self = shift;
 	
 	foreach my $attr (@{$self->cached_per_req_attr_list}) {
-		unless (defined $self->per_request_attr_build_defaults->{$attr->name}) {
+		if (not defined $self->per_request_attr_build_not_set->{$attr->name}) {
+			# Record attributes with a default state of "not_set":
+			unless($attr->has_value($self)) {
+				$self->per_request_attr_build_not_set->{$attr->name} = 1;
+			}
+		}
+		elsif (not defined $self->per_request_attr_build_defaults->{$attr->name}) {
 			my $val = $attr->get_value($self);
 			$val = clone($val) if (ref($val));
 			$self->per_request_attr_build_defaults->{$attr->name} = $val;
@@ -161,8 +169,13 @@ sub reset_per_req_attrs {
 	my $self = shift;
 	
 	foreach my $attr (@{$self->cached_per_req_attr_list}) {
+
+		# Reset to "not_set":
+		if (defined $self->per_request_attr_build_not_set->{$attr->name}) {
+			$attr->clear_value($self);
+		}
 		# Reset to default:
-		if(defined $self->per_request_attr_build_defaults->{$attr->name}) {
+		elsif(defined $self->per_request_attr_build_defaults->{$attr->name}) {
 			my $val = $self->per_request_attr_build_defaults->{$attr->name};
 			$val = clone($val) if (ref($val));
 			$attr->set_value($self,$val);
@@ -219,7 +232,7 @@ sub Module {
 	
 	$self->_load_module($name) or die "Failed to load Module '$name'";
 	
-	return $self->modules_obj->{$name} if ($no_onreq);
+	#return $self->modules_obj->{$name} if ($no_onreq);
 	return $self->modules_obj->{$name}->THIS_MODULE;
 }
 
