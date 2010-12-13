@@ -1,4 +1,4 @@
-package RapidApp::Role::DataStore::SavedSearch;
+package RapidApp::Role::DataStore2::SavedSearch;
 
 
 use strict;
@@ -9,13 +9,12 @@ use Try::Tiny;
 
 #### --------------------- ####
 
-
-
-after 'ONREQUEST' => sub {
+sub BUILD {}
+before 'BUILD' => sub {
 	my $self = shift;
-	
-	$self->run_load_saved_search;
+	$self->add_ONREQUEST_calls_early('run_load_saved_search');
 };
+
 
 sub run_load_saved_search {
 	my $self = shift;
@@ -23,6 +22,7 @@ sub run_load_saved_search {
 	return unless ($self->can('load_saved_search'));
 	
 	try {
+		$self->Module('store'); # <-- Make sure store has already called ONREQUEST
 		$self->load_saved_search;
 	}
 	catch {
@@ -36,7 +36,6 @@ sub run_load_saved_search {
 		});
 	};
 }
-
 
 
 no Moose;

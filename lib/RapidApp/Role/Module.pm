@@ -1,11 +1,12 @@
 package RapidApp::Role::Module;
+use Moose::Role;
+use strict;
 #
 # -------------------------------------------------------------- #
 #
-use Term::ANSIColor qw(:constants);
 
-use strict;
-use Moose::Role;
+use RapidApp::Include qw(sugar perlutil);
+
 
 use Clone qw(clone);
 use Time::HiRes qw(gettimeofday);
@@ -20,6 +21,9 @@ has 'modules_obj'						=> ( is => 'ro', 	default => sub {{}} );
 has 'default_module'					=> ( is => 'rw',	default => 'default_module' );
 has 'create_module_params'			=> ( is => 'ro',	default => sub { {} } );
 has 'modules_params'					=> ( is => 'ro',	default => sub { {} } );
+
+has 'print_rapidapp_handlers_call_debug' => ( is => 'rw', isa => 'Bool', default => 0 );
+
 
 # All purpose options:
 has 'module_options' => ( is => 'ro', lazy => 1, default => sub {{}}, traits => [ 'RapidApp::Role::PerRequestVar' ] );
@@ -39,6 +43,7 @@ has 'modules' => (
 
 
 has 'per_request_attr_build_defaults' => ( is => 'ro', default => sub {{}}, isa => 'HashRef' );
+has 'per_request_attr_build_not_set' => ( is => 'ro', default => sub {{}}, isa => 'HashRef' );
 
 sub timed_new {
 	my ($class, @args)= @_;
@@ -77,11 +82,23 @@ has 'cached_per_req_attr_list' => ( is => 'ro', lazy => 1, default => sub {
 	
 	my $attrs = [];
 	foreach my $attr ($self->meta->get_all_attributes) {
-		#push @$attrs, $attr if ($attr->does('RapidApp::Role::PerRequestBuildDefReset'));
-		push @$attrs, $attr if ($attr->does('RapidApp::Role::PerRequestBuildDefReset') or $attr->does('RapidApp::Role::PerRequestVar'));
+		push @$attrs, $attr if ($self->should_clear_per_req($attr));
 	}
 	return $attrs;
 });
+
+sub should_clear_per_req {
+	my $self = shift;
+	my $attr = shift;
+	
+	return 1 if (
+		$attr->does('RapidApp::Role::PerRequestBuildDefReset') or 
+		$attr->does('RapidApp::Role::PerRequestVar')
+	);
+	
+	return 0;
+}
+
 
 # Does the same thing as apply_modules but also init/loads the modules
 sub apply_init_modules {
@@ -103,41 +120,102 @@ has 'ONREQUEST_called' => ( is => 'rw', lazy => 1, default => 0 );
 
 has '_lastRequestApplied' => ( is => 'rw', default => 0 );
 
+sub reset_ONREQUEST {
+	my $self = shift;
+	$self->_lastRequestApplied(0);
+}
+
+
+
 sub ONREQUEST {
 	my $self = shift;
 	
+	#$self->c->log->debug(MAGENTA . '[' . $self->get_rapidapp_module_path . ']->ONREQUEST (' . $self->c->stash->{rapidapp_request_id} . ')');
+	
 	$self->_lastRequestApplied($self->c->stash->{rapidapp_request_id});
 	
-	$self->new_clear_per_req_attrs;
+	$self->init_per_req_attrs;
+	$self->c->stash->{rapidapp_called_modules}->{$self} = $self;
 	
+	#$self->new_clear_per_req_attrs;
+	
+	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_early);
 	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls);
-	
-	
+	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_late);
 	
 	$self->ONREQUEST_called(1);
 	return $self;
 }
 
-sub new_clear_per_req_attrs {
+
+
+sub init_per_req_attrs {
 	my $self = shift;
 	
-	#$self->ONREQUEST_called(0);
-	
 	foreach my $attr (@{$self->cached_per_req_attr_list}) {
-		# Reset to default:
-		if(defined $self->per_request_attr_build_defaults->{$attr->name}) {
-			my $val = $self->per_request_attr_build_defaults->{$attr->name};
-			$val = clone($val) if (ref($val));
-			$attr->set_value($self,$val);
+		if($attr->has_value($self)) {
+			unless (defined $self->per_request_attr_build_defaults->{$attr->name}) {
+				my $val = $attr->get_value($self);
+				$val = clone($val) if (ref($val));
+				$self->per_request_attr_build_defaults->{$attr->name} = $val;
+			}
 		}
-		# Initialize default:
 		else {
-			my $val = $attr->get_value($self);
-			$val = clone($val) if (ref($val));
-			$self->per_request_attr_build_defaults->{$attr->name} = $val;
+			$self->per_request_attr_build_not_set->{$attr->name} = 1;
 		}
 	}
 }
+
+sub reset_per_req_attrs {
+	my $self = shift;
+	my $c = shift;
+	
+	foreach my $attr (@{$self->cached_per_req_attr_list}) {
+
+		# Reset to "not_set":
+		if (defined $self->per_request_attr_build_not_set->{$attr->name}) {
+			#$c->log->debug(GREEN . BOLD . ' =====> ' . $attr->name . ' (clear_value)' . CLEAR);
+			$attr->clear_value($self);
+		}
+		# Reset to default:
+		elsif(defined $self->per_request_attr_build_defaults->{$attr->name}) {
+			my $val = $self->per_request_attr_build_defaults->{$attr->name};
+			$val = clone($val) if (ref($val));
+			#$c->log->debug(YELLOW . BOLD . ' =====> ' . $attr->name . ' (set_value)' . CLEAR);
+			$attr->set_value($self,$val);
+		}
+	}
+	
+	# Legacy:
+	$self->clear_attributes if ($self->no_persist);
+}
+
+
+
+
+#sub new_clear_per_req_attrs {
+#	my $self = shift;
+#	
+#	#$self->ONREQUEST_called(0);
+#	
+#	foreach my $attr (@{$self->cached_per_req_attr_list}) {
+#		# Reset to default:
+#		if(defined $self->per_request_attr_build_defaults->{$attr->name}) {
+#			my $val = $self->per_request_attr_build_defaults->{$attr->name};
+#			$val = clone($val) if (ref($val));
+#			$attr->set_value($self,$val);
+#		}
+#		# Initialize default:
+#		else {
+#			my $val = $attr->get_value($self);
+#			$val = clone($val) if (ref($val));
+#			$self->per_request_attr_build_defaults->{$attr->name} = $val;
+#		}
+#	}
+#	
+#	# Legacy:
+#	$self->clear_attributes if ($self->no_persist);
+#}
 
 
 
@@ -158,7 +236,7 @@ sub Module {
 	
 	$self->_load_module($name) or die "Failed to load Module '$name'";
 	
-	return $self->modules_obj->{$name} if ($no_onreq);
+	#return $self->modules_obj->{$name} if ($no_onreq);
 	return $self->modules_obj->{$name}->THIS_MODULE;
 }
 
@@ -322,19 +400,44 @@ sub call_rapidapp_handlers {
 	my $self = shift;
 	foreach my $Handler (@_) {
 		die 'not a RapidApp::Handler' unless (ref($Handler) eq 'RapidApp::Handler');
+		
+		if($self->print_rapidapp_handlers_call_debug) {
+			my $msg = YELLOW . '->call_rapidapp_handlers[' . $self->get_rapidapp_module_path . '] ' . CLEAR;
+			$msg .= GREEN;
+			if (defined $Handler->scope) {
+				$msg .= '(' . ref($Handler->scope);
+				if ($Handler->scope->does('RapidApp::Role::Module')) {
+					$msg .= CLEAR . BLUE . ' ' . $Handler->scope->get_rapidapp_module_path;
+				}
+				$msg .= CLEAR . GREEN . ')' . CLEAR;
+			}
+			else {
+				$msg .= '(no scope)';
+			}
+			
+			if (defined $Handler->method) {
+				$msg .= BOLD . '->' . $Handler->method . CLEAR;
+			}
+			else {
+				$msg .= BOLD . '==>CODEREF->()' . CLEAR;
+			}
+		
+			$self->app->log->debug($msg);
+		}
+		
 		$Handler->call;
 	}
 }
 
-before 'ONREQUEST' => sub {
-	my $self = shift;
-	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_early);
-};
-
-after 'ONREQUEST' => sub {
-	my $self = shift;
-	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_late);
-};
+#before 'ONREQUEST' => sub {
+#	my $self = shift;
+#	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_early);
+#};
+#
+#after 'ONREQUEST' => sub {
+#	my $self = shift;
+#	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_late);
+#};
 
 
 # All purpose flags (true/false) settings
@@ -354,6 +457,17 @@ has 'flags' => (
 		 all_flags		=> 'elements'
 	},
 );
+
+
+# function for debugging purposes - returns a string of the module path
+sub get_rapidapp_module_path {
+	my $self = shift;
+	
+	my $parent_path = '';
+	$parent_path = $self->parent_module->get_rapidapp_module_path if (defined $self->parent_module);
+	
+	return $parent_path . '/' . $self->module_name;
+}
 
 
 

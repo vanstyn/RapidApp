@@ -82,6 +82,14 @@ sub dispatch {
 	defined $c->res->body || defined $c->stash->{current_view} || defined defined $self->c->stash->{current_view_instance}
 		or die "No view was selected, and a body was not generated";
 	
+	# Reset all the per_req attrs of the Modules called during this request:
+	if (ref($c->stash->{rapidapp_called_modules}) eq 'HASH') {
+		foreach my $Module (values %{$c->stash->{rapidapp_called_modules}}) {
+			$c->log->debug(MAGENTA . BOLD . ' >> CLEARING ' . $Module->get_rapidapp_module_path . CLEAR);
+			$Module->reset_per_req_attrs;
+		}
+	}
+	
 	return $result;
 }
 
