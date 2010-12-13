@@ -31,13 +31,15 @@ sub BUILD {
 	
 	$self->apply_actions(
 		view => 'view',
-		justdie => 'justdie',
-		diefancy => 'diefancy',
-		usererror => 'usererror',
+		die => 'gen_die',
+		error => 'gen_error',
+		usererror => 'gen_usererror',
 	);
+	
+	$self->auto_web1(1);
 }
 
-sub viewport {
+sub view {
 	my $self= shift;
 	
 	# Generating an exception while trying to view exceptions wouldn't be too useful
@@ -62,15 +64,15 @@ sub viewport {
 	$self->c->stash->{template}= 'templates/rapidapp/exception.tt';
 }
 
-sub justdie {
+sub gen_die {
 	die "Deliberately generating an exception";
 }
 
-sub diefancy {
+sub gen_error {
 	die RapidApp::Error->new("Generating an exception using the RapidApp::Error class");
 }
 
-sub usererror {
+sub gen_usererror {
 	die usererr "PEBKAC";
 }
 
