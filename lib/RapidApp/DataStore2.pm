@@ -35,7 +35,7 @@ has 'read_raw_mungers' => (
 
 
 has 'base_params_mungers' => (
-	traits    => [ 'Array' ],
+	traits    => [ 'Array', 'RapidApp::Role::PerRequestBuildDefReset' ],
 	is        => 'ro',
 	isa       => 'ArrayRef[RapidApp::Handler]',
 	default   => sub { [] },
