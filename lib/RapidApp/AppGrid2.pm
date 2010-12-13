@@ -116,26 +116,27 @@ sub BUILD {
 	$self->DataStore->add_read_raw_mungers(RapidApp::Handler->new( scope => $self, method => 'add_loadContentCnf_read_munger' ));
 	
 	$self->add_ONREQUEST_calls('init_onrequest');
+	$self->add_ONREQUEST_calls_late('init_delete_enable');
 }
-
 
 sub init_onrequest {
 	my $self = shift;
 		
 	#$self->apply_config(store => $self->JsonStore);
 	$self->apply_config(tbar => $self->tbar_items) if (defined $self->tbar_items);
-	
-	# This is set in ONREQUEST instead of BUILD because it can change depending on the
-	# user that is logged in
-	if($self->can('action_delete_records') and $self->get_module_option('delete_records')) {
-		my $act_name = 'delete_rows';
-		$self->apply_actions($act_name => 'action_delete_records' );
-		$self->apply_config(delete_url => $self->suburl($act_name));
-	}
-	
-
 }
 
+
+
+sub init_delete_enable {
+	my $self = shift;
+	if($self->can('action_delete_records') and $self->has_flag('can_delete')) {
+	#if($self->can('action_delete_records')) {
+		my $act_name = 'delete_rows';
+		$self->apply_actions( $act_name => 'action_delete_records' );
+		$self->apply_extconfig( delete_url => $self->suburl($act_name) );
+	}
+}
 
 
 
