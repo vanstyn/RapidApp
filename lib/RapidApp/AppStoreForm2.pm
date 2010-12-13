@@ -103,7 +103,21 @@ sub _build_add_button {
 
 has 'tbar_icon' => ( is => 'ro', default => undef );
 #has 'tbar_title' => ( is => 'ro', default => undef );
-has 'formpanel_items' => ( is => 'ro', default => sub {[]} );
+#has 'formpanel_items' => ( is => 'ro', default => sub {[]} );
+
+
+
+has 'formpanel_items' => (
+	traits    => [ 'Array' ],
+	is        => 'ro',
+	isa       => 'ArrayRef[HashRef]',
+	default   => sub { [] },
+	handles => {
+		all_formpanel_items		=> 'elements',
+		add_formpanel_items		=> 'push',
+	}
+);
+
 
 
 has 'tbar_title_text_cls' => ( is => 'ro', default => 'tbar-title-medium' );
