@@ -118,12 +118,22 @@ has 'ONREQUEST_called' => ( is => 'rw', lazy => 1, default => 0 );
 
 has '_lastRequestApplied' => ( is => 'rw', default => 0 );
 
+sub reset_ONREQUEST {
+	my $self = shift;
+	$self->_lastRequestApplied(0);
+}
+
+
+
 sub ONREQUEST {
 	my $self = shift;
 	
 	$self->_lastRequestApplied($self->c->stash->{rapidapp_request_id});
 	
-	$self->new_clear_per_req_attrs;
+	$self->init_per_req_attrs;
+	$self->c->stash->{rapidapp_called_modules}->{$self} = $self;
+	
+	#$self->new_clear_per_req_attrs;
 	
 	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_early);
 	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls);
@@ -133,10 +143,22 @@ sub ONREQUEST {
 	return $self;
 }
 
-sub new_clear_per_req_attrs {
+
+
+sub init_per_req_attrs {
 	my $self = shift;
 	
-	#$self->ONREQUEST_called(0);
+	foreach my $attr (@{$self->cached_per_req_attr_list}) {
+		unless (defined $self->per_request_attr_build_defaults->{$attr->name}) {
+			my $val = $attr->get_value($self);
+			$val = clone($val) if (ref($val));
+			$self->per_request_attr_build_defaults->{$attr->name} = $val;
+		}
+	}
+}
+
+sub reset_per_req_attrs {
+	my $self = shift;
 	
 	foreach my $attr (@{$self->cached_per_req_attr_list}) {
 		# Reset to default:
@@ -145,17 +167,38 @@ sub new_clear_per_req_attrs {
 			$val = clone($val) if (ref($val));
 			$attr->set_value($self,$val);
 		}
-		# Initialize default:
-		else {
-			my $val = $attr->get_value($self);
-			$val = clone($val) if (ref($val));
-			$self->per_request_attr_build_defaults->{$attr->name} = $val;
-		}
 	}
 	
 	# Legacy:
 	$self->clear_attributes if ($self->no_persist);
 }
+
+
+
+
+#sub new_clear_per_req_attrs {
+#	my $self = shift;
+#	
+#	#$self->ONREQUEST_called(0);
+#	
+#	foreach my $attr (@{$self->cached_per_req_attr_list}) {
+#		# Reset to default:
+#		if(defined $self->per_request_attr_build_defaults->{$attr->name}) {
+#			my $val = $self->per_request_attr_build_defaults->{$attr->name};
+#			$val = clone($val) if (ref($val));
+#			$attr->set_value($self,$val);
+#		}
+#		# Initialize default:
+#		else {
+#			my $val = $attr->get_value($self);
+#			$val = clone($val) if (ref($val));
+#			$self->per_request_attr_build_defaults->{$attr->name} = $val;
+#		}
+#	}
+#	
+#	# Legacy:
+#	$self->clear_attributes if ($self->no_persist);
+#}
 
 
 
