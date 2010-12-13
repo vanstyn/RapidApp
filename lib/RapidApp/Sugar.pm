@@ -8,8 +8,9 @@ use RapidApp::JSON::MixedEncoder;
 use RapidApp::JSON::RawJavascript;
 use RapidApp::Error::UserError;
 use RapidApp::Handler;
+use RapidApp::DefaultOverride qw(override_defaults merge_defaults);
 
-our @EXPORT = qw(sessvar perreq asjson rawjs usererr);
+our @EXPORT = qw(sessvar perreq asjson rawjs usererr override_defaults merge_defaults);
 
 # Module shortcuts
 #
