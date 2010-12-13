@@ -130,6 +130,8 @@ sub reset_ONREQUEST {
 sub ONREQUEST {
 	my $self = shift;
 	
+	#$self->c->log->debug(MAGENTA . '[' . $self->get_rapidapp_module_path . ']->ONREQUEST (' . $self->c->stash->{rapidapp_request_id} . ')');
+	
 	$self->_lastRequestApplied($self->c->stash->{rapidapp_request_id});
 	
 	$self->init_per_req_attrs;
@@ -151,33 +153,35 @@ sub init_per_req_attrs {
 	my $self = shift;
 	
 	foreach my $attr (@{$self->cached_per_req_attr_list}) {
-		if (not defined $self->per_request_attr_build_not_set->{$attr->name}) {
-			# Record attributes with a default state of "not_set":
-			unless($attr->has_value($self)) {
-				$self->per_request_attr_build_not_set->{$attr->name} = 1;
+		if($attr->has_value($self)) {
+			unless (defined $self->per_request_attr_build_defaults->{$attr->name}) {
+				my $val = $attr->get_value($self);
+				$val = clone($val) if (ref($val));
+				$self->per_request_attr_build_defaults->{$attr->name} = $val;
 			}
 		}
-		elsif (not defined $self->per_request_attr_build_defaults->{$attr->name}) {
-			my $val = $attr->get_value($self);
-			$val = clone($val) if (ref($val));
-			$self->per_request_attr_build_defaults->{$attr->name} = $val;
+		else {
+			$self->per_request_attr_build_not_set->{$attr->name} = 1;
 		}
 	}
 }
 
 sub reset_per_req_attrs {
 	my $self = shift;
+	my $c = shift;
 	
 	foreach my $attr (@{$self->cached_per_req_attr_list}) {
 
 		# Reset to "not_set":
 		if (defined $self->per_request_attr_build_not_set->{$attr->name}) {
+			#$c->log->debug(GREEN . BOLD . ' =====> ' . $attr->name . ' (clear_value)' . CLEAR);
 			$attr->clear_value($self);
 		}
 		# Reset to default:
 		elsif(defined $self->per_request_attr_build_defaults->{$attr->name}) {
 			my $val = $self->per_request_attr_build_defaults->{$attr->name};
 			$val = clone($val) if (ref($val));
+			#$c->log->debug(YELLOW . BOLD . ' =====> ' . $attr->name . ' (set_value)' . CLEAR);
 			$attr->set_value($self,$val);
 		}
 	}

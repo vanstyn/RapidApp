@@ -40,9 +40,12 @@ has 'auto_viewport'				=> ( is => 'rw',	default => 0 );
 
 
 
-has 'instance_id' => ( is => 'ro', lazy => 1, traits => ['RapidApp::Role::PerRequestBuildDefReset'], default => sub {
-	my $self = shift;
-	return 'instance-' . String::Random->new->randregex('[a-z0-9A-Z]{5}');
+has 'instance_id' => ( 
+	is => 'ro', lazy => 1, 
+	traits => ['RapidApp::Role::PerRequestBuildDefReset'], 
+	default => sub {
+		my $self = shift;
+		return 'instance-' . String::Random->new->randregex('[a-z0-9A-Z]{5}');
 });
 
 
