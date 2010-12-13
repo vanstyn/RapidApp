@@ -12,15 +12,6 @@ use Devel::StackTrace::AsHTML;
 
 has 'exceptionStore' => ( is => 'rw' ); # either a store object, or a Model name
 
-#merge_attr_defaults(
-#	actions => {
-#		view => 'view',
-#		justdie => 'justdie',
-#		diefancy => 'diefancy',
-#		usererror => 'usererror',
-#	},
-#);
-
 sub BUILD {
 	my $self= shift;
 	
@@ -39,27 +30,47 @@ sub BUILD {
 	$self->auto_web1(1);
 }
 
-sub view {
-	my $self= shift;
-	
+sub getExceptionObject {
+	my ($self, $id)= @_;
 	# Generating an exception while trying to view exceptions wouldn't be too useful
 	#   so we trap and display exceptions specially in this module.
-	my $id;
+	my $err;
 	try {
-		$id= $self->c->req->params->{id};
 		defined $id or die "No ID specified";
 		
 		my $store= $self->exceptionStore;
 		defined $store or die "No ExceptionStore configured";
 		ref $store or $store= $self->c->model($store);
 		
-		my $err= $store->loadException($id);
-		$self->c->stash->{ex}= $err;
+		$err= $store->loadException($id);
 	}
 	catch {
-		$self->c->log->debug(Dumper(keys %$_));
-		$self->c->stash->{ex}= { id => $id, error => $_ };
+		$err= { id => $id, error => $_ };
 	};
+	return $err;
+}
+
+sub extconfig {
+	my $self= shift;
+	my $id= $self->c->req->params->{id};
+	defined $id or die "No ID specified";
+	
+	my $err= $self->getExceptionObject($id);
+	
+	return {
+		xtype => 'box',
+		html => $self->c->view("RapidApp::TT")->render($self->c, 'templates/rapidapp/exception.tt', { ex => $err })
+	};
+}
+
+sub view {
+	my $self= shift;
+	my $id= $self->c->req->params->{id};
+	defined $id or die "No ID specified";
+	
+	my $err= $self->getExceptionObject($id);
+	
+	$self->c->stash->{ex}= $err;
 	$self->c->stash->{current_view}= 'RapidApp::TT';
 	$self->c->stash->{template}= 'templates/rapidapp/exception.tt';
 }

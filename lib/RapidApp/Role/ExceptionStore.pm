@@ -55,4 +55,20 @@ around 'loadException' => sub {
 	return $ret;
 }
 
+# =head2 \@list= $obj->listExceptions( \%args )
+
+  # my $list= $obj->listExceptions();  # all
+  # my $list= $obj->listExceptions({ offset => $ofs, limit => $count }); # count, starting from ofs
+
+# =cut
+# requires 'listExceptions';
+
+# around 'listExceptions' => sub {
+	# my ($orig, $self, $args)= @_;
+	# defined $args or $args= {};
+	# my $ret= $self->$orig($args);
+	# defined $ret && ref $ret eq 'ARRAY' or die "API breakage- did not return list";
+	# return $ret;
+# }
+
 1;

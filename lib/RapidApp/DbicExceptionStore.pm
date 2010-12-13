@@ -28,7 +28,7 @@ The DBIC ResultSource matching the required schema (below)
 This module provides the ExceptionStore role which reads/writes rows to the exceptions table,
 and then serializes relevant bits of data into a blob field to be deserialized and inspected later.
 
-These required schema is (subject to change):
+The required schema is (subject to change):
 
 =over
 
