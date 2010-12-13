@@ -21,6 +21,9 @@ has 'default_module'					=> ( is => 'rw',	default => 'default_module' );
 has 'create_module_params'			=> ( is => 'ro',	default => sub { {} } );
 has 'modules_params'					=> ( is => 'ro',	default => sub { {} } );
 
+has 'print_rapidapp_handlers_call_debug' => ( is => 'ro', default => 0 );
+
+
 # All purpose options:
 has 'module_options' => ( is => 'ro', lazy => 1, default => sub {{}}, traits => [ 'RapidApp::Role::PerRequestVar' ] );
 
@@ -337,6 +340,31 @@ sub call_rapidapp_handlers {
 	my $self = shift;
 	foreach my $Handler (@_) {
 		die 'not a RapidApp::Handler' unless (ref($Handler) eq 'RapidApp::Handler');
+		
+		if($self->print_rapidapp_handlers_call_debug) {
+			my $msg = YELLOW . '->call_rapidapp_handlers[' . $self->get_rapidapp_module_path . '] ' . CLEAR;
+			$msg .= GREEN;
+			if (defined $Handler->scope) {
+				$msg .= '(' . ref($Handler->scope);
+				if ($Handler->scope->does('RapidApp::Role::Module')) {
+					$msg .= CLEAR . BLUE . ' ' . $Handler->scope->get_rapidapp_module_path;
+				}
+				$msg .= CLEAR . GREEN . ')' . CLEAR;
+			}
+			else {
+				$msg .= '(no scope)';
+			}
+			
+			if (defined $Handler->method) {
+				$msg .= BOLD . '->' . $Handler->method . CLEAR;
+			}
+			else {
+				$msg .= BOLD . '==>CODEREF->()' . CLEAR;
+			}
+		
+			$self->app->log->debug($msg);
+		}
+		
 		$Handler->call;
 	}
 }
@@ -369,6 +397,17 @@ has 'flags' => (
 		 all_flags		=> 'elements'
 	},
 );
+
+
+# function for debugging purposes - returns a string of the module path
+sub get_rapidapp_module_path {
+	my $self = shift;
+	
+	my $parent_path = '';
+	$parent_path = $self->parent_module->get_rapidapp_module_path if (defined $self->parent_module);
+	
+	return $parent_path . '/' . $self->module_name;
+}
 
 
 
