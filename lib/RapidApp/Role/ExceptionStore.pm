@@ -53,7 +53,7 @@ around 'loadException' => sub {
 	my $ret= $self->$orig($id);
 	defined $ret && $ret->isa('RapidApp::Error') or die "API breakage- did not return a RapidApp::Error";
 	return $ret;
-}
+};
 
 # =head2 \@list= $obj->listExceptions( \%args )
 

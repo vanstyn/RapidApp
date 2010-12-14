@@ -209,7 +209,7 @@ sub controller_dispatch {
 		}
 		elsif ($self->c->stash->{requestContentType} ne 'JSON' && $self->auto_web1) {
 			$self->c->log->info("--> " . GREEN . BOLD . "[web1_content]" . CLEAR . ". (no action)");
-			return $self->viewport;
+			return $self->web1_content;
 		}
 		else {
 			$self->c->log->info("--> " . GREEN . BOLD . "[content]" . CLEAR . ". (no action)");

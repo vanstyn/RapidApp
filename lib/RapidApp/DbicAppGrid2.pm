@@ -3,9 +3,9 @@ package RapidApp::DbicAppGrid2;
 
 use strict;
 use Moose;
-
 extends 'RapidApp::AppGrid2';
 with 'RapidApp::Role::DbicLink';
+
 #use RapidApp::MooseX::ClassAttrSugar;
 #setup_apply_methods_for('config');
 #setup_apply_methods_for('listeners');
@@ -16,7 +16,6 @@ with 'RapidApp::Role::DbicLink';
 #	loadMask				=> \1
 #
 #);
-
 
 sub BUILD {
 	my $self = shift;

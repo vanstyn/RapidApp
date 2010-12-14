@@ -1,6 +1,8 @@
 package RapidApp::DbicExceptionStore;
 
 use Moose;
+with 'RapidApp::Role::ExceptionStore';
+
 use RapidApp::Include 'perlutil';
 
 use Storable ('freeze', 'thaw');
@@ -11,7 +13,7 @@ RapidApp::DbicExceptionStore;
 
 =cut
 
-has 'resultSource' => ( is => 'rw', isa => 'DBIc::Class::ResultSource' );
+has 'resultSource' => ( is => 'rw', isa => 'DBIx::Class::ResultSource' );
 
 =head1 ATTRIBUTES
 
@@ -106,10 +108,10 @@ sub saveException {
 			why   => $serialized,
 		});
 		$refId= $row->id;
-		$c->log->info("Exception saved as refId ".$refId);
+		$self->c->log->info("Exception saved as refId ".$refId);
 	}
 	catch {
-		$c->log->error("Failed to save exception to database: ".$_);
+		$self->c->log->error("Failed to save exception to database: ".$_);
 		$refId= undef;
 	};
 	return $refId;

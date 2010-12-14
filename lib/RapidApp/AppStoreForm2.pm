@@ -101,8 +101,8 @@ sub _build_add_button {
 
 
 
-has 'tbar_icon' => ( is => 'ro', default => undef );
-#has 'tbar_title' => ( is => 'ro', default => undef );
+has 'tbar_icon' => ( is => 'ro', isa => 'Str' );
+has 'tbar_title' => ( is => 'ro', isa => 'Str' );
 #has 'formpanel_items' => ( is => 'ro', default => sub {[]} );
 
 

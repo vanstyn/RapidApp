@@ -12,7 +12,6 @@ use Switch;
 
 use Moose::Util::TypeConstraints;
 
-
 has 'joins' => ( is => 'ro', default => sub {[]} );
 
 has 'base_search_set' => ( is => 'ro',	default => undef );
@@ -111,7 +110,9 @@ around 'BUILD' => sub {
 	my $self = shift;
 	
 	role_type('RapidApp::Role::DataStore2')->assert_valid($self);
-	
+	# We can't 'require' this method, because intermediate subclasses like DbicAppGrid2 don't have it defined, though the final one should.
+	# What Moose really needs is an "use Moose::Abstract" for intermediate base classes, which would delay the 'requires' checks.
+	$self->can('ResultSource') or die "Role ".__PACKAGE__." requires method ".'ResultSource';
 	
 	$self->$orig(@_);
 	
@@ -148,7 +149,7 @@ around 'BUILD' => sub {
 			
 			# -- Build combos (dropdowns) for every related field (for use in multifilters currently):
 			if ($prefix) {
-				$self->log->debug(MAGENTA . BOLD . $colname . ' (' . $rel_name . ')' . CLEAR);
+				#$self->log->debug(MAGENTA . BOLD . $colname . ' (' . $rel_name . ')' . CLEAR);
 				
 				my $module_name = 'combo_' . $colname;
 				$self->apply_modules(
@@ -175,7 +176,7 @@ around 'BUILD' => sub {
 			my $info = $Source->relationship_info($rel);
 			
 			use Data::Dumper;
-			$self->log->debug(YELLOW . BOLD . Dumper($info) . CLEAR);
+			#$self->log->debug(YELLOW . BOLD . Dumper($info) . CLEAR);
 			
 			#next unless ($info->{attrs}->{accessor} eq 'single');
 

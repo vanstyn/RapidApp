@@ -23,8 +23,8 @@ has 'DataStore_class'	=> ( is => 'ro', default => 'RapidApp::DataStore2', isa =>
 has 'title' => ( is => 'ro', default => undef );
 has 'title_icon_href' => ( is => 'ro', default => undef );
 
-has 'open_record_class' => ( is => 'ro', default => undef, isa => 'Maybe[ClassName]' );
-has 'add_record_class' => ( is => 'ro', default => undef, isa => 'Maybe[ClassName]' );
+has 'open_record_class' => ( is => 'ro', default => undef, isa => 'Maybe[ClassName|HashRef]' );
+has 'add_record_class' => ( is => 'ro', default => undef, isa => 'Maybe[ClassName|HashRef]' );
 
 
 # autoLoad needs to be false for the paging toolbar to not load the whole

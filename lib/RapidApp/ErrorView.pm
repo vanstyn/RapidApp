@@ -5,12 +5,15 @@ extends 'RapidApp::AppStoreForm2';
 
 use RapidApp::Include qw(perlutil sugar);
 
+use RapidApp::DbicExceptionStore;
+
 # make sure the as_html method gets loaded into StackTrace, which might get deserialized
 use Devel::StackTrace;
 use Devel::StackTrace::WithLexicals;
 use Devel::StackTrace::AsHTML;
 
-has 'exceptionStore' => ( is => 'rw' ); # either a store object, or a Model name
+has 'exceptionStore' => ( is => 'rw', isa => 'Str|RapidApp::Role::ExceptionStore' );
+has 'useParentExceptionStore' => ( is => 'rw', isa => 'Bool', lazy => 1, default => 0 );
 
 sub BUILD {
 	my $self= shift;
@@ -30,7 +33,20 @@ sub BUILD {
 	$self->auto_web1(1);
 }
 
-sub getExceptionObject {
+sub getExceptionStoreObj {
+	my $self= shift;
+	if ($self->useParentExceptionStore) {
+		return $self->module_parent->exceptionStore;
+	}
+	else {
+		my $e= $self->exceptionStore;
+		defined $e or die "No ExceptionStore configured";
+		ref $e or $e= $self->c->model($e);
+		return $e;
+	}
+}
+
+sub getExceptionObj {
 	my ($self, $id)= @_;
 	# Generating an exception while trying to view exceptions wouldn't be too useful
 	#   so we trap and display exceptions specially in this module.
@@ -38,7 +54,7 @@ sub getExceptionObject {
 	try {
 		defined $id or die "No ID specified";
 		
-		my $store= $self->exceptionStore;
+		my $store= $self->getExceptionStoreObj;
 		defined $store or die "No ExceptionStore configured";
 		ref $store or $store= $self->c->model($store);
 		
@@ -55,7 +71,7 @@ sub extconfig {
 	my $id= $self->c->req->params->{id};
 	defined $id or die "No ID specified";
 	
-	my $err= $self->getExceptionObject($id);
+	my $err= $self->getExceptionObj($id);
 	
 	return {
 		xtype => 'box',
@@ -63,16 +79,10 @@ sub extconfig {
 	};
 }
 
-sub view {
+sub web1config {
 	my $self= shift;
-	my $id= $self->c->req->params->{id};
-	defined $id or die "No ID specified";
-	
-	my $err= $self->getExceptionObject($id);
-	
-	$self->c->stash->{ex}= $err;
-	$self->c->stash->{current_view}= 'RapidApp::TT';
-	$self->c->stash->{template}= 'templates/rapidapp/exception.tt';
+	my $extCfg= $self->extconfig;
+	return $extCfg->{html};
 }
 
 sub gen_die {
