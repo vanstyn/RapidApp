@@ -3,6 +3,7 @@ Ext.ns('Ext.ux.RapidApp.AppStoreForm2');
 Ext.ux.RapidApp.AppStoreForm2.FormPanel = Ext.extend(Ext.form.FormPanel,{
 
 	// Defaults:
+	closetab_on_create: true,
 	bodyCssClass: 'panel-borders',
 	monitorValid: true,
 	trackResetOnLoad: true, // <-- for some reason this default doesn't work and has to be set in the constructor
@@ -87,13 +88,29 @@ Ext.ux.RapidApp.AppStoreForm2.store_load_handler = function(store,records,option
 	store.setBaseParam("orig_params",Ext.util.JSON.encode(Record.data));
 }
 
-Ext.ux.RapidApp.AppStoreForm2.store_create_closetab = function(store,action,result,res,rs) {
+
+Ext.ux.RapidApp.AppStoreForm2.store_create_handler = function(store,action,result,res,rs) {
 	if(action != "create"){ return; }
-				
-	// close the current tab:
+	
 	var panel = store.formpanel;
-	var tp = panel.findParentByType("apptabpanel");
-	var tab = tp.getActiveTab();
-	tp.remove(tab);
+	if(!res.raw.loadCfg || !panel.closetab_on_create) { return; }
+	
+	// get the current tab:
+	var tp, tab;
+	if(panel.closetab_on_create) {
+		tp = panel.findParentByType("apptabpanel");
+		tab = tp.getActiveTab();
+	}
+	
+	// Automatically load "loadCfg" if it exists in the response:
+	if(res.raw.loadCfg) {
+		var loadTarget = Ext.ux.RapidApp.AppTab.findParent_loadTarget(panel);
+		loadTarget.loadContent(res.raw.loadCfg);
+	}
+	
+	// close the tab:
+	if(panel.closetab_on_create) {
+		tp.remove(tab);
+	}
 }
-			
+

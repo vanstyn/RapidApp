@@ -16,7 +16,8 @@ sub BUILD {
 	
 	$self->Module('store',1)->add_listener( load => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.store_load_handler' ));	
 	$self->Module('store',1)->add_listener( write => RapidApp::JSONFunc->new( raw => 1, func =>  'function(store) { store.load(); }' )) if ($self->reload_on_save);
-	$self->Module('store',1)->add_listener( write => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.store_create_closetab' )) if ($self->closetab_on_create);	
+	#$self->Module('store',1)->add_listener( write => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.store_create_closetab' )) if ($self->closetab_on_create);
+	$self->Module('store',1)->add_listener( write => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.store_create_handler' ));	
 
 	$self->apply_extconfig(
 		xtype		=> 'appstoreform2',

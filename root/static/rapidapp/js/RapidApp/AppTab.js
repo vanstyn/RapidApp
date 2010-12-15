@@ -91,6 +91,24 @@ Ext.ux.RapidApp.AppTab.treenav_click = function(node,event) {
 	return loadTarget.loadContent(node.attributes.loadContentCnf);
 }
 
+
+Ext.ux.RapidApp.AppTab.findParent_loadTarget = function(cnt) {
+	var loadTarget = null;
+	var parent = cnt.findParentBy(function(cmp) {
+		loadTarget = cmp.getComponent('load-target');
+		if(loadTarget) { return true; }
+		return false;
+	});
+	return loadTarget;
+};
+
+Ext.ux.RapidApp.AppTab.cnt_init_loadTarget = function(cnt) {
+	cnt.loadTargetObj = Ext.ux.RapidApp.AppTab.findParent_loadTarget(cnt);
+}
+
+
+
+/*
 Ext.ux.RapidApp.AppTab.cnt_init_loadTarget = function(cnt) {
 	var loadTarget;
 	var parent = cnt.findParentBy(function(cmp) {
@@ -101,7 +119,7 @@ Ext.ux.RapidApp.AppTab.cnt_init_loadTarget = function(cnt) {
 	cnt.loadTargetObj = loadTarget;
 	//tree.loadTargetObj = tree.ownerCt.ownerCt.getComponent('load-target');
 }
-
+*/
 
 Ext.ux.RapidApp.AppTab.gridrow_nav = function(grid,index,e) {
 	var loadTarget = grid.loadTargetObj;
