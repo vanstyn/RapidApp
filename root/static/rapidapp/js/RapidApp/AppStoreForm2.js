@@ -93,7 +93,7 @@ Ext.ux.RapidApp.AppStoreForm2.store_create_handler = function(store,action,resul
 	if(action != "create"){ return; }
 	
 	var panel = store.formpanel;
-	if(!res.raw.loadCfg || !panel.closetab_on_create) { return; }
+	if(!res.raw.loadCfg && !panel.closetab_on_create) { return; }
 	
 	// get the current tab:
 	var tp, tab;
