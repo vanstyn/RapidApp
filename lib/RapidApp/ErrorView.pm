@@ -15,6 +15,19 @@ use Devel::StackTrace::AsHTML;
 has 'exceptionStore' => ( is => 'rw', isa => 'Str|RapidApp::Role::ExceptionStore' );
 has 'useParentExceptionStore' => ( is => 'rw', isa => 'Bool', lazy => 1, default => 0 );
 
+my $read_only_style= {
+	'background-color'	=> 'transparent',
+	'border-color'		=> 'transparent',
+	'background-image'	=> 'none',
+	
+	# the normal text field has padding-top: 2px which makes the text sit towards
+	# the bottom of the field. We set top and bot here to move one of the px to the
+	# bottom so the text will be vertically centered but take up the same vertical
+	# size as a normal text field:
+	'padding-top'		=> '1px',
+	'padding-bottom'	=> '1px'
+};
+
 sub BUILD {
 	my $self= shift;
 	
@@ -31,12 +44,39 @@ sub BUILD {
 	);
 	
 	$self->auto_web1(1);
+	
+	$self->apply_extconfig(
+		labelAlign	=> 'left',
+		bodyStyle	=> 'padding:25px 25px 15px 15px;',
+		labelWidth 	=> 130,
+		defaults => {
+			xtype 		=> 'displayfield',
+			width			=> 'auto',
+			#style => $read_only_style
+		}
+	);
+	
+	$self->add_formpanel_items(
+		{ name => 'id',       fieldLabel => 'ID' },
+		{ name => 'dateTime', fieldLabel => 'Date' },
+		{ name => 'message',  fieldLabel => 'Message' },
+		{ name => 'userMessage', fieldLabel => 'UserMsg' },
+		{ name => 'srcLoc',     fieldLabel => 'Source Loc' },
+		{ name => 'trace',    fieldLabel => 'Trace' },
+		{ name => 'data',     fieldLabel => 'Debug Info' },
+	);
+	
+	$self->DataStore->apply_flags(
+		can_read	=> 1,
+		can_update	=> 0,
+		can_create	=> 0,
+	);
 }
 
 sub getExceptionStoreObj {
 	my $self= shift;
 	if ($self->useParentExceptionStore) {
-		return $self->module_parent->exceptionStore;
+		return $self->parent_module->exceptionStore;
 	}
 	else {
 		my $e= $self->exceptionStore;
@@ -66,6 +106,35 @@ sub getExceptionObj {
 	return $err;
 }
 
+sub read_records {
+	my ($self, $params)= @_;
+	my $id = $params->{id};
+	defined $id or die "cannot lookup row without id";
+	my $store= $self->getExceptionStoreObj;
+	defined $store or die "No ExceptionStore configured";
+	ref $store or $store= $self->c->model($store);
+	
+	my $err= $store->loadException($id);
+	my $srcLoc= $err->srcLoc;
+	defined $srcLoc and $srcLoc =~ s|.*?/lib/||;
+	my $traceStr= $err->trace->as_string;
+	$traceStr =~ s|called at /.*?/lib/(.*?) line ([0-9]+)|<br/><span style="padding:1px 2em"> </span><font color="gray">called at <font color="blue">$1</font> line <font color="blue">$2</font></font>|g;
+	my $row= {
+		id => $id,
+		message => $err->message,
+		userMessage => $err->userMessage,
+		dateTime => $err->dateTime->ymd .' '. $err->dateTime->hms,
+		srcLoc => $srcLoc,
+		trace => '<pre>'.$traceStr.'</pre>',
+		data => Dumper($err->data),
+	};
+	return {
+		results	=> 1,
+		rows	=> [ $row ],
+	};
+}
+
+=pod
 sub extconfig {
 	my $self= shift;
 	my $id= $self->c->req->params->{id};
@@ -96,5 +165,5 @@ sub gen_error {
 sub gen_usererror {
 	die usererr "PEBKAC";
 }
-
+=cut
 1;

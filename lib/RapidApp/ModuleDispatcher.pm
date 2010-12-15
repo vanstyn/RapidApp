@@ -4,7 +4,7 @@ use Moose;
 use RapidApp::Include 'perlutil';
 
 # either an exceptionStore instance, or the name of a catalyst Model implementing one
-has 'exceptionStore'        => ( is => 'rw' );
+has 'exceptionStore'        => ( is => 'rw', isa => 'Maybe[RapidApp::Role::ExceptionStore|Str]' );
 
 # Whether to save errors to whichever ExceptionStore is available via whatever configuration
 # If this is true and no ExceptionStore is configured, we die
@@ -119,7 +119,8 @@ sub onException {
 	
 	if ($self->saveErrors && (!$err->isUserError || $self->saveUserErrors)) {
 		defined $self->exceptionStore or die "saveErrors is set, but no exceptionStore is defined";
-		my $store= ref $self->exceptionStore? $self->exceptionStore : $c->model($self->exceptionStore);
+		my $store= $self->exceptionStore;
+		ref $store or $store= $c->model($store);
 		my $refId= $store->saveException($err);
 		if (!$err->isUserError || $self->reportIdForUserErrors) {
 			$c->stash->{exceptionRefId}= $refId;

@@ -28,23 +28,23 @@ sub BUILD {
 	my $self= shift;
 	
 	$self->apply_to_all_columns(
-		#hidden 		=> \1,
 		render_fn	=> 'Ext.ux.showNull'
 	);
 	
 	my @colOpts= (
-		id => { width => 30, header => 'ID' },
+		id    => { width =>  30, header => 'ID' },
+		when  => { width => 120, header => 'Date' },
+		who   => { width =>  70, header => 'User' },
+		what  => { width => 250, header => 'Message' },
+		where => { width => 250, header => 'Src Loc.' },
+		why   => { hidden => \1 },
 	);
 	$self->batch_apply_opts(
 		columns => { @colOpts },
 		column_order => [ grep(!ref $_, @colOpts) ],
-		sort => {
-			field		=> 'id',
-			direction	=> 'DSC'
-		}
+		sort => { field => 'id', direction => 'DESC' },
 	);
 }
-
 
 sub content {
 	my $self= shift;
