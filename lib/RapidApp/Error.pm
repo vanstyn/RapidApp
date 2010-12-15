@@ -97,6 +97,19 @@ sub ignoreSelfFrameFilter {
 	return 1;
 }
 
+# trim down the tree of data referenced by the stack trace
+sub trimTrace {
+	my ($self, $maxDepth)= @_;
+	my $trace= $self->trace;
+	my @frames= $trace->frames; # make sure frames are generated
+	delete $trace->{raw}; # make sure raw trace stuff isn't kept
+	for my $f (@frames) {
+		if (defined $f->{args}) {
+			$f->{args}= [ map { ''.$_ } $f->args ];
+		}
+	}
+}
+
 around 'BUILDARGS' => sub {
 	my ($orig, $class, @args)= @_;
 	my $params= ref $args[0] eq 'HASH'? $args[0]

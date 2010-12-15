@@ -80,8 +80,9 @@ Writes out a new record in the table, saving this exception object.
 =cut
 sub saveException {
 	my ($self, $err)= @_;
+	my $log= RapidApp::ScopedGlobals->log;
 	
-	my $uid= defined $err->data->{user}? $err->data->{user}->id : undef;
+	my $uid= (defined $err->data && defined $err->data->{user})? $err->data->{user}->id : undef;
 	
 	my $msg= $err->message;
 	# truncate strings which actually go into varchar columns
@@ -89,14 +90,24 @@ sub saveException {
 	
 	my $srcLoc= $err->srcLoc;
 	# truncate strings which actually go into varchar columns
+	$srcLoc =~ s|.*?/lib/||;
 	!defined($srcLoc) || length($srcLoc) < 64 or $srcLoc= substr($srcLoc,0,64);
-	
-	local $Storable::forgive_me= 1; # ignore non-storable things
-	my $serialized= freeze( $err );
-	$self->c->log->debug("Froze ".length($serialized)." bytes of error object");
 	
 	my $refId;
 	try {
+		
+		$err->trimTrace;
+		local $Storable::forgive_me= 1; # ignore non-storable things
+		my $serialized= freeze( $err );
+		if (!defined $serialized || length($serialized) > 65000) {
+			$log->warn("Error serialization was ".length($serialized)." bytes, attempting to save an approximation");
+			
+			$serialized= freeze( { map { substr(''.$_, 0, 1000) } %$err } );
+			if (!defined $serialized || length($serialized) > 65000) {
+				$serialized= freeze( { message => 'Unable to save error object' } );
+			}
+		}
+		
 		my $rs= $self->resultSource;
 		defined $rs or die "Missing ResultSource";
 		
@@ -108,10 +119,10 @@ sub saveException {
 			why   => $serialized,
 		});
 		$refId= $row->id;
-		$self->c->log->info("Exception saved as refId ".$refId);
+		$log->info("Exception saved as refId ".$refId);
 	}
 	catch {
-		$self->c->log->error("Failed to save exception to database: ".$_);
+		$log->error("Failed to save exception to database: ".$_);
 		$refId= undef;
 	};
 	return $refId;
@@ -126,10 +137,13 @@ sub loadException {
 	my $rs= $self->resultSource;
 	defined $rs or die "Missing ResultSource";
 	
-	my $row= $rs->find($id);
+	my $row= $rs->resultset->find($id);
 	defined $row or die "No excption exists for id $id";
 	
-	my $err= thaw($row->why);
+	my $serialized= $row->why;
+	RapidApp::ScopedGlobals->log->debug('Read '.length($serialized).' bytes of serialized error');
+	my $err= thaw($serialized);
+	defined $err or die "Failed to deserialize exception";
 	return $err;
 }
 
