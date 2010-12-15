@@ -88,6 +88,7 @@ sub dispatch {
 			$c->log->debug(MAGENTA . BOLD . ' >> CLEARING ' . $Module->get_rapidapp_module_path . CLEAR);
 			$Module->reset_per_req_attrs;
 		}
+		delete $c->stash->{rapidapp_called_modules};
 	}
 	
 	return $result;

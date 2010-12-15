@@ -11,6 +11,7 @@ use RapidApp::Include qw(sugar perlutil);
 use Clone qw(clone);
 use Time::HiRes qw(gettimeofday);
 use Catalyst::Utils;
+use Scalar::Util 'weaken';
 
 our $VERSION = '0.1';
 
@@ -76,16 +77,22 @@ before 'BUILD' => sub {
 	$self->cached_per_req_attr_list;
 };
 
-
-has 'cached_per_req_attr_list' => ( is => 'ro', lazy => 1, default => sub {
+sub cached_per_req_attr_list {
 	my $self = shift;
-	
-	my $attrs = [];
-	foreach my $attr ($self->meta->get_all_attributes) {
-		push @$attrs, $attr if ($self->should_clear_per_req($attr));
+	# XXX TODO: I think there is some Moose way of applying roles to the meta object,
+	#   but I'm not taking the time to look it up.  This would also help with clearing the cache
+	#   if new attributes were defined.
+	my $attrs= (ref $self)->meta->{RapidApp_Module_PerRequestAttributeList};
+	if (!defined $attrs) {
+		my $attrs= [ grep { $self->should_clear_per_req($_) } $self->meta->get_all_attributes ];
+		# we don't want this cache to make attributes live longer than needed, so weaken the references
+		for (my $i=$#$attrs; $i>=0; $i--) {
+			weaken $attrs->[$i];
+		}
+		(ref $self)->meta->{RapidApp_Module_PerRequestAttributeList}= $attrs;
 	}
 	return $attrs;
-});
+};
 
 sub should_clear_per_req {
 	my $self = shift;
