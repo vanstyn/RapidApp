@@ -28,7 +28,7 @@ sub BUILD {
 	my $self= shift;
 	
 	$self->apply_to_all_columns(
-		hidden 		=> \1,
+		#hidden 		=> \1,
 		render_fn	=> 'Ext.ux.showNull'
 	);
 	
@@ -45,6 +45,7 @@ sub BUILD {
 	);
 }
 
+
 sub content {
 	my $self= shift;
 	my $extcfg= $self->get_complete_extconfig;
@@ -58,6 +59,7 @@ sub viewport {
 	$self->log->debug("xtype ".$extcfg->{xtype});
 	return $self->SUPER::viewport;
 }
+
 
 no Moose;
 __PACKAGE__->meta->make_immutable;
