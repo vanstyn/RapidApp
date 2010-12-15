@@ -13,9 +13,7 @@
 	<p>The details of this error could not be saved.</p>
 	[% ELSIF exceptionRefId %]
 	<p>The details of this error have been kept for analysis.<br/>
-	Reference number
-	
-	[% IF debug && errorViewPath %]<a href="/[% errorViewPath %]/view?id=[% exceptionRefId %]" target="_blank">[% exceptionRefId %]</a>[% ELSE %][% exceptionRefId %][% END %]
+	Reference number [% IF debug && errorViewPath %]<a href="[% errorViewPath %]/item?id=[% exceptionRefId %]" target="_blank">[% exceptionRefId %]</a>[% ELSE %][% exceptionRefId %][% END %]
 	</p>
 	[% END %]
 </body>

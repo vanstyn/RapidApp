@@ -27,6 +27,13 @@ sub get_complete_extconfig {
 	return $self->extconfig;
 }
 
+sub web1_content {
+	my $self= shift;
+	$self->c->stash->{current_view} = 'RapidApp::Web1Cfg';
+	$self->c->stash->{web1cfg} = $self->get_complete_web1config;
+	return 1;
+}
+
 sub get_complete_web1config {
 	my $self= shift;
 	return $self->get_complete_extconfig;

@@ -5,21 +5,28 @@ extends 'RapidApp::AppStoreForm2';
 
 use RapidApp::Include qw(perlutil sugar);
 
+use RapidApp::DbicExceptionStore;
+
 # make sure the as_html method gets loaded into StackTrace, which might get deserialized
 use Devel::StackTrace;
 use Devel::StackTrace::WithLexicals;
 use Devel::StackTrace::AsHTML;
 
-has 'exceptionStore' => ( is => 'rw' ); # either a store object, or a Model name
+has 'exceptionStore' => ( is => 'rw', isa => 'Str|RapidApp::Role::ExceptionStore' );
+has 'useParentExceptionStore' => ( is => 'rw', isa => 'Bool', lazy => 1, default => 0 );
 
-#merge_attr_defaults(
-#	actions => {
-#		view => 'view',
-#		justdie => 'justdie',
-#		diefancy => 'diefancy',
-#		usererror => 'usererror',
-#	},
-#);
+my $read_only_style= {
+	'background-color'	=> 'transparent',
+	'border-color'		=> 'transparent',
+	'background-image'	=> 'none',
+	
+	# the normal text field has padding-top: 2px which makes the text sit towards
+	# the bottom of the field. We set top and bot here to move one of the px to the
+	# bottom so the text will be vertically centered but take up the same vertical
+	# size as a normal text field:
+	'padding-top'		=> '1px',
+	'padding-bottom'	=> '1px'
+};
 
 sub BUILD {
 	my $self= shift;
@@ -31,47 +38,132 @@ sub BUILD {
 	
 	$self->apply_actions(
 		view => 'view',
-		justdie => 'justdie',
-		diefancy => 'diefancy',
-		usererror => 'usererror',
+		die => 'gen_die',
+		error => 'gen_error',
+		usererror => 'gen_usererror',
+	);
+	
+	$self->auto_web1(1);
+	
+	$self->apply_extconfig(
+		labelAlign	=> 'left',
+		bodyStyle	=> 'padding:25px 25px 15px 15px;',
+		labelWidth 	=> 130,
+		defaults => {
+			xtype 		=> 'displayfield',
+			width			=> 'auto',
+			#style => $read_only_style
+		}
+	);
+	
+	$self->add_formpanel_items(
+		{ name => 'id',       fieldLabel => 'ID' },
+		{ name => 'dateTime', fieldLabel => 'Date' },
+		{ name => 'message',  fieldLabel => 'Message' },
+		{ name => 'userMessage', fieldLabel => 'UserMsg' },
+		{ name => 'srcLoc',     fieldLabel => 'Source Loc' },
+		{ name => 'trace',    fieldLabel => 'Trace' },
+		{ name => 'data',     fieldLabel => 'Debug Info' },
+	);
+	
+	$self->DataStore->apply_flags(
+		can_read	=> 1,
+		can_update	=> 0,
+		can_create	=> 0,
 	);
 }
 
-sub viewport {
+sub getExceptionStoreObj {
 	my $self= shift;
-	
+	if ($self->useParentExceptionStore) {
+		return $self->parent_module->exceptionStore;
+	}
+	else {
+		my $e= $self->exceptionStore;
+		defined $e or die "No ExceptionStore configured";
+		ref $e or $e= $self->c->model($e);
+		return $e;
+	}
+}
+
+sub getExceptionObj {
+	my ($self, $id)= @_;
 	# Generating an exception while trying to view exceptions wouldn't be too useful
 	#   so we trap and display exceptions specially in this module.
-	my $id;
+	my $err;
 	try {
-		$id= $self->c->req->params->{id};
 		defined $id or die "No ID specified";
 		
-		my $store= $self->exceptionStore;
+		my $store= $self->getExceptionStoreObj;
 		defined $store or die "No ExceptionStore configured";
 		ref $store or $store= $self->c->model($store);
 		
-		my $err= $store->loadException($id);
-		$self->c->stash->{ex}= $err;
+		$err= $store->loadException($id);
 	}
 	catch {
-		$self->c->log->debug(Dumper(keys %$_));
-		$self->c->stash->{ex}= { id => $id, error => $_ };
+		$err= { id => $id, error => $_ };
 	};
-	$self->c->stash->{current_view}= 'RapidApp::TT';
-	$self->c->stash->{template}= 'templates/rapidapp/exception.tt';
+	return $err;
 }
 
-sub justdie {
+sub read_records {
+	my ($self, $params)= @_;
+	my $id = $params->{id};
+	defined $id or die "cannot lookup row without id";
+	my $store= $self->getExceptionStoreObj;
+	defined $store or die "No ExceptionStore configured";
+	ref $store or $store= $self->c->model($store);
+	
+	my $err= $store->loadException($id);
+	my $srcLoc= $err->srcLoc;
+	defined $srcLoc and $srcLoc =~ s|.*?/lib/||;
+	my $traceStr= $err->trace->as_string;
+	$traceStr =~ s|called at /.*?/lib/(.*?) line ([0-9]+)|<br/><span style="padding:1px 2em"> </span><font color="gray">called at <font color="blue">$1</font> line <font color="blue">$2</font></font>|g;
+	my $row= {
+		id => $id,
+		message => $err->message,
+		userMessage => $err->userMessage,
+		dateTime => $err->dateTime->ymd .' '. $err->dateTime->hms,
+		srcLoc => $srcLoc,
+		trace => '<pre>'.$traceStr.'</pre>',
+		data => Dumper($err->data),
+	};
+	return {
+		results	=> 1,
+		rows	=> [ $row ],
+	};
+}
+
+=pod
+sub extconfig {
+	my $self= shift;
+	my $id= $self->c->req->params->{id};
+	defined $id or die "No ID specified";
+	
+	my $err= $self->getExceptionObj($id);
+	
+	return {
+		xtype => 'box',
+		html => $self->c->view("RapidApp::TT")->render($self->c, 'templates/rapidapp/exception.tt', { ex => $err })
+	};
+}
+
+sub web1config {
+	my $self= shift;
+	my $extCfg= $self->extconfig;
+	return $extCfg->{html};
+}
+
+sub gen_die {
 	die "Deliberately generating an exception";
 }
 
-sub diefancy {
+sub gen_error {
 	die RapidApp::Error->new("Generating an exception using the RapidApp::Error class");
 }
 
-sub usererror {
+sub gen_usererror {
 	die usererr "PEBKAC";
 }
-
+=cut
 1;

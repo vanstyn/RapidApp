@@ -202,14 +202,14 @@ sub controller_dispatch {
 			if ($self->c->stash->{requestContentType} ne 'JSON') {
 				$self->c->stash->{current_view} = 'RapidApp::HttpStatus';
 				$self->c->res->status(404);
-				return undef;
+				return 1;
 			} else {
 				die RapidApp::Role::Controller::UnknownAction->new(message => "Unknown module or action", unknown_arg => $opt);
 			}
 		}
 		elsif ($self->c->stash->{requestContentType} ne 'JSON' && $self->auto_web1) {
 			$self->c->log->info("--> " . GREEN . BOLD . "[web1_content]" . CLEAR . ". (no action)");
-			return $self->viewport;
+			return $self->web1_content;
 		}
 		else {
 			$self->c->log->info("--> " . GREEN . BOLD . "[content]" . CLEAR . ". (no action)");

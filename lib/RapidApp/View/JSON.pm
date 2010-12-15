@@ -60,6 +60,8 @@ sub process {
 		$jsonStr= $self->encoder->encode({
 			exception	=> \1,
 			success		=> \0,
+			rows			=> [],
+			results		=> 0,
 			msg			=> $msg
 		});
 	}

@@ -51,8 +51,24 @@ around 'loadException' => sub {
 	my ($orig, $self, $id)= @_;
 	defined $id && !ref $id or die "Invalid ID parameter";
 	my $ret= $self->$orig($id);
-	defined $ret && $ret->isa('RapidApp::Error') or die "API breakage- did not return a RapidApp::Error";
+	defined $ret && $ret->isa('RapidApp::Error') or die "API breakage- ".(ref $ret)." is not a RapidApp::Error";
 	return $ret;
-}
+};
+
+# =head2 \@list= $obj->listExceptions( \%args )
+
+  # my $list= $obj->listExceptions();  # all
+  # my $list= $obj->listExceptions({ offset => $ofs, limit => $count }); # count, starting from ofs
+
+# =cut
+# requires 'listExceptions';
+
+# around 'listExceptions' => sub {
+	# my ($orig, $self, $args)= @_;
+	# defined $args or $args= {};
+	# my $ret= $self->$orig($args);
+	# defined $ret && ref $ret eq 'ARRAY' or die "API breakage- did not return list";
+	# return $ret;
+# }
 
 1;
