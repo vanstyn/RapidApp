@@ -202,7 +202,7 @@ sub controller_dispatch {
 			if ($self->c->stash->{requestContentType} ne 'JSON') {
 				$self->c->stash->{current_view} = 'RapidApp::HttpStatus';
 				$self->c->res->status(404);
-				return undef;
+				return 1;
 			} else {
 				die RapidApp::Role::Controller::UnknownAction->new(message => "Unknown module or action", unknown_arg => $opt);
 			}
