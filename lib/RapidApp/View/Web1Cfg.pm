@@ -20,12 +20,13 @@ sub process {
 	%{$self->_js_files}= ();
 	
 	# generate the html
-	my $html= $self->genRoot($c->stash->{web1cfg});
+	my @html= $self->genDump($c->stash->{web1cfg});
+	#my @html= $self->cfg2html($c->stash->{web1cfg});
 	
 	$c->stash->{css_inc_list}= keys(%{$self->_css_files});
 	$c->stash->{js_inc_list}= keys(%{$self->_js_files});
 	$c->stash->{header}= join('\n', @{$self->_header_extra});
-	$c->stash->{content}= $html;
+	$c->stash->{content}= join('', @html);
 	$c->stash->{template}= 'templates/rapidapp/web1_page.tt';
 	return $c->view('RapidApp::TT')->process($c);
 }
@@ -39,16 +40,24 @@ sub stash {
 
 sub htmlEsc {
 	my $text= shift;
+	$text =~ s/&/&amp;/g;
 	$text =~ s/</&lt;/g;
 	$text =~ s/>/&gt;/g;
-	$text =~ s/&/&amp;/g;
 	$text =~ s/"/&quot;/g;
 	return $text;
 }
 
-sub genRoot {
+sub genDump {
 	my ($self, $cfg)= @_;
-	return '<pre>'.htmlEsc(Dumper($cfg)).'</pre>';
+	return '<pre>', htmlEsc(Dumper($cfg)), '</pre>';
+}
+
+sub cfg2html {
+	my ($self, $cfg)= @_;
+	my $xtype= $cfg->{xtype};
+	defined $cfg->{xtype} or die "Config hash with no xtype: ".Dumper($cfg);
+	$xtype eq 'appstoreform2' and return appstoreform22html
+	return $cfg;
 }
 
 1;
