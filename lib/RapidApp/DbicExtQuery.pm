@@ -62,8 +62,10 @@ sub data_fetch {
 	
 	# We can't limit the fields if there is a query (because it needs to be able to search 
 	# in all fields and all relationships:
-	delete $params->{columns} if (defined $params->{query});
+	#delete $params->{columns} if (defined $params->{query});
 
+	#Add all the fields (assciated with string search/query) This replaces the above delete $params->{columns} 
+	push @{$params->{columns}},@{JSON::PP::decode_json($params->{fields})} if (defined $params->{query} and defined $params->{fields});
 
 	# If there is a filter, we need to make sure that column is included if we have a 
 	# limited set of columns:

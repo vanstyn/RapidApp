@@ -299,13 +299,8 @@ sub read_records {
 		}
 		
 		$params->{columns} = $newcols;
-		
-		# We can't limit the fields if there is a query (because it needs to be able to search 
-		# in all fields and all relationships:
-		delete $params->{columns} if (defined $params->{query});
 	};
 	
-
 	my $data = $self->DbicExtQuery->data_fetch($params);
 
 	my $rows = [];
