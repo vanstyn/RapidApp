@@ -60,6 +60,19 @@ sub viewport {
 	return $self->SUPER::viewport;
 }
 
+sub getjs_simpleRequestor {
+	my ($self, $url)= @_;
+	return 'function() { Ext.Ajax.request( { url: "'.$url.'" } ); }';
+}
+
+sub options_menu_items {
+	my $self= shift;
+	return [
+		{ text => 'Generate Internal Error', handler => rawjs $self->getjs_simpleRequestor($self->suburl('item/gen_error')) },
+		{ text => 'Generate User Error', handler => rawjs $self->getjs_simpleRequestor($self->suburl('item/gen_usererror')) },
+		{ text => 'Generate Perl Exception', handler => rawjs $self->getjs_simpleRequestor($self->suburl('item/gen_die')) },
+	];
+}
 
 no Moose;
 __PACKAGE__->meta->make_immutable;

@@ -38,9 +38,9 @@ sub BUILD {
 	
 	$self->apply_actions(
 		view => 'view',
-		die => 'gen_die',
-		error => 'gen_error',
-		usererror => 'gen_usererror',
+		gen_die => 'gen_die',
+		gen_error => 'gen_error',
+		gen_usererror => 'gen_usererror',
 	);
 	
 	$self->auto_web1(1);
@@ -134,6 +134,18 @@ sub read_records {
 	};
 }
 
+sub gen_die {
+	die "Deliberately generating an exception";
+}
+
+sub gen_error {
+	die RapidApp::Error->new("Generating an exception using the RapidApp::Error class");
+}
+
+sub gen_usererror {
+	die usererr "PEBKAC";
+}
+
 =pod
 sub extconfig {
 	my $self= shift;
@@ -154,16 +166,5 @@ sub web1config {
 	return $extCfg->{html};
 }
 
-sub gen_die {
-	die "Deliberately generating an exception";
-}
-
-sub gen_error {
-	die RapidApp::Error->new("Generating an exception using the RapidApp::Error class");
-}
-
-sub gen_usererror {
-	die usererr "PEBKAC";
-}
 =cut
 1;
