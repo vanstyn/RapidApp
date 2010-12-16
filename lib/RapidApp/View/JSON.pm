@@ -48,7 +48,7 @@ sub process {
 			$msg .= 'The details of this error have been kept for analysis<br/>'
 				.'Reference number ';
 			if ($c->debug && $c->r->errorViewPath) {
-				$msg .= '<a href="/'.$c->r->errorViewPath.'/view?id='.$id.'" target="_blank">'.$id.'</a>';
+				$msg .= '<a href="'.$c->r->errorViewPath.'/?id='.$id.'" target="_blank">'.$id.'</a>';
 			} else {
 				$msg .= $id;
 			}
