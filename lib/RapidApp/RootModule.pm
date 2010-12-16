@@ -31,12 +31,21 @@ sub BUILD {
 	$self->auto_viewport(1);
 }
 
+sub Controller {
+	my $self= shift;
+	$self->c->stash->{title} = $self->app_title;
+	return $self->SUPER::Controller(@_);
+}
+
 # build a HTML viewport for the ExtJS content
 # we override the config_url and the title
-after 'viewport' => sub {
+sub viewport {
 	my $self= shift;
+	my $ret= $self->SUPER::viewport;
 	$self->c->stash->{config_url} = $self->base_url . '/' . $self->default_module;
-	$self->c->stash->{title} = $self->app_title;
+	return $ret;
 };
 
+no Moose;
+__PACKAGE__->meta->make_immutable;
 1;
