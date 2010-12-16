@@ -3,6 +3,8 @@ package RapidApp::ModuleDispatcher;
 use Moose;
 use RapidApp::Include 'perlutil';
 
+use RapidApp::Role::ExceptionStore;
+
 # either an exceptionStore instance, or the name of a catalyst Model implementing one
 has 'exceptionStore'        => ( is => 'rw', isa => 'Maybe[RapidApp::Role::ExceptionStore|Str]' );
 
