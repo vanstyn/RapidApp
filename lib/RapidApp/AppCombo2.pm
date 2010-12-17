@@ -17,7 +17,7 @@ sub BUILD {
 	my $self = shift;
 	
 	$self->apply_extconfig(
-		xtype				=> 'combo',
+		xtype				=> 'appcombo2',
 		typeAhead		=> \0,
 		mode				=> 'remote',
 		triggerAction	=> 'all',
@@ -31,9 +31,6 @@ sub BUILD {
 		valueField 		=> $self->valueField,
 	);
 	
-	$self->add_listener(
-		afterrender => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppCombo2.combo.afterrender_listener' )
-	);
 }
 
 
