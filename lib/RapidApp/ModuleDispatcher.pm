@@ -53,6 +53,7 @@ sub dispatch {
 	
 	# special die handler to make sure we don't throw plain strings.
 	local $SIG{__DIE__}= \&dieConverter;
+	#local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
 	RapidApp::ScopedGlobals->applyForSub(
 		{ catalystInstance => $c,
 		  catalystClass => $c->rapidApp->catalystAppClass,
@@ -161,8 +162,9 @@ sub dieConverter {
 sub noCatalystFrameFilter {
 	my ($stopTrace, $params)= @_;
 	return 0 if $$stopTrace;
-	return 0 if $params->{caller}->[3] eq __PACKAGE__.'::dieConverter';
-	$$stopTrace= $params->{caller}->[3] eq __PACKAGE__.'::dispatch';
+	my ($pkg, $subName)= ($params->{caller}->[0], $params->{caller}->[3]);
+	return 0 if ($pkg eq __PACKAGE__ && $subName =~ /^RapidApp::Error:/);
+	$$stopTrace= $subName eq __PACKAGE__.'::dispatch';
 	return RapidApp::Error::ignoreSelfFrameFilter($params);
 }
 
