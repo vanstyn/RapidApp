@@ -161,7 +161,6 @@ sub dieConverter {
 sub noCatalystFrameFilter {
 	my ($stopTrace, $params)= @_;
 	return 0 if $$stopTrace;
-	return 0 if $params->{caller}->[3] eq __PACKAGE__.'::dieConverter';
 	$$stopTrace= $params->{caller}->[3] eq __PACKAGE__.'::dispatch';
 	return RapidApp::Error::ignoreSelfFrameFilter($params);
 }
