@@ -91,9 +91,9 @@ sub _build_trace {
 }
 sub ignoreSelfFrameFilter {
 	my $params= shift;
-	my ($from, $calledPkg)= (''.$params->{caller}->[0], ''.$params->{caller}->[3]);
-	return 0 if substr($from, 0, 15) eq 'RapidApp::Error';
-	return 0 if substr($from, 0, 10) eq 'Class::MOP' && substr($calledPkg, 0, 15) eq 'RapidApp::Error';
+	my ($from, $subName)= (''.$params->{caller}->[0], ''.$params->{caller}->[3]);
+	return 0 if $from =~ /^RapidApp::Error(:.+)?$/;
+	return 0 if $subName =~ /^RapidApp::Error:.*?:(_build_trace|BUILD)$/;
 	return 1;
 }
 
