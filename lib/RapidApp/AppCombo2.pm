@@ -17,7 +17,7 @@ sub BUILD {
 	my $self = shift;
 	
 	$self->apply_extconfig(
-		xtype				=> 'combo',
+		xtype				=> 'appcombo2',
 		typeAhead		=> \0,
 		mode				=> 'remote',
 		triggerAction	=> 'all',
@@ -30,6 +30,7 @@ sub BUILD {
 		displayField 	=> $self->displayField,
 		valueField 		=> $self->valueField,
 	);
+	
 }
 
 
