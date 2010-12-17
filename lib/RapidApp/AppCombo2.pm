@@ -30,6 +30,10 @@ sub BUILD {
 		displayField 	=> $self->displayField,
 		valueField 		=> $self->valueField,
 	);
+	
+	$self->add_listener(
+		afterrender => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppCombo2.combo.afterrender_listener' )
+	);
 }
 
 
