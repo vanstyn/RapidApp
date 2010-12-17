@@ -117,16 +117,25 @@ sub read_records {
 	my $err= $store->loadException($id);
 	my $srcLoc= $err->srcLoc;
 	defined $srcLoc and $srcLoc =~ s|.*?/lib/||;
-	my $traceStr= $err->trace->as_string;
-	$traceStr =~ s|called at /.*?/lib/(.*?) line ([0-9]+)|<br/><span style="padding:1px 2em"> </span><font color="gray">called at <font color="blue">$1</font> line <font color="blue">$2</font></font>|g;
+	
+	my $traceStr;
+	for my $frame ($err->trace->frames) {
+		my $fname= $frame->filename;
+		$fname =~ s|.*?/lib/perl[^/]+/([^A-Z][^/]*/)*||;
+		$fname =~ s|.*?/lib/||;
+		my $loc= sprintf('<font color="blue">%s</font> line <font color="blue">%d</font>', $fname, $frame->line);
+		my $call= sprintf('<b>%s</b>( %s )', $frame->subroutine, join (', ',$frame->args) );
+		$call =~ s/([^ ]+)=HASH[^ ,]+/\\%$1/g;
+		$traceStr .= '<div class="trace" style="padding: .3em 0 1em 0">'.$loc.' : <br/><span style="padding:1px 2em"> </span>'.$call.'</div>';
+	}
 	my $row= {
 		id => $id,
 		message => $err->message,
 		userMessage => $err->userMessage,
 		dateTime => $err->dateTime->ymd .' '. $err->dateTime->hms,
 		srcLoc => $srcLoc,
-		trace => '<pre>'.$traceStr.'</pre>',
-		data => Dumper($err->data),
+		trace => $traceStr,
+		data => $err->data? Dumper($err->data) : undef,
 	};
 	return {
 		results	=> 1,
