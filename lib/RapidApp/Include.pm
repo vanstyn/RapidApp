@@ -55,7 +55,7 @@ sub calleruse {
 sub perlutil {
 	calleruse 'strict';
 	calleruse 'warnings';
-	calleruse qw(Scalar::Util blessed);
+	calleruse qw(Scalar::Util blessed weaken reftype);
 	calleruse 'Data::Dumper';
 	calleruse 'Try::Tiny';
 	calleruse 'DateTime';
