@@ -1,4 +1,4 @@
-package RapidApp::View::Web1Cfg;
+package RapidApp::View::Web1Render;
 
 use Moose;
 use namespace::autoclean;
@@ -20,15 +20,15 @@ sub _process {
 	my ($self, $c)= @_;
 	# generate the html
 	my $renderCxt= RapidApp::Web1RenderContext->new();
-	my $cfg= $c->stash->{web1cfg};
-	defined $cfg or die "Nothing to render";
-	my @html= $renderCxt->render($cfg);
+	my $module= $c->stash->{module} or die "Missing argument: ->{module}";
+	defined $module or die "Nothing to render";
+	$module->web1_render($renderCxt);
 	
 	# get the params set up for the template
 	$c->stash->{css_inc_list}= [ $renderCxt->getCssIncludeList ];
 	$c->stash->{js_inc_list}= [ $renderCxt->getJsIncludeList ];
 	$c->stash->{header}= $renderCxt->getHeaderLiteral;
-	$c->stash->{content}= join('', @html);
+	$c->stash->{content}= $renderCxt->getBody;
 	$c->stash->{template}= 'templates/rapidapp/web1_page.tt';
 	return $c->view('RapidApp::TT')->process($c);
 }

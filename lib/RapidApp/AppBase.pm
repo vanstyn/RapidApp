@@ -84,10 +84,28 @@ sub urlparams {
 	return $new;
 }
 
+sub content {
+	die "Unimplemented";
+}
+
 sub web1_content {
 	my $self= shift;
 	return $self->viewport if $self->auto_viewport;
-	return $self->SUPER::web1_content;
+	try {
+		$self->c->stash->{module}= $self;
+		$self->c->view('RapidApp::Web1Render')->process($self->c);
+		delete $self->c->stash->{module};
+	}
+	catch {
+		delete $self->c->stash->{module};
+		die $_;
+	};
+	return 1;
+}
+
+sub web1_render {
+	my ($self, $renderContext)= @_;
+	die RapidApp::Error->new("Unimplemented");
 }
 
 sub viewport {

@@ -6,7 +6,9 @@ with 'RapidApp::Role::DataStore2';
 use strict;
 
 use RapidApp::Include qw(sugar perlutil);
-
+	my ($self, $context, $cfg)= @_;
+use RapidApp::ExtCfgToHtml;
+use RapidApp::ExtCfgToHtml::ExtJSForm;
 
 has 'reload_on_save' 		=> ( is => 'ro', default => 0 );
 has 'closetab_on_create'	=> ( is => 'ro', default => 0 );
@@ -28,6 +30,7 @@ sub BUILD {
 	$self->add_listener( afterrender			=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.afterrender_handler' ) );
 
 	$self->add_ONREQUEST_calls('init_onrequest');
+	$self->enableAuthorRendering;
 }
 
 sub init_onrequest {
@@ -40,6 +43,11 @@ sub init_onrequest {
 	);
 }
 
+sub web1_render {
+	my ($self, $cxt)= @_;
+	my $cfg= $self->get_complete_extconfig;
+	RapidApp::ExtCfgToHtml->render($cxt, $cfg, 'form');
+}
 
 ############# Buttons #################
 has 'button_text_cls' => ( is => 'ro', default => 'tbar-button-medium' );
@@ -147,11 +155,20 @@ sub formpanel_tbar {
 	};
 }
 
-
+# RapidApp::Web1RenderContext->registerXtypeRenderFunction('appstoreform2' => \&web1_render_appstoreform2);
+# sub web1_render_appstoreform2 {
+	# my ($context, $cfg)= @_;
+	# if ($cfg->{store} && $cfg->{store}{parm} && $cfg->{store}{parm}{api} && $cfg->{store}{parm}{api}{read}) {
+		# my $storeReadUrl= $cfg->{store}{parm}{api}{read};
+		
+	# }
+	# $context->render($cfg, 'form');
+# }
 
 #### --------------------- ####
 
 
 no Moose;
 #__PACKAGE__->meta->make_immutable;
+
 1;

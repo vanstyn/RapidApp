@@ -56,7 +56,7 @@ sub setupRapidApp {
 	injectUnlessExist( 'Catalyst::View::TT', 'View::RapidApp::TT' );
 	injectUnlessExist( 'RapidApp::View::Viewport', 'View::RapidApp::Viewport' );
 	injectUnlessExist( 'RapidApp::View::JSON', 'View::RapidApp::JSON' );
-	injectUnlessExist( 'RapidApp::View::Web1Cfg', 'View::RapidApp::Web1Cfg' );
+	injectUnlessExist( 'RapidApp::View::Web1Render', 'View::RapidApp::Web1Render' );
 	injectUnlessExist( 'RapidApp::View::HttpStatus', 'View::RapidApp::HttpStatus' );
 };
 

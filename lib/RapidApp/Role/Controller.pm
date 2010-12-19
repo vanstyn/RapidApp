@@ -298,13 +298,8 @@ sub render_data {
 	}
 }
 
-sub content {
-	die RapidApp::Error->new("Unimplemented");
-}
-
-sub web1_content {
-	die RapidApp::Error->new("Unimplemented");
-}
+requires 'content';
+requires 'web1_content';
 
 sub set_response_warning {
 	my $self = shift;

@@ -17,7 +17,13 @@ sub BUILD {
 
 sub content {
 	my $self = shift;
+	#return bless { %{$self->get_complete_extconfig} }, 'RapidApp::AppCmp::SelfConfigRender';
 	return $self->get_complete_extconfig;
+}
+
+sub web1_render {
+	my ($self, $renderContext)= @_;
+	RapidApp::ExtCfgToHtml->render($renderContext, $self->get_complete_extconfig);
 }
 
 sub get_complete_extconfig {
@@ -27,16 +33,15 @@ sub get_complete_extconfig {
 	return $self->extconfig;
 }
 
-sub web1_content {
+sub enableAuthorRendering {
 	my $self= shift;
-	$self->c->stash->{current_view} = 'RapidApp::Web1Cfg';
-	$self->c->stash->{web1cfg} = $self->get_complete_web1config;
-	return 1;
-}
-
-sub get_complete_web1config {
-	my $self= shift;
-	return $self->get_complete_extconfig;
+	# my $cfg= $self->extconfig;
+	# $cfg->{author_module}= $self->base_url;
+	# if (ref $cfg eq 'HASH') {
+		# bless $self->extconfig, 'RapidApp::AppCmp::SelfConfigRender';
+	# } elsif (ref $cfg ne 'RapidApp::AppCmp::SelfConfigRender') {
+		# die "Unable to set author rendering on ext config object";
+	# }
 }
 
 sub apply_all_extconfig_attrs {
@@ -215,16 +220,25 @@ sub add_listener {
 
 
 
-
-
-
-
-
-
-
 #### --------------------- ####
 
 
 no Moose;
 #__PACKAGE__->meta->make_immutable;
+
+package RapidApp::AppCmp::SelfConfigRender;
+
+# This class gets applied to ExtConfig hashes to cause them to come back to the originating package
+#   to be correctly rendered.
+
+sub extConfigRender {
+	my ($cfg, $renderContext)= shift;
+	my $module= RapidApp::ScopedGlobals->c->rapidApp->module($cfg->{author_module});
+	$module->web1_render($renderContext);
+}
+
+sub TO_JSON {
+	return (shift);
+}
+
 1;
