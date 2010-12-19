@@ -64,13 +64,13 @@ keyword for implementation details.
 
 =cut
 sub applyForSub {
-	my ($class, $varChangeHash, $sub)= @_;
+	my ($class, $varChangeHash, $sub, @args)= @_;
 	$class eq __PACKAGE__ or die "applyForSub is a package method";
 	ref $varChangeHash eq 'HASH' or die "Expected hash of variable alterations as first parameter";
 	ref $sub eq 'CODE' or die "Expected coderef as second parameter";
 	
 	local $_vals= { %$_vals, %$varChangeHash };
-	return $sub->();
+	return $sub->(@args);
 }
 
 =head2 varExists( $varName )
