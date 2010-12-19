@@ -69,7 +69,7 @@ sub _build_srcLoc {
 	return defined $frame? $frame->filename . ' line ' . $frame->line : undef;
 }
 
-has 'data' => ( is => 'rw', isa => 'HashRef' );
+has 'data' => ( is => 'rw', isa => 'HashRef', lazy => 1, default => sub {{}} );
 has 'cause' => ( is => 'rw' );
 
 has 'traceArgs' => ( is => 'ro', lazy => 1, default => sub {{ frame_filter => \&ignoreSelfFrameFilter }} );
