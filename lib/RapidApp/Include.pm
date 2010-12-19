@@ -72,6 +72,7 @@ sub rapidapp_base {
 	calleruse 'RapidApp::JSON::MixedEncoder';
 	calleruse 'RapidApp::JSON::RawJavascript';
 	calleruse 'RapidApp::DbicExtQuery';
+	calleruse 'RapidApp::Web1RenderContext';
 }
 
 sub extjs {

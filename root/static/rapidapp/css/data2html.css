@@ -1,0 +1,58 @@
+.dump-blessed, .dump-hash, .dump-array, .dump-blessed *, .dump-hash *, .dump-array * {
+	margin: 0;
+	padding: 0;
+	font-face: "Courier New";
+	font-family: monospace, sans-serif;
+	font-size: 10pt;
+}
+
+.dump-blessed {
+	padding: 0 0 0 0.5em;
+	margin: 0.05em;
+}
+
+.dump-blessed-clsname {
+	color: teal;
+	font-weight: bold;
+}
+
+.dump-deref {
+	color: brown;
+	font-size: smaller;
+	vertical-align: middle;
+}
+
+.dump-hash {
+	margin-left: 0.8em;
+	padding-left: 0.4em;
+	border: none;
+	border-left: 1px dotted gray;
+	border-top: 1px dotted gray;
+}
+
+.dump-hash .key {
+	white-space: pre;
+	color: blue;
+}
+
+.dump-array {
+	margin-left: 0.8em;
+	padding-left: 0.4em;
+	border: none;
+	border-left: 1px dotted gray;
+	border-top: 1px dotted gray;
+}
+
+.dump-array td.key {
+	border: none;
+	color: blue;
+	vertical-align: top;
+	padding: 0;
+	margin: 0 3px 0 3px;
+}
+
+.dump-array td {
+	width: auto;
+	padding: 0;
+	margin: 0.05em;
+}

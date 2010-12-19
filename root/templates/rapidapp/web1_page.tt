@@ -6,22 +6,11 @@
 <head>
   <title>[% title | html %]</title>
   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-
-[% FOREACH cssfile IN css_inc_list %]
-  <link rel="stylesheet" type="text/css" href="[% cssfile | uri %]" />
-[% END %]
-
-[% FOREACH jsfile IN js_inc_list %]
-  <script type="text/javascript" src="[% jsfile | uri %]"></script>
-[% END %]
-
-[% FILTER indent('  ') %]
-  [% header %]
-[% END %]
+[% FOREACH cssfile IN css_inc_list %]<link rel="stylesheet" type="text/css" href="[% cssfile %]" />[% END %]
+[% FOREACH jsfile IN js_inc_list %]<script type="text/javascript" src="[% jsfile %]"></script>[% END %]
+[% FILTER indent('  ') %][% header %][% END %]
 </head>
 <body>
-[% FILTER indent('  ') %]
-[% content %]
-[% END %]
+[% FILTER indent('  ') %][% content %][% END %]
 </body>
 </html>
