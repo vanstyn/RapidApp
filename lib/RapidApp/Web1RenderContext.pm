@@ -71,51 +71,58 @@ sub data2html {
 
 sub _data2html {
 	my ($self, $obj)= @_;
-	ref $obj or return escHtml("$obj")."<br/>\n";
-	blessed $obj
-		and return $self->write(
-			'<span class="dump-blessed-clsname">'.(ref $obj).'</span><div class="dump-blessed">',
-			$self->_ref2html(reftype($obj), $obj), '</div>');
-	return $self->_ref2html(ref ($obj), $obj);
+	if (!ref $obj) {
+		$self->write(escHtml("$obj")."<br/>\n");
+	} elsif (blessed $obj) {
+		$self->write('<span class="dump-blessed-clsname">'.(ref $obj).'</span><div class="dump-blessed">');
+		$self->_ref2html(reftype($obj), $obj),
+		$self->write('</div>');
+	} else {
+		$self->_ref2html(ref ($obj), $obj);
+	}
 }
 
 sub _ref2html {
 	my ($self, $refType, $obj)= @_;
-	$refType eq 'HASH'
-		and return $self->write($self->_hash2html($obj));
-	$refType eq 'ARRAY'
-		and return $self->write($self->_array2html($obj));
-	$refType eq 'SCALAR'
-		and return $self->write('<span class="dump-deref">[ref]</span>'.escHtml($$obj)."<br/>\n");
-	if ($refType eq 'REF') {
+	if ($refType eq 'HASH') {
+		$self->_hash2html($obj);
+	} elsif ($refType eq 'ARRAY') {
+		$self->_array2html($obj);
+	} elsif ($refType eq 'SCALAR') {
+		$self->write('<span class="dump-deref">[ref]</span>'.escHtml($$obj)."<br/>\n");
+	} elsif ($refType eq 'REF') {
 		$self->write('<span class="dump-deref">[ref]</span>');
 		$self->_data2html($$obj);
+	} else {
+		$self->write(escHtml("$obj")."<br/>\n");
 	}
-	return escHtml("$obj")."<br/>\n";
 }
 
 sub _hash2html {
 	my ($self, $obj)= @_;
-	my @result= '<div class="dump-hash">';
+	$self->write('<div class="dump-hash">');
 	my $maxKeyLen= 0;
 	my @keys= sort keys %$obj;
 	for my $key (@keys) {
 		$maxKeyLen= length($key) if length($key) > $maxKeyLen;
 	}
 	for my $key (sort keys %$obj) {
-		push @result, sprintf("\n<span class='key'>%*s</span> ",-$maxKeyLen, $key), $self->_data2html($obj->{$key});
+		$self->write(sprintf("\n<span class='key'>%*s</span> ",-$maxKeyLen, $key));
+		$self->_data2html($obj->{$key});
 	}
-	return @result, '</div>';
+	$self->write('</div>');
 }
 
 sub _array2html {
 	my ($self, $obj)= @_;
-	my @result= '<table class="dump-array">';
+	$self->write('<table class="dump-array">');
 	my $i= 0;
 	for my $item (@$obj) {
-		push @result, sprintf("\n<tr><td class='key'>%d -</td><td>", $i++), $self->_data2html($item), '</td></tr>';
+		$self->write(sprintf("\n<tr><td class='key'>%d -</td><td>", $i++));
+		$self->_data2html($item);
+		$self->write('</td></tr>');
 	}
-	return @result, '</table>';
+	$self->write('</table>');
 }
 
 # DO NOT make immutable, to allow other packages to load plugins into this one
