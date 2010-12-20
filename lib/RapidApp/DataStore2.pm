@@ -161,13 +161,13 @@ sub get_store_base_params {
 		$params->{$key} = $self->c->req->params->{$key} if (defined $self->c->req->params->{$key});
 	}
 	
-	return undef unless (scalar keys %$params > 0);
-	
 	unless ($self->has_no_base_params_mungers) {
 		foreach my $Handler ($self->all_base_params_mungers) {
 			$Handler->call($params);
 		}
 	}
+	
+	return undef unless (scalar keys %$params > 0);
 	
 	return $params;
 }
