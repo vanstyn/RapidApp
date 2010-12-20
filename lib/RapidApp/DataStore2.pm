@@ -358,15 +358,10 @@ sub set_columns_order {
 
 
 sub read {
-	my $self = shift;
-
-	my $data = $self->read_raw;
+	# params is optional
+	my ($self, $params)= @_;
 	
-	unless ($self->has_no_read_raw_mungers) {
-		foreach my $Handler ($self->all_read_raw_mungers) {
-			$Handler->call($data);
-		}
-	}
+	my $data = $self->read_raw($params);
 	
 	return $self->meta_json_packet($data);
 }
@@ -374,30 +369,36 @@ sub read {
 
 
 sub read_raw {
-	my $self = shift;
+	# params is optional
+	my ($self, $params)= @_;
 	
+	my $data;
 	if (defined $self->read_handler and $self->has_flag('can_read')) {
+		if (!$params) {
+			my $reqPrm= $self->c->req->params;
+			$params= defined $reqPrm->{orig_params}? $self->json->decode($reqPrm->{orig_params}) : $reqPrm;
+		}
 		
-		my $params = $self->c->req->params;
-		$params = $self->json->decode($self->c->req->params->{orig_params}) if (defined $self->c->req->params->{orig_params});
+		$data = $self->read_handler->call($params);
 		
-		my $data = $self->read_handler->call($params);
-		
+		# data should be a hash with rows (arrayref) and results (number):
 		die "unexpected data returned in read_raw" unless (
 			ref($data) eq 'HASH' and 
 			defined $data->{results} and
 			ref($data->{rows}) eq 'ARRAY'
 		);
-		
-		# data should be a hash with rows (arrayref) and results (number):
-		return $data;
+	} else {
+		# empty set of data:
+		$data= { results => 0, rows => [] }
 	}
 	
-	# empty set of data:
-	return {
-		results	=> 0,
-		rows		=> []
-	};
+	unless ($self->has_no_read_raw_mungers) {
+		foreach my $Handler ($self->all_read_raw_mungers) {
+			$Handler->call($data);
+		}
+	}
+	
+	return $data;
 }
 
 

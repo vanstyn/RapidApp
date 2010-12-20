@@ -6,7 +6,6 @@ with 'RapidApp::Role::DataStore2';
 use strict;
 
 use RapidApp::Include qw(sugar perlutil);
-	my ($self, $context, $cfg)= @_;
 use RapidApp::ExtCfgToHtml;
 use RapidApp::ExtCfgToHtml::ExtJSForm;
 
@@ -46,7 +45,27 @@ sub init_onrequest {
 sub web1_render {
 	my ($self, $cxt)= @_;
 	my $cfg= $self->get_complete_extconfig;
+	my $storeFetchParams= $cfg->{store}{parm}{baseParams};
+	my $data= $self->Module('store')->read_raw($storeFetchParams);
+	if (scalar(@{$data->{rows}})) {
+		$self->mergeStoreValues($cfg->{items}, $data->{rows}->[0]);
+	}
 	RapidApp::ExtCfgToHtml->render($cxt, $cfg, 'form');
+	$cxt->data2html($cfg);
+}
+
+sub mergeStoreValues {
+	my ($self, $items, $row)= @_;
+	
+	my %itemByName= ();
+	for my $item (@$items) {
+		defined $item->{name}
+			and $itemByName{$item->{name}}= $item;
+	}
+	for my $key (keys %$row) {
+		defined $itemByName{$key}
+			and $itemByName{$key}->{value}= $row->{$key};
+	}
 }
 
 ############# Buttons #################
