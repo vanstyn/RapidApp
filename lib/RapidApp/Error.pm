@@ -128,8 +128,9 @@ sub dump {
 	my $self= shift;
 	
 	# start with the readable messages
-	my $result= $self->message."\n";
-	$self->has_userMessage
+	my $result= $self->message."\n  at ".$self->srcLoc;
+	
+	$self->has_userMessage || $self->userMessage_Fn
 		and $result.= "User Message: ".$self->userMessage."\n";
 	
 	$result.= ' on '.$self->dateTime->ymd.' '.$self->dateTime->hms."\n";
@@ -147,7 +148,8 @@ sub dump {
 }
 
 sub as_string {
-	return (shift)->message;
+	my $self= shift;
+	return $self->message.' ('.$self->srcLoc.')';
 }
 
 # called by Perl, on this package only (not a method lookup)
