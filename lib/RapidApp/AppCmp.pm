@@ -13,6 +13,12 @@ sub BUILD {
 	# Add the Ext.ux.RapidApp.Plugin.EventHandlers plugin to all AppCmp
 	# based objects:
 	$self->add_plugin({ ptype => 'rappeventhandlers' });
+	
+	# if a subclass overrode the web1_render function, we need to let ExtConfig2Html know
+	if ($self->can('web1_render') != \&web1_render) {
+		$self->extconfig->{rapidapp_author_module} ||= $self->module_path;
+		$self->extconfig->{rapidapp_custom_cfg2html}= 1
+	}
 }
 
 sub content {
@@ -22,8 +28,9 @@ sub content {
 }
 
 sub web1_render {
-	my ($self, $renderContext)= @_;
-	RapidApp::ExtCfgToHtml->render($renderContext, $self->get_complete_extconfig);
+	my ($self, $renderContext, $extConfig)= @_;
+	$extConfig ||= $self->get_complete_extconfig;
+	RapidApp::ExtCfgToHtml->render($renderContext, $extConfig, $extConfig->{xtype});
 }
 
 sub get_complete_extconfig {
@@ -31,17 +38,6 @@ sub get_complete_extconfig {
 	$self->apply_all_extconfig_attrs;
 	$self->call_rapidapp_handlers($self->all_ONCONTENT_calls);
 	return $self->extconfig;
-}
-
-sub enableAuthorRendering {
-	my $self= shift;
-	# my $cfg= $self->extconfig;
-	# $cfg->{author_module}= $self->base_url;
-	# if (ref $cfg eq 'HASH') {
-		# bless $self->extconfig, 'RapidApp::AppCmp::SelfConfigRender';
-	# } elsif (ref $cfg ne 'RapidApp::AppCmp::SelfConfigRender') {
-		# die "Unable to set author rendering on ext config object";
-	# }
 }
 
 sub apply_all_extconfig_attrs {
