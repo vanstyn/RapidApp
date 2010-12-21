@@ -8,19 +8,22 @@ use Scalar::Util 'blessed';
 
 use CatalystX::InjectComponent;
 
-sub r        { (shift)->rapidApp } # handy alias
 sub rapidApp { (shift)->model("RapidApp"); }
-sub module   { (shift)->model("RapidApp")->module(@_); }
 
-after 'setup_components' => sub {
-	my ($app) = @_;
+has 'request_id' => ( is => 'ro', default => sub { (shift)->rapidApp->requestCount; } );
+
+around 'setup_components' => sub {
+	my ($orig, $app, @args)= @_;
 	# At this point, we don't have a catalyst instance yet, just the package name.
 	# Catalyst has an amazing number of package methods that masquerade as instance methods later on.
 	#local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
 	try {
 		RapidApp::ScopedGlobals->applyForSub(
 			{ catalystClass => $app, log => $app->log },
-			sub { $app->setupRapidApp }
+			sub {
+				$app->$orig(@args);  # standard catalyst setup_components
+				$app->setupRapidApp; # our additional components needed for RapidApp
+			}
 		);
 	}
 	catch {
@@ -82,6 +85,37 @@ after 'setup_finalize' => sub {
 		print STDERR $_->dump if (blessed($_) && $_->can('dump'));
 		die $_;
 	};
+};
+
+# Make the scoped-globals catalystClass and log available throughout the application during request processing
+# Called once, per worker thread, in class-context.
+around 'run' => sub {
+	my ($orig, $app, @args)= @_;
+	RapidApp::ScopedGlobals->applyForSub(
+		{ catalystClass => $app, log => $app->log },
+		$orig, $app, @args
+	);
+};
+
+# called once per request, in class-context
+before 'handle_request' => sub {
+	my ($app, @arguments)= @_;
+	$app->rapidApp->incRequestCount;
+};
+
+# called once per request, to dispatch the request on a newly constructed $c object
+around 'dispatch' => sub {
+	my ($orig, $c, @args)= @_;
+	RapidApp::ScopedGlobals->applyForSub(
+		{ catalystInstance => $c, log => $c->log },
+		$orig, $c, @args
+	);
+};
+
+# called after the response is sent to the client, in object-context
+after 'finalize' => sub {
+	my $c= shift;
+	$c->rapidApp->cleanupAfterRequest;
 };
 
 1;

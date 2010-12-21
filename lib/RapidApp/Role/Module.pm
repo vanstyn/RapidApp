@@ -138,12 +138,12 @@ sub reset_ONREQUEST {
 sub ONREQUEST {
 	my $self = shift;
 	
-	#$self->c->log->debug(MAGENTA . '[' . $self->get_rapidapp_module_path . ']->ONREQUEST (' . $self->c->stash->{rapidapp_request_id} . ')');
+	#$self->c->log->debug(MAGENTA . '[' . $self->get_rapidapp_module_path . ']->ONREQUEST (' . $self->c->request_id . ')');
 	
-	$self->_lastRequestApplied($self->c->stash->{rapidapp_request_id});
+	$self->_lastRequestApplied($self->c->request_id);
 	
 	$self->init_per_req_attrs;
-	$self->c->stash->{rapidapp_called_modules}->{$self->module_path} = undef;
+	$self->c->rapidApp->markDirtyModule($self);
 	
 	#$self->new_clear_per_req_attrs;
 	
@@ -232,7 +232,7 @@ sub THIS_MODULE {
 	my $self = shift;
 	return $self unless (defined $self->c);
 	
-	return $self->ONREQUEST if (defined $self->c && $self->c->stash->{rapidapp_request_id} != $self->_lastRequestApplied);
+	return $self->ONREQUEST if (defined $self->c && $self->c->request_id != $self->_lastRequestApplied);
 	return $self;
 }
 

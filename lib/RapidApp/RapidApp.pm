@@ -5,8 +5,8 @@ use namespace::autoclean;
 extends 'Catalyst::Model';
 
 use RapidApp::Include 'perlutil';
-
 use RapidApp::ScopedGlobals 'sEnv';
+use Time::HiRes qw(gettimeofday);
 
 # the package name of the catalyst application, i.e. "GreenSheet" or "HOPS"
 has 'catalystAppClass' => ( is => 'rw', isa => 'Str', required => 1 );
@@ -136,6 +136,44 @@ sub module {
 		$m= $m->Module($part) or die "No such module: ".join('/',@path);
 	}
 	return $m;
+}
+
+has 'dirtyModules' => ( is => 'rw', isa => 'HashRef', default => sub {{}} );
+
+sub markDirtyModule {
+	my ($self, $module)= @_;
+	$self->dirtyModules->{$module}= $module;
+}
+
+sub cleanupAfterRequest {
+	my $self= shift;
+	
+	my ($sec0, $msec0)= gettimeofday;
+	
+	$self->cleanDirtyModules;
+	
+	my ($sec1, $msec1)= gettimeofday;
+	my $elapsed= ($sec1-$sec0)+($msec1-$msec0)*.000001;
+	RapidApp::ScopedGlobals->log->info(sprintf("Cleanup took %0.3f seconds\n\n", $elapsed));
+}
+
+sub cleanDirtyModules {
+	my ($self)= @_;
+	my @modules= values %{$self->dirtyModules};
+	for my $module (@modules) {
+		sEnv->log->debug(MAGENTA . BOLD . ' >> CLEARING ' . $module->module_path . CLEAR);
+		$module->reset_per_req_attrs;
+	}
+	%{$self->dirtyModules}= ();
+}
+
+has '_requestCount' => ( is => 'rw', default => 0 );
+sub requestCount {
+	(shift)->_requestCount;
+}
+sub incRequestCount {
+	my $self= shift;
+	$self->_requestCount($self->_requestCount+1);
 }
 
 1;
