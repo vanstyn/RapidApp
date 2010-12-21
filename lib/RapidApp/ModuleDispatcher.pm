@@ -87,11 +87,15 @@ sub dispatch {
 	
 	# Reset all the per_req attrs of the Modules called during this request:
 	if (ref($c->stash->{rapidapp_called_modules}) eq 'HASH') {
-		foreach my $Module (values %{$c->stash->{rapidapp_called_modules}}) {
-			$c->log->debug(MAGENTA . BOLD . ' >> CLEARING ' . $Module->get_rapidapp_module_path . CLEAR);
-			$Module->reset_per_req_attrs;
+		# first, resolve the names into the module references
+		# the resolving process can modify the modules, so we need to do it before we start clearing them.
+		my $pathSet= delete $c->stash->{rapidapp_called_modules};
+		my @modules= map { $c->rapidApp->module($_) } keys %$pathSet;
+		# now clear them
+		foreach my $module (@modules) {
+			$c->log->debug(MAGENTA . BOLD . ' >> CLEARING ' . $module->module_path . CLEAR);
+			$module->reset_per_req_attrs;
 		}
-		delete $c->stash->{rapidapp_called_modules};
 	}
 	
 	return $result;

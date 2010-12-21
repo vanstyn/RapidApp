@@ -74,6 +74,9 @@ sub _load_root_module {
 	Catalyst::Utils::ensure_class_loaded($self->rootModuleClass);
 	
 	my $mParams= $self->rootModuleConfig || {};
+	$mParams->{module_name}= '';
+	$mParams->{module_path}= '/';
+	$mParams->{parent_module_ref}= undef;
 	return $self->rootModule($self->rootModuleClass->timed_new($mParams));
 }
 

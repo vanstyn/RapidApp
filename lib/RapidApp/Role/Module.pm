@@ -16,8 +16,9 @@ use Scalar::Util 'weaken';
 our $VERSION = '0.1';
 
 
-has 'module_name'						=> ( is => 'rw',	isa => 'Str', required => 1 );
-has 'parent_module_ref'					=> ( is => 'ro',	default => undef );
+has 'module_name'						=> ( is => 'ro',	isa => 'Str', required => 1 );
+has 'module_path'						=> ( is => 'ro',	isa => 'Str', required => 1 );
+has 'parent_module_ref'					=> ( is => 'ro',	isa => 'Maybe[RapidApp::Role::Module]', weak_ref => 1, required => 1);
 has 'modules_obj'						=> ( is => 'ro', 	default => sub {{}} );
 has 'default_module'					=> ( is => 'rw',	default => 'default_module' );
 has 'create_module_params'			=> ( is => 'ro',	default => sub { {} } );
@@ -142,7 +143,7 @@ sub ONREQUEST {
 	$self->_lastRequestApplied($self->c->stash->{rapidapp_request_id});
 	
 	$self->init_per_req_attrs;
-	$self->c->stash->{rapidapp_called_modules}->{$self} = $self;
+	$self->c->stash->{rapidapp_called_modules}->{$self->module_path} = undef;
 	
 	#$self->new_clear_per_req_attrs;
 	
@@ -285,6 +286,9 @@ sub create_module {
 	}
 	
 	$params->{module_name} = $name;
+	$params->{module_path} = $self->module_path;
+	$params->{module_path} .= '/' unless substr($params->{module_path}, -1) eq '/';
+	$params->{module_path} .= $name;
 	$params->{parent_module_ref} = $self;
 	
 	my $Object = $class_name->timed_new($params) or die "Failed to create module instance ($class_name)";
@@ -468,12 +472,7 @@ has 'flags' => (
 
 # function for debugging purposes - returns a string of the module path
 sub get_rapidapp_module_path {
-	my $self = shift;
-	
-	my $parent_path = '';
-	$parent_path = $self->parent_module->get_rapidapp_module_path if (defined $self->parent_module);
-	
-	return $parent_path . '/' . $self->module_name;
+	return (shift)->module_path;
 }
 
 
