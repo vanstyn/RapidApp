@@ -1,3 +1,7 @@
+.ext-cmp {
+	font: 12px tahoma,arial,helvetica,sans-serif;
+}
+
 .xt-form {
 	width: 100%;
 	background-color: #EEE;
@@ -7,6 +11,7 @@
 .xt-form td.label {
 	width: 0;
 	white-space: pre;
+	vertical-align: top;
 }
 
 .xt-textfield {
@@ -17,6 +22,5 @@
 
 .xt-displayfield {
 	width: 500px;
-	background-color: white;
-	border: 1px solid black;
+	/* background-color: white; */
 }

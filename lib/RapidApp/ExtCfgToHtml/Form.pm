@@ -1,11 +1,11 @@
-package RapidApp::ExtCfgToHtml::ExtJSForm;
+package RapidApp::ExtCfgToHtml::Form;
 
 use strict;
 use warnings;
 use RapidApp::ExtCfgToHtml;
 
 { # Register these functions with the RenderContext
-	my @xtypes= qw(form textfield displayfield);
+	my @xtypes= qw(form textfield numberfield displayfield);
 	for my $xt (@xtypes) {
 		my $methodName= "render_xtype_$xt";
 		RapidApp::ExtCfgToHtml->registerXtypeRenderFunction($xt => \&$methodName);
@@ -21,7 +21,7 @@ sub render_xtype_form {
 	
 	# make sure we have items to render
 	defined $cfg->{items} && scalar(@{$cfg->{items}}) > 0
-		or return $context->write('<table class="form"> </table>');
+		or return $context->write('<table class="xt-form"> </table>');
 	
 	# build the completed list of items
 	my %defaults= defined $cfg->{defaults}? %{$cfg->{defaults}} : ();
@@ -52,6 +52,10 @@ sub render_xtype_textfield {
 	my ($self, $context, $cfg)= @_;
 	my $val= defined $cfg->{value}? $cfg->{value} : '&nbsp;';
 	$context->write('<div class="xt-textfield">'.$val.'</div>');
+}
+
+sub render_xtype_numberfield {
+	render_xtype_textfield(@_);
 }
 
 1;

@@ -7,7 +7,8 @@ use strict;
 
 use RapidApp::Include qw(sugar perlutil);
 use RapidApp::ExtCfgToHtml;
-use RapidApp::ExtCfgToHtml::ExtJSForm;
+use RapidApp::ExtCfgToHtml::Basic;
+use RapidApp::ExtCfgToHtml::Form;
 
 has 'reload_on_save' 		=> ( is => 'ro', default => 0 );
 has 'closetab_on_create'	=> ( is => 'ro', default => 0 );
@@ -29,7 +30,6 @@ sub BUILD {
 	$self->add_listener( afterrender			=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.afterrender_handler' ) );
 
 	$self->add_ONREQUEST_calls('init_onrequest');
-	$self->enableAuthorRendering;
 }
 
 sub init_onrequest {
