@@ -35,6 +35,9 @@ around 'setup_components' => sub {
 sub setupRapidApp {
 	my $app= shift;
 	my $log= RapidApp::ScopedGlobals->log;
+	if (my $coderef = $log->can('_flush')){
+		$log->$coderef();
+	}
 	injectUnlessExist('RapidApp::RapidApp', 'RapidApp');
 	
 	my @names= keys %{ $app->components };
@@ -74,6 +77,10 @@ sub injectUnlessExist {
 
 after 'setup_finalize' => sub {
 	my $app= shift;
+	my $log= $app->log;
+	if (my $coderef = $log->can('_flush')){
+		$log->$coderef();
+	}
 	#local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
 	try {
 		RapidApp::ScopedGlobals->applyForSub(
@@ -106,6 +113,7 @@ before 'handle_request' => sub {
 # called once per request, to dispatch the request on a newly constructed $c object
 around 'dispatch' => sub {
 	my ($orig, $c, @args)= @_;
+	$c->stash->{onrequest_time_elapsed}= 0;
 	RapidApp::ScopedGlobals->applyForSub(
 		{ catalystInstance => $c, log => $c->log },
 		$orig, $c, @args
@@ -113,9 +121,9 @@ around 'dispatch' => sub {
 };
 
 # called after the response is sent to the client, in object-context
-after 'finalize' => sub {
+after 'log_response' => sub {
 	my $c= shift;
-	$c->rapidApp->cleanupAfterRequest;
+	$c->rapidApp->cleanupAfterRequest($c);
 };
 
 1;

@@ -146,7 +146,8 @@ sub markDirtyModule {
 }
 
 sub cleanupAfterRequest {
-	my $self= shift;
+	my ($self, $c)= @_;
+	return unless scalar(keys %{$self->dirtyModules} );
 	
 	my ($sec0, $msec0)= gettimeofday;
 	
@@ -154,7 +155,9 @@ sub cleanupAfterRequest {
 	
 	my ($sec1, $msec1)= gettimeofday;
 	my $elapsed= ($sec1-$sec0)+($msec1-$msec0)*.000001;
-	RapidApp::ScopedGlobals->log->info(sprintf("Cleanup took %0.3f seconds\n\n", $elapsed));
+	
+	$c->log->info(sprintf("Module init (ONREQUEST) took %0.3f seconds", $c->stash->{onrequest_time_elapsed}));
+	$c->log->info(sprintf("Cleanup took %0.3f seconds", $elapsed));
 }
 
 sub cleanDirtyModules {

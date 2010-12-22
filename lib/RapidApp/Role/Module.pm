@@ -137,6 +137,7 @@ sub reset_ONREQUEST {
 
 sub ONREQUEST {
 	my $self = shift;
+	my ($sec0, $msec0)= gettimeofday;
 	
 	#$self->c->log->debug(MAGENTA . '[' . $self->get_rapidapp_module_path . ']->ONREQUEST (' . $self->c->request_id . ')');
 	
@@ -152,6 +153,12 @@ sub ONREQUEST {
 	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_late);
 	
 	$self->ONREQUEST_called(1);
+	
+	my ($sec1, $msec1)= gettimeofday;
+	my $elapsed= ($sec1-$sec0)+($msec1-$msec0)*.000001;
+	$self->c->stash->{onrequest_time_elapsed}+= $elapsed;
+	
+	#$self->log->debug(sprintf(GREEN."ONREQUEST for %s took %0.3f seconds".CLEAR, $self->module_path, $elapsed));
 	return $self;
 }
 
