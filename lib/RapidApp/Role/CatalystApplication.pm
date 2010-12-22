@@ -16,7 +16,7 @@ around 'setup_components' => sub {
 	my ($orig, $app, @args)= @_;
 	# At this point, we don't have a catalyst instance yet, just the package name.
 	# Catalyst has an amazing number of package methods that masquerade as instance methods later on.
-	#local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
+	local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
 	try {
 		RapidApp::ScopedGlobals->applyForSub(
 			{ catalystClass => $app, log => $app->log },
@@ -27,7 +27,8 @@ around 'setup_components' => sub {
 		);
 	}
 	catch {
-		print STDERR $_->dump if (blessed($_) && $_->can('dump'));
+		print STDERR $_->dump and exit if (blessed($_) && $_->can('dump'));
+		#print STDERR $_ . "\n\n" . $_->trace and exit if (blessed($_) && $_->can('trace'));
 		die $_;
 	};
 };
@@ -81,7 +82,7 @@ after 'setup_finalize' => sub {
 	if (my $coderef = $log->can('_flush')){
 		$log->$coderef();
 	}
-	#local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
+	local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
 	try {
 		RapidApp::ScopedGlobals->applyForSub(
 			{ catalystClass => $app, log => $app->log },
@@ -89,7 +90,8 @@ after 'setup_finalize' => sub {
 		);
 	}
 	catch {
-		print STDERR $_->dump if (blessed($_) && $_->can('dump'));
+		print STDERR $_->dump and exit if (blessed($_) && $_->can('dump'));
+		#print STDERR $_ . "\n\n" . $_->trace and exit if (blessed($_) && $_->can('trace'));
 		die $_;
 	};
 };

@@ -130,13 +130,13 @@ sub dump {
 	# start with the readable messages
 	my $result= $self->message."\n  at ".$self->srcLoc;
 	
-	$self->has_userMessage || $self->userMessage_Fn
+	$self->has_userMessage || $self->userMessage_fn
 		and $result.= "User Message: ".$self->userMessage."\n";
 	
 	$result.= ' on '.$self->dateTime->ymd.' '.$self->dateTime->hms."\n";
 	
-	defined $self->data
-		and $result.= Dumper([$self->data], ["Data"])."\n";
+	keys (%{$self->data})
+		and $result.= Data::Dumper->Dump([$self->data], ["Data"])."\n";
 	
 	defined $self->trace
 		and $result.= 'Stack: '.$self->trace."\n";

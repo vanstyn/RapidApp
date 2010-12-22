@@ -48,8 +48,8 @@ sub dispatch {
 	my $result;
 	
 	# special die handler to make sure we don't throw plain strings.
-	#local $SIG{__DIE__}= \&dieConverter;
-	local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
+	local $SIG{__DIE__}= \&dieConverter;
+	#local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
 	my $targetModule;
 	try {
 		# get the root module (or sub-module, if we've been configured that way)
