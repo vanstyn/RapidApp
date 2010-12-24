@@ -137,7 +137,55 @@ sub get_config_for_traits {
 	return $config;
 }
 
+## -- vvv -- new parameters for Forms:
+has 'field_readonly' => ( 
+	is => 'rw', 
+	traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ],
+	isa => 'Bool', 
+	default => 0 
+);
 
+has 'field_readonly_config' => (
+	traits    => [ 'Hash' ],
+	is        => 'ro',
+	isa       => 'HashRef',
+	default   => sub { {} },
+	handles   => {
+		 apply_field_readonly_config			=> 'set',
+		 get_field_config_readonly_param		=> 'get',
+		 has_field_config_readonly_param		=> 'exists',
+		 has_no_field_readonly_config 		=> 'is_empty',
+		 delete_field_readonly_config_param	=> 'delete'
+	},
+);
+
+has 'field_config' => (
+	traits    => [ 'Hash' ],
+	is        => 'ro',
+	isa       => 'HashRef',
+	default   => sub { {} },
+	handles   => {
+		 apply_field_config			=> 'set',
+		 get_field_config_param		=> 'get',
+		 has_field_config_param		=> 'exists',
+		 has_no_field_config 		=> 'is_empty',
+		 delete_field_config_param	=> 'delete'
+	},
+);
+
+sub get_field_config {
+	my $self = shift;
+	
+	my $cnf = { 
+		name		=> $self->name,
+		%{ $self->field_config } 
+	};
+	
+	$cnf = { %$cnf, %{$self->field_readonly_config} } if ($self->field_readonly);
+	
+	return $cnf;
+}
+## -- ^^^ --
 
 no Moose;
 __PACKAGE__->meta->make_immutable;
