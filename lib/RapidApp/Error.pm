@@ -6,6 +6,7 @@ use overload '""' => \&_stringify_object; # to-string operator overload
 use Data::Dumper;
 use DateTime;
 use Devel::StackTrace::WithLexicals;
+use RapidApp::Data::DeepMap;
 
 sub dieConverter {
 	die ref $_[0]? $_[0] : &capture(join(' ', @_), { lateTrace => 0 });
@@ -97,19 +98,6 @@ sub ignoreSelfFrameFilter {
 	return 1;
 }
 
-# trim down the tree of data referenced by the stack trace
-sub trimTrace {
-	my ($self, $maxDepth)= @_;
-	my $trace= $self->trace;
-	my @frames= $trace->frames; # make sure frames are generated
-	delete $trace->{raw}; # make sure raw trace stuff isn't kept
-	for my $f (@frames) {
-		if (defined $f->{args}) {
-			$f->{args}= [ map { ''.$_ } $f->args ];
-		}
-	}
-}
-
 around 'BUILDARGS' => sub {
 	my ($orig, $class, @args)= @_;
 	my $params= ref $args[0] eq 'HASH'? $args[0]
@@ -155,6 +143,47 @@ sub as_string {
 # called by Perl, on this package only (not a method lookup)
 sub _stringify_object {
 	return (shift)->as_string;
+}
+
+our $trimmer= RapidApp::Data::DeepMap->new(
+	defaultMapper => \&fn_trimUnwantedCrap,
+	mapperByRef => {
+		'HASH' => \&fn_trimUnwantedCrap,
+		'ARRAY' => \&fn_trimUnwantedCrap,
+	},
+	mapperByISA => {
+		'Catalyst' => sub { '$c'; },
+		'RapidApp::Error' => \&RapidApp::Data::DeepMap::fn_deepTranslate,
+		'Devel::StackTrace' => \&fn_trimStackTrace,
+	}
+);
+
+our $MAX_DEPTH= 3;
+
+sub getTrimmedClone {
+	my ($self, $maxDepth)= @_;
+	$trimmer->reset();
+	local $MAX_DEPTH= $maxDepth;
+	return $trimmer->translate($self);
+}
+
+sub fn_trimStackTrace {
+	my ($trace, $mapper)= @_;
+	my $depth= $mapper->currentDepth;
+	$mapper->currentDepth(0);
+	my $result= &fn_trimUnwantedCrap($trace, $mapper);
+	$mapper->currentDepth($depth);
+	return $result;
+}
+
+sub fn_trimUnwantedCrap {
+	my ($obj, $mapper)= @_;
+	(my $r= ref $obj) or return $obj;
+	blessed($obj) and return "[$obj]";
+	$mapper->currentDepth < $MAX_DEPTH or return "[$obj]";
+	$r eq 'HASH' and return RapidApp::Data::DeepMap::fn_deepTranslateHash(@_);
+	$r eq 'ARRAY' and return RapidApp::Data::DeepMap::fn_deepTranslateArray(@_);
+	return "[$r]";
 }
 
 no Moose;

@@ -95,17 +95,28 @@ sub saveException {
 	
 	my $refId;
 	try {
-		
-		$err->trimTrace;
 		local $Storable::forgive_me= 1; # ignore non-storable things
-		my $serialized= freeze( $err );
-		if (!defined $serialized || length($serialized) > 65000) {
-			$log->warn("Error serialization was ".length($serialized)." bytes, attempting to save an approximation");
+		
+		my $serialized;
+		my $MAX_SERIALIZED_SIZE= 65000;
+		{ open my $file, ">", "/tmp/Dump_$err";
+			$file->print(Dumper($err));
+			$file->close;
+		}
+		for (my $maxDepth=8; $maxDepth > 0; $maxDepth--) {
+			my $trimErr= $err->getTrimmedClone($maxDepth);
+			$serialized= freeze( $trimErr );
 			
-			$serialized= freeze( { map { substr(''.$_, 0, 1000) } %$err } );
-			if (!defined $serialized || length($serialized) > 65000) {
-				$serialized= freeze( { message => 'Unable to save error object' } );
-			}
+			last if (defined $serialized && length($serialized) < $MAX_SERIALIZED_SIZE);
+			$log->warn("Error serialization was ".length($serialized)." bytes, attempting to trim further...");
+		}
+		if (!defined $serialized || length($serialized) > $MAX_SERIALIZED_SIZE) {
+			my $trimErr= RapidApp::Error->new({
+				message => substr($err->message, 0, 1000),
+				srcLoc => $err->srcLoc,
+				trace => undef,
+			});
+			$serialized= freeze( $trimErr );
 		}
 		
 		my $rs= $self->resultSource;
@@ -146,5 +157,7 @@ sub loadException {
 	defined $err or die "Failed to deserialize exception";
 	return $err;
 }
+
+
 
 1;
