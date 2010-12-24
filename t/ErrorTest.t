@@ -3,6 +3,7 @@ use warnings;
 use Test::More;
 use Try::Tiny;
 use Data::Dumper;
+use Carp;
 
 BEGIN {
 	use_ok 'RapidApp::Error';
@@ -105,19 +106,47 @@ sub dieConversion {
 sub foo {
 	$_[0]->new($_[1]);
 }
-sub bar {
-	foo(@_);
+sub fromDirect {
+	die RapidApp::Error->new('Message');
 }
-sub baz {
-	bar(@_);
+sub fromCarp {
+	croak('Message');
 }
+sub fromConfess {
+	confess('Message');
+}
+sub fromUse {
+	require Nonexistent::Package;
+}
+sub fromUse2 {
+	require Package_Which_Cant_Compile;
+}
+sub fromCatalystUtilLoad {
+}
+sub intermediate {
+	&{$_[0]};
+}
+
 sub traceCollection {
 	my $err;
 	my $msg= 'Died Here';
-	$err= baz('RapidApp::Error', { message => $msg });
+	$err= foo('RapidApp::Error', { message => $msg });
 	#diag(Dumper($err->trace->frame(0)));
 	like($err->trace->frame(0)->subroutine, qr/RapidApp::Error::new/, 'first reported frame');
 	like($err->trace->frame(1)->subroutine, qr/.*::foo/, 'second reported frame');
+	
+	my @fnList= qw( fromDirect fromCarp fromConfess fromUse fromUse2 fromCatalystUtilLoad);
+	for my $fn (@fnList) {
+		my $err;
+		local $SIG{__DIE__}= \&RapidApp::Error::dieConvert;
+		try { intermediate \&$fn }
+		catch { $err= RapidApp::Error::capture($_); }
+		
+		like("$err", qr/Message/, $fn.' - message preserved');
+		like("$err", qr/ErrorTest.t line [0-9]+/, $fn.' - line preserved');
+		
+		like ($err->trace->frame(1)->subroutine, qr/intermediate/, $fn.' - trace preserved');
+	}
 	
 	done_testing;
 }
