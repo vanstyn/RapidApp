@@ -7,7 +7,7 @@ use Scalar::Util qw(blessed reftype);
 has '_mapperCache'     => ( is => 'rw', isa => 'HashRef', lazy_build => 1 );
 has '_translatedCache' => ( is => 'rw', isa => 'HashRef', lazy_build => 1 );
 
-has 'defaultMapper' => ( is => 'rw', isa => 'CodeRef', default => \&passthrough, trigger => \&_clear_mapperCache );
+has 'defaultMapper' => ( is => 'rw', isa => 'CodeRef', default => sub { \&fn_passthrough }, trigger => \&_clear_mapperCache );
 has '_mapperByRef'  => ( is => 'ro', isa => 'HashRef', default => sub {{}}, init_arg => 'mapperByRef' );
 has '_mapperByISA'  => ( is => 'ro', isa => 'HashRef', default => sub {{}}, init_arg => 'mapperByISA' );
 has 'blessedMapMethod' => ( is => 'rw', isa => 'Str', default => 'deepMap' );
@@ -20,6 +20,9 @@ sub _build__mapperCache {
 		ARRAY => $self->_mapperByRef->{ARRAY} || \&fn_translateArrayContents,
 		REF   => $self->_mapperByRef->{REF}   || \&fn_translateRefContents,
 	}; # was defaulting it to the _mapperByRef, but might as well just build the content lazily too
+}
+sub _build__translatedCache {
+	{};
 }
 
 sub reset {
@@ -47,18 +50,29 @@ sub applyMapperByISA {
 	}
 }
 
+#~ sub _trace {
+	#~ my @caller= caller(1);
+	#~ print STDERR $caller[3].'( '.join (', ', @_)." )\n";
+#~ }
+
 sub translate {
+	#_trace(@_);
 	my ($self, $obj)= @_;
-	return $obj unless ref $obj;
 	return $self->_translatedCache->{$obj} if exists $self->_translatedCache->{$obj};
+	return $self->defaultMapper->($obj, $self)  unless ref $obj;
 	my $mapperFn= $self->_mapperCache->{ref $obj} || $self->_getMapperFor(ref $obj);
 	return ($self->_translatedCache->{$obj}= &$mapperFn($obj, $self));
 }
 
-sub fn_passthrough { $_[0]; }
-sub fn_prune { undef; }
+sub fn_passthrough {#_trace(@_);
+	$_[0]
+}
+sub fn_prune {#_trace(@_);
+	undef
+}
 
 sub fn_translateContents {
+	#_trace(@_);
 	my ($obj, $mapper)= @_;
 	ref $obj or return $obj;
 	blessed($obj) and return &fn_deepTranslateBlessed(@_);
@@ -69,6 +83,7 @@ sub fn_translateContents {
 }
 
 sub fn_translateHashContents {
+	#_trace(@_);
 	my ($obj, $mapper)= @_;
 	my @content= %$obj;
 	my $depth= $mapper->currentDepth;
@@ -81,11 +96,12 @@ sub fn_translateHashContents {
 }
 
 sub fn_translateArrayContents {
+	#_trace(@_);
 	my ($obj, $mapper)= @_;
 	my @content= @$obj;
 	my $depth= $mapper->currentDepth;
 	$mapper->currentDepth($depth+1);
-	for (my $i=$#content; $i > 0; $i-= 2) {
+	for (my $i=$#content; $i >= 0; $i--) {
 		$content[$i]= $mapper->translate($content[$i]);
 	}
 	$mapper->currentDepth($depth);
@@ -93,12 +109,14 @@ sub fn_translateArrayContents {
 }
 
 sub fn_translateRefContents {
+	#_trace(@_);
 	my ($obj, $mapper)= @_;
 	$obj= $mapper->translate($$obj);
 	return \$obj;
 }
 
 sub fn_translateBlessedContents {
+	#_trace(@_);
 	my ($obj, $mapper)= @_;
 	my $mapperFn= $mapper->_mapperCache->{reftype $obj} || $mapper->_getMapperFor(reftype $obj);
 	my $newObj= &$mapperFn(@_);
@@ -107,6 +125,7 @@ sub fn_translateBlessedContents {
 }
 
 sub _getMapperFor {
+	#_trace(@_);
 	my ($self, $type)= @_;
 	
 	# is there a 'ref' rule for it?
