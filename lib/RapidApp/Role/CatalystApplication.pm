@@ -16,7 +16,8 @@ around 'setup_components' => sub {
 	my ($orig, $app, @args)= @_;
 	# At this point, we don't have a catalyst instance yet, just the package name.
 	# Catalyst has an amazing number of package methods that masquerade as instance methods later on.
-	local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
+	local $SIG{__DIE__}= \&collectTrace if $app->debug;
+	&flushLog;
 	try {
 		RapidApp::ScopedGlobals->applyForSub(
 			{ catalystClass => $app, log => $app->log },
@@ -27,18 +28,18 @@ around 'setup_components' => sub {
 		);
 	}
 	catch {
-		print STDERR $_->dump and exit if (blessed($_) && $_->can('dump'));
-		#print STDERR $_ . "\n\n" . $_->trace and exit if (blessed($_) && $_->can('trace'));
-		die $_;
+		&flushLog;
+		# print STDERR $_->dump and exit if (blessed($_) && $_->can('dump'));
+		# #print STDERR $_ . "\n\n" . $_->trace and exit if (blessed($_) && $_->can('trace'));
+		# die $_;
 	};
 };
 
 sub setupRapidApp {
 	my $app= shift;
 	my $log= RapidApp::ScopedGlobals->log;
-	if (my $coderef = $log->can('_flush')){
-		$log->$coderef();
-	}
+	&flushLog;
+
 	injectUnlessExist('RapidApp::RapidApp', 'RapidApp');
 	
 	my @names= keys %{ $app->components };
@@ -78,11 +79,8 @@ sub injectUnlessExist {
 
 after 'setup_finalize' => sub {
 	my $app= shift;
-	my $log= $app->log;
-	if (my $coderef = $log->can('_flush')){
-		$log->$coderef();
-	}
-	local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
+	&flushLog;
+	local $SIG{__DIE__}= \&collectTrace if $app->debug;
 	try {
 		RapidApp::ScopedGlobals->applyForSub(
 			{ catalystClass => $app, log => $app->log },
@@ -90,9 +88,10 @@ after 'setup_finalize' => sub {
 		);
 	}
 	catch {
-		print STDERR $_->dump and exit if (blessed($_) && $_->can('dump'));
-		#print STDERR $_ . "\n\n" . $_->trace and exit if (blessed($_) && $_->can('trace'));
-		die $_;
+		flushLog $log;
+		# print STDERR $_->dump and exit if (blessed($_) && $_->can('dump'));
+		# #print STDERR $_ . "\n\n" . $_->trace and exit if (blessed($_) && $_->can('trace'));
+		# die $_;
 	};
 };
 
@@ -127,5 +126,38 @@ after 'log_response' => sub {
 	my $c= shift;
 	$c->rapidApp->cleanupAfterRequest($c);
 };
+
+sub flushLog {
+	my $log= RapidApp::ScopedGlobals->get("log");
+	$log ||= RapidApp::ScopedGlobals->get("catalystApplication")->log;
+	defined $log or return;
+	if (my $coderef = $log->can('_flush')){
+		$log->$coderef();
+	}
+}
+
+sub initTraceOutputFile {
+	my $fname= $ENV{TRACE_OUT_FILE} || '/tmp/RapidApp_Error_Traces';
+	open my $fd, '>', $fname;
+	my $now= DateTime->now;
+	$fd->print("RapidApp Application started at ".$now->ymd.' '.$now->hms."\n\n");
+	close $fd;
+	return $fname;
+}
+
+our $DIE_IGNORE= 0;
+our $TRACE_OUT_FILE= initTraceOutputFile;
+sub collectTrace {
+	return @_ if $DIE_IGNORE;
+	local $DIE_IGNORE=1;
+	
+	open my $fd, '>>', $TRACE_OUT_FILE;
+	$fd->print("Exception: ".join(' ',@_)."\n\n".Devel::StackTrace->new->as_string."\n\n\n");
+	close $fd;
+	
+	my $log= RapidApp::ScopedGlobals->get("log");
+	my $msg= "Exception trace saved to $TRACE_OUT_FILE";
+	if ($log) { $log->info($msg) } else { print STDERR $msg }
+}
 
 1;
