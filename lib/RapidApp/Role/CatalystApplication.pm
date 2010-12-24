@@ -16,23 +16,14 @@ around 'setup_components' => sub {
 	my ($orig, $app, @args)= @_;
 	# At this point, we don't have a catalyst instance yet, just the package name.
 	# Catalyst has an amazing number of package methods that masquerade as instance methods later on.
-	local $SIG{__DIE__}= \&collectTrace if $app->debug;
 	&flushLog;
-	try {
-		RapidApp::ScopedGlobals->applyForSub(
-			{ catalystClass => $app, log => $app->log },
-			sub {
-				$app->$orig(@args);  # standard catalyst setup_components
-				$app->setupRapidApp; # our additional components needed for RapidApp
-			}
-		);
-	}
-	catch {
-		&flushLog;
-		# print STDERR $_->dump and exit if (blessed($_) && $_->can('dump'));
-		# #print STDERR $_ . "\n\n" . $_->trace and exit if (blessed($_) && $_->can('trace'));
-		# die $_;
-	};
+	RapidApp::ScopedGlobals->applyForSub(
+		{ catalystClass => $app, log => $app->log },
+		sub {
+			$app->$orig(@args);  # standard catalyst setup_components
+			$app->setupRapidApp; # our additional components needed for RapidApp
+		}
+	);
 };
 
 sub setupRapidApp {
@@ -80,19 +71,10 @@ sub injectUnlessExist {
 after 'setup_finalize' => sub {
 	my $app= shift;
 	&flushLog;
-	local $SIG{__DIE__}= \&collectTrace if $app->debug;
-	try {
-		RapidApp::ScopedGlobals->applyForSub(
-			{ catalystClass => $app, log => $app->log },
-			sub { $app->rapidApp->_setup_finalize }
-		);
-	}
-	catch {
-		flushLog $log;
-		# print STDERR $_->dump and exit if (blessed($_) && $_->can('dump'));
-		# #print STDERR $_ . "\n\n" . $_->trace and exit if (blessed($_) && $_->can('trace'));
-		# die $_;
-	};
+	RapidApp::ScopedGlobals->applyForSub(
+		{ catalystClass => $app, log => $app->log },
+		sub { $app->rapidApp->_setup_finalize }
+	);
 };
 
 # Make the scoped-globals catalystClass and log available throughout the application during request processing
@@ -129,35 +111,14 @@ after 'log_response' => sub {
 
 sub flushLog {
 	my $log= RapidApp::ScopedGlobals->get("log");
-	$log ||= RapidApp::ScopedGlobals->get("catalystApplication")->log;
+	if (!defined $log) {
+		my $app= RapidApp::ScopedGlobals->get("catalystClass");
+		$log= $app->log if defined $app;
+	}
 	defined $log or return;
 	if (my $coderef = $log->can('_flush')){
 		$log->$coderef();
 	}
-}
-
-sub initTraceOutputFile {
-	my $fname= $ENV{TRACE_OUT_FILE} || '/tmp/RapidApp_Error_Traces';
-	open my $fd, '>', $fname;
-	my $now= DateTime->now;
-	$fd->print("RapidApp Application started at ".$now->ymd.' '.$now->hms."\n\n");
-	close $fd;
-	return $fname;
-}
-
-our $DIE_IGNORE= 0;
-our $TRACE_OUT_FILE= initTraceOutputFile;
-sub collectTrace {
-	return @_ if $DIE_IGNORE;
-	local $DIE_IGNORE=1;
-	
-	open my $fd, '>>', $TRACE_OUT_FILE;
-	$fd->print("Exception: ".join(' ',@_)."\n\n".Devel::StackTrace->new->as_string."\n\n\n");
-	close $fd;
-	
-	my $log= RapidApp::ScopedGlobals->get("log");
-	my $msg= "Exception trace saved to $TRACE_OUT_FILE";
-	if ($log) { $log->info($msg) } else { print STDERR $msg }
 }
 
 1;
