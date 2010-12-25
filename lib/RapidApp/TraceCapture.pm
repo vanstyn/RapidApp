@@ -58,6 +58,12 @@ sub collectTracesWithin {
 		&$code;
 	}
 	catch {
+		
+		# -- Added by HV because this is causing HOPS to not be able to start
+		# MIKE: FIX IT!!!!!
+		return unless (defined $_);
+		# --
+	
 		writeFullTrace("$_", $LAST_TRACE) if defined($LAST_TRACE);
 		$LAST_TRACE= undef;
 		die $_;
