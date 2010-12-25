@@ -470,10 +470,7 @@ sub update {
 		msg => 'Update Succeeded'
 	} if ($result);
 	
-	return {
-		success => \0,
-		msg => 'Update Failed'
-	};
+	die "Update Failed";
 }
 
 
@@ -520,13 +517,10 @@ sub create {
 	if(ref($result) eq 'HASH') {
 		$result->{success} = \0;
 		$result->{msg} = 'Create Failed' unless (defined $result->{msg});
-		return $result;
+		die $result->{msg};
 	}
 	
-	return {
-		success => \0,
-		msg => 'Create Failed'
-	};
+	die 'Create Failed';
 }
 
 
