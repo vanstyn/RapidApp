@@ -50,18 +50,20 @@ sub applyMapperByISA {
 	}
 }
 
-#~ sub _trace {
-	#~ my @caller= caller(1);
-	#~ print STDERR $caller[3].'( '.join (', ', @_)." )\n";
-#~ }
+ sub _trace {
+	 my @caller= caller(1);
+	 print STDERR $caller[3].'( '.join (', ', @_)." )\n";
+ }
 
 sub translate {
-	#_trace(@_);
+	_trace(@_);
 	my ($self, $obj)= @_;
-	return $self->_translatedCache->{$obj} if exists $self->_translatedCache->{$obj};
-	return $self->defaultMapper->($obj, $self)  unless ref $obj;
-	my $mapperFn= $self->_mapperCache->{ref $obj} || $self->_getMapperFor(ref $obj);
-	return ($self->_translatedCache->{$obj}= &$mapperFn($obj, $self));
+	return $self->_translatedCache->{$obj} if defined $obj && exists $self->_translatedCache->{$obj};
+	return $self->defaultMapper->($obj, $self, '') unless ref $obj;
+	
+	my $r= ref $obj;
+	my $mapperFn= $self->_mapperCache->{$r} || $self->_getMapperFor($r);
+	return ($self->_translatedCache->{$obj}= &$mapperFn($obj, $self, $r));
 }
 
 sub fn_passthrough {#_trace(@_);
@@ -75,10 +77,10 @@ sub fn_translateContents {
 	#_trace(@_);
 	my ($obj, $mapper)= @_;
 	ref $obj or return $obj;
-	blessed($obj) and return &fn_deepTranslateBlessed(@_);
-	ref $obj eq 'HASH'   and return &fn_deepTranslateHash(@_);
-	ref $obj eq 'ARRAY'  and return &fn_deepTranslateArray(@_);
-	ref $obj eq 'REF' || ref $obj eq 'SCALAR' and return &fn_deepTranslateRef(@_);
+	blessed($obj) and return &fn_translateBlessedContents(@_);
+	ref $obj eq 'HASH'   and return &fn_translateHashContents(@_);
+	ref $obj eq 'ARRAY'  and return &fn_translateArrayContents(@_);
+	ref $obj eq 'REF' || ref $obj eq 'SCALAR' and return &fn_translateRefContents(@_);
 	return $obj;
 }
 
@@ -118,8 +120,9 @@ sub fn_translateRefContents {
 sub fn_translateBlessedContents {
 	#_trace(@_);
 	my ($obj, $mapper)= @_;
-	my $mapperFn= $mapper->_mapperCache->{reftype $obj} || $mapper->_getMapperFor(reftype $obj);
-	my $newObj= &$mapperFn(@_);
+	my $r= reftype $obj;
+	my $mapperFn= $mapper->_mapperCache->{$r} || $mapper->_getMapperFor($r);
+	my $newObj= &$mapperFn($obj, $mapper, $r);
 	return bless $newObj, ref($obj) if (ref $newObj && !blessed $newObj);
 	return $newObj;
 }
@@ -132,10 +135,13 @@ sub _getMapperFor {
 	my $mapperFn= $self->_mapperByRef->{$type};
 	
 	# check for an ISA rule.  Note that it doesn't hurt to run "isa" on non-existant packages like HASH or ARRAY.
-	for my $key (keys %{$self->_mapperByISA}) {
-		if ($type->isa($key)) {
-			$mapperFn= $self->_mapperByISA->{$key};
-			last;
+	if (!defined $mapperFn) {
+		for my $key (keys %{$self->_mapperByISA}) {
+			#print STDERR "$type->isa($key): ".$type->isa($key)." (".$self->_mapperByISA->{$key}.")\n";
+			if ($type->isa($key)) {
+				$mapperFn= $self->_mapperByISA->{$key};
+				last;
+			}
 		}
 	}
 	
