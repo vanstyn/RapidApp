@@ -97,7 +97,7 @@ sub saveException {
 	try {
 		local $Storable::forgive_me= 1; # ignore non-storable things
 		
-		my $serialized;
+		my ($serialized, $serializedSize);
 		my $MAX_SERIALIZED_SIZE= 65000;
 		{ open my $file, ">", "/tmp/Dump_$err";
 			$file->print(Dumper($err));
@@ -105,16 +105,24 @@ sub saveException {
 		}
 		for (my $maxDepth=8; $maxDepth > 0; $maxDepth--) {
 			my $trimErr= $err->getTrimmedClone($maxDepth);
+			$trimErr->data->{freezeInfo}= "Exception object trimmed to depth $maxDepth";
 			$serialized= freeze( $trimErr );
+			$serializedSize= defined $serialized? length($serialized) : -1;
 			
-			last if (defined $serialized && length($serialized) < $MAX_SERIALIZED_SIZE);
-			$log->warn("Error serialization was ".length($serialized)." bytes, attempting to trim further...");
+			last if (defined $serialized && $serializedSize < $MAX_SERIALIZED_SIZE);
+			$log->warn("Error serialization was $serializedSize bytes, attempting to trim further...");
 		}
-		if (!defined $serialized || length($serialized) > $MAX_SERIALIZED_SIZE) {
+		if (!defined $serialized || $serializedSize > $MAX_SERIALIZED_SIZE) {
 			my $trimErr= RapidApp::Error->new({
 				message => substr($err->message, 0, 1000),
 				srcLoc => $err->srcLoc,
 				trace => undef,
+				data => {
+					freezeInfo => "Exception object could not be trimmed small enough",
+					smallestTrimmedErrorSize => $serializedSize,
+					maxSize => $MAX_SERIALIZED_SIZE,
+					numberOfStackFrames => ( $err->trace? scalar($err->trace->frames) : 'none' ),
+				},
 			});
 			$serialized= freeze( $trimErr );
 		}
