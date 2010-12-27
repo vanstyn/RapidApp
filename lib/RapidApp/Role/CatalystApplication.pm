@@ -16,29 +16,21 @@ around 'setup_components' => sub {
 	my ($orig, $app, @args)= @_;
 	# At this point, we don't have a catalyst instance yet, just the package name.
 	# Catalyst has an amazing number of package methods that masquerade as instance methods later on.
-	local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
-	try {
-		RapidApp::ScopedGlobals->applyForSub(
-			{ catalystClass => $app, log => $app->log },
-			sub {
-				$app->$orig(@args);  # standard catalyst setup_components
-				$app->setupRapidApp; # our additional components needed for RapidApp
-			}
-		);
-	}
-	catch {
-		print STDERR $_->dump and exit if (blessed($_) && $_->can('dump'));
-		#print STDERR $_ . "\n\n" . $_->trace and exit if (blessed($_) && $_->can('trace'));
-		die $_;
-	};
+	&flushLog;
+	RapidApp::ScopedGlobals->applyForSub(
+		{ catalystClass => $app, log => $app->log },
+		sub {
+			$app->$orig(@args);  # standard catalyst setup_components
+			$app->setupRapidApp; # our additional components needed for RapidApp
+		}
+	);
 };
 
 sub setupRapidApp {
 	my $app= shift;
 	my $log= RapidApp::ScopedGlobals->log;
-	if (my $coderef = $log->can('_flush')){
-		$log->$coderef();
-	}
+	&flushLog;
+
 	injectUnlessExist('RapidApp::RapidApp', 'RapidApp');
 	
 	my @names= keys %{ $app->components };
@@ -78,22 +70,11 @@ sub injectUnlessExist {
 
 after 'setup_finalize' => sub {
 	my $app= shift;
-	my $log= $app->log;
-	if (my $coderef = $log->can('_flush')){
-		$log->$coderef();
-	}
-	local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
-	try {
-		RapidApp::ScopedGlobals->applyForSub(
-			{ catalystClass => $app, log => $app->log },
-			sub { $app->rapidApp->_setup_finalize }
-		);
-	}
-	catch {
-		print STDERR $_->dump and exit if (blessed($_) && $_->can('dump'));
-		#print STDERR $_ . "\n\n" . $_->trace and exit if (blessed($_) && $_->can('trace'));
-		die $_;
-	};
+	&flushLog;
+	RapidApp::ScopedGlobals->applyForSub(
+		{ catalystClass => $app, log => $app->log },
+		sub { $app->rapidApp->_setup_finalize }
+	);
 };
 
 # Make the scoped-globals catalystClass and log available throughout the application during request processing
@@ -127,5 +108,17 @@ after 'log_response' => sub {
 	my $c= shift;
 	$c->rapidApp->cleanupAfterRequest($c);
 };
+
+sub flushLog {
+	my $log= RapidApp::ScopedGlobals->get("log");
+	if (!defined $log) {
+		my $app= RapidApp::ScopedGlobals->get("catalystClass");
+		$log= $app->log if defined $app;
+	}
+	defined $log or return;
+	if (my $coderef = $log->can('_flush')){
+		$log->$coderef();
+	}
+}
 
 1;

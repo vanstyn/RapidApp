@@ -9,7 +9,7 @@ Ext.ux.RapidApp.AppStoreForm2.FormPanel = Ext.extend(Ext.form.FormPanel,{
 	trackResetOnLoad: true, // <-- for some reason this default doesn't work and has to be set in the constructor
 	frame: true,
 	autoScroll: true,
-	
+
 	initComponent: function() {
 		this.store.formpanel = this;
 		Ext.ux.RapidApp.AppStoreForm2.FormPanel.superclass.initComponent.apply(this,arguments);
@@ -55,10 +55,10 @@ Ext.ux.RapidApp.AppStoreForm2.add_handler = function(cmp) {
 };
 
 Ext.ux.RapidApp.AppStoreForm2.clientvalidation_handler = function(FormPanel, valid) {
-	
+
 	var tbar = FormPanel.getTopToolbar();
 	if (! tbar) { return; }
-	if (valid && FormPanel.getForm().isDirty()) { 
+	if (valid && FormPanel.getForm().isDirty()) {
 		var save_btn = tbar.getComponent("save-btn");
 		if(save_btn) save_btn.enable();
 		var add_btn = tbar.getComponent("add-btn");
@@ -71,15 +71,15 @@ Ext.ux.RapidApp.AppStoreForm2.clientvalidation_handler = function(FormPanel, val
 	}
 };
 
-Ext.ux.RapidApp.AppStoreForm2.afterrender_handler = function(FormPanel) { 
+Ext.ux.RapidApp.AppStoreForm2.afterrender_handler = function(FormPanel) {
 	new Ext.LoadMask(FormPanel.getEl(),{
-		msg: "StoreForm Loading...", 
-		store: FormPanel.store 
+		msg: "StoreForm Loading...",
+		store: FormPanel.store
 	});
 	FormPanel.store.load();
 };
 
-Ext.ux.RapidApp.AppStoreForm2.store_load_handler = function(store,records,options) { 
+Ext.ux.RapidApp.AppStoreForm2.store_load_handler = function(store,records,options) {
 
 	var form = store.formpanel.getForm();
 	var Record = records[0];
@@ -91,26 +91,55 @@ Ext.ux.RapidApp.AppStoreForm2.store_load_handler = function(store,records,option
 
 Ext.ux.RapidApp.AppStoreForm2.store_create_handler = function(store,action,result,res,rs) {
 	if(action != "create"){ return; }
-	
+
 	var panel = store.formpanel;
 	if(!res.raw.loadCfg && !panel.closetab_on_create) { return; }
-	
+
 	// get the current tab:
 	var tp, tab;
 	if(panel.closetab_on_create) {
 		tp = panel.findParentByType("apptabpanel");
 		tab = tp.getActiveTab();
 	}
-	
+
 	// Automatically load "loadCfg" if it exists in the response:
 	if(res.raw.loadCfg) {
 		var loadTarget = Ext.ux.RapidApp.AppTab.findParent_loadTarget(panel);
 		loadTarget.loadContent(res.raw.loadCfg);
 	}
-	
+
 	// close the tab:
 	if(panel.closetab_on_create) {
 		tp.remove(tab);
 	}
 }
+
+
+Ext.ux.RapidApp.AppStoreForm2.save_and_close = function(fp) {
+	var store = fp.store;
+	var tbar = fp.getTopToolbar();
+
+	var tp = fp.findParentByType("apptabpanel");
+	var tab = tp.getActiveTab();
+
+	var add_btn = tbar.getComponent("add-btn");
+
+	// if both add_btn and closetab_on_create are true, then we don't have to
+	// add a listener to the store because it should already have one that will
+	// close the active tab:
+	if (! add_btn || ! fp.closetab_on_create) {
+		store.on('write',function() { tp.remove(tab); });
+	}
+
+	// find either add-btn or save-btn (they shouldn't both exist):
+	var btn = add_btn;
+	if (! btn) {
+		btn = tbar.getComponent("save-btn");
+	}
+
+	// call the button's handler directly:
+	return btn.handler(btn);
+}
+
+
 
