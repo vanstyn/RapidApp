@@ -4,11 +4,19 @@ use Test::More;
 use Try::Tiny;
 use Data::Dumper;
 use Carp;
+use Catalyst::Utils;
+use Storable 'freeze', 'thaw';
 
 BEGIN {
 	use_ok 'RapidApp::Error';
 	use_ok 'RapidApp::Error::WrappedError';
 	use_ok 'RapidApp::Error::UserError';
+}
+
+{
+	my $fname= __FILE__;
+	$fname =~ s|/[^/]+$||;
+	unshift @INC, $fname.'/../blib';
 }
 
 sub constructor {
@@ -48,7 +56,7 @@ in source
 file".';
 	
 	$err= RapidApp::Error->new($msg);
-	is(''.$err, $msg, 'Error');
+	like(''.$err, qr/$msg at [^ ]/, 'Error');
 	
 	$err= RapidApp::Error->new($msgWithLocation);
 	is(''.$err, $msgWithLocation, 'Error with line info');
@@ -106,24 +114,37 @@ sub dieConversion {
 sub foo {
 	$_[0]->new($_[1]);
 }
+
+our $expectedCallDepth= 0;
+sub fromRaw {
+	$expectedCallDepth= 1;
+	die "MyString";
+}
 sub fromDirect {
-	die RapidApp::Error->new('Message');
+	$expectedCallDepth= 1;
+	die RapidApp::Error->new("UniqueString4321");
 }
 sub fromCarp {
-	croak('Message');
+	$expectedCallDepth= 2;
+	croak("UniqueString4321");
 }
 sub fromConfess {
-	confess('Message');
+	$expectedCallDepth= 2;
+	confess("UniqueString4321");
 }
 sub fromUse {
-	require Nonexistent::Package;
+	$expectedCallDepth= 1;
+	require Nonexistent::Package::UniqueString4321;
 }
 sub fromUse2 {
+	$expectedCallDepth= 1;
 	require Package_Which_Cant_Compile;
 }
 sub fromCatalystUtilLoad {
+	$expectedCallDepth= 3;
+	Catalyst::Utils::ensure_class_loaded('Nonexistent::Package::UniqueString4321');
 }
-sub intermediate {
+sub intermediate_method {
 	&{$_[0]};
 }
 
@@ -138,22 +159,72 @@ sub traceCollection {
 	my @fnList= qw( fromDirect fromCarp fromConfess fromUse fromUse2 fromCatalystUtilLoad);
 	for my $fn (@fnList) {
 		my $err;
-		local $SIG{__DIE__}= \&RapidApp::Error::dieConvert;
-		try { intermediate \&$fn }
-		catch { $err= RapidApp::Error::capture($_); }
+		local $SIG{__DIE__}= \&RapidApp::Error::dieConverter;
+		try { &intermediate_method(\&$fn) }
+		catch { $err= RapidApp::Error::capture($_); };
 		
-		like("$err", qr/Message/, $fn.' - message preserved');
+		like("$err", qr/UniqueString4321/, $fn.' - message preserved');
 		like("$err", qr/ErrorTest.t line [0-9]+/, $fn.' - line preserved');
 		
-		like ($err->trace->frame(1)->subroutine, qr/intermediate/, $fn.' - trace preserved');
+		my @frames= $err->trace->frames;
+		my $i;
+		for ($i=0; $i <= $#frames; $i++) {
+			last if $frames[$i]->subroutine =~ /intermediate_method/;
+		}
+		
+		ok($i <= $#frames, $fn.' - trace preserved');
+		is($i, $expectedCallDepth+1, $fn.' - trace starts at correct line');
 	}
 	
 	done_testing;
 }
+
+sub dieInDeepStack {
+	my $depth= shift;
+	die RapidApp::Error->new("Deep exception") unless $depth;
+	dieInDeepStack($depth-1, @_);
+}
+
+package BogusCatalystApp;
+use Catalyst;
+
+package main;
+
+sub sizeCompaction {
+	my $c= {};
+	for (my $i=10000; $i >= 0; $i--) {
+		$c->{$i}= "$i kljfhdhflsdkhflakjsdhflkasdjhflkjsdhflkajsdhflkasjdhflajksdhflaksdjhflkasjdhflkdsajhflkasdjhflaksdjhflaksjdhf";
+	}
+	bless $c, 'BogusCatalystApp';
+	isa_ok($c, 'Catalyst');
+	
+	my $err;
+	try {
+		dieInDeepStack(50, $c);
+	}
+	catch {
+		$err= $_;
+		$err->data->{info}= $c;
+	};
+	
+	local $Storable::forgive_me= 1; # ignore non-storable things
+	my $serialized= freeze($err);
+	ok(length($serialized) > 100000, 'object starts large ('.length($serialized).')');
+	
+	my $err2= $err->getTrimmedClone(50);
+	$serialized= freeze($err2);
+	ok(length($serialized) < 100000, 'trimmed object is small ('.length($serialized).')');
+	
+	#print STDERR Dumper($err2);
+	
+	done_testing;
+}
+
 
 subtest 'Constructor Tests' => \&constructor;
 subtest 'User Error Constructor Tests' => \&userErrorConstructor;
 subtest 'Stringification' => \&stringification;
 subtest 'Die Conversion' => \&dieConversion;
 subtest 'Trace Collection' => \&traceCollection;
+subtest 'Size compaction' => \&sizeCompaction;
 done_testing;
