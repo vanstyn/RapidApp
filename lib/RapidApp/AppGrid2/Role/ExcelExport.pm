@@ -48,7 +48,7 @@ sub excel_read {
 	my $dlData = '';
 	open my $fd, '>', \$dlData;
 	
-	my $data = $self->store_read;
+	my $data = $self->DataStore->read;
 	
 	my @headers = ();
 	my @fields = ();

@@ -110,11 +110,11 @@ sub web1_render {
 
 sub viewport {
 	my $self= shift;
-	$self->c->stash->{current_view} = 'RapidApp::Viewport';
-	$self->c->stash->{title} = $self->module_name;
-	$self->c->stash->{config_url} = $self->base_url;
+	$self->c->stash->{current_view} ||= 'RapidApp::Viewport';
+	$self->c->stash->{title} ||= $self->module_name;
+	$self->c->stash->{config_url} ||= $self->base_url;
 	if (scalar keys %{$self->c->req->params}) {
-		$self->c->stash->{config_params} = { %{$self->c->req->params} };
+		$self->c->stash->{config_params} ||= { %{$self->c->req->params} };
 	}
 }
 
