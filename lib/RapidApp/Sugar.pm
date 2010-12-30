@@ -10,7 +10,7 @@ use RapidApp::Error::UserError;
 use RapidApp::Handler;
 use RapidApp::DefaultOverride qw(override_defaults merge_defaults);
 
-our @EXPORT = qw(sessvar perreq asjson rawjs usererr override_defaults merge_defaults);
+our @EXPORT = qw(sessvar perreq asjson rawjs ra_die usererr override_defaults merge_defaults);
 
 # Module shortcuts
 #
@@ -43,6 +43,12 @@ sub rawjs {
 }
 
 # Exception constructors
+
+sub ra_die {
+	my $msg= shift;
+	my $data= { %_ };
+	die RapidApp::Error->new(message => $msg, data => $data);
+}
 
 sub usererr {
 	return RapidApp::Error::UserError->new(@_);
