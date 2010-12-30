@@ -56,7 +56,7 @@ sub applyMapperByISA {
  }
 
 sub translate {
-	_trace(@_);
+	#_trace(@_);
 	my ($self, $obj)= @_;
 	return $self->_translatedCache->{$obj} if defined $obj && exists $self->_translatedCache->{$obj};
 	return $self->defaultMapper->($obj, $self, '') unless ref $obj;
