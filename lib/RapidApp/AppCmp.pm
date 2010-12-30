@@ -16,9 +16,10 @@ sub BUILD {
 	
 	# if a subclass overrode the web1_render function, we need to let ExtConfig2Html know
 	if ($self->can('web1_render') != \&web1_render) {
-		$self->extconfig->{rapidapp_author_module} ||= $self->module_path;
+		#$self->extconfig->{rapidapp_author_module} ||= $self->module_path;
 		$self->extconfig->{rapidapp_custom_cfg2html}= 1
 	}
+	$self->extconfig->{rapidapp_author_module} ||= $self->module_path;
 }
 
 sub content {
