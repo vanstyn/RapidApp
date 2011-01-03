@@ -6,7 +6,7 @@ use Scalar::Util 'blessed';
 use Data::Dumper;
 use base 'JSON::PP';
 
-@RapidApp::JSON::MixedEncoder::EXPORT = qw{encode_json decode_json};
+our @EXPORT = qw{encode_json decode_json};
 
 # copied from JSON::PP
 my $JSON; # cache
