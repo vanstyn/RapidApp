@@ -105,8 +105,7 @@ sub _directLink_handleLink($$$) {
 	my ($self, $c, $link, $redirect)= @_;
 	$c->isa('Catalyst') && $link->isa('RapidApp::DirectLink::Link') or die "invalid params";
 	
-	my $ret= $self->directLink_handleAuth($c, $link);
-	$ret->{success} or return $ret;
+	$self->directLink_handleAuth($c, $link);
 	
 	my $hashMerge= Hash::Merge->new('LEFT_PRECEDENT');
 	
@@ -115,15 +114,14 @@ sub _directLink_handleLink($$$) {
 	if ($redirect) {
 		my $destUri= URI->new($link->targetUrl);
 		$destUri->query_form($hashMerge->merge($destUri->query_form, $link->requestParams));
-		$ret->{success}= $c->response->redirect($destUri->as_string);
+		return $c->response->redirect($destUri->as_string);
 	}
 	else {
 		$c->request->path($link->targetUrl);
 		$c->request->parameters($link->requestParams || {});
 		$c->request->arguments(undef);  # let the dispatcher re-calculate them
-		$ret->{success}= $c->dispatch;
+		return $c->dispatch;
 	}
-	return $ret;
 }
 
 =head2 $self->directLink_handleAuth( $c, $link )
@@ -145,11 +143,14 @@ sub directLink_handleAuth($$) {
 	# If there is no session, try authenticating the user
 	if (!defined $c->user) {
 		my $user= $c->authenticate($link->auth, $realm? $realm : ());
-		return { success => defined $user };
+		defined $user or die "Failed to authenticate user using link credentials";
+		
+		return 1;
 	}
 	else {
 		my $user= $c->find_user($link->auth, $realm? $realm : ());
-		$user or return { success=>0, invalidUser=>1 };
+		defined $user or die "Failed to find user by link auth params";
+		
 		return $self->directLink_handleAuthDiscrepancy($c, $c->user, $user);
 	}
 }
