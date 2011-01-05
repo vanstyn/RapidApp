@@ -57,13 +57,14 @@ sub BUILD {
 	);
 	
 	$self->add_formpanel_items(
-		{ name => 'id',       fieldLabel => 'ID' },
-		{ name => 'dateTime', fieldLabel => 'Date' },
-		{ name => 'message',  fieldLabel => 'Message' },
+		{ name => 'id',          fieldLabel => 'ID' },
+		{ name => 'dateTime',    fieldLabel => 'Date' },
+		{ name => 'message',     fieldLabel => 'Message' },
 		{ name => 'userMessage', fieldLabel => 'UserMsg' },
-		{ name => 'srcLoc',     fieldLabel => 'Source Loc' },
-		{ name => 'trace',    fieldLabel => 'Trace' },
-		{ name => 'data',     fieldLabel => 'Debug Info' },
+		{ name => 'srcLoc',      fieldLabel => 'Source Loc' },
+		{ name => 'trace',       fieldLabel => 'Trace' },
+		{ name => 'cause',       fieldLabel => 'Cause' },
+		{ name => 'data',        fieldLabel => 'Debug Info' },
 	);
 	
 	$self->DataStore->apply_flags(
@@ -128,6 +129,16 @@ sub read_records {
 		$call =~ s/([^ ]+)=HASH[^ ,]+/\\%$1/g;
 		$traceStr .= '<div class="trace" style="padding: .3em 0 1em 0">'.$loc.' : <br/><span style="padding:1px 2em"> </span>'.$call.'</div>';
 	}
+	
+	my $htmlRenderCxt= RapidApp::Web1RenderContext->new();
+	
+	$htmlRenderCxt->data2html($err->cause);
+	my $causeStr= $htmlRenderCxt->getBody;
+	
+	$htmlRenderCxt->body_fragments([]);
+	$htmlRenderCxt->data2html($err->data);
+	my $dataStr= $htmlRenderCxt->getBody;
+	
 	my $row= {
 		id => $id,
 		message => $err->message,
@@ -135,7 +146,8 @@ sub read_records {
 		dateTime => $err->dateTime->ymd .' '. $err->dateTime->hms,
 		srcLoc => $srcLoc,
 		trace => $traceStr,
-		data => $err->data? Dumper($err->data) : undef,
+		cause => $causeStr,
+		data => $dataStr,
 	};
 	return {
 		results	=> 1,

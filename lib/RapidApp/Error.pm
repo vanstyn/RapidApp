@@ -7,6 +7,7 @@ use Data::Dumper;
 use DateTime;
 use Devel::StackTrace::WithLexicals;
 use RapidApp::Data::DeepMap;
+use Scalar::Util 'blessed', 'reftype';
 
 sub dieConverter {
 	die ref $_[0]? $_[0] : &capture(join(' ', @_), { lateTrace => 0 });
@@ -154,6 +155,9 @@ our $trimmer= RapidApp::Data::DeepMap->new(
 	},
 	mapperByISA => {
 		'Catalyst' => sub { '$c'; },
+		'RapidApp::Module' => \&fn_snubBlessed,
+		'Catalyst::Component' => \&fn_snubBlessed,
+		'IO::Handle' => \&fn_snubBlessed,
 		'RapidApp::Error' => \&RapidApp::Data::DeepMap::fn_translateBlessedContents,
 		'Devel::StackTrace' => \&fn_trimStackTrace,
 		'Devel::StackTrace::Frame' => \&RapidApp::Data::DeepMap::fn_translateBlessedContents,
@@ -184,11 +188,15 @@ sub fn_trimUnwantedCrap {
 	my ($obj, $mapper, $type)= @_;
 	$type or return $obj;
 	$mapper->currentDepth < $MAX_DEPTH or return "[$obj]";
+	$type= reftype($obj) if blessed($obj);
 	$type eq 'HASH' and return RapidApp::Data::DeepMap::fn_translateHashContents(@_);
 	$type eq 'ARRAY' and return RapidApp::Data::DeepMap::fn_translateArrayContents(@_);
-	$type eq 'REF' and return RapidApp::Data::DeepMap::fn_translateArrayContents(@_);
-	
-	# must be a blessed object
+	$type eq 'REF' and return RapidApp::Data::DeepMap::fn_translateRefContents(@_);
+	return "[$obj]";
+}
+
+sub fn_snubBlessed {
+	my ($obj, $mapper, $type)= @_;
 	return "[$type]";
 }
 
