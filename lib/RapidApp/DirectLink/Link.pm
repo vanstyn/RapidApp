@@ -49,13 +49,15 @@ RapidApp::DirectLink::Link
 =cut
 
 has 'creationDate'  => ( is => 'rw', isa => 'DateTime', lazy_build => 1, trigger => \&fixTz );
-has 'randomHash'    => ( is => 'rw', isa => 'Str', lazy_build => 1);
+has 'randomHash'    => ( is => 'rw', isa => 'Str', lazy_build => 1 );
 
 has 'targetUrl'     => ( is => 'rw', isa => 'Str', required => 1 );
 has 'auth'          => ( is => 'rw', isa => 'HashRef', required => 1 );
 has 'requestParams' => ( is => 'rw' ); # isa HashRef, but allowed to be undef
 has 'session'       => ( is => 'rw' ); # isa HashRef, but allowed to be undef
 has 'stash'         => ( is => 'rw' ); # isa HashRef, but allowed to be undef
+
+has 'handlerUrl'    => ( is => 'rw' ); # the external URL to follow for this link, populated by Linkfactory when applicable
 
 =head1 ATTRIBUTES
 
@@ -216,6 +218,17 @@ sub linkUid {
 		my $d= $self->creationDate;
 		return sprintf('%06x%s', ($d->year*15+$d->month)*40+$d->day, $self->randomHash);
 	}
+}
+
+=head2 linkUrl
+
+Returns handlerUrl with a id parameter of linkUid
+
+=cut
+
+sub linkUrl {
+	my $self= shift;
+	return sprintf('%s?id=%s', $self->handlerUrl, $self->linkUid);
 }
 
 =head2 dateFromLinkUid
