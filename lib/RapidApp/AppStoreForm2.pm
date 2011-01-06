@@ -51,7 +51,7 @@ sub web1_render {
 		$self->mergeStoreValues($cfg->{items}, $data->{rows}->[0]);
 	}
 	RapidApp::ExtCfgToHtml->render($cxt, $cfg, 'form');
-	$cxt->data2html($cfg);
+	$ENV{DEBUG_CFG_OBJECTS} and $cxt->data2html($cfg);
 }
 
 sub mergeStoreValues {
