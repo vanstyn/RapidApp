@@ -51,7 +51,20 @@ RapidApp::DirectLink::Link
 has 'creationDate'  => ( is => 'rw', isa => 'DateTime', lazy_build => 1, trigger => \&fixTz );
 has 'randomHash'    => ( is => 'rw', isa => 'Str', lazy_build => 1 );
 
-has 'targetUrl'     => ( is => 'rw', isa => 'Str', required => 1 );
+has 'target'        => ( is => 'rw', isa => 'Str|ArrayRef[Str]', required => 1 );
+sub isRedirect { return !ref ((shift)->target); }
+sub targetUrl {
+	my $self= shift;
+	$self->isRedirect or die 'target is not a URL';
+	return $self->target;
+}
+sub isAction   { return ref ((shift)->target) eq 'ARRAY'; }
+sub targetAction {
+	my $self= shift;
+	$self->isAction or die 'target is not an action';
+	return $self->target;
+}
+
 has 'auth'          => ( is => 'rw', isa => 'HashRef', required => 1 );
 has 'requestParams' => ( is => 'rw' ); # isa HashRef, but allowed to be undef
 has 'session'       => ( is => 'rw' ); # isa HashRef, but allowed to be undef
@@ -178,7 +191,7 @@ around BUILDARGS => sub {
 		my $p= $params->{params};
 		ref $p eq 'HASH' or $p= JSON::PP::decode_json($p);
 		$params->{auth}=          $p->{auth}  if defined $p->{auth};
-		$params->{targetUrl}=     $p->{url}   if defined $p->{url};
+		$params->{target}=        $p->{url}   if defined $p->{url};
 		$params->{requestParams}= $p->{req}   if defined $p->{req};
 		$params->{session}=       $p->{sess}  if defined $p->{sess};
 		$params->{stash}=         $p->{stash} if defined $p->{stash};
@@ -240,6 +253,7 @@ representing the encoded date portion of a UID.
 
 sub dateFromLinkUid {
 	my ($ignored, $uid)= @_;
+	length($uid) == 14 or die "Link UIDs must be 14 characters long";
 	my $day= hex(substr($uid,0,6));
 	{use integer;
 		my $month= $day / 40; # leave some space, for error checking
@@ -249,6 +263,7 @@ sub dateFromLinkUid {
 }
 sub hashFromLinkUid {
 	my ($ignored, $uid)= @_;
+	length($uid) == 14 or die "Link UIDs must be 14 characters long";
 	return substr($uid,6);
 }
 
@@ -266,8 +281,8 @@ sub params {
 	my $self= shift;
 	if (scalar(@_)) {
 		my $params= (ref $_[0] eq 'HASH')? $_[0] : { @_ };
-		defined $params->{url} or die "Params must contain a 'url' key, for the targetUrl field";
-		$self->targetUrl($params->{url});
+		defined $params->{url} or die "Params must contain a 'url' key, for the target field";
+		$self->target($params->{url});
 		$self->auth($params->{auth});
 		$self->requestParams($params->{req});
 		$self->session($params->{sess});
@@ -275,7 +290,7 @@ sub params {
 		return $params;
 	}
 	return {
-		url => $self->targetUrl,
+		url => $self->target,
 		auth => $self->auth,
 		req => $self->requestParams,
 		sess => $self->session,
