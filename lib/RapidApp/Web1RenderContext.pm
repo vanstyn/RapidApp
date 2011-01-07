@@ -72,7 +72,7 @@ sub data2html {
 sub _data2html {
 	my ($self, $obj)= @_;
 	if (!ref $obj) {
-		$self->write(escHtml("$obj")."<br/>\n");
+		$self->write((defined $obj? escHtml("'$obj'") : "undef")."<br/>\n");
 	} elsif (blessed $obj) {
 		$self->write('<span class="dump-blessed-clsname">'.(ref $obj).'</span><div class="dump-blessed">');
 		$self->_ref2html(reftype($obj), $obj),

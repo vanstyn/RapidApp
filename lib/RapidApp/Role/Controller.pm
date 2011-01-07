@@ -103,7 +103,7 @@ has 'create_module_params' => ( is => 'ro', lazy => 1, default => sub {{}} );
 has 'json' => ( is => 'ro', lazy_build => 1 );
 sub _build_json {
 	my $self = shift;
-	$self->log->warn((ref $self)."->json still being used");
+	#$self->log->warn((ref $self)."->json still being used");
 	return RapidApp::JSON::MixedEncoder->new;
 }
 

@@ -182,7 +182,6 @@ sub fn_trimStackTrace {
 
 sub fn_trimUnwantedCrap {
 	my ($obj, $mapper, $type)= @_;
-	printf STDERR "fn_trimUnwantedCrap($obj, $mapper, $type)\n";
 	$type or return $obj;
 	$mapper->currentDepth < $MAX_DEPTH or return "[$obj]";
 	$type eq 'HASH' and return RapidApp::Data::DeepMap::fn_translateHashContents(@_);
