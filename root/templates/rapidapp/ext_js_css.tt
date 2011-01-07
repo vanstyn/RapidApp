@@ -30,7 +30,7 @@
 
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/css/tabular-table.css" />
 
-<link rel="stylesheet" type="text/css" href="/static/rapidapp/css/MultilineToolbar.css" />
+<link rel="stylesheet" type="text/css" href="/static/rapidapp/js/MultilineToolbar/MultilineToolbar.css" />
 
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/css/RapidApp.css" />
 
@@ -118,4 +118,5 @@
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp/History.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp/AppStoreForm2.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp/AppCombo2.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/RapidApp/MultilineToolbar/MultilineToolbar.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp.js"></script>
