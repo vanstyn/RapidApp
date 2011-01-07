@@ -51,6 +51,7 @@ By default, it looks for a ResultSource named 'DirectLink', though this is confi
 has 'schema' => ( is => 'rw', isa => 'DBIx::Class::Schema' );
 has 'directLinkSourceName' => ( is => 'rw', isa => 'Str', default => 'DirectLink' );
 has 'directLinkRS' => ( is => 'rw' ); # is either a ResultSource, or a coderef that returns one
+has 'linkHandlerUrl' => ( is => 'rw', isa => 'Str' ); # the URL to a module which handles incoming DirectLinks.
 
 =head1 ATTRIBUTES
 
@@ -145,6 +146,10 @@ sub createLink {
 		};
 	}
 	defined $result or die "Failed $attempt attempts to create a unique link ID";
+	
+	# set the handler URL according to our config
+	$result->handlerUrl($self->linkHandlerUrl);
+	
 	return $result;
 }
 

@@ -82,48 +82,31 @@ Returns a hash containing a 'success' key, and possibly diagnostics.
 
 =cut
 
-sub dispatchToLink($$) {
+sub followLink($$) {
 	my ($self, $c, $link)= @_;
-	return $self->_directLink_handleLink($c, $link, 0);
-}
-
-=head2 $self->redirectToLink( $c, $link )
-
-Processes a link's authentication parts, and then sends a redirect to the browser to load
-the link target.
-
-Returns a hash containing a 'success' key, and possibly diagnostics.
-
-=cut
-
-sub redirectToLink($$) {
-	my ($self, $c, $link)= @_;
-	return $self->_directLink_handleLink($c, $link, 1);
-}
-
-sub _directLink_handleLink($$$) {
-	my ($self, $c, $link, $redirect)= @_;
 	$c->isa('Catalyst') && $link->isa('RapidApp::DirectLink::Link') or die "invalid params";
 	
-	my $ret= $self->directLink_handleAuth($c, $link);
-	$ret->{success} or return $ret;
+	$self->directLink_handleAuth($c, $link);
 	
 	my $hashMerge= Hash::Merge->new('LEFT_PRECEDENT');
 	
 	$c->stash($hashMerge->merge($link->stash || {}, $c->stash));
 	$c->session($hashMerge->merge($link->session || {}, $c->session));
-	if ($redirect) {
+	
+	if ($link->isRedirect) {
 		my $destUri= URI->new($link->targetUrl);
+		$c->log->debug('DirectLink URI = '.$destUri->as_string);
 		$destUri->query_form($hashMerge->merge($destUri->query_form, $link->requestParams));
-		$ret->{success}= $c->response->redirect($destUri->as_string);
+		$c->log->info('Redirecting client to '.$destUri->as_string);
+		return $c->response->redirect($destUri->as_string);
 	}
 	else {
-		$c->request->path($link->targetUrl);
 		$c->request->parameters($link->requestParams || {});
-		$c->request->arguments(undef);  # let the dispatcher re-calculate them
-		$ret->{success}= $c->dispatch;
+		my @newArgs= @{$link->targetAction};
+		$c->log->info('Re-dispatching with arguments: ('.join(', ',@newArgs).')');
+		my $action= shift @newArgs;
+		return $c->visit($action, \@newArgs);
 	}
-	return $ret;
 }
 
 =head2 $self->directLink_handleAuth( $c, $link )
@@ -144,12 +127,20 @@ sub directLink_handleAuth($$) {
 	
 	# If there is no session, try authenticating the user
 	if (!defined $c->user) {
-		my $user= $c->authenticate($link->auth, $realm? $realm : ());
-		return { success => defined $user };
+		# first, try using just the link, as a credential:
+		my $user= $c->authenticate({ directLink => $link }, $realm? $realm : ());
+		# if that fails, try authenticating with the auth data in the link
+		defined $user
+			or $user= $c->authenticate( $link->auth, $realm? $realm : ());
+		
+		defined $user or die "Failed to authenticate user using link credentials";
+		
+		return 1;
 	}
 	else {
 		my $user= $c->find_user($link->auth, $realm? $realm : ());
-		$user or return { success=>0, invalidUser=>1 };
+		defined $user or die "Failed to find user by link auth params";
+		
 		return $self->directLink_handleAuthDiscrepancy($c, $c->user, $user);
 	}
 }
