@@ -51,6 +51,11 @@ has 'instance_id' => (
 
 ###########################################################################################
 
+sub BUILD {
+	my $self= shift;
+	$self->apply_actions(viewport => 'viewport');
+}
+
 sub suburl {
 	my $self = shift;
 	my $url = shift;
