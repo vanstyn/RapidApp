@@ -164,10 +164,14 @@ Ext.override(Ext.data.Connection,{
 		var options = response.argument.options;
 
 		var thisConn = this;
-		var success_callback_repeat = function(params) {
+		var success_callback_repeat = function(newopts) {
 			
-			// Optional changes/additions to the original request params:
-			if(params) { Ext.apply(options.params,params); }
+			// Optional changes/additions to the original request options:
+			if(Ext.isObject(newopts)) {
+				Ext.iterate(newopts,function(key,value){
+					Ext.apply(options[key],value);
+				});
+			}
 			
 			call_orig = false;
 			thisConn.request(options);
@@ -221,11 +225,11 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 	};
 	
 	var default_formpanel_cnf = {
+		frame: true,
 		labelAlign: 'right',
 		bodyStyle: 'padding:20px 20px 10px 10px;',
 		labelWidth: 70,
 		defaults: {
-			//labelStyle: 'text-align:right;',
 			xtype: 'textfield',
 			width: 175
 		}
@@ -239,14 +243,17 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 	
 	var btn_handler = function(btn) {
 	
-		var customprompt = { button: btn.text };
 		var formpanel = win.getComponent('formpanel');
 		var form = formpanel.getForm();
-		customprompt.data = form.getFieldValues();
+		var data = form.getFieldValues();
 		
-		// Recall the original request, adding in the customprompt data:
-		var newopts = {};
-		newopts[data.param_name] = Ext.encode(customprompt);
+		var headers = {
+			'X-RapidApp-CustomPrompt-Button': btn.text,
+			'X-RapidApp-CustomPrompt-Data': Ext.encode(data)
+		};
+		
+		// Recall the original request, adding in the customprompt header ata:
+		var newopts = { headers: headers };
 		btn.ownerCt.ownerCt.close();
 		return formpanel.success_callback(newopts);
 	}
@@ -279,8 +286,7 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 	var formpanel = {
 		xtype: 'form',
 		itemId: 'formpanel',
-		frame: true,
-		labelAlign: 'right',
+		
 		anchor: '100% 100%',
 		items: data.items,
 		success_callback: success_callback // <-- storing this here so we can use it in the btn handler

@@ -146,6 +146,8 @@ sub ONREQUEST {
 	$self->init_per_req_attrs;
 	$self->c->rapidApp->markDirtyModule($self);
 	
+	#$self->process_customprompt;
+	
 	#$self->new_clear_per_req_attrs;
 	
 	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_early);
@@ -481,6 +483,32 @@ has 'flags' => (
 sub get_rapidapp_module_path {
 	return (shift)->module_path;
 }
+
+
+has 'customprompt_button' => ( 
+	is => 'rw',
+	isa => 'Maybe[Str]',
+	traits => [ 'RapidApp::Role::PerRequestBuildDefReset'	],
+	lazy => 1,
+	default => sub {
+		my $self = shift;
+		return $self->c->req->header('X-RapidApp-CustomPrompt-Button');
+	}
+);
+
+
+has 'customprompt_data' => ( 
+	is => 'rw',
+	isa => 'HashRef',
+	traits => [ 'RapidApp::Role::PerRequestBuildDefReset'	],
+	lazy => 1,
+	default => sub {
+		my $self = shift;
+		my $rawdata = $self->c->req->header('X-RapidApp-CustomPrompt-Data');
+		return {} unless (defined $rawdata);
+		return $self->json->decode($rawdata);
+	}
+);
 
 
 
