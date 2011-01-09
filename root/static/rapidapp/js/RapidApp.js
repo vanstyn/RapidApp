@@ -164,9 +164,12 @@ Ext.override(Ext.data.Connection,{
 		var options = response.argument.options;
 
 		var thisConn = this;
-		var success_callback_repeat = function() {
+		var success_callback_repeat = function(params) {
+			
+			// Optional changes/additions to the original request params:
+			if(params) { Ext.apply(options.params,params); }
+			
 			call_orig = false;
-			//console.log('repeat');
 			thisConn.request(options);
 		};
 
@@ -180,6 +183,12 @@ Ext.override(Ext.data.Connection,{
 				Ext.ux.RapidApp.ReAuthPrompt(success_callback_repeat);
 			}
 		}
+		
+		var customprompt = response.getResponseHeader('X-RapidApp-CustomPrompt');
+		if (customprompt) {
+			call_orig = false;
+			Ext.ux.RapidApp.handleCustomPrompt(customprompt,success_callback_repeat);
+		}
 
 		if(response.getResponseHeader('X-RapidApp-Exception')) return;
 
@@ -192,6 +201,93 @@ Ext.override(Ext.data.Connection,{
 
 
 Ext.ns('Ext.ux.RapidApp');
+
+Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
+
+	// Defaults
+	var data = {
+		title: 'Untitled X-RapidApp-CustomPrompt',
+		param_name: 'customprompt',
+		height: 300,
+		width: 400,
+		buttons: ['Ok'],
+		buttonIcons: {},
+		items: [
+			{
+				xtype: 'label',
+				html: 'No data available'
+			}
+		]
+	};
+	
+	Ext.apply(data,Ext.decode(headerdata));
+	
+	var btn_handler = function(btn) {
+	
+		var customprompt = { button: btn.text };
+		var formpanel = win.getComponent('formpanel');
+		var form = formpanel.getForm();
+		customprompt.data = form.getFieldValues();
+		
+		// Recall the original request, adding in the customprompt data:
+		var newopts = {};
+		newopts[data.param_name] = Ext.encode(customprompt);
+		btn.ownerCt.ownerCt.close();
+		return formpanel.success_callback(newopts);
+	}
+	
+	// Custom buttons:
+	var buttons = [];
+	Ext.each(data.buttons,function(text) {
+		var btn = {
+			xtype: 'button',
+			text: text,
+			handler: btn_handler
+		}
+		
+		if(data.buttonIcons[text]) {
+			btn.iconCls = data.buttonIcons[text];
+		}
+		
+		buttons.push(btn);
+	});
+	
+	// Cancel:
+	buttons.push({
+		xtype: 'button',
+		text: 'Cancel',
+		handler: function(btn) {
+			btn.ownerCt.ownerCt.close();
+		}
+	});
+	
+	var formpanel = {
+		xtype: 'form',
+		itemId: 'formpanel',
+		frame: true,
+		labelAlign: 'right',
+		anchor: '100% 100%',
+		items: data.items,
+		success_callback: success_callback // <-- storing this here so we can use it in the btn handler
+	};
+
+	var win = new Ext.Window({
+		title: data.title,
+		layout: 'anchor',
+		width: data.width,
+		height: data.height,
+		closable: true,
+		modal: true,
+		autoScroll: true,
+		items: formpanel,
+		buttons: buttons
+	});
+
+	win.show();
+};
+
+
+
 
 //This is currently set by RapidApp::AppAuth:
 Ext.ux.RapidApp.loginUrl = '/main/banner/auth/login';

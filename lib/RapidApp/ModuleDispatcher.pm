@@ -63,7 +63,17 @@ sub dispatch {
 		#$targetModule->recursive_clear_per_request_vars;
 	}
 	catch {
-		$result= $self->onException(RapidApp::Error::capture($_, {lateTrace => 1}));
+		
+		my $err = $_;
+		
+		if (blessed($err) and $err->isa('RapidApp::Error::CustomPrompt')) {
+			$c->response->header('X-RapidApp-CustomPrompt' => $err->header_json);
+			length($c->response->body) > 0 or $c->response->body("Contains X-RapidApp-CustomPrompt Data");
+			return;
+		}
+		
+		
+		$result= $self->onException(RapidApp::Error::capture($err, {lateTrace => 1}));
 		
 		# redundant, but we need to make sure it happens if the request dies
 		# we want to leave the other one in the try block so we can catch errors conveniently
@@ -89,6 +99,12 @@ sub onException {
 	
 	my $c= RapidApp::ScopedGlobals->catalystInstance;
 	my $log= RapidApp::ScopedGlobals->log;
+	
+	if (blessed($err) and $err->isa('RapidApp::Error::CustomPrompt')) {
+		$c->response->header('X-RapidApp-CustomPrompt' => $err->header_json);
+		length($c->response->body) > 0 or $c->response->body("Contains X-RapidApp-CustomPrompt Data");
+		return;
+	}
 	
 	$c->stash->{exception}= $err;
 	$c->stash->{isUserError}= $err->isUserError;
