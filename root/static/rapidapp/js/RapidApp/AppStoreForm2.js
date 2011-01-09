@@ -39,6 +39,10 @@ Ext.ux.RapidApp.AppStoreForm2.add_handler = function(cmp) {
 	var fp = cmp.findParentByType('appstoreform2');
 	var form = fp.getForm();
 	var store = fp.store;
+	
+	store.rejectChanges();
+	store.removeAll();
+	
 	var form_data = form.getFieldValues();
 	var store_fields = [];
 	Ext.iterate(form_data,function(key,value){
