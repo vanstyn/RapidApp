@@ -67,6 +67,9 @@ sub _build_dateTime {
 has 'srcLoc' => ( is => 'rw', lazy_build => 1 );
 sub _build_srcLoc {
 	my $self= shift;
+	# -- vv -- Added by HV to get UserErrors working again: (Mike: fixme)
+	return undef unless ($self->trace);
+	# -- ^^ --
 	my $frame= $self->trace->frame(0);
 	return defined $frame? $frame->filename . ' line ' . $frame->line : undef;
 }
