@@ -155,10 +155,34 @@ Ext.Ajax.on('requestexception',Ext.ux.RapidApp.ajaxCheckException);
 Ext.Ajax.on('beforerequest',Ext.ux.RapidApp.ajaxRequestContentType);
 
 
+Ext.ux.RapidApp.ajaxShowGlobalMask = function(conn,options) {
+	if(options.loadMaskMsg) {
+	
+		conn.LoadMask = new Ext.LoadMask(Ext.getBody(),{
+			msg: options.loadMaskMsg
+			//removeMask: true
+		});
+		conn.LoadMask.show();
+	}
+}
+Ext.ux.RapidApp.ajaxHideGlobalMask = function(conn,options) {
+	if(conn.LoadMask) {
+		console.dir(arguments);
+		conn.LoadMask.hide();
+	}
+}
+Ext.Ajax.on('beforerequest',Ext.ux.RapidApp.ajaxShowGlobalMask,this);
+Ext.Ajax.on('requestcomplete',Ext.ux.RapidApp.ajaxHideGlobalMask,this);
+Ext.Ajax.on('requestexception',Ext.ux.RapidApp.ajaxHideGlobalMask,this);
+
+
+
 Ext.override(Ext.data.Connection,{
 
 	handleResponse_orig: Ext.data.Connection.prototype.handleResponse,
 	handleResponse : function(response){
+
+		this.fireEvent('requestcomplete',this,response,response.argument.options);
 
 		var call_orig = true;
 		var options = response.argument.options;
