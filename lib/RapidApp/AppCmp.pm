@@ -203,11 +203,13 @@ sub add_listener {
 	my $handler = RapidApp::JSONFunc->new( raw => 1, func =>
 		'function(scope) {' .
 			'var args = arguments;' .
-			'var list = scope.listener_callbacks["' . $event . '"];' .
-			'if(Ext.isArray(list)) {' .
-				'Ext.each(list,function(fn) {' .
-					'fn.apply(this,args);' .
-				'},scope);' .
+			'if(scope.listener_callbacks) {' .
+				'var list = scope.listener_callbacks["' . $event . '"];' .
+				'if(Ext.isArray(list)) {' .
+					'Ext.each(list,function(fn) {' .
+						'fn.apply(this,args);' .
+					'},scope);' .
+				'}' .
 			'}' .
 		'}'
 	);
