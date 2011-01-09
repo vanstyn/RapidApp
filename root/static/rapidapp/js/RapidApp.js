@@ -220,7 +220,22 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 		]
 	};
 	
+	var default_formpanel_cnf = {
+		labelAlign: 'right',
+		bodyStyle: 'padding:20px 20px 10px 10px;',
+		labelWidth: 70,
+		defaults: {
+			//labelStyle: 'text-align:right;',
+			xtype: 'textfield',
+			width: 175
+		}
+	};
+	
 	Ext.apply(data,Ext.decode(headerdata));
+	if(! data.formpanel_cnf) { data.formpanel_cnf = {}; }
+	
+	Ext.apply(default_formpanel_cnf,data.formpanel_cnf);
+	data.formpanel_cnf = default_formpanel_cnf;
 	
 	var btn_handler = function(btn) {
 	
@@ -270,6 +285,8 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 		items: data.items,
 		success_callback: success_callback // <-- storing this here so we can use it in the btn handler
 	};
+	
+	Ext.apply(formpanel,data.formpanel_cnf);
 
 	var win = new Ext.Window({
 		title: data.title,

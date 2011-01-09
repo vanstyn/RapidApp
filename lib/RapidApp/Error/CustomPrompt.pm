@@ -12,7 +12,7 @@ has 'width'			=> ( is => 'ro', isa => 'Maybe[Int]', default => undef );
 has 'buttons'		=> ( is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default => undef );
 has 'buttonIcons'	=> ( is => 'ro', isa => 'Maybe[HashRef[Str]]', default => undef );
 has 'items'			=> ( is => 'ro', isa => 'Maybe[ArrayRef|HashRef]', default => undef );
-
+has 'formpanel_cnf'	=> ( is => 'ro', isa => 'Maybe[HashRef]', default => undef );
 
 sub header_data {
 	my $self = shift;
@@ -25,6 +25,7 @@ sub header_data {
 	$data->{buttons} 		= $self->buttons if (defined $self->buttons);
 	$data->{buttonIcons} 	= $self->buttonIcons if (defined $self->buttonIcons);
 	$data->{items} 			= $self->items if (defined $self->items);
+	$data->{formpanel_cnf} 	= $self->formpanel_cnf if (defined $self->formpanel_cnf);
 
 	return $data;
 }
