@@ -167,14 +167,12 @@ Ext.ux.RapidApp.ajaxShowGlobalMask = function(conn,options) {
 }
 Ext.ux.RapidApp.ajaxHideGlobalMask = function(conn,options) {
 	if(conn.LoadMask) {
-		console.dir(arguments);
 		conn.LoadMask.hide();
 	}
 }
 Ext.Ajax.on('beforerequest',Ext.ux.RapidApp.ajaxShowGlobalMask,this);
 Ext.Ajax.on('requestcomplete',Ext.ux.RapidApp.ajaxHideGlobalMask,this);
 Ext.Ajax.on('requestexception',Ext.ux.RapidApp.ajaxHideGlobalMask,this);
-
 
 
 Ext.override(Ext.data.Connection,{
