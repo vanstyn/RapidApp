@@ -51,6 +51,11 @@ has 'instance_id' => (
 
 ###########################################################################################
 
+sub BUILD {
+	my $self= shift;
+	$self->apply_actions(viewport => 'viewport');
+}
+
 sub suburl {
 	my $self = shift;
 	my $url = shift;
@@ -104,7 +109,7 @@ sub web1_content {
 }
 
 sub web1_render {
-	my ($self, $renderContext)= @_;
+	my ($self, $renderCxt)= @_;
 	die RapidApp::Error->new("Unimplemented");
 }
 

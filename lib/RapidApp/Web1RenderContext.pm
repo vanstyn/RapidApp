@@ -1,13 +1,18 @@
 package RapidApp::Web1RenderContext;
-
-
 use Moose;
 use RapidApp::Include 'perlutil';
+
+use RapidApp::Web1RenderContext::RenderFunction;
+use RapidApp::Web1RenderContext::RenderHandler;
+use RapidApp::Web1RenderContext::Renderer;
+
+our $DEFAULT_RENDERER= RapidApp::Web1RenderContext::RenderFunction->new(\&data2html);
 
 has '_css_files' => ( is => 'rw', isa => 'HashRef', default => sub {{}} );
 has '_js_files'  => ( is => 'rw', isa => 'HashRef', default => sub {{}} );
 has 'header_fragments' => ( is => 'rw', isa => 'ArrayRef', default => sub {[]} );
 has 'body_fragments' => ( is => 'rw', isa => 'ArrayRef', default => sub {[]} );
+has 'renderer'  => ( is => 'rw', isa => 'RapidApp::Web1RenderContext::Renderer', lazy => 1, default => sub { $DEFAULT_RENDERER });
 
 sub BUILD {
 	my $self= shift;
@@ -63,43 +68,52 @@ sub escHtml {
 	return $text;
 }
 
+sub render {
+	my ($self, $data)= @_;
+	return $self->renderer->renderAsHtml($self, $data);
+}
+
 sub data2html {
 	my ($self, $obj)= @_;
 	$self and $self->incCSS('/static/rapidapp/css/data2html.css');
-	return _data2html(@_);
+	return _data2html(@_, {});
 }
 
 sub _data2html {
-	my ($self, $obj)= @_;
+	my ($self, $obj, $seenSet)= @_;
 	if (!ref $obj) {
 		$self->write((defined $obj? escHtml("'$obj'") : "undef")."<br/>\n");
 	} elsif (blessed $obj) {
 		$self->write('<span class="dump-blessed-clsname">'.(ref $obj).'</span><div class="dump-blessed">');
-		$self->_ref2html(reftype($obj), $obj),
+		$self->_ref2html(reftype($obj), $obj, $seenSet),
 		$self->write('</div>');
 	} else {
-		$self->_ref2html(ref ($obj), $obj);
+		$self->_ref2html(ref ($obj), $obj, $seenSet);
 	}
 }
 
 sub _ref2html {
-	my ($self, $refType, $obj)= @_;
+	my ($self, $refType, $obj, $seenSet)= @_;
+	if (exists $seenSet->{$obj}) {
+		return $self->write("(seen previously) $obj");
+	}
+	$seenSet->{$obj}= undef;
 	if ($refType eq 'HASH') {
-		$self->_hash2html($obj);
+		$self->_hash2html($obj, $seenSet);
 	} elsif ($refType eq 'ARRAY') {
-		$self->_array2html($obj);
+		$self->_array2html($obj, $seenSet);
 	} elsif ($refType eq 'SCALAR') {
 		$self->write('<span class="dump-deref">[ref]</span>'.escHtml($$obj)."<br/>\n");
 	} elsif ($refType eq 'REF') {
 		$self->write('<span class="dump-deref">[ref]</span>');
-		$self->_data2html($$obj);
+		$self->_data2html($$obj, $seenSet);
 	} else {
 		$self->write(escHtml("$obj")."<br/>\n");
 	}
 }
 
 sub _hash2html {
-	my ($self, $obj)= @_;
+	my ($self, $obj, $seenSet)= @_;
 	$self->write('<div class="dump-hash">');
 	my $maxKeyLen= 0;
 	my @keys= sort keys %$obj;
@@ -108,22 +122,23 @@ sub _hash2html {
 	}
 	for my $key (sort keys %$obj) {
 		$self->write(sprintf("\n<span class='key'>%*s</span> ",-$maxKeyLen, $key));
-		$self->_data2html($obj->{$key});
+		$self->_data2html($obj->{$key}, $seenSet);
 	}
 	$self->write('</div>');
 }
 
 sub _array2html {
-	my ($self, $obj)= @_;
+	my ($self, $obj, $seenSet)= @_;
 	$self->write('<table class="dump-array">');
 	my $i= 0;
 	for my $item (@$obj) {
 		$self->write(sprintf("\n<tr><td class='key'>%d -</td><td>", $i++));
-		$self->_data2html($item);
+		$self->_data2html($item, $seenSet);
 		$self->write('</td></tr>');
 	}
 	$self->write('</table>');
 }
 
-# DO NOT make immutable, to allow other packages to load plugins into this one
+no Moose;
+__PACKAGE__->meta->make_immutable;
 1;

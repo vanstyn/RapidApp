@@ -10,7 +10,9 @@ use RapidApp::Data::DeepMap;
 use Scalar::Util 'blessed', 'reftype';
 
 sub dieConverter {
-	die ref $_[0]? $_[0] : &capture(join(' ', @_), { lateTrace => 0 });
+	local $SIG{__DIE__}= undef;
+	print STDERR "\ndieConverter: ".Data::Dumper->new([@_])->Maxdepth(2)->Dump."\n";
+	die ref $_[0]? $_[0] : &capture(join(' ', grep { defined $_ } @_), { lateTrace => 0 });
 }
 
 =head2 $err= capture( $someError, \%constructorArgs )
@@ -25,14 +27,18 @@ If the object is already a RapidApp::Error derivative, the arguments are ignored
 
 =cut
 sub capture {
+	local $SIG{__DIE__}= undef;
+	print STDERR "\ncapture: ".Data::Dumper->new([@_])->Maxdepth(2)->Dump."\n";
+	
 	# allow leniency if we're called as a package method
 	shift if !ref $_[0] && $_[0] eq __PACKAGE__;
 	my ($errObj, $ctorArgs)= @_;
+	
+	defined $errObj && blessed($errObj) && $errObj->isa('RapidApp::Error')
+		and return $errObj;
+	
 	$ctorArgs ||= {};
 	exists $ctorArgs->{lateTrace} or $ctorArgs->{lateTrace}= 1;
-	
-	blessed($errObj) && $errObj->isa('RapidApp::Error')
-		and return $errObj;
 	
 	return RapidApp::Error::WrappedError->new(captured => $errObj, %$ctorArgs);
 }
@@ -147,60 +153,6 @@ sub as_string {
 # called by Perl, on this package only (not a method lookup)
 sub _stringify_object {
 	return (shift)->as_string;
-}
-
-our $trimmer= RapidApp::Data::DeepMap->new(
-	defaultMapper => \&fn_trimUnwantedCrap,
-	mapperByRef => {
-		'HASH'  => \&fn_trimUnwantedCrap,
-		'ARRAY' => \&fn_trimUnwantedCrap,
-		'REF'   => \&fn_trimUnwantedCrap,
-	},
-	mapperByISA => {
-		'Catalyst' => sub { '$c'; },
-		'RapidApp::Module' => \&fn_snubBlessed,
-		'Catalyst::Component' => \&fn_snubBlessed,
-		'IO::Handle' => \&fn_snubBlessed,
-		'RapidApp::Error' => \&RapidApp::Data::DeepMap::fn_translateBlessedContents,
-		'Devel::StackTrace' => \&fn_trimStackTrace,
-		'Devel::StackTrace::Frame' => \&RapidApp::Data::DeepMap::fn_translateBlessedContents,
-	}
-);
-
-our $MAX_DEPTH= 3;
-
-sub getTrimmedClone {
-	my ($self, $maxDepth)= @_;
-	$trimmer->reset();
-	local $MAX_DEPTH= $maxDepth;
-	my $ret= $trimmer->translate($self);
-	$trimmer->reset();
-	return $ret;
-}
-
-sub fn_trimStackTrace {
-	my ($trace, $mapper, $type)= @_;
-	my $depth= $mapper->currentDepth;
-	$mapper->currentDepth(0);
-	my $result= &RapidApp::Data::DeepMap::fn_translateBlessedContents($trace, $mapper);
-	$mapper->currentDepth($depth);
-	return $result;
-}
-
-sub fn_trimUnwantedCrap {
-	my ($obj, $mapper, $type)= @_;
-	$type or return $obj;
-	$mapper->currentDepth < $MAX_DEPTH or return "[$obj]";
-	$type= reftype($obj) if blessed($obj);
-	$type eq 'HASH' and return RapidApp::Data::DeepMap::fn_translateHashContents(@_);
-	$type eq 'ARRAY' and return RapidApp::Data::DeepMap::fn_translateArrayContents(@_);
-	$type eq 'REF' and return RapidApp::Data::DeepMap::fn_translateRefContents(@_);
-	return "[$obj]";
-}
-
-sub fn_snubBlessed {
-	my ($obj, $mapper, $type)= @_;
-	return "[$type]";
 }
 
 no Moose;

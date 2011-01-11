@@ -87,6 +87,8 @@ sub fn_translateContents {
 sub fn_translateHashContents {
 	#_trace(@_);
 	my ($obj, $mapper)= @_;
+	my $result= {};
+	$mapper->_translatedCache->{$obj}= $result;
 	my @content= %$obj;
 	my $depth= $mapper->currentDepth;
 	$mapper->currentDepth($depth+1);
@@ -94,13 +96,15 @@ sub fn_translateHashContents {
 		$content[$i]= $mapper->translate($content[$i]);
 	}
 	$mapper->currentDepth($depth);
-	return { @content };
+	%$result= @content;
+	return $result;
 }
 
 sub fn_translateArrayContents {
 	#_trace(@_);
 	my ($obj, $mapper)= @_;
 	my @content= @$obj;
+	$mapper->_translatedCache->{$obj}= \@content;
 	my $depth= $mapper->currentDepth;
 	$mapper->currentDepth($depth+1);
 	for (my $i=$#content; $i >= 0; $i--) {
@@ -113,6 +117,7 @@ sub fn_translateArrayContents {
 sub fn_translateRefContents {
 	#_trace(@_);
 	my ($obj, $mapper)= @_;
+	$mapper->_translatedCache->{$obj}= \$obj;
 	$obj= $mapper->translate($$obj);
 	return \$obj;
 }

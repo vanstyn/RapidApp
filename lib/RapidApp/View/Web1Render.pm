@@ -5,6 +5,14 @@ use namespace::autoclean;
 BEGIN { extends 'Catalyst::View'; }
 
 use RapidApp::Include 'perlutil', 'sugar';
+use RapidApp::Web1RenderContext::ExtCfgToHtml;
+
+has 'defaultRenderer' => ( is => 'rw', isa => 'RapidApp::Web1RenderContext::Renderer', lazy_build => 1 );
+
+sub _build_defaultRenderer {
+	my $self= shift;
+	return RapidApp::Web1RenderContext::ExtCfgToHtml->new();
+}
 
 sub process {
 	my ($self, $c)= @_;
@@ -19,7 +27,7 @@ sub process {
 sub _process {
 	my ($self, $c)= @_;
 	# generate the html
-	my $renderCxt= RapidApp::Web1RenderContext->new();
+	my $renderCxt= RapidApp::Web1RenderContext->new(renderer => $self->defaultRenderer);
 	my $module= $c->stash->{module} or die "Missing argument: ->{module}";
 	defined $module or die "Nothing to render";
 	$module->web1_render($renderCxt);
