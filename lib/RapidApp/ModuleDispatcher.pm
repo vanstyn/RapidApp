@@ -91,7 +91,7 @@ sub onException {
 	my $log= RapidApp::ScopedGlobals->log;
 	
 	$c->stash->{exception}= $err;
-	$log->error("Caught exception during module dispatch [".(ref $err)."]");
+	$log->error("Caught exception during module dispatch [".(ref $err || 'scalar')."]: $err");
 	
 	if ($self->saveErrors && (!(blessed $err && $err->isa('RapidApp::UserError')) || $self->saveUserErrors)) {
 		$log->info("Writing ".scalar(@$traces)." exception trace(s) to ".$RapidApp::TraceCapture::TRACE_OUT_FILE);
@@ -111,8 +111,9 @@ sub onException {
 =cut
 	}
 	else {
+		my $lastTrace= scalar(@$traces) > 0? $traces->[$#$traces] : undef;
 		# not saving error, so just print it
-		$log->debug("$err");
+		$log->debug($lastTrace) if defined $lastTrace;
 	}
 	
 	# on exceptions, we either generate a 503, or a JSON response to the same effect
