@@ -18,7 +18,7 @@ has 'rendererByRef' => (
 	}
 );
 
-has '_rendererByRefCache' => ( is => 'ro', isa => 'HashRef' );
+has '_rendererByRefCache' => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub { {} } );
 
 sub renderAsHtml {
 	my ($self, $renderCxt, $data)= @_;
@@ -26,7 +26,7 @@ sub renderAsHtml {
 	# we use this slightly odd logic to prevent running "findRendererFor" more than once per type.
 	my $renderer= exists $self->_rendererByRefCache->{$type}? $self->_rendererByRefCache->{$type}
 		: ($self->_rendererByRefCache->{$type}= $self->findRendererForRef($data));
-	($renderer || $self->defaultRenderer)->render($renderCxt, $data);
+	($renderer || $self->defaultRenderer)->renderAsHtml($renderCxt, $data);
 }
 
 =head2 findRendererForRef

@@ -25,7 +25,7 @@ sub render_layout_box {
 	my ($self, $renderCxt, $items)= @_;
 	$renderCxt->write('<div class="ly-box">');
 	for my $item (@$items) {
-		$self->render($renderCxt, $item);
+		$self->renderAsHtml($renderCxt, $item);
 	}
 	$renderCxt->write('</div>');
 }
@@ -40,7 +40,7 @@ sub render_layout_hbox {
 	$renderCxt->write('<table class="ly-hbox"><tr>');
 	for my $item (@$items) {
 		$renderCxt->write('<td>');
-		$self->render($renderCxt, $item);
+		$self->renderAsHtml($renderCxt, $item);
 		$renderCxt->write('</td>');
 	}
 	$renderCxt->write('</tr></table>');

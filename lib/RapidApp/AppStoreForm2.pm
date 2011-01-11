@@ -42,8 +42,8 @@ sub init_onrequest {
 
 sub web1_render {
 	my ($self, $renderCxt, $extCfg)= @_;
-	$renderCxt->renderer->isa('RapidApp::Web1RenderContext::ExtCfg2Html')
-		or die "Renderer for automatic ext->html conversion must be a Web1RenderContext::ExtCfg2Html";
+	$renderCxt->renderer->isa('RapidApp::Web1RenderContext::ExtCfgToHtml')
+		or die "Renderer for automatic ext->html conversion must be a Web1RenderContext::ExtCfg2ToHtml";
 	
 	# get the cfg if it wasn't gotten already
 	$extCfg ||= $self->get_complete_extconfig;
@@ -58,11 +58,12 @@ sub web1_render {
 	}
 	
 	# now render using the renderer for xtype "form"
-	my $formRenderer= $extCfg->renderer->findRendererForXtype('form');
+	my $formRenderer= $renderCxt->renderer->findRendererForXtype('form');
 	$formRenderer->renderAsHtml($renderCxt, $extCfg);
 	
 	# for debugging, show the complete contents of the extCfg hash
-	$ENV{DEBUG_CFG_OBJECTS} and $renderCxt->data2html($extCfg);
+	($ENV{DEBUG_CFG_OBJECTS} || $self->c->req->params->{DEBUG_CFG_OBJECTS})
+		and $renderCxt->data2html($extCfg);
 }
 
 sub mergeStoreValues {

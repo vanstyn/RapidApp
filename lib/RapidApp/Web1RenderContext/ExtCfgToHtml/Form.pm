@@ -23,7 +23,7 @@ sub render_layout_form {
 		$renderCxt->write(defined $item->{fieldLabel}?
 			'<tr><td class="label">'.$item->{fieldLabel}.'</td><td>'
 			: '<tr><td colspan="2">');
-		$self->render($renderCxt, $item);
+		$self->renderAsHtml($renderCxt, $item);
 		$renderCxt->write("</td></tr>\n");
 	}
 	return $renderCxt->write("</table>\n");

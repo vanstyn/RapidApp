@@ -17,7 +17,7 @@ sub BUILD {
 	# if a subclass overrode the web1_render function, we need to let ExtConfig2Html know
 	if ($self->can('web1_render') != \&web1_render) {
 		#$self->extconfig->{rapidapp_author_module} ||= $self->module_path;
-		$self->extconfig->{rapidapp_cfg2html_renderer}= 'RapidApp::AppCmp::SelfConfigRender';
+		$self->extconfig->{rapidapp_cfg2html_renderer}= RapidApp::AppCmp::SelfConfigRender->new($self->module_path);
 	}
 }
 
@@ -238,12 +238,12 @@ our @ISA= ( 'RapidApp::Web1RenderContext::Renderer' );
 
 sub new {
 	my ($class, $moduleName)= @_;
-	return bless { \$moduleName }, $class;
+	return bless \$moduleName, $class;
 }
 
 sub renderAsHtml {
 	my ($self, $renderCxt, $extCfg)= @_;
-	my $module= RapidApp::ScopedGlobals->c->rapidApp->module($$self);
+	my $module= RapidApp::ScopedGlobals->catalystInstance->rapidApp->module($$self);
 	defined $module or die "No module named $$self exists!";
 	$module->web1_render($renderCxt, $extCfg);
 }

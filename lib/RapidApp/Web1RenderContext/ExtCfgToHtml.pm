@@ -45,9 +45,8 @@ sub findRendererForExtCfg {
 }
 
 sub findRendererForXtype {
-	my ($self, $extCfg)= @_;
+	my ($self, $xtype)= @_;
 	
-	my $xtype= $extCfg->{xtype};
 	defined $xtype or return undef;
 	
 	# see if it is cached
