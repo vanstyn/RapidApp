@@ -16,8 +16,9 @@ sub BUILD {
 	
 	# if a subclass overrode the web1_render function, we need to let ExtConfig2Html know
 	if ($self->can('web1_render') != \&web1_render) {
-		#$self->extconfig->{rapidapp_author_module} ||= $self->module_path;
-		$self->extconfig->{rapidapp_cfg2html_renderer}= RapidApp::AppCmp::SelfConfigRender->new($self->module_path);
+		# Note: RapidApp::AppCmp::SelfConfigRender is defined at the bottom of this file
+		$self->extconfig->{rapidapp_cfg2html_renderer}=
+			RapidApp::AppCmp::SelfConfigRender->new($self->module_path);
 	}
 }
 
@@ -27,10 +28,12 @@ sub content {
 	return $self->get_complete_extconfig;
 }
 
+# The default web-1.0 rendering for AppCmp subclasses is to generate the config, and then run it
+#  through ExtCfgToHtml
 sub web1_render {
 	my ($self, $renderCxt, $extConfig)= @_;
-	$renderCxt->renderer->isa('RapidApp::Web1RenderContext::ExtCfg2Html')
-		or die "Renderer for automatic ext->html conversion must be a Web1RenderContext::ExtCfg2Html";
+	$renderCxt->renderer->isa('RapidApp::Web1RenderContext::ExtCfgToHtml')
+		or die "Renderer for automatic ext->html conversion must be a Web1RenderContext::ExtCfgToHtml";
 	$extConfig ||= $self->get_complete_extconfig;
 	$renderCxt->render($renderCxt, $extConfig);
 }
@@ -231,25 +234,35 @@ package RapidApp::AppCmp::SelfConfigRender;
 
 This class gets applied to ExtConfig hashes to cause them to come back to the originating module
 to be correctly rendered.  It gets frequently created, and seldom used, so don't bother with Moose.
-All it does is relay calls to "renderAsHtml" to a module's "web1_render", and hide itself during JSON
-serialization.
+All it does is relay calls to "renderAsHtml" to a module's "web1_render", and hide itself during
+JSON serialization.
 
 =cut
 
 our @ISA= ( 'RapidApp::Web1RenderContext::Renderer' );
 
+# Extremely light-weight constructor.
+# We just bless a ref to the module name as our class
 sub new {
 	my ($class, $moduleName)= @_;
 	return bless \$moduleName, $class;
 }
 
+sub moduleName {
+	return ${(shift)};
+}
+
+# This is the standard method of RapidApp::Web1RenderContext::Renderer which gets called to render the $extCfg.
+# We simply pass the call to the module's web1_render.
 sub renderAsHtml {
 	my ($self, $renderCxt, $extCfg)= @_;
-	my $module= RapidApp::ScopedGlobals->catalystInstance->rapidApp->module($$self);
-	defined $module or die "No module named $$self exists!";
+	my $module= RapidApp::ScopedGlobals->catalystInstance->rapidApp->module($self->moduleName);
+	defined $module or die "No module named ".$self->moduleName." exists!";
 	$module->web1_render($renderCxt, $extCfg);
 }
 
+# We can't have objects in the JSON.
+# We could return undef, but returning the module name might help with debugging.
 sub TO_JSON {
 	my $self= shift;
 	return $$self;

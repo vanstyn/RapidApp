@@ -6,6 +6,27 @@ with 'RapidApp::Web1RenderContext::ExtCfgToHtml::Form';
 
 use RapidApp::Include 'perlutil', 'sugar';
 
+=head1 NAME
+
+RapidApp::Web1RenderContext::ExtCfgToHtml
+
+=head1 SYNOPSIS
+
+  my $cx= RapidApp::Web1RenderContext->new( renderer => RapidApp::Web1RenderContext::ExtCfgToHtml->new );
+  my $cfg= $module->get_complete_extconfig;
+  $cx->render($cfg);
+
+=head1 DESCRIPTION
+
+This class is a Web1 renderer, extending RenderByType to also handle hashes based on xtype.
+
+Most of the additional functionality comes from methods named $self->render_xtype_${XTYPE}.
+This module checks for methods of that name each time it encounters a new xtype, and if found,
+it creates a renderer around that method.  Subsequent renderings of the same xtype will find
+the renderer in the cache, so only a few renderer instances get created.
+
+=cut
+
 has 'rendererByXtype' => (
 	traits  => ['Hash'],
 	is      => 'ro',

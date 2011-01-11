@@ -5,6 +5,28 @@ extends 'RapidApp::Web1RenderContext::Renderer';
 use MRO::Compat;
 use RapidApp::Web1RenderContext;
 
+=head1 NAME
+
+RapidApp::Web1RenderContext::RenderByType
+
+=head1 SYNOPSIS
+
+  my $renderer= RapidApp::Web1RenderContext::RenderByType->new;
+  $renderer->apply_rendererByRef(
+    HASH => $myHashRenderer,
+    'Some::Class' => $myCustomRenderer,
+  );
+  my $cx= RapidApp::Web1RenderContext->new( renderer => $renderer );
+  $cx->render($treeOfObjects);
+
+=head1 DESCRIPTION
+
+This module is a Web 1.0 Renderer which simply refers to a lookup table by ref type to
+find the correct renderer for a given perl object.  It can also associate renderers with
+ref types of 'HASH', 'ARRAY', 'REF', and so on.
+
+=cut
+
 has 'defaultRenderer' => ( is => 'rw', isa => 'RapidApp::Web1RenderContext::Renderer',
 	default => sub { $RapidApp::Web1RenderContext::DEFAULT_RENDERER } );
 

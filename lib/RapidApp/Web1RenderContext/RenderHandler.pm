@@ -5,7 +5,7 @@ extends 'RapidApp::Web1RenderContext::Renderer';
 
 =pod
 
-This class is for any method which can be referred to by a RapidApp::Handler.
+This class makes a renderer from any method which can be referred to by a RapidApp::Handler.
 This class derives from handler, so it has all the same constructor options.
 
 =cut

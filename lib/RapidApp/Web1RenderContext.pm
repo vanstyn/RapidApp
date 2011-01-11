@@ -6,6 +6,46 @@ use RapidApp::Web1RenderContext::RenderFunction;
 use RapidApp::Web1RenderContext::RenderHandler;
 use RapidApp::Web1RenderContext::Renderer;
 
+=head1 NAME
+
+RapidApp::Web1RenderContext
+
+=head1 SYNOPSIS
+
+  my $cx= RapidApp::Web1RenderContext->new();
+  $cx->render($data);
+  $cx->write("<div class='copyright'>Copyright (c) 2042 Our Company</div>");
+  
+  my $html= '<html><head>';
+  for my $jsFile (@{$cx->getJsIncludeList) {
+    $html .= '<script type="text/javascript" src="' . $jsFile . '"></script>';
+  }
+  for my $cssFile (@{$cx->getCssIncludeList) {
+    $html .= '<link rel="stylesheet" type="text/css" href="' . $cssFile . '" />';
+  }
+  $html .= $cx->getHeaderLiteral . '</head><body>';
+  $html .= $cx->getBody;
+  $html .= '</body></html>';
+
+  # to re-use the render context, you need to clear it
+  $cx->clear();
+
+=head1 DESCRIPTION
+
+This module facilitates writing html fragments in short bursts and later joining them
+while also building up a list of javascript and css files which are required.
+
+Note that none of these functions *return* html, they collect it within the context, to
+be joined later.
+
+When you are done, you can build a proper HTML page from it.
+
+This module also has a renderer, which can be set to any renderer of your choice.
+
+There are also a number of handy utility methods, like "data2html".
+
+=cut
+
 our $DEFAULT_RENDERER= RapidApp::Web1RenderContext::RenderFunction->new(\&data2html);
 
 has '_css_files' => ( is => 'rw', isa => 'HashRef', default => sub {{}} );
@@ -51,6 +91,19 @@ sub getHeaderLiteral {
 sub getBody {
 	my $self= shift;
 	return join('', @{$self->body_fragments});
+}
+
+sub clear {
+	my $self= shift;
+	%{$self->_css_files}= ();
+	%{$self->_js_files}= ();
+	@{$self->header_fragments}= ();
+	@{$self->body_fragments}= ();
+}
+
+sub clearBody {
+	my $self= shift;
+	@{$self->body_fragments}= ();
 }
 
 sub write {

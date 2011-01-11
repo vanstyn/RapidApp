@@ -10,6 +10,8 @@ This class is for functions with arguments of the form
   function( $context, $data )
 If the function requires any other parameters, use RapidApp::Web1RenderContext::RenderMethod instead.
 
+We skip Moose, because our needs are very simple and lots of these will get created.
+
 =cut
 sub new {
 	my ($class, $code)= @_;
