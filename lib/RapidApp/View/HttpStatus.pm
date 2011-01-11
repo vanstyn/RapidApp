@@ -32,8 +32,8 @@ sub process {
 		$c->stash->{template} = 'templates/rapidapp/http-status.tt';
 	}
 	
-	if (defined $c->stash->{exceptionRefId} and !length $c->stash->{exceptionRefId}) {
-		$c->stash->{exceptionRefFailure}= 1; # we don't have "defined" in TT, so add a more convenient variable
+	if (exists $c->stash->{exceptionRefId} and !$c->stash->{exceptionRefId}) {
+		$c->stash->{exceptionRefFailure}= 1; # we don't have "defined" or "exists" in TT, so add a more convenient variable
 	}
 	
 	$self->SUPER::process($c);

@@ -8,6 +8,40 @@ use Devel::StackTrace;
 use Devel::StackTrace::AsHTML;
 use IO::File;
 use Try::Tiny;
+use Scalar::Util 'weaken';
+
+=head1 NAME
+
+RapidApp::TraceCapture
+
+=head1 DESCRIPTION
+
+This module contains a number of useful functions for capturing stack traces.
+
+The writeQuickTrace and writeFullTrace functions send their output to the file specified by
+the environment variable TRACE_OUT_FILE, or default to /tmp/RapidApp_Error_Traces if unset.
+
+=head1 SYNOPSIS
+
+  try {
+    local $SIG{__DIE__}= \&RapidApp::TraceCapture::captureTrace;
+    
+    # do stuff
+    do->stuff();
+    
+    # clear any stack traces we might have picked up, since none were fatal
+    RapidApp::TraceCapture::collectTraces;
+  }
+  catch {
+    my $err= $_;
+    my @traces= RapidApp::TraceCapture::collectTraces;
+    for my $trace (@traces) {
+      RapidApp::TraceCapture::writeFullTrace($trace);
+    }
+  };
+
+
+=cut
 
 sub initTraceOutputFile {
 	my $fname= $ENV{TRACE_OUT_FILE} || '/tmp/RapidApp_Error_Traces';
@@ -19,55 +53,83 @@ sub initTraceOutputFile {
 }
 
 our $TRACE_OUT_FILE= initTraceOutputFile;
-our $LAST_TRACE= undef;
+our @TRACES= ();
+our $LAST_THROWN_OBJ_STR;
 
-sub writeQuickTrace {
+sub emitMessage {
 	my $msg= shift;
-	my $trace= shift;
-	my $fd= IO::File->new(">> $TRACE_OUT_FILE");
-	$fd->print("<p>Exception: $msg\n</p>\n<pre style='margin:0.2em 1em 2em 1em; font-size:10pt'>".$trace->as_string."\n</pre>\n\n\n");
-	$fd->close();
-}
-
-sub writeFullTrace {
-	my $msg= shift;
-	my $trace= shift;
-	open my $fd, '>>', $TRACE_OUT_FILE;
-	$fd->print("<p>Exception: $msg\n</p><br/>\n".$trace->as_html."\n<br/><br/><br/>\n");
-	close $fd;
-}
-
-sub collectTrace {
-	$LAST_TRACE= Devel::StackTrace->new;
-	writeQuickTrace(join(' ', @_), $LAST_TRACE);
 	my $log= sEnv->get("log");
-	my $msg= "Exception trace saved to $TRACE_OUT_FILE\n";
 	if ($log) {
 		$log->info($msg);
 		$log->flush if $log->can('flush');
 	} else {
-		print STDERR $msg;
+		STDERR->print($msg."\n");
+		STDERR->flush();
 	}
 }
 
-sub collectTracesWithin {
-	my ($code)= @_;
-	
+sub writeQuickTrace {
+	my $trace= shift;
 	try {
-		print STDERR "Setting collector error-trap\n";
-		local $SIG{__DIE__}= \&collectTrace;
-		&$code;
+		my $fd= IO::File->new(">> $TRACE_OUT_FILE");
+		my @frames= $trace->frames;
+		$fd->print("<div style='margin:0.2em 1em 2em 1em; font-size:10pt'>\n");
+		for my $frame (@frames) {
+			my $fname= $frame->filename;
+			$fname =~ s|.*?/lib/perl[^/]+/([^A-Z][^/]*/)*||;
+			$fname =~ s|.*?/lib/||;
+			my $loc= sprintf('<font color="blue">%s</font> line <font color="blue">%d</font>', $fname, $frame->line);
+			
+			my $call= sprintf('<b>%s</b>', $frame->subroutine);
+			my $args= '<span style="font-size: 8pt">'.join('<br />', map { defined $_? $_ : "<undef>" } $frame->args).'</span>';
+			#$call =~ s/([^ ]+)=HASH[^ ,]+/\\%$1/g;
+			
+			$fd->print("<div> $loc <table style='padding-left:2em'><tr><td valign='top'>$call".'&nbsp;'."(</td><td> $args </td></tr></table></div>\n");
+		}
+		$fd->print("\n</div><hr width='70%' />\n\n\n");
+		$fd->close();
 	}
 	catch {
-		writeFullTrace("$_", $LAST_TRACE) if defined($LAST_TRACE);
-		$LAST_TRACE= undef;
-		die $_;
+		emitMessage "Error while saving trace: $_";
 	};
-	print STDERR (defined $LAST_TRACE? "No exceptions were fatal.\n" : "No Exceptions encountered\n");
+}
+
+sub writeFullTrace {
+	my $trace= shift;
+	try {
+		my $fd= IO::File->new(">> $TRACE_OUT_FILE");
+		$fd->print($trace->as_html."\n<br/><br/><br/>\n");
+		$fd->close();
+	}
+	catch {
+		emitMessage "Error while saving trace: $_";
+	};
+}
+
+sub captureTrace {
+	my $errStr= "".$_[0];
+	
+	# do not record multiple stack traces for an error which is getting re-thrown frm a catch
+	return unless !defined $LAST_THROWN_OBJ_STR or $errStr ne $LAST_THROWN_OBJ_STR;
+	$LAST_THROWN_OBJ_STR= $errStr;
+	
+	push @TRACES, Devel::StackTrace->new;
+	emitMessage "Exception trace captured";
+}
+
+sub collectTraces {
+	my @result= @TRACES;
+	@TRACES= ();
+	$LAST_THROWN_OBJ_STR= undef;
+	return @result;
 }
 
 END {
-	writeFullTrace("Unexpected call to exit... Last trace:", $LAST_TRACE) if defined($LAST_TRACE);
+	if (scalar(@TRACES)) {
+		emitMessage "Unexpected call to exit... Dumping traces to $TRACE_OUT_FILE";
+		for my $trace (@TRACES) { writeFullTrace($trace); }
+		@TRACES= ();
+	}
 }
 
 1;

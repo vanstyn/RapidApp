@@ -6,6 +6,7 @@ BEGIN { extends 'Catalyst::View'; }
 
 use RapidApp::JSON::MixedEncoder;
 use Data::Dumper;
+use Scalar::Util 'blessed', 'reftype';
 
 has 'encoding' => ( is => 'rw', isa => 'Str', default => 'utf-8' );
 
@@ -30,22 +31,13 @@ sub process {
 		$c->res->header('X-RapidApp-Exception' => 1);
 		$c->res->status(542);
 		
-		my $msg;
-		if ($c->stash->{isUserError}) {
-			$msg= $err->userMessage;
-			$msg =~ s|\n|<br/>|g;
-			$msg =~ s|&|&amp;|g;
-			$msg =~ s|<|&lt;|g;
-			$msg =~ s|>|&gt;|g;
-			$msg =~ s|"|&quot;|g;
-		}
-		else {
-			$msg= 'An internal error occured<br/>';
-		}
+		my $msg= $self->getUserMessage($err) || 'An internal error occured';
 		
+		# If exceptionRefId exists, we mention something about it to the user.
+		# If it is false, this means we failed to save it.
 		if ($c->stash->{exceptionRefId}) {
 			my $id= $c->stash->{exceptionRefId};
-			$msg .= 'The details of this error have been kept for analysis<br/>'
+			$msg .= '<br/>The details of this error have been kept for analysis<br/>'
 				.'Reference number ';
 			if ($c->debug && $c->rapidApp->errorViewPath) {
 				$msg .= '<a href="'.$c->rapidApp->errorViewPath.'/?id='.$id.'" target="_blank">'.$id.'</a>';
@@ -53,7 +45,7 @@ sub process {
 				$msg .= $id;
 			}
 		}
-		elsif (defined $c->stash->{exceptionRefId}) {
+		elsif (exists $c->stash->{exceptionRefId}) {
 			$msg .= "The details of this error could not be saved.";
 		}
 		
@@ -80,6 +72,21 @@ sub process {
 	}
 	
 	$c->res->body($jsonStr);
+}
+
+sub getUserMessage {
+	my ($self, $err)= @_;
+	blessed($err) or return undef;
+	my $method= $err->can('userMessage') || return undef;
+	my $str= $err->$method();
+	defined $str && length($str) or return undef;
+	
+	$str =~ s|\n|<br/>|g;
+	$str =~ s|&|&amp;|g;
+	$str =~ s|<|&lt;|g;
+	$str =~ s|>|&gt;|g;
+	$str =~ s|"|&quot;|g;
+	return $str;
 }
 
 1;
