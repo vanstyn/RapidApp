@@ -6,9 +6,7 @@ with 'RapidApp::Role::DataStore2';
 use strict;
 
 use RapidApp::Include qw(sugar perlutil);
-use RapidApp::ExtCfgToHtml;
-use RapidApp::ExtCfgToHtml::Basic;
-use RapidApp::ExtCfgToHtml::Form;
+use RapidApp::Web1RenderContext::ExtCfgToHtml;
 
 has 'reload_on_save' 		=> ( is => 'ro', default => 0 );
 has 'closetab_on_create'	=> ( is => 'ro', default => 0 );
@@ -43,15 +41,28 @@ sub init_onrequest {
 }
 
 sub web1_render {
-	my ($self, $cxt)= @_;
-	my $cfg= $self->get_complete_extconfig;
-	my $storeFetchParams= $cfg->{store}{parm}{baseParams};
+	my ($self, $renderCxt, $extCfg)= @_;
+	$renderCxt->renderer->isa('RapidApp::Web1RenderContext::ExtCfg2Html')
+		or die "Renderer for automatic ext->html conversion must be a Web1RenderContext::ExtCfg2Html";
+	
+	# get the cfg if it wasn't gotten already
+	$extCfg ||= $self->get_complete_extconfig;
+	
+	# load the data for the form
+	my $storeFetchParams= $extCfg->{store}{parm}{baseParams};
 	my $data= $self->Module('store')->read_raw($storeFetchParams);
+	
+	# if we got it, fill in the values
 	if (scalar(@{$data->{rows}})) {
-		$self->mergeStoreValues($cfg->{items}, $data->{rows}->[0]);
+		$self->mergeStoreValues($extCfg->{items}, $data->{rows}->[0]);
 	}
-	RapidApp::ExtCfgToHtml->render($cxt, $cfg, 'form');
-	$ENV{DEBUG_CFG_OBJECTS} and $cxt->data2html($cfg);
+	
+	# now render using the renderer for xtype "form"
+	my $formRenderer= $extCfg->renderer->findRendererForXtype('form');
+	$formRenderer->renderAsHtml($renderCxt, $extCfg);
+	
+	# for debugging, show the complete contents of the extCfg hash
+	$ENV{DEBUG_CFG_OBJECTS} and $renderCxt->data2html($extCfg);
 }
 
 sub mergeStoreValues {
@@ -173,16 +184,6 @@ sub formpanel_tbar {
 		items => $items
 	};
 }
-
-# RapidApp::Web1RenderContext->registerXtypeRenderFunction('appstoreform2' => \&web1_render_appstoreform2);
-# sub web1_render_appstoreform2 {
-	# my ($context, $cfg)= @_;
-	# if ($cfg->{store} && $cfg->{store}{parm} && $cfg->{store}{parm}{api} && $cfg->{store}{parm}{api}{read}) {
-		# my $storeReadUrl= $cfg->{store}{parm}{api}{read};
-		
-	# }
-	# $context->render($cfg, 'form');
-# }
 
 #### --------------------- ####
 

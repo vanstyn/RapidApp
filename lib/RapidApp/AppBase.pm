@@ -109,7 +109,7 @@ sub web1_content {
 }
 
 sub web1_render {
-	my ($self, $renderContext)= @_;
+	my ($self, $renderCxt)= @_;
 	die RapidApp::Error->new("Unimplemented");
 }
 
