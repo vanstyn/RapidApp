@@ -308,8 +308,8 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 	var formpanel = {
 		xtype: 'form',
 		itemId: 'formpanel',
-		
-		anchor: '100% 100%',
+		autoScroll: true,
+		//anchor: '100% 100%',
 		items: data.items,
 		success_callback: success_callback // <-- storing this here so we can use it in the btn handler
 	};
@@ -318,12 +318,12 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 
 	var win = new Ext.Window({
 		title: data.title,
-		layout: 'anchor',
+		layout: 'fit',
 		width: data.width,
 		height: data.height,
 		closable: true,
 		modal: true,
-		autoScroll: true,
+		//autoScroll: true,
 		items: formpanel,
 		buttons: buttons
 	});
