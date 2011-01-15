@@ -215,11 +215,18 @@ Ext.override(Ext.data.Connection,{
 			call_orig = false;
 			Ext.ux.RapidApp.handleCustomPrompt(customprompt,success_callback_repeat);
 		}
-
+		
 		if(response.getResponseHeader('X-RapidApp-Exception')) return;
 
 		if(call_orig) {
 			this.handleResponse_orig.apply(this,arguments);
+			
+			var servercallback = response.getResponseHeader('X-RapidApp-Callback');
+			if (servercallback) {
+				// Put the response into "this" and then call the callback with "this" scope
+				this.response = response;
+				Ext.ux.RapidApp.handleServerCallBack.call(this,servercallback);
+			}
 		}
 	}
 });
@@ -227,6 +234,26 @@ Ext.override(Ext.data.Connection,{
 
 
 Ext.ns('Ext.ux.RapidApp');
+
+// Call an arbitrary function specified in the response from the server (X-RapidApp-Callback)
+// the function is called with the scope (this) of the Ext.data.Connection that made the
+// Ajax request to the server, and the response is available in this.response
+Ext.ux.RapidApp.handleServerCallBack = function(headerdata) {
+
+	var data = {};
+	Ext.apply(data,Ext.decode(headerdata));
+
+	var func;
+	if(data.func) 				{ eval('func = function() { return ' + data.func + '.apply(this,arguments); };'); }
+	else if (data.anonfunc)	{	eval('func = ' + data.anonfunc + ';'); }
+	else 								{ throw "Neither 'func' nor 'anonfunc' was specified in X-RapidApp-Callback header data"; 	}
+	
+	if (data.arguments) {
+		return func.apply(this,data.arguments);
+	}
+	return func.call(this);
+}
+
 
 Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 
