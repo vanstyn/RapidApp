@@ -315,5 +315,61 @@ sub set_response_warning {
 	return $self->c->response->header('X-RapidApp-Warning' => $self->json->encode($warn));
 }
 
+# if response_callback_scoped is true when set_response_callback is called, the
+# function will be called with the scope (this reference) of the Ext.data.Connection
+# object that initiated the Ajax request (Ext.Ajax.request) and this.response will
+# also contain the response object; This is false by default because setting the 
+# scope breaks many functions, and this is usually not needed (the only reason to
+# turn this on would be if you need to examine the specific request/response)
+has 'response_callback_scoped' => (
+	is => 'rw',
+	traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ],
+	default => 0
+);
+
+=item
+set_response_callback examples
+
+$self->set_response_callback( 'Ext.ux.MyFunc' );
+
+$self->set_response_callback( alert => 'foo!' );
+
+$self->set_response_callback( 'Ext.Msg.alert' => ( 'A message!!', 'this is awesome!!' ) );
+
+my $func = RapidApp::JSONFunc->new( raw => 1, func => 'function(){ console.log("anon!!"); console.dir(this.response); }');	
+$self->response_callback_scoped(1);
+$self->set_response_callback( $func => ( "arg1",{ key_in_arg2 => 'blah!!!' },'arg3',\1  ) );
+
+=cut
+
+# when calling set_response_callback the JS function specified will be
+# called after the request is completed successfully
+sub set_response_callback {
+	my ($self, $func, @args) = @_;
+
+	my $data = {};
+	$data->{arguments} = [ @args ] if (scalar @args > 0);
+	
+	if(ref($func) eq 'RapidApp::JSONFunc') {
+		die "only 'raw' RapidApp::JSONFunc objects are supported" unless ($func->raw);
+		$data->{anonfunc} = $func;
+	}
+	else {
+		$data->{func} = $func;
+	}
+	
+	$data->{scoped} = \1 if ($self->response_callback_scoped);
+	
+	return $self->c->response->header( 'X-RapidApp-Callback' => $self->json->encode($data) );
+}
+
+
+
+
+
+
+
+
+
 
 1;
