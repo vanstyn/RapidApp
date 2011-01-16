@@ -56,6 +56,7 @@ has 'base_search_set_list' => ( is => 'ro', lazy => 1, default => sub {
 sub data_fetch {
 	my $self = shift;
 	my $params = shift or return undef;
+	my $extra_search = shift;
 	
 	# Treat zero length string as if it wasn't defined at all:
 	delete $params->{query} if (defined $params->{query} and $params->{query} eq '');
@@ -83,7 +84,7 @@ sub data_fetch {
 	my $Search	= $params->{Search_spec};	# <-- Optional custom Search_spec override
 	
 	$Attr 		= $self->Attr_spec($params) unless (defined $Attr);
-	$Search 		= $self->Search_spec($params) unless (defined $Search);
+	$Search 		= $self->Search_spec($params,$extra_search) unless (defined $Search);
 	
 	#use Data::Dumper;
 	#print STDERR BOLD .GREEN . Dumper($Attr) . CLEAR;
@@ -366,6 +367,7 @@ sub addToFlatHashref {
 sub Search_spec {
 	my $self = shift;
 	my $params = shift;
+	my $extra_search = shift;
 
 	my $filter_search = [];
 	#my $set_filters = {};
@@ -538,6 +540,7 @@ sub Search_spec {
 	}
 	
 	push @$filter_search, @{ $self->base_search_set_list } if (defined $self->base_search_set_list);
+	push @$filter_search, @{ $extra_search } if (defined $extra_search);
 	
 	if (scalar @$filter_search > 0) {
 		#unshift @$search, { -and => $filter_search };

@@ -149,7 +149,7 @@ around 'BUILD' => sub {
 			
 			# -- Build combos (dropdowns) for every related field (for use in multifilters currently):
 			if ($prefix) {
-				#$self->log->debug(MAGENTA . BOLD . $colname . ' (' . $rel_name . ')' . CLEAR);
+				print STDERR '      ' . MAGENTA . BOLD . $colname . ' (' . $rel_name . ')' . CLEAR . "\n";
 				
 				my $module_name = 'combo_' . $colname;
 				$self->apply_modules(
@@ -301,7 +301,9 @@ sub read_records {
 		$params->{columns} = $newcols;
 	};
 	
-	my $data = $self->DbicExtQuery->data_fetch($params);
+	my @arg = ( $params );
+	push @arg, $self->read_extra_search_set if ($self->can('read_extra_search_set'));
+	my $data = $self->DbicExtQuery->data_fetch(@arg);
 
 	my $rows = [];
 	foreach my $row (@{$data->{rows}}) {
