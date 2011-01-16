@@ -718,6 +718,26 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 		Ext.getCmp(winId).close();
 		// Call the success function if it was passed in the cfg:
 		if (cfg.success) { cfg.success.apply(scope,arguments); }
+		
+		var call_args = arguments;
+		
+		// Call additional specified success callbacks. These can be functions outright,
+		// or objects containing a custom scope and handler:
+		if(Ext.isArray(cfg.success_callbacks)) {
+			Ext.each(cfg.success_callbacks,function(item) {
+				if(Ext.isFunction(item)) {
+					//call the function with the same scope as
+					item.apply(scope,call_args);
+				}
+				else if(Ext.isObject(item)) {
+					if(item.scope && item.handler) {
+						//call the handler with the custom provided scope:
+						item.handler.apply(item.scope,call_args);
+					}
+				}
+			});
+		}
+		
 		if (cfg.eval_response && response.responseText) { return eval(response.responseText); }
 	};
 
