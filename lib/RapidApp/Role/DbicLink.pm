@@ -31,6 +31,8 @@ has 'never_fetch_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
 	return $h;
 });
 
+has 'no_rel_combos' => ( is => 'ro', isa => 'Bool', default => 0);
+
 sub apply_primary_columns {
 	my $self = shift;
 	my @cols = (ref($_[0]) eq 'ARRAY') ? @{ $_[0] } : @_; # <-- arg as array or arrayref
@@ -101,6 +103,38 @@ sub _build_join_map {
 	return $map;
 }
 
+has 'join_col_prefix_map' => (
+	is => 'ro',
+	isa => 'HashRef',
+	lazy => 1,
+	default => sub {
+		my $self = shift;
+		my $map = {};
+		foreach my $join (@{$self->joins}) {
+			$map->{$self->hashref_concat_recurse($join)} = 1;
+		}
+		return $map;
+	}
+);
+
+sub hashref_concat_recurse {
+	my ($self, @list) = @_;
+	
+	my @join_list = ();
+	foreach my $ele (@list) {
+		if (ref($ele)) {
+			die "only hashrefs or strings are supported" unless (ref($ele) eq 'HASH');
+			push @join_list, $self->hashref_concat_recurse(%$ele);
+		}
+		else {
+			push @join_list, $ele;
+		}
+	}
+	my $str = join('_',@join_list);
+	return $str;
+}
+
+
 
 
 
@@ -137,7 +171,7 @@ around 'BUILD' => sub {
 			$colname = $prefix . '_' . $column if ($prefix);
 			
 			next unless ($self->valid_colname($colname));
-			
+
 			$self->fieldname_transforms->{$colname} = $rel_name . '.' . $column unless ($colname eq $column);
 			
 			my $opts = { name => $colname };
@@ -147,9 +181,10 @@ around 'BUILD' => sub {
 			
 			$self->apply_columns( $colname => $opts );
 			
+			print STDERR '      ' . MAGENTA . BOLD . ref($self) . ': ' . $colname . CLEAR . "\n";
 			# -- Build combos (dropdowns) for every related field (for use in multifilters currently):
-			if ($prefix) {
-				print STDERR '      ' . MAGENTA . BOLD . $colname . ' (' . $rel_name . ')' . CLEAR . "\n";
+			if ($prefix and not ($ENV{NO_REL_COMBOS} or $self->no_rel_combos)) {
+				
 				
 				my $module_name = 'combo_' . $colname;
 				$self->apply_modules(
@@ -160,7 +195,7 @@ around 'BUILD' => sub {
 							ResultSource	=> $Source
 						}
 					}
-				);
+				) ;
 				
 				$self->apply_columns(
 					$colname => { field_cnf => $self->Module($module_name)->content }
@@ -183,7 +218,9 @@ around 'BUILD' => sub {
 			my $subSource = $Source->schema->source($info->{class});
 			my $new_prefix = $rel;
 			$new_prefix = $prefix . '_' . $rel if ($prefix);
-			$addColRecurse->($subSource,$rel,$new_prefix);
+			
+			# only follow prefixes that are defined in the joins:
+			$addColRecurse->($subSource,$rel,$new_prefix) if ($self->join_col_prefix_map->{$new_prefix});
 			
 		}
 	};
