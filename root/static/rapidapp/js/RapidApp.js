@@ -712,17 +712,17 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 
 	cfg.fieldset['anchor'] = '100% 100%';
 
+	var scope = this;
 
 	var success_fn = function(response,options) {
 		Ext.getCmp(winId).close();
 		// Call the success function if it was passed in the cfg:
-		if (cfg.success) { cfg.success.apply(this,arguments); }
+		if (cfg.success) { cfg.success.apply(scope,arguments); }
 		if (cfg.eval_response && response.responseText) { return eval(response.responseText); }
 	};
 
 	var failure_fn = function(response,options) {
-
-		if (cfg.failure) { cfg.failure.apply(this,arguments); }
+		if (cfg.failure) { cfg.failure.apply(scope,arguments); }
 	};
 
 	var win = new Ext.Window({
