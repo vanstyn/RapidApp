@@ -176,16 +176,24 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 	},
 
 	initComponent: function() {
-	
+		
+		var bbar_items = [];
+		if(Ext.isArray(this.bbar)) { bbar_items = this.bbar; }
+		
+		this.bbar = {
+			xtype:	'toolbar',
+			items: bbar_items
+		};
+		
 		if(this.pageSize) {
-			this.bbar = {
+			Ext.apply(this.bbar,{
 				xtype:	'paging',
 				store: this.store,
 				pageSize: this.pageSize,
 				displayInfo : true,
 				prependButtons: true,
 				items: []
-			};
+			});
 		}
 		
 		// ----- MultiFilters: ----- //
@@ -250,7 +258,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 					);
 				}
 			});
-			this.bbar.items.push(
+			this.bbar.items.unshift(
 				'Selection:',
 				deleteBtn,
 				'-'
