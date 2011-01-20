@@ -66,14 +66,7 @@ sub dispatch {
 	catch {
 		my $err = $_;
 		my @traces= RapidApp::TraceCapture::collectTraces;
-		
-		if (blessed($err) and $err->isa('RapidApp::Error::CustomPrompt')) {
-			$c->response->header('X-RapidApp-CustomPrompt' => $err->header_json);
-			length($c->response->body) > 0 or $c->response->body("Contains X-RapidApp-CustomPrompt Data");
-		}
-		else {
-			$result= $self->onException($_, \@traces);
-		}
+		$result= $self->onException($_, \@traces);
 	};
 	# if the body was not set, make sure a view was chosen
 	defined $c->res->body || defined $c->stash->{current_view} || defined defined $self->c->stash->{current_view_instance}
