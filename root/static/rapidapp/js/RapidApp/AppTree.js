@@ -110,8 +110,14 @@ Ext.ux.RapidApp.AppTree.add = function(tree,cfg) {
 
 	var node = tree.getSelectionModel().getSelectedNode();
 	var id = "root";
-	if(node) id = node.id;
-	
+	if(node) {
+		// If this is a leaf node, it can't have childred, so use the parent node:
+		if(node.isLeaf() && node.parentNode) { 
+			var parent = node.parentNode;
+			node = parent;
+		}
+		id = node.id;
+	}
 	
 	var winform_cfg = {
 		title: "Add",
