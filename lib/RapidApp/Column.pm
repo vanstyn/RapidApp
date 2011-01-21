@@ -110,7 +110,12 @@ sub apply_attributes {
 
 sub get_grid_config {
 	my $self = shift;
-	return { map { $_ => $self->$_ } @{&meta_gridColParam_attr_names($self->meta)} };
+	my $config= {};
+	for my $attrName (@{&meta_gridColParam_attr_names($self->meta)}) {
+		my $val= $self->$attrName();
+		$config->{$attrName}= $val if defined $val;
+	}
+	return $config
 	#return $self->get_config_for_traits('RapidApp::Role::GridColParam');
 }
 
