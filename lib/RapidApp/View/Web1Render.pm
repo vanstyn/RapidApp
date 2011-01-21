@@ -9,9 +9,18 @@ use RapidApp::Web1RenderContext::ExtCfgToHtml;
 
 has 'defaultRenderer' => ( is => 'rw', isa => 'RapidApp::Web1RenderContext::Renderer', lazy_build => 1 );
 
+sub renderAsIgnored {
+	my ($renderCxt, $obj)= @_;
+	if (RapidApp::ScopedGlobals->catalystInstance->debug) {
+		$renderCxt->write("<div><b>[unrenderable content]</b></div>");
+	}
+}
+
 sub _build_defaultRenderer {
 	my $self= shift;
-	return RapidApp::Web1RenderContext::ExtCfgToHtml->new();
+	return RapidApp::Web1RenderContext::ExtCfgToHtml->new(
+		defaultRenderer => RapidApp::Web1RenderContext::RenderFunction->new(\&renderAsIgnored),
+	);
 }
 
 sub process {
@@ -20,18 +29,18 @@ sub process {
 	$c->res->header('Cache-Control' => 'no-cache');
 	RapidApp::ScopedGlobals->applyForSub(
 		{ catalystClass => ref $c, catalystInstance => $c, log => $c->log },
-		\&_process, $self, $c
+		\&_process, $self, $c->stash
 	);
 }
 
-sub _process {
-	my ($self, $c)= @_;
+sub render {
+	my ($self, $hash)= @_;
 	# generate the html
 	my $renderCxt= RapidApp::Web1RenderContext->new(renderer => $self->defaultRenderer);
-	my $module= $c->stash->{module} or die "Missing argument: ->{module}";
-	defined $module or die "Nothing to render";
+	my $module= $hash->{module} or die "Missing argument: module => x";
 	$module->web1_render($renderCxt);
 	
+	my $c= RapidApp::ScopedGlobals->catalystInstance;
 	# get the params set up for the template
 	$c->stash->{css_inc_list}= [ $renderCxt->getCssIncludeList ];
 	$c->stash->{js_inc_list}= [ $renderCxt->getJsIncludeList ];

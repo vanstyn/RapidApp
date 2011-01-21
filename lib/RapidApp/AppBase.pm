@@ -54,6 +54,7 @@ has 'instance_id' => (
 sub BUILD {
 	my $self= shift;
 	$self->apply_actions(viewport => 'viewport');
+	$self->apply_actions('web1.0' => 'web1');
 }
 
 sub suburl {
@@ -95,16 +96,12 @@ sub content {
 
 sub web1_content {
 	my $self= shift;
-	return $self->viewport if $self->auto_viewport;
-	try {
-		$self->c->stash->{module}= $self;
-		$self->c->view('RapidApp::Web1Render')->process($self->c);
-		delete $self->c->stash->{module};
-	}
-	catch {
-		delete $self->c->stash->{module};
-		die $_;
-	};
+	return $self->auto_viewport? $self->viewport : $self->web1;
+}
+
+sub web1 { # public action
+	my $self= shift;
+	$self->c->view('RapidApp::Web1Render')->render({module => $self});
 	return 1;
 }
 

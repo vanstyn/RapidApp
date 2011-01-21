@@ -35,7 +35,11 @@ sub web1_render {
 	$renderCxt->renderer->isa('RapidApp::Web1RenderContext::ExtCfgToHtml')
 		or die "Renderer for automatic ext->html conversion must be a Web1RenderContext::ExtCfgToHtml";
 	$extConfig ||= $self->get_complete_extconfig;
-	$renderCxt->render($renderCxt, $extConfig);
+	if ($self->c->debug && $self->c->req->params->{dumpcfg}) {
+		$renderCxt->data2html($extConfig);
+	} else {
+		$renderCxt->render($extConfig);
+	}
 }
 
 sub get_complete_extconfig {
