@@ -12,7 +12,7 @@ sub BUILD {
 	
 	# Add the Ext.ux.RapidApp.Plugin.EventHandlers plugin to all AppCmp
 	# based objects:
-	$self->add_plugin({ ptype => 'rappeventhandlers' });
+	#$self->add_plugin({ ptype => 'rappeventhandlers' });
 	
 	# if a subclass overrode the web1_render function, we need to let ExtConfig2Html know
 	if ($self->can('web1_render') != \&web1_render) {
@@ -123,6 +123,8 @@ has 'plugins' => (
 	}
 );
 
+
+# -- disabled and replaced by "listener_callbacks"
 # event_handlers do basically the same thing as "listeners" except it is
 # setup as a list instead of a hash, allowing multiple handlers to be
 # defined for the same event. Items should be added as ArrayRefs, with
@@ -132,20 +134,20 @@ has 'plugins' => (
 # with all Ext.Observable objects, "event_handlers" is a custom param that
 # is processed in the Ext.ux.RapidApp.Plugin.EventHandlers plugin which is
 # also setup in AppCmp
-has 'event_handlers' => (
-	traits    => [
-		'Array',
-		'RapidApp::Role::AppCmpConfigParam',
-		'RapidApp::Role::PerRequestBuildDefReset',
-	],
-	is        => 'ro',
-	isa       => 'ArrayRef[ArrayRef]',
-	default   => sub { [] },
-	handles => {
-		add_event_handlers		=> 'push',
-		has_no_event_handlers	=> 'is_empty',
-	}
-);
+#has 'event_handlers' => (
+#	traits    => [
+#		'Array',
+#		'RapidApp::Role::AppCmpConfigParam',
+#		'RapidApp::Role::PerRequestBuildDefReset',
+#	],
+#	is        => 'ro',
+#	isa       => 'ArrayRef[ArrayRef]',
+#	default   => sub { [] },
+#	handles => {
+#		add_event_handlers		=> 'push',
+#		has_no_event_handlers	=> 'is_empty',
+#	}
+#);
 
 
 
@@ -191,6 +193,12 @@ sub add_listener_callbacks {
 	my $list = [];
 	$list = $self->get_listener_callbacks($event) if ($self->has_listener_callbacks($event));
 	
+#	foreach my $func (@_) {
+#		# Auto convert strings into RapidApp::JSONFunc objects:
+#		#$func = RapidApp::JSONFunc->new( raw => 1, func => $func ) unless (ref($func));
+#		push @$list, $func;
+#	}
+	
 	push @$list, @_;
 	
 	return $self->apply_listener_callbacks( $event => $list );	
@@ -205,14 +213,21 @@ sub add_listener {
 	$self->add_listener_callbacks($event,@_);
 	
 	my $handler = RapidApp::JSONFunc->new( raw => 1, func =>
-		'function(scope) {' .
+		'function(arg1) {' .
+			
+			'var cmp = this;' .
+			
+			'if(arg1.listener_callbacks && !cmp.listener_callbacks) {' .
+				'cmp = arg1;' .
+			'}' .
+			
 			'var args = arguments;' .
-			'if(scope.listener_callbacks) {' .
-				'var list = scope.listener_callbacks["' . $event . '"];' .
+			'if(cmp.listener_callbacks) {' .
+				'var list = this.listener_callbacks["' . $event . '"];' .
 				'if(Ext.isArray(list)) {' .
 					'Ext.each(list,function(fn) {' .
 						'fn.apply(this,args);' .
-					'},scope);' .
+					'},this);' .
 				'}' .
 			'}' .
 		'}'

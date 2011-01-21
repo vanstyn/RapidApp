@@ -1,40 +1,15 @@
 package RapidApp::AppNavTree;
-
-
-use strict;
 use Moose;
-
 extends 'RapidApp::AppTree';
 
-
-
-use RapidApp::JSONFunc;
-#use RapidApp::AppDataView::Store;
-
-#use RapidApp::MooseX::ClassAttrSugar;
-#setup_apply_methods_for('listeners');
-#setup_apply_methods_for('config');
-
-#apply_default_listeners(
-#	'beforerender'	=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' ),
-#	'click' 			=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.treenav_click' )
-#);
+use RapidApp::Include qw(sugar perlutil);
 
 sub BUILD {
 	my $self = shift;
-	
-#	$self->apply_listeners (
-#		'beforerender'	=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' ),
-#		'click' 			=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.treenav_click' )
-#	
-#	);
 
-	$self->add_event_handlers (
-		[ 'beforerender', RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' ) ],
-		[ 'click', RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.treenav_click' ) ]
-	);
+	$self->add_listener( click => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.treenav_click' ) );
+	$self->add_listener( beforerender => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' ) );
 }
-
 
 
 has 'module_scope' => ( is => 'ro', lazy => 1, default => sub { return shift; });

@@ -76,6 +76,11 @@ sub BUILD {
 		)
 	);
 	
+	$self->add_listener( write => RapidApp::JSONFunc->new( raw => 1, func => 
+		'function(store, action, result, res, rs) { store.load(); }' 
+	)) if ($self->reload_on_save);
+	
+	
 	$self->add_base_keys($self->record_pk);
 	
 	# If this isn't in late we get a deep recursion error:
@@ -85,11 +90,16 @@ sub BUILD {
 
 sub store_init_onrequest {
 	my $self = shift;
+	
+	
+	
 
-	$self->add_event_handlers([ 
-		'write', 
-		RapidApp::JSONFunc->new( raw => 1, func => 'function(store, action, result, res, rs) { store.load(); }' )
-	]) if ($self->reload_on_save);
+	
+#	$self->add_event_handlers([ 
+#		'write', 
+#		RapidApp::JSONFunc->new( raw => 1, func => 'function(store, action, result, res, rs) { store.load(); }' )
+#	]) if ($self->reload_on_save);
+	
 	
 	$self->apply_extconfig( baseParams => $self->base_params ) if (
 		defined $self->base_params and

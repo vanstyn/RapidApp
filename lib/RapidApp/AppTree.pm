@@ -1,10 +1,8 @@
 package RapidApp::AppTree;
-
-
-use strict;
 use Moose;
-
 extends 'RapidApp::AppCmp';
+
+use RapidApp::Include qw(sugar perlutil);
 
 #use RapidApp::MooseX::ClassAttrSugar;
 #setup_apply_methods_for('config');
@@ -38,14 +36,38 @@ sub BUILD {
 	$self->apply_actions( add 		=> 'call_add_node' ) if ($self->can('add_node'));
 	$self->apply_actions( delete 	=> 'call_delete_node' ) if ($self->can('delete_node'));
 	
+	
+	$self->add_ONREQUEST_calls('init_onreq');
+	
 }
 
 
+sub init_onreq {
+	my $self = shift;
+	
+	$self->apply_extconfig(
+		id						=> $self->instance_id,
+		dataUrl				=> $self->suburl('/nodes'),
+		rootVisible			=> $self->show_root_node ? \1 : \0,
+		root					=> $self->root_node,
+		tbar					=> $self->tbar,
+	);
+	
+	my $node;
+	$node = $self->root_node_name if ($self->show_root_node);
+	$node = $self->c->req->params->{node} if ($self->c->req->params->{node});
+	
+	return unless($node);
 
-use RapidApp::JSONFunc;
-#use RapidApp::AppDataView::Store;
+	$self->add_listener( 
+		afterrender => RapidApp::JSONFunc->new( raw => 1, func => 
+			'function(tree) {' .
+				'Ext.ux.RapidApp.AppTree.jump_to_node_id(tree,"' . $node . '");' .
+			'}'
+		)
+	);
+}
 
-use Term::ANSIColor qw(:constants);
 
 
 
@@ -141,39 +163,21 @@ has 'tbar' => ( is => 'ro', lazy => 1, default => sub {
 });
 
 
-before 'content' => sub {
-	my $self = shift;
-	
-	$self->set_afterrender;
-	
-	$self->apply_config(
-		id						=> $self->instance_id,
-		dataUrl				=> $self->suburl('/nodes'),
-		rootVisible			=> $self->show_root_node ? \1 : \0,
-		root					=> $self->root_node,
-		tbar					=> $self->tbar,
-	);
-};
+#before 'content' => sub {
+#	my $self = shift;
+#	
+#	$self->set_afterrender;
+#	
+#	$self->apply_config(
+#		id						=> $self->instance_id,
+#		dataUrl				=> $self->suburl('/nodes'),
+#		rootVisible			=> $self->show_root_node ? \1 : \0,
+#		root					=> $self->root_node,
+#		tbar					=> $self->tbar,
+#	);
+#};
 
 
-
-sub set_afterrender {
-	my $self = shift;
-	
-	my $node;
-	$node = $self->root_node_name if ($self->show_root_node);
-	$node = $self->c->req->params->{node} if ($self->c->req->params->{node});
-	
-	return unless($node);
-
-	$self->apply_listeners( 
-		afterrender => RapidApp::JSONFunc->new( raw => 1, func => 
-			'function(tree) {' .
-				'Ext.ux.RapidApp.AppTree.jump_to_node_id(tree,"' . $node . '");' .
-			'}'
-		)
-	);
-}
 
 
 
