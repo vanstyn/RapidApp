@@ -81,8 +81,16 @@ Ext.ux.RapidApp.AppTree.jump_to_node_id = function(tree,id) {
 	return select_child(id,parents);
 };
 
-Ext.ux.RapidApp.AppTree.add = function(tree,url) {
+Ext.ux.RapidApp.AppTree.add = function(tree,cfg) {
 
+	var url;
+	if (Ext.isObject(cfg)) {
+	
+	}
+	else {
+		url = cfg;
+	}
+	
 	var items = [
 		{
 			xtype: 'textfield',
@@ -103,8 +111,9 @@ Ext.ux.RapidApp.AppTree.add = function(tree,url) {
 	var node = tree.getSelectionModel().getSelectedNode();
 	var id = "root";
 	if(node) id = node.id;
-
-	Ext.ux.RapidApp.WinFormPost({
+	
+	
+	var winform_cfg = {
 		title: "Add",
 		height: 130,
 		width: 250,
@@ -113,14 +122,16 @@ Ext.ux.RapidApp.AppTree.add = function(tree,url) {
 		params: {
 			node: id
 		},
-
 		fieldset: fieldset,
 		success: function(response) {
 			tree.getLoader().load(node,function(tp){
 				node.expand();
 			});
 		}
-	});
+	};
+	
+	Ext.apply(winform_cfg,cfg);
+	Ext.ux.RapidApp.WinFormPost(winform_cfg);
 }
 
 

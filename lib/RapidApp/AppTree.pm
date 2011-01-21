@@ -179,7 +179,10 @@ has 'tbar' => ( is => 'ro', lazy => 1, default => sub {
 
 
 
-
+has 'add_button_text' => ( is => 'ro', isa => 'Str', default => 'Add' );
+has 'add_button_iconCls' => ( is => 'ro', isa => 'Str', default => 'icon-add' );
+has 'delete_button_text' => ( is => 'ro', isa => 'Str', default => 'Delete' );
+has 'delete_button_iconCls' => ( is => 'ro', isa => 'Str', default => 'icon-delete' );
 
 sub add_button {
 	my $self = shift;
@@ -201,16 +204,21 @@ sub add_button {
 		items 			=> $items,
 	};
 	
+	my $cfg = {
+		url => $self->suburl('/add'),
+		title => $self->add_button_text
+	};
+	
 	return RapidApp::JSONFunc->new(
 		func => 'new Ext.Button', 
 		parm => {
-			text 		=> 'Add',
-			iconCls	=> 'icon-add',
+			text 		=> $self->add_button_text,
+			iconCls	=> $self->add_button_iconCls,
 			handler 	=> RapidApp::JSONFunc->new( 
 				raw => 1, 
 				func => 'function(btn) { ' . 
 					'var tree = btn.ownerCt.ownerCt;'.
-					'Ext.ux.RapidApp.AppTree.add(tree,"' . $self->suburl('/add') . '");' .
+					'Ext.ux.RapidApp.AppTree.add(tree,' . $self->json->encode($cfg) . ');' .
 					
 				'}'
 			)
@@ -224,8 +232,8 @@ sub delete_button {
 	return RapidApp::JSONFunc->new(
 		func => 'new Ext.Button', 
 		parm => {
-			text 		=> 'Delete',
-			iconCls	=> 'icon-delete',
+			text 		=> $self->delete_button_text,
+			iconCls	=> $self->delete_button_iconCls,
 			handler 	=> RapidApp::JSONFunc->new( 
 				raw => 1, 
 				func => 'function(btn) { ' . 
