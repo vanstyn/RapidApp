@@ -1,13 +1,7 @@
 package RapidApp::Column;
-#
-# -------------------------------------------------------------- #
-#
+use Moose;
 
 use Term::ANSIColor qw(:constants);
-
-use strict;
-use warnings;
-use Moose;
 
 our $VERSION = '0.1';
 
@@ -116,9 +110,26 @@ sub apply_attributes {
 
 sub get_grid_config {
 	my $self = shift;
-	return $self->get_config_for_traits('RapidApp::Role::GridColParam');
+	return { map { $_ => $self->$_ } @{&meta_gridColParam_attr_names($self->meta)} };
+	#return $self->get_config_for_traits('RapidApp::Role::GridColParam');
 }
 
+=pod
+These were intended to be Meta role methods, but that feature is broken, so they are slightly
+unusual functions so that they can be converted back when Moose people fix the feature.
+
+function meta_gridColParam_attr_names returns a ArrayRef of attribute names which have the trait
+'GridColParam', and caches this list in the metaclass object.  Thus, one cache gets created per
+subclass, which is what we want, because each subclass might define new grid attributes.
+=cut
+sub meta_gridColParam_attr_names {
+	my $meta= shift;
+	$meta->{gridColParam_attr_names} ||= &meta__build_gridColParam_attr_names($meta);
+}
+sub meta__build_gridColParam_attr_names {
+	my $meta= shift;
+	return [ map { $_->does('RapidApp::Role::GridColParam')? $_->name : () } $meta->get_all_attributes ];
+}
 
 # returns hashref for all attributes with defined values that 
 # match any of the list of passed traits
