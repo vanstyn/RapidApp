@@ -187,19 +187,21 @@ has 'listener_callbacks' => (
 	},
 );
 sub add_listener_callbacks {
-	my $self = shift;
-	my $event = shift;
+	my ($self,$event,@funcs) = @_;
 	
 	my $list = [];
 	$list = $self->get_listener_callbacks($event) if ($self->has_listener_callbacks($event));
 	
-#	foreach my $func (@_) {
-#		# Auto convert strings into RapidApp::JSONFunc objects:
-#		#$func = RapidApp::JSONFunc->new( raw => 1, func => $func ) unless (ref($func));
-#		push @$list, $func;
-#	}
-	
-	push @$list, @_;
+	foreach my $func (@funcs) {
+		
+		if (ref($func)) {
+			push @$list, $func;
+		}
+		else {
+			# Auto convert strings into RapidApp::JSONFunc objects:
+			push @$list, RapidApp::JSONFunc->new( raw => 1, func => $func );
+		}
+	}
 	
 	return $self->apply_listener_callbacks( $event => $list );	
 }
