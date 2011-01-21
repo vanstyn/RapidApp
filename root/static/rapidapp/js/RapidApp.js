@@ -493,8 +493,17 @@ Ext.ux.RapidApp.validateCsvEmailStr = function(v) {
 
 Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 
-
 	initComponent: function() {
+		
+		// Handle an initial value:
+		if(this.value) {
+			var init_value = this.value.valueOf();
+			delete this.value;
+			this.on('afterrender',function(cmp) {
+				cmp.setValue(init_value);
+			});
+		}
+		
 		this.setEditable(false);
 
 		var config = {
@@ -506,10 +515,7 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 		};
 		Ext.apply(this, Ext.apply(this.initialConfig, config));
 		Ext.ux.RapidApp.CustomPickerField.superclass.initComponent.apply(this, arguments);
-		//}
 	},
-
-	//setEditable: false,
 
 	getValue: function() {
 		return this.dataValue;

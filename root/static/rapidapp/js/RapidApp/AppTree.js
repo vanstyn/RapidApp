@@ -81,6 +81,25 @@ Ext.ux.RapidApp.AppTree.jump_to_node_id = function(tree,id) {
 	return select_child(id,parents);
 };
 
+
+Ext.ux.RapidApp.AppTree.get_selected_node = function(tree) {
+
+	var node = tree.getSelectionModel().getSelectedNode();
+	if(node) {
+		// If this is a leaf node, it can't have childred, so use the parent node:
+		if(node.isLeaf() && node.parentNode) { 
+			var parent = node.parentNode;
+			node = parent;
+		}
+		id = node.id;
+	}
+	else {
+		node = tree.root;
+	}
+
+	return node;
+}
+
 Ext.ux.RapidApp.AppTree.add = function(tree,cfg) {
 
 	var url;
@@ -108,6 +127,10 @@ Ext.ux.RapidApp.AppTree.add = function(tree,cfg) {
 		items: items
 	};
 
+	var node = Ext.ux.RapidApp.AppTree.get_selected_node(tree);
+	var id = node.id;
+
+/*
 	var node = tree.getSelectionModel().getSelectedNode();
 	var id = "root";
 	if(node) {
@@ -118,6 +141,7 @@ Ext.ux.RapidApp.AppTree.add = function(tree,cfg) {
 		}
 		id = node.id;
 	}
+*/
 	
 	var winform_cfg = {
 		title: "Add",
