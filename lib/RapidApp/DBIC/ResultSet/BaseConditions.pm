@@ -21,10 +21,15 @@ has 'base_joins' => (
 	}
 );
 
+has 'override_search_rs' => ( is => 'ro', isa => 'Bool', default => 1 );
+
 sub search_rs {
 	my ($self, @args) = @_;
 	
-	return $self->SUPER::search_rs(@args) unless ($self->base_search_conditions);
+	return $self->SUPER::search_rs(@args) unless (
+		$self->base_search_conditions and 
+		$self->override_search_rs
+	);
 	
 	# Skip munging search_rs if our base_search_conditions have already been
 	# embedded in this ResultSet object (this probably means a resultset
@@ -103,5 +108,5 @@ sub cur_joins_list {
 	return @new;
 }
 
-__PACKAGE__->meta->make_immutable;
+
 1;
