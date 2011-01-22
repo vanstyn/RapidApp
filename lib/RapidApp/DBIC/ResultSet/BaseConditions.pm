@@ -43,6 +43,7 @@ sub search_rs {
 	);
 
 	my ($search, $attr) = @args;
+	$attr = {} unless (defined $attr);
 	
 	$self->set_joins($attr);
 	
