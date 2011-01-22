@@ -288,16 +288,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 		});
 		
 		this.getColumnModel().on('hiddenchange',function(colmodel) {
-
-			// For some reason I don't understand, reloading the store directly
-			// does not make it see the new non-hidden column names, but calling
-			// the refresh function on the paging toolbar does:
-			var ptbar = thisGrid.getBottomToolbar();
-			ptbar.doRefresh();
-			//var Store = thisGrid.getStore();
-			//Store.reload();
-		});
-		
+			this.getStore().load();
+		},this);
 		
 		var store_load_parms = {};
 		
