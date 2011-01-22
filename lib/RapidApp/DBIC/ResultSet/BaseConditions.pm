@@ -21,6 +21,9 @@ has 'base_joins' => (
 	}
 );
 
+# Optional defaults for attr in the overridden search_rs
+has 'default_attr' => ( is => 'ro', isa => 'Maybe[HashRef]', default => undef );
+
 has 'override_search_rs' => ( is => 'ro', isa => 'Bool', default => 1 );
 
 sub search_rs {
@@ -44,6 +47,8 @@ sub search_rs {
 
 	my ($search, $attr) = @args;
 	$attr = {} unless (defined $attr);
+	
+	$attr = { %{ $self->default_attr }, %$attr } if (defined $self->default_attr);
 	
 	$self->set_joins($attr);
 	
