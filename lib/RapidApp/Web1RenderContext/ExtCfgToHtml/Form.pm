@@ -13,15 +13,17 @@ sub render_xtype_form {
 	# build the completed list of items
 	my %defaults= defined $cfg->{defaults}? %{$cfg->{defaults}} : ();
 	my $itemList= [ map { {%defaults, %$_} } @{$cfg->{items}} ];
-	return $self->render_layout_form($renderCxt, $itemList);
+	return $self->render_layout_form($renderCxt, { items => $itemList });
 }
 
 sub render_layout_form {
-	my ($self, $renderCxt, $itemList)= @_;
+	my ($self, $renderCxt, $params)= @_;
+	my $wid= defined $params->{labelWidth}? ' style="width:'.$params->{labelWidth}.'"' : '';
+	my $itemList= $params->{items};
 	$renderCxt->write("<table class='xt-form'>\n");
 	for my $item (@$itemList) {
 		$renderCxt->write(defined $item->{fieldLabel}?
-			'<tr><td class="label">'.$item->{fieldLabel}.'</td><td>'
+			'<tr><td class="label"'.$wid.'>'.$item->{fieldLabel}.'</td><td>'
 			: '<tr><td colspan="2">');
 		$self->renderAsHtml($renderCxt, $item);
 		$renderCxt->write("</td></tr>\n");
@@ -31,18 +33,44 @@ sub render_layout_form {
 
 sub render_xtype_displayfield {
 	my ($self, $renderCxt, $cfg)= @_;
-	my $val= defined $cfg->{value}? $cfg->{value} : '&nbsp;';
-	$renderCxt->write('<div class="xt-displayfield">'.$val.'</div>');
+	# XXX who escapes the content of a displayField?  the server or the browser?
+	my $val= defined $cfg->{value}? $cfg->{value} : '';
+	my $wid= defined $cfg->{width}? ' style="width:'.$cfg->{width}.'"' : '';
+	$renderCxt->write('<div class="xt-displayfield"'.$wid.'>'.$val.'&nbsp;</div>');
 }
 
 sub render_xtype_textfield {
 	my ($self, $renderCxt, $cfg)= @_;
-	my $val= defined $cfg->{value}? $cfg->{value} : '&nbsp;';
-	$renderCxt->write('<div class="xt-textfield">'.$val.'</div>');
+	my $val= defined $cfg->{value}? $renderCxt->escHtml($cfg->{value}) : '';
+	my $wid= defined $cfg->{width}? ' style="width:'.$cfg->{width}.'"' : '';
+	$renderCxt->write('<div class="xt-textfield"'.$wid.'>'.$val.'&nbsp;</div>');
 }
 
 sub render_xtype_numberfield {
 	render_xtype_textfield(@_);
+}
+
+sub render_xtype_textarea {
+	my ($self, $renderCxt, $cfg)= @_;
+	my $val= defined $cfg->{value}? $renderCxt->escHtml($cfg->{value}) : '';
+	my $wid= defined $cfg->{width}? ' style="width:'.$cfg->{width}.'"' : '';
+	$val =~ s|\n|<br />|g;
+	$renderCxt->write('<div class="xt-textfield"'.$wid.'>'.$val.'&nbsp;</div>');
+}
+
+sub render_xtype_xdatetime {
+	# XXX TODO: implement this with the actual formatting strings used by ExtJS
+	render_xtype_textfield(@_);
+#	my ($self, $renderCxt, $cfg)= @_;
+#	my $val= defined $cfg->{value}? $renderCxt->escHtml($cfg->{value}) : '';
+#	$val =~ s|\n|<br />|g;
+#	my $wid= defined $cfg->{width}? 'style="width:'.$cfg->{width}.'"' : '';
+#	$renderCxt->write('<div class="xt-textfield"'.$wid.'>'.$val.'&nbsp;</div>');
+}
+
+sub render_xtype_checkbox {
+	my ($self, $renderCxt, $cfg)= @_;
+	$renderCxt->write('<span class="checkvalue">'.($cfg->{value}? "[Yes]":"[No]").'</span>');
 }
 
 no Moose;

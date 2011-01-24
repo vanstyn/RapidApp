@@ -137,6 +137,9 @@ sub _data2html {
 	if (!ref $obj) {
 		$self->write((defined $obj? escHtml("'$obj'") : "undef")."<br/>\n");
 	} elsif (blessed $obj) {
+		# NEVER dump our own object... hehe  (grows infinitely)
+		return if $obj eq $self;
+		
 		$self->write('<span class="dump-blessed-clsname">'.(ref $obj).'</span><div class="dump-blessed">');
 		$self->_ref2html(reftype($obj), $obj, $seenSet),
 		$self->write('</div>');

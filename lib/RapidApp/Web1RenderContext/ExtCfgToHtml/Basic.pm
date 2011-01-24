@@ -8,15 +8,16 @@ sub render_xtype_panel {
 	
 	$renderCxt->write('<div class="xt-panel">');
 	# make sure we have items to render
-	if (defined $cfg->{items} && scalar(@{$cfg->{items}}) > 0) {
+	my $items= ref $cfg->{items} eq 'ARRAY'? $cfg->{items} : defined $cfg->{items}? [ $cfg->{items} ] : []; # items is allowed to be a single item
+	if (scalar(@$items)) {
 		# build the completed list of items
 		my %defaults= defined $cfg->{defaults}? %{$cfg->{defaults}} : ();
-		my $itemList= [ map { {%defaults, %$_} } @{$cfg->{items}} ];
+		my $fullItems= [ map { {%defaults, %$_} } @$items ];
 		
 		my $layout= $cfg->{layout} || "box";
-		my $layoutFn= $self->can("render_layout_$layout") || &render_layout_box;
+		my $layoutFn= $self->can("render_layout_$layout") || \&render_layout_box;
 		
-		$self->$layoutFn($renderCxt, $itemList);
+		$self->$layoutFn($renderCxt, $fullItems);
 	}
 	$renderCxt->write('</div>');
 }
