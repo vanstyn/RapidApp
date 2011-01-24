@@ -41,6 +41,15 @@ has 'base_search_set'    		=> ( is => 'ro',	default => undef );
 ###########################################################################################
 
 
+has 'get_ResultSet_Handler' => ( is => 'ro', isa => 'Maybe[RapidApp::Handler]', default => undef );
+
+sub ResultSet {
+	my $self = shift;
+	return $self->get_ResultSet_Handler->call if (defined $self->get_ResultSet_Handler);
+	return $self->ResultSource->resultset;
+}
+
+
 has 'base_search_set_list' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	return undef unless (defined $self->base_search_set and $self->base_search_set ne '');
@@ -89,17 +98,17 @@ sub data_fetch {
 	#use Data::Dumper;
 	#print STDERR BOLD .GREEN . Dumper($Attr) . CLEAR;
 	
-	my @rows = $self->ResultSource->resultset->search($Search,$Attr)->all;
+	my @rows = $self->ResultSet->search($Search,$Attr)->all;
 	
 	
-	#my $rs = $self->ResultSource->resultset->search($Search,$Attr);
+	#my $rs = $self->ResultSet->search($Search,$Attr);
 	
 	my $count_Attr = Clone::clone($Attr);
 	delete $count_Attr->{page} if (defined $count_Attr->{page}); # <-- ##  need to delete page and rows attrs to prevent the
 	delete $count_Attr->{rows} if (defined $count_Attr->{rows}); # <-- ##  totalCount from including only the current page
 	
 	return {
-		totalCount	=> $self->ResultSource->resultset->search($Search,$count_Attr)->count,
+		totalCount	=> $self->ResultSet->search($Search,$count_Attr)->count,
 		rows			=> \@rows
 		#totalCount => $rs->count,
 		#rs => $rs
@@ -564,7 +573,7 @@ sub safe_create_row {
 		$safe_params->{$col} = $params->{$col} if (defined $params->{$col});
 	}
  
-	return $self->ResultSource->resultset->create($safe_params);
+	return $self->ResultSet->create($safe_params);
 }
 
 

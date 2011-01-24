@@ -31,6 +31,32 @@ has 'never_fetch_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
 	return $h;
 });
 
+
+has 'get_ResultSet_Handler' => ( is => 'ro', isa => 'Maybe[RapidApp::Handler]', default => undef );
+
+has 'DbicExtQuery' => ( is => 'ro', lazy_build => 1 );
+sub _build_DbicExtQuery {
+	my $self = shift;
+	
+	my $cnf = {
+		ResultSource				=> $self->ResultSource,
+		get_ResultSet_Handler	=> $self->get_ResultSet_Handler,
+		ExtNamesToDbFields 		=> $self->fieldname_transforms,
+		joins 						=> $self->joins,
+		#implied_joins			=> 1
+		#group_by				=> [ 'me.id' ],
+	};
+	
+	$cnf->{base_search_set} = $self->base_search_set if (defined $self->base_search_set);
+	
+	#$cnf->{columns} = $self->json->decode($self->c->req->params->{columns}) if (
+	#	defined $self->c->req->params->{columns}
+	#);
+	
+	return RapidApp::DbicExtQuery->new($cnf);
+}
+
+
 has 'no_rel_combos' => ( is => 'ro', isa => 'Bool', default => 0);
 
 sub apply_primary_columns {
@@ -283,26 +309,6 @@ sub dbic_to_ext_type {
 
 
 
-has 'DbicExtQuery' => ( is => 'ro', lazy_build => 1 );
-sub _build_DbicExtQuery {
-	my $self = shift;
-	
-	my $cnf = {
-		ResultSource			=> $self->ResultSource,
-		ExtNamesToDbFields 	=> $self->fieldname_transforms,
-		joins 					=> $self->joins,
-		#implied_joins			=> 1
-		#group_by				=> [ 'me.id' ],
-	};
-	
-	$cnf->{base_search_set} = $self->base_search_set if (defined $self->base_search_set);
-	
-	#$cnf->{columns} = $self->json->decode($self->c->req->params->{columns}) if (
-	#	defined $self->c->req->params->{columns}
-	#);
-	
-	return RapidApp::DbicExtQuery->new($cnf);
-}
 
 
 
