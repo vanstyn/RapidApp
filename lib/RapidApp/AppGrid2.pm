@@ -228,6 +228,12 @@ sub options_menu {
 	};
 }
 
+sub show_add_button {
+	my $self = shift;
+	return 1 if (defined $self->add_record_class);
+	return 0;
+}
+
 
 
 sub tbar_items {
@@ -243,7 +249,7 @@ sub tbar_items {
 	
 	push @{$arrayref}, '->';
 	
-	push @{$arrayref}, $self->add_button if (defined $self->add_record_class);
+	push @{$arrayref}, $self->add_button if ($self->show_add_button);
 
 	return (scalar @{$arrayref} > 1) ? $arrayref : undef;
 }
