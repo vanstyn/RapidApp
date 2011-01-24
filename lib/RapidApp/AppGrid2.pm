@@ -286,7 +286,10 @@ sub set_columns_visible {
 }
 
 
-
+sub web1_render {
+	my ($self, $renderCxt, $extConfig)= @_;
+	$renderCxt->write("<h2>APPGRID2</h2>\n");
+}
 
 
 #### --------------------- ####
