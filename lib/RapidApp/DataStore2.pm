@@ -285,6 +285,7 @@ sub apply_columns_list {
 	die "type of arg 1 must be ArrayRef" unless (ref($cols) eq 'ARRAY');
 	
 	foreach my $column (@$cols) {
+		croak "Can't apply_attributes because column '$column' is not defined\n" unless (defined $self->columns->{$column});
 		$self->columns->{$column}->apply_attributes(%opt);
 	}
 	

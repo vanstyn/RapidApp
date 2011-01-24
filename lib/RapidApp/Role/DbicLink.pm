@@ -192,7 +192,7 @@ around 'BUILD' => sub {
 		my $prefix = shift;
 		
 		foreach my $column ($Source->columns) {
-			
+			#print STDERR '      ' . GREEN . BOLD . ref($self) . ': ' . $column . CLEAR . "\n";
 			my $colname = $column;
 			$colname = $prefix . '_' . $column if ($prefix);
 			
@@ -223,6 +223,7 @@ around 'BUILD' => sub {
 					}
 				) ;
 				
+				#print STDERR '       ' . CYAN . BOLD . 'apply_columns: ' . $colname . CLEAR . "\n";
 				$self->apply_columns(
 					$colname => { field_cnf => $self->Module($module_name)->content }
 				);
@@ -231,12 +232,11 @@ around 'BUILD' => sub {
 		}
 
 		foreach my $rel ($Source->relationships) {
-			
+			#print STDERR '     ' . RED . 'rel: ' . $rel . '  (' . $Source->source_name . ')' . CLEAR . "\n";
 			next unless (defined $self->join_map->{$Source->source_name}->{$rel});
-		
+			#print STDERR '     ' . GREEN . 'source: ' . $Source->source_name . CLEAR . "\n";
 			my $info = $Source->relationship_info($rel);
 			
-			use Data::Dumper;
 			#$self->log->debug(YELLOW . BOLD . Dumper($info) . CLEAR);
 			
 			#next unless ($info->{attrs}->{accessor} eq 'single');
@@ -246,6 +246,7 @@ around 'BUILD' => sub {
 			$new_prefix = $prefix . '_' . $rel if ($prefix);
 			
 			# only follow prefixes that are defined in the joins:
+			#print STDERR '     ' . RED . BOLD . '$addColRecurse: ' . $new_prefix . CLEAR . "\n";
 			$addColRecurse->($subSource,$rel,$new_prefix) if ($self->join_col_prefix_map->{$new_prefix});
 			
 		}
