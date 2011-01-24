@@ -32,7 +32,7 @@ has 'never_fetch_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
 });
 
 
-has 'get_ResultSet_Handler' => ( is => 'ro', isa => 'Maybe[RapidApp::Handler]', default => undef );
+has 'get_ResultSet_Handler' => ( is => 'ro', isa => 'Maybe[RapidApp::Handler]', lazy => 1, default => undef );
 
 has 'DbicExtQuery' => ( is => 'ro', lazy_build => 1 );
 sub _build_DbicExtQuery {
