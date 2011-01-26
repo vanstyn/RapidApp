@@ -103,7 +103,7 @@ sub getInlineCss {
 
 sub inlineCssFiles {
 	my $self= shift;
-	$self->addHeaderLiteral($self->getInlineCss(@_));
+	$self->addHeaderLiteral("<style type='text/css'>\n".$self->getInlineCss(@_)."\n</style>\n");
 	%{$self->_css_files}= ();
 }
 
