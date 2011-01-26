@@ -3,6 +3,7 @@ use Moose;
 extends 'RapidApp::Web1RenderContext::RenderByType';
 with 'RapidApp::Web1RenderContext::ExtCfgToHtml::Basic';
 with 'RapidApp::Web1RenderContext::ExtCfgToHtml::Form';
+with 'RapidApp::Web1RenderContext::ExtCfgToHtml::Misc';
 
 use RapidApp::Include 'perlutil', 'sugar';
 

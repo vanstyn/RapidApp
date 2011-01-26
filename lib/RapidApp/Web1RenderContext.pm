@@ -59,23 +59,66 @@ sub BUILD {
 }
 
 sub incCSS {
-	my ($self, $cssUrl)= @_;
-	$self->_css_files->{$cssUrl}= undef;
+	my ($self, $cssUrl, $order)= @_;
+	$order ||= 0;
+	exists $self->_css_files->{$cssUrl} && $self->_css_files->{$cssUrl} ne $order
+		and warn "Conflicting priority for file: $cssUrl";
+	$self->_css_files->{$cssUrl}= $order;
 }
 
 sub getCssIncludeList {
 	my $self= shift;
-	return keys %{$self->_css_files};
+	my $files= $self->_css_files;
+	return sort { $files->{$a} <=> $files->{$b} } keys %$files;
+}
+
+sub getInlineCss {
+	my $self= shift;
+	my $app= RapidApp::ScopedGlobals->catalystClass;
+	my $log= RapidApp::ScopedGlobals->log;
+	my $params= ref $_[0] eq 'HASH'? $_[0] : { %_ };
+	my $path= $params->{path} || [ $app->config->{root} ];
+	
+	my @cssFiles= $self->getCssIncludeList;
+	my @text= ();
+	for my $fname (@cssFiles) {
+		try {
+			my $filePath= $fname;
+			my $i= 0;
+			while (! -e $filePath) {
+				$i <= $#$path or die "file not found";
+				$filePath= $path->[$i++].'/'.$fname;
+			}
+			open (my $fd, "<:encoding(UTF-8)", $filePath) or die $!;
+			local $/= undef;
+			my $content= <$fd>;
+			push @text, $content;
+		}
+		catch {
+			$log->error("Cannot inline $fname: ".$_);
+		};
+	}
+	return join "\n", @text;
+}
+
+sub inlineCssFiles {
+	my $self= shift;
+	$self->addHeaderLiteral("<style type='text/css'>\n".$self->getInlineCss(@_)."\n</style>\n");
+	%{$self->_css_files}= ();
 }
 
 sub incJS {
-	my ($self, $jsUrl)= @_;
-	$self->_js_files->{$jsUrl}= undef;
+	my ($self, $jsUrl, $order)= @_;
+	$order ||= 0;
+	exists $self->_js_files->{$jsUrl} && $self->_js_files->{$jsUrl} ne $order
+		and warn "Conflicting priority for file: $jsUrl";
+	$self->_js_files->{$jsUrl}= $order;
 }
 
 sub getJsIncludeList {
 	my $self= shift;
-	return keys %{$self->_js_files};
+	my $files= $self->_js_files;
+	return sort { $files->{$a} <=> $files->{$b} } keys %$files;
 }
 
 sub addHeaderLiteral {
@@ -135,7 +178,7 @@ sub data2html {
 sub _data2html {
 	my ($self, $obj, $seenSet)= @_;
 	if (!ref $obj) {
-		$self->write((defined $obj? escHtml("'$obj'") : "undef")."<br/>\n");
+		$self->write((defined $obj? escHtml("'$obj'") : "undef")."<br />\n");
 	} elsif (blessed $obj) {
 		# NEVER dump our own object... hehe  (grows infinitely)
 		return if $obj eq $self;
@@ -151,7 +194,7 @@ sub _data2html {
 sub _ref2html {
 	my ($self, $refType, $obj, $seenSet)= @_;
 	if (exists $seenSet->{$obj}) {
-		return $self->write("(seen previously) $obj");
+		return $self->write("(seen previously) $obj<br />\n");
 	}
 	$seenSet->{$obj}= undef;
 	if ($refType eq 'HASH') {
@@ -164,7 +207,7 @@ sub _ref2html {
 		$self->write('<span class="dump-deref">[ref]</span>');
 		$self->_data2html($$obj, $seenSet);
 	} else {
-		$self->write(escHtml("$obj")."<br/>\n");
+		$self->write(escHtml("$obj")."<br />\n");
 	}
 }
 

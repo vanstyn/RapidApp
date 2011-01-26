@@ -6,22 +6,24 @@ sub render_xtype_form {
 	
 	$renderCxt->incCSS('/static/rapidapp/css/web1_ExtJSForm.css');
 	
-	# make sure we have items to render
-	defined $cfg->{items} && scalar(@{$cfg->{items}}) > 0
-		or return $renderCxt->write('<table class="xt-form"> </table>');
+	$cfg->{layout} ||= 'form';
+	$self->render_xtype_panel($renderCxt, $cfg);
 	
-	# build the completed list of items
-	my %defaults= defined $cfg->{defaults}? %{$cfg->{defaults}} : ();
-	my $itemList= [ map { {%defaults, %$_} } @{$cfg->{items}} ];
-	return $self->render_layout_form($renderCxt, { items => $itemList });
+	# # make sure we have items to render
+	# defined $cfg->{items} && scalar(@{$cfg->{items}}) > 0
+		# or return $renderCxt->write('<table class="xt-form"> </table>');
+	
+	# # build the completed list of items
+	# my %defaults= defined $cfg->{defaults}? %{$cfg->{defaults}} : ();
+	# my $itemList= [ map { {%defaults, %$_} } @{$cfg->{items}} ];
+	# return $self->render_layout_form($renderCxt, { items => $itemList });
 }
 
 sub render_layout_form {
-	my ($self, $renderCxt, $params)= @_;
-	my $wid= defined $params->{labelWidth}? ' style="width:'.$params->{labelWidth}.'"' : '';
-	my $itemList= $params->{items};
-	$renderCxt->write("<table class='xt-form'>\n");
-	for my $item (@$itemList) {
+	my ($self, $renderCxt, $items, $parent)= @_;
+	my $wid= defined $parent->{labelWidth}? ' style="width:'.$parent->{labelWidth}.'"' : '';
+	$renderCxt->write("<table class='ly-form'>\n");
+	for my $item (@$items) {
 		$renderCxt->write(defined $item->{fieldLabel}?
 			'<tr><td class="label"'.$wid.'>'.$item->{fieldLabel}.'</td><td>'
 			: '<tr><td colspan="2">');

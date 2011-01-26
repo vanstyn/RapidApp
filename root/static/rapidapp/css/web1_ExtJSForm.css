@@ -1,23 +1,31 @@
-.ext-cmp {
-	font: 12px tahoma,arial,helvetica,sans-serif;
-}
-
-.xt-form {
+.ly-form {
+	border: 1px solid #BBB;
 	width: 100%;
-	background-color: #EEE;
-	border: 1px solid black;
+	font: 12px tahoma,arial,helvetica,sans-serif;
+	padding: .7em;
+	//border: 1px solid black;
 }
 
-.xt-form td.label {
+.ly-form tr {
+	padding: 1em;
+}
+
+.ly-form td.label {
 	width: 0;
 	white-space: pre;
 	vertical-align: top;
+	padding:.2em;
+	padding-left: 1em;
+	padding-right: 1em;
+	font-weight: bold;
 }
 
 .xt-textfield {
 	width: 500px;
-	background-color: white;
-	border: 1px solid black;
+	//border: 1px solid #BBB;
+	//background-color: white;
+	padding: .2em;
+	padding-left: .5em;
 }
 
 .xt-displayfield {

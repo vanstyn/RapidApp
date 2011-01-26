@@ -228,12 +228,6 @@ sub options_menu {
 	};
 }
 
-sub show_add_button {
-	my $self = shift;
-	return 1 if (defined $self->add_record_class);
-	return 0;
-}
-
 
 
 sub tbar_items {
@@ -249,7 +243,7 @@ sub tbar_items {
 	
 	push @{$arrayref}, '->';
 	
-	push @{$arrayref}, $self->add_button if ($self->show_add_button);
+	push @{$arrayref}, $self->add_button if (defined $self->add_record_class);
 
 	return (scalar @{$arrayref} > 1) ? $arrayref : undef;
 }
@@ -293,8 +287,52 @@ sub set_columns_visible {
 
 
 sub web1_render {
-	my ($self, $renderCxt, $extConfig)= @_;
-	$renderCxt->write("<h2>APPGRID2</h2>\n");
+	my ($self, $renderCxt, $extCfg)= @_;
+	
+	# simulate a get request to the grid's store
+	my $storeFetchParams= $extCfg->{store}{parm}{baseParams};
+	my $origParams= $self->c->req->params;
+	my $data;
+	try {
+		$self->c->req->params($storeFetchParams);
+		$data= $self->Module('store')->read();
+		$self->c->req->params($origParams);
+	}
+	catch {
+		$self->c->req->params($origParams);
+		die $_;
+	};
+	
+	my $cols= $extCfg->{columns};
+	defined $cols && ref $cols eq 'ARRAY'
+		or $cols= [];
+	# filter hidden columns
+	$cols= [ grep { !$_->{hidden} || (ref $_->{hidden} && !${$_->{hidden}}) } @$cols ];
+	
+	# now wrap the rows in a panel
+	
+	my $hasFrame= ref $extCfg->{frame} && ${$extCfg->{frame}};
+	my $tbar= ref $extCfg->{tbar} eq 'ARRAY'? $extCfg->{tbar} : undef;
+	# skip bottom bar, since web 1.0 doesn't need the buttons
+	
+	my $renderClosure= sub {
+		# write table
+		$renderCxt->write("<div class='x-grid3'><div class='x-grid3-viewport'><table style='width:100%'>\n");
+		
+		# write header cells
+		$renderCxt->write('<tr class="x-grid3-hd-row x-grid3-header">');
+		$renderCxt->write(join('', map { '<th class="x-grid3-hd x-grid3-cell"><div class="x-grid3-hd-inner">'.$_->{header}.'</div></th>' } @$cols ));
+		$renderCxt->write("</tr>\n");
+		
+		# write data cells
+		for my $row (@{$data->{rows}}) {
+			$renderCxt->write('<tr>'.join('', map { '<td class="x-grid3-col x-grid3-cell">'.$row->{$_->{dataIndex}}.'</td>' } @$cols )."</tr>\n");
+		}
+		
+		$renderCxt->write("</table></div></div>\n");
+	};
+	
+	$renderCxt->renderer->render_panel_structure($renderCxt, $hasFrame, $tbar, undef, $renderClosure);
 }
 
 
