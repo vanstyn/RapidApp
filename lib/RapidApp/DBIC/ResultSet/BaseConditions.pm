@@ -28,13 +28,17 @@ has 'base_search_joins' => (
 	default => sub {[]},
 	handles => {
 		add_base_search_joins	=> 'push',
-		all_base_search_joins	=> 'elements'
+		all_base_search_joins	=> 'elements',
+		clear_base_search_joins	=> 'clear'
 	}
 );
 after 'add_base_search_joins' => sub {
 	my $self = shift;
 	$self->apply_base_search_attrs( join => [ $self->all_base_search_joins ] );
-
+};
+after 'clear_base_search_joins' => sub {
+	my $self = shift;
+	$self->apply_base_search_attrs( join => [] );
 };
 
 has 'override_search_rs' => ( is => 'ro', isa => 'Bool', default => 1 );
