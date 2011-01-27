@@ -112,6 +112,97 @@ sub JSON_encode {
 	return $self->json->encode(shift);
 }
 
+# This method attempts to set up a catalyst request instance such that a new request can be executed
+#   to a different module and with different parameters and HTTP headers than were used for the main
+#  request.
+sub simulateRequest {
+	my ($self, $req)= @_;
+	
+	my $c= RapidApp::ScopedGlobals->catalystInstance;
+	
+	my $tempResp= Catalyst::Response->new();
+	
+	my $origReq= $c->request;
+	my $origResp= $c->response;
+	my $origStash= $c->stash;
+	
+	try {
+		$c->request($req);
+		$c->response($tempResp);
+		
+		# This is dangerous both any way you do it.  We could make an empty stash, but then might lose important
+		#   settings (like those set by ModuleDispatcher)
+		$c->stash({ %$origStash });
+		
+		my $path= $req->uri->path;
+		$path =~ s|^/||;
+		my @args= split('/', $path);
+		$self->c->log->debug("Simulate Request: \"".join('", "', @args));
+		my $ctl_ret= $self->Controller($c, @args);
+		
+		$c->log->debug('controller return: '.(length($ctl_ret) > 20? (ref $ctl_ret).' length='.length($ctl_ret) : $ctl_ret));
+		$c->log->debug('body: '.(length($tempResp->body) > 20? (ref $tempResp->body).' length='.length($tempResp->body) : $tempResp->body));
+		
+		# execute the specified view, if needed
+		if (!defined $c->res->body) {
+			my $view= $self->c->stash->{current_view_instance} || $c->view($c->stash->{current_view});
+			$view->process($c);
+		}
+		
+		$c->request($origReq);
+		$c->response($origResp);
+		$c->stash($origStash);
+	}
+	catch {
+		$c->request($origReq);
+		$c->response($origResp);
+		$c->stash($origStash);
+		die $_;
+	};
+	return $tempResp;
+}
+
+sub simulateRequestToSubUrl {
+	my ($self, $uri, @params)= @_;
+	blessed($uri) && $uri->isa('URI') or $uri= URI->new($uri);
+	
+	# if parameters were part of the URI, extract them first, then possibly override them with @params
+	# Note that "array-style" URI params will be returned as duplicate key entries, so we have to do some work to
+	#   assemble the values into lists to match the way you'd expect it to work.
+	my @uriParams= $uri->query_form;
+	my %paramHash;
+	for (my $i=0; $i < $#uriParams; $i+= 2) {
+		my ($key, $val)= ($uriParams[$i], $uriParams[$i+1]);
+		$paramHash{$key}= (!defined $paramHash{$key})?
+			$val
+			: (ref $paramHash{$key} ne 'ARRAY')?
+				[ $paramHash{$key}, $val ]
+				: [ @{$paramHash{$key}}, $val ];
+	}
+	
+	# add in the supplied parameters
+	%paramHash= ( %paramHash, @params );
+	
+	my $req= Catalyst::Request->new( uri => $uri, parameters => \%paramHash );
+		
+	return $self->simulateRequest($req);
+}
+
+sub simulateRequestToSubUrl_asString {
+	my $self= shift;
+	my $resp= $self->simulateRequestToSubUrl(@_);
+	$resp->status == 200
+		or die "Simulated request to ".$_[0]." returned status ".$resp->status;
+	my $ret= $resp->body;
+	if (ref $ret) {
+		my $fd= $ret;
+		local $/= undef;
+		$ret= <$fd>;
+		$fd->close;
+	}
+	return $ret;
+}
+
 # Initializes variables of the controller based on the details of the current request being handled.
 # This is a stub for 'after's and 'before's and overrides.
 sub prepare_controller {
