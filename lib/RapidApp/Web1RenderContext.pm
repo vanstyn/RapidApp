@@ -54,6 +54,9 @@ has 'header_fragments' => ( is => 'rw', isa => 'ArrayRef', default => sub {[]} )
 has 'body_fragments' => ( is => 'rw', isa => 'ArrayRef', default => sub {[]} );
 has 'renderer'  => ( is => 'rw', isa => 'RapidApp::Web1RenderContext::Renderer', lazy => 1, default => sub { $DEFAULT_RENDERER });
 
+# free-form parameters for adjusting rendering
+has 'params' => ( is => 'rw', isa => 'HashRef', default => sub {{}} );
+
 sub BUILD {
 	my $self= shift;
 }
