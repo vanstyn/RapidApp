@@ -313,28 +313,34 @@ sub web1_render {
 	
 	my $hasFrame= ref $extCfg->{frame} && ${$extCfg->{frame}};
 	my $tbar= ref $extCfg->{tbar} eq 'ARRAY'? $extCfg->{tbar} : undef;
+	
 	# skip bottom bar, since web 1.0 doesn't need the buttons
 	
-	my $renderClosure= sub {
-		# write table
-		$renderCxt->write("<div class='x-grid3'><div class='x-grid3-viewport'><table style='width:100%'>\n");
-		
-		# write header cells
-		$renderCxt->write('<tr class="x-grid3-hd-row x-grid3-header">');
-		$renderCxt->write(join('', map { '<th class="x-grid3-hd x-grid3-cell"><div class="x-grid3-hd-inner">'.$_->{header}.'</div></th>' } @$cols ));
-		$renderCxt->write("</tr>\n");
-		
-		# write data cells
-		for my $row (@{$data->{rows}}) {
-			$renderCxt->write('<tr>'.join('', map { '<td class="x-grid3-col x-grid3-cell">'.$row->{$_->{dataIndex}}.'</td>' } @$cols )."</tr>\n");
-		}
-		
-		$renderCxt->write("</table></div></div>\n");
-	};
+	my $renderClosure= sub { $self->web1_render_table($renderCxt, $cols, $data->{rows}) };
 	
 	$renderCxt->renderer->render_panel_structure($renderCxt, $hasFrame, $tbar, undef, $renderClosure);
 }
 
+sub web1_render_table {
+	my ($self, $renderCxt, $cols, $rows)= @_;
+	# write table
+	$renderCxt->write("<div class='x-grid3'><div class='x-grid3-viewport'><table style='width:100%'>\n");
+	
+	# write header cells
+	$renderCxt->write('<tr class="x-grid3-hd-row x-grid3-header">');
+	$renderCxt->write(join('', map { '<th class="x-grid3-hd x-grid3-cell"><div class="x-grid3-hd-inner">'.$_->{header}.'</div></th>' } @$cols ));
+	$renderCxt->write("</tr>\n");
+	
+	# write data cells
+	for my $row (@$rows) { $self->web1_render_table_row($renderCxt, $cols, $row); }
+	
+	$renderCxt->write("</table></div></div>\n");
+}
+
+sub web1_render_table_row {
+	my ($self, $renderCxt, $cols, $row)= @_;
+	$renderCxt->write('<tr>'.join('', map { '<td class="x-grid3-col x-grid3-cell">'.$row->{$_->{dataIndex}}.'</td>' } @$cols )."</tr>\n");
+}
 
 #### --------------------- ####
 
