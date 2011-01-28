@@ -2832,3 +2832,24 @@ Ext.ux.FieldHelp = Ext.extend(Object, (function(){
 })());
 Ext.preg('fieldhelp',Ext.ux.FieldHelp);
 
+
+/* 2011-01-28 by HV:
+ Extended Saki's Ext.ux.form.DateTime to updateValue on 'select' and then 
+ fire the new event 'updated'
+*/
+Ext.ns('Ext.ux.RapidApp.form');
+Ext.ux.RapidApp.form.DateTime2 = Ext.extend(Ext.ux.form.DateTime ,{
+	initComponent: function() {
+		Ext.ux.RapidApp.form.DateTime2.superclass.initComponent.call(this);
+		this.addEvents( 'updated' );
+		this.on('change',this.updateValue,this);
+		this.on('select',this.updateValue,this);
+		this.relayEvents(this.df, ['change','select']);
+		this.relayEvents(this.tf, ['change','select']);
+	},
+	updateValue: function() {
+		Ext.ux.RapidApp.form.DateTime2.superclass.updateValue.call(this);
+		this.fireEvent('updated',this);
+	}
+});
+Ext.reg('xdatetime2', Ext.ux.RapidApp.form.DateTime2);
