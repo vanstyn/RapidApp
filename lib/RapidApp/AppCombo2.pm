@@ -34,6 +34,8 @@ sub BUILD {
 sub web1_render {
 	my ($self, $renderCxt, $extCfg)= @_;
 	
+	$renderCxt->incCSS('/static/rapidapp/css/web1_ExtJSMisc.css');
+	
 	# simulate a get request to the grid's store
 	my $storeFetchParams= $extCfg->{store}{parm}{baseParams};
 	my $origParams= $self->c->req->params;
@@ -49,28 +51,23 @@ sub web1_render {
 	};
 	
 	# now we need to find the row that corresponds to the value
-	my $value= $extCfg->{value};
+	my @values= split ',', $extCfg->{value};
 	my $valueField= $extCfg->{valueField};
-	my $selectedRow;
+	my @selectedRows;
 	
-	$self->c->log->debug((ref $self)." looking for $valueField=$value.' in ".Data::Dumper::Dumper($data->{rows}));
+	#$self->c->log->debug((ref $self)." looking for $valueField=[".join(',',@values)."] in ".Data::Dumper::Dumper($data->{rows}));
 	
 	if (ref $data->{rows} eq 'ARRAY' && scalar(@{$data->{rows}}) ) {
 		for my $row (@{$data->{rows}}) {
-			if ($value eq $row->{$valueField}) {
-				$selectedRow= $row;
-				last;
+			for my $val (@values) {
+				$val eq $row->{$valueField}
+					and push @selectedRows, $row;
 			}
 		}
 	}
 	
 	$renderCxt->write('<div class="xt-appcombo2">');
-	if ($selectedRow) {
-		$self->web1_render_list_item($renderCxt, $selectedRow, $extCfg->{tpl});
-	}
-	else {
-		$renderCxt->write('<span class="val">&nbsp;</span>');
-	}
+	$self->web1_render_list_items($renderCxt, \@selectedRows, $extCfg->{tpl});
 	$renderCxt->write("</div>\n");
 }
 
@@ -81,14 +78,15 @@ If we come up with a better engine for that, replace this code with a call to it
 In the meantime, you can override this method to do custom rendering in your module.
 
 =cut
-sub web1_render_list_item {
-	my ($self, $renderCxt, $row, $template)= @_;
+sub web1_render_list_items {
+	my ($self, $renderCxt, $rows, $template)= @_;
+=pod
 	my $text= $template;
 	$template =~ s|</?tpl[^>]+>||g;
 	my @parts= split /[{}]/, $template;
 	for (my $i=1; $i <= $#parts; $i+= 2) {
 		if (substr($parts[$i], 0, 1) eq '[') {
-			$self->c->log->warn("You need to write a custom 'web1_render_list_item' for ".(ref $self));
+			$self->c->log->warn("You need to write a custom 'web1_render_list_items' for ".(ref $self));
 			$parts[$i]= '[unrenderable content]';
 		}
 		else {
@@ -98,6 +96,23 @@ sub web1_render_list_item {
 	my $html= join '', @parts;
 	$self->c->log->debug("Before: $template\nAfter: $html");
 	$renderCxt->write($html);
+=cut
+	if ($self->can('web1_render_getListItemContent')) {
+		if (scalar(@$rows) == 0) {
+			$renderCxt->write('<span class="value-placeholder">(unset)</span>');
+		}
+		elsif (scalar(@$rows) == 1) {
+			$renderCxt->write($self->web1_render_getListItemContent($rows->[0]));
+		}
+		else {
+			my @items= map { '<li>'.$self->web1_render_getListItemContent($_).'</li>' } @$rows;
+			$renderCxt->write('<ul>'.(join '', @items).'</ul>');
+		}
+	}
+	else {
+		$self->c->log->warn("You need to write a custom 'web1_render_list_items' or 'web1_render_getListItemContent' for ".(ref $self));
+		$renderCxt->write('[unrenderable content]');
+	}
 }
 
 no Moose;

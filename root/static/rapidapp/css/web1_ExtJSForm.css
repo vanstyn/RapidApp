@@ -3,7 +3,7 @@
 	width: 100%;
 	font: 12px tahoma,arial,helvetica,sans-serif;
 	padding: .7em;
-	//border: 1px solid black;
+	/*border: 1px solid black;*/
 }
 
 .ly-form tr {
@@ -22,8 +22,8 @@
 
 .xt-textfield {
 	width: 500px;
-	//border: 1px solid #BBB;
-	//background-color: white;
+	/*border: 1px solid #BBB;*/
+	/*background-color: white;*/
 	padding: .2em;
 	padding-left: .5em;
 }

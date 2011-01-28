@@ -4,3 +4,8 @@
 	margin: 0px;
 	width: 100%;
 }
+
+.xt-appcombo2 ul {
+	list-style-type: circle;
+	margin-left: 1em;
+}
