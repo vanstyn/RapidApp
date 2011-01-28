@@ -1,6 +1,11 @@
 package RapidApp::Web1RenderContext::ExtCfgToHtml::Basic;
 use Moose::Role;
 
+sub render_xtype_box {
+	my ($self, $renderCxt, $cfg)= @_;
+	$renderCxt->write('<div>'.$cfg->{html}.'</div>');
+}
+
 sub render_xtype_panel {
 	my ($self, $renderCxt, $cfg)= @_;
 	
