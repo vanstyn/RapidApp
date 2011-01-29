@@ -12,32 +12,19 @@ Ext.ux.RapidApp.AppTree_select_handler = function(tree) {
 }
 
 Ext.ux.RapidApp.AppTree_setValue_translator = function(val,tf,url) {
-	if(val.indexOf('/') > 0) {
-		//console.log(val.indexOf('/'));
-		//console.log(val);
-		//console.log(url);
-
+	if(!tf.translated) {
 		Ext.Ajax.request({
 			url: url,
-			params: {
-				node: val
-			},
+			params: { node: val },
 			success: function(response) {
-				//console.dir(response);
 				var res = Ext.decode(response.responseText);
-				//console.log(res.text);
+				tf.translated = true; // <-- prevent recursion
 				tf.dataValue = res.id;
 				tf.setValue(res.text);
-
 			}
-
-
 		});
-
-		//return val;
 	}
 	else {
-
 		return val;
 	}
 }
