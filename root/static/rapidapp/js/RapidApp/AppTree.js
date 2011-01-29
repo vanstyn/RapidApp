@@ -11,7 +11,9 @@ Ext.ux.RapidApp.AppTree_select_handler = function(tree) {
 
 }
 
+
 Ext.ux.RapidApp.AppTree_setValue_translator = function(val,tf,url) {
+	if(val.indexOf('/') > 0) { tf.translated = false; }
 	if(!tf.translated) {
 		Ext.Ajax.request({
 			url: url,
