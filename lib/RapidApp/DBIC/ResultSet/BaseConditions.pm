@@ -17,7 +17,8 @@ has 'base_search_attrs' => (
 	isa => 'HashRef', 
 	default => sub {{}},
 	handles => {
-		apply_base_search_attrs	=> 'set',
+		apply_base_search_attrs		=> 'set',
+		delete_base_search_attrs	=> 'delete',
 	}
 );
 
