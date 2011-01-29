@@ -2865,3 +2865,34 @@ Ext.ux.RapidApp.form.DateTime2 = Ext.extend(Ext.ux.form.DateTime ,{
 	}
 });
 Ext.reg('xdatetime2', Ext.ux.RapidApp.form.DateTime2);
+
+
+/*
+ Creates a "tool" button just like the tools from "tools" in Ext.Panel
+ Inspired by: http://www.sencha.com/forum/showthread.php?119956-use-x-tool-close-icon-in-toolbar&highlight=tool+button
+*/
+Ext.ns('Ext.ux.RapidApp');
+Ext.ux.RapidApp.BoxToolBtn = Ext.extend(Ext.BoxComponent, {
+
+	toolType: 'gear',
+	toolQtip: 'tooltip!!!',
+	handler: function(){},
+	initComponent: function() {
+	
+		this.autoEl = {
+			cls: 'x-tool x-tool-' + this.toolType,
+			'ext:qtip': this.toolQtip
+		};
+		
+		Ext.ux.RapidApp.BoxToolBtn.superclass.initComponent.call(this);
+		
+		this.on('afterrender',function(box) {
+		 	var el = box.getEl();
+			el.addClassOnOver('x-tool-close-over');
+			el.on('click', this.handler, this, box);
+		},this);
+	}
+});
+
+
+
