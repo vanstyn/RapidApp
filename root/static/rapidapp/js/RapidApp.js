@@ -2846,6 +2846,18 @@ Ext.ux.RapidApp.form.DateTime2 = Ext.extend(Ext.ux.form.DateTime ,{
 		this.on('select',this.updateValue,this);
 		this.relayEvents(this.df, ['change','select']);
 		this.relayEvents(this.tf, ['change','select']);
+		if (this.minValue) {
+			var val = this.minValue;
+			var dt = Date.parseDate(val, this.hiddenFormat);
+			this.tf.setMinValue(dt);
+			this.df.setMinValue(dt);
+		}
+		if (this.maxValue) {
+			var val = this.maxValue;
+			var dt = Date.parseDate(val, this.hiddenFormat);
+			this.tf.setMaxValue(dt);
+			this.df.setMaxValue(dt);
+		}
 	},
 	updateValue: function() {
 		Ext.ux.RapidApp.form.DateTime2.superclass.updateValue.call(this);
