@@ -13,5 +13,10 @@ sub render_xtype_htmleditor {
 	$renderCxt->write("<div class='xt-htmleditor'>".(length($cfg->{value})? $cfg->{value} : "&nbsp;")."</div>\n");
 }
 
+sub render_xtype_hopshtmleditor {
+	my $self = shift;
+	return $self->render_xtype_htmleditor(@_);
+}
+
 no Moose;
 1;

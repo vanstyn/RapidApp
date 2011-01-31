@@ -2872,10 +2872,11 @@ Ext.reg('xdatetime2', Ext.ux.RapidApp.form.DateTime2);
  Inspired by: http://www.sencha.com/forum/showthread.php?119956-use-x-tool-close-icon-in-toolbar&highlight=tool+button
 */
 Ext.ns('Ext.ux.RapidApp');
-Ext.ux.RapidApp.BoxToolBtn = Ext.extend(Ext.BoxComponent, {
+Ext.ux.RapidApp.ClickBox = Ext.extend(Ext.BoxComponent, {
 
-	toolType: 'gear',
-	toolQtip: 'tooltip!!!',
+	cls: null,
+	overCls: null,
+	qtip: null,
 	handler: function(){},
 	scope: null,
 	initComponent: function() {
@@ -2884,20 +2885,50 @@ Ext.ux.RapidApp.BoxToolBtn = Ext.extend(Ext.BoxComponent, {
 			this.scope = this;
 		}
 		
-		this.autoEl = {
-			cls: 'x-tool x-tool-' + this.toolType,
-			'ext:qtip': this.toolQtip
-		};
+		this.autoEl = {};
+		if(this.cls) { 
+			this.autoEl.cls = this.cls;
+		}
+		if(this.qtip) { 
+			this.autoEl['ext:qtip'] = this.qtip; 
+		}
 		
-		Ext.ux.RapidApp.BoxToolBtn.superclass.initComponent.call(this);
+		Ext.ux.RapidApp.ClickBox.superclass.initComponent.call(this);
 		
 		this.on('afterrender',function(box) {
 		 	var el = box.getEl();
-			el.addClassOnOver('x-tool-close-over');
+			if(this.overCls) {
+				el.addClassOnOver(this.overCls);
+			}
 			el.on('click', this.handler, this.scope, box);
 		},this);
 	}
 });
+Ext.reg('clickbox', Ext.ux.RapidApp.ClickBox);
+
+Ext.ux.RapidApp.BoxToolBtn = Ext.extend(Ext.ux.RapidApp.ClickBox, {
+
+	toolType: 'gear',
+
+	initComponent: function() {
+		
+		this.cls = 'x-tool x-tool-' + this.toolType;
+		this.overCls = 'x-tool-' + this.toolType + '-over';
+		if(this.toolQtip) { this.qtip = this.toolQtip; }
+		
+		Ext.ux.RapidApp.BoxToolBtn.superclass.initComponent.call(this);
+	}
+});
+Ext.reg('boxtoolbtn', Ext.ux.RapidApp.BoxToolBtn);
 
 
 
+Ext.ux.RapidApp.ComponentDataView = Ext.extend(Ext.ux.ComponentDataView,{
+	initComponent: function() {
+		Ext.each(this.items,function(item) {
+			item.ownerCt = this;
+		},this);
+		Ext.ux.RapidApp.ComponentDataView.superclass.initComponent.call(this);
+	}
+});
+Ext.reg('rcompdataview', Ext.ux.RapidApp.ComponentDataView);
