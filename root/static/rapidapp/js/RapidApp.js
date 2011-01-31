@@ -2872,6 +2872,57 @@ Ext.reg('xdatetime2', Ext.ux.RapidApp.form.DateTime2);
  Inspired by: http://www.sencha.com/forum/showthread.php?119956-use-x-tool-close-icon-in-toolbar&highlight=tool+button
 */
 Ext.ns('Ext.ux.RapidApp');
+Ext.ux.RapidApp.ClickBox = Ext.extend(Ext.BoxComponent, {
+
+	cls: null,
+	overCls: null,
+	qtip: null,
+	handler: function(){},
+	scope: null,
+	initComponent: function() {
+		
+		if(!this.scope) {
+			this.scope = this;
+		}
+		
+		this.autoEl = {};
+		if(this.cls) { 
+			this.autoEl.cls = this.cls;
+		}
+		if(this.qtip) { 
+			this.autoEl['ext:qtip'] = this.qtip; 
+		}
+		
+		Ext.ux.RapidApp.ClickBox.superclass.initComponent.call(this);
+		
+		this.on('afterrender',function(box) {
+		 	var el = box.getEl();
+			if(this.overCls) {
+				el.addClassOnOver(this.overCls);
+			}
+			el.on('click', this.handler, this.scope, box);
+		},this);
+	}
+});
+
+
+Ext.ux.RapidApp.BoxToolBtn = Ext.extend(Ext.ux.RapidApp.ClickBox, {
+
+	toolType: 'gear',
+
+	initComponent: function() {
+		
+		this.cls = 'x-tool x-tool-' + this.toolType;
+		this.overCls = 'x-tool-' + this.toolType + '-over';
+		if(this.toolQtip) { this.qtip = this.toolQtip; }
+		
+		Ext.ux.RapidApp.BoxToolBtn.superclass.initComponent.call(this);
+	}
+});
+
+
+
+/*
 Ext.ux.RapidApp.BoxToolBtn = Ext.extend(Ext.BoxComponent, {
 
 	toolType: 'gear',
@@ -2893,11 +2944,11 @@ Ext.ux.RapidApp.BoxToolBtn = Ext.extend(Ext.BoxComponent, {
 		
 		this.on('afterrender',function(box) {
 		 	var el = box.getEl();
-			el.addClassOnOver('x-tool-close-over');
+			el.addClassOnOver('x-tool-' + this.toolType + '-over');
 			el.on('click', this.handler, this.scope, box);
 		},this);
 	}
 });
-
+*/
 
 
