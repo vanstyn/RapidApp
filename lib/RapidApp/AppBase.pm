@@ -107,7 +107,7 @@ sub web1 { # public action
 
 sub web1_render {
 	my ($self, $renderCxt)= @_;
-	die RapidApp::Error->new("Unimplemented");
+	$self->c->error("No web1_render defined for ".(ref $self));
 }
 
 sub viewport {
