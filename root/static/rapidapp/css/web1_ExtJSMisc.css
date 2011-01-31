@@ -1,8 +1,8 @@
 .xt-htmleditor {
-	border: 1px solid black;
-	padding: 0px;
+	border: 2px solid #DDD;
+	background-color: white;
+	padding: 8px;
 	margin: 0px;
-	width: 100%;
 }
 
 .xt-appcombo2 ul {

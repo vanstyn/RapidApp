@@ -72,7 +72,11 @@ sub render_xtype_xdatetime {
 
 sub render_xtype_checkbox {
 	my ($self, $renderCxt, $cfg)= @_;
-	$renderCxt->write('<span class="checkvalue">'.($cfg->{value}? "[Yes]":"[No]").'</span>');
+	#RapidApp::ScopedGlobals->log->warn("checkbox: cfg=".Data::Dumper::Dumper($cfg));
+	my $val= $cfg->{value};
+	ref $val eq 'SCALAR'
+		and $val= $$val;
+	$renderCxt->write('<span class="checkvalue">'.($val? "[Yes]":"[No]").'</span>');
 }
 
 no Moose;
