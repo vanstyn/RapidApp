@@ -2877,8 +2877,13 @@ Ext.ux.RapidApp.BoxToolBtn = Ext.extend(Ext.BoxComponent, {
 	toolType: 'gear',
 	toolQtip: 'tooltip!!!',
 	handler: function(){},
+	scope: null,
 	initComponent: function() {
-	
+		
+		if(!this.scope) {
+			this.scope = this;
+		}
+		
 		this.autoEl = {
 			cls: 'x-tool x-tool-' + this.toolType,
 			'ext:qtip': this.toolQtip
@@ -2889,7 +2894,7 @@ Ext.ux.RapidApp.BoxToolBtn = Ext.extend(Ext.BoxComponent, {
 		this.on('afterrender',function(box) {
 		 	var el = box.getEl();
 			el.addClassOnOver('x-tool-close-over');
-			el.on('click', this.handler, this, box);
+			el.on('click', this.handler, this.scope, box);
 		},this);
 	}
 });
