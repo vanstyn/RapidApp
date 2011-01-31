@@ -10,7 +10,7 @@ sub render_xtype_superboxselect {
 sub render_xtype_htmleditor {
 	my ($self, $renderCxt, $cfg)= @_;
 	$renderCxt->incCSS('/static/rapidapp/css/web1_ExtJSMisc.css');
-	$renderCxt->write("<div class='xt-htmleditor'>".$cfg->{value}."</div>");
+	$renderCxt->write("<div class='xt-htmleditor'>".(length($cfg->{value})? $cfg->{value} : "&nbsp;")."</div>\n");
 }
 
 no Moose;

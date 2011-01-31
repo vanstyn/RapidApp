@@ -309,20 +309,18 @@ sub web1_render {
 	# filter hidden columns
 	$cols= [ grep { !$_->{hidden} || (ref $_->{hidden} && !${$_->{hidden}}) } @$cols ];
 	
-	# now wrap the rows in a panel
-	
-	my $hasFrame= ref $extCfg->{frame} && ${$extCfg->{frame}};
-	my $tbar= ref $extCfg->{tbar} eq 'ARRAY'? $extCfg->{tbar} : undef;
-	
-	# skip bottom bar, since web 1.0 doesn't need the buttons
-	
-	my $renderClosure= sub { $self->web1_render_table($renderCxt, $cols, $data->{rows}) };
-	
-	$renderCxt->renderer->render_panel_structure($renderCxt, $hasFrame, $tbar, undef, $renderClosure);
+	# now render it using the xtype_panel code
+	$renderCxt->renderer->render_xtype_panel($renderCxt, {
+		%$extCfg,
+		bbar => undef, # skip bottom bar, since web 1.0 doesn't need the buttons
+		bodyContent => sub { $self->web1_render_table($renderCxt, $extCfg, $cols, $data->{rows}) },
+	});
 }
 
 sub web1_render_table {
-	my ($self, $renderCxt, $cols, $rows)= @_;
+	my ($self, $renderCxt, $extCfg, $cols, $rows)= @_;
+	$renderCxt->incCSS('/static/rapidapp/css/web1_ExtJSGrid.css');
+	
 	# write table
 	$renderCxt->write("<div class='x-grid3'><div class='x-grid3-viewport'><table style='width:100%'>\n");
 	
@@ -332,13 +330,20 @@ sub web1_render_table {
 	$renderCxt->write("</tr>\n");
 	
 	# write data cells
-	for my $row (@$rows) { $self->web1_render_table_row($renderCxt, $cols, $row); }
+	if (scalar(@$rows)) {
+		for my $row (@$rows) { $self->web1_render_table_row($renderCxt, $extCfg, $cols, $row); }
+	}
+	else {
+		my $span= scalar(@$cols) > 1? ' colspan="'.scalar(@$cols).'"' : '';
+		my $emptyText= defined $extCfg->{viewConfig} && $extCfg->{viewConfig}{emptyText};
+		$renderCxt->write("<tr><td class='x-grid-empty'$span>".$emptyText."</td></tr>");
+	}
 	
 	$renderCxt->write("</table></div></div>\n");
 }
 
 sub web1_render_table_row {
-	my ($self, $renderCxt, $cols, $row)= @_;
+	my ($self, $renderCxt, $extCfg, $cols, $row)= @_;
 	$renderCxt->write('<tr>'.join('', map { '<td class="x-grid3-col x-grid3-cell">'.$row->{$_->{dataIndex}}.'</td>' } @$cols )."</tr>\n");
 }
 

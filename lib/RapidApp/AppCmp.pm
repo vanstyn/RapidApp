@@ -34,10 +34,14 @@ sub web1_render {
 	my ($self, $renderCxt, $extConfig)= @_;
 	$renderCxt->renderer->isa('RapidApp::Web1RenderContext::ExtCfgToHtml')
 		or die "Renderer for automatic ext->html conversion must be a Web1RenderContext::ExtCfgToHtml";
+	
 	$extConfig ||= $self->get_complete_extconfig;
+	my $customRenderer= $extConfig->{rapidapp_cfg2html_renderer};
+	
 	if ($self->c->debug && $self->c->req->params->{dumpcfg}) {
 		$renderCxt->data2html($extConfig);
-	} else {
+	}
+	else {
 		$renderCxt->render($extConfig);
 	}
 }
@@ -279,7 +283,15 @@ sub renderAsHtml {
 	my ($self, $renderCxt, $extCfg)= @_;
 	my $module= RapidApp::ScopedGlobals->catalystInstance->rapidApp->module($self->moduleName);
 	defined $module or die "No module named ".$self->moduleName." exists!";
-	$module->web1_render($renderCxt, $extCfg);
+	# prevent a recursion loop.   If we got called from web1_render, don't go back.
+	if (defined $extCfg->{_SelfConfigRender_DontRecurse}) {
+		my %cfg= %$extCfg;
+		delete $cfg{rapidapp_cfg2html_renderer};
+		$renderCxt->render(\%cfg);
+	}
+	else {
+		$module->web1_render($renderCxt, { %$extCfg, _SelfConfigRender_DontRecurse => 1 });
+	}
 }
 
 # We can't have objects in the JSON.

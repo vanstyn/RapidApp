@@ -1,4 +1,8 @@
-.ext-cmp {
+html, body, .x-panel {
 	font: 12px tahoma,arial,helvetica,sans-serif;
 	background-color: #F0F0F0;
+}
+
+.x-panel-tl, .x-panel-tr, .x-panel-tc, .x-panel-ml, .x-panel-mr, .x-panel-mc, .x-panel-bl, .x-panel-br, .x-panel-bc {
+	background-color: transparent;
 }

@@ -9,60 +9,88 @@ sub render_xtype_box {
 sub render_xtype_panel {
 	my ($self, $renderCxt, $cfg)= @_;
 	
-	my $hasFrame= ref $cfg->{frame} && ${$cfg->{frame}};
-	# first the top bar context, if any
-	my $tbar= ref $cfg->{tbar} eq 'ARRAY'? $cfg->{tbar} : undef;
-	my $bbar= ref $cfg->{bbar} eq 'ARRAY'? $cfg->{bbar} : undef;
+	# This function first builds a list of pieces which can either be literals or functions that
+	#   perform rendering, and then writes or runs each of them at the end.
+	# This way, it is possible to override the generated HTML for any/all parts of the panel, and
+	#   should allow maximum re-use by other renderers.
 	
-	# then the body elements
-	my $items= $self->build_container_item_list($cfg);
-	
-	my $layout= $cfg->{layout} || "box";
-	my $layoutFn= $self->can("render_layout_$layout") || \&render_layout_box;
-	my $renderClosure= sub { $self->$layoutFn($renderCxt, $items, $cfg) };
-	
-	$self->render_panel_structure($renderCxt, $hasFrame, $tbar, $bbar, $renderClosure);
-}
-
-sub render_panel_structure {
-	my ($self, $renderCxt, $hasFrame, $tbar, $bbar, $renderContent)= @_;
-	
-	$renderCxt->incCSS('/static/ext/resources/css/ext-all.css', -100);
-	$renderCxt->incCSS('/static/ext/resources/css/xtheme-gray.css', -1);
-	$renderCxt->incCSS('/static/rapidapp/css/web1_ExtJSBasic.css');
-	
-	$renderCxt->write('<div class="x-panel">');
-	
-	$hasFrame
-		and $renderCxt->write('<div class="x-panel-tl"><div class="x-panel-tr"><div class="x-panel-tc"></div></div></div>'."\n");
-	
-	$renderCxt->write('<div class="x-panel-bwrap">'."\n");
-	
-	$hasFrame
-		and $renderCxt->write('<div class="x-panel-ml"><div class="x-panel-mr"><div class="x-panel-mc">'."\n");
-	
-	# first the top bar context, if any
-	defined $tbar
-		and $self->render_panel_bar($renderCxt, $tbar, 1);
-	
-	# then the body elements
-	if (defined $renderContent) {
-		$renderCxt->write('<div class="x-panel-body">'."\n");
-		$renderContent->();
-		$renderCxt->write('</div>'."\n");
+	my $cssClass= $cfg->{baseCls};
+	if (!defined $cssClass) {
+		$cssClass= 'x-panel';
+		$renderCxt->incCSS('/static/ext/resources/css/ext-all.css', -100);
+		$renderCxt->incCSS('/static/ext/resources/css/xtheme-gray.css', -1);
+		$renderCxt->incCSS('/static/rapidapp/css/web1_ExtJSBasic.css');
 	}
 	
-	# then the bbar, if any
-	defined $bbar
-		and $self->render_panel_bar($renderCxt, $bbar, 0);
+	my ($frameContentBegin, $titleContent, $frameContentBody, $tbarContent, $bodyContent, $bbarContent, $frameContentEnd);
 	
-	$hasFrame
-		and $renderCxt->write('</div></div></div>'
-			.'<div class="x-panel-bl x-panel-nofooter"><div class="x-panel-br"><div class="x-panel-bc"></div></div></div>'."\n");
+	my $hasFrame= ref $cfg->{frame} eq 'SCALAR'? ${$cfg->{frame}} : $cfg->{frame};
+	if ($hasFrame) {
+		$frameContentBegin= $cfg->{frameContentBegin};
+		defined $frameContentBegin
+			or $frameContentBegin= '<div class="'.$cssClass.'-tl"><div class="'.$cssClass.'-tr"><div class="'.$cssClass.'-tc"></div></div></div>'."\n";
+		$frameContentBody= $cfg->{frameContentBody};
+		defined $frameContentBody
+			or $frameContentBody= '<div class="'.$cssClass.'-ml"><div class="'.$cssClass.'-mr"><div class="'.$cssClass.'-mc">'."\n";
+		$frameContentEnd= $cfg->{frameContentEnd};
+		defined $frameContentEnd
+			or $frameContentEnd= '</div></div></div>'
+			.'<div class="'.$cssClass.'-bl '.$cssClass.'-nofooter"><div class="'.$cssClass.'-br"><div class="'.$cssClass.'-bc"></div></div></div>'."\n";
+	}
 	
-	$renderCxt->write('</div>');
+	$titleContent= $cfg->{titleContent};
+	!defined $titleContent && defined $cfg->{title}
+		and $titleContent= '<div class="'.$cssClass.'"><div class="'.$cssClass.'-header">'
+			.'<span class="'.$cssClass.'-header-text">'.$cfg->{title}.'</span></div></div>';
 	
-	$renderCxt->write('</div>'."\n");
+	$tbarContent= $cfg->{tbarContent};
+	if (!defined $tbarContent && defined $cfg->{tbar}) {
+		my $tbarCfg= ref $cfg->{tbar} eq 'HASH'? $cfg->{tbar} : { items => $cfg->{tbar} };
+		$tbarContent= sub {
+			$renderCxt->write("<div class='$cssClass-tbar $cssClass-tbar-noheader'>");
+			$self->render_xtype_toolbar($renderCxt, $tbarCfg);
+			$renderCxt->write("</div>");
+		};
+	}
+	
+	$bbarContent= $cfg->{bbarContent};
+	if (!defined $bbarContent && defined $cfg->{bbar}) {
+		my $bbarCfg= ref $cfg->{bbar} eq 'HASH'? $cfg->{bbar} : { items => $cfg->{bbar} };
+		$bbarContent= sub {
+			$renderCxt->write("<div class='$cssClass-bbar $cssClass-bbar-noheader'>");
+			$self->render_xtype_toolbar($renderCxt, $bbarCfg);
+			$renderCxt->write("</div>");
+		};
+	}
+	
+	$bodyContent= $cfg->{bodyContent};
+	if (!defined $bodyContent && defined $cfg->{items}) {
+		my $items= $self->build_container_item_list($cfg);
+		my $layout= $cfg->{layout} || "box";
+		my $layoutFn= $self->can("render_layout_$layout") || \&render_layout_box;
+		$bodyContent= sub {
+			$renderCxt->write('<div class="'.$cssClass.'-body">'."\n");
+			$self->$layoutFn($renderCxt, $items, $cfg);
+			$renderCxt->write('</div>'."\n");
+		};
+	}
+	
+	$renderCxt->write();
+	for my $part (
+		'<div class="'.$cssClass.'">',
+		$frameContentBegin,
+		'<div class="'.$cssClass.'-bwrap">',
+		$titleContent,
+		$frameContentBody,
+		$tbarContent,
+		$bodyContent,
+		$bbarContent,
+		$frameContentEnd,
+		"</div></div>\n")
+	{
+		next unless defined $part && $part ne '';
+		ref $part eq 'CODE'? $part->($renderCxt) : $renderCxt->write($part);
+	}
 }
 
 sub build_container_item_list {
@@ -80,11 +108,34 @@ sub build_container_item_list {
 	return [ @visible ];
 }
 
-sub render_panel_bar {
-	my ($self, $renderCxt, $barItems, $isTop)= @_;
-	my @textItems= grep { ! ref $_ && ! ($_ =~ /^[-><].?$/) } @$barItems;
-	my $styles= $isTop? 'x-panel-tbar x-panel-tbar-noheader':'x-panel-bbar x-panel-bbar-noheader';
-	$renderCxt->write('<div class="'.$styles.'"><div class="x-toolbar x-toolbar-layout-ct">'.join(' ', @textItems).'</div></div>');
+sub render_xtype_toolbar {
+	my ($self, $renderCxt, $extCfg)= @_;
+	
+	my $barItems= ref $extCfg->{items} eq 'ARRAY' ? $extCfg->{items} : [ $extCfg->{items} ];
+	
+	# ignore anything that isn't plain html or text, and which isn't aan alignment indicator
+	# TODO: process the alignment indicators
+	my @leftItems= grep { ! ref $_ && ! ($_ =~ /^[-><].?$/) } @$barItems;
+	my @rightItems;
+	
+	# if nothing is in the toolbar, then skip rendering it
+	return unless scalar(@leftItems) || scalar(@rightItems);
+	
+	my $cssClass= $extCfg->{baseCls} || 'x-toolbar';
+	my $leftContent= scalar(@leftItems) == 0? ''
+		: '<table><tr>'.join('', map({ "<td class='$cssClass-cell'>$_</td>" } @leftItems)).'</tr></table>';
+	my $rightContent= scalar(@rightItems) == 0? ''
+		: '<table><tr>'.join('', map({ "<td class='$cssClass-cell'>$_</td>" } @rightItems)).'</tr></table>';
+	
+	$renderCxt->write(
+		"<div class='$cssClass $cssClass-layout-ct'>"
+			."<table class='$cssClass-ct'>\n"
+				."<tr>\n"
+					.(length($leftContent)? "<td class='$cssClass-left' align='left'>$leftContent</td>\n" : '')
+					.(length($rightContent)? "<td class='$cssClass-right' align='right'>$rightContent</td>\n" : '')
+				."</tr>"
+			."</table>"
+		."</div>\n");
 }
 
 sub render_layout_box {
