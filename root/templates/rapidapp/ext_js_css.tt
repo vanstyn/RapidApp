@@ -119,4 +119,5 @@
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp/AppStoreForm2.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp/AppCombo2.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp/MultilineToolbar/MultilineToolbar.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/Ext.ux.ComponentDataView.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp.js"></script>
