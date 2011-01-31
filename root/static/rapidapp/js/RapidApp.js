@@ -2904,7 +2904,7 @@ Ext.ux.RapidApp.ClickBox = Ext.extend(Ext.BoxComponent, {
 		},this);
 	}
 });
-
+Ext.reg('clickbox', Ext.ux.RapidApp.ClickBox);
 
 Ext.ux.RapidApp.BoxToolBtn = Ext.extend(Ext.ux.RapidApp.ClickBox, {
 
@@ -2919,36 +2919,16 @@ Ext.ux.RapidApp.BoxToolBtn = Ext.extend(Ext.ux.RapidApp.ClickBox, {
 		Ext.ux.RapidApp.BoxToolBtn.superclass.initComponent.call(this);
 	}
 });
+Ext.reg('boxtoolbtn', Ext.ux.RapidApp.BoxToolBtn);
 
 
 
-/*
-Ext.ux.RapidApp.BoxToolBtn = Ext.extend(Ext.BoxComponent, {
-
-	toolType: 'gear',
-	toolQtip: 'tooltip!!!',
-	handler: function(){},
-	scope: null,
+Ext.ux.RapidApp.ComponentDataView = Ext.extend(Ext.ux.ComponentDataView,{
 	initComponent: function() {
-		
-		if(!this.scope) {
-			this.scope = this;
-		}
-		
-		this.autoEl = {
-			cls: 'x-tool x-tool-' + this.toolType,
-			'ext:qtip': this.toolQtip
-		};
-		
-		Ext.ux.RapidApp.BoxToolBtn.superclass.initComponent.call(this);
-		
-		this.on('afterrender',function(box) {
-		 	var el = box.getEl();
-			el.addClassOnOver('x-tool-' + this.toolType + '-over');
-			el.on('click', this.handler, this.scope, box);
+		Ext.each(this.items,function(item) {
+			item.ownerCt = this;
 		},this);
+		Ext.ux.RapidApp.ComponentDataView.superclass.initComponent.call(this);
 	}
 });
-*/
-
-
+Ext.reg('rcompdataview', Ext.ux.RapidApp.ComponentDataView);
