@@ -9,9 +9,13 @@ use RapidApp::Web1RenderContext::ExtCfgToHtml;
 
 has 'defaultRenderer' => ( is => 'rw', isa => 'RapidApp::Web1RenderContext::Renderer', lazy_build => 1 );
 
-sub renderAsIgnored {
+sub renderUnknown {
 	my ($renderCxt, $obj)= @_;
-	if (RapidApp::ScopedGlobals->catalystInstance->debug) {
+	if (ref $obj eq 'HASH' && exists $obj->{value}) {
+		RapidApp::ScopedGlobals->log->warn('Wild guess at rendering unknown xtype via $cfg->{value}='.$obj->{value});
+		$renderCxt->write("<div>".(defined $obj->{value}? $obj->{value} : "(not set)")."</div>");
+	}
+	elsif (RapidApp::ScopedGlobals->catalystInstance->debug) {
 		$renderCxt->write("<div><b>[unrenderable content]</b></div>");
 	}
 }
@@ -19,7 +23,7 @@ sub renderAsIgnored {
 sub _build_defaultRenderer {
 	my $self= shift;
 	return RapidApp::Web1RenderContext::ExtCfgToHtml->new(
-		defaultRenderer => RapidApp::Web1RenderContext::RenderFunction->new(\&renderAsIgnored),
+		defaultRenderer => RapidApp::Web1RenderContext::RenderFunction->new(\&renderUnknown),
 	);
 }
 
