@@ -86,7 +86,8 @@ sub Login_Window_code {
 					id				=> 'username_field',
 					itemId		=> 'username_field',
 					name			=> 'username',
-					fieldLabel	=> $Params->{username_label}
+					fieldLabel	=> $Params->{username_label},
+					value			=> ($Params->{username} || ''),
 				},{
 					id				=> 'password_field',
 					name			=> 'password',

@@ -1,11 +1,7 @@
 package RapidApp::Role::AuthRequire;
-#
-# -------------------------------------------------------------- #
-#
 
-
-use strict;
 use Moose::Role;
+
 requires 'c';
 requires 'Controller';
 requires 'render_data';
@@ -17,28 +13,9 @@ use Term::ANSIColor qw(:constants);
 our $VERSION = '0.1';
 
 
-has 'non_auth_content'		=> ( is => 'rw',	default => '' );
-
-
-
-
-#around 'Controller' => sub {
-#	my $orig = shift;
-#	my $self = shift;
-#
-#	
-#	return $self->$orig(@_);
-#};
-
-
-
-sub kill_session {
-	my $self = shift;
-	$self->c->logout;
-	return $self->c->delete_session('kill_session()');
-}
-
-
+has 'non_auth_content' => ( is => 'rw', default => '' );
+has 'auto_prompt'      => ( is => 'rw', default => 0 );
+has 'auth_module_path' => ( is => 'rw', default => '/main/banner/auth' );
 
 
 around 'Controller' => sub {
@@ -53,35 +30,18 @@ around 'Controller' => sub {
 	#$self->c->res->status(205);
 	
 	unless ($self->c->session_is_valid and $self->c->user_exists) {
-		
-	
-		
-		$self->kill_session;
-		#$self->c->res->status(205);
-		
-		
-		
 		$self->c->res->header('X-RapidApp-Authenticated' => 0);
+		
+		if ($self->auto_prompt) {
+			my $authModule= $c->rapidApp->module($self->auth_module_path);
+			return $authModule->viewport;
+		}
+		
 		return $self->render_data($self->non_auth_content);
 	}
 	
 	$self->c->res->header('X-RapidApp-Authenticated' => $self->c->user->get('username'));
 	return $self->$orig(@_);
 };
-
-
-#around 'content' => sub {
-#	my $orig = shift;
-#	my $self = shift;
-#	
-#	return $self->non_auth_content unless (
-#		defined $self->c and
-#		$self->c->user_exists
-#	);
-#	
-#	return $self->$orig(@_);
-#};
-
-
 
 1;
