@@ -69,7 +69,7 @@ sub emitMessage {
 }
 
 sub writeQuickTrace {
-	my $trace= shift;
+	my $trace= shift || Devel::StackTrace->new;
 	try {
 		my $fd= IO::File->new(">> $TRACE_OUT_FILE");
 		my @frames= $trace->frames;
@@ -95,7 +95,7 @@ sub writeQuickTrace {
 }
 
 sub writeFullTrace {
-	my $trace= shift;
+	my $trace= shift || Devel::StackTrace->new;
 	try {
 		my $fd= IO::File->new(">> $TRACE_OUT_FILE");
 		$fd->print($trace->as_html."\n<br/><br/><br/>\n");
