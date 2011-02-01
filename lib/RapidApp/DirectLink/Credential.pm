@@ -16,13 +16,13 @@ It will then go to the store to try and find the user object, first using the 'a
 the link, and if that fails, using the passed $authinfo parameter.
 
 =cut
-my $hashToStr= sub {
+sub _hashToStr {
 	my $hash= shift;
 	return '{ '.(join ', ', map { $_.'="'.$hash->{$_}.'"' } sort keys %$hash).' }';
 };
 sub authenticate {
 	my ($self, $c, $realm, $authinfo)= @_;
-	$c->log->debug("authenticate: ".$hashToStr->($authinfo));
+	$c->log->debug("authenticate: "._hashToStr($authinfo));
 	my $link= $authinfo->{directLink};
 	ref $link && blessed($link) && $link->isa('RapidApp::DirectLink::Link') or return 0;
 	

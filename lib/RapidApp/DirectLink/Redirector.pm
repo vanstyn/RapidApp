@@ -118,30 +118,53 @@ of the DirectLink.  The default behavior should fit most situations, but you can
 for special handling.
 
 =cut
-
+sub _hashToStr {
+	my $hash= shift;
+	return '{ '.(join ', ', map { $_.'="'.$hash->{$_}.'"' } sort keys %$hash).' }';
+};
 sub directLink_handleAuth($$) {
 	my ($self, $c, $link)= @_;
+	
+	my $hasUser= $c->session_is_valid && $c->user_exists;
 	
 	# We allow the auth data to also specify the realm.
 	my $realm= $link->auth->{realm};
 	
-	# If there is no session, try authenticating the user
-	if (!defined $c->user) {
-		# first, try using just the link, as a credential:
-		my $user= $c->authenticate({ directLink => $link }, $realm? $realm : ());
-		# if that fails, try authenticating with the auth data in the link
-		defined $user
-			or $user= $c->authenticate( $link->auth, $realm? $realm : ());
-		
-		defined $user or die "Failed to authenticate user using link credentials";
-		
-		return 1;
+	$c->log->debug("DirectLink: HandleAuth: autologin = ".($link->auth->{autologin}?'true':'false')
+		.", curuser = ".($hasUser? $c->user->id : 'undef').", auth = "._hashToStr($link->auth));
+	
+	# we only auto-authenticate if that flag was set in the auth hash
+	if ($link->auth->{autologin}) {
+		# If there is no session, try authenticating the user
+		if (!defined $c->user) {
+			# first, try using just the link, as a credential:
+			my $user= $c->authenticate({ directLink => $link }, $realm? $realm : ());
+			# if that fails, try authenticating with the auth data in the link
+			defined $user
+				or $user= $c->authenticate( $link->auth, $realm? $realm : ());
+			
+			defined $user or die "Failed to authenticate user using link credentials";
+			
+			return 1;
+		}
+		else {
+			my $user= $c->find_user($link->auth, $realm? $realm : ());
+			defined $user or die "Failed to find user by link auth params";
+			
+			return $self->directLink_handleAuthDiscrepancy($c, $c->user, $user);
+		}
 	}
+	# else we merely advise the auth system of what user should be used
 	else {
 		my $user= $c->find_user($link->auth, $realm? $realm : ());
-		defined $user or die "Failed to find user by link auth params";
-		
-		return $self->directLink_handleAuthDiscrepancy($c, $c->user, $user);
+		if ($user) {
+			my $uname= $user->get("username");
+			$c->log->info("defaulting login-username to ".$uname);
+			$c->session->{RapidApp_username}= $uname;
+		}
+		else {
+			$c->log->warn("didn't find the user specified by the link");
+		}
 	}
 }
 
