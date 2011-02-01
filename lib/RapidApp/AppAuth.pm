@@ -138,7 +138,7 @@ sub login {
 			$self->c->log->info(' ---> Login succeeded.');
 			
 			# keep it handy in the session
-			$self->c->session->{RapidApp_username}= $user;
+			$self->c->session->{RapidApp_username}= $self->c->user->username;
 			
 			return {
 				success	=> 1,
@@ -154,7 +154,6 @@ sub login {
 		msg		=> 'Logon failure.'
 	};
 }
-
 
 sub logout {
 	my $self = shift;

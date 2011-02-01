@@ -17,23 +17,30 @@ sub _apply_system_account_user_masquerade {
 	my $authKey= $c->request->headers->header('X-SystemAccountAuthKey');
 	if (defined $authKey) {
 		if ($authKey ne $c->get_system_account_auth_key) {
+			$c->delete_session('Attempt to use system account with invalid key');
 			$c->response->status(401);
 			return;
 		}
 		
-		if (!$c->session->{isSystemAccount}) {
-			$c->delete_session('System account cannot use existing session');
-			$c->session->{isSystemAccount}= 1; # create a new one
+		my $masqUser= $c->request->headers->header('X-SystemAccountMasqueradeAs');
+		my $userObj= $c->find_user({ id => $masqUser, sysAcctAuthKey => $authKey });
+		if (!defined $userObj) {
+			$c->delete_session('No such user $masqUser');
+			$c->response->status(401);
+			return;
 		}
 		
-		my $masqUser= $c->request->headers->header('X-SystemAccountMasqueradeAs');
-		if (defined $masqUser) {
-			if (!($c->user_exists && $c->user->id == $masqUser)) {
-				my $userObj= $c->find_user({ id => $masqUser, sysAcctAuthKey => $authKey });
-				defined $userObj or die "No such user $masqUser";
-				$c->user($userObj);
-				$c->persist_user;
-			}
+		# if we have a session, is it set up correctly?  If not, delete it and start a new one.
+		if ($c->session_is_valid) {
+			$c->delete_session('System account cannot use existing session')
+				unless $c->session->{isSystemAccount} && $c->user_exists && $c->user->id == $masqUser;
+		}
+		
+		# else create a new session
+		if (!$c->session_is_valid) {
+			$c->session->{isSystemAccount}= 1;
+			$c->set_authenticated($userObj);
+			$c->session->{RapidApp_username}= $masqUser->get("username");
 		}
 	}
 	$c->$orig(@args);
