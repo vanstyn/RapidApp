@@ -40,7 +40,7 @@ sub _apply_system_account_user_masquerade {
 		if (!$c->session_is_valid) {
 			$c->session->{isSystemAccount}= 1;
 			$c->set_authenticated($userObj);
-			$c->session->{RapidApp_username}= $masqUser->get("username");
+			$c->session->{RapidApp_username}= $userObj->get("username");
 		}
 	}
 	$c->$orig(@args);
