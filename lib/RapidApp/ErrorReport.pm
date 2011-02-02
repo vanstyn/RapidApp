@@ -12,9 +12,11 @@ sub _build_dateTime {
 	return $d;
 }
 
+has 'exception' => ( is => 'rw', required => 1 );
+
 has 'traces' => ( is => 'rw', isa => 'ArrayRef', required => 1 );
 
-has 'exception' => ( is => 'rw', required => 1 );
+has 'debugInfo' => ( is => 'rw', default => undef );
 
 sub getTrimmedClone {
 	my ($self, $maxDepth)= @_;
