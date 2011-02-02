@@ -40,9 +40,11 @@ around 'BUILDARGS' => sub {
 	return $result;
 };
 
-# Path to the error viewer, needed for debug mode hyperlinks
-# The first loaded ErrorView module will set this path to itself automatically, if not set to something else.
-has 'errorViewPath' => ( is => 'rw', isa => 'Str' );
+# Each of the following is the path to a module implementing some useful feature.
+# The module can be specified in the config, or it will be automatically set by the first
+#    module of that type which gets loaded.
+has 'errorViewPath' => ( is => 'rw', isa => 'Str' ); # ErrorView
+has 'appAuthPath'   => ( is => 'rw', isa => 'Str' ); # AppAuth
 
 sub BUILD {
 	my $self= shift;

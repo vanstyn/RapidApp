@@ -40,6 +40,11 @@ sub BUILD {
 		login_window	=> 'login_window',
 		logout_window	=> 'logout_window',
 	);
+	
+	# Register ourselves with RapidApp if no other has already been registered
+	# This is used by the AuthRequire module to determine where to direct users who haven't logged in.
+	defined $self->app->rapidApp->appAuthPath
+		or $self->app->rapidApp->appAuthPath($self->module_path);
 }
 
 sub content {
