@@ -11,7 +11,7 @@ sub _build_action {
 		name      => 'writeResponse',
 		code      => $self->can('writeResponse'),
 		reverse   => $cls.'->writeResponse',
-		class     => $cls,
+		class     => $self,
 		namespace => $cls,
 	});
 }

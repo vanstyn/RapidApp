@@ -111,7 +111,7 @@ sub saveErrorReport {
 		push @summaryParts, '['.(ref $err).']' if ref $err;
 		
 		my $msg= ''.$errReport->exception;
-		length($msg) < 64 or $msg= substr($msg,0,60).'...';
+		length($msg) < 164 or $msg= substr($msg,0,160).'...';
 		push @summaryParts, $msg;
 	}
 	catch {
@@ -135,7 +135,7 @@ sub saveErrorReport {
 		
 		for (my $maxDepth=$self->maxCloneDepth; $maxDepth > 0; $maxDepth--) {
 			my $trimErr= $errReport->getTrimmedClone($maxDepth);
-			$trimErr->debugInfo->{freezeInfo}= "Exception object trimmed to depth $maxDepth";
+			$trimErr->apply_debugInfo(freezeInfo => "Exception object trimmed to depth $maxDepth");
 			$serialized= freeze( $trimErr );
 			$serializedSize= defined $serialized? length($serialized) : -1;
 			

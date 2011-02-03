@@ -19,9 +19,11 @@ sub process {
 	defined $c->response->status || $c->response->status(500);
 	
 	my $stat= $c->response->status;
+	my $statInfo= $codes->{$stat} || { short => "<no details>", long => "<no details>" };
+	
 	$c->stash->{statusCode}= $stat;
-	$c->stash->{shortStatusText}= $codes->{$stat}->{short};
-	$c->stash->{longStatusText}=  $codes->{$stat}->{long};
+	$c->stash->{shortStatusText}= $statInfo->{short};
+	$c->stash->{longStatusText}=  $statInfo->{long};
 	$c->stash->{errorViewPath}= $c->rapidApp->errorViewPath;
 	
 	if ($c->response->status == 404) {

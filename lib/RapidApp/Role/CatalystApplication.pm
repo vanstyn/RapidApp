@@ -59,6 +59,7 @@ sub setupRapidApp {
 	injectUnlessExist( 'RapidApp::View::JSON', 'View::RapidApp::JSON' );
 	injectUnlessExist( 'RapidApp::View::Web1Render', 'View::RapidApp::Web1Render' );
 	injectUnlessExist( 'RapidApp::View::HttpStatus', 'View::RapidApp::HttpStatus' );
+	injectUnlessExist( 'RapidApp::View::OnError', 'View::RapidApp::OnError' );
 };
 
 sub injectUnlessExist {
@@ -138,8 +139,10 @@ around 'dispatch' => sub {
 		$c->error('Body was not defined!  (discovered at '.__FILE__.' '.__LINE__.')');
 	}
 	
-	scalar(@{ $c->error })
-		and $c->view('RapidApp::OnError')->process($c);
+	if (scalar(@{$c->error})) {
+		$c->view('RapidApp::OnError')->process($c);
+		$c->clear_errors;
+	}
 	
 	if (!defined $c->response->content_type) {
 		$c->log->error("Body was set, but content-type was not!  This can lead to encoding errors!");

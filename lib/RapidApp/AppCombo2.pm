@@ -31,7 +31,7 @@ sub BUILD {
 	);
 }
 
-sub web1_render {
+sub web1_render_extcfg {
 	my ($self, $renderCxt, $extCfg)= @_;
 	
 	$renderCxt->incCSS('/static/rapidapp/css/web1_ExtJSMisc.css');

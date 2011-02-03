@@ -5,6 +5,7 @@ use namespace::autoclean;
 BEGIN { extends 'Catalyst::View'; }
 
 use RapidApp::Include 'perlutil', 'sugar';
+use RapidApp::ErrorReport;
 
 =head1 NAME
 
@@ -30,6 +31,7 @@ sub process {
 	my ($self, $c)= @_;
 	
 	my $log= $c->log;
+	$log->warn("got here");
 	my @errors= @{$c->error};
 	my @traces= @{$c->stack_traces};
 	
@@ -43,18 +45,26 @@ sub process {
 	
 	my $err= $errors[0];
 	
-	my $errorReport= $c->rapidApp->saveErrors? $self->saveErrorReport : '';
-	
-	$c->stash->{exception}= $err;
-	
-	if (!$c->rapidApp->saveErrors) {
-		my $lastTrace= scalar(@$traces) > 0? $traces->[$#$traces] : undef;
+	if ($c->rapidApp->saveErrorReports) {
+		my $report= RapidApp::ErrorReport->new(
+			exception => $err,
+			traces => \@traces,
+		);
+		my $errorStore= $c->rapidApp->resolveErrorReportStore;
+		my $reportId= $errorStore->saveErrorReport($report);
+		defined $reportId
+			or $log->error("Failed to save error report");
+		$c->stash->{exceptionRefId}= $reportId;
+	}
+	else {
+		my $lastTrace= scalar(@traces) > 0? $traces[-1] : undef;
 		# not saving error, so just print it
 		$log->debug($lastTrace) if defined $lastTrace;
 	}
 	
 	# on exceptions, we either generate a 503, or a JSON response to the same effect
 	if ($c->stash->{requestContentType} eq 'JSON') {
+		$c->stash->{exception}= $err;
 		$c->view('RapidApp::JSON')->process($c);
 	}
 	else {
@@ -63,13 +73,11 @@ sub process {
 		if (defined $userMessage && length $userMessage) {
 			$c->stash->{longStatusText}= $userMessage;
 		}
+		$c->stash->{exception}= $err;
 		$c->view('RapidApp::HttpStatus')->process($c);
 	}
 }
 
-sub saveErrorReport {
-	return 1;
-}
 =pod
 	if ($c->rapidApp->saveErrors) {
 		$log->info("Writing ".scalar(@$traces)." exception trace(s) to ".$RapidApp::TraceCapture::TRACE_OUT_FILE);

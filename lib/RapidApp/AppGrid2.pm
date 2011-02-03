@@ -286,7 +286,7 @@ sub set_columns_visible {
 }
 
 
-sub web1_render {
+sub web1_render_extcfg {
 	my ($self, $renderCxt, $extCfg)= @_;
 	
 	# simulate a get request to the grid's store
@@ -306,6 +306,7 @@ sub web1_render {
 	my $cols= $extCfg->{columns};
 	defined $cols && ref $cols eq 'ARRAY'
 		or $cols= [];
+	
 	# filter hidden columns
 	$cols= [ grep { !$_->{hidden} || (ref $_->{hidden} && !${$_->{hidden}}) } @$cols ];
 	
@@ -326,7 +327,7 @@ sub web1_render_table {
 	
 	# write header cells
 	$renderCxt->write('<tr class="x-grid3-hd-row x-grid3-header">');
-	$renderCxt->write(join('', map { '<th class="x-grid3-hd x-grid3-cell"><div class="x-grid3-hd-inner">'.$_->{header}.'</div></th>' } @$cols ));
+	$renderCxt->write(join('', map { '<th class="x-grid3-hd x-grid3-cell" width="'.$_->{width}.'"><div class="x-grid3-hd-inner">'.$_->{header}.'</div></th>' } @$cols ));
 	$renderCxt->write("</tr>\n");
 	
 	# write data cells

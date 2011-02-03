@@ -7,9 +7,10 @@ extends 'Catalyst::Model';
 use RapidApp::Include 'perlutil';
 use RapidApp::ScopedGlobals 'sEnv';
 use Time::HiRes qw(gettimeofday);
+use RapidApp::Role::ErrorReportStore;
 
 # the package name of the catalyst application, i.e. "GreenSheet" or "HOPS"
-has 'catalystAppClass' => ( is => 'rw', isa => 'Str', required => 1 );
+has 'catalystAppClass' => ( is => 'rw', isa => 'Str', required => 1, default => sub { sEnv->catalystClass } );
 
 # the class name of the root module
 has 'rootModuleClass' => ( is => 'rw', isa => 'Str', lazy_build => 1 );
@@ -23,22 +24,30 @@ sub defaultRootModuleClass {
 }
 
 # the config hash for the modules
-has 'rootModuleConfig' => ( is => 'rw', isa => 'HashRef' );
+has 'rootModuleConfig'  => ( is => 'rw', isa => 'HashRef' );
 
 # whether to preload the modules at catalyst setup time
-has 'preloadModules' => ( is => 'rw', isa => 'Bool', default => 1 );
+has 'preloadModules'    => ( is => 'rw', isa => 'Bool', default => 1 );
 
 # the root model instance
-has 'rootModule' => ( is => 'rw', lazy_build => 1 );
+has 'rootModule'        => ( is => 'rw', lazy_build => 1 );
 
-has 'enableDirectLink' => ( is => 'rw', isa => 'Bool', default => 0 );
+has 'enableDirectLink'  => ( is => 'rw', isa => 'Bool', default => 0 );
 
-around 'BUILDARGS' => sub {
-	my ($orig, $class, @args)= @_;
-	my $result= $class->$orig(@args);
-	$result->{catalystAppClass} ||= sEnv->catalystClass;
-	return $result;
-};
+# Whether to save errors to whichever ExceptionStore is available via whatever configuration
+# If this is true and no ExceptionStore is configured, we die
+has 'saveErrorReports'  => ( is => 'rw', isa => 'Bool', default => 0 );
+
+# either an exceptionStore instance, or the name of a catalyst Model implementing one
+has 'errorReportStore'  => ( is => 'rw', isa => 'Maybe[RapidApp::Role::ErrorReportStore|Str]',
+	lazy => 1, default => sub { RapidApp::FileErrorStore->new } );
+
+sub resolveErrorReportStore {
+	my $self= shift;
+	my $store= $self->errorReportStore;
+	ref $store or $store= $self->catalystAppClass->model($store);
+	return $store;
+}
 
 # Each of the following is the path to a module implementing some useful feature.
 # The module can be specified in the config, or it will be automatically set by the first
@@ -72,7 +81,9 @@ sub _build_rootModule {
 sub _load_root_module {
 	my $self= shift;
 	
-	sEnv->log->debug("Running require on root module ".$self->rootModuleClass);
+	my $log= sEnv->log;
+	$log->debug("Running require on root module ".$self->rootModuleClass);
+	$log->_flush if $log->can('_flush');
 	Catalyst::Utils::ensure_class_loaded($self->rootModuleClass);
 	
 	my $mParams= $self->rootModuleConfig || {};

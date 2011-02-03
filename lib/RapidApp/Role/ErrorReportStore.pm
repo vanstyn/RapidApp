@@ -3,6 +3,7 @@ package RapidApp::Role::ErrorReportStore;
 use Moose::Role;
 use Try::Tiny;
 use RapidApp::ScopedGlobals;
+use RapidApp::ErrorReport;
 
 =head2 $id= $obj->saveErrorReport( RapidApp::ErrorReport )
 

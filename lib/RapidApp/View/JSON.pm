@@ -46,7 +46,7 @@ sub process {
 			}
 		}
 		elsif (exists $c->stash->{exceptionRefId}) {
-			$msg .= "The details of this error could not be saved.";
+			$msg .= "<br/>The details of this error could not be saved.";
 		}
 		
 		$jsonStr= $self->encoder->encode({

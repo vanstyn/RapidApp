@@ -70,6 +70,7 @@ sub _build_dateTime {
 	return $d;
 }
 
+=pod
 has 'srcLoc' => ( is => 'rw', lazy_build => 1 );
 sub _build_srcLoc {
 	my $self= shift;
@@ -79,10 +80,12 @@ sub _build_srcLoc {
 	my $frame= $self->trace->frame(0);
 	return defined $frame? $frame->filename . ' line ' . $frame->line : undef;
 }
+=cut
 
 has 'data' => ( is => 'rw', isa => 'HashRef', lazy => 1, default => sub {{}} );
 has 'cause' => ( is => 'rw' );
 
+=pod
 has 'traceArgs' => ( is => 'ro', lazy => 1, default => sub {{ frame_filter => \&ignoreSelfFrameFilter }} );
 sub collectTraceArgs {
 	my $self= shift;
@@ -107,7 +110,7 @@ sub ignoreSelfFrameFilter {
 	return 0 if $subName =~ /^RapidApp::Error:.*?:(_build_trace|BUILD)$/;
 	return 1;
 }
-
+=cut
 around 'BUILDARGS' => sub {
 	my ($orig, $class, @args)= @_;
 	my $params= ref $args[0] eq 'HASH'? $args[0]
@@ -118,15 +121,16 @@ around 'BUILDARGS' => sub {
 
 sub BUILD {
 	my $self= shift;
-	$self->trace; # activate the trace
+	#$self->trace; # activate the trace
 	defined($self->message_fn) || $self->has_message or die "Require one of message or message_fn";
+	RapidApp::ScopedGlobals->log->warn(Data::Dumper::Dumper($self));
 }
 
 sub dump {
 	my $self= shift;
 	
 	# start with the readable messages
-	my $result= $self->message."\n  at ".$self->srcLoc;
+	my $result= $self->message;#."\n  at ".$self->srcLoc;
 	
 	$self->has_userMessage || $self->userMessage_fn
 		and $result.= "User Message: ".$self->userMessage."\n";
@@ -136,8 +140,8 @@ sub dump {
 	keys (%{$self->data})
 		and $result.= Data::Dumper->Dump([$self->data], ["Data"])."\n";
 	
-	defined $self->trace
-		and $result.= 'Stack: '.$self->trace."\n";
+	#defined $self->trace
+	#	and $result.= 'Stack: '.$self->trace."\n";
 	
 	defined $self->cause
 		and $result.= 'Caused by: '.(blessed $self->cause && $self->cause->can('dump')? $self->cause->dump : ''.$self->cause);
@@ -147,7 +151,7 @@ sub dump {
 
 sub as_string {
 	my $self= shift;
-	return $self->message.' at '.$self->srcLoc;
+	return $self->message#.' at '.$self->srcLoc;
 }
 
 # called by Perl, on this package only (not a method lookup)

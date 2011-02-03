@@ -7,19 +7,6 @@ use RapidApp::Role::ExceptionStore;
 use RapidApp::TraceCapture;
 use Scalar::Util 'blessed';
 
-# either an exceptionStore instance, or the name of a catalyst Model implementing one
-has 'exceptionStore'        => ( is => 'rw', isa => 'Maybe[RapidApp::Role::ExceptionStore|Str]' );
-
-# Whether to save errors to whichever ExceptionStore is available via whatever configuration
-# If this is true and no ExceptionStore is configured, we die
-has 'saveErrors'            => ( is => 'rw', isa => 'Bool', default => 0 );
-
-# Whether to record an exception even if "$err->isUserError" is true
-has 'saveUserErrors'        => ( is => 'rw', isa => 'Bool', default => 1 );
-
-# Whether to also show the tracking ID to the user for UserErrors (probably only desirable for debugging)
-has 'reportIdForUserErrors' => ( is => 'rw', isa => 'Bool', default => 0 );
-
 # Which RapidApp module to dispatch to.  By default, we dispatch to the root.
 # If you had multiple ModuleDispatchers, you might choose to dispatch to deeper in the tree.
 has 'dispatchTarget'        => ( is => 'rw', isa => 'Str',  default => "/");

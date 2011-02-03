@@ -14,8 +14,8 @@ sub BUILD {
 	# based objects:
 	#$self->add_plugin({ ptype => 'rappeventhandlers' });
 	
-	# if a subclass overrode the web1_render function, we need to let ExtConfig2Html know
-	if ($self->can('web1_render') != \&web1_render) {
+	# if a subclass overrode the web1_render_extcfg function, we need to let ExtConfig2Html know
+	if ($self->can('web1_render_extcfg') != \&web1_render_extcfg) {
 		# Note: RapidApp::AppCmp::SelfConfigRender is defined at the bottom of this file
 		$self->extconfig->{rapidapp_cfg2html_renderer}=
 			RapidApp::AppCmp::SelfConfigRender->new($self->module_path);
@@ -31,19 +31,23 @@ sub content {
 # The default web-1.0 rendering for AppCmp subclasses is to generate the config, and then run it
 #  through ExtCfgToHtml
 sub web1_render {
-	my ($self, $renderCxt, $extConfig)= @_;
+	my ($self, $renderCxt)= @_;
 	$renderCxt->renderer->isa('RapidApp::Web1RenderContext::ExtCfgToHtml')
 		or die "Renderer for automatic ext->html conversion must be a Web1RenderContext::ExtCfgToHtml";
 	
-	$extConfig ||= $self->get_complete_extconfig;
-	my $customRenderer= $extConfig->{rapidapp_cfg2html_renderer};
+	my $extCfg= $self->get_complete_extconfig;
 	
 	if ($self->c->debug && $self->c->req->params->{dumpcfg}) {
-		$renderCxt->data2html($extConfig);
+		$renderCxt->data2html($extCfg);
+		return;
 	}
-	else {
-		$renderCxt->render($extConfig);
-	}
+	
+	$self->web1_render_extcfg($renderCxt, $extCfg);
+}
+
+sub web1_render_extcfg {
+	my ($self, $renderCxt, $extCfg)= @_;
+	$renderCxt->render($extCfg);
 }
 
 sub get_complete_extconfig {
@@ -278,7 +282,7 @@ sub moduleName {
 }
 
 # This is the standard method of RapidApp::Web1RenderContext::Renderer which gets called to render the $extCfg.
-# We simply pass the call to the module's web1_render.
+# We simply pass the call to the module's web1_render_extcfg.
 sub renderAsHtml {
 	my ($self, $renderCxt, $extCfg)= @_;
 	my $module= RapidApp::ScopedGlobals->catalystInstance->rapidApp->module($self->moduleName);
@@ -290,7 +294,7 @@ sub renderAsHtml {
 		$renderCxt->render(\%cfg);
 	}
 	else {
-		$module->web1_render($renderCxt, { %$extCfg, _SelfConfigRender_DontRecurse => 1 });
+		$module->web1_render_extcfg($renderCxt, { %$extCfg, _SelfConfigRender_DontRecurse => 1 });
 	}
 }
 

@@ -2,7 +2,7 @@ package RapidApp::Data::DeepMap;
 
 use Moose;
 
-use Scalar::Util qw(blessed reftype);
+use Scalar::Util qw(blessed reftype refaddr);
 
 has '_mapperCache'     => ( is => 'rw', isa => 'HashRef', lazy_build => 1 );
 has '_translatedCache' => ( is => 'rw', isa => 'HashRef', lazy_build => 1 );
@@ -58,16 +58,22 @@ sub applyMapperByISA {
 sub translate {
 	#_trace(@_);
 	my ($self, $obj)= @_;
-	return $self->_translatedCache->{$obj} if defined $obj && exists $self->_translatedCache->{$obj};
-	return $self->defaultMapper->($obj, $self, '') unless ref $obj;
-	
 	my $r= ref $obj;
+	!$r
+		and return $self->defaultMapper->($obj, $self, '');
+	
+	# use cached, if possible
+	return $self->_translatedCache->{refaddr $obj} if exists $self->_translatedCache->{refaddr $obj};
+	
 	my $mapperFn= $self->_mapperCache->{$r} || $self->_getMapperFor($r);
-	return ($self->_translatedCache->{$obj}= &$mapperFn($obj, $self, $r));
+	return ($self->_translatedCache->{refaddr $obj}= &$mapperFn($obj, $self, $r));
 }
 
 sub fn_passthrough {#_trace(@_);
 	$_[0]
+}
+sub fn_snub {
+	'['.$_[0].']'
 }
 sub fn_prune {#_trace(@_);
 	undef
@@ -88,7 +94,7 @@ sub fn_translateHashContents {
 	#_trace(@_);
 	my ($obj, $mapper)= @_;
 	my $result= {};
-	$mapper->_translatedCache->{$obj}= $result;
+	$mapper->_translatedCache->{refaddr $obj}= $result;
 	my @content= %$obj;
 	my $depth= $mapper->currentDepth;
 	$mapper->currentDepth($depth+1);
@@ -104,7 +110,7 @@ sub fn_translateArrayContents {
 	#_trace(@_);
 	my ($obj, $mapper)= @_;
 	my @content= @$obj;
-	$mapper->_translatedCache->{$obj}= \@content;
+	$mapper->_translatedCache->{refaddr $obj}= \@content;
 	my $depth= $mapper->currentDepth;
 	$mapper->currentDepth($depth+1);
 	for (my $i=$#content; $i >= 0; $i--) {
@@ -117,7 +123,7 @@ sub fn_translateArrayContents {
 sub fn_translateRefContents {
 	#_trace(@_);
 	my ($obj, $mapper)= @_;
-	$mapper->_translatedCache->{$obj}= \$obj;
+	$mapper->_translatedCache->{refaddr $obj}= \$obj;
 	$obj= $mapper->translate($$obj);
 	return \$obj;
 }

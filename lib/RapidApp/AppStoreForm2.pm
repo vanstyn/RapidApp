@@ -40,7 +40,7 @@ sub init_onrequest {
 	);
 }
 
-sub web1_render {
+sub web1_render_extcfg {
 	my ($self, $renderCxt, $extCfg)= @_;
 	$renderCxt->renderer->isa('RapidApp::Web1RenderContext::ExtCfgToHtml')
 		or die "Renderer for automatic ext->html conversion must be a Web1RenderContext::ExtCfg2ToHtml";

@@ -6,18 +6,32 @@ extends 'RapidApp::DbicAppGrid2';
 use RapidApp::Include 'perlutil', 'sugar';
 use RapidApp::ErrorView;
 use RapidApp::DbicExtQuery;
+use RapidApp::DbicErrorStore;
 
-has 'exceptionStore' => ( is => 'rw', isa => 'RapidApp::DbicExceptionStore' );
+has 'errorReportStore' => ( is => 'rw', isa => 'Maybe[RapidApp::DbicErrorStore|Str]' );
+
+sub resolveErrorReportStore {
+	my $self= shift;
+	
+	my $store= $self->errorReportStore;
+	defined $store
+		and return (ref $store? $store : $self->c->model($store));
+	
+	return $self->app->rapidApp->resolveErrorReportStore;
+}
 
 sub ResultSource {
-	return (shift)->exceptionStore->resultSource;
+	my $self= shift;
+	my $store= $self->resolveErrorReportStore;
+	$store->isa('RapidApp::DbicErrorStore') or die "Can only browse error stores of type RapidApp::DbicErrorStore";
+	return $store->resultSource;
 }
 
 override_defaults(
 	record_pk => 'id',
 	title     => 'Exceptions',
 	auto_web1 => 1,
-	auto_viewport => 1,
+	#auto_viewport => 1,
 	open_record_class => sub {{
 		class => 'RapidApp::ErrorView',
 		params => { edit_mode => 1, useParentExceptionStore => 1 }
@@ -32,32 +46,16 @@ sub BUILD {
 	);
 	
 	my @colOpts= (
-		id    => { width =>  30, header => 'ID' },
-		when  => { width => 120, header => 'Date' },
-		who   => { width =>  70, header => 'User' },
-		what  => { width => 250, header => 'Message' },
-		where => { width => 250, header => 'Src Loc.' },
-		why   => { hidden => \1 },
+		id      => { width =>  30, header => 'ID' },
+		when    => { width => 120, header => 'Date' },
+		summary => { width => 900, header => 'Summary' },
+		report  => { hidden => \1 },
 	);
 	$self->batch_apply_opts(
 		columns => { @colOpts },
 		column_order => [ grep(!ref $_, @colOpts) ],
 		sort => { field => 'id', direction => 'DESC' },
 	);
-}
-
-sub content {
-	my $self= shift;
-	my $extcfg= $self->get_complete_extconfig;
-	$self->log->debug("xtype ".$extcfg->{xtype});
-	return $extcfg;
-}
-
-sub viewport {
-	my $self= shift;
-	my $extcfg= $self->get_complete_extconfig;
-	$self->log->debug("xtype ".$extcfg->{xtype});
-	return $self->SUPER::viewport;
 }
 
 sub getjs_simpleRequestor {

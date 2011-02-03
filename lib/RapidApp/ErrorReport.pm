@@ -2,8 +2,10 @@ package RapidApp::ErrorReport;
 use Moose;
 
 use RapidApp::Error;
+use Scalar::Util 'reftype';
 
 our $TRIMMER;
+our $MAX_DEPTH;
 
 has 'dateTime' => ( is => 'rw', isa => 'DateTime', required => 1, lazy_build => 1 );
 sub _build_dateTime {
@@ -16,18 +18,23 @@ has 'exception' => ( is => 'rw', required => 1 );
 
 has 'traces' => ( is => 'rw', isa => 'ArrayRef', required => 1 );
 
-has 'debugInfo' => ( is => 'rw', default => undef );
+has 'debugInfo' => (
+	traits	=> ['Hash'],
+	is        => 'ro',
+	isa       => 'HashRef',
+	default   => sub { {} },
+	handles   => { apply_debugInfo => 'set' }
+);
 
 sub getTrimmedClone {
 	my ($self, $maxDepth)= @_;
+	$maxDepth ||= 4;
 	$TRIMMER->reset();
 	local $MAX_DEPTH= $maxDepth;
 	my $ret= $TRIMMER->translate($self);
 	$TRIMMER->reset();
 	return $ret;
 }
-
-our $MAX_DEPTH= 3;
 
 $TRIMMER= RapidApp::Data::DeepMap->new(
 	defaultMapper => \&fn_trimUnwantedCrap,
@@ -41,7 +48,7 @@ $TRIMMER= RapidApp::Data::DeepMap->new(
 		'RapidApp::Module' => \&fn_snubBlessed,
 		'Catalyst::Component' => \&fn_snubBlessed,
 		'IO::Handle' => \&fn_snubBlessed,
-		'RapidApp::Error' => \&RapidApp::Data::DeepMap::fn_translateBlessedContents,
+		#'RapidApp::Error' => \&RapidApp::Data::DeepMap::fn_translateBlessedContents,
 		'RapidApp::ErrorReport' => \&RapidApp::Data::DeepMap::fn_translateBlessedContents,
 		'Devel::StackTrace' => \&fn_trimStackTrace,
 		'Devel::StackTrace::Frame' => \&RapidApp::Data::DeepMap::fn_translateBlessedContents,
@@ -61,10 +68,11 @@ sub fn_trimUnwantedCrap {
 	my ($obj, $mapper, $type)= @_;
 	$type or return $obj;
 	$mapper->currentDepth < $MAX_DEPTH or return "[$obj]";
-	$type= reftype($obj) if blessed($obj);
 	$type eq 'HASH' and return RapidApp::Data::DeepMap::fn_translateHashContents(@_);
 	$type eq 'ARRAY' and return RapidApp::Data::DeepMap::fn_translateArrayContents(@_);
 	$type eq 'REF' and return RapidApp::Data::DeepMap::fn_translateRefContents(@_);
+	blessed($obj) && $type eq ref $obj
+		and return RapidApp::Data::DeepMap::fn_translateBlessedContents(@_);
 	return "[$obj]";
 }
 

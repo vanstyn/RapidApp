@@ -2,6 +2,7 @@ package RapidApp::Error::CustomPrompt;
 
 sub new {
 	my $class= shift;
+	RapidApp::ScopedGlobals->log->warn("Use RapidApp::Responder::CustomPrompt instead of RapidApp::Error::CustomPrompt");
 	return RapidApp::Responder::CustomPrompt->new(@_);
 }
 =pod

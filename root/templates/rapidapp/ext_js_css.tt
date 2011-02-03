@@ -36,6 +36,7 @@
 
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/css/header.css" />
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/css/title.css" />
+<link rel="stylesheet" type="text/css" href="/static/rapidapp/css/data2html.css" />
 
 <script type="text/javascript" src="/static/ext/adapter/ext/ext-base.js"></script>
 [% IF debug %]
@@ -121,3 +122,4 @@
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp/MultilineToolbar/MultilineToolbar.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/Ext.ux.ComponentDataView.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/ErrorTrace.js"></script>

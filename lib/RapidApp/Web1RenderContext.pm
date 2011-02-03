@@ -1,6 +1,7 @@
 package RapidApp::Web1RenderContext;
 use Moose;
 use RapidApp::Include 'perlutil';
+use Scalar::Util 'refaddr';
 
 use RapidApp::Web1RenderContext::RenderFunction;
 use RapidApp::Web1RenderContext::RenderHandler;
@@ -183,11 +184,16 @@ sub _data2html {
 	if (!ref $obj) {
 		$self->write((defined $obj? escHtml("'$obj'") : "undef")."<br />\n");
 	} elsif (blessed $obj) {
-		# NEVER dump our own object... hehe  (grows infinitely)
-		return if $obj eq $self;
-		
 		$self->write('<span class="dump-blessed-clsname">'.(ref $obj).'</span><div class="dump-blessed">');
-		$self->_ref2html(reftype($obj), $obj, $seenSet),
+		
+		# NEVER dump our own object... hehe  (grows infinitely)
+		# comparing  objects with operator overloads can get hairy, so just ignore all Web1RenderContexts
+		if (ref $obj eq 'Web1RenderContext') {
+			$self->write(escHtml("$obj"));
+		}
+		else {
+			$self->_ref2html(reftype($obj), $obj, $seenSet),
+		}
 		$self->write('</div>');
 	} else {
 		$self->_ref2html(ref ($obj), $obj, $seenSet);
@@ -196,10 +202,10 @@ sub _data2html {
 
 sub _ref2html {
 	my ($self, $refType, $obj, $seenSet)= @_;
-	if (exists $seenSet->{$obj}) {
+	if ($refType ne 'SCALAR' && exists $seenSet->{refaddr $obj}) {
 		return $self->write("(seen previously) $obj<br />\n");
 	}
-	$seenSet->{$obj}= undef;
+	$seenSet->{refaddr $obj}= undef;
 	if ($refType eq 'HASH') {
 		$self->_hash2html($obj, $seenSet);
 	} elsif ($refType eq 'ARRAY') {

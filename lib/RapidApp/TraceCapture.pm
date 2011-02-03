@@ -61,7 +61,7 @@ sub emitMessage {
 	my $log= sEnv->get("log");
 	if ($log) {
 		$log->info($msg);
-		$log->flush if $log->can('flush');
+		$log->_flush if $log->can('_flush');
 	} else {
 		STDERR->print($msg."\n");
 		STDERR->flush();
