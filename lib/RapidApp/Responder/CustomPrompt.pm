@@ -1,14 +1,9 @@
-package RapidApp::Error::CustomPrompt;
+package RapidApp::Responder::CustomPrompt;
 
-sub new {
-	my $class= shift;
-	return RapidApp::Responder::CustomPrompt->new(@_);
-}
-=pod
 use Moose;
-#extends 'RapidApp::Error';
+extends 'RapidApp::Responder';
 
-use JSON::PP;
+use RapidApp::Include;
 
 has 'title' 		=> ( is => 'ro', isa => 'Maybe[Str]', default => undef );
 has 'param_name'	=> ( is => 'ro', isa => 'Maybe[Str]', default => undef );
@@ -35,16 +30,15 @@ sub header_data {
 	return $data;
 }
 
-# TODO: do this properly in a View:
 sub header_json {
 	my $self = shift;
-	return JSON::PP::encode_json($self->header_data);
+	return RapidApp::JSON::MixedEncoder::encode_json($self->header_data);
 }
 
-sub customHttpResponse {
+sub writeResponse {
 	my ($self, $c)= @_;
 	
-	$c->response->header('X-RapidApp-CustomPrompt' => $err->header_json);
+	$c->response->header('X-RapidApp-CustomPrompt' => $self->header_json);
 	unless (length($c->response->body) > 0) {
 		$c->response->content_type('text/plain; charset=utf-8');
 		$c->response->body("More user input was needed to complete your request, but we can only send prompts through dynamic javascript requests");
@@ -53,5 +47,4 @@ sub customHttpResponse {
 
 no Moose;
 __PACKAGE__->meta->make_immutable;
-=cut
 1;

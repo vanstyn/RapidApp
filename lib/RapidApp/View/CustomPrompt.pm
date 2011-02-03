@@ -1,14 +1,9 @@
-package RapidApp::Error::CustomPrompt;
+package RapidApp::View::CustomPrompt;
 
-sub new {
-	my $class= shift;
-	return RapidApp::Responder::CustomPrompt->new(@_);
-}
-=pod
 use Moose;
-#extends 'RapidApp::Error';
+extends 'Catalyst::View';
 
-use JSON::PP;
+use RapidApp::Include
 
 has 'title' 		=> ( is => 'ro', isa => 'Maybe[Str]', default => undef );
 has 'param_name'	=> ( is => 'ro', isa => 'Maybe[Str]', default => undef );
@@ -35,13 +30,27 @@ sub header_data {
 	return $data;
 }
 
-# TODO: do this properly in a View:
 sub header_json {
 	my $self = shift;
-	return JSON::PP::encode_json($self->header_data);
+	return RapidApp::JSON::MixedEncoder::encode_json($self->header_data);
 }
 
-sub customHttpResponse {
+sub action {
+	my $self= shift;
+	return catalyst::Action->new(
+		name => 'CustomPrompt',
+		code => $self->can('process'),
+		class => ref $self,
+		'reverse' => '/'.(ref $self).'->process',
+	);
+}
+
+# experiment at making this an action rather than an exception
+sub dispatch {
+	process(@_);
+}
+
+sub process {
 	my ($self, $c)= @_;
 	
 	$c->response->header('X-RapidApp-CustomPrompt' => $err->header_json);
@@ -53,5 +62,4 @@ sub customHttpResponse {
 
 no Moose;
 __PACKAGE__->meta->make_immutable;
-=cut
 1;

@@ -14,7 +14,7 @@ RapidApp::DbicExceptionStore;
 =cut
 
 has 'resultSource'      => ( is => 'rw', isa => 'DBIx::Class::ResultSource' );
-has 'maxSerializedSize' => ( is => 'rw', defualt => 4*1024*1024 );
+has 'maxSerializedSize' => ( is => 'rw', default => 4*1024*1024 );
 has 'maxCloneDepth'     => ( is => 'rw', default => 6 );
 
 =head1 ATTRIBUTES
@@ -89,7 +89,7 @@ In SQL DDL:
 Writes out a new record in the table, saving this exception object.
 
 =cut
-sub saveException {
+sub saveErrorReport {
 	my ($self, $errReport)= @_;
 	my $log= RapidApp::ScopedGlobals->log;
 	my $c= RapidApp::ScopedGlobals->get("catalystInstance");
@@ -102,7 +102,7 @@ sub saveException {
 			my $uid= defined $c->user? $c->user->id : 'no user';
 			my $uname= defined $c->user? $c->user->username : '??';
 			my $isSys= $c->session->{isSystemAccount};
-			push @summaryParts, ($isSys? $uname.'('.$uid.')' : 'system ('.$uid.')';
+			push @summaryParts, ($isSys? $uname.'('.$uid.')' : 'system ('.$uid.')');
 			
 			push @summaryParts, $c->request->path;
 		}
@@ -116,7 +116,7 @@ sub saveException {
 	}
 	catch {
 		push @summaryParts, '(error building summary: '.$_.')';
-	}
+	};
 	
 	my $summary= substr(join(' ', @summaryParts), 0, 200);
 	undef @summaryParts;
@@ -134,7 +134,7 @@ sub saveException {
 		}
 		
 		for (my $maxDepth=$self->maxCloneDepth; $maxDepth > 0; $maxDepth--) {
-			my $trimErr= $err->getTrimmedClone($maxDepth);
+			my $trimErr= $errReport->getTrimmedClone($maxDepth);
 			$trimErr->debugInfo->{freezeInfo}= "Exception object trimmed to depth $maxDepth";
 			$serialized= freeze( $trimErr );
 			$serializedSize= defined $serialized? length($serialized) : -1;
@@ -142,18 +142,20 @@ sub saveException {
 			last if (defined $serialized && $serializedSize < $self->maxSerializedSize);
 			$log->warn("Error serialization was $serializedSize bytes, attempting to trim further...");
 		}
-		if (!defined $serialized || $serializedSize > $MAX_SERIALIZED_SIZE) {
-			my $trimErr= RapidApp::Error->new({
-				message => substr($err->message, 0, 1000),
-				srcLoc => $err->srcLoc,
-				trace => undef,
-				data => {
+		
+		# last ditch attempt at saving something
+		if (!defined $serialized || $serializedSize >= $self->maxSerializedSize) {
+			my $trimErr= RapidApp::ErrorReport->new(
+				dateTime => $errReport->dateTime,
+				exception => undef,
+				traces => [],
+				debugInfo => {
 					freezeInfo => "Exception object could not be trimmed small enough",
 					smallestTrimmedErrorSize => $serializedSize,
-					maxSize => $MAX_SERIALIZED_SIZE,
-					numberOfStackFrames => ( $err->trace? scalar($err->trace->frames) : 'none' ),
+					maxSize => $self->maxSerializedSize,
+					numTraces => scalar(@{$errReport->traces}),
 				},
-			});
+			);
 			$serialized= freeze( $trimErr );
 		}
 		
@@ -161,11 +163,9 @@ sub saveException {
 		defined $rs or die "Missing ResultSource";
 		
 		my $row= $rs->resultset->create({
-			who   => $uid,
-			what  => $msg,
-			when  => $err->dateTime,
-			where => $srcLoc,
-			why   => $serialized,
+			when    => $errReport->dateTime,
+			summary => $summary,
+			report  => $serialized,
 		});
 		$refId= $row->id;
 		$log->info("Exception saved as refId ".$refId);
@@ -180,7 +180,7 @@ sub saveException {
 =head2 $err= $store->loadException( $id )
 
 =cut
-sub loadException {
+sub loadErrorReport {
 	my ($self, $id)= @_;
 	
 	my $rs= $self->resultSource;
@@ -189,11 +189,11 @@ sub loadException {
 	my $row= $rs->resultset->find($id);
 	defined $row or die "No excption exists for id $id";
 	
-	my $serialized= $row->why;
+	my $serialized= $row->report;
 	RapidApp::ScopedGlobals->log->debug('Read '.length($serialized).' bytes of serialized error');
-	my $err= thaw($serialized);
-	defined $err or die "Failed to deserialize exception";
-	return $err;
+	my $errReport= thaw($serialized);
+	defined $errReport or die "Failed to deserialize exception";
+	return $errReport;
 }
 
 
