@@ -1,4 +1,4 @@
-[% USE Dumper %]
+﻿[% USE Dumper %]
 <html>
 <head><title>Exception [% ex.id %]</title></head>
 <style type="text/css">

@@ -1,4 +1,4 @@
-<html>
+﻿<html>
 <head>
 	<title> [% name | html %] - [% shortStatusText %]</title>
 	<style type="text/css">
