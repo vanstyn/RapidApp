@@ -29,7 +29,7 @@ sub process {
 		my $err= $c->stash->{exception};
 		
 		$c->res->header('X-RapidApp-Exception' => 1);
-		$c->res->status(542);
+		$c->res->status(500);
 		
 		my $msg= $self->getUserMessage($err) || 'An internal error occured';
 		

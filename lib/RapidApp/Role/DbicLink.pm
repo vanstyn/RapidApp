@@ -207,7 +207,8 @@ around 'BUILD' => sub {
 			
 			$self->apply_columns( $colname => $opts );
 			
-			print STDERR '      ' . MAGENTA . BOLD . ref($self) . ': ' . $colname . CLEAR . "\n";
+			$self->app->debug
+				and print STDERR '      ' . MAGENTA . BOLD . ref($self) . ': ' . $colname . CLEAR . "\n";
 			# -- Build combos (dropdowns) for every related field (for use in multifilters currently):
 			if ($prefix and not ($ENV{NO_REL_COMBOS} or $self->no_rel_combos)) {
 				

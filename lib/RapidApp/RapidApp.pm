@@ -8,6 +8,7 @@ use RapidApp::Include 'perlutil';
 use RapidApp::ScopedGlobals 'sEnv';
 use Time::HiRes qw(gettimeofday);
 use RapidApp::Role::ErrorReportStore;
+use RapidApp::FileErrorStore;
 
 # the package name of the catalyst application, i.e. "GreenSheet" or "HOPS"
 has 'catalystAppClass' => ( is => 'rw', isa => 'Str', required => 1, default => sub { sEnv->catalystClass } );
@@ -82,7 +83,8 @@ sub _load_root_module {
 	my $self= shift;
 	
 	my $log= sEnv->log;
-	$log->debug("Running require on root module ".$self->rootModuleClass);
+	sEnv->catalystClass->debug
+		and $log->debug("Running require on root module ".$self->rootModuleClass);
 	$log->_flush if $log->can('_flush');
 	Catalyst::Utils::ensure_class_loaded($self->rootModuleClass);
 	
@@ -98,13 +100,18 @@ sub performModulePreload {
 	
 	# Access the root module, causing it to get built
 	# We set RapidAppModuleLoadTimeTracker to instruct the modules to record their load times.
-	my $loadTimes= {};
-	sEnv->applyForSub(
-		{ RapidAppModuleLoadTimeTracker => $loadTimes },
-		sub { $self->rootModule($self->_load_root_module) }
-	);
-	scalar(keys %$loadTimes)
-		and $self->displayLoadTimes($loadTimes);
+	if ($self->catalystAppClass->debug) {
+		my $loadTimes= {};
+		sEnv->applyForSub(
+			{ RapidAppModuleLoadTimeTracker => $loadTimes },
+			sub { $self->rootModule($self->_load_root_module) }
+		);
+		scalar(keys %$loadTimes)
+			and $self->displayLoadTimes($loadTimes);
+	}
+	else {
+		$self->rootModule($self->_load_root_module);
+	}
 }
 
 sub displayLoadTimes {
@@ -162,22 +169,26 @@ sub cleanupAfterRequest {
 	my ($self, $c)= @_;
 	return unless scalar(keys %{$self->dirtyModules} );
 	
-	my ($sec0, $msec0)= gettimeofday;
+	my ($sec0, $msec0)= $c->debug && gettimeofday;
 	
-	$self->cleanDirtyModules;
+	$self->cleanDirtyModules($c);
 	
-	my ($sec1, $msec1)= gettimeofday;
-	my $elapsed= ($sec1-$sec0)+($msec1-$msec0)*.000001;
-	
-	$c->log->info(sprintf("Module init (ONREQUEST) took %0.3f seconds", $c->stash->{onrequest_time_elapsed}));
-	$c->log->info(sprintf("Cleanup took %0.3f seconds", $elapsed));
+	if ($c->debug) {
+		my ($sec1, $msec1)= gettimeofday;
+		my $elapsed= ($sec1-$sec0)+($msec1-$msec0)*.000001;
+		
+		$c->log->info(sprintf("Module init (ONREQUEST) took %0.3f seconds", $c->stash->{onrequest_time_elapsed}));
+		$c->log->info(sprintf("Cleanup took %0.3f seconds", $elapsed));
+	}
 }
 
 sub cleanDirtyModules {
-	my ($self)= @_;
+	my ($self, $c)= @_;
+	my $log= $c->log;
 	my @modules= values %{$self->dirtyModules};
 	for my $module (@modules) {
-		sEnv->log->debug(MAGENTA . BOLD . ' >> CLEARING ' . $module->module_path . CLEAR);
+		$log->debug(MAGENTA . BOLD . ' >> CLEARING ' . $module->module_path . CLEAR)
+			if $c->debug;
 		$module->reset_per_req_attrs;
 	}
 	%{$self->dirtyModules}= ();

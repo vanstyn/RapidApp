@@ -50,14 +50,17 @@ has 'per_request_attr_build_not_set' => ( is => 'ro', default => sub {{}}, isa =
 sub timed_new {
 	my ($class, @args)= @_;
 	my ($sec0, $msec0)= gettimeofday;
+	
 	my $result= $class->new(@args);
+	
 	my ($sec1, $msec1)= gettimeofday;
 	my $elapsed= ($sec1-$sec0)+($msec1-$msec0)*.000001;
 	if (RapidApp::ScopedGlobals->varExists("RapidAppModuleLoadTimeTracker")) {
 		RapidApp::ScopedGlobals->RapidAppModuleLoadTimeTracker->{$result->base_url}= { module => ref $result, loadTime => $elapsed };
 	}
 	elsif (RapidApp::ScopedGlobals->varExists("log")) {
-		RapidApp::ScopedGlobals->log->debug(sprintf("Loaded RapidApp module ".(ref $result)." at ".$result->base_url.": %0.3f s", $elapsed));
+		RapidApp::ScopedGlobals->catalystClass->debug
+			and RapidApp::ScopedGlobals->log->debug(sprintf("Loaded RapidApp module ".(ref $result)." at ".$result->base_url.": %0.3f s", $elapsed));
 	}
 	return $result;
 };
@@ -300,7 +303,9 @@ sub create_module {
 	$params->{module_path} .= $name;
 	$params->{parent_module_ref} = $self;
 	
-	my $Object = $class_name->timed_new($params) or die "Failed to create module instance ($class_name)";
+	my $app= RapidApp::ScopedGlobals->catalystClass;
+	my $ctor= ($app->debug && $class_name->can('timed_new')) || $class_name->can('new');
+	my $Object = $class_name->$ctor($params) or die "Failed to create module instance ($class_name)";
 	die "$class_name is not a valid RapidApp Module" unless ($Object->does('RapidApp::Role::Module'));
 	
 	return $Object;

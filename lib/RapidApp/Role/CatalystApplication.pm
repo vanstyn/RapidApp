@@ -12,7 +12,8 @@ sub rapidApp { (shift)->model("RapidApp"); }
 
 has 'request_id' => ( is => 'ro', default => sub { (shift)->rapidApp->requestCount; } );
 
-# an array of stack traces which were caught during the request
+# An array of stack traces which were caught during the request
+# We assign this right at the end of around("dispatch")
 has 'stack_traces' => ( is => 'rw', lazy => 1, default => sub{[]} );
 
 around 'setup_components' => sub {
@@ -67,7 +68,7 @@ sub injectUnlessExist {
 	my ($actual, $virtual)= @_;
 	my $app= RapidApp::ScopedGlobals->catalystClass;
 	if (!$app->components->{$virtual}) {
-		sEnv->log->debug("RapidApp: Installing virtual $virtual");
+		$app->debug && $app->log->debug("RapidApp: Installing virtual $virtual");
 		CatalystX::InjectComponent->inject( into => $app, component => $actual, as => $virtual );
 	}
 }
@@ -98,7 +99,9 @@ before 'handle_request' => sub {
 };
 
 # called once per request, to dispatch the request on a newly constructed $c object
-around 'dispatch' => sub {
+around 'dispatch' => \&_rapidapp_top_level_dispatch;
+
+sub _rapidapp_top_level_dispatch {
 	my ($orig, $c, @args)= @_;
 	
 	# put the debug flag into the stash, for easy access in templates
@@ -141,8 +144,7 @@ around 'dispatch' => sub {
 	}
 	
 	if (scalar(@{$c->error})) {
-		$c->view('RapidApp::OnError')->process($c);
-		$c->clear_errors;
+		$c->onError;
 	}
 	
 	if (!defined $c->response->content_type) {
@@ -168,6 +170,52 @@ sub flushLog {
 	}
 }
 
+sub onError {
+	my $c= shift;
+	my $log= $c->log;
+	
+	my @errors= @{$c->error};
+	my @traces= @{$c->stack_traces};
+	
+	# print them, first
+	$log->error($_) for (@errors);
+	
+	# then optionally save them
+	if ($c->rapidApp->saveErrorReports && scalar(@errors)) {
+		# I don't know what would cause multiple errors, so don't bother handling that, but warn about it just in case
+		if (scalar(@errors) > 1) {
+			$log->warn("multiple (".scalar(@errors).") errors encountered, but only saving the first");
+		}
+		
+		# buld a report
+		my $err= shift @errors;
+		my $report= RapidApp::ErrorReport->new(
+			exception => $err,
+			traces => \@traces,
+		);
+		
+		# save the report
+		my $errorStore= $c->rapidApp->resolveErrorReportStore;
+		my $reportId= $errorStore->saveErrorReport($report);
+		defined $reportId
+			or $log->error("Failed to save error report");
+		$c->stash->{exceptionRefId}= $reportId;
+	}
+	elsif ($c->debug) {
+		# not saving error, so log the stack trace
+		$log->info("Writing ".scalar(@traces)." exception trace(s) to ".RapidApp::TraceCapture::traceLogName);
+		&flushLog;
+		
+		if ($ENV{FULL_TRACE} || $c->request->params->{fullTrace}) {
+			RapidApp::TraceCapture::writeFullTrace($_) for (@traces);
+		} else {
+			RapidApp::TraceCapture::writeQuickTrace($_) for (@traces);
+		}
+	}
+	
+	$c->view('RapidApp::OnError')->process($c);
+	$c->clear_errors;
+}
 
 sub scream {
 	my $c = shift;

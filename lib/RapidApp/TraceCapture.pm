@@ -94,6 +94,10 @@ sub writeQuickTrace {
 	};
 }
 
+sub traceLogName {
+	return $TRACE_OUT_FILE;
+}
+
 sub writeFullTrace {
 	my $trace= shift || Devel::StackTrace->new;
 	try {

@@ -46,7 +46,7 @@ as easily write your own controller which inherits from TopController:
   sub end : ActionClass('RenderView') {}
   
   no Moose;
-  __PACKAGE__->meta->make_immutable(1);
+  __PACKAGE__->meta->make_immutable;
   1;
 
 The benefits you do gain from extending this default are the ability to plug in
@@ -65,5 +65,5 @@ sub approot :Path {
 sub end : ActionClass('RenderView') {}
 
 no Moose;
-__PACKAGE__->meta->make_immutable(1);
+__PACKAGE__->meta->make_immutable;
 1;

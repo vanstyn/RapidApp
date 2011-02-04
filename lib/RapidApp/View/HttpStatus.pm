@@ -2,15 +2,13 @@ package RapidApp::View::HttpStatus;
 
 use strict;
 use warnings;
+use HTTP::Status;
 
 use base 'Catalyst::View::TT';
 
-my $codes = {
-	500 => {
-		short => 'Internal Server Error',
-		long  => 'An error occured while processing this request',
-	},
-};
+my %_longMessages = (
+	500 => 'An error occured while processing this request',
+);
 
 sub process {
 	my ($self, $c)= @_;
@@ -19,12 +17,11 @@ sub process {
 	defined $c->response->status || $c->response->status(500);
 	
 	my $stat= $c->response->status;
-	my $statInfo= $codes->{$stat} || { short => "<no details>", long => "<no details>" };
 	
-	$c->stash->{statusCode}= $stat;
-	$c->stash->{shortStatusText}= $statInfo->{short};
-	$c->stash->{longStatusText}=  $statInfo->{long};
-	$c->stash->{errorViewPath}= $c->rapidApp->errorViewPath;
+	$c->stash->{statusCode}      ||= $stat;
+	$c->stash->{shortStatusText} ||= HTTP::Status::status_message($stat);
+	$c->stash->{longStatusText}  ||= $_longMessages{$stat} || "<no details>";
+	$c->stash->{errorViewPath}   ||= $c->rapidApp->errorViewPath;
 	
 	if ($c->response->status == 404) {
 		$c->stash->{template} = 'templates/rapidapp/http-404.tt';

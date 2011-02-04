@@ -31,36 +31,14 @@ sub process {
 	my ($self, $c)= @_;
 	
 	my $log= $c->log;
-	$log->warn("got here");
 	my @errors= @{$c->error};
-	my @traces= @{$c->stack_traces};
 	
 	if (!scalar(@errors)) {
 		push @errors, "Using View::RapidApp::OnError without any errors... this is an error in itself";
-		$log->error(@errors);
-	}
-	elsif (scalar(@errors) > 1) {
-		$log->warn("multiple (".scalar(@errors).") errors encountered, performing processing on the first");
+		$log->error($errors[0]);
 	}
 	
 	my $err= $errors[0];
-	
-	if ($c->rapidApp->saveErrorReports) {
-		my $report= RapidApp::ErrorReport->new(
-			exception => $err,
-			traces => \@traces,
-		);
-		my $errorStore= $c->rapidApp->resolveErrorReportStore;
-		my $reportId= $errorStore->saveErrorReport($report);
-		defined $reportId
-			or $log->error("Failed to save error report");
-		$c->stash->{exceptionRefId}= $reportId;
-	}
-	else {
-		my $lastTrace= scalar(@traces) > 0? $traces[-1] : undef;
-		# not saving error, so just print it
-		$log->debug($lastTrace) if defined $lastTrace;
-	}
 	
 	# on exceptions, we either generate a 503, or a JSON response to the same effect
 	if ($c->stash->{requestContentType} eq 'JSON') {
