@@ -5,14 +5,12 @@ extends 'RapidApp::AppStoreForm2';
 
 use RapidApp::Include qw(perlutil sugar);
 
-use RapidApp::DbicExceptionStore;
-
 # make sure the as_html method gets loaded into StackTrace, which might get deserialized
 use Devel::StackTrace;
 use Devel::StackTrace::WithLexicals;
 use Devel::StackTrace::AsHTML;
 
-has 'errorReportStore' => ( is => 'rw', isa => 'Str|RapidApp::Role::ExceptionStore' );
+has 'errorReportStore' => ( is => 'rw', isa => 'Maybe[RapidApp::Role::ErrorReportStore|Str]' );
 has 'useParentExceptionStore' => ( is => 'rw', isa => 'Bool', lazy => 1, default => 0 );
 
 sub resolveErrorReportStore {

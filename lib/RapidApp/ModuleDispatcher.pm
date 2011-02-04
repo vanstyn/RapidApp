@@ -3,7 +3,6 @@ package RapidApp::ModuleDispatcher;
 use Moose;
 use RapidApp::Include 'perlutil';
 
-use RapidApp::Role::ExceptionStore;
 use RapidApp::TraceCapture;
 use Scalar::Util 'blessed';
 
