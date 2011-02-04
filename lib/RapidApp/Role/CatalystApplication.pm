@@ -6,6 +6,7 @@ use RapidApp::RapidApp;
 use RapidApp::ScopedGlobals 'sEnv';
 use Scalar::Util 'blessed';
 use CatalystX::InjectComponent;
+use RapidApp::TraceCapture;
 
 sub rapidApp { (shift)->model("RapidApp"); }
 
