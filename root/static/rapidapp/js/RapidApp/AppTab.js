@@ -288,7 +288,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 		});
 		
 		this.getColumnModel().on('hiddenchange',function(colmodel) {
-			this.getStore().load();
+			this.getStore().reload();
 		},this);
 		
 		var store_load_parms = {};
