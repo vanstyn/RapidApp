@@ -75,7 +75,6 @@ sub render_xtype_panel {
 		};
 	}
 	
-	$renderCxt->write();
 	for my $part (
 		'<div class="'.$cssClass.'">',
 		$frameContentBegin,

@@ -7,7 +7,13 @@ Render the data to the specified context.
 
 =cut
 sub renderAsHtml {
+	my ($self, $renderContext, $data)= @_;
 	die "Unimplemented";
+}
+
+sub TO_JSON {
+	my $self= shift;
+	return ref $self;
 }
 
 no Moose;
