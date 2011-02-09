@@ -16,10 +16,11 @@ with 'RapidApp::FilterableDebug';
 sub BUILD {
 	my $self= shift;
 	$self->applyDebugChannels(
-		'controller'    => { color => MAGENTA,  },
+		'auth'          => { color => GREEN,   showSrcLoc => 0 },
+		'controller'    => { color => MAGENTA, showSrcLoc => 0 },
 		'dbiclink'      => { color => MAGENTA, showSrcLoc => 0 },
-		'notifications' => { color => YELLOW,   },
-		'web1render'    => { color => CYAN,     },
+		'notifications' => { color => YELLOW,  showSrcLoc => 0 },
+		'web1render'    => { color => CYAN,    showSrcLoc => 0 },
 	);
 }
 
