@@ -54,9 +54,7 @@ sub setupRapidAppLog {
 	my $log= $app->log;
 	my $logCfg= $app->config->{Debug} || {};
 	if ($logCfg->{channels}) {
-		while (my ($key, $val)= each %{ $logCfg->{channels} }) {
-			$log->debugChannels->add($key, $val);
-		}
+		$log->applyDebugChannels($logCfg->{channels});
 	}
 }
 

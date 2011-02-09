@@ -13,13 +13,15 @@ has '_log' => (
 
 with 'RapidApp::FilterableDebug';
 
-override_defaults(
-	debugChannels => sub {
-		RapidApp::FilterableDebug::Channels->new_from_config({
-			'dbiclink' => { color => MAGENTA, showSrcLoc => 0 }
-		})
-	},
-);
+sub BUILD {
+	my $self= shift;
+	$self->applyDebugChannels(
+		'controller'    => { color => MAGENTA,  },
+		'dbiclink'      => { color => MAGENTA, showSrcLoc => 0 },
+		'notifications' => { color => YELLOW,   },
+		'web1render'    => { color => CYAN,     },
+	);
+}
 
 # The neat thing we're doing here is making an object which can be added to a debug_*() statement
 #    and will flush the log, but only if that debug channel was enabled.  This way we don't flush if the
@@ -35,18 +37,18 @@ sub _build_FLUSH {
 sub abort {
 	my $self= shift;
 	if (my $code= $self->_log->can("abort")) {
-		$self->_log->$code();
+		$self->_log->$code(@_);
 	}
 }
 
 sub flush {
-	(shift)->_flush();
+	(shift)->_flush(@_);
 }
 
 sub _flush {
 	my $self= shift;
 	if (my $code= $self->_log->can("_flush")) {
-		$self->_log->$code();
+		$self->_log->$code(@_);
 	}
 }
 

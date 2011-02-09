@@ -187,8 +187,7 @@ sub cleanDirtyModules {
 	my $log= $c->log;
 	my @modules= values %{$self->dirtyModules};
 	for my $module (@modules) {
-		$log->debug(MAGENTA . BOLD . ' >> CLEARING ' . $module->module_path . CLEAR)
-			if $c->debug;
+		$log->debug_controller(' >> CLEARING ' . $module->module_path);
 		$module->reset_per_req_attrs;
 	}
 	%{$self->dirtyModules}= ();

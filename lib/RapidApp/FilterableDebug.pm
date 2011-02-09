@@ -4,21 +4,35 @@ use Term::ANSIColor;
 
 requires 'debug';
 
-has 'debugChannels' => ( is => 'ro', required => 1,
-	default => sub { RapidApp::FilterableDebug::Channels->new(owner => shift) },
-	#trigger => sub { my ($self, $new, $old)= @_; $new->owner($self); $new; },
+has '_debugChannels' => (
+	is => 'ro',
+	isa => 'HashRef[RapidApp::FilterableDebug::Channel]',
+	traits => ['Hash'],
+	handles => { getDebugChannels => 'get', debugChannels => 'values' },
+	required => 1, default => sub {{}}, init_arg => 'debugChannels',
+	# set owner for all channels
+	trigger => sub { my ($self, $new, $old)= @_; $_->_owner($self) for (values %$new); },
 );
 
-around 'BUILDARGS' => sub {
-	my ($orig, $class, @args)= @_;
-	my $ret= $class->$orig(@args);
-	
-	# coersion for 'channels'
-	ref $ret eq 'HASH' && ref $ret->{debugChannels} eq 'HASH'
-		and $ret->{debugChannels}= RapidApp::FilterableDebug::Channels->new_from_config($ret->{debugChannels});
-	
-	return $ret;
-};
+sub applyDebugChannels {
+	my ($self, @args)= @_;
+	my $cfg= ref $args[0] eq 'HASH'? $args[0] : { @args };
+	if (keys(%$cfg)) {
+		# for each debug channel definition, either create the channel or alter it
+		while (my ($key, $chCfg)= each %$cfg) {
+			$chCfg ||= {}; # undef is ok; we just set defaults if the channel doesn't exist or ignore otherwise.
+			if (defined $self->_debugChannels->{$key}) {
+				$self->_debugChannels->{$key}->applyConfig($chCfg);
+			}
+			else {
+				my $ch= RapidApp::FilterableDebug::Channel->new({ %$chCfg, name => $key });
+				$ch->_owner($self);
+				$self->_debugChannels->{$key}= $ch;
+				# TODO: inline the debug function here
+			}
+		}
+	}
+}
 
 our $AUTOLOAD;
 sub AUTOLOAD {
@@ -26,7 +40,7 @@ sub AUTOLOAD {
 	$AUTOLOAD =~ /.*:debug_([^:]+)/ or die "No method $AUTOLOAD";
 	
 	my $channelName= $1;
-	my $channel= $self->debugChannels->get($channelName);
+	my $channel= $self->getDebugChannels($channelName);
 	if (!defined $channel) {
 		warn "No debug channel $channelName";
 		return;
@@ -75,42 +89,6 @@ sub _buildChannelMethods {
 =cut
 
 
-package RapidApp::FilterableDebug::Channels;
-use Moose;
-
-has '_channels' => ( is => 'ro', isa => 'HashRef[RapidApp::FilterableDebug::Channel]', default => sub {{}} );
-has 'owner'     => ( is => 'rw' );
-
-sub new_from_config {
-	my ($class, $cfg)= @_;
-	
-	my $self= $class->new();
-	
-	while (my ($key, $val)= each %$cfg) {
-		$self->add($key, $val || {});
-	}
-	
-	return $self;
-}
-
-sub add {
-	my ($self, $nameOrObj, $cfg)= @_;
-	if (!ref $nameOrObj) {
-		$cfg ||= { };
-		$nameOrObj= RapidApp::FilterableDebug::Channel->new({ %$cfg, name => $nameOrObj });
-	}
-	$nameOrObj->isa('RapidApp::FilterableDebug::Channel') or die "expected Channel object";
-	$self->_channels->{$nameOrObj->name}= $nameOrObj;
-}
-
-sub get {
-	my ($self, $name)= @_;
-	return $self->_channels->{$name};
-}
-
-no Moose;
-__PACKAGE__->meta->make_immutable;
-
 package RapidApp::FilterableDebug::Channel;
 use Moose;
 
@@ -118,10 +96,21 @@ has 'name'       => ( is => 'ro', isa => 'Str', required => 1 );
 has 'enabled'    => ( is => 'rw', isa => 'Bool', lazy_build => 1 );
 has 'color'      => ( is => 'rw', default => Term::ANSIColor::YELLOW );
 has 'showSrcLoc' => ( is => 'rw', default => 1 );
+has '_owner'     => ( is => 'rw', weak_ref => 1 );
 
 sub _build_enabled {
 	my $self= shift;
 	return $ENV{'DEBUG_'.uc($self->name)}? 1 : 0;
+}
+
+sub applyConfig {
+	my ($self, @args)= @_;
+	my $cfg= ref $args[0] eq 'HASH'? $args[0] : { @args };
+	scalar(keys(%$cfg)) or return;
+	
+	while (my ($key, $val)= each %$cfg) {
+		$self->$key($val);
+	}
 }
 
 no Moose;
