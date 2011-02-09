@@ -7,5 +7,6 @@
 
 .xt-appcombo2 ul {
 	list-style-type: circle;
-	margin-left: 1em;
+	list-style-position: inside;
+	margin-left: .3em;
 }
