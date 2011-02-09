@@ -7,6 +7,7 @@ use RapidApp::ScopedGlobals 'sEnv';
 use Scalar::Util 'blessed';
 use CatalystX::InjectComponent;
 use RapidApp::TraceCapture;
+use RapidApp::Log;
 
 sub rapidApp { (shift)->model("RapidApp"); }
 
@@ -29,6 +30,35 @@ around 'setup_components' => sub {
 		}
 	);
 };
+
+# make sure to create a RapidApp::Log object, because we depend on its methods
+around 'setup_log' => sub {
+	my ($orig, $app, @args)= @_;
+	
+	my $ret= $app->$orig(@args);
+	
+	my $log= $app->log;
+	if (!$log->isa("RapidApp::Log")) {
+		$app->log( RapidApp::Log->new(origLog => $log) );
+	}
+	
+	return $ret;
+};
+
+# we can't get the complete ->config until after Config::Loader has run
+after 'setup_plugins' => \&setupRapidAppLog;
+
+sub setupRapidAppLog {
+	my $app= shift;
+	
+	my $log= $app->log;
+	my $logCfg= $app->config->{Debug} || {};
+	if ($logCfg->{channels}) {
+		while (my ($key, $val)= each %{ $logCfg->{channels} }) {
+			$log->debugChannels->add($key, $val);
+		}
+	}
+}
 
 sub setupRapidApp {
 	my $app= shift;
