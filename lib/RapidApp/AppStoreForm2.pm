@@ -178,7 +178,27 @@ has 'formpanel_items' => (
 	}
 );
 
+sub options_menu_items {
+	my $self = shift;
+	return undef;
+}
 
+
+sub options_menu {
+	my $self = shift;
+	
+	my $items = $self->options_menu_items or return undef;
+	return undef unless (ref($items) eq 'ARRAY') && scalar(@$items);
+	
+	return {
+		xtype		=> 'button',
+		text		=> 'Options',
+		iconCls	=> 'icon-gears',
+		menu => {
+			items	=> $items
+		}
+	};
+}
 
 has 'tbar_title_text_cls' => ( is => 'ro', default => 'tbar-title-medium' );
 #has 'formpanel_tbar' => ( is => 'ro', lazy_build => 1 );
@@ -195,6 +215,9 @@ sub formpanel_tbar {
 	push @$items, '<div class="' . $self->tbar_title_text_cls . '">' . $self->tbar_title . '</div>' if (defined $self->tbar_title);
 	
 	push @$items, '->';
+	
+	my $menu = $self->options_menu;
+	defined $menu and push @$items, $menu, ' ', '-';
 	
 	push @$items, $self->add_button if (defined $Store->create_handler and $Store->has_flag('can_create'));
 	push @$items, $self->reload_button if (defined $Store->read_handler and not $Store->has_flag('can_create') and $Store->has_flag('can_read'));

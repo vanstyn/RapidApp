@@ -216,7 +216,7 @@ sub options_menu {
 	my $self = shift;
 	
 	my $items = $self->options_menu_items or return undef;
-	return undef unless (ref($items) eq 'ARRAY');
+	return undef unless (ref($items) eq 'ARRAY') && scalar(@$items);
 	
 	return {
 		xtype		=> 'button',
