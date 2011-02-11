@@ -11,6 +11,8 @@ use RapidApp::Web1RenderContext::ExtCfgToHtml;
 has 'reload_on_save' 		=> ( is => 'ro', default => 0 );
 has 'closetab_on_create'	=> ( is => 'ro', default => 0 );
 
+has 'link_buttons_by_id'   => ( is => 'rw', default => 0 );
+
 sub BUILD {
 	my $self = shift;
 	
@@ -33,10 +35,19 @@ sub BUILD {
 sub init_onrequest {
 	my $self = shift;
 	
+	if ($self->link_buttons_by_id) {
+		$self->clear_add_button;
+		$self->clear_save_button;
+		$self->clear_reload_button;
+	}
 	$self->apply_extconfig( 
 		id 		=> $self->instance_id,
 		tbar 		=> $self->formpanel_tbar,
 		items 	=> $self->formpanel_items,
+		($self->link_buttons_by_id?
+			(addBtnId => $self->instance_id.'_addBtn',
+			saveBtnId => $self->instance_id.'_saveBtn') : ()
+		)
 	);
 }
 
@@ -96,6 +107,7 @@ sub _build_reload_button {
 			iconCls	=> $self->reload_button_iconCls,
 			itemId	=> 'reload-btn',
 			scale		=> $self->button_scale,
+			($self->link_buttons_by_id? (appstoreform_id => $self->instance_id) : () ),
 			handler 	=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.reload_handler' ) 
 	});
 }
@@ -114,6 +126,10 @@ sub _build_save_button {
 			scale		=> $self->button_scale,
 			disabledClass => 'item-disabled',
 			disabled => \1,
+			($self->link_buttons_by_id?
+				(appstoreform_id => $self->instance_id,
+				id => $self->instance_id.'_saveBtn') : ()
+			),
 			handler 	=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.save_handler' ) 
 	});
 }
@@ -133,6 +149,10 @@ sub _build_add_button {
 			scale		=> $self->button_scale,
 			disabledClass => 'item-disabled',
 			disabled => \1,
+			($self->link_buttons_by_id?
+				(appstoreform_id => $self->instance_id,
+				id => $self->instance_id.'_addBtn') : ()
+			),
 			handler 	=> RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppStoreForm2.add_handler' ) 
 	});
 }

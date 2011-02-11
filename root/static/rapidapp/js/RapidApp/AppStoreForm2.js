@@ -9,23 +9,37 @@ Ext.ux.RapidApp.AppStoreForm2.FormPanel = Ext.extend(Ext.form.FormPanel,{
 	trackResetOnLoad: true, // <-- for some reason this default doesn't work and has to be set in the constructor
 	frame: true,
 	autoScroll: true,
+	addBtnId: null,
+	saveBtnId: null,
 
 	initComponent: function() {
 		this.store.formpanel = this;
 		Ext.ux.RapidApp.AppStoreForm2.FormPanel.superclass.initComponent.apply(this,arguments);
+	},
+	getAddBtn: function() {
+		if (this.addBtnId) { return Ext.getCmp(this.addBtnId); }
+		var tbar= this.getTopToolbar();
+		if (tbar) { return tbar.getComponent("add-btn"); }
+		return null;
+	},
+	getSaveBtn: function() {
+		if (this.saveBtnId) { return Ext.getCmp(this.saveBtnId); }
+		var tbar= this.getTopToolbar();
+		if (tbar) { return tbar.getComponent("save-btn"); }
+		return null;
 	}
-
 });
 Ext.reg('appstoreform2', Ext.ux.RapidApp.AppStoreForm2.FormPanel);
 
 Ext.ux.RapidApp.AppStoreForm2.reload_handler = function(cmp) {
-	var fp = cmp.findParentByType('appstoreform2');
+	var fp= ('appstoreform_id' in cmp)? Ext.getCmp(cmp.appstoreform_id) : cmp.findParentByType('appstoreform2');
+	//var fp = cmp.findParentByType('appstoreform2');
 	fp.store.reload();
 };
 
 
 Ext.ux.RapidApp.AppStoreForm2.save_handler = function(cmp) {
-	var fp = cmp.findParentByType('appstoreform2');
+	var fp= ('appstoreform_id' in cmp)? Ext.getCmp(cmp.appstoreform_id) : cmp.findParentByType('appstoreform2');
 	var form = fp.getForm();
 	var store = fp.store;
 	var record = store.getAt(0);
@@ -36,7 +50,7 @@ Ext.ux.RapidApp.AppStoreForm2.save_handler = function(cmp) {
 };
 
 Ext.ux.RapidApp.AppStoreForm2.add_handler = function(cmp) {
-	var fp = cmp.findParentByType('appstoreform2');
+	var fp= ('appstoreform_id' in cmp)? Ext.getCmp(cmp.appstoreform_id) : cmp.findParentByType('appstoreform2');
 	var form = fp.getForm();
 	var store = fp.store;
 	
@@ -59,18 +73,14 @@ Ext.ux.RapidApp.AppStoreForm2.add_handler = function(cmp) {
 };
 
 Ext.ux.RapidApp.AppStoreForm2.clientvalidation_handler = function(FormPanel, valid) {
-
-	var tbar = FormPanel.getTopToolbar();
-	if (! tbar) { return; }
+	var save_btn = FormPanel.getSaveBtn();
+	var add_btn = FormPanel.getAddBtn();
+	
 	if (valid && FormPanel.getForm().isDirty()) {
-		var save_btn = tbar.getComponent("save-btn");
 		if(save_btn) save_btn.enable();
-		var add_btn = tbar.getComponent("add-btn");
 		if(add_btn) add_btn.enable();
 	} else {
-		var save_btn = tbar.getComponent("save-btn");
 		if (save_btn && !save_btn.disabled) save_btn.disable();
-		var add_btn = tbar.getComponent("add-btn");
 		if (add_btn && !add_btn.disabled) add_btn.disable();
 	}
 };
@@ -121,12 +131,11 @@ Ext.ux.RapidApp.AppStoreForm2.store_create_handler = function(store,action,resul
 
 Ext.ux.RapidApp.AppStoreForm2.save_and_close = function(fp) {
 	var store = fp.store;
-	var tbar = fp.getTopToolbar();
 
 	var tp = fp.findParentByType("apptabpanel");
 	var tab = tp.getActiveTab();
 
-	var add_btn = tbar.getComponent("add-btn");
+	var add_btn = fp.getAddBtn();
 
 	// if both add_btn and closetab_on_create are true, then we don't have to
 	// add a listener to the store because it should already have one that will
@@ -136,11 +145,8 @@ Ext.ux.RapidApp.AppStoreForm2.save_and_close = function(fp) {
 	}
 
 	// find either add-btn or save-btn (they shouldn't both exist):
-	var btn = add_btn;
-	if (! btn) {
-		btn = tbar.getComponent("save-btn");
-	}
-
+	var btn = add_btn? add_btn : fp.getSaveBtn();
+	
 	// call the button's handler directly:
 	return btn.handler(btn);
 }
