@@ -1,4 +1,30 @@
+# We extend the metaclass here to hold a list of attributes which are "grid config" parameters.
+# Note that to properly handle dynamic package modifications we would need to  invalidate this cache in many
+#    circumstances, which would add a lot of complexity to this class.
+# As long as we define attributes at compile-time, and call grid_config_attr_names at runtime, we can keep things simple.
+package RapidApp::Column::Meta::Class;
+use Moose;
+BEGIN {
+	extends 'Moose::Meta::Class';
+	
+	has '_grid_config_attr_names' => ( is => 'ro', isa => 'ArrayRef', lazy_build => 1 );
+	sub _build__grid_config_attr_names {
+		my $self= shift;
+		return [ map { $_->name } grep { $_->does('RapidApp::Role::GridColParam') } $self->get_all_attributes ];
+	}
+	
+	sub grid_config_attr_names { return @{(shift)->_grid_config_attr_names} }
+	
+	__PACKAGE__->meta->make_immutable;
+}
+
+#-----------------------------------------------------------------------
+#  And now, for the main package.
+#
 package RapidApp::Column;
+
+BEGIN{ Moose->init_meta(for_class => __PACKAGE__, metaclass => 'RapidApp::Column::Meta::Class'); }
+
 use Moose;
 
 use Term::ANSIColor qw(:constants);
@@ -110,30 +136,16 @@ sub apply_attributes {
 
 sub get_grid_config {
 	my $self = shift;
-	my $config= {};
-	for my $attrName (@{&meta_gridColParam_attr_names($self->meta)}) {
-		my $val= $self->$attrName();
-		$config->{$attrName}= $val if defined $val;
-	}
-	return $config
+	my $val;
+	return { map { defined($val= $self->$_)? ($_ => $val)  :  () } $self->meta->grid_config_attr_names };
+	
+	#for my $attrName (@{&meta_gridColParam_attr_names($self->meta)}) {
+	#	my $val= $self->$attrName();
+	#	$config->{$attrName}= $val if defined $val;
+	#}
+	#return $config
+	
 	#return $self->get_config_for_traits('RapidApp::Role::GridColParam');
-}
-
-=pod
-These were intended to be Meta role methods, but that feature is broken, so they are slightly
-unusual functions so that they can be converted back when Moose people fix the feature.
-
-function meta_gridColParam_attr_names returns a ArrayRef of attribute names which have the trait
-'GridColParam', and caches this list in the metaclass object.  Thus, one cache gets created per
-subclass, which is what we want, because each subclass might define new grid attributes.
-=cut
-sub meta_gridColParam_attr_names {
-	my $meta= shift;
-	$meta->{gridColParam_attr_names} ||= &meta__build_gridColParam_attr_names($meta);
-}
-sub meta__build_gridColParam_attr_names {
-	my $meta= shift;
-	return [ map { $_->does('RapidApp::Role::GridColParam')? $_->name : () } $meta->get_all_attributes ];
 }
 
 # returns hashref for all attributes with defined values that 
