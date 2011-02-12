@@ -3,9 +3,17 @@ Ext.ns('Ext.ux.RapidApp.AppTab');
 
 Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 
-	//initComponent: function() {
-	//	Ext.ux.RapidApp.AppTab.TabPanel.superclass.call(this);
-	//},
+	initComponent: function() {
+		if(this.initLoadTabs) {
+			this.on('afterrender',function() {
+				Ext.each(this.initLoadTabs,function(cnf) {
+					this.loadTab(cnf);
+				},this);
+			},this);
+		}
+		
+		Ext.ux.RapidApp.AppTab.TabPanel.superclass.initComponent.call(this);
+	},
 
 	itemId: 'load-target',
 
