@@ -4,5 +4,5 @@ html, body, .x-panel {
 }
 
 .x-panel-tl, .x-panel-tr, .x-panel-tc, .x-panel-ml, .x-panel-mr, .x-panel-mc, .x-panel-bl, .x-panel-br, .x-panel-bc {
-	background-color: transparent;
+	background-color: #F0F0F0;
 }

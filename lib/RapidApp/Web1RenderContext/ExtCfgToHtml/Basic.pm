@@ -125,9 +125,10 @@ sub render_xtype_toolbar {
 		: '<table><tr>'.join('', map({ "<td class='$cssClass-cell'>$_</td>" } @leftItems)).'</tr></table>';
 	my $rightContent= scalar(@rightItems) == 0? ''
 		: '<table><tr>'.join('', map({ "<td class='$cssClass-cell'>$_</td>" } @rightItems)).'</tr></table>';
+	my $style= $extCfg->{style}? ' style="'.$extCfg->{style}.'"' : '';
 	
 	$renderCxt->write(
-		"<div class='$cssClass $cssClass-layout-ct'>"
+		"<div class='$cssClass $cssClass-layout-ct'$style>"
 			."<table class='$cssClass-ct'>\n"
 				."<tr>\n"
 					.(length($leftContent)? "<td class='$cssClass-left' align='left'>$leftContent</td>\n" : '')
