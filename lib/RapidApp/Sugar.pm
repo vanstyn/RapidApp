@@ -10,7 +10,7 @@ use RapidApp::Error::UserError;
 use RapidApp::Handler;
 use RapidApp::DefaultOverride qw(override_defaults merge_defaults);
 
-our @EXPORT = qw(sessvar perreq asjson rawjs ra_die usererr override_defaults merge_defaults);
+our @EXPORT = qw(sessvar perreq asjson rawjs mixedjs ra_die usererr override_defaults merge_defaults);
 
 # Module shortcuts
 #
@@ -40,6 +40,10 @@ sub asjson {
 sub rawjs {
 	scalar(@_) == 1 && ref $_[0] eq '' or die "Expected single string argument";
 	return RapidApp::JSON::RawJavascript->new(js=>$_[0]);
+}
+
+sub mixedjs {
+	return RapidApp::JSON::ScriptWithData->new(@_);
 }
 
 # Exception constructors
