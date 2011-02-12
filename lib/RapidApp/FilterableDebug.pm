@@ -1,6 +1,8 @@
 package RapidApp::FilterableDebug;
 use Moose::Role;
+
 use Term::ANSIColor;
+use Data::Dumper;
 
 requires 'debug';
 
@@ -61,7 +63,7 @@ sub _filtered_debug_emit {
 		$locInfo = $srcFile . ' line '. $srcLine . "\n";
 	}
 	
-	my $msg= join('', map { $self->_debug_data_to_text($_) } @data );
+	my $msg= join(' ', map { $self->_debug_data_to_text($_) } @data );
 	$self->debug($locInfo . $msg);
 }
 
@@ -69,7 +71,11 @@ sub _debug_data_to_text {
 	my ($self, $data)= @_;
 	ref $data or return $data;
 	ref $data eq 'CODE' and return &$data;
-	return Dumper($data);
+	my $dump= Data::Dumper->new([$data], [''])->Indent(1)->Maxdepth(5)->Dump;
+	$dump =~ s/^[^{]+//;
+	length($dump) > 2000
+		and $dump= substr($dump, 0, 2000)."\n...\n...";
+	return $dump;
 }
 
 =pod
