@@ -1,5 +1,5 @@
 package RapidApp::Data::DeepMap;
-
+use Exporter 'import';
 use Moose;
 
 use Scalar::Util qw(blessed reftype refaddr);
@@ -69,11 +69,25 @@ sub translate {
 	return ($self->_translatedCache->{refaddr $obj}= &$mapperFn($obj, $self, $r));
 }
 
+my @map_functions= qw(
+	fn_passthrough fn_snub fn_prune
+	fn_translateContents
+	fn_translateHashContents
+	fn_translateArrayContents
+	fn_translateRefContents
+	fn_translateBlessedContents );
+our @EXPORT_OK= @map_functions;
+our %EXPORT_TAGS= (map_fn => [ @map_functions ] );
+
 sub fn_passthrough {#_trace(@_);
 	$_[0]
 }
 sub fn_snub {
-	'['.$_[0].']'
+	my $obj= shift;
+	!defined $obj and return '[undef]';
+	ref $obj and return '['.ref($obj).'@'.refaddr($obj).']';
+	length($obj) > 20 and return "'".substr($obj, 0, 17)."'...";
+	return "'$obj'";
 }
 sub fn_prune {#_trace(@_);
 	undef
@@ -81,7 +95,7 @@ sub fn_prune {#_trace(@_);
 
 sub fn_translateContents {
 	#_trace(@_);
-	my ($obj, $mapper)= @_;
+	my ($obj, $mapper, $type)= @_;
 	ref $obj or return $obj;
 	blessed($obj) and return &fn_translateBlessedContents(@_);
 	ref $obj eq 'HASH'   and return &fn_translateHashContents(@_);
@@ -92,7 +106,7 @@ sub fn_translateContents {
 
 sub fn_translateHashContents {
 	#_trace(@_);
-	my ($obj, $mapper)= @_;
+	my ($obj, $mapper, $type)= @_;
 	my $result= {};
 	$mapper->_translatedCache->{refaddr $obj}= $result;
 	my @content= %$obj;
@@ -108,7 +122,7 @@ sub fn_translateHashContents {
 
 sub fn_translateArrayContents {
 	#_trace(@_);
-	my ($obj, $mapper)= @_;
+	my ($obj, $mapper, $type)= @_;
 	my @content= @$obj;
 	$mapper->_translatedCache->{refaddr $obj}= \@content;
 	my $depth= $mapper->currentDepth;
@@ -122,7 +136,7 @@ sub fn_translateArrayContents {
 
 sub fn_translateRefContents {
 	#_trace(@_);
-	my ($obj, $mapper)= @_;
+	my ($obj, $mapper, $type)= @_;
 	$mapper->_translatedCache->{refaddr $obj}= \$obj;
 	$obj= $mapper->translate($$obj);
 	return \$obj;
@@ -130,8 +144,9 @@ sub fn_translateRefContents {
 
 sub fn_translateBlessedContents {
 	#_trace(@_);
-	my ($obj, $mapper)= @_;
+	my ($obj, $mapper, $type)= @_;
 	my $r= reftype $obj;
+	return fn_passthrough(@_) if (defined $type && $type eq $r); # prevent infinite loops if we become the mapper for a non-blessed type.
 	my $mapperFn= $mapper->_mapperCache->{$r} || $mapper->_getMapperFor($r);
 	my $newObj= &$mapperFn($obj, $mapper, $r);
 	return bless $newObj, ref($obj) if (ref $newObj && !blessed $newObj);

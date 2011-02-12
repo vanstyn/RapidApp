@@ -125,7 +125,7 @@ sub saveErrorReport {
 	try {
 		local $Storable::forgive_me= 1; # ignore non-storable things
 		
-		my ($serialized, $serializedSize);
+		my ($serialized, $serializedSize)= (undef, 0x7FFFFFFF);
 		
 		if ($ENV{DEBUG_ERROR_STORE}) {
 			open my $file, ">", "/tmp/Dump_$errReport";
@@ -133,24 +133,34 @@ sub saveErrorReport {
 			$file->close;
 		}
 		
-		for (my $maxDepth=$self->maxCloneDepth; $maxDepth > 0; $maxDepth--) {
-			my $trimErr= $errReport->getTrimmedClone($maxDepth);
-			$trimErr->apply_debugInfo(freezeInfo => "Exception object trimmed to depth $maxDepth");
-			$serialized= freeze( $trimErr );
-			$serializedSize= defined $serialized? length($serialized) : -1;
-			
+		for (my $maxDepth= $self->maxCloneDepth; $maxDepth > 2; $maxDepth--) {
+			try {
+				my $trimErr= $errReport->getTrimmedClone($maxDepth);
+				$trimErr->apply_debugInfo(freezeInfo => "Exception object trimmed to depth $maxDepth");
+				$serialized= freeze( $trimErr );
+				$serializedSize= defined $serialized? length($serialized) : -1;
+			}
+			catch {
+				$log->warn("Error serialization failed, attempting to trim further...");
+			};
 			last if (defined $serialized && $serializedSize < $self->maxSerializedSize);
 			$log->warn("Error serialization was $serializedSize bytes, attempting to trim further...");
 		}
 		
 		# last ditch attempt at saving something
 		if (!defined $serialized || $serializedSize >= $self->maxSerializedSize) {
+			my $errMsg= 'Exception could not be stringified!';
+			try {
+				$errMsg= ''.$errReport->exception;
+				$errMsg= substr($errMsg, 0, $self->maxSerializedSize - 600); # I actually measured the frozen size of the hash below with no message to be 405 bytes
+			}
+			catch { };
 			my $trimErr= RapidApp::ErrorReport->new(
 				dateTime => $errReport->dateTime,
-				exception => undef,
+				exception => $errMsg,
 				traces => [],
 				debugInfo => {
-					freezeInfo => "Exception object could not be trimmed small enough",
+					freezeInfo => "Exception object could not be serialized",
 					smallestTrimmedErrorSize => $serializedSize,
 					maxSize => $self->maxSerializedSize,
 					numTraces => scalar(@{$errReport->traces}),

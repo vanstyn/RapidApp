@@ -3,6 +3,7 @@ use Moose;
 
 use RapidApp::Error;
 use Scalar::Util 'reftype';
+use RapidApp::Data::DeepMap ':map_fn';
 
 our $TRIMMER;
 our $MAX_DEPTH;
@@ -45,13 +46,18 @@ $TRIMMER= RapidApp::Data::DeepMap->new(
 	},
 	mapperByISA => {
 		'Catalyst' => sub { '$c'; },
-		'RapidApp::Module' => \&fn_snubBlessed,
-		'Catalyst::Component' => \&fn_snubBlessed,
-		'IO::Handle' => \&fn_snubBlessed,
+		'RapidApp::Module' => \&fn_snub,
+		'Catalyst::Component' => \&fn_snub,
+		'DBIx::Class::Schema' => \&fn_snub,
+		'DBIx::Class::ResultSource' => \&fn_snub,
+		'DBIx::Class::ResultSet' => \&fn_snub,
+		'DBIx::Class::Storage' => \&fn_snub,
+		'DBI' => \&fn_snub,
+		'IO::Handle' => \&fn_snub,
 		#'RapidApp::Error' => \&RapidApp::Data::DeepMap::fn_translateBlessedContents,
-		'RapidApp::ErrorReport' => \&RapidApp::Data::DeepMap::fn_translateBlessedContents,
+		'RapidApp::ErrorReport' => \&fn_translateBlessedContents,
 		'Devel::StackTrace' => \&fn_trimStackTrace,
-		'Devel::StackTrace::Frame' => \&RapidApp::Data::DeepMap::fn_translateBlessedContents,
+		'Devel::StackTrace::Frame' => \&fn_translateBlessedContents,
 	}
 );
 
@@ -59,7 +65,7 @@ sub fn_trimStackTrace {
 	my ($trace, $mapper, $type)= @_;
 	my $depth= $mapper->currentDepth;
 	$mapper->currentDepth(0);
-	my $result= &RapidApp::Data::DeepMap::fn_translateBlessedContents($trace, $mapper);
+	my $result= &fn_translateBlessedContents($trace, $mapper);
 	$mapper->currentDepth($depth);
 	return $result;
 }
@@ -67,18 +73,13 @@ sub fn_trimStackTrace {
 sub fn_trimUnwantedCrap {
 	my ($obj, $mapper, $type)= @_;
 	$type or return $obj;
-	$mapper->currentDepth < $MAX_DEPTH or return "[$obj]";
-	$type eq 'HASH' and return RapidApp::Data::DeepMap::fn_translateHashContents(@_);
-	$type eq 'ARRAY' and return RapidApp::Data::DeepMap::fn_translateArrayContents(@_);
-	$type eq 'REF' and return RapidApp::Data::DeepMap::fn_translateRefContents(@_);
+	$mapper->currentDepth < $MAX_DEPTH or return fn_snub(@_);
+	$type eq 'HASH' and return fn_translateHashContents(@_);
+	$type eq 'ARRAY' and return fn_translateArrayContents(@_);
+	$type eq 'REF' and return fn_translateRefContents(@_);
 	blessed($obj) && $type eq ref $obj
-		and return RapidApp::Data::DeepMap::fn_translateBlessedContents(@_);
-	return "[$obj]";
-}
-
-sub fn_snubBlessed {
-	my ($obj, $mapper, $type)= @_;
-	return "[$type]";
+		and return fn_translateBlessedContents(@_);
+	return fn_snub(@_);
 }
 
 no Moose;

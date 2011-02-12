@@ -69,6 +69,7 @@ sub options_menu_items {
 		{ text => 'Generate Internal Error', handler => rawjs $self->getjs_simpleRequestor($self->suburl('item/gen_error')) },
 		{ text => 'Generate User Error', handler => rawjs $self->getjs_simpleRequestor($self->suburl('item/gen_usererror')) },
 		{ text => 'Generate Perl Exception', handler => rawjs $self->getjs_simpleRequestor($self->suburl('item/gen_die')) },
+		{ text => 'Generate DBIC Exception', handler => rawjs $self->getjs_simpleRequestor($self->suburl('item/gen_dbicerr')) },
 	];
 }
 

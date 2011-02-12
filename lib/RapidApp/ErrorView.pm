@@ -55,6 +55,7 @@ sub BUILD {
 		gen_die => 'gen_die',
 		gen_error => 'gen_error',
 		gen_usererror => 'gen_usererror',
+		gen_dbicerr => 'gen_dbicerr',
 	);
 	
 	$self->apply_extconfig(
@@ -226,6 +227,15 @@ sub gen_error {
 
 sub gen_usererror {
 	die usererr "PEBKAC";
+}
+
+sub gen_dbicerr {
+	my $self= shift;
+	for ($self->c->models) {
+		my $m= $self->c->model($_);
+		next unless $m->isa('Catalyst::Model::DBIC::Schema');
+		my @row= $m->storage->dbh->selectrow_array("NONSENSICAL SQL QUERY THAT WILL THROW AN EXCEPTION");
+	}
 }
 
 =pod
