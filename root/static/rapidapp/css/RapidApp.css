@@ -80,7 +80,7 @@ pre {
 .icon-arrow-divide { background-image: url(/static/rapidapp/images/arrow_divide.png) !important; }
 
 .icon-gears { background-image: url(/static/rapidapp/images/gears.png) !important; }
-
+.icon-gears-24x24 { background-image: url(/static/rapidapp/images/gears_24x24.png) !important; }
 
 .tbar-title-medium {
 	font-size:175% !important;

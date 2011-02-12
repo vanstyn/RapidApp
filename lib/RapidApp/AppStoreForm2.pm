@@ -193,7 +193,7 @@ sub options_menu {
 	return {
 		xtype    => 'button',
 		text     => '<div class="'.$self->button_text_cls.'">Options</div>',
-		iconCls  => 'icon-gears',
+		iconCls  => 'icon-gears-24x24',
 		scale    => $self->button_scale,
 		menu => {
 			items	=> $items
