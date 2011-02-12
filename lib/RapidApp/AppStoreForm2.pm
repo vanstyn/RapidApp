@@ -191,9 +191,10 @@ sub options_menu {
 	return undef unless (ref($items) eq 'ARRAY') && scalar(@$items);
 	
 	return {
-		xtype		=> 'button',
-		text		=> 'Options',
-		iconCls	=> 'icon-gears',
+		xtype    => 'button',
+		text     => '<div class="'.$self->button_text_cls.'">Options</div>',
+		iconCls  => 'icon-gears',
+		scale    => $self->button_scale,
 		menu => {
 			items	=> $items
 		}
