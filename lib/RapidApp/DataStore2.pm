@@ -17,7 +17,7 @@ has 'record_pk' 			=> ( is => 'ro', default => undef );
 has 'store_fields' 		=> ( is => 'ro', default => undef );
 has 'storeId' 				=> ( is => 'ro', default => sub { 'datastore-' . String::Random->new->randregex('[a-z0-9A-Z]{5}') } );
 has 'store_use_xtype'	=> ( is => 'ro', default => 0 );
-has 'store_autoLoad'		=> ( is => 'ro', default => sub {\0} );
+has 'store_autoLoad'		=> ( is => 'rw', default => sub {\0} );
 has 'reload_on_save' 	=> ( is => 'ro', default => 1 );
 
 
