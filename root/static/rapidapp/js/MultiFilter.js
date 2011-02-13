@@ -607,40 +607,56 @@ Ext.ux.MultiFilter.Filter = Ext.extend(Ext.Container,{
 			this.filterSelection,
 			
 			{
-				xtype: 'button',
+				//xtype: 'button',
+				//iconCls: 'icon-arrow-down',
+				xtype: 'boxtoolbtn',
+				toolType: 'down',
 				flex: 0,
-				iconCls: 'icon-arrow-down',
 				itemId: 'down-button',
 				handler: function(btn) {
-					var filter = btn.ownerCt;
-					var set = btn.ownerCt.ownerCt;
+					//var filter = btn.ownerCt;
+					//var set = btn.ownerCt.ownerCt;
+					var filter = this;
+					var set = this.ownerCt;
 					return Ext.ux.MultiFilter.movefilter(set,filter,1);
-				}
+				},
+				scope: this
 			},
 			
 			{
-				xtype: 'button',
+				//xtype: 'button',
+				//iconCls: 'icon-arrow-up',
+				xtype: 'boxtoolbtn',
+				toolType: 'up',
 				flex: 0,
-				iconCls: 'icon-arrow-up',
 				itemId: 'up-button',
 				handler: function(btn) {
-					var filter = btn.ownerCt;
-					var set = btn.ownerCt.ownerCt;
+					//var filter = btn.ownerCt;
+					//var set = btn.ownerCt.ownerCt;
+					var filter = this;
+					var set = this.ownerCt;
 					return Ext.ux.MultiFilter.movefilter(set,filter,-1);
-				}
+				},
+				scope: this
 			},
 			
 			{
-				xtype: 'button',
+				//xtype: 'button',
+				//iconCls: 'icon-delete',
+				xtype: 'boxtoolbtn',
+				toolType: 'close',
 				flex: 0,
-				iconCls: 'icon-delete',
 				handler: function(btn) {
-					var filter = btn.ownerCt;
-					var set = btn.ownerCt.ownerCt;
+					//var filter = btn.ownerCt;
+					//var set = btn.ownerCt.ownerCt;
+					var filter = this;
+					var set = this.ownerCt;
 					set.remove(filter,true);
 					set.bubble(function(){ this.doLayout(); });
-				}
-			}
+				},
+				scope: this
+			},
+			{ xtype: 'spacer', width: 2 }
 		];
 
 		Ext.ux.MultiFilter.Filter.superclass.initComponent.apply(this,arguments);
