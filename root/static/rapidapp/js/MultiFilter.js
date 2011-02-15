@@ -63,9 +63,12 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		//	fields.push(item.name);
 		//});
 		
+		if(! this.grid.no_multifilter_fields) { this.grid.no_multifilter_fields = {}; }
 		Ext.each(this.grid.getColumnModel().config,function(item) {
-			fields.push(item.dataIndex);
-		});
+			if (! this.grid.no_multifilter_fields[item.dataIndex]) {
+				fields.push(item.dataIndex);
+			}
+		},this);
 		
 		this.Criteria = Ext.extend(Ext.ux.MultiFilter.Criteria,{
 			gridColumns: this.grid.getColumnModel().config,

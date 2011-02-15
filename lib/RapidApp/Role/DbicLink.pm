@@ -17,6 +17,7 @@ has 'group_by' => ( is => 'ro', isa => 'Maybe[Str|ArrayRef]', default => undef )
 
 has 'base_search_set' => ( is => 'ro',	default => undef );
 has 'fieldname_transforms' => ( is => 'ro', default => sub {{}});
+has 'dbf_virtual_fields'      => ( is => 'ro',	required => 0, 	isa => 'Maybe[HashRef]', default => undef 	);
 has 'primary_columns' => ( is => 'rw', default => sub {[]}, isa => 'ArrayRef');
 
 has 'always_fetch_columns' => ( is => 'ro', default => undef );
@@ -32,6 +33,38 @@ has 'never_fetch_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
 	return $h;
 });
 
+has 'no_search_fields' => (
+	is => 'ro',
+	traits => [ 'Array' ],
+	isa => 'ArrayRef[Str]',
+	default   => sub { [] },
+	handles => {
+		all_no_search_fields		=> 'uniq',
+		add_no_search_fields		=> 'push',
+		has_no_no_search_fields 	=> 'is_empty',
+	}
+);
+
+has '_no_search_fields_hash' => (
+	traits    => [ 'Hash' ],
+	is        => 'ro',
+	isa       => 'HashRef[Bool]',
+	handles   => {
+		is_no_search_field				=> 'exists',
+	},
+	lazy => 1,
+	default => sub {
+		my $self = shift;
+		my $h = {};
+		my @list = $self->all_no_search_fields;
+		push @list, keys %{$self->dbf_virtual_fields} if ($self->dbf_virtual_fields);
+		foreach my $col (@list) {
+			$h->{$col} = 1;
+		}
+		return $h;
+	}
+);
+
 
 has 'get_ResultSet_Handler' => ( is => 'ro', isa => 'Maybe[RapidApp::Handler]', lazy => 1, default => undef );
 
@@ -41,10 +74,15 @@ has 'DbicExtQuery' => ( is => 'ro', lazy_build => 1 );
 sub _build_DbicExtQuery {
 	my $self = shift;
 	
+	my $no_search_fields = [ $self->all_no_search_fields ];
+	push @$no_search_fields, keys %{$self->dbf_virtual_fields} if ($self->dbf_virtual_fields);
+	
 	my $cnf = {
 		ResultSource				=> $self->ResultSource,
 		get_ResultSet_Handler	=> $self->get_ResultSet_Handler,
 		ExtNamesToDbFields 		=> $self->fieldname_transforms,
+		dbf_virtual_fields		=> $self->dbf_virtual_fields,
+		no_search_fields			=> $no_search_fields,
 		literal_dbf_colnames		=> $self->literal_dbf_colnames,
 		joins 						=> $self->joins,
 		#implied_joins			=> 1
@@ -233,6 +271,8 @@ around 'BUILD' => sub {
 	my $orig = shift;
 	my $self = shift;
 	
+	$self->apply_extconfig( no_multifilter_fields => $self->_no_search_fields_hash );
+
 	role_type('RapidApp::Role::DataStore2')->assert_valid($self);
 	# We can't 'require' this method, because intermediate subclasses like DbicAppGrid2 don't have it defined, though the final one should.
 	# What Moose really needs is an "use Moose::Abstract" for intermediate base classes, which would delay the 'requires' checks.
