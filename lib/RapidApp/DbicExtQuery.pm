@@ -61,6 +61,38 @@ has 'base_search_set_list' => ( is => 'ro', lazy => 1, default => sub {
 });
 
 
+has 'literal_dbf_colnames' => (
+	is => 'ro',
+	traits => [ 'Array' ],
+	isa => 'ArrayRef[Str]',
+	default   => sub { [] },
+	handles => {
+		all_literal_dbf_colnames		=> 'elements',
+		add_literal_dbf_colnames		=> 'push',
+		has_no_literal_dbf_colnames 	=> 'is_empty',
+	}
+);
+
+has '_literal_dbf_colnames_hash' => (
+	traits    => [ 'Hash' ],
+	is        => 'ro',
+	isa       => 'HashRef[Bool]',
+	handles   => {
+		has_literal_dbf_colname				=> 'exists',
+	},
+	lazy => 1,
+	default => sub {
+		my $self = shift;
+		my $h = {};
+		foreach my $col ($self->all_literal_dbf_colnames) {
+			$h->{$col} = 1;
+		}
+		return $h;
+	}
+);
+
+
+
 
 sub data_fetch {
 	my $self = shift;
@@ -184,7 +216,7 @@ sub Attr_spec {
 		defined $dbfName or $dbfName= $params->{sort};
 		
 		#Set the relationship to "me" if none is specified:
-		$dbfName = 'me.' . $dbfName unless ($dbfName =~ /\./);
+		$dbfName = 'me.' . $dbfName unless ($dbfName =~ /\./ or $self->has_literal_dbf_colname($dbfName));
 		
 		if (lc($params->{dir}) eq 'desc') {
 			$attr->{order_by} = { -desc => $dbfName };
@@ -232,7 +264,7 @@ sub Attr_spec {
 			}
 			
 			#Set the relationship to "me" if none is specified:
-			$dbfName = 'me.' . $dbfName unless ($dbfName =~ /\./);
+			$dbfName = 'me.' . $dbfName unless ($dbfName =~ /\./ or $self->has_literal_dbf_colname($dbfName));
 			
 			push @{$attr->{'select'}}, $dbfName;
 			push @{$attr->{'as'}}, $extName;

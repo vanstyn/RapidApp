@@ -13,6 +13,7 @@ use Switch;
 use Moose::Util::TypeConstraints;
 
 has 'joins' => ( is => 'ro', default => sub {[]} );
+has 'group_by' => ( is => 'ro', isa => 'Maybe[Str|ArrayRef]', default => undef );
 
 has 'base_search_set' => ( is => 'ro',	default => undef );
 has 'fieldname_transforms' => ( is => 'ro', default => sub {{}});
@@ -34,6 +35,8 @@ has 'never_fetch_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
 
 has 'get_ResultSet_Handler' => ( is => 'ro', isa => 'Maybe[RapidApp::Handler]', lazy => 1, default => undef );
 
+has 'literal_dbf_colnames' => ( is => 'ro', isa => 'ArrayRef', default => sub {[]} );
+
 has 'DbicExtQuery' => ( is => 'ro', lazy_build => 1 );
 sub _build_DbicExtQuery {
 	my $self = shift;
@@ -42,10 +45,13 @@ sub _build_DbicExtQuery {
 		ResultSource				=> $self->ResultSource,
 		get_ResultSet_Handler	=> $self->get_ResultSet_Handler,
 		ExtNamesToDbFields 		=> $self->fieldname_transforms,
+		literal_dbf_colnames		=> $self->literal_dbf_colnames,
 		joins 						=> $self->joins,
 		#implied_joins			=> 1
 		#group_by				=> [ 'me.id' ],
 	};
+	
+	$cnf->{group_by} = $self->group_by if (defined $self->group_by);
 	
 	$cnf->{base_search_set} = $self->base_search_set if (defined $self->base_search_set);
 	
