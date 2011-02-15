@@ -280,7 +280,8 @@ around 'BUILD' => sub {
 					$module_name => {
 						class	=> 'RapidApp::DbicAppCombo',
 						params	=> {
-							valueField		=> $self->record_pk,
+							#valueField		=> $self->record_pk,
+							valueField		=> ($Source->primary_columns)[0],
 							name				=> $column,
 							ResultSource	=> $Source
 						}
