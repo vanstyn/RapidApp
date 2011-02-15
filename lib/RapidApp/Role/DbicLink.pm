@@ -161,8 +161,66 @@ sub hashref_concat_recurse {
 }
 
 
+has 'limit_dbiclink_columns' => (
+	is => 'ro',
+	traits => [ 'Array' ],
+	isa => 'ArrayRef[Str]',
+	default   => sub { [] },
+	handles => {
+		all_limit_dbiclink_columns		=> 'elements',
+		add_limit_dbiclink_columns		=> 'push',
+		has_no_limit_dbiclink_columns 	=> 'is_empty',
+	}
+);
+
+has '_limit_dbiclink_columns_hash' => (
+	traits    => [ 'Hash' ],
+	is        => 'ro',
+	isa       => 'HashRef[Bool]',
+	handles   => {
+		has_limit_dbiclink_column				=> 'exists',
+	},
+	lazy => 1,
+	default => sub {
+		my $self = shift;
+		my $h = {};
+		foreach my $col ($self->all_limit_dbiclink_columns) {
+			$h->{$col} = 1;
+		}
+		return $h;
+	}
+);
 
 
+has 'exclude_dbiclink_columns' => (
+	is => 'ro',
+	traits => [ 'Array' ],
+	isa => 'ArrayRef[Str]',
+	default   => sub { [] },
+	handles => {
+		all_exclude_dbiclink_columns		=> 'elements',
+		add_exclude_dbiclink_columns		=> 'push',
+		has_no_exclude_dbiclink_columns 	=> 'is_empty',
+	}
+);
+
+has '_exclude_dbiclink_columns_hash' => (
+	traits    => [ 'Hash' ],
+	is        => 'ro',
+	isa       => 'HashRef[Bool]',
+	handles   => {
+		has_exclude_dbiclink_column				=> 'exists',
+	},
+	lazy => 1,
+	default => sub {
+		my $self = shift;
+		my $h = {};
+		foreach my $col ($self->all_exclude_dbiclink_columns) {
+			$h->{$col} = 1;
+		}
+		return $h;
+	}
+);
 
 sub BUILD {}
 around 'BUILD' => sub {
@@ -192,9 +250,13 @@ around 'BUILD' => sub {
 		my $prefix = shift;
 		
 		foreach my $column ($Source->columns) {
+			
 			#print STDERR '      ' . GREEN . BOLD . ref($self) . ': ' . $column . CLEAR . "\n";
 			my $colname = $column;
 			$colname = $prefix . '_' . $column if ($prefix);
+			
+			next unless ($self->has_no_limit_dbiclink_columns or $self->has_limit_dbiclink_column($colname));
+			next if ($self->has_exclude_dbiclink_column($colname));
 			
 			next unless ($self->valid_colname($colname));
 
