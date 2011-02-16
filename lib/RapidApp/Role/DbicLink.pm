@@ -17,7 +17,9 @@ has 'group_by' => ( is => 'ro', isa => 'Maybe[Str|ArrayRef]', default => undef )
 
 has 'base_search_set' => ( is => 'ro',	default => undef );
 has 'fieldname_transforms' => ( is => 'ro', default => sub {{}});
+
 has 'dbf_virtual_fields'      => ( is => 'ro',	required => 0, 	isa => 'Maybe[HashRef]', default => undef 	);
+
 has 'primary_columns' => ( is => 'rw', default => sub {[]}, isa => 'ArrayRef');
 
 has 'always_fetch_columns' => ( is => 'ro', default => undef );
@@ -37,13 +39,15 @@ has 'no_search_fields' => (
 	is => 'ro',
 	traits => [ 'Array' ],
 	isa => 'ArrayRef[Str]',
-	default   => sub { [] },
+	builder => '_build_no_search_fields',
 	handles => {
 		all_no_search_fields		=> 'uniq',
 		add_no_search_fields		=> 'push',
 		has_no_no_search_fields 	=> 'is_empty',
 	}
 );
+sub _build_no_search_fields { return [] }
+
 
 has '_no_search_fields_hash' => (
 	traits    => [ 'Hash' ],
@@ -53,17 +57,20 @@ has '_no_search_fields_hash' => (
 		is_no_search_field				=> 'exists',
 	},
 	lazy => 1,
-	default => sub {
-		my $self = shift;
-		my $h = {};
-		my @list = $self->all_no_search_fields;
-		push @list, keys %{$self->dbf_virtual_fields} if ($self->dbf_virtual_fields);
-		foreach my $col (@list) {
-			$h->{$col} = 1;
-		}
-		return $h;
-	}
+	builder => '_build__no_search_fields_hash',
 );
+sub _build__no_search_fields_hash {
+	my $self = shift;
+	my $h = {};
+	my @list = $self->all_no_search_fields;
+	push @list, keys %{$self->dbf_virtual_fields} if ($self->dbf_virtual_fields);
+	foreach my $col (@list) {
+		$h->{$col} = 1;
+	}
+	return $h;
+}
+
+
 
 
 has 'get_ResultSet_Handler' => ( is => 'ro', isa => 'Maybe[RapidApp::Handler]', lazy => 1, default => undef );
@@ -209,13 +216,15 @@ has 'limit_dbiclink_columns' => (
 	is => 'ro',
 	traits => [ 'Array' ],
 	isa => 'ArrayRef[Str]',
-	default   => sub { [] },
+	builder => '_build_limit_dbiclink_columns',
 	handles => {
 		all_limit_dbiclink_columns		=> 'elements',
 		add_limit_dbiclink_columns		=> 'push',
 		has_no_limit_dbiclink_columns 	=> 'is_empty',
 	}
 );
+sub _build_limit_dbiclink_columns { return [] }
+
 
 has '_limit_dbiclink_columns_hash' => (
 	traits    => [ 'Hash' ],
