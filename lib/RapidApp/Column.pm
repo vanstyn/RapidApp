@@ -133,6 +133,23 @@ sub apply_attributes {
 	}
 }
 
+sub applyIf_attributes {
+	my $self = shift;
+	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	foreach my $attr ($self->meta->get_all_attributes) {
+		next unless (defined $new{$attr->name});
+		$attr->set_value($self,$new{$attr->name}) unless ($attr->get_value($self)); # <-- only set attrs that aren't already set
+		delete $new{$attr->name};
+	}
+	
+	#There should be nothing left over in %new:
+	if (scalar(keys %new) > 0) {
+		#die "invalid attributes (" . join(',',keys %new) . ") passed to apply_attributes";
+		use Data::Dumper;
+		die  "invalid attributes (" . join(',',keys %new) . ") passed to apply_attributes :\n" . Dumper(\%new);
+	}
+}
 
 sub get_grid_config {
 	my $self = shift;

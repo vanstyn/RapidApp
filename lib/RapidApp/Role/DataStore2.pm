@@ -26,6 +26,7 @@ has 'DataStore' => (
 		apply_columns				=> 'apply_columns',
 		column_list					=> 'column_list',
 		apply_to_all_columns		=> 'apply_to_all_columns',
+		applyIf_to_all_columns	=> 'applyIf_to_all_columns',
 		apply_columns_list		=> 'apply_columns_list',
 		set_sort						=> 'set_sort',
 		batch_apply_opts			=> 'batch_apply_opts',

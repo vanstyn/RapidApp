@@ -277,6 +277,17 @@ sub apply_to_all_columns {
 	return $self->apply_config(columns => $self->column_list);
 }
 
+sub applyIf_to_all_columns {
+	my $self = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	foreach my $column (keys %{ $self->columns } ) {
+		$self->columns->{$column}->applyIf_attributes(%opt);
+	}
+	
+	return $self->apply_config(columns => $self->column_list);
+}
+
 sub apply_columns_list {
 	my $self = shift;
 	my $cols = shift;
