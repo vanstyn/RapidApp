@@ -4,7 +4,7 @@ use Moose;
 use namespace::autoclean;
 extends 'Catalyst::Model';
 
-use RapidApp::Include 'perlutil';
+use RapidApp::Include 'perlutil', 'sugar';
 use RapidApp::ScopedGlobals 'sEnv';
 use Time::HiRes qw(gettimeofday);
 use RapidApp::Role::ErrorReportStore;
@@ -184,10 +184,9 @@ sub cleanupAfterRequest {
 
 sub cleanDirtyModules {
 	my ($self, $c)= @_;
-	my $log= $c->log;
 	my @modules= values %{$self->dirtyModules};
 	for my $module (@modules) {
-		$log->debug_controller(' >> CLEARING ' . $module->module_path);
+		DEBUG(controller => ' >> CLEARING ' . $module->module_path);
 		$module->reset_per_req_attrs;
 	}
 	%{$self->dirtyModules}= ();

@@ -11,20 +11,6 @@ has '_log' => (
 	handles => [ qw( fatal is_fatal error is_error warn is_warn info is_info debug is_debug ) ],
 );
 
-with 'RapidApp::FilterableDebug';
-
-sub BUILD {
-	my $self= shift;
-	$self->applyDebugChannels(
-		'auth'          => { color => GREEN,   showSrcLoc => 0 },
-		'controller'    => { color => MAGENTA, showSrcLoc => 0 },
-		'dbiclink'      => { color => MAGENTA, showSrcLoc => 0 },
-		'db'            => { color => BOLD.GREEN, showSrcLoc => 0 },
-		'notifications' => { color => YELLOW,  showSrcLoc => 0 },
-		'web1render'    => { color => CYAN,    showSrcLoc => 0 },
-	);
-}
-
 # The neat thing we're doing here is making an object which can be added to a debug_*() statement
 #    and will flush the log, but only if that debug channel was enabled.  This way we don't flush if the
 #   debug channel wasn't enabled, and we don't need an awkward "if" statement.

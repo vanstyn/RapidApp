@@ -7,21 +7,49 @@ use RapidApp::ScopedGlobals 'sEnv';
 use Scalar::Util 'blessed';
 use CatalystX::InjectComponent;
 use RapidApp::TraceCapture;
+use Hash::Merge;
 use RapidApp::Log;
+use RapidApp::Debug;
 
 sub rapidApp { (shift)->model("RapidApp"); }
 
 has 'request_id' => ( is => 'ro', default => sub { (shift)->rapidApp->requestCount; } );
 
+sub debug_config_defaults {
+	return {
+		channels => {
+			'auth'          => { color => GREEN,     },
+			'controller'    => { color => MAGENTA,   },
+			'dbiclink'      => { color => MAGENTA,   },
+			'db'            => { color => BOLD.GREEN,},
+			'notifications' => { color => YELLOW,    },
+			'web1render'    => { color => CYAN,      },
+		},
+	};
+}
+
 # An array of stack traces which were caught during the request
 # We assign this right at the end of around("dispatch")
 has 'stack_traces' => ( is => 'rw', lazy => 1, default => sub{[]} );
+
+# make sure to create a RapidApp::Log object, because we depend on its methods
+around 'setup_log' => sub {
+	my ($orig, $app, @args)= @_;
+	my $ret= $app->$orig(@args);
+	my $log= $app->log;
+	if (!$log->isa("RapidApp::Log")) {
+		$app->log( RapidApp::Log->new(origLog => $log) );
+	}
+	return $ret;
+};
+
 
 around 'setup_components' => sub {
 	my ($orig, $app, @args)= @_;
 	# At this point, we don't have a catalyst instance yet, just the package name.
 	# Catalyst has an amazing number of package methods that masquerade as instance methods later on.
 	&flushLog;
+	$app->config->{Debug}= Hash::Merge::merge( $app->config->{Debug}, debug_config_defaults() );
 	RapidApp::ScopedGlobals->applyForSub(
 		{ catalystClass => $app, log => $app->log },
 		sub {
@@ -31,24 +59,10 @@ around 'setup_components' => sub {
 	);
 };
 
-# make sure to create a RapidApp::Log object, because we depend on its methods
-around 'setup_log' => sub {
-	my ($orig, $app, @args)= @_;
-	
-	my $ret= $app->$orig(@args);
-	
-	my $log= $app->log;
-	if (!$log->isa("RapidApp::Log")) {
-		$app->log( RapidApp::Log->new(origLog => $log) );
-	}
-	
-	return $ret;
-};
+# we can't get the complete ->config until after ConfigLoader has run
+after 'setup_plugins' => \&processConfig;
 
-# we can't get the complete ->config until after Config::Loader has run
-after 'setup_plugins' => \&setupRapidAppLog;
-
-sub setupRapidAppLog {
+sub processConfig {
 	my $app= shift;
 	
 	my $log= $app->log;

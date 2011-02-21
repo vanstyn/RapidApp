@@ -9,8 +9,9 @@ use RapidApp::JSON::RawJavascript;
 use RapidApp::Error::UserError;
 use RapidApp::Handler;
 use RapidApp::DefaultOverride qw(override_defaults merge_defaults);
+use RapidApp::Debug;
 
-our @EXPORT = qw(sessvar perreq asjson rawjs mixedjs ra_die usererr override_defaults merge_defaults);
+our @EXPORT = qw(sessvar perreq asjson rawjs mixedjs ra_die usererr override_defaults merge_defaults DEBUG);
 
 # Module shortcuts
 #
@@ -56,6 +57,11 @@ sub ra_die {
 
 sub usererr {
 	return RapidApp::Error::UserError->new(@_);
+}
+
+# debug stuff to the log
+sub DEBUG {
+	return RapidApp::Debug::write_debug_msg(@_);
 }
 
 1;

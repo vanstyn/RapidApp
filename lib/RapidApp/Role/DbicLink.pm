@@ -324,7 +324,7 @@ around 'BUILD' => sub {
 			
 			$self->apply_columns( $colname => $opts );
 			
-			$self->log->debug_dbiclink(BOLD . ref($self) . ': ' . $colname, $self->log->FLUSH);
+			DEBUG(dbiclink => BOLD . ref($self) . ': ' . $colname, sub { $self->log->flush });
 			
 			# -- Build combos (dropdowns) for every related field (for use in multifilters currently):
 			if ($prefix and not ($ENV{NO_REL_COMBOS} or $self->no_rel_combos)) {
