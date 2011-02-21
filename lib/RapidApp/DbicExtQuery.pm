@@ -27,6 +27,8 @@ use Term::ANSIColor qw(:constants);
 
 has 'ResultSource'				=> ( is => 'ro',	required => 1, 	isa => 'DBIx::Class::ResultSource'			);
 has 'ExtNamesToDbFields'      => ( is => 'rw',	required => 0, 	isa => 'HashRef', default => sub{ {} } 	);
+has 'dbf_virtual_fields'      => ( is => 'ro',	required => 0, 	isa => 'Maybe[HashRef]', default => undef 	);
+has 'no_search_fields'			=> ( is => 'rw',	required => 0, 	isa => 'HashRef', default => sub{ {} } 	);
 has 'columns'                 => ( is => 'rw',  required => 0,    isa => 'ArrayRef', default => sub{ [] }   );
 
 # be careful! joins can slow queries considerably
@@ -38,7 +40,21 @@ has 'prefetch'    				=> ( is => 'ro',	default => undef	);
 
 has 'base_search_set'    		=> ( is => 'ro',	default => undef );
 
+
+
 ###########################################################################################
+
+
+sub BUILD {
+	my $self = shift;
+	
+	if ($self->dbf_virtual_fields) {
+		foreach my $col (keys %{ $self->dbf_virtual_fields }) {
+			$self->ExtNamesToDbFields->{$col} = $col;
+			$self->add_literal_dbf_colnames($col);
+		}
+	}
+}
 
 
 has 'get_ResultSet_Handler' => ( is => 'ro', isa => 'Maybe[RapidApp::Handler]', default => undef );
@@ -59,6 +75,68 @@ has 'base_search_set_list' => ( is => 'ro', lazy => 1, default => sub {
 	);
 	return [ $self->base_search_set ];
 });
+
+
+has 'literal_dbf_colnames' => (
+	is => 'ro',
+	traits => [ 'Array' ],
+	isa => 'ArrayRef[Str]',
+	default   => sub { [] },
+	handles => {
+		all_literal_dbf_colnames		=> 'elements',
+		add_literal_dbf_colnames		=> 'push',
+		has_no_literal_dbf_colnames 	=> 'is_empty',
+	}
+);
+
+has '_literal_dbf_colnames_hash' => (
+	traits    => [ 'Hash' ],
+	is        => 'ro',
+	isa       => 'HashRef[Bool]',
+	handles   => {
+		has_literal_dbf_colname				=> 'exists',
+	},
+	lazy => 1,
+	default => sub {
+		my $self = shift;
+		my $h = {};
+		foreach my $col ($self->all_literal_dbf_colnames) {
+			$h->{$col} = 1;
+		}
+		return $h;
+	}
+);
+
+
+has 'no_search_fields' => (
+	is => 'ro',
+	traits => [ 'Array' ],
+	isa => 'ArrayRef[Str]',
+	default   => sub { [] },
+	handles => {
+		all_no_search_fields		=> 'uniq',
+		add_no_search_fields		=> 'push',
+		has_no_no_search_fields 	=> 'is_empty',
+	}
+);
+
+has '_no_search_fields_hash' => (
+	traits    => [ 'Hash' ],
+	is        => 'ro',
+	isa       => 'HashRef[Bool]',
+	handles   => {
+		is_no_search_field				=> 'exists',
+	},
+	lazy => 1,
+	default => sub {
+		my $self = shift;
+		my $h = {};
+		foreach my $col ($self->all_no_search_fields) {
+			$h->{$col} = 1;
+		}
+		return $h;
+	}
+);
 
 
 
@@ -184,7 +262,7 @@ sub Attr_spec {
 		defined $dbfName or $dbfName= $params->{sort};
 		
 		#Set the relationship to "me" if none is specified:
-		$dbfName = 'me.' . $dbfName unless ($dbfName =~ /\./);
+		$dbfName = 'me.' . $dbfName unless ($dbfName =~ /\./ or $self->has_literal_dbf_colname($dbfName));
 		
 		if (lc($params->{dir}) eq 'desc') {
 			$attr->{order_by} = { -desc => $dbfName };
@@ -232,9 +310,9 @@ sub Attr_spec {
 			}
 			
 			#Set the relationship to "me" if none is specified:
-			$dbfName = 'me.' . $dbfName unless ($dbfName =~ /\./);
+			$dbfName = 'me.' . $dbfName unless ($dbfName =~ /\./ or $self->has_literal_dbf_colname($dbfName));
 			
-			push @{$attr->{'select'}}, $dbfName;
+			push @{$attr->{'select'}}, $self->transform_select_item($dbfName);
 			push @{$attr->{'as'}}, $extName;
 		}
 		
@@ -266,7 +344,7 @@ sub Attr_spec {
 			#	my $j = $self->hash_to_join($t) or next;
 			#	push @{$attr->{join}}, $j;
 			#}
-			push @{$attr->{'+select'}}, $t;
+			push @{$attr->{'+select'}}, $self->transform_select_item($t);
 			push @{$attr->{'+as'}}, $k;
 		}
 	}
@@ -388,6 +466,9 @@ sub Search_spec {
 				my $field = $filter->{field};
 				# optionally convert table column name to db field name
 				my $dbfName= $self->ExtNamesToDbFields->{$filter->{field}};
+				
+				next if ($self->is_no_search_field($dbfName) or $self->is_no_search_field($field));
+				
 				$field = 'me.' . $field; # <-- http://www.mail-archive.com/dbix-class@lists.scsys.co.uk/msg02386.html
 				defined $dbfName or $dbfName= $field;
 				
@@ -464,6 +545,9 @@ sub Search_spec {
 			foreach my $field (@$fields) {
 				# optionally convert table column name to db field name
 				my $dbfName= $self->ExtNamesToDbFields->{$field};
+				
+				next if ($self->is_no_search_field($dbfName) or $self->is_no_search_field($field));
+				
 				$field = 'me.' . $field; # <-- http://www.mail-archive.com/dbix-class@lists.scsys.co.uk/msg02386.html
 				defined $dbfName or $dbfName= $field;
 				
@@ -488,6 +572,9 @@ sub Search_spec {
 				foreach my $f (keys %$multi) {
 					# optionally convert table column name to db field name
 					my $dbfName = $self->ExtNamesToDbFields->{$f};
+					
+					#next if ($self->is_no_search_field($dbfName) or $self->is_no_search_field($f));
+					
 					my $field = 'me.' . $f; # <-- http://www.mail-archive.com/dbix-class@lists.scsys.co.uk/msg02386.html
 					defined $dbfName or $dbfName = $field;
 					$multi->{$dbfName} = $multi->{$f};
@@ -576,6 +663,13 @@ sub safe_create_row {
 	return $self->ResultSet->create($safe_params);
 }
 
+
+sub transform_select_item {
+	my $self = shift;
+	my $col = shift;
+	return $col unless (defined $self->dbf_virtual_fields);
+	return $self->dbf_virtual_fields->{$col} ? $self->dbf_virtual_fields->{$col} : $col;
+}
 
 
 
