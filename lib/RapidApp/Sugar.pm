@@ -61,7 +61,8 @@ sub usererr {
 
 # debug stuff to the log
 sub DEBUG {
-	return RapidApp::Debug::write_debug_msg(@_);
+	unshift @_, 'RapidApp::Debug';
+	goto &RapidApp::Debug::global_write; # we don't want to mess up 'caller'
 }
 
 1;
