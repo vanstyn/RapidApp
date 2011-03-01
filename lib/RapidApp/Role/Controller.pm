@@ -287,18 +287,22 @@ sub controller_dispatch {
 		return $self->process_action($self->default_action,@_);
 	}
 	else {
+		my $ct= $self->c->stash->{requestContentType};
 		# if there were unprocessed arguments which were not an action, and there was no default action, generate a 404
 		if (defined $opt) {
 			$self->c->log->info("--> " . RED . BOLD . "unknown action: $opt" . CLEAR);
-			if ($self->c->stash->{requestContentType} ne 'JSON') {
+			if ($ct eq 'text/x-RapidApp-FormSubmitResponse'
+				|| $ct eq 'JSON'
+			) {
+				die RapidApp::Role::Controller::UnknownAction->new(message => "Unknown module or action", unknown_arg => $opt);
+			}
+			else {
 				$self->c->stash->{current_view} = 'RapidApp::HttpStatus';
 				$self->c->res->status(404);
 				return 1;
-			} else {
-				die RapidApp::Role::Controller::UnknownAction->new(message => "Unknown module or action", unknown_arg => $opt);
 			}
 		}
-		elsif ($self->c->stash->{requestContentType} ne 'JSON' && $self->auto_web1) {
+		elsif ($ct ne 'JSON' && $ct ne 'text/x-RapidApp-FormSubmitResponse' && $self->auto_web1) {
 			$self->c->log->info("--> " . GREEN . BOLD . "[web1_content]" . CLEAR . ". (no action)");
 			return $self->web1_content;
 		}

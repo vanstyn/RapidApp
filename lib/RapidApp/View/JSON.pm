@@ -7,6 +7,7 @@ BEGIN { extends 'Catalyst::View'; }
 use RapidApp::JSON::MixedEncoder;
 use Data::Dumper;
 use Scalar::Util 'blessed', 'reftype';
+use HTML::Entities;
 
 has 'encoding' => ( is => 'rw', isa => 'Str', default => 'utf-8' );
 
@@ -21,11 +22,24 @@ sub process {
 	my $jsonStr;
 	
 	my $encoding= $c->stash->{encoding} || $self->encoding;
-	#$c->res->content_type("application/json; charset=$encoding");
+	my $rct= $c->stash->{requestContentType};
+	
+	if ($rct eq 'text/x-rapidapp-form-response') {
+		$c->res->content_type("text/html; charset=$encoding");
+	}
+	elsif ($rct eq 'JSON') {
+		$c->res->content_type("application/json; charset=$encoding");
+	}
+	else {
+		$c->res->content_type("text/plain; charset=$encoding");
+	}
 	
 	$c->res->header('Cache-Control' => 'no-cache');
 	
 	if ($c->stash->{exception}) {
+		$c->stash->{exception}->isa('RapidApp::Responder::UserError')
+			and RapidApp::ScopedGlobals->log->warn("UserError didn't get to do its own rendering!");
+		
 		my $err= $c->stash->{exception};
 		
 		$c->res->header('X-RapidApp-Exception' => 1);
@@ -50,7 +64,8 @@ sub process {
 		}
 		
 		$jsonStr= $self->encoder->encode({
-			exception	=> \1,
+			($rct eq 'text/x-rapidapp-form-response'? ('X-RapidApp-Exception' => 1) : ()),
+			exception   => \1,
 			success		=> \0,
 			rows			=> [],
 			results		=> 0,
@@ -71,6 +86,11 @@ sub process {
 		die "None of exception, jsonData, json, controllerResult were specified.  Cannot render.";
 	}
 	
+	# The ExtJS form submission must be delivered as encoded HTML, so that ExtJS can extract the string from the IFrame
+	if ($rct eq 'text/x-rapidapp-form-response') {
+		$jsonStr= encode_entities($jsonStr);
+	}
+	
 	$c->res->body($jsonStr);
 }
 
@@ -80,13 +100,7 @@ sub getUserMessage {
 	my $method= $err->can('userMessage') || return undef;
 	my $str= $err->$method();
 	defined $str && length($str) or return undef;
-	
-	$str =~ s|\n|<br/>|g;
-	$str =~ s|&|&amp;|g;
-	$str =~ s|<|&lt;|g;
-	$str =~ s|>|&gt;|g;
-	$str =~ s|"|&quot;|g;
-	return $str;
+	return join('<br/>', encode_entities(split '\n', $str));
 }
 
 1;

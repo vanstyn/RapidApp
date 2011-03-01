@@ -4,6 +4,7 @@ use Moose;
 extends 'RapidApp::Responder';
 
 use RapidApp::Include;
+use HTML::Entities;
 
 has 'title' 		=> ( is => 'ro', isa => 'Maybe[Str]', default => undef );
 has 'param_name'	=> ( is => 'ro', isa => 'Maybe[Str]', default => undef );
@@ -14,7 +15,7 @@ has 'buttonIcons'	=> ( is => 'ro', isa => 'Maybe[HashRef[Str]]', default => unde
 has 'items'			=> ( is => 'ro', isa => 'Maybe[ArrayRef|HashRef]', default => undef );
 has 'formpanel_cnf'	=> ( is => 'ro', isa => 'Maybe[HashRef]', default => undef );
 
-sub header_data {
+sub customprompt_data {
 	my $self = shift;
 	
 	my $data = {};
@@ -30,18 +31,32 @@ sub header_data {
 	return $data;
 }
 
-sub header_json {
+sub customprompt_json {
 	my $self = shift;
-	return RapidApp::JSON::MixedEncoder::encode_json($self->header_data);
+	return RapidApp::JSON::MixedEncoder::encode_json($self->customprompt_data);
 }
 
 sub writeResponse {
 	my ($self, $c)= @_;
 	
-	$c->response->header('X-RapidApp-CustomPrompt' => $self->header_json);
-	unless (length($c->response->body) > 0) {
-		$c->response->content_type('text/plain; charset=utf-8');
-		$c->response->body("More user input was needed to complete your request, but we can only send prompts through dynamic javascript requests");
+	$c->response->status(500);
+	$c->response->content_type('text/html');
+	
+	my $rct= $c->stash->{requestContentType};
+	if ($rct eq 'text/x-rapidapp-form-response') {
+		# Because ExtJS must read the string from the source of an IFrame, we must encode in HTML
+		my $json= RapidApp::JSON::MixedEncoder::encode_json({
+			'X-RapidApp-CustomPrompt' => $self->customprompt_json,
+			success => \0,
+		});
+		$c->response->body(encode_entities($json));
+	}
+	else {
+		$c->response->header('X-RapidApp-CustomPrompt' => $self->customprompt_json);
+		unless (length($c->response->body) > 0) {
+			$c->response->content_type('text/plain; charset=utf-8');
+			$c->response->body("More user input was needed to complete your request, but we can only send prompts through dynamic javascript requests");
+		}
 	}
 }
 

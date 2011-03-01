@@ -4,9 +4,7 @@ Ext.Ajax.timeout = 120000; // 2 minute timeout (default is 30 seconds)
 Ext.ns('Ext.log');
 Ext.log = function() {};
 
-
-
-
+Ext.ns('Ext.ux.RapidApp');
 
 
 Ext.ns('Ext.ux.form.FormConnectorField');
@@ -116,30 +114,30 @@ Ext.override(Ext.ux.form.SuperBoxSelect,{
 });
 
 
-Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.errMsgHandler = function(title,msg) {
 	Ext.Msg.alert(title,Ext.util.Format.nl2br(msg));
 }
 
 Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
 	try {
-		var exception = response.getResponseHeader('X-RapidApp-Exception');
+		if (!('decoded' in response))
+			response.decoded= Ext.decode(response.responseText, true) || {};
+		
+		var haveHeaders= response.getResponseHeader != null;
+		
+		var exception = haveHeaders? response.getResponseHeader('X-RapidApp-Exception') : response.decoded['X-RapidApp-Exception'];
 		if (exception) {
-			var res = Ext.decode(response.responseText);
-			if (res) {
-				var title = res.title || 'Error';
-				var msg = res.msg || 'unknown error - Ext.ux.RapidApp.ajaxCheckException';
-				Ext.ux.RapidApp.errMsgHandler(title,msg);
-			}
+			var title = response.decoded.title || 'Error';
+			var msg = response.decoded.msg || 'unknown error - Ext.ux.RapidApp.ajaxCheckException';
+			Ext.ux.RapidApp.errMsgHandler(title,msg);
 		}
-		else {
-			var warning = response.getResponseHeader('X-RapidApp-Warning');
-			if (warning) {
-				var data = Ext.decode(warning);
-				var title = data.title || 'Warning';
-				var msg = data.msg || 'Unknown (X-RapidApp-Warning)';
-				Ext.ux.RapidApp.errMsgHandler(title,msg);
-			}
+		
+		var warning = haveHeaders? response.getResponseHeader('X-RapidApp-Warning') : response.decoded['X-RapidApp-Warning'];
+		if (warning) {
+			var data = Ext.decode(warning);
+			var title = data.title || 'Warning';
+			var msg = data.msg || 'Unknown (X-RapidApp-Warning)';
+			Ext.ux.RapidApp.errMsgHandler(title,msg);
 		}
 	}
 	catch(err) {}
@@ -179,12 +177,11 @@ Ext.override(Ext.data.Connection,{
 
 	handleResponse_orig: Ext.data.Connection.prototype.handleResponse,
 	handleResponse : function(response){
-
 		this.fireEvent('requestcomplete',this,response,response.argument.options);
-
+		
 		var call_orig = true;
 		var options = response.argument.options;
-
+		
 		var thisConn = this;
 		var success_callback_repeat = function(newopts) {
 			
@@ -198,42 +195,125 @@ Ext.override(Ext.data.Connection,{
 			call_orig = false;
 			thisConn.request(options);
 		};
-
+		
 		var auth = response.getResponseHeader('X-RapidApp-Authenticated');
-		if (auth) {
-			Ext.ns('Ext.ux.RapidApp');
-			var orig = Ext.ux.RapidApp.Authenticated;
-			if (auth != '0') { Ext.ux.RapidApp.Authenticated = auth; }
-			if (orig && orig != auth && auth == '0') {
-				call_orig = false;
-				Ext.ux.RapidApp.ReAuthPrompt(success_callback_repeat);
-			}
-		}
+		if (auth != null)
+			if (!Ext.ux.RapidApp.updateAuthenticated(auth, success_callback_repeat))
+				return;
 		
 		var customprompt = response.getResponseHeader('X-RapidApp-CustomPrompt');
-		if (customprompt) {
-			call_orig = false;
-			Ext.ux.RapidApp.handleCustomPrompt(customprompt,success_callback_repeat);
-		}
+		if (customprompt)
+			return Ext.ux.RapidApp.handleCustomPrompt(customprompt,success_callback_repeat);
 		
-		if(response.getResponseHeader('X-RapidApp-Exception')) return;
-
-		if(call_orig) {
-			this.handleResponse_orig.apply(this,arguments);
-			
-			var servercallback = response.getResponseHeader('X-RapidApp-Callback');
-			if (servercallback) {
-				// Put the response into "this" and then call the callback handler with "this" scope
-				this.response = response;
-				Ext.ux.RapidApp.handleServerCallBack.call(this,servercallback);
-			}
+		if(response.getResponseHeader('X-RapidApp-Exception'))
+			return;
+		
+		this.handleResponse_orig.apply(this,arguments);
+		
+		var servercallback = response.getResponseHeader('X-RapidApp-Callback');
+		if (servercallback) {
+			// Put the response into "this" and then call the callback handler with "this" scope
+			this.response = response;
+			Ext.ux.RapidApp.handleServerCallBack.call(this,servercallback);
 		}
 	}
 });
 
+Ext.override(Ext.form.FormPanel, {
+	getForm_orig: Ext.form.FormPanel.prototype.getForm,
+	getForm: function() {
+		var basicForm= this.getForm_orig();
+		basicForm.formPanel= this;
+		return basicForm;
+	}
+});
 
+Ext.override(Ext.form.BasicForm, {
+	submit_orig: Ext.form.BasicForm.prototype.submit,
+	submit: function(submitOpts) {
+		var formPanel= this.formPanel;
+		
+		if (this.standardSubmit || this.fileUpload)
+			Ext.ux.RapidApp.performStandardFormSubmit(formPanel, this, submitOpts);
+		else
+			this.submit_orig(submitOpts);
+	}
+});
 
-Ext.ns('Ext.ux.RapidApp');
+Ext.ux.RapidApp.generateParamFormFields= function(formPanel, params) {
+	var key;
+	// clear any leftover hidden fields
+	formPanel.items.each(function(cmp) { if (cmp.isAutoHiddenField) formPanel.items.remove(cmp); });
+	
+	// Pack any baseParams into actual form fields
+	for (key in formPanel.baseParams) {
+		formPanel.add({ xtype: 'hidden', name: key, value: formPanel.baseParams[key], isAutoHiddenField: true });
+	}
+	if (params)
+		for (key in params) {
+			formPanel.add({ xtype: 'hidden', name: key, value: formPanel.baseParams[key], isAutoHiddenField: true });
+		}
+}
+
+Ext.ux.RapidApp.performStandardFormSubmit= function(formPanel, form, submitOpts) {
+	submitOpts= submitOpts || {};
+	// Set the contect type so that RapidApp returns a proper response
+	// We put it in the "text/" category so that the browser will display it inline, allowing ExtJS to process it.
+	if (!formPanel.items.get('rapidapp_rct_field'))
+		formPanel.add({
+			xtype: 'hidden', itemId: 'rapidapp_rct_field',
+			name: 'RequestContentType', value: 'text/x-rapidapp-form-response'
+		});
+	
+	Ext.ux.RapidApp.generateParamFormFields(formPanel, submitOpts.params);
+	
+	formPanel.doLayout();
+	
+	var success_callback_repeat= function() { form.submit_orig(submitOpts); }
+	var orig_success= submitOpts.success;
+	var orig_fail= submitOpts.failure;
+	
+	submitOpts.success= function(form, action) {
+		orig_success(form, action);
+	};
+	
+	submitOpts.failure= function(form, action) {
+		var auth= action.result['X-RapidApp-Authenticated'];
+		if (auth != null)
+			if (!Ext.ux.RapidApp.updateAuthenticated(auth, success_callback_repeat))
+				return;
+		
+		var custPrompt= action.result['X-RapidApp-CustomPrompt'];
+		if (custPrompt)
+			return Ext.ux.RapidApp.handleCustomPrompt(custPrompt, success_callback_repeat);
+		
+		if(action.result['X-RapidApp-Exception'] != null)
+			return;
+		
+		orig_fail.apply(this,arguments);
+		
+		var servercallback = action.result['X-RapidApp-Callback'];
+		if (servercallback) {
+			// Put the response into "this" and then call the callback handler with "this" scope
+			this.response = response;
+			Ext.ux.RapidApp.handleServerCallBack.call(this,servercallback);
+		}
+	};
+	
+	success_callback_repeat();
+}
+
+// returns whether or not to keep processing the request
+Ext.ux.RapidApp.updateAuthenticated= function(authValue) {
+	var orig = Ext.ux.RapidApp.Authenticated;
+	if (authValue != '0') { Ext.ux.RapidApp.Authenticated = authValue; }
+	if (orig && orig != authValue && authValue == '0') {
+		Ext.ux.RapidApp.ReAuthPrompt(success_callback_repeat);
+		return false;
+	}
+	return true;
+}
+
 
 // Call an arbitrary function specified in the response from the server (X-RapidApp-Callback)
 // If "scoped" is true, the function is called with the scope (this) of the Ext.data.Connection 
@@ -469,9 +549,6 @@ Ext.ux.RapidApp.ReAuthPrompt = function(success_callback) {
 	});
 }
 
-
-
-Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.validateCsvEmailStr = function(v) {
 	var str = new String(v);
 	var arr = str.split(',');
