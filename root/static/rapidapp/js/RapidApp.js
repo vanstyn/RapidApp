@@ -172,53 +172,38 @@ Ext.Ajax.on('beforerequest',Ext.ux.RapidApp.ajaxShowGlobalMask,this);
 Ext.Ajax.on('requestcomplete',Ext.ux.RapidApp.ajaxHideGlobalMask,this);
 Ext.Ajax.on('requestexception',Ext.ux.RapidApp.ajaxHideGlobalMask,this);
 
-
+/**
+ * We override Connection so that **Every** AJAX request gets our processing added to it.
+ * We first set up a closure that can re-issue the current request, and then check headers
+ *   to see if we want to interrupt the current one.
+ */
 Ext.override(Ext.data.Connection,{
 
 	handleResponse_orig: Ext.data.Connection.prototype.handleResponse,
 	handleResponse : function(response){
 		this.fireEvent('requestcomplete',this,response,response.argument.options);
 		
-		var call_orig = true;
 		var options = response.argument.options;
 		
 		var thisConn = this;
 		var success_callback_repeat = function(newopts) {
-			
 			// Optional changes/additions to the original request options:
 			if(Ext.isObject(newopts)) {
 				Ext.iterate(newopts,function(key,value){
 					Ext.apply(options[key],value);
 				});
 			}
-			
-			call_orig = false;
 			thisConn.request(options);
 		};
 		
-		var auth = response.getResponseHeader('X-RapidApp-Authenticated');
-		if (auth != null)
-			if (!Ext.ux.RapidApp.updateAuthenticated(auth, success_callback_repeat))
-				return;
+		var orig_args= arguments;
+		var current_callback_continue= function() { thisConn.handleResponse_orig.apply(thisConn,orig_args); };
 		
-		var customprompt = response.getResponseHeader('X-RapidApp-CustomPrompt');
-		if (customprompt)
-			return Ext.ux.RapidApp.handleCustomPrompt(customprompt,success_callback_repeat);
-		
-		if(response.getResponseHeader('X-RapidApp-Exception'))
-			return;
-		
-		this.handleResponse_orig.apply(this,arguments);
-		
-		var servercallback = response.getResponseHeader('X-RapidApp-Callback');
-		if (servercallback) {
-			// Put the response into "this" and then call the callback handler with "this" scope
-			this.response = response;
-			Ext.ux.RapidApp.handleServerCallBack.call(this,servercallback);
-		}
+		Ext.ux.RapidApp.handleCustomServerDirectives(response, current_callback_continue, success_callback_repeat);
 	}
 });
 
+/** This override allows us to access formPanel from basicForm  */
 Ext.override(Ext.form.FormPanel, {
 	getForm_orig: Ext.form.FormPanel.prototype.getForm,
 	getForm: function() {
@@ -228,6 +213,9 @@ Ext.override(Ext.form.FormPanel, {
 	}
 });
 
+/** This override wraps the standard form submission (which doesn't use Ext.Ajax)
+ *    so that the same directive processing happens as with Ajax
+ */
 Ext.override(Ext.form.BasicForm, {
 	submit_orig: Ext.form.BasicForm.prototype.submit,
 	submit: function(submitOpts) {
@@ -240,71 +228,111 @@ Ext.override(Ext.form.BasicForm, {
 	}
 });
 
+/**
+ * For every parameter, and formPanel.baseParams, add a hidden field to the form which causes the parameter
+ * to get submitted when the standard browser form submit is used.
+ */
 Ext.ux.RapidApp.generateParamFormFields= function(formPanel, params) {
 	var key;
+	var changed= false;
+	
 	// clear any leftover hidden fields
-	formPanel.items.each(function(cmp) { if (cmp.isAutoHiddenField) formPanel.items.remove(cmp); });
+	formPanel.items.each(function(cmp) {
+		if (cmp.isAutoHiddenField) {
+			formPanel.items.remove(cmp);
+			changed= true;
+		}
+	});
 	
 	// Pack any baseParams into actual form fields
 	for (key in formPanel.baseParams) {
 		formPanel.add({ xtype: 'hidden', name: key, value: formPanel.baseParams[key], isAutoHiddenField: true });
+		changed= true;
 	}
+	// Pack any explicit params into form fields
 	if (params)
 		for (key in params) {
 			formPanel.add({ xtype: 'hidden', name: key, value: formPanel.baseParams[key], isAutoHiddenField: true });
+			changed= true;
 		}
+	
+	// build the new fields, if needed
+	if (changed)
+		formPanel.doLayout();
 }
 
 Ext.ux.RapidApp.performStandardFormSubmit= function(formPanel, form, submitOpts) {
 	submitOpts= submitOpts || {};
 	// Set the contect type so that RapidApp returns a proper response
 	// We put it in the "text/" category so that the browser will display it inline, allowing ExtJS to process it.
-	if (!formPanel.items.get('rapidapp_rct_field'))
+	if (!formPanel.items.get('rapidapp_rct_field')) {
 		formPanel.add({
 			xtype: 'hidden', itemId: 'rapidapp_rct_field',
 			name: 'RequestContentType', value: 'text/x-rapidapp-form-response'
 		});
+		formPanel.doLayout();
+	}
 	
 	Ext.ux.RapidApp.generateParamFormFields(formPanel, submitOpts.params);
-	
-	formPanel.doLayout();
 	
 	var success_callback_repeat= function() { form.submit_orig(submitOpts); }
 	var orig_success= submitOpts.success;
 	var orig_fail= submitOpts.failure;
+	var orig_context= this;
 	
 	submitOpts.success= function(form, action) {
-		orig_success(form, action);
+		var orig_args= arguments;
+		continue_callback= function() { orig_success.apply(orig_context, orig_args); }
+		Ext.ux.RapidApp.handleCustomServerDirectives(action, continue_callback, success_callback_repeat);
 	};
 	
 	submitOpts.failure= function(form, action) {
-		var auth= action.result['X-RapidApp-Authenticated'];
-		if (auth != null)
-			if (!Ext.ux.RapidApp.updateAuthenticated(auth, success_callback_repeat))
-				return;
-		
-		var custPrompt= action.result['X-RapidApp-CustomPrompt'];
-		if (custPrompt)
-			return Ext.ux.RapidApp.handleCustomPrompt(custPrompt, success_callback_repeat);
-		
-		if(action.result['X-RapidApp-Exception'] != null)
-			return;
-		
-		orig_fail.apply(this,arguments);
-		
-		var servercallback = action.result['X-RapidApp-Callback'];
-		if (servercallback) {
-			// Put the response into "this" and then call the callback handler with "this" scope
-			this.response = response;
-			Ext.ux.RapidApp.handleServerCallBack.call(this,servercallback);
-		}
+		var args= arguments;
+		continue_callback= function() { orig_fail.apply(orig_context, orig_args); }
+		Ext.ux.RapidApp.handleCustomServerDirectives(action, continue_callback, success_callback_repeat);
 	};
 	
 	success_callback_repeat();
 }
 
+/**
+ * This function performs special handling for custom HTTP headers (or in the case of form uploads, custom
+ *   JSON attributes) which may either continue the current request, or end it, or restart it with additional
+ *   parameters.
+ * This is called by our overridden Ext.data.Connection.handleResponse, and our custom Ext.form.BasicForm.submit
+ * In the event of a form submission, we don't have headers, and must assume the response is a JSON packet.
+ */
+Ext.ux.RapidApp.handleCustomServerDirectives= function(response, continue_current_callback, success_callback_repeat) {
+	// first, set up an accessor that can deal with both header-based and JSON based attributes
+	if (response.getResponseHeader != null)
+		response.getAttr= response.getResponseHeader;
+	else
+		response.getAttr= function(key) { return response.result[key]; };
+	
+	var auth = response.getAttr('X-RapidApp-Authenticated');
+	if (auth != null)
+		if (!Ext.ux.RapidApp.updateAuthenticated(auth, success_callback_repeat))
+			return;
+	
+	var customprompt = response.getAttr('X-RapidApp-CustomPrompt');
+	if (customprompt)
+		return Ext.ux.RapidApp.handleCustomPrompt(customprompt,success_callback_repeat);
+	
+	if(response.getResponseHeader('X-RapidApp-Exception'))
+		return;
+	
+	continue_current_callback();
+	
+	var servercallback = response.getAttr('X-RapidApp-Callback');
+	if (servercallback) {
+		// Put the response into "this" and then call the callback handler with "this" scope
+		this.response = response;
+		Ext.ux.RapidApp.handleServerCallBack.call(this,servercallback);
+	}
+}
+
 // returns whether or not to keep processing the request
-Ext.ux.RapidApp.updateAuthenticated= function(authValue) {
+Ext.ux.RapidApp.updateAuthenticated= function(authValue, success_callback_repeat) {
 	var orig = Ext.ux.RapidApp.Authenticated;
 	if (authValue != '0') { Ext.ux.RapidApp.Authenticated = authValue; }
 	if (orig && orig != authValue && authValue == '0') {

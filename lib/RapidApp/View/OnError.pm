@@ -40,7 +40,7 @@ sub process {
 	
 	my $err= $errors[0];
 	
-	# on exceptions, we either generate a 503, or a JSON response to the same effect
+	# on exceptions, we either generate a 500, or a JSON response to the same effect
 	if ($c->stash->{requestContentType} eq 'JSON') {
 		$c->stash->{exception}= $err;
 		$c->view('RapidApp::JSON')->process($c);

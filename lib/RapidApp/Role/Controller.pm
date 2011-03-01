@@ -302,7 +302,7 @@ sub controller_dispatch {
 				return 1;
 			}
 		}
-		elsif ($ct ne 'JSON' && $ct ne 'text/x-RapidApp-FormSubmitResponse' && $self->auto_web1) {
+		elsif ($ct ne 'JSON' && $ct ne 'text/x-rapidapp-form-response' && $self->auto_web1) {
 			$self->c->log->info("--> " . GREEN . BOLD . "[web1_content]" . CLEAR . ". (no action)");
 			return $self->web1_content;
 		}
