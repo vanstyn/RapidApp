@@ -8,6 +8,7 @@ use RapidApp::JSON::MixedEncoder;
 use Data::Dumper;
 use Scalar::Util 'blessed', 'reftype';
 use HTML::Entities;
+use RapidApp::Sugar;
 
 has 'encoding' => ( is => 'rw', isa => 'Str', default => 'utf-8' );
 
@@ -19,28 +20,11 @@ sub _build_encoder {
 sub process {
 	my ($self, $c)= @_;
 	
-	my $jsonStr;
-	
-	my $encoding= $c->stash->{encoding} || $self->encoding;
-	my $rct= $c->stash->{requestContentType};
-	
-	if ($rct eq 'text/x-rapidapp-form-response') {
-		$c->res->content_type("text/html; charset=$encoding");
-	}
-	elsif ($rct eq 'JSON') {
-		$c->res->content_type("application/json; charset=$encoding");
-	}
-	else {
-		$c->res->content_type("text/plain; charset=$encoding");
-	}
-	
-	$c->res->header('Cache-Control' => 'no-cache');
+	my $json;
 	
 	if ($c->stash->{exception}) {
-		$c->stash->{exception}->isa('RapidApp::Responder::UserError')
-			and RapidApp::ScopedGlobals->log->warn("UserError didn't get to do its own rendering!");
-		
 		my $err= $c->stash->{exception};
+		DEBUG('controller', 'JSON->process( exception == '.$err.' )');
 		
 		$c->res->header('X-RapidApp-Exception' => 1);
 		$c->res->status(500);
@@ -62,36 +46,50 @@ sub process {
 		elsif (exists $c->stash->{exceptionRefId}) {
 			$msg .= "<br/>The details of this error could not be saved.";
 		}
-		
-		$jsonStr= $self->encoder->encode({
-			($rct eq 'text/x-rapidapp-form-response'? ('X-RapidApp-Exception' => 1) : ()),
+		$json= {
 			exception   => \1,
 			success		=> \0,
 			rows			=> [],
 			results		=> 0,
 			msg			=> $msg
-		});
-	}
-	elsif (defined $c->stash->{jsonData}) {
-		$jsonStr= $self->encoder->encode($c->stash->{jsonData});
-	}
-	elsif (defined $c->stash->{json}) {
-		$jsonStr= $c->stash->{json};
-	}
-	elsif (defined $c->stash->{controllerResult}) {
-		my $data= $c->stash->{controllerResult};
-		$jsonStr= ref $data? $self->encoder->encode($data) : $data;
+		};
 	}
 	else {
-		die "None of exception, jsonData, json, controllerResult were specified.  Cannot render.";
+		$json= $c->stash->{json} || $c->stash->{jsonData} || $c->stash->{controllerResult}
+			or die "None of exception, json, jsonData, controllerResult were specified.  Cannot render.";
 	}
 	
-	# The ExtJS form submission must be delivered as encoded HTML, so that ExtJS can extract the string from the IFrame
+	$self->setJsonBody($c, $json);
+}
+
+sub setJsonBody {
+	my ($self, $c, $json)= @_;
+	
+	my $encoding= $c->stash->{encoding} || $self->encoding;
+	my $rct= $c->stash->{requestContentType};
+	DEBUG('controller', 'rendering json for request content type ', $rct, json => $json);
+	
+	(!ref $json) or $json= $self->encoder->encode($json);
+	
+	$c->res->header('Cache-Control' => 'no-cache');
+	
 	if ($rct eq 'text/x-rapidapp-form-response') {
-		$jsonStr= encode_entities($jsonStr);
+		my $hdr= $c->res->headers;
+		my %headers= map { $_ => $hdr->header($_) } $hdr->header_field_names;
+		my $headerJson= $self->encoder->encode(\%headers);
+		
+		$c->res->content_type("text/html; charset=$encoding");
+		$c->res->body(
+			'<html><body>'.
+				'<textarea id="json">'.encode_entities($json).'</textarea>'.
+				'<textarea id="header_json">'.encode_entities($headerJson).'</textarea>'.
+			'</body></html>'
+		);
 	}
-	
-	$c->res->body($jsonStr);
+	else {
+		$c->res->content_type("application/json; charset=$encoding");
+		$c->res->body($json);
+	}
 }
 
 sub getUserMessage {

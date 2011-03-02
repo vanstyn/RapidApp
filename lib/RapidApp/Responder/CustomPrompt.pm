@@ -39,20 +39,15 @@ sub customprompt_json {
 sub writeResponse {
 	my ($self, $c)= @_;
 	
+	$c->response->header('X-RapidApp-CustomPrompt' => $self->customprompt_json);
 	$c->response->status(500);
-	$c->response->content_type('text/html');
 	
 	my $rct= $c->stash->{requestContentType};
-	if ($rct eq 'text/x-rapidapp-form-response') {
-		# Because ExtJS must read the string from the source of an IFrame, we must encode in HTML
-		my $json= RapidApp::JSON::MixedEncoder::encode_json({
-			'X-RapidApp-CustomPrompt' => $self->customprompt_json,
-			success => \0,
-		});
-		$c->response->body(encode_entities($json));
+	if ($rct eq 'text/x-rapidapp-form-response' || $rct eq 'JSON') {
+		$c->stash->{json}= { success => \0 };
+		$c->view('RapidApp::JSON')->process($c);
 	}
 	else {
-		$c->response->header('X-RapidApp-CustomPrompt' => $self->customprompt_json);
 		unless (length($c->response->body) > 0) {
 			$c->response->content_type('text/plain; charset=utf-8');
 			$c->response->body("More user input was needed to complete your request, but we can only send prompts through dynamic javascript requests");

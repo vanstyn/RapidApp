@@ -497,7 +497,7 @@ has 'customprompt_button' => (
 	lazy => 1,
 	default => sub {
 		my $self = shift;
-		return $self->c->req->header('X-RapidApp-CustomPrompt-Button');
+		return $self->c->req->header('X-RapidApp-CustomPrompt-Button') || $self->c->req->params->{'X-RapidApp-CustomPrompt-Button'};
 	}
 );
 
@@ -509,7 +509,7 @@ has 'customprompt_data' => (
 	lazy => 1,
 	default => sub {
 		my $self = shift;
-		my $rawdata = $self->c->req->header('X-RapidApp-CustomPrompt-Data');
+		my $rawdata = $self->c->req->header('X-RapidApp-CustomPrompt-Data') || $self->c->req->params->{'X-RapidApp-CustomPrompt-Data'};
 		return {} unless (defined $rawdata);
 		return $self->json->decode($rawdata);
 	}

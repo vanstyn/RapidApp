@@ -23,7 +23,7 @@ sub process {
 	$c->stash->{longStatusText}  ||= $_longMessages{$stat} || "<no details>";
 	$c->stash->{errorViewPath}   ||= $c->rapidApp->errorViewPath;
 	
-	if ($c->response->status == 404) {
+	if ($stat == 404) {
 		$c->stash->{template} = 'templates/rapidapp/http-404.tt';
 		$c->stash->{attemptedUrl}= $c->req->path;
 	}

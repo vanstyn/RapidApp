@@ -21,32 +21,20 @@ around 'BUILDARGS' => sub {
 sub writeResponse {
 	my ($self, $c)= @_;
 	
-	$c->stash->{exception}= $self;
-	
 	my $text= $self->userMessage;
 	if (!$self->isHtml) {
 		$text= join('<br />', encode_entities(split "\n", $text));
 	}
 	
-	$c->response->status(500);
-	$c->response->content_type("text/html");
-	
 	my $rct= $c->stash->{requestContentType};
-	if ($rct eq 'JSON') {
-		$c->response->body("Error: ".$text);
-	}
-	elsif ($rct eq 'text/x-rapidapp-form-response') {
-		# Because ExtJS must read the string from the source of an IFrame, we must encode in HTML
-		# But, form responses must be JSON, so we encode the JSON as HTML.  (yes, it's ugly)
-		my $json= RapidApp::JSON::MixedEncoder::encode_json({
-			'X-RapidApp-Exception' => 1,
-			msg => $text,
-			success => \0,
-		});
-		$c->response->body(encode_entities($json));
+	if ($rct eq 'JSON' || $rct eq 'text/x-rapidapp-form-response') {
+		$c->stash->{exception}= $self;
+		$c->forward('View::RapidApp::JSON');
 	}
 	else {
-		$c->response->body("Error: ".$text);
+		$c->response->status(500);
+		$c->stash->{longStatusText}= $text;
+		$c->forward('View::RapidApp::HttpStatus');
 	}
 }
 

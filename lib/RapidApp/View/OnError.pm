@@ -39,9 +39,11 @@ sub process {
 	}
 	
 	my $err= $errors[0];
+	my $rct= $c->stash->{requestContentType};
+	DEBUG('controller', 'OnError->process( rct == '.$rct.' )');
 	
 	# on exceptions, we either generate a 500, or a JSON response to the same effect
-	if ($c->stash->{requestContentType} eq 'JSON') {
+	if ($rct eq 'JSON' || $rct eq 'text/x-rapidapp-form-response') {
 		$c->stash->{exception}= $err;
 		$c->view('RapidApp::JSON')->process($c);
 	}
