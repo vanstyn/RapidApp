@@ -63,10 +63,11 @@ sub _create_channel {
 
 sub _debug_data_to_text {
 	my ($self, $data)= @_;
+	defined $data or return '<undef>';
 	ref $data or return $data;
 	ref $data eq 'CODE' and return &$data;
 	my $dump= Data::Dumper->new([$data], [''])->Indent(1)->Maxdepth(5)->Dump;
-	$dump =~ s/^[^{]+//;
+	$dump= substr($dump, 4);
 	length($dump) > 2000
 		and $dump= substr($dump, 0, 2000)."\n...\n...";
 	return $dump;
