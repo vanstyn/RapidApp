@@ -56,7 +56,7 @@ sub ra_die {
 }
 
 sub usererr {
-	return RapidApp::Error::UserError->new(@_);
+	return RapidApp::Responder::UserError->new(@_);
 }
 
 # debug stuff to the log
