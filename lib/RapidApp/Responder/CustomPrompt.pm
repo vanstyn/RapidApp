@@ -40,7 +40,7 @@ sub writeResponse {
 	my ($self, $c)= @_;
 	
 	$c->response->header('X-RapidApp-CustomPrompt' => $self->customprompt_json);
-	$c->response->status(500);
+	#$c->response->status(500);
 	
 	my $rct= $c->stash->{requestContentType};
 	if ($rct eq 'text/x-rapidapp-form-response' || $rct eq 'JSON') {
