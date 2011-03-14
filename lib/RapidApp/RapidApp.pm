@@ -62,7 +62,7 @@ sub BUILD {
 
 sub _setup_finalize {
 	my $self= shift;
-	$self->performModulePreload() if ($self->preloadModules);
+	$self->performModulePreload() if ($self->preloadModules && !$ENV{NO_PRELOAD_MODULES});
 }
 
 sub _build_rootModule {
