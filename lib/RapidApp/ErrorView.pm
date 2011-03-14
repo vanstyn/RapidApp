@@ -56,6 +56,7 @@ sub BUILD {
 		gen_error => 'gen_error',
 		gen_usererror => 'gen_usererror',
 		gen_dbicerr => 'gen_dbicerr',
+		gen_custprompt => 'gen_custprompt',
 	);
 	
 	$self->apply_extconfig(
@@ -236,6 +237,20 @@ sub gen_dbicerr {
 		next unless $m->isa('Catalyst::Model::DBIC::Schema');
 		my @row= $m->storage->dbh->selectrow_array("NONSENSICAL SQL QUERY THAT WILL THROW AN EXCEPTION");
 	}
+}
+
+sub gen_custprompt {
+	my $self= shift;
+	die RapidApp::Responder::CustomPrompt->new(
+		title	  => 'Testing CustomPrompt',
+		items	  => { xtype => 'box', html => '<h2>Testing</h2>' },
+		buttons => [ 'It Works', "It doesn't work" ],
+		height  => 100,
+		width   => 300,
+		formpanel_cnf => {
+			labelAlign	=> 'top'
+		}
+	);
 }
 
 =pod

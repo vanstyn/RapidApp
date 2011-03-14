@@ -47,7 +47,7 @@ sub BUILD {
 	
 	my @colOpts= (
 		id      => { width =>  30, header => 'ID' },
-		when    => { width => 120, header => 'Date' },
+		when    => { width => 120, header => 'Date', render_fn => 'Ext.ux.RapidApp.renderUtcDate' },
 		summary => { width => 900, header => 'Summary' },
 		report  => { hidden => \1 },
 	);
@@ -59,17 +59,23 @@ sub BUILD {
 }
 
 sub getjs_simpleRequestor {
-	my ($self, $url)= @_;
-	return 'function() { Ext.Ajax.request( { url: "'.$url.'" } ); }';
+	my ($self, $url, $params)= @_;
+	return mixedjs 'function() { Ext.Ajax.request( ',
+		{ url => $url,
+		  success => rawjs('function (response, opts) { Ext.Msg.alert("success"); }'),
+		  failure => rawjs('function (response, opts) { Ext.Msg.alert("failure"); }'),
+		  params => $params,
+		}, ' ); }';
 }
 
 sub options_menu_items {
 	my $self= shift;
 	return [
-		{ text => 'Generate Internal Error', handler => rawjs $self->getjs_simpleRequestor($self->suburl('item/gen_error')) },
-		{ text => 'Generate User Error', handler => rawjs $self->getjs_simpleRequestor($self->suburl('item/gen_usererror')) },
-		{ text => 'Generate Perl Exception', handler => rawjs $self->getjs_simpleRequestor($self->suburl('item/gen_die')) },
-		{ text => 'Generate DBIC Exception', handler => rawjs $self->getjs_simpleRequestor($self->suburl('item/gen_dbicerr')) },
+		{ text => 'Generate Internal Error', handler => $self->getjs_simpleRequestor($self->suburl('item/gen_error')) },
+		{ text => 'Generate User Error',     handler => $self->getjs_simpleRequestor($self->suburl('item/gen_usererror')) },
+		{ text => 'Generate Perl Exception', handler => $self->getjs_simpleRequestor($self->suburl('item/gen_die')) },
+		{ text => 'Generate DBIC Exception', handler => $self->getjs_simpleRequestor($self->suburl('item/gen_dbicerr')) },
+		{ text => 'Generate CustomPrompt',   handler => $self->getjs_simpleRequestor($self->suburl('item/gen_custprompt')) },
 	];
 }
 
