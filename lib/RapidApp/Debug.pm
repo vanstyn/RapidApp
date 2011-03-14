@@ -43,7 +43,7 @@ sub _write {
 	
 	my $dest= $ch->dest || $self->dest || RapidApp::ScopedGlobals->get('log');
 	
-	if (!defined $dest) { print STDERR $msg; }
+	if (!defined $dest) { print STDERR $msg."\n"; }
 	elsif ($dest->can('debug')) { $dest->debug($msg); }
 	else { $dest->print($msg); }
 }
@@ -95,6 +95,15 @@ sub global_write {
 	unshift @_, $self;
 	goto &_write; # we don't want to mess up 'caller'
 }
+
+use Exporter qw( import );
+our @EXPORT_OK= 'DEBUG';
+
+sub DEBUG {
+	unshift @_, 'RapidApp::Debug';
+	goto &RapidApp::Debug::global_write; # we don't want to mess up 'caller'
+}
+
 
 # ----------------------------------------------------------------------------
 # Channel object
