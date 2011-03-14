@@ -345,7 +345,7 @@ around 'BUILD' => sub {
 				
 				#print STDERR '       ' . CYAN . BOLD . 'apply_columns: ' . $colname . CLEAR . "\n";
 				$self->apply_columns(
-					$colname => { field_cnf => $self->Module($module_name)->content }
+					$colname => { rel_combo_field_cnf => $self->Module($module_name)->content }
 				);
 			}
 			# --

@@ -219,6 +219,7 @@ Ext.ux.MultiFilter.StaticCombo = Ext.extend(Ext.form.ComboBox,{
 
 Ext.ux.MultiFilter.defaultConditionMap = {
 
+	'is'							: '=',
 	'is equal to'				: '=',
 	'is not equal to'			: '!=',
 	'before'						: '<',
@@ -331,6 +332,9 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			value_list.push(key);
 		});
 		
+		// Extra condition for use with rel_combo_field_cnf:
+		value_list.push('is');
+		
 		Ext.apply(this.cond_combo_cnf,{
 			value_list: value_list
 		});
@@ -349,7 +353,6 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		
 		this.initColumns();
 		
-		
 		/* These are declared here instead of in the base class above because we 
 		 * modify them later on, and we need to make sure they are attributes
 		 * of the instance and not the class itself
@@ -364,12 +367,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 					// On select, set the value and call configSelector() to recreate the criteria container:
 					select: function(combo) {
 						var criteria = combo.ownerCt;
-						
 						var val = combo.getRawValue();
-						//if(criteria.fieldNameMap[val]) {
-						//	val = criteria.fieldNameMap[val];
-						//}
-						
 						Ext.apply(criteria.field_combo_cnf,{
 							value: val
 						});
@@ -381,7 +379,27 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 				name: 'cond_combo',
 				itemId: 'cond_combo',
 				width: 100,
-				value_list: []
+				value_list: [],
+				listeners: {
+					select: function(combo) {
+						var criteria = combo.ownerCt;
+						var val = combo.getRawValue();
+						
+						if(val == criteria.last_cond_value) { return; }
+						if(val != 'is' && criteria.last_cond_value != 'is') { return; }
+						
+						Ext.apply(criteria.cond_combo_cnf,{
+							value: val,
+						});
+						
+						// Set criteria.last_cond_value (used above and also in configSelector login below)
+						Ext.apply(criteria,{
+							last_cond_value: val
+						});
+
+						criteria.configSelector();
+					}
+				}
 			},
 			datafield_cnf: {
 				xtype	: 'textfield',
@@ -445,10 +463,10 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			if (column && column.filter && column.filter.type) {
 				this.condType = column.filter.type;
 			}
-			
-			if (column && column.field_cnf) {
+
+			if (column && column.rel_combo_field_cnf && this.last_cond_value == 'is') {
 				cust_dfield_cnf = {};
-				Ext.apply(cust_dfield_cnf,column.field_cnf);
+				Ext.apply(cust_dfield_cnf,column.rel_combo_field_cnf);
 				delete cust_dfield_cnf.id;
 				delete cust_dfield_cnf.width;
 			}
