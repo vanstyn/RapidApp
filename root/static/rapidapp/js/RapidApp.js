@@ -6,6 +6,11 @@ Ext.log = function() {};
 
 Ext.ns('Ext.ux.RapidApp');
 
+Ext.ns('Ext.ux.RapidApp.userPrefs');
+Ext.ux.RapidApp.userPrefs.timezone= 'America/New_York';
+Ext.ux.RapidApp.userPrefs.timezoneOffset= -5*60;
+Ext.ux.RapidApp.userPrefs.dateFormat= 'Y M j, g:i a';
+Ext.ux.RapidApp.userPrefs.nearDateFormat= 'D M j, g:i a';
 
 Ext.ns('Ext.ux.form.FormConnectorField');
 Ext.ux.form.FormConnectorField = Ext.extend(Ext.form.Hidden, {
@@ -174,7 +179,11 @@ Ext.Ajax.on('requestexception',Ext.ux.RapidApp.ajaxHideGlobalMask,this);
  *   to see if we want to interrupt the current one.
  */
 Ext.override(Ext.data.Connection,{
-
+	//request_orig: Ext.data.Connection.prototype.request,
+	//request: function(opts) {
+	//	return this.request_orig(opts);
+	//},
+	
 	handleResponse_orig: Ext.data.Connection.prototype.handleResponse,
 	handleResponse : function(response){
 		this.fireEvent('requestcomplete',this,response,response.argument.options);
@@ -3067,3 +3076,24 @@ Ext.ux.RapidApp.ComponentDataView = Ext.extend(Ext.ux.ComponentDataView,{
 	}
 });
 Ext.reg('rcompdataview', Ext.ux.RapidApp.ComponentDataView);
+
+Ext.ux.RapidApp.renderUtcDate= function(dateStr) {
+	try {
+		var dt= new Date(Date.parseDate(dateStr, "Y-m-d g:i:s"));
+		var now= new Date();
+		var utc= dt.getTime();
+		dt.setTime(utc + Ext.ux.RapidApp.userPrefs.timezoneOffset*60*1000);
+		var fmt= (now.getTime() - dt.getTime() > 1000*60*60*24*365)? Ext.ux.RapidApp.userPrefs.dateFormat : Ext.ux.RapidApp.userPrefs.nearDateFormat;
+		return '<span class="RapidApp-dt"><s>'+utc+'</s>'+dt.format(fmt)+'</span>';
+	} catch (err) {
+		return dateStr + " GMT";
+	}
+}
+
+Ext.ux.RapidApp.checkLocalTimezone = function(conn,options) {
+	if (!options.headers) { options.headers= {}; }
+	var dt= new Date();
+	Ext.ux.RapidApp.userPrefs.timezoneOffset= dt.getTimezoneOffset();
+	options.headers['X-RapidApp-TimezoneOffset']= Ext.ux.RapidApp.userPrefs.timezoneOffset;
+};
+Ext.Ajax.on('beforerequest',Ext.ux.RapidApp.checkLocalTimezone);

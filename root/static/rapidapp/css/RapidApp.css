@@ -555,3 +555,7 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 	padding-top:1px!important;
 	padding-bottom:1px!important;
 }
+
+.RapidApp-dt s {
+	display: none;
+}
