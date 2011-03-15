@@ -20,8 +20,8 @@ our $VERSION = '0.1';
 use DateTime::Format::Flexible;
 use DateTime;
 
+use RapidApp::Include qw(sugar perlutil);
 
-use Term::ANSIColor qw(:constants);
 
 #### --------------------- ####
 
@@ -44,6 +44,7 @@ has 'base_search_set'    		=> ( is => 'ro',	default => undef );
 
 ###########################################################################################
 
+sub c { return RapidApp::ScopedGlobals->get("catalystInstance"); }
 
 sub BUILD {
 	my $self = shift;
@@ -164,7 +165,25 @@ sub data_fetch {
 			push @{$params->{columns}}, $filter->{field} if ($filter->{field});
 		}
 	}
-
+	
+	
+	# vv ---
+	# Add composit_fields from dbf_virtual_fields to the column list:
+	if($params->{columns} and $self->dbf_virtual_fields) {
+		my %add = ();
+		foreach my $col (@{$params->{columns}}) {
+			delete $add{$col} if ($add{$col}); # <-- no need to add if its already in the column list
+			next unless (
+				ref($self->dbf_virtual_fields->{$col}) eq 'HASH' and
+				ref($self->dbf_virtual_fields->{$col}->{composit_fields}) eq 'ARRAY'
+			);
+			foreach my $composit (@{$self->dbf_virtual_fields->{$col}->{composit_fields}}) {
+				$add{$composit}++;
+			}
+		}
+		push @{$params->{columns}},keys %add;
+	}
+	# ^^ ---
 
 
 	my $Attr		= $params->{Attr_spec};		# <-- Optional custom Attr_spec override
@@ -667,8 +686,18 @@ sub safe_create_row {
 sub transform_select_item {
 	my $self = shift;
 	my $col = shift;
-	return $col unless (defined $self->dbf_virtual_fields);
-	return $self->dbf_virtual_fields->{$col} ? $self->dbf_virtual_fields->{$col} : $col;
+	return $col unless (
+		defined $self->dbf_virtual_fields and
+		defined $self->dbf_virtual_fields->{$col}
+	);
+	
+	my $virt = $self->dbf_virtual_fields->{$col};
+	# the database function can either be specified as the value directly, 
+	# or as a subkey 'function' within the value (if its a HashRef):
+	return $virt->{function} if (ref($virt) eq 'HASH' and defined $virt->{function});
+	return $virt;
+	
+	#return $self->dbf_virtual_fields->{$col} ? $self->dbf_virtual_fields->{$col} : $col;
 }
 
 
