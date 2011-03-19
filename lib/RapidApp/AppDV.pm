@@ -108,7 +108,7 @@ has 'xtemplate_cnf' => (
 			
 			return
 				'<div class="appdv-click-el edit:' . $column . '" style="float: right;padding-top:4px;padding-left:4px;cursor:pointer;"><img src="/static/rapidapp/images/pencil_tiny.png"></div>' .
-				'<div class="appdv-field-value ' . $column . '">{' . $column . '}</div>';
+				'<div class="appdv-field-value ' . $column . '"><div class="data">{' . $column . '}</div></div>';
 			#'</div>';
 		});
 		

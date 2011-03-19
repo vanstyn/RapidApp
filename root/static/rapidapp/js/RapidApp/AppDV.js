@@ -46,28 +46,31 @@ Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 	
 	//console.dir(topEl);
 	
-	var valueEl = topEl.child('div.appdv-field-value.' + fieldname); 
+	var valueEl = topEl.child('div.appdv-field-value.' + fieldname);
+	var dataEl = valueEl.child('div.data');
+	if (valueEl.hasClass('editing')) {
+		valueEl.removeClass('editing');
+		dv.FieldCmp[fieldname].destroy();
+		dataEl.show();
+	}
+	else {
+		valueEl.addClass('editing');
+		
+		var Record = dv.getStore().getAt(index);
+		
+		var Field = new Ext.form.TextField({
+			name: fieldname,
+			value: Record.data[fieldname],
+			renderTo: valueEl
+		});
+		
+		dataEl.hide();
+		Field.show();
+		if(!Ext.isObject(dv.FieldCmp)) { dv.FieldCmp = {} }
+		dv.FieldCmp[fieldname] = Field;
+		
+	}
 	
-	console.dir(valueEl);
-	
-	
-	
-	//console.dir(clickParent);
-	
-	var Record = dv.getStore().getAt(index);
-	
-	//console.dir(event);
-	
-	
-	//var target = event.getTarget();
-	//console.dir(htmlEl);
-	//console.dir(target);
-	
-	
-	//console.dir(event.getRelatedTarget());
-	
-	//console.dir(Record);
-	//console.dir(arguments);
 
 }
 
