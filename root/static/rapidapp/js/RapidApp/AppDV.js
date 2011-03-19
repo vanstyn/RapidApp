@@ -47,16 +47,29 @@ Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 	//console.dir(topEl);
 	
 	var valueEl = topEl.child('div.appdv-field-value.' + fieldname);
+	//if (!valueEl) { return; }
+	
 	var dataEl = valueEl.child('div.data');
+	var Store = dv.getStore()
+	var Record = Store.getAt(index);
+	
 	if (valueEl.hasClass('editing')) {
+	
+		var Field = dv.FieldCmp[fieldname];
+		var val = Field.getValue();
+	
+		Record.set(fieldname,val);
+		//Record.commit();
+		Store.save();
+	
 		valueEl.removeClass('editing');
 		dv.FieldCmp[fieldname].destroy();
-		dataEl.show();
+		dataEl.setVisible(true);
 	}
 	else {
 		valueEl.addClass('editing');
 		
-		var Record = dv.getStore().getAt(index);
+		
 		
 		var Field = new Ext.form.TextField({
 			name: fieldname,
@@ -64,7 +77,8 @@ Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 			renderTo: valueEl
 		});
 		
-		dataEl.hide();
+		dataEl.setVisibilityMode(Ext.Element.DISPLAY);
+		dataEl.setVisible(false);
 		Field.show();
 		if(!Ext.isObject(dv.FieldCmp)) { dv.FieldCmp = {} }
 		dv.FieldCmp[fieldname] = Field;
