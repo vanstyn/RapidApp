@@ -21,10 +21,12 @@ Ext.ux.RapidApp.AppDV.edit_field_handler = function(field,args) {
 
 Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 	var target = event.getTarget(null,null,true);
-	var clickParent = target.parent('div.appdv-click-el');
-	if(!clickParent) { return; }
+
+	var clickEl = target;
+	if(!clickEl.hasClass('appdv-click-el')) { clickEl = target.parent('div.appdv-click-el'); }
+	if(!clickEl) { return; }
 	
-	var node = clickParent.dom;
+	var node = clickEl.dom;
 	// Needed for IE:
 	var classList = node.classList;
 	if(! classList) {
@@ -77,6 +79,25 @@ Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 		});
 		
 		var Field = Ext.ComponentMgr.create(cnf,'field');
+
+		if(Field.resizable) {
+			var resizer = new Ext.Resizable(Field.wrap, {
+				pinned: true,
+				handles: 's,e,se',
+				width: 600,
+				height: 200,
+				minWidth: 600,
+				minHeight: 200,
+				dynamic: true,
+				listeners : {
+					'resize' : function(resizable, height, width) {
+						Field.setSize(height,width);
+					}
+				}
+			});
+		}
+
+
 		
 		dataEl.setVisibilityMode(Ext.Element.DISPLAY);
 		dataEl.setVisible(false);

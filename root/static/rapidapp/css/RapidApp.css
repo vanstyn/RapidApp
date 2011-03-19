@@ -403,7 +403,31 @@ html, body { height:100%; }
 }
 
 
+.appdv-edit-box {
+	visibility:hidden;
+	position: absolute; 
+	top: 0; 
+	right: 0;
+	padding-top:4px;
+	padding-left:4px;
+	cursor:	pointer;
+	z-index:500;
+	font-size: 10px;
+	font-family: arial;
+	background:url(/static/rapidapp/images/pencil_tiny.png) center right no-repeat floralwhite;
+	padding:1px 14px 1px 1px;
+	white-space:nowrap;
+	color: blue;
+	font-weight: normal;
+	text-decoration:underline;
+	border-style: dotted;
+	border-width: 1px;
+	border-color: blue;
+}
 
+.appdv-field-value:hover, .appdv-field-value:hover .appdv-edit-box {
+	visibility:visible;
+}
 
 .GreenSheetWrap1 {
 border: 1px #999999 solid !important;

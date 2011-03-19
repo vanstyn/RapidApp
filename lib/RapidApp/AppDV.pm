@@ -86,8 +86,11 @@ has 'xtemplate_cnf' => (
 			$self->FieldCmp->{$Column->name} = $Column->get_field_config;
 
 			return
-				'<div class="appdv-click-el edit:' . $Column->name . '" style="float: right;padding-top:4px;padding-left:4px;cursor:pointer;"><img src="/static/rapidapp/images/pencil_tiny.png"></div>' .
-				'<div class="appdv-field-value ' . $Column->name . '"><div class="data">{' . $Column->name . '}</div></div>';
+				#'<div class="appdv-click-el edit:' . $Column->name . '" style="float: right;padding-top:4px;padding-left:4px;cursor:pointer;"><img src="/static/rapidapp/images/pencil_tiny.png"></div>' .
+				'<div class="appdv-field-value ' . $Column->name . '" style="position:relative;">' .
+					'<div class="data">{' . $Column->name . '}</div>' .
+					'<div class="appdv-click-el edit:' . $Column->name . ' appdv-edit-box">edit</div>' .
+				'</div>';
 			#'</div>';
 		});
 		
