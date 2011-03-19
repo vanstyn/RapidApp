@@ -19,6 +19,39 @@ Ext.ux.RapidApp.AppDV.edit_field_handler = function(field,args) {
 }
 
 
+Ext.ns('Ext.ux.form');
+Ext.ux.form.FieldTip = Ext.extend(Object, {
+    init: function(field){
+        field.on({
+            focus: function(){
+                if(!this.tip){
+                    this.tip = new Ext.Tip({
+                        title: this.qtitle,
+                        html: this.qtip,
+                    });
+                }
+                this.tip.showBy(this.el, 'tl-tr?');
+            },
+            blur: function(){
+                if(this.tip){
+                    this.tip.hide();
+                }
+            },
+            destroy: function(){
+                if(this.tip){
+                    this.tip.destroy();
+                    delete this.tip;
+                }
+            }
+        });
+    }
+});
+Ext.preg('fieldtip', Ext.ux.form.FieldTip);
+
+
+
+
+
 Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 	var target = event.getTarget(null,null,true);
 
@@ -52,6 +85,7 @@ Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 	//if (!valueEl) { return; }
 	
 	var dataEl = valueEl.child('div.data');
+	var fieldEl = valueEl.child('div.fieldholder');
 	var Store = dv.getStore()
 	var Record = Store.getAt(index);
 	
@@ -75,7 +109,8 @@ Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 		Ext.apply(cnf,dv.FieldCmp_cnf[fieldname]);
 		Ext.apply(cnf,{
 			value: Record.data[fieldname],
-			renderTo: valueEl
+			//renderTo: valueEl
+			renderTo: fieldEl
 		});
 		
 		var Field = Ext.ComponentMgr.create(cnf,'field');

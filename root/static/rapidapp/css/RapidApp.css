@@ -403,9 +403,15 @@ html, body { height:100%; }
 }
 
 
+
+
+.editing .appdv-save-box {
+	display:block;
+}
+
 .appdv-edit-box {
 	visibility:hidden;
-	position: absolute; 
+	position: absolute;
 	top: 0; 
 	right: 0;
 	padding-top:4px;
@@ -427,6 +433,18 @@ html, body { height:100%; }
 
 .appdv-field-value:hover, .appdv-field-value:hover .appdv-edit-box {
 	visibility:visible;
+}
+
+
+.appdv-edit-box + .save, .editing .appdv-edit-box {
+	display:none;
+}
+
+.editing .appdv-edit-box + .save {
+	display:block;
+	visibility:visible;
+	position: relative;
+	float:right;
 }
 
 .GreenSheetWrap1 {
