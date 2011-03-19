@@ -79,7 +79,10 @@ has 'xtemplate_cnf' => (
 				height => 10,
 				width => 10,
 				#xtype => 'hops-editnotetoolbtn',
-				handler => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppDV.edit_field_handler' ),
+				handler => RapidApp::JSONFunc->new( 
+					raw => 1, 
+					func => 'function() { Ext.ux.RapidApp.AppDV.edit_field_handler.call(this,"' . $column . '"); }'
+				),
 				renderTarget => 'div.' . $column . '_edit_field_lnk',
 				applyValue => $self->record_pk,
 			};

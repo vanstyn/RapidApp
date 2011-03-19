@@ -8,8 +8,8 @@ Ext.ux.RapidApp.AppDV.ClickBox = Ext.extend(Ext.ux.RapidApp.ClickBox, {
 Ext.reg('appdv-clickbox', Ext.ux.RapidApp.AppDV.ClickBox);
 
 
-Ext.ux.RapidApp.AppDV.edit_field_handler = function() {
-	console.log(this.value);
+Ext.ux.RapidApp.AppDV.edit_field_handler = function(field) {
+	console.log(field + ': ' + this.value);
 	//console.log('Ext.ux.RapidApp.AppDV.edit_field_handler');
 	//console.dir(arguments);
 }
