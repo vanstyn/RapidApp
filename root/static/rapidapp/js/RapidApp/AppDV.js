@@ -55,7 +55,7 @@ Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 	
 	if (valueEl.hasClass('editing')) {
 	
-		var Field = dv.FieldCmp[fieldname];
+		var Field = dv.FieldCmp[index][fieldname];
 		var val = Field.getValue();
 	
 		Record.set(fieldname,val);
@@ -63,25 +63,27 @@ Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 		Store.save();
 	
 		valueEl.removeClass('editing');
-		dv.FieldCmp[fieldname].destroy();
+		dv.FieldCmp[index][fieldname].destroy();
 		dataEl.setVisible(true);
 	}
 	else {
 		valueEl.addClass('editing');
 		
-		
-		
-		var Field = new Ext.form.TextField({
-			name: fieldname,
+		var cnf = {};
+		Ext.apply(cnf,dv.FieldCmp_cnf[fieldname]);
+		Ext.apply(cnf,{
 			value: Record.data[fieldname],
 			renderTo: valueEl
 		});
+		
+		var Field = Ext.ComponentMgr.create(cnf,'field');
 		
 		dataEl.setVisibilityMode(Ext.Element.DISPLAY);
 		dataEl.setVisible(false);
 		Field.show();
 		if(!Ext.isObject(dv.FieldCmp)) { dv.FieldCmp = {} }
-		dv.FieldCmp[fieldname] = Field;
+		if(!Ext.isObject(dv.FieldCmp[index])) { dv.FieldCmp[index] = {} }
+		dv.FieldCmp[index][fieldname] = Field;
 		
 	}
 	

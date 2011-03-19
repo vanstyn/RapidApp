@@ -1,12 +1,12 @@
 package RapidApp::AppDV;
 # Editable DataView class
 
-
 use warnings;
 use Moose;
 extends 'RapidApp::AppCmp';
 with 'RapidApp::Role::DataStore2';
 
+use RapidApp::Include qw(sugar perlutil);
 
 use Template;
 use RapidApp::RecAutoload;
@@ -44,7 +44,7 @@ sub BUILD {
 sub load_xtemplate {
 	my $self = shift;
 	$self->apply_extconfig( tpl => $self->xtemplate );
-	#$self->apply_extconfig( items => $self->cmpdv_items );
+	$self->apply_extconfig( FieldCmp_cnf => $self->FieldCmp );
 }
 
 
@@ -60,7 +60,7 @@ sub xtemplate {
 }
 
 
-has 'cmpdv_items' => ( is => 'rw', isa => 'ArrayRef', default => sub {[]} );
+has 'FieldCmp' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 
 has 'xtemplate_cnf' => ( 
 	is => 'ro', 
@@ -70,45 +70,24 @@ has 'xtemplate_cnf' => (
 		my $self = shift;
 	
 		my $tpl_vars = {};
-		my $cmpdv_items = [];
-		
-		my $cmpdv_items_add = sub {
-			my $column = shift;
-			push @$cmpdv_items, {
-				xtype => 'appdv-clickbox',
-				cls => 'hops-note-edit',
-				#qtip => 'Edit',
-				height => 10,
-				width => 10,
-				handler => RapidApp::JSONFunc->new( 
-					raw => 1, 
-					func => 'function() { Ext.ux.RapidApp.AppDV.edit_field_handler.call(this,"' . $column . '",arguments); }'
-				),
-				renderTarget => 'div.' . $column . '_edit_field_lnk',
-				applyValue => $self->record_pk,
-			};
-		};
 		
 		$tpl_vars->{field} = RapidApp::RecAutoload->new( process_coderef => sub {
-			my $column = shift;
-			return '' unless ($self->columns->{$column});
-			$cmpdv_items_add->($column);
+			my $name = shift;
+			my $Column = $self->columns->{$name} or return '';
+			$self->FieldCmp->{$Column->name} = $Column->get_field_config;
 			
-			return '<div class="' . $column . '">{' . $column . '}</div>';
+			return '<div class="' . $Column->name . '">{' . $Column->name . '}</div>';
 		});
 		
 		$tpl_vars->{edit_field} = RapidApp::RecAutoload->new( process_coderef => sub {
+			my $name = shift;
+			my $Column = $self->columns->{$name} or return '';
 			
-			my $column = shift;
-			return '' unless ($self->columns->{$column});
-			$cmpdv_items_add->($column);
-			
-			#return '<div class="appdv-click-el edit:' . $column . '">' . 
-				#'<div class="' . $column . '_edit_field_lnk" style="float: right;padding-top:4px;padding-left:4px;"></div>' .
-			
+			$self->FieldCmp->{$Column->name} = $Column->get_field_config;
+
 			return
-				'<div class="appdv-click-el edit:' . $column . '" style="float: right;padding-top:4px;padding-left:4px;cursor:pointer;"><img src="/static/rapidapp/images/pencil_tiny.png"></div>' .
-				'<div class="appdv-field-value ' . $column . '"><div class="data">{' . $column . '}</div></div>';
+				'<div class="appdv-click-el edit:' . $Column->name . '" style="float: right;padding-top:4px;padding-left:4px;cursor:pointer;"><img src="/static/rapidapp/images/pencil_tiny.png"></div>' .
+				'<div class="appdv-field-value ' . $Column->name . '"><div class="data">{' . $Column->name . '}</div></div>';
 			#'</div>';
 		});
 		
@@ -117,8 +96,6 @@ has 'xtemplate_cnf' => (
 		my $Template = Template->new({ INCLUDE_PATH => $self->tt_include_path });
 		$Template->process($self->tt_file,$tpl_vars,\$html_out)
 			or die usererr $Template->error;
-		
-		$self->cmpdv_items($cmpdv_items);
 		
 		return $html_out;
 		}
