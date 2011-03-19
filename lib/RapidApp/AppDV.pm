@@ -27,12 +27,14 @@ sub BUILD {
 	my $self = shift;
 
 	$self->apply_extconfig(
-		xtype				=> 'rcompdataview',
+		xtype				=> 'dataview',
 		autoHeight		=> \1,
 		multiSelect		=> \1,
 		simpleSelect	=> \1,
 		#tpl				=> $self->xtemplate
 	);
+	
+	$self->add_listener( click => 'Ext.ux.RapidApp.AppDV.click_handler' );
 	
 	# FIXME: call this once instead of on every request:
 	$self->add_ONREQUEST_calls('load_xtemplate');
@@ -42,7 +44,7 @@ sub BUILD {
 sub load_xtemplate {
 	my $self = shift;
 	$self->apply_extconfig( tpl => $self->xtemplate );
-	$self->apply_extconfig( items => $self->cmpdv_items );
+	#$self->apply_extconfig( items => $self->cmpdv_items );
 }
 
 
@@ -78,10 +80,9 @@ has 'xtemplate_cnf' => (
 				#qtip => 'Edit',
 				height => 10,
 				width => 10,
-				#xtype => 'hops-editnotetoolbtn',
 				handler => RapidApp::JSONFunc->new( 
 					raw => 1, 
-					func => 'function() { Ext.ux.RapidApp.AppDV.edit_field_handler.call(this,"' . $column . '"); }'
+					func => 'function() { Ext.ux.RapidApp.AppDV.edit_field_handler.call(this,"' . $column . '",arguments); }'
 				),
 				renderTarget => 'div.' . $column . '_edit_field_lnk',
 				applyValue => $self->record_pk,
@@ -102,11 +103,13 @@ has 'xtemplate_cnf' => (
 			return '' unless ($self->columns->{$column});
 			$cmpdv_items_add->($column);
 			
-			return '<div class="' . $column . '">' . 
-				'<div class="' . $column . '_edit_field_lnk" style="float: right;padding-top:4px;padding-left:4px;"></div>' .
-				#'<div class="' . $column . '_edit_field_lnk" style="float: right;padding-top:4px;padding-left:4px;cursor:pointer;"><img src="/static/rapidapp/images/pencil_tiny.png"></div>' .
-				'{' . $column . '}' .
-			'</div>';
+			#return '<div class="appdv-click-el edit:' . $column . '">' . 
+				#'<div class="' . $column . '_edit_field_lnk" style="float: right;padding-top:4px;padding-left:4px;"></div>' .
+			
+			return
+				'<div class="appdv-click-el edit:' . $column . '" style="float: right;padding-top:4px;padding-left:4px;cursor:pointer;"><img src="/static/rapidapp/images/pencil_tiny.png"></div>' .
+				'<div class="appdv-field-value ' . $column . '">{' . $column . '}</div>';
+			#'</div>';
 		});
 		
 		my $html_out = '';
