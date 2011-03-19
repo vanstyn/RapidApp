@@ -45,7 +45,7 @@ sub _write {
 	
 	if (!defined $dest) { print STDERR $msg."\n"; }
 	elsif ($dest->can('debug')) { $dest->debug($msg); }
-	else { $dest->print($msg); }
+	else { $dest->print($msg."\n"); }
 }
 
 sub _autocreate_channel {
@@ -67,9 +67,11 @@ sub _debug_data_to_text {
 	ref $data or return $data;
 	ref $data eq 'CODE' and return &$data;
 	my $dump= Data::Dumper->new([$data], [''])->Indent(1)->Maxdepth(5)->Dump;
-	$dump= substr($dump, 4);
-	length($dump) > 2000
-		and $dump= substr($dump, 0, 2000)."\n...\n...";
+	$dump= substr($dump, 4, length($dump)-6); # trim off "$ = " and ";\n"
+	length($dump) < 80 # inline short hashes
+		and $dump =~ s/\n\s*/ /g;
+	length($dump) > 2000 # truncate long hashes
+		and $dump= substr($dump, 0, 2000)."\n[...]\n";
 	return $dump;
 }
 
