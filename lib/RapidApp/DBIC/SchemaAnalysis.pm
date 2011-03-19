@@ -1,22 +1,45 @@
 package RapidApp::DBIC::SchemaAnalysis;
 use Moose::Role;
 
+use RapidApp::Debug 'DEBUG';
+
 requires 'schema';
 
-has 'related_columns' => ( is => 'ro', isa => 'HashRef', lazy_build => 1 );
-has 'auto_id_columns' => ( is => 'ro', isa => 'HashRef', lazy_build => 1 );
-has 'remap_fields_per_source' => ( is => 'ro', isa => 'HashRef', lazy_build => 1 );
+# map of {srcN} => $rsrc
+has 'valid_sources' => (is => 'ro', isa => 'HashRef[DBIx::Class::ResultSource]', lazy_build => 1 );
+
+# map of {colKey}{colKey} => 1
+has 'related_columns' => ( is => 'ro', isa => 'HashRef[HashRef]', lazy_build => 1 );
+
+# map of {srcN} => [ $colN, ... ]
+has 'auto_id_columns_per_source' => ( is => 'ro', isa => 'HashRef[ArrayRef]', lazy_build => 1 );
+
+# map of {colKey} => colKey
+has 'related_auto_id_columns' => ( is => 'ro', isa => 'HashRef', lazy_build => 1 );
+
+# map of {srcN} => \@cols
+has 'remap_fields_per_source' => ( is => 'ro', isa => 'HashRef[ArrayRef]', lazy_build => 1 );
 
 sub is_auto_id_col {
 	my ($self, $colKey)= @_;
-	return defined (shift)->auto_id_columns->{$colKey};
+	return defined $self->related_auto_id_columns->{$colKey};
+}
+
+sub _build_valid_sources {
+	my $self= shift;
+	my %sources= map { $_ => $self->schema->source($_) }
+		grep { !$self->schema->resultset($_)->result_class->can('CONSTANT_VALUES') }
+			$self->schema->sources;
+	DEBUG('export', 'valid sources: ' => keys %sources);
+	return \%sources;
 }
 
 sub _build_related_columns {
 	my $self= shift;
 	my $result= {};
-	for my $srcN ($self->schema->sources) {
-		my $rsrc= $self->schema->source($srcN);
+	my $srcHash= $self->valid_sources;
+	for my $srcN (keys %$srcHash) {
+		my $rsrc= $srcHash->{$srcN};
 		for my $relN ($rsrc->relationships) {
 			my $relInfo= $rsrc->relationship_info($relN);
 			my $foreignSrcN= $rsrc->related_source($relN)->source_name;
@@ -30,49 +53,70 @@ sub _build_related_columns {
 			}
 		}
 	}
-	DEBUG('export', related_columns => $result);
+	DEBUG('export', 'related columns' => $result);
 	return $result;
 }
 
-sub _build_auto_id_columns {
+sub _build_key_constraints_per_source {
+	my $self= shift;
+	
+}
+
+sub _build_dependable_keys_per_source {
+	my $self= shift;
+	
+}
+
+sub _build_auto_id_columns_per_source {
+	my $self= shift;
+	
+	my $result= {};
+	# for each source...
+	my $srcHash= $self->valid_sources;
+	for my $srcN (keys %$srcHash) {
+		my $rsrc= $srcHash->{$srcN};
+		$result->{$srcN}= [ grep { $rsrc->column_info($_)->{is_auto_increment} } $rsrc->columns ];
+	}
+	DEBUG('export', 'auto id columns' => $result);
+	return $result;
+}
+
+sub _build_related_auto_id_columns {
 	my $self= shift;
 	
 	my $result= {};
 	# for all sources...
-	for my $srcN ($self->schema->sources) {
-		my $rsrc= $self->schema->source($srcN);
-		
-		# For all auto_increment columns of this source...
-		for my $colN (grep { $rsrc->column_info($_)->{is_auto_increment} } $rsrc->columns) {
+	my $srcHash= $self->valid_sources;
+	for my $srcN (keys %$srcHash) {
+		for my $colN (@{$self->auto_id_columns_per_source->{$srcN}}) {
 			my $colKey= $srcN.'.'.$colN;
 			
-			# mark this column as a auti_id column
+			# this column depends on itself
 			$result->{$colKey}= $colKey;
 			
-			# now, for any chain of relations, mark those columns as auti_id dependent on this column.
+			# now, for any chain of relations, mark those columns as auto_id dependent on this column.
 			# (use a worklist algorithm, rather than recursion)
 			my @toCheck= keys %{$self->related_columns->{$colKey}};
 			my %seen= map { $_ => 1 } @toCheck;
-			while (scalar(@toCheck)) {
-				my $relCol= pop @toCheck;
+			while (my $relCol= pop @toCheck) {
 				$result->{$relCol}= $colKey;
 				push @toCheck, grep { $seen{$_}++ == 0 } keys %{$self->related_columns->{$relCol}};
 			}
 		}
 	}
-	DEBUG('export', auto_id_columns => $result);
+	DEBUG('export', 'all auto id col refs' => $result);
 	return $result;
 }
 
 sub _build_remap_fields_per_source {
 	my $self= shift;
 	my $result= {};
-	for my $srcN ($self->schema->sources) {
-		$result->{$srcN}=
-			grep { $self->is_auto_id_col($srcN.'.'.$_) }
-				$self->schema->source($srcN)->columns;
+	my $srcHash= $self->valid_sources;
+	for my $srcN (keys %$srcHash) {
+		$result->{$srcN}= [ grep { $self->is_auto_id_col($srcN.'.'.$_) } $srcHash->{$srcN}->columns ];
 	}
 	
+	DEBUG('export', 'fields which need remapped' => $result);
 	return $result;
 }
 
