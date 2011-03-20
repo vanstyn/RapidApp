@@ -12,7 +12,10 @@ has 'valid_sources' => (is => 'ro', isa => 'HashRef[DBIx::Class::ResultSource]',
 has 'related_columns' => ( is => 'ro', isa => 'HashRef[HashRef]', lazy_build => 1 );
 
 # map of {srcN} => [ $colN, ... ]
-has 'auto_id_columns_per_source' => ( is => 'ro', isa => 'HashRef[ArrayRef]', lazy_build => 1 );
+has 'auto_cols_per_source' => ( is => 'ro', isa => 'HashRef[ArrayRef]', lazy_build => 1 );
+
+# map of {srcN} => \@deps
+has 'col_depend_per_source' => ( is => 'ro', isa => 'HashRef[ArrayRef]', lazy_build => 1 );
 
 # map of {colKey} => colKey
 has 'related_auto_id_columns' => ( is => 'ro', isa => 'HashRef', lazy_build => 1 );
@@ -67,7 +70,7 @@ sub _build_dependable_keys_per_source {
 	
 }
 
-sub _build_auto_id_columns_per_source {
+sub _build_auto_cols_per_source {
 	my $self= shift;
 	
 	my $result= {};
@@ -81,6 +84,33 @@ sub _build_auto_id_columns_per_source {
 	return $result;
 }
 
+sub _build_col_depend_per_source {
+	my $self= shift;
+	
+	my $result= {};
+	my $srcHash= $self->valid_sources;
+	
+	# for each source ...
+	for my $srcN (keys %$srcHash) {
+		my @deps= ();
+		
+		# Add any dependencies
+		# TODO: we should process constraints here, not just auti-id columns.
+		# TODO: we can support multi-column constraints by adding a method which stringifies a
+		#    list of columns, and a list of values in a canonical maanner.
+		my $rsrc= $srcHash->{$srcN};
+		for my $colN ($rsrc->columns) {
+			my $colKey= $srcN.'.'.$colN;
+			my $originColKey= $self->related_auto_id_columns->{$colKey};
+			$originColKey && $originColKey ne $colKey
+				and push @deps, { col => $colN, origin_colKey => $originColKey };
+		}
+		
+		$result->{$srcN}= \@deps;
+	}
+	return $result;
+}
+
 sub _build_related_auto_id_columns {
 	my $self= shift;
 	
@@ -88,7 +118,7 @@ sub _build_related_auto_id_columns {
 	# for all sources...
 	my $srcHash= $self->valid_sources;
 	for my $srcN (keys %$srcHash) {
-		for my $colN (@{$self->auto_id_columns_per_source->{$srcN}}) {
+		for my $colN (@{$self->auto_cols_per_source->{$srcN}}) {
 			my $colKey= $srcN.'.'.$colN;
 			
 			# this column depends on itself

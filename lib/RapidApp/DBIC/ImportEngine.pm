@@ -3,6 +3,7 @@ use Moose;
 
 use Params::Validate ':all';
 use IO::Handle;
+use Try::Tiny;
 use RapidApp::Debug 'DEBUG';
 use RapidApp::JSON::MixedEncoder 'decode_json', 'encode_json';
 
@@ -13,27 +14,49 @@ with 'RapidApp::DBIC::SchemaAnalysis';
 # map of {ColKey}{read_id} => $saved_id
 has 'auto_id_map' => ( is => 'ro', isa => 'HashRef[HashRef[Str]]', default => sub {{}} );
 
-# map of {srcN}{primary_key} => \@unfinished_records
-has 'pending_records' => ( is => 'rw', isa => 'HashRef[HashRef[ArrayRef]]', default => sub {{}} );
+# map of {colKey}{missing_id} => [ [ $srcN, $rec, \@deps, $errMsg ], ... ]
+has 'records_missing_keys' => ( is => 'ro', isa => 'HashRef[HashRef[ArrayRef]]', default => sub {{}} );
+sub records_missing_keys_count {
+	my $self= shift;
+	my $cnt= 0;
+	map { map { $cnt+= scalar(@$_) } values %$_ } values %{$self->records_missing_keys};
+	return $cnt;
+}
+
+# array of [ [ $srcN, $rec, \@deps, $errMsg ], ... ]
+has 'records_failed_insert' => ( is => 'rw', isa => 'ArrayRef[ArrayRef]', default => sub {[]} );
 
 # map of {srcN}{primary_key} => 1
-has 'processed' => ( is => 'ro', isa => 'HashRef[HashRef]', default => sub {{}} );
+#has 'processed' => ( is => 'ro', isa => 'HashRef[HashRef]', default => sub {{}} );
 
 sub import_records {
 	my ($self, $src)= @_;
-	my $data;
+	my ($data, $cnt, $worklist);
 	$self->schema->txn_do( sub {
 		while (($data= $self->read_record($src))) {
 			$self->import_record($data);
 		}
-		if (scalar keys %{$self->pending_records}) {
-			my $cnt= 0;
-			map { map { $cnt+= scalar @$_ } values %$_ } values %{$self->pending_records};
-			if ($cnt > 0) {
-				$self->report_missing_keys ;
-				die "$cnt records could not be added due to missing dependencies\nSee /tmp/rapidapp_import_errors.txt for details\n";
+		
+		# if ($cnt= $self->records_missing_keys_count) {
+			# $self->report_missing_keys;
+			# die "$cnt records could not be added due to missing dependencies\nSee /tmp/rapidapp_import_errors.txt for details\n";
+		# }
+		
+		# keep trying to insert them until either no records get inserted, or until they all succeed
+		if (scalar @{$self->records_failed_insert}) {
+			do {
+				$worklist= $self->records_failed_insert;
+				$self->records_failed_insert([]);
+				
+				$self->perform_insert(@$_) for (@$worklist);
+			} while (scalar( @{$self->records_failed_insert} ) < scalar(@$worklist));
+			
+			if ($cnt= scalar @{$self->records_failed_insert}) {
+				$self->report_insert_errors;
+				die "$cnt records could not be added due to errors\nSee /tmp/rapidapp_import_errors.txt for details\n";
 			}
 		}
+		
 	});
 }
 
@@ -42,17 +65,24 @@ sub report_missing_keys {
 	
 	my $debug_fd= IO::File->new;
 	$debug_fd->open('/tmp/rapidapp_import_errors.txt', 'w') or die $!;
-	my $cnt= 0;
-	for my $srcN (keys %{$self->pending_records}) {
-		while (my ($pk, $recs)= each %{$self->pending_records->{$srcN}}) {
-			$debug_fd->print("Required $srcN = $pk\n");
+	for my $colKey (keys %{$self->records_missing_keys}) {
+		while (my ($colVal, $recs)= each %{$self->records_missing_keys->{$colKey}}) {
+			$debug_fd->print("Required $colKey = '$colVal' :\n");
 			$debug_fd->print("\t".encode_json($_)."\n") for (@$recs);
-			$cnt+= scalar @$recs;
 		}
 	}
-	$debug_fd->print("\nFound keys:\n");
-	for my $srcN (keys %{$self->processed}) {
-		$debug_fd->print("\t".$srcN."\t".$_."\n") for %{$self->processed->{$srcN}};
+	$debug_fd->close();
+}
+
+sub report_insert_errors {
+	my $self= shift;
+	
+	my $debug_fd= IO::File->new;
+	$debug_fd->open('/tmp/rapidapp_import_errors.txt', 'w') or die $!;
+	$debug_fd->print("Insertion Errors:\n");
+	for my $attempt (%{$self->{records_failed_insert}}) {
+		my ($srcN, $rec, $deps, $errMsg)= @_;
+		$debug_fd->print("insert $srcN\n\tRecord : ".encode_json($rec)."\n\tError  : $errMsg\n");
 	}
 	$debug_fd->close();
 }
@@ -81,10 +111,11 @@ sub import_record {
 	}
 	
 	# then calculate dependencies on other rows
-	my @deps= ($code= $resultClass->can('calculate_record_dependencies'))?
+	my $deps= ($code= $resultClass->can('calculate_record_dependencies'))?
 		$resultClass->$code($rec) : $self->calculate_dependencies($srcN, $rec);
 	
-	$self->perform_insert($srcN, $rec) if ($self->process_dependencies($srcN, $rec, \@deps));
+	my $remapped= $self->process_dependencies($srcN, $rec, $deps);
+	$self->perform_insert($srcN, $rec, $deps, $remapped) if $remapped;
 }
 
 sub get_primary_key_string {
@@ -102,105 +133,96 @@ sub stringify_pk {
 }
 
 sub perform_insert {
-	my ($self, $srcN, $rec)= @_;
+	my $self= shift;
+	my ($srcN, $rec, $deps, $remappedRec)= @_;
+	
 	DEBUG('export', 'perform_insert', $srcN, $rec);
 	
 	my $rs= $self->schema->resultset($srcN);
 	my $resultClass= $rs->result_class;
-	my ($code, $row, $pkstr);
-	
-	# calculate the primary key of this row
-	if ($pkstr= $self->get_primary_key_string($rs->result_source, $rec)) {
-		# mark it as seen, if the primary key is known at this point
-		($self->processed->{$srcN} ||= {})->{$pkstr}= 1;
-	}
-	
-	my @oldIds;
-	# there should just be zero or one, but we might extend this to auto-datetimes too
-	my @autoIdCols= @{$self->auto_id_columns_per_source->{$srcN} || []};
-	for my $colN (@autoIdCols) {
-		push @oldIds, delete $rec->{$colN};
-	}
+	my ($code, $row);
 	
 	# perform the insert, possibly calling the Result class to do the work
-	if ($code= $resultClass->can('import_create')) {
-		$row= $resultClass->$code($rs, $rec);
+	my $err;
+	try {
+		if ($code= $resultClass->can('import_create')) {
+			$row= $resultClass->$code($rs, $remappedRec, $rec);
+		} else {
+			$row= $rs->create($remappedRec);
+		}
 	}
-	else {
-		$row= $rs->create($rec);
+	catch {
+		$err= $_;
+	};
+	if ($err) {
+		# we'll try it again later
+		DEBUG('export', "\t[failed, deferred...]");
+		push @{$self->records_failed_insert}, [ @_ ];
+		return;
 	}
 	
 	# record any auto-id values that got generated
-	for my $colN (@autoIdCols) {
-		my $origVal= pop @oldIds;
+	my @autoCols= @{$self->auto_cols_per_source->{$srcN} || []};
+	my @pending;
+	for my $colN (@autoCols) {
+		my $origVal= $rec->{$colN};
 		my $newVal= $row->get_column($colN);
-		DEBUG('export', origVal => $origVal, newVal => $newVal, srcN => $srcN, colN => $colN);
-		($self->auto_id_map->{$srcN.'.'.$colN} ||= {})->{ $origVal }= $newVal;
+		my $colKey= $srcN.'.'.$colN;
+		($self->auto_id_map->{$colKey} ||= {})->{ $origVal }= $newVal;
+		my $pendingThisCol= $self->records_missing_keys->{$colKey} || {};
+		my $pendingThisKey= delete $pendingThisCol->{$origVal};
+		if ($pendingThisKey) {
+			DEBUG('export', "\t[resolved dep: $srcN.$colN  $origVal => $newVal");
+			push @pending, @$pendingThisKey;
+		}
 	}
 	
 	# now, insert any records that depended on this one (unless they have other un-met deps, in which case they get re-queued)
-	if ($pkstr && $self->pending_records->{$srcN}) {
-		if (my $pending= delete $self->pending_records->{$srcN}{$pkstr}) {
-			for my $p (@$pending) {
-				$self->perform_insert(@$p) if ($self->process_dependencies(@$p));
-			}
-		}
+	for (@pending) {
+		my $remapped= $self->process_dependencies(@$_);
+		$self->perform_insert(@$_, $remapped) if $remapped;
 	}
 }
 
 sub calculate_dependencies {
 	my ($self, $srcN, $rec)= @_;
-	my @deps;
-	
-	# for each field that needs remapped,  create a dependency that says this record depends on some primary-key of some source
-	# (we assume it is an auto-id column, since this is all we support now)
-	for my $colN (@{$self->remap_fields_per_source->{$srcN}}) {
-		if (defined $rec->{$colN}) {
-			#  find out what Source this value is coming from
-			my $srcCol= $self->related_auto_id_columns->{$srcN.'.'.$colN};
-			next if $srcCol eq $srcN.'.'.$colN;
-			
-			my ($peerSrcN)= split /[.]/, $srcCol;
-			# all auto-id columns will in fact be the single primary key value
-			# (hopefully this is true for all databases...)
-			push @deps, { srcN => $peerSrcN, pk => [ $rec->{$colN} ] };
-		}
-	}
-	return @deps;
+	return $self->col_depend_per_source->{$srcN} || [];
 }
 
 sub process_dependencies {
 	my $self= shift;
 	my ($srcN, $rec, $deps)= @_;
 	
-	# first, check to see if any are unresolved, and if so, queue it again and return false
-	for my $dep (@$deps) {
-		# to handle multiple-column primary keys, we combine the values into a single string
-		$dep->{pkstr} ||= stringify_pk(@{$dep->{pk}});
-		# if a record in that source by that primary key has not been inserted...
-		if (!$self->processed->{$dep->{srcN}}{$dep->{pkstr}}) {
-			# then we add this record to a list that will get re-attempted after that primary key gets processed.
-			my $pending= ($self->pending_records->{$dep->{srcN}}{$dep->{pkstr}} ||= []);
-			push @$pending, [ @_ ];
-			return 0;
-		}
-	}
+	my $remappedRec= { %$rec };
 	
-	# if they're all resolved, then swap the values
-	for my $colN (@{$self->remap_fields_per_source->{$srcN}}) {
-		if (defined $rec->{$colN}) {
-			# get the colKey of the table which defines the auto_id column
-			my $originatingCol= $self->related_auto_id_columns->{$srcN.'.'.$colN};
-			next if $originatingCol eq $srcN.'.'.$colN;
-			# get the translated value for our imported value of that column
-			my $newVal= $self->auto_id_map->{$originatingCol}->{$rec->{$colN}};
+	# Delete values for auto-generated keys
+	# there should just be zero or one for auto_increment, but we might extend this to auto-datetimes too
+	my @autoCols= @{$self->auto_cols_per_source->{$srcN} || []};
+	delete $remappedRec->{$_} for (@autoCols);
+	
+	# swap values of any fields that need remapped
+	for my $dep (@$deps) {
+		my $colN= $dep->{col};
+		my $oldVal= $rec->{$colN};
+		if (defined $oldVal) {
+			# find the new value for the key
+			my $newVal= $self->auto_id_map->{$dep->{origin_colKey}}->{$oldVal};
+			
+			# if we don't know it yet, we depend on this foreign column value.
+			# queue this record for later insertion.
+			if (!defined $newVal) {
+				my $pending= (($self->records_missing_keys->{$dep->{origin_colKey}} ||= {})->{$oldVal} ||= []);
+				push @$pending, [ @_ ];
+				DEBUG('export', "\t[delayed due to dependency: $srcN.$colN=$oldVal => ".$dep->{origin_colKey}."=?? ]");
+				return undef;
+			}
 			# swap it
-			$rec->{$colN}= $newVal;
+			$remappedRec->{$colN}= $newVal;
 		}
 	}
 	
 	# the record will now get inserted
-	return 1;
+	return $remappedRec;
 }
 
 no Moose;
