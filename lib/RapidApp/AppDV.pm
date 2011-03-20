@@ -113,7 +113,7 @@ has 'xtemplate_cnf' => (
 					'<div class="fieldholder"></div>' .
 					'<div class="appdv-click-el edit:' . $Column->name . ' appdv-edit-box">edit</div>' .
 					'<div class="appdv-click-el edit:' . $Column->name . ' appdv-edit-box save">save</div>' .
-					'<div class="appdv-click-el edit:' . $Column->name . ' appdv-edit-box cancel"><img src="/static/rapidapp/images/cross_tiny.png"></div>' .
+					'<div class="appdv-click-el edit:' . $Column->name . ' appdv-edit-box cancel"><img class="cancel" src="/static/rapidapp/images/cross_tiny.png"></div>' .
 				'</div>' .
 			'</div>';
 
