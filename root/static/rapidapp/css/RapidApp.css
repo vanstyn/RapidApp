@@ -404,11 +404,6 @@ html, body { height:100%; }
 
 
 
-
-.editing .appdv-save-box {
-	display:block;
-}
-
 .appdv-edit-box {
 	visibility:hidden;
 	position: absolute;
@@ -436,15 +431,23 @@ html, body { height:100%; }
 }
 
 
-.appdv-edit-box + .save, .editing .appdv-edit-box {
+.appdv-edit-box + .save, .appdv-edit-box + .cancel, .editing .appdv-edit-box {
 	display:none;
 }
 
-.editing .appdv-edit-box + .save {
+.editing .appdv-edit-box + .save, .editing .appdv-edit-box + .cancel {
 	display:block;
 	visibility:visible;
 	position: relative;
+	background:url(/static/rapidapp/images/cross_tiny.png) center right no-repeat floralwhite;
+	padding-right: 15px;
 	float:right;
+}
+
+.editing .appdv-edit-box + .save {
+	background:url(/static/rapidapp/images/bullet_disk.png) center right no-repeat floralwhite;
+	padding-right: 15px;
+	float:left;
 }
 
 .GreenSheetWrap1 {

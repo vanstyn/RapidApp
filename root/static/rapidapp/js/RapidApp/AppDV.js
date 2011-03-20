@@ -92,11 +92,12 @@ Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 	if (valueEl.hasClass('editing')) {
 	
 		var Field = dv.FieldCmp[index][fieldname];
-		var val = Field.getValue();
-	
-		Record.set(fieldname,val);
-		//Record.commit();
-		Store.save();
+		
+		if(!target.hasClass('cancel')) {
+			var val = Field.getValue();
+			Record.set(fieldname,val);
+			Store.save();
+		}
 	
 		valueEl.removeClass('editing');
 		dv.FieldCmp[index][fieldname].destroy();
@@ -112,6 +113,10 @@ Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 			//renderTo: valueEl
 			renderTo: fieldEl
 		});
+		
+		if(!cnf.width) {
+			cnf.width = dataEl.getWidth();
+		}
 		
 		var Field = Ext.ComponentMgr.create(cnf,'field');
 

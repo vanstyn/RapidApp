@@ -93,6 +93,7 @@ has 'xtemplate_cnf' => (
 					'<div class="fieldholder"></div>' .
 					'<div class="appdv-click-el edit:' . $Column->name . ' appdv-edit-box">edit</div>' .
 					'<div class="appdv-click-el edit:' . $Column->name . ' appdv-edit-box save">save</div>' .
+					'<div class="appdv-click-el edit:' . $Column->name . ' appdv-edit-box cancel">cancel</div>' .
 				#'</div>' .
 				'</div>';
 			#'</div>';
