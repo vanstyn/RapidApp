@@ -37,7 +37,7 @@ sub BUILD {
 
 	$self->apply_extconfig(
 		id					=> $self->instance_id,
-		xtype				=> 'rcompdataview',
+		xtype				=> 'appdv',
 		autoHeight		=> \1,
 		multiSelect		=> \1,
 		simpleSelect	=> \1,
@@ -135,7 +135,9 @@ has 'xtemplate_cnf' => (
 			# Apply optional overrides:
 			$cnf = { %$cnf, %{ $self->submodule_config_override->{$name} } } if ($self->submodule_config_override->{$name});
 			
-			$self->DVitems->{$name} = $cnf;
+			# Store component configs as serialized JSON to make sure
+			# they come out the same every time on the client side:
+			$self->DVitems->{$name} = $self->json->encode($cnf);
 			
 			return '<div class="appdv-submodule ' . $name . '"></div>';
 		});
