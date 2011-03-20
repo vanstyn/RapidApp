@@ -30,7 +30,9 @@ has 'submodule_config_override' => (
 	default   => sub { {} }
 );
 
-
+has '+DataStore_build_params' => ( default => sub {{
+	store_autoLoad => \1
+}});
 
 sub BUILD {
 	my $self = shift;
@@ -152,8 +154,15 @@ has 'xtemplate_cnf' => (
 		}
 );
 
-
-
+# Dummy read_records:
+sub read_records {
+	my $self = shift;
+	
+	return {
+		results => 1,
+		rows => [{ $self->record_pk => 1 }]
+	};
+}
 
 
 
