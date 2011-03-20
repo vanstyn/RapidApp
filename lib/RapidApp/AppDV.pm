@@ -9,7 +9,17 @@ with 'RapidApp::Role::DataStore2';
 use RapidApp::Include qw(sugar perlutil);
 
 use Template;
-use RapidApp::RecAutoload;
+use RapidApp::AppDV::TTController;
+
+has 'TTController'  => (
+	is => 'ro',
+	isa => 'RapidApp::AppDV::TTController',
+	lazy => 1,
+	default => sub {
+		my $self = shift;
+		return RapidApp::AppDV::TTController->new( AppDV => $self );
+	}
+);
 
 has 'tt_include_path' => ( 
 	is => 'ro', 
@@ -43,6 +53,7 @@ sub BUILD {
 		autoHeight		=> \1,
 		multiSelect		=> \1,
 		simpleSelect	=> \1,
+		overClass		=> 'record-over',
 		items => []
 		#tpl				=> $self->xtemplate
 	);
@@ -85,69 +96,11 @@ has 'xtemplate_cnf' => (
 	lazy => 1,
 	default => sub {
 		my $self = shift;
-	
-		my $tpl_vars = {};
-		
-		$tpl_vars->{field} = RapidApp::RecAutoload->new( process_coderef => sub {
-			my $name = shift;
-			my $Column = $self->columns->{$name} or return '';
-			$self->FieldCmp->{$Column->name} = $Column->get_field_config;
-			
-			return '<div class="' . $Column->name . '">{' . $Column->name . '}</div>';
-		});
-		
-		$tpl_vars->{edit_field} = RapidApp::RecAutoload->new( process_coderef => sub {
-			my $name = shift;
-			my $Column = $self->columns->{$name} or return '';
-			
-			$self->FieldCmp->{$Column->name} = $Column->get_field_config;
-
-
-			
-			return
-			
-			'<div class="appdv-click ' . $self->get_extconfig_param('id') . '">' .
-			
-				#'<div class="appdv-click-el edit:' . $Column->name . '" style="float: right;padding-top:4px;padding-left:4px;cursor:pointer;"><img src="/static/rapidapp/images/pencil_tiny.png"></div>' .
-				'<div class="appdv-field-value ' . $Column->name . '" style="position:relative;">' .
-				#'<div style="overflow:auto;">' .
-					'<div class="data">{' . $Column->name . '}</div>' .
-					'<div class="fieldholder"></div>' .
-					'<div class="appdv-click-el edit:' . $Column->name . ' appdv-edit-box">edit</div>' .
-					'<div class="appdv-click-el edit:' . $Column->name . ' appdv-edit-box save">save</div>' .
-					'<div class="appdv-click-el edit:' . $Column->name . ' appdv-edit-box cancel"><img class="cancel" src="/static/rapidapp/images/cross_tiny.png"></div>' .
-				'</div>' .
-			'</div>';
-
-		});
-		
-		
-		$tpl_vars->{submodule} = RapidApp::RecAutoload->new( process_coderef => sub {
-			my $name = shift;
-			
-			my $Module = $self->Module($name) or return '';
-			
-			my $cnf = {
-				%{ $Module->content },
-				
-				renderTarget => 'div.appdv-submodule.' . $name,
-				applyValue => $self->record_pk
-			};
-			
-			# Apply optional overrides:
-			$cnf = { %$cnf, %{ $self->submodule_config_override->{$name} } } if ($self->submodule_config_override->{$name});
-			
-			# Store component configs as serialized JSON to make sure
-			# they come out the same every time on the client side:
-			$self->DVitems->{$name} = $self->json->encode($cnf);
-			
-			return '<div class="appdv-submodule ' . $name . '"></div>';
-		});
 		
 		my $html_out = '';
 		
 		my $Template = Template->new({ INCLUDE_PATH => $self->tt_include_path });
-		$Template->process($self->tt_file,$tpl_vars,\$html_out)
+		$Template->process($self->tt_file,{ r => $self->TTController },\$html_out)
 			or die $Template->error;
 		
 		return $html_out;

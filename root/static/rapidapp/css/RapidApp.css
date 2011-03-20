@@ -451,6 +451,52 @@ html, body { height:100%; }
 	float:left;
 }
 
+
+
+
+
+.appdv-toggle {
+	visibility:hidden;
+	width: 30;
+	padding:4px 14px 1px 1px;
+	cursor:	pointer;
+	font-size: 11px;
+	font-family: arial;
+	background:url(/static/rapidapp/images/pencil_tiny.png) center right no-repeat;
+	white-space:nowrap;
+	color: blue;
+	font-weight: bold;
+	border-bottom-style: dotted;
+	border-bottom-width: 1px;
+	border-color: blue;
+	float:left;
+	clear:both;
+}
+
+.record-over:hover .appdv-toggle {
+	visibility:visible;
+	
+}
+
+
+.appdv-editable-value {
+	padding-right: 14px;
+}
+
+.appdv-editable-value:hover {
+	background:url(/static/rapidapp/images/pencil_tiny.png) center right no-repeat;
+	cursor:	pointer;
+}
+
+.appdv-editable-value:hover span {
+	border-bottom-style: dotted;
+	border-bottom-width: 1px;
+	border-color: blue;
+}
+
+
+/************************************/
+
 .GreenSheetWrap1 {
 border: 1px #999999 solid !important;
 margin : 3px !important;
