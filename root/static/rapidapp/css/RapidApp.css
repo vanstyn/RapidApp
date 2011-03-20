@@ -439,8 +439,9 @@ html, body { height:100%; }
 	display:block;
 	visibility:visible;
 	position: relative;
-	background:url(/static/rapidapp/images/cross_tiny.png) center right no-repeat floralwhite;
-	padding-right: 15px;
+	/*background:url(/static/rapidapp/images/cross_tiny.png) center right no-repeat floralwhite;*/
+	background: floralwhite;
+	padding-right: 1px;
 	float:right;
 }
 
