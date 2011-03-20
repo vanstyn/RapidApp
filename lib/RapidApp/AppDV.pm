@@ -27,6 +27,7 @@ sub BUILD {
 	my $self = shift;
 
 	$self->apply_extconfig(
+		id					=> $self->instance_id,
 		xtype				=> 'rcompdataview',
 		autoHeight		=> \1,
 		multiSelect		=> \1,
@@ -90,7 +91,12 @@ has 'xtemplate_cnf' => (
 			
 			$self->FieldCmp->{$Column->name} = $Column->get_field_config;
 
+
+			
 			return
+			
+			'<div class="appdv-click ' . $self->get_extconfig_param('id') . '">' .
+			
 				#'<div class="appdv-click-el edit:' . $Column->name . '" style="float: right;padding-top:4px;padding-left:4px;cursor:pointer;"><img src="/static/rapidapp/images/pencil_tiny.png"></div>' .
 				'<div class="appdv-field-value ' . $Column->name . '" style="position:relative;">' .
 				#'<div style="overflow:auto;">' .
@@ -99,9 +105,9 @@ has 'xtemplate_cnf' => (
 					'<div class="appdv-click-el edit:' . $Column->name . ' appdv-edit-box">edit</div>' .
 					'<div class="appdv-click-el edit:' . $Column->name . ' appdv-edit-box save">save</div>' .
 					'<div class="appdv-click-el edit:' . $Column->name . ' appdv-edit-box cancel"><img src="/static/rapidapp/images/cross_tiny.png"></div>' .
-				#'</div>' .
-				'</div>';
-			#'</div>';
+				'</div>' .
+			'</div>';
+
 		});
 		
 		

@@ -1,89 +1,11 @@
 Ext.ns('Ext.ux.RapidApp.AppDV');
 
-Ext.ux.RapidApp.AppDV.ClickBox = Ext.extend(Ext.ux.RapidApp.ClickBox, {
-	setValue: function(val) {
-		this.value = val;
-	}
-});
-Ext.reg('appdv-clickbox', Ext.ux.RapidApp.AppDV.ClickBox);
-
-Ext.ux.RapidApp.AppDV.afterrender_handler = function(dv) {
-	this.ModuleCmp = {};
-	
-	var dvEl = dv.getEl();
-	console.log(dv.itemSelector);
-	var selectorEl = dvEl.child(dv.itemSelector);
-	console.dir(selectorEl);
-	
-	
-	if(Ext.isObject(this.ModuleCmp_cnf)) {
-		Ext.iterate(this.ModuleCmp_cnf,function(module,cnf){
-			
-			console.log(cnf.renderToSelector);
-			
-			//console.dir(dvEl);
-			
-			console.dir(dvEl.child('div.appdv-submodule'));
-			
-			var renderDiv = dvEl.child(cnf.renderToSelector);
-			console.dir(renderDiv);
-			
-			cnf.renderTo = renderDiv;
-			
-			this.ModuleCmp[module] = Ext.ComponentMgr.create(cnf,'panel');
-			this.ModuleCmp[module].show();
-		},this);
-	}
-}
-
-Ext.ux.RapidApp.AppDV.edit_field_handler = function(field,args) {
-	console.log(field + ': ' + this.value);
-	var e = args[1];
-	var parent = e.parentNode;
-	
-	console.dir(parent);
-	//console.log('Ext.ux.RapidApp.AppDV.edit_field_handler');
-	console.dir(args);
-}
-
-
-Ext.ns('Ext.ux.form');
-Ext.ux.form.FieldTip = Ext.extend(Object, {
-    init: function(field){
-        field.on({
-            focus: function(){
-                if(!this.tip){
-                    this.tip = new Ext.Tip({
-                        title: this.qtitle,
-                        html: this.qtip,
-                    });
-                }
-                this.tip.showBy(this.el, 'tl-tr?');
-            },
-            blur: function(){
-                if(this.tip){
-                    this.tip.hide();
-                }
-            },
-            destroy: function(){
-                if(this.tip){
-                    this.tip.destroy();
-                    delete this.tip;
-                }
-            }
-        });
-    }
-});
-Ext.preg('fieldtip', Ext.ux.form.FieldTip);
-
-
-
-
 
 Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 	var target = event.getTarget(null,null,true);
 
-	console.dir(target);
+	// Limit processing to click nodes within this dataview (i.e. not in our submodules)
+	if(!target.findParent('div.appdv-click.' + dv.id)) { return; }
 
 	var clickEl = target;
 	if(!clickEl.hasClass('appdv-click-el')) { clickEl = target.parent('div.appdv-click-el'); }
