@@ -63,7 +63,7 @@ sub getjs_simpleRequestor {
 	return mixedjs 'function() { Ext.Ajax.request( ',
 		{ url => $url,
 		  success => rawjs('function (response, opts) { Ext.Msg.alert("success"); }'),
-		  failure => rawjs('function (response, opts) { Ext.Msg.alert("failure"); }'),
+		  #failure => rawjs('function (response, opts) { Ext.Msg.alert("failure"); }'),
 		  params => $params,
 		}, ' ); }';
 }
