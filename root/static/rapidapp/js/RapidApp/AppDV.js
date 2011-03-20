@@ -27,7 +27,7 @@ Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 	});
 	
 	if (!fieldname) { return; }
-	console.log(fieldname);
+	//console.log(fieldname);
 	
 	var topEl = new Ext.Element(domEl);
 	
@@ -70,22 +70,20 @@ Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 			contentEl: dataEl
 		});
 		
-		console.dir(dataEl);
+		//console.dir(dataEl);
 		
-		if(!cnf.width) {
-			cnf.width = dataEl.getWidth();
-		}
-		
+		if(!cnf.width) {	cnf.width = dataEl.getWidth(); }
+		if(!cnf.height) { cnf.height = dataEl.getHeight(); }
+		if(cnf.minWidth) { if(!cnf.width || cnf.width < cnf.minWidth) { cnf.width = cnf.minWidth; } }
+		if(cnf.minHeight) { if(!cnf.height || cnf.height < cnf.minHeight) { cnf.height = cnf.minHeight; } }
+				
 		var Field = Ext.ComponentMgr.create(cnf,'field');
 
 		if(Field.resizable) {
 			var resizer = new Ext.Resizable(Field.wrap, {
 				pinned: true,
-				handles: 's,e,se',
-				width: 600,
-				height: 200,
-				minWidth: 600,
-				minHeight: 200,
+				handles: 's',
+				//handles: 's,e,se',
 				dynamic: true,
 				listeners : {
 					'resize' : function(resizable, height, width) {
@@ -95,11 +93,6 @@ Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 			});
 		}
 
-
-		
-		
-		
-		
 		Field.show();
 		//dataEl.setVisibilityMode(Ext.Element.DISPLAY);
 		//dataEl.setVisible(false);
@@ -109,10 +102,7 @@ Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 		if(!Ext.isObject(dv.FieldCmp)) { dv.FieldCmp = {} }
 		if(!Ext.isObject(dv.FieldCmp[index])) { dv.FieldCmp[index] = {} }
 		dv.FieldCmp[index][fieldname] = Field;
-		
 	}
-	
-
 }
 
 
