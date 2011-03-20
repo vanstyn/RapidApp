@@ -52,8 +52,11 @@ Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 		}
 	
 		valueEl.removeClass('editing');
+		
+		//console.dir(dv.FieldCmp[index][fieldname].contentEl);
+		dv.FieldCmp[index][fieldname].contentEl.appendTo(valueEl);
 		dv.FieldCmp[index][fieldname].destroy();
-		dataEl.setVisible(true);
+		//dataEl.setVisible(true);
 	}
 	else {
 		valueEl.addClass('editing');
@@ -63,8 +66,11 @@ Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 		Ext.apply(cnf,{
 			value: Record.data[fieldname],
 			//renderTo: valueEl
-			renderTo: fieldEl
+			renderTo: fieldEl,
+			contentEl: dataEl
 		});
+		
+		console.dir(dataEl);
 		
 		if(!cnf.width) {
 			cnf.width = dataEl.getWidth();
@@ -91,9 +97,15 @@ Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 
 
 		
-		dataEl.setVisibilityMode(Ext.Element.DISPLAY);
-		dataEl.setVisible(false);
+		
+		
+		
 		Field.show();
+		//dataEl.setVisibilityMode(Ext.Element.DISPLAY);
+		//dataEl.setVisible(false);
+		
+		//Field.getEl().applyStyle(dataEl.getStyle());
+		
 		if(!Ext.isObject(dv.FieldCmp)) { dv.FieldCmp = {} }
 		if(!Ext.isObject(dv.FieldCmp[index])) { dv.FieldCmp[index] = {} }
 		dv.FieldCmp[index][fieldname] = Field;
