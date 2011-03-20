@@ -27,14 +27,17 @@ sub BUILD {
 	my $self = shift;
 
 	$self->apply_extconfig(
-		xtype				=> 'dataview',
+		xtype				=> 'rcompdataview',
 		autoHeight		=> \1,
 		multiSelect		=> \1,
 		simpleSelect	=> \1,
+		items => []
 		#tpl				=> $self->xtemplate
 	);
 	
-	$self->add_listener( click => 'Ext.ux.RapidApp.AppDV.click_handler' );
+	
+	#$self->add_listener( afterrender	=> 'Ext.ux.RapidApp.AppDV.afterrender_handler' );
+	$self->add_listener(	click 		=> 'Ext.ux.RapidApp.AppDV.click_handler' );
 	
 	# FIXME: call this once instead of on every request:
 	$self->add_ONREQUEST_calls('load_xtemplate');
@@ -45,6 +48,7 @@ sub load_xtemplate {
 	my $self = shift;
 	$self->apply_extconfig( tpl => $self->xtemplate );
 	$self->apply_extconfig( FieldCmp_cnf => $self->FieldCmp );
+	$self->apply_extconfig( items => [ values %{ $self->DVitems } ] );
 }
 
 
@@ -60,6 +64,7 @@ sub xtemplate {
 }
 
 
+has 'DVitems' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 has 'FieldCmp' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 
 has 'xtemplate_cnf' => ( 
@@ -99,11 +104,31 @@ has 'xtemplate_cnf' => (
 			#'</div>';
 		});
 		
+		
+		$tpl_vars->{submodule} = RapidApp::RecAutoload->new( process_coderef => sub {
+			my $name = shift;
+			
+			my $Module = $self->Module($name) or return '';
+			
+			#my $id = 'mod-' . $self->instance_id . '-' . $name;
+			
+			my $cnf = {
+				%{ $Module->content },
+				
+				renderTarget => 'div.appdv-submodule.' . $name,
+				applyValue => $self->record_pk
+			};
+			
+			$self->DVitems->{$name} = $cnf;
+			
+			return '<div class="appdv-submodule ' . $name . '"></div>';
+		});
+		
 		my $html_out = '';
 		
 		my $Template = Template->new({ INCLUDE_PATH => $self->tt_include_path });
 		$Template->process($self->tt_file,$tpl_vars,\$html_out)
-			or die usererr $Template->error;
+			or die $Template->error;
 		
 		return $html_out;
 		}

@@ -7,6 +7,34 @@ Ext.ux.RapidApp.AppDV.ClickBox = Ext.extend(Ext.ux.RapidApp.ClickBox, {
 });
 Ext.reg('appdv-clickbox', Ext.ux.RapidApp.AppDV.ClickBox);
 
+Ext.ux.RapidApp.AppDV.afterrender_handler = function(dv) {
+	this.ModuleCmp = {};
+	
+	var dvEl = dv.getEl();
+	console.log(dv.itemSelector);
+	var selectorEl = dvEl.child(dv.itemSelector);
+	console.dir(selectorEl);
+	
+	
+	if(Ext.isObject(this.ModuleCmp_cnf)) {
+		Ext.iterate(this.ModuleCmp_cnf,function(module,cnf){
+			
+			console.log(cnf.renderToSelector);
+			
+			//console.dir(dvEl);
+			
+			console.dir(dvEl.child('div.appdv-submodule'));
+			
+			var renderDiv = dvEl.child(cnf.renderToSelector);
+			console.dir(renderDiv);
+			
+			cnf.renderTo = renderDiv;
+			
+			this.ModuleCmp[module] = Ext.ComponentMgr.create(cnf,'panel');
+			this.ModuleCmp[module].show();
+		},this);
+	}
+}
 
 Ext.ux.RapidApp.AppDV.edit_field_handler = function(field,args) {
 	console.log(field + ': ' + this.value);
@@ -54,6 +82,8 @@ Ext.preg('fieldtip', Ext.ux.form.FieldTip);
 
 Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 	var target = event.getTarget(null,null,true);
+
+	console.dir(target);
 
 	var clickEl = target;
 	if(!clickEl.hasClass('appdv-click-el')) { clickEl = target.parent('div.appdv-click-el'); }

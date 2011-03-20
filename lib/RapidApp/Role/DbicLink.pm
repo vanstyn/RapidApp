@@ -77,6 +77,13 @@ has 'get_ResultSet_Handler' => ( is => 'ro', isa => 'Maybe[RapidApp::Handler]', 
 
 has 'literal_dbf_colnames' => ( is => 'ro', isa => 'ArrayRef', default => sub {[]} );
 
+sub ResultSet {
+	my $self = shift;
+	return $self->ResultSource->resultset unless ($self->get_ResultSet_Handler);
+	return $self->get_ResultSet_Handler->call;
+}
+
+
 has 'DbicExtQuery' => ( is => 'ro', lazy_build => 1 );
 sub _build_DbicExtQuery {
 	my $self = shift;
