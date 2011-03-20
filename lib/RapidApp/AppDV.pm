@@ -23,6 +23,15 @@ has 'tt_include_path' => (
 
 has 'tt_file' => ( is => 'ro', isa => 'Str', required => 1 );
 
+
+has 'submodule_config_override' => (
+	is        => 'ro',
+	isa       => 'HashRef[HashRef]',
+	default   => sub { {} }
+);
+
+
+
 sub BUILD {
 	my $self = shift;
 
@@ -116,14 +125,15 @@ has 'xtemplate_cnf' => (
 			
 			my $Module = $self->Module($name) or return '';
 			
-			#my $id = 'mod-' . $self->instance_id . '-' . $name;
-			
 			my $cnf = {
 				%{ $Module->content },
 				
 				renderTarget => 'div.appdv-submodule.' . $name,
 				applyValue => $self->record_pk
 			};
+			
+			# Apply optional overrides:
+			$cnf = { %$cnf, %{ $self->submodule_config_override->{$name} } } if ($self->submodule_config_override->{$name});
 			
 			$self->DVitems->{$name} = $cnf;
 			
