@@ -48,6 +48,7 @@ sub div_clickable_field {
 				'<table><tr>' .
 					'<td class="data">' .
 						'<div class="data-inner">{' . $name . '}</div>' .
+						'<div class="fieldholder"></div>' .
 					'</td>' .
 									
 					'<td class="icons">' .

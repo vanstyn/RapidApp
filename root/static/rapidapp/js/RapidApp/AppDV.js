@@ -97,12 +97,13 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		}
 		if(!topmostEl.child('div.clickable')) { return; }
 		
+		//var topEl = new Ext.Element(domEl);
+		//var editEl = topEl.child('div.editable-value');
+		
 		var editEl = target.parent('div.editable-value');
 		if(editEl) {
 			return this.handle_edit_click(target,editEl,index);
 		}
-	
-	
 	},
 	handle_edit_click: function (target,editEl,index) {
 		var fieldnameEl = editEl.child('div.field-name');
@@ -111,13 +112,10 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		var fieldname = fieldnameEl.dom.innerHTML;
 		if(!fieldname) { return; }
 		//console.log(fieldname);
-		
-		//var dataEl = editEl.down('div.data');
-		//console.dir(editEl);
-		
+
 		var dataWrap = editEl.child('table').child('tr').child('td.data');
+		var fieldholderEl = dataWrap.child('div.fieldholder');
 		var dataEl = dataWrap.child('div.data-inner');
-		//console.dir(dataEl);
 		
 		var Store = this.getStore()
 		var Record = Store.getAt(index);
@@ -138,9 +136,12 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			editEl.removeClass('editing');
 			
 			//console.dir(dv.FieldCmp[index][fieldname].contentEl);
-			this.FieldCmp[index][fieldname].contentEl.appendTo(dataWrap);
-			this.FieldCmp[index][fieldname].destroy();
-			//dataEl.setVisible(true);
+			var Fld = this.FieldCmp[index][fieldname];
+			if(Fld.contentEl) {
+				Fld.contentEl.appendTo(dataWrap);
+			}
+			Fld.destroy();
+			dataEl.setVisible(true);
 		}
 		else {
 			editEl.addClass('editing');
@@ -149,9 +150,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			Ext.apply(cnf,this.FieldCmp_cnf[fieldname]);
 			Ext.apply(cnf,{
 				value: Record.data[fieldname],
-				//renderTo: valueEl
-				renderTo: dataWrap,
-				contentEl: dataEl
+				renderTo: dataWrap
+				//contentEl: dataEl
 			});
 			
 			//console.dir(dataEl);
@@ -160,8 +160,19 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			if(!cnf.height) { cnf.height = dataEl.getHeight(); }
 			if(cnf.minWidth) { if(!cnf.width || cnf.width < cnf.minWidth) { cnf.width = cnf.minWidth; } }
 			if(cnf.minHeight) { if(!cnf.height || cnf.height < cnf.minHeight) { cnf.height = cnf.minHeight; } }
-					
-			var Field = Ext.ComponentMgr.create(cnf,'field');
+			
+			if(Ext.isIE) {
+				dataEl.setVisibilityMode(Ext.Element.DISPLAY);
+				dataEl.setVisible(false);
+			}
+			else {
+				// Stupid IE can't do it with contentEl, but we want to do the contentEl
+				// way because if we use the hide method the element jumps in an
+				// ungly way in FF.
+				cnf.contentEl = dataEl;
+			}
+			
+			var Field = Ext.create(cnf,'field');
 
 			if(Field.resizable) {
 				var resizer = new Ext.Resizable(Field.wrap, {
@@ -176,21 +187,13 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 					}
 				});
 			}
-
-			Field.show();
-			//dataEl.setVisibilityMode(Ext.Element.DISPLAY);
-			//dataEl.setVisible(false);
 			
-			//Field.getEl().applyStyle(dataEl.getStyle());
+			Field.show();
 			
 			if(!Ext.isObject(this.FieldCmp)) { this.FieldCmp = {} }
 			if(!Ext.isObject(this.FieldCmp[index])) { this.FieldCmp[index] = {} }
 			this.FieldCmp[index][fieldname] = Field;
-				
-				
-			
 		}
-		//console.dir(editEl);
 	}
 });
 Ext.reg('appdv', Ext.ux.RapidApp.AppDV.DataView);
