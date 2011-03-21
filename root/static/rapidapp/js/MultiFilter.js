@@ -389,7 +389,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 						if(val != 'is' && criteria.last_cond_value != 'is') { return; }
 						
 						Ext.apply(criteria.cond_combo_cnf,{
-							value: val,
+							value: val
 						});
 						
 						// Set criteria.last_cond_value (used above and also in configSelector login below)

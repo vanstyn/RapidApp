@@ -52,8 +52,8 @@ sub div_clickable_field {
 									
 					'<td class="icons">' .
 						'<div class="edit">&nbsp;</div>' .
-						'<div class="save">&nbsp;</div>' .
-						'<div class="cancel">&nbsp;</div>' .
+						'<div class="save" title="save">&nbsp;</div>' .
+						'<div class="cancel" title="cancel">&nbsp;</div>' .
 					'</td>' .
 					
 					

@@ -110,14 +110,14 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 		var fieldname = fieldnameEl.dom.innerHTML;
 		if(!fieldname) { return; }
-		console.log(fieldname);
+		//console.log(fieldname);
 		
 		//var dataEl = editEl.down('div.data');
 		//console.dir(editEl);
 		
 		var dataWrap = editEl.child('table').child('tr').child('td.data');
 		var dataEl = dataWrap.child('div.data-inner');
-		console.dir(dataEl);
+		//console.dir(dataEl);
 		
 		var Store = this.getStore()
 		var Record = Store.getAt(index);
