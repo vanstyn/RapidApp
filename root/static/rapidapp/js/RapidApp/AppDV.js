@@ -85,8 +85,98 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		  Ext.destroy(this.components[index]);
 		  this.components.splice(index, 1);
 	 },
-	click_controller: function(dv, index, domEl, event) {
+	set_field_editable: function(editEl,fieldname,index,Record) {
+		
+		var dataWrap = editEl.child('div.data-wrapper');
+		var dataEl = editEl.child('div.data-holder');
+		var fieldEl = editEl.child('div.field-holder');
+		
+		
+		editEl.addClass('editing');
+
+		var cnf = {};
+		Ext.apply(cnf,this.FieldCmp_cnf[fieldname]);
+		Ext.apply(cnf,{
+			value: Record.data[fieldname],
+			//renderTo: dataWrap
+			renderTo: fieldEl
+			//contentEl: dataEl
+		});
+		
+		//console.dir(dataEl);
+		
+		if(!cnf.width) {	cnf.width = dataEl.getWidth(); }
+		if(!cnf.height) { cnf.height = dataEl.getHeight(); }
+		if(cnf.minWidth) { if(!cnf.width || cnf.width < cnf.minWidth) { cnf.width = cnf.minWidth; } }
+		if(cnf.minHeight) { if(!cnf.height || cnf.height < cnf.minHeight) { cnf.height = cnf.minHeight; } }
+		
+		if(Ext.isIE) {
+			dataEl.setVisibilityMode(Ext.Element.DISPLAY);
+			dataEl.setVisible(false);
+		}
+		else {
+			// Stupid IE can't do it with contentEl, but we want to do the contentEl
+			// way because if we use the hide method the element jumps in an
+			// ungly way in FF.
+			cnf.contentEl = dataEl;
+		}
+		
+		var Field = Ext.create(cnf,'field');
+
+		if(Field.resizable) {
+			var resizer = new Ext.Resizable(Field.wrap, {
+				pinned: true,
+				handles: 's',
+				//handles: 's,e,se',
+				dynamic: true,
+				listeners : {
+					'resize' : function(resizable, height, width) {
+						Field.setSize(height,width);
+					}
+				}
+			});
+		}
+		
+		Field.show();
+		
+		if(!Ext.isObject(this.FieldCmp)) { this.FieldCmp = {} }
+		if(!Ext.isObject(this.FieldCmp[index])) { this.FieldCmp[index] = {} }
+		this.FieldCmp[index][fieldname] = Field;
+	},
+	
+	save_field_data: function(editEl,fieldname,index,Record) {
+		if(!editEl.hasClass('editing')) { return false; }
+		
+		var Field = this.FieldCmp[index][fieldname];
+			
+		if(!Field.validate()) { return false; }
+		var val = Field.getValue();
+		Record.set(fieldname,val);
+		
+		return true;
+	},
+	
+	cancel_field_editable: function(editEl,fieldname,index,Record) {
+	
+		editEl.removeClass('editing');
+		
+		var dataWrap = editEl.child('div.data-wrapper');
+		var dataEl = editEl.child('div.data-holder');
+		var fieldEl = editEl.child('div.field-holder');
+			
+		//console.dir(dv.FieldCmp[index][fieldname].contentEl);
+		var Fld = this.FieldCmp[index][fieldname];
+		if(Fld.contentEl) {
+			Fld.contentEl.appendTo(dataWrap);
+		}
+		Fld.destroy();
+		dataEl.setVisible(true);
+	
+	},
+	
+	click_controller: function(dv, index, domNode, event) {
 		var target = event.getTarget(null,null,true);
+		var domEl = new Ext.Element(domNode);
 
 		// Limit processing to click nodes within this dataview (i.e. not in our submodules)
 		var topmostEl = target.findParent('div.appdv-tt-generated.' + dv.id,null,true);
@@ -98,103 +188,123 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		var clickableEl = topmostEl.child('div.clickable');
 		if(!clickableEl) { return; }
 
+		var Store = this.getStore();
+		var Record = Store.getAt(index);
+		
 		var editEl = clickableEl.child('div.editable-value');
 		if(editEl) {
+			return this.handle_edit_field(target,editEl,Record,index,domEl);
+		}
 		
-			//console.dir(editEl);
-		
-			return this.handle_edit_click(target,editEl,index);
+		editEl = clickableEl.child('div.edit-record-toggle');
+		if(editEl) {
+			return this.handle_edit_record(target,editEl,Record,index,domEl);
 		}
 	},
-	handle_edit_click: function (target,editEl,index) {
-		
+	get_fieldname_by_editEl: function(editEl) {
 		var fieldnameEl = editEl.child('div.field-name');
-		if(!fieldnameEl) { return; }
+		if(!fieldnameEl) { return false; }
 		
-		var fieldname = fieldnameEl.dom.innerHTML;
+		return fieldnameEl.dom.innerHTML;
+	},
+	handle_edit_field: function (target,editEl,Record,index,domEl) {
+		
+		// abort if the entire record is in edit mode:
+		if(domEl.hasClass('editing-record')) { return; }
+		
+		// abort if another record is already being updated:
+		if(domEl.parent().hasClass('record-update')) { return; }
+		
+		var fieldname = this.get_fieldname_by_editEl(editEl);
 		if(!fieldname) { return; }
 		
 		var dataWrap = editEl.child('div.data-wrapper');
 		var dataEl = editEl.child('div.data-holder');
 		var fieldEl = editEl.child('div.field-holder');
 
-		var Store = this.getStore()
-		var Record = Store.getAt(index);
-		
 		if (editEl.hasClass('editing')) {
 		
 			var Field = this.FieldCmp[index][fieldname];
 			
 			if(target.hasClass('save')) {
-				var val = Field.getValue();
-				Record.set(fieldname,val);
-				Store.save();
+				if(!this.save_field_data(editEl,fieldname,index,Record)) { return; }
+				this.getStore().save();
 			}
 			else {
 				if(!target.hasClass('cancel')) { return; }
 			}
 		
-			editEl.removeClass('editing');
-			
-			//console.dir(dv.FieldCmp[index][fieldname].contentEl);
-			var Fld = this.FieldCmp[index][fieldname];
-			if(Fld.contentEl) {
-				Fld.contentEl.appendTo(dataWrap);
-			}
-			Fld.destroy();
-			dataEl.setVisible(true);
+			this.cancel_field_editable(editEl,fieldname,index,Record);
 		}
 		else {
-			editEl.addClass('editing');
-
-			var cnf = {};
-			Ext.apply(cnf,this.FieldCmp_cnf[fieldname]);
-			Ext.apply(cnf,{
-				value: Record.data[fieldname],
-				//renderTo: dataWrap
-				renderTo: fieldEl
-				//contentEl: dataEl
-			});
+			this.set_field_editable(editEl,fieldname,index,Record);
+		}
+		
+	},
+	handle_edit_record: function (target,editEl,Record,index,domEl) {
+		
+		var editDoms = domEl.query('div.editable-value');
+		var editEls = [];
+		Ext.each(editDoms,function(dom) {
+			editEls.push(new Ext.Element(dom));
+		});
+		
+		
+		//console.dir(editEls);
+		
+		if(domEl.hasClass('editing-record')) {  
+		
+			var save = false;
 			
-			//console.dir(dataEl);
-			
-			if(!cnf.width) {	cnf.width = dataEl.getWidth(); }
-			if(!cnf.height) { cnf.height = dataEl.getHeight(); }
-			if(cnf.minWidth) { if(!cnf.width || cnf.width < cnf.minWidth) { cnf.width = cnf.minWidth; } }
-			if(cnf.minHeight) { if(!cnf.height || cnf.height < cnf.minHeight) { cnf.height = cnf.minHeight; } }
-			
-			if(Ext.isIE) {
-				dataEl.setVisibilityMode(Ext.Element.DISPLAY);
-				dataEl.setVisible(false);
+			if(target.hasClass('save')) {
+				save = true;
 			}
 			else {
-				// Stupid IE can't do it with contentEl, but we want to do the contentEl
-				// way because if we use the hide method the element jumps in an
-				// ungly way in FF.
-				cnf.contentEl = dataEl;
+				if(!target.hasClass('cancel')) { return; }
 			}
-			
-			var Field = Ext.create(cnf,'field');
-
-			if(Field.resizable) {
-				var resizer = new Ext.Resizable(Field.wrap, {
-					pinned: true,
-					handles: 's',
-					//handles: 's,e,se',
-					dynamic: true,
-					listeners : {
-						'resize' : function(resizable, height, width) {
-							Field.setSize(height,width);
-						}
+		
+			var success = true;
+			Ext.each(editEls,function(editEl) {
+				var fieldname = this.get_fieldname_by_editEl(editEl);
+				if(!fieldname) { return; }
+				
+				if(save) {
+					if(!this.save_field_data(editEl,fieldname,index,Record)) { 
+						success = false;
+						return;
 					}
-				});
+				}
+			},this);
+			
+			var Store = this.getStore();
+			
+			if(!success) { 
+				Store.rejectChanges();
+				return; 
 			}
 			
-			Field.show();
+			Ext.each(editEls,function(editEl) {
+				var fieldname = this.get_fieldname_by_editEl(editEl);
+				this.cancel_field_editable(editEl,fieldname,index,Record);
+			},this);
 			
-			if(!Ext.isObject(this.FieldCmp)) { this.FieldCmp = {} }
-			if(!Ext.isObject(this.FieldCmp[index])) { this.FieldCmp[index] = {} }
-			this.FieldCmp[index][fieldname] = Field;
+			domEl.removeClass('editing-record');
+			domEl.parent().removeClass('record-update');
+			return Store.save();
+		}
+		else {
+			// abort if another record is already being updated:
+			if(domEl.parent().hasClass('record-update')) { return; }
+		
+			domEl.parent().addClass('record-update');
+			domEl.addClass('editing-record');
+			
+		
+			Ext.each(editEls,function(editEl) {
+				var fieldname = this.get_fieldname_by_editEl(editEl);
+				this.set_field_editable(editEl,fieldname,index,Record);
+			},this);
+
 		}
 	}
 });

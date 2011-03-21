@@ -32,22 +32,22 @@ sub div_wrapper {
 
 sub div_clickable {
 	my $self = shift;
-	return '<div class="clickable">' . 
-		(shift) . 
-	'</div>';
+	return $self->div_wrapper(
+		'<div class="clickable">' . 
+			(shift) . 
+		'</div>'
+	);
 }
 
 
 sub div_editable_value{
 	my $self = shift;
 	my $name = shift;
-	return $self->div_wrapper(
-		$self->div_clickable(
-			'<div class="editable-value">' .
-				'<div class="field-name" style="display:none;">' . $name . '</div>' .
-				(shift) .
-			'</div>'
-		)
+	return $self->div_clickable(
+		'<div class="editable-value">' .
+			'<div class="field-name" style="display:none;">' . $name . '</div>' .
+			(shift) .
+		'</div>'
 	);
 }
 
@@ -230,10 +230,20 @@ has 'submodule' => (
 has 'toggle' => (
 	is => 'ro',
 	lazy => 1,
-	default => sub {{
-		edit 		=> '<div class="appdv-toggle edit">Edit</div>',
-		select	=> '<div class="appdv-toggle select"></div>'
-	}}
+	default => sub {
+		my $self = shift;
+		return {
+			edit => $self->div_clickable(
+				'<div class="edit-record-toggle">' .
+					'<div class="edit">Edit</div>' .
+					'<div class="save">Save</div>' .
+					'<div class="cancel">Cancel</div>' .
+				'</div>'
+			),
+							
+			select	=> '<div class="appdv-toggle select"></div>'
+		};
+	}
 );
 
 

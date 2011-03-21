@@ -455,28 +455,76 @@ html, body { height:100%; }
 
 
 
-.appdv-toggle {
+
+
+
+
+
+
+/******************  edit-record-toggle  *****************/
+
+.appdv-tt-generated .edit-record-toggle {
+	padding: 4px;
+}
+
+.record-update .appdv-tt-generated .edit-record-toggle .edit {
+	display:none!important;
+}
+
+
+.appdv-tt-generated .edit-record-toggle div {
+	display: none;
 	visibility:hidden;
 	width: 30;
 	padding:4px 14px 1px 1px;
 	cursor:	pointer;
 	font-size: 11px;
 	font-family: arial;
-	background:url(/static/rapidapp/images/pencil_tiny.png) center right no-repeat;
 	white-space:nowrap;
 	color: blue;
 	font-weight: bold;
-	border-bottom-style: dotted;
-	border-bottom-width: 1px;
-	border-color: blue;
 	float:left;
 	clear:both;
+	border-bottom-width: 1px;
 }
 
-.record-over:hover .appdv-toggle {
-	visibility:visible;
-	
+.appdv-tt-generated .edit-record-toggle div:hover {
+	border-bottom-style: dotted;
+	border-color: blue;
 }
+
+.appdv-tt-generated .edit-record-toggle .edit {
+	display:block;
+}
+
+.editing-record .appdv-tt-generated .edit-record-toggle .edit {
+	display:none;
+}
+
+
+.record-over:hover .appdv-tt-generated .edit-record-toggle .edit {
+	visibility:visible;
+}
+
+
+.editing-record .appdv-tt-generated .edit-record-toggle .save, .editing-record .appdv-tt-generated .edit-record-toggle .cancel {
+	visibility:visible;
+	display:block;
+}
+
+.appdv-tt-generated .edit-record-toggle .edit {
+	background:url(/static/rapidapp/images/pencil_tiny.png) center right no-repeat;
+}
+
+.appdv-tt-generated .edit-record-toggle .save {
+	background:url(/static/rapidapp/images/bullet_disk.png) center right no-repeat;
+}
+
+.appdv-tt-generated .edit-record-toggle .cancel {
+	background:url(/static/rapidapp/images/cross_tiny.png) center right no-repeat;
+}
+
+/******************  END edit-record-toggle  *****************/
 
 
 .appdv-editable-value {
@@ -509,6 +557,11 @@ html, body { height:100%; }
 	display:none;
 }
 
+.editing-record .appdv-edit-field td.icons div, .record-update .appdv-edit-field td.icons div {
+	display:none !important;
+}
+
+
 .appdv-edit-field td.icons .edit {
 	background:url(/static/rapidapp/images/pencil_tiny.png) center center no-repeat;
 }
@@ -524,6 +577,7 @@ html, body { height:100%; }
 .appdv-edit-field:hover td.icons .edit {
 	display:block;
 }
+
 
 .appdv-edit-field:hover .data-holder {
 	border-bottom-style: dotted;
@@ -548,6 +602,10 @@ html, body { height:100%; }
 
 div.appdv-edit-bigfield {
 	position:relative;
+}
+
+.editing-record .appdv-edit-bigfield .icons div, .record-update .appdv-edit-bigfield .icons div {
+	display:none !important;
 }
 
 
