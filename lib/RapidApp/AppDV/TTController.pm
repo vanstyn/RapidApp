@@ -11,6 +11,63 @@ has 'AppDV' => (
 	required => 1
 );
 
+
+sub dataview_id {
+	my $self = shift;
+	return $self->AppDV->get_extconfig_param('id');
+}
+
+
+
+
+sub div_wrapper {
+	my $self = shift;
+	return '<div class="appdv-tt-generated ' . $self->dataview_id . '">' . 
+		(shift) . 
+	'</div>';
+}
+
+
+
+
+sub div_clickable {
+	my $self = shift;
+	return '<div class="clickable">' . 
+		(shift) . 
+	'</div>';
+}
+
+
+sub div_clickable_field {
+	my $self = shift;
+	my $name = shift;
+	return $self->div_wrapper(
+		$self->div_clickable(
+			'<div class="editable-value">' .
+				'<div class="field-name" style="display:none;">' . $name . '</div>' .
+				'<table><tr>' .
+					'<td class="data">' .
+						'<div class="data-inner">{' . $name . '}</div>' .
+					'</td>' .
+									
+					'<td class="icons">' .
+						'<div class="edit">&nbsp;</div>' .
+						'<div class="save">&nbsp;</div>' .
+						'<div class="cancel">&nbsp;</div>' .
+					'</td>' .
+					
+					
+				'</tr></table>' .
+			'</div>'
+		)
+	);
+}
+
+
+
+
+
+
 has 'field' => (
 	is => 'ro',
 	lazy => 1,
@@ -28,7 +85,26 @@ has 'field' => (
 );
 
 
+
 has 'edit_field' => (
+	is => 'ro',
+	lazy => 1,
+	isa => 'RapidApp::RecAutoload',
+	default => sub {
+		my $self = shift;
+		return RapidApp::RecAutoload->new( process_coderef => sub {
+			my $name = shift;
+			my $Column = $self->AppDV->columns->{$name} or return '';
+			
+			$self->AppDV->FieldCmp->{$Column->name} = $Column->get_field_config;
+
+			return $self->div_clickable_field($Column->name);
+		});
+	}
+);
+
+
+has 'edit_bigfield' => (
 	is => 'ro',
 	lazy => 1,
 	isa => 'RapidApp::RecAutoload',

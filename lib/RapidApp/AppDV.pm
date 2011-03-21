@@ -60,7 +60,7 @@ sub BUILD {
 	
 	
 	#$self->add_listener( afterrender	=> 'Ext.ux.RapidApp.AppDV.afterrender_handler' );
-	$self->add_listener(	click 		=> 'Ext.ux.RapidApp.AppDV.click_handler' );
+	#$self->add_listener(	click 		=> 'Ext.ux.RapidApp.AppDV.click_handler' );
 	
 	# FIXME: call this once instead of on every request:
 	$self->add_ONREQUEST_calls('load_xtemplate');

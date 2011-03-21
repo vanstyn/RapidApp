@@ -497,6 +497,113 @@ html, body { height:100%; }
 
 /************************************/
 
+.editable-value td.icons {
+	width:24px;
+}
+
+.editable-value td.icons div {
+	width: 12px;
+	float:left;
+	cursor:	pointer;
+	display:none;
+}
+
+
+.editable-value td.icons .edit {
+	background:url(/static/rapidapp/images/pencil_tiny.png) center center no-repeat;
+}
+
+.editable-value td.icons .save {
+	background:url(/static/rapidapp/images/bullet_disk.png) center center no-repeat;
+}
+
+.editable-value td.icons .cancel {
+	background:url(/static/rapidapp/images/cross_tiny.png) center center no-repeat;
+}
+
+
+.editable-value:hover td.icons .edit {
+	display:block;
+}
+
+
+.editable-value:hover .data .data-inner {
+	border-bottom-style: dotted;
+	border-bottom-width: 1px;
+	border-color: blue;
+	cursor:	pointer;
+}
+
+
+.editing td.icons .save, .editing td.icons .cancel {
+	display:block;
+}
+
+/*
+.editing td.icons div {
+	display:block;
+}
+*/
+
+.editing:hover td.icons .edit {
+	display:none;
+}
+
+
+/*
+
+.appdv-tt-generated .clickable .editable-value .data {
+	padding-right: 14px;
+}
+
+.appdv-tt-generated .clickable .editable-value .data:hover {
+	background:url(/static/rapidapp/images/pencil_tiny.png) center right no-repeat;
+	cursor:	pointer;
+}
+
+.appdv-tt-generated .clickable .editable-value .data:hover span {
+	border-bottom-style: dotted;
+	border-bottom-width: 1px;
+	border-color: blue;
+}
+
+.appdv-tt-generated .clickable .editable-value .save, .appdv-tt-generated .clickable .editable-value .cancel {
+
+	position: absolute;
+	top: 0; 
+	right: 0;
+	padding-top:4px;
+	padding-left:4px;
+	cursor:	pointer;
+	z-index:500;
+	font-size: 10px;
+	font-family: arial;
+	background:url(/static/rapidapp/images/pencil_tiny.png) center right no-repeat floralwhite;
+	padding:1px 14px 1px 1px;
+	white-space:nowrap;
+	color: blue;
+	font-weight: normal;
+	text-decoration:underline;
+	border-style: dotted;
+	border-width: 1px;
+	border-color: blue;
+}
+
+
+.appdv-tt-generated .clickable .editable-value + .editing .save, .appdv-tt-generated .clickable .editable-value + .editing .cancel {
+	visibility:visible;
+}
+
+
+*/
+
+
+
+
+
+
+/************************************/
+
 .GreenSheetWrap1 {
 border: 1px #999999 solid !important;
 margin : 3px !important;
