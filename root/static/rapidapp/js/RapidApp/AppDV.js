@@ -158,20 +158,21 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	
 	cancel_field_editable: function(editEl,fieldname,index,Record) {
 	
-		editEl.removeClass('editing');
-		
 		var dataWrap = editEl.child('div.data-wrapper');
 		var dataEl = editEl.child('div.data-holder');
 		var fieldEl = editEl.child('div.field-holder');
+		
+		if(dataWrap && dataEl && fieldEl) {
+
+			var Fld = this.FieldCmp[index][fieldname];
+			if(Fld.contentEl) {
+				Fld.contentEl.appendTo(dataWrap);
+			}
+			Fld.destroy();
+			dataEl.setVisible(true);
 			
-		//console.dir(dv.FieldCmp[index][fieldname].contentEl);
-		var Fld = this.FieldCmp[index][fieldname];
-		if(Fld.contentEl) {
-			Fld.contentEl.appendTo(dataWrap);
+			editEl.removeClass('editing');
 		}
-		Fld.destroy();
-		dataEl.setVisible(true);
-	
 	},
 	
 	click_controller: function(dv, index, domNode, event) {
@@ -253,7 +254,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		//console.dir(editEls);
 		
 		if(domEl.hasClass('editing-record')) {  
-		
+			var Store = this.getStore();
 			var save = false;
 			
 			if(target.hasClass('save')) {
@@ -262,8 +263,11 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			else {
 				if(!target.hasClass('cancel')) { return; }
 			}
+			
+			Record.beginEdit();
 		
 			var success = true;
+			/***** SAVE RECORDS *****/
 			Ext.each(editEls,function(editEl) {
 				var fieldname = this.get_fieldname_by_editEl(editEl);
 				if(!fieldname) { return; }
@@ -275,21 +279,21 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 					}
 				}
 			},this);
-			
-			var Store = this.getStore();
-			
+
 			if(!success) { 
 				Store.rejectChanges();
 				return; 
 			}
 			
+			/***** REMOVE EDIT STATUS *****/
 			Ext.each(editEls,function(editEl) {
 				var fieldname = this.get_fieldname_by_editEl(editEl);
 				this.cancel_field_editable(editEl,fieldname,index,Record);
 			},this);
 			
-			domEl.removeClass('editing-record');
+			domEl.removeClass('editing-record');	
 			domEl.parent().removeClass('record-update');
+			Record.endEdit();
 			return Store.save();
 		}
 		else {
