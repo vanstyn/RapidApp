@@ -87,20 +87,18 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	 },
 	click_controller: function(dv, index, domEl, event) {
 		var target = event.getTarget(null,null,true);
-		
+
 		// Limit processing to click nodes within this dataview (i.e. not in our submodules)
-		var topmostEl = target.parent('div.appdv-tt-generated.' + dv.id);
+		var topmostEl = target.findParent('div.appdv-tt-generated.' + dv.id,null,true);
 		if(!topmostEl) { 
 			// Temporary: map to old function:
 			return Ext.ux.RapidApp.AppDV.click_handler.apply(this,arguments);
 			return; 
 		}
-		if(!topmostEl.child('div.clickable')) { return; }
-		
-		//var topEl = new Ext.Element(domEl);
-		//var editEl = topEl.child('div.editable-value');
-		
-		var editEl = target.parent('div.editable-value');
+		var clickableEl = topmostEl.child('div.clickable');
+		if(!clickableEl) { return; }
+
+		var editEl = clickableEl.child('div.editable-value');
 		if(editEl) {
 		
 			//console.dir(editEl);
@@ -109,24 +107,17 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		}
 	},
 	handle_edit_click: function (target,editEl,index) {
+		
 		var fieldnameEl = editEl.child('div.field-name');
 		if(!fieldnameEl) { return; }
 		
 		var fieldname = fieldnameEl.dom.innerHTML;
 		if(!fieldname) { return; }
-		//console.log(fieldname);
 		
 		var dataWrap = editEl.child('div.data-wrapper');
 		var dataEl = editEl.child('div.data-holder');
 		var fieldEl = editEl.child('div.field-holder');
-		//console.dir(editEl);
-		//console.dir(dataEl);
 
-		//var dataWrap = editEl.child('table').child('tr').child('td.data');
-		//var fieldEl = dataWrap.child('div.fieldholder');
-		//var dataEl = dataWrap.child('div.data-inner');
-		//console.dir(dataEl);
-		
 		var Store = this.getStore()
 		var Record = Store.getAt(index);
 		

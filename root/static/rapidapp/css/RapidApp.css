@@ -542,6 +542,78 @@ html, body { height:100%; }
 
 /****************** END appdv-edit-field ******************/
 
+
+
+/****************** appdv-edit-bigfield ******************/
+
+div.appdv-edit-bigfield {
+	position:relative;
+}
+
+
+.appdv-edit-bigfield .icons div {
+	display:none;
+	position: absolute;
+	top: 0; 
+	right: 0;
+	padding-top:4px;
+	padding-left:4px;
+	cursor:	pointer;
+	z-index:500;
+	font-size: 10px;
+	font-family: arial;
+	padding:1px 14px 1px 1px;
+	white-space:nowrap;
+	color: blue;
+	font-weight: normal;
+	text-decoration:underline;
+	border-style: dotted;
+	border-width: 1px;
+	border-color: blue;
+}
+
+.appdv-edit-bigfield .icons .edit {
+	background:url(/static/rapidapp/images/pencil_tiny.png) center right no-repeat floralwhite;
+}
+
+.appdv-edit-bigfield .icons .save {
+	background:url(/static/rapidapp/images/bullet_disk.png) center right no-repeat floralwhite;
+	padding-right: 15px;
+}
+
+.appdv-edit-bigfield .icons .cancel {
+	background:url(/static/rapidapp/images/cross_tiny.png) center right no-repeat floralwhite;
+	padding-right: 15px;
+}
+
+.appdv-edit-bigfield:hover .icons, .appdv-edit-bigfield:hover .icons .edit {
+	display:block;
+}
+
+.editing .appdv-edit-bigfield .icons .edit, .appdv-edit-bigfield:hover .icons .save, .appdv-edit-bigfield:hover .icons .cancel {
+	display:none;
+}
+
+.editing .appdv-edit-bigfield .icons .save, .editing .appdv-edit-bigfield .icons .cancel {
+	display:block;
+	visibility:visible;
+	position: relative;
+	float:right;
+}
+
+/****************** END appdv-edit-bigfield ******************/
+
+
+
+
+
+
+
+
+
+
+
+
 /*
 
 .appdv-tt-generated .clickable .editable-value .data {

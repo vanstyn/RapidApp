@@ -51,6 +51,16 @@ sub div_editable_value{
 	);
 }
 
+sub data_wrapper_div {
+	my $self = shift;
+	my $name = shift;
+	return '<div class="data-wrapper">' .
+		'<div class="data-holder">{' . $name . '}</div>' .
+		'<div class="field-holder"></div>' .
+	'</div>' ;
+}
+
+
 
 sub div_edit_field {
 	my $self = shift;
@@ -58,12 +68,7 @@ sub div_edit_field {
 	return $self->div_editable_value($name,
 		'<div class="appdv-edit-field">' .	
 			'<table><tr>' .
-				'<td>' .
-					'<div class="data-wrapper">' .
-						'<div class="data-holder">{' . $name . '}</div>' .
-						'<div class="field-holder"></div>' .
-					'</div>' .
-				'</td>' .
+				'<td>' . $self->data_wrapper_div($name) . '</td>' .
 								
 				'<td class="icons">' .
 					'<div class="edit">&nbsp;</div>' .
@@ -81,17 +86,15 @@ sub div_edit_field {
 sub div_bigfield {
 	my $self = shift;
 	my $name = shift;
-	return $self->div_wrapper(
-		$self->div_clickable(
-			'<div class="edit-bigfield">' .
-				'<div class="field-name" style="display:none;">' . $name . '</div>' .
-				'<div class="data">{' . $name . '}</div>' .
-				'<div class="fieldholder"></div>' .
+	return $self->div_editable_value($name,
+		'<div class="appdv-edit-bigfield">' .
+			$self->data_wrapper_div($name)  . 
+			'<div class="icons">' .
 				'<div class="edit">edit</div>' .
+				'<div class="cancel">cancel</div>' .
 				'<div class="save">save</div>' .
-				'<div class="cancel" title="cancel"><img class="cancel" src="/static/rapidapp/images/cross_tiny.png"></div>' .
-			'</div>'
-		)
+			'</div>' .
+		'</div>'
 	);
 }
 
@@ -145,7 +148,7 @@ has 'edit_bigfield' => (
 			
 			$self->AppDV->FieldCmp->{$Column->name} = $Column->get_field_config;
 
-			return
+			return $self->div_bigfield($Column->name);
 			
 			'<div class="appdv-click ' . $self->AppDV->get_extconfig_param('id') . '">' .
 			
