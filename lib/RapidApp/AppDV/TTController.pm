@@ -38,34 +38,62 @@ sub div_clickable {
 }
 
 
-sub div_clickable_field {
+sub div_editable_value{
 	my $self = shift;
 	my $name = shift;
 	return $self->div_wrapper(
 		$self->div_clickable(
 			'<div class="editable-value">' .
 				'<div class="field-name" style="display:none;">' . $name . '</div>' .
-				'<table><tr>' .
-					'<td class="data">' .
-						'<div class="data-inner">{' . $name . '}</div>' .
-						'<div class="fieldholder"></div>' .
-					'</td>' .
-									
-					'<td class="icons">' .
-						'<div class="edit">&nbsp;</div>' .
-						'<div class="save" title="save">&nbsp;</div>' .
-						'<div class="cancel" title="cancel">&nbsp;</div>' .
-					'</td>' .
-					
-					
-				'</tr></table>' .
+				(shift) .
 			'</div>'
 		)
 	);
 }
 
 
+sub div_edit_field {
+	my $self = shift;
+	my $name = shift;
+	return $self->div_editable_value($name,
+		'<div class="appdv-edit-field">' .	
+			'<table><tr>' .
+				'<td>' .
+					'<div class="data-wrapper">' .
+						'<div class="data-holder">{' . $name . '}</div>' .
+						'<div class="field-holder"></div>' .
+					'</div>' .
+				'</td>' .
+								
+				'<td class="icons">' .
+					'<div class="edit">&nbsp;</div>' .
+					'<div class="save" title="save">&nbsp;</div>' .
+					'<div class="cancel" title="cancel">&nbsp;</div>' .
+				'</td>' .
+			'</tr></table>' .
+		'</div>'
+	);
+}
 
+
+
+
+sub div_bigfield {
+	my $self = shift;
+	my $name = shift;
+	return $self->div_wrapper(
+		$self->div_clickable(
+			'<div class="edit-bigfield">' .
+				'<div class="field-name" style="display:none;">' . $name . '</div>' .
+				'<div class="data">{' . $name . '}</div>' .
+				'<div class="fieldholder"></div>' .
+				'<div class="edit">edit</div>' .
+				'<div class="save">save</div>' .
+				'<div class="cancel" title="cancel"><img class="cancel" src="/static/rapidapp/images/cross_tiny.png"></div>' .
+			'</div>'
+		)
+	);
+}
 
 
 
@@ -99,7 +127,7 @@ has 'edit_field' => (
 			
 			$self->AppDV->FieldCmp->{$Column->name} = $Column->get_field_config;
 
-			return $self->div_clickable_field($Column->name);
+			return $self->div_edit_field($Column->name);
 		});
 	}
 );

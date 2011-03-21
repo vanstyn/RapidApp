@@ -495,60 +495,52 @@ html, body { height:100%; }
 }
 
 
-/************************************/
 
-.editable-value td.icons {
+/****************** appdv-edit-field ******************/
+
+.appdv-edit-field td.icons {
 	width:24px;
 }
 
-.editable-value td.icons div {
+.appdv-edit-field td.icons div {
 	width: 12px;
 	float:left;
 	cursor:	pointer;
 	display:none;
 }
 
-
-.editable-value td.icons .edit {
+.appdv-edit-field td.icons .edit {
 	background:url(/static/rapidapp/images/pencil_tiny.png) center center no-repeat;
 }
 
-.editable-value td.icons .save {
+.appdv-edit-field td.icons .save {
 	background:url(/static/rapidapp/images/bullet_disk.png) center center no-repeat;
 }
 
-.editable-value td.icons .cancel {
+.appdv-edit-field td.icons .cancel {
 	background:url(/static/rapidapp/images/cross_tiny.png) center center no-repeat;
 }
 
-
-.editable-value:hover td.icons .edit {
+.appdv-edit-field:hover td.icons .edit {
 	display:block;
 }
 
-
-.editable-value:hover .data .data-inner {
+.appdv-edit-field:hover .data-holder {
 	border-bottom-style: dotted;
 	border-bottom-width: 1px;
 	border-color: blue;
 	cursor:	pointer;
 }
 
-
-.editing td.icons .save, .editing td.icons .cancel {
+.editing .appdv-edit-field td.icons .save, .editing .appdv-edit-field td.icons .cancel {
 	display:block;
 }
 
-/*
-.editing td.icons div {
-	display:block;
-}
-*/
-
-.editing:hover td.icons .edit {
+.editing:hover .appdv-edit-field td.icons .edit {
 	display:none;
 }
 
+/****************** END appdv-edit-field ******************/
 
 /*
 

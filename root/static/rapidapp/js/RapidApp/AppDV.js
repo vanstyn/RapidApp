@@ -102,6 +102,9 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 		var editEl = target.parent('div.editable-value');
 		if(editEl) {
+		
+			//console.dir(editEl);
+		
 			return this.handle_edit_click(target,editEl,index);
 		}
 	},
@@ -112,10 +115,17 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		var fieldname = fieldnameEl.dom.innerHTML;
 		if(!fieldname) { return; }
 		//console.log(fieldname);
+		
+		var dataWrap = editEl.child('div.data-wrapper');
+		var dataEl = editEl.child('div.data-holder');
+		var fieldEl = editEl.child('div.field-holder');
+		//console.dir(editEl);
+		//console.dir(dataEl);
 
-		var dataWrap = editEl.child('table').child('tr').child('td.data');
-		var fieldholderEl = dataWrap.child('div.fieldholder');
-		var dataEl = dataWrap.child('div.data-inner');
+		//var dataWrap = editEl.child('table').child('tr').child('td.data');
+		//var fieldEl = dataWrap.child('div.fieldholder');
+		//var dataEl = dataWrap.child('div.data-inner');
+		//console.dir(dataEl);
 		
 		var Store = this.getStore()
 		var Record = Store.getAt(index);
@@ -150,7 +160,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			Ext.apply(cnf,this.FieldCmp_cnf[fieldname]);
 			Ext.apply(cnf,{
 				value: Record.data[fieldname],
-				renderTo: dataWrap
+				//renderTo: dataWrap
+				renderTo: fieldEl
 				//contentEl: dataEl
 			});
 			
