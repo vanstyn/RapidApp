@@ -60,7 +60,9 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 						// RapidApp specific:
 						// Components are stored as serialized JSON to ensure they
 						// come out exactly the same every time:
-						c = Ext.create(Ext.decode(items[j]), this.defaultType);
+						var itemCnf = Ext.decode(items[j]);
+						itemCnf.ownerCt = this;
+						c = Ext.create(itemCnf, this.defaultType);
 						
 					r[j] = c;
 					if(c.renderTarget){
@@ -138,6 +140,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			// ungly way in FF.
 			cnf.contentEl = dataEl;
 		}
+		
+		cnf.ownerCt = this;
 		
 		var Field = Ext.create(cnf,'field');
 
