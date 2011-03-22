@@ -402,7 +402,7 @@ html, body { height:100%; }
     display:none;
 }
 
-
+/*
 
 .appdv-edit-box {
 	visibility:hidden;
@@ -439,7 +439,7 @@ html, body { height:100%; }
 	display:block;
 	visibility:visible;
 	position: relative;
-	/*background:url(/static/rapidapp/images/cross_tiny.png) center right no-repeat floralwhite;*/
+	
 	background: floralwhite;
 	padding-right: 1px;
 	float:right;
@@ -451,7 +451,7 @@ html, body { height:100%; }
 	float:left;
 }
 
-
+*/
 
 
 
@@ -526,7 +526,7 @@ html, body { height:100%; }
 
 /******************  END edit-record-toggle  *****************/
 
-
+/*
 .appdv-editable-value {
 	padding-right: 14px;
 }
@@ -541,7 +541,7 @@ html, body { height:100%; }
 	border-bottom-width: 1px;
 	border-color: blue;
 }
-
+*/
 
 
 /****************** appdv-edit-field ******************/
@@ -578,10 +578,13 @@ html, body { height:100%; }
 	display:block;
 }
 
-
-.appdv-edit-field:hover .data-holder {
+.appdv-edit-field .data-holder {
 	border-bottom-style: dotted;
 	border-bottom-width: 1px;
+	border-color: transparent;
+}
+
+.appdv-edit-field:hover .data-holder {
 	border-color: blue;
 	cursor:	pointer;
 }
