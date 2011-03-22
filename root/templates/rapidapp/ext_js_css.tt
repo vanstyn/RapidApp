@@ -122,4 +122,5 @@
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp/MultilineToolbar/MultilineToolbar.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/Ext.ux.ComponentDataView.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp.js"></script>
+<script type="text/javascript" src="/static/rapidapp/js/RapidApp/AppDV.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/ErrorTrace.js"></script>

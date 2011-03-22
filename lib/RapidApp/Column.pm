@@ -94,6 +94,8 @@ has 'filter'	=> ( is => 'rw', default => undef, traits => [ 'RapidApp::Role::Gri
 has 'field_cnf'	=> ( is => 'rw', default => undef, traits => [ 'RapidApp::Role::GridColParam' ]  );
 has 'rel_combo_field_cnf'	=> ( is => 'rw', default => undef, traits => [ 'RapidApp::Role::GridColParam' ]  );
 
+has 'field_cmp_config'	=> ( is => 'rw', default => undef, traits => [ 'RapidApp::Role::GridColParam' ]  );
+
 has 'render_fn' => ( 
 	is => 'rw', lazy => 1, 
 	default => undef,
@@ -234,6 +236,8 @@ sub get_field_config {
 	};
 	
 	$cnf = { %$cnf, %{$self->field_readonly_config} } if ($self->field_readonly);
+	
+	$self->field_cmp_config($cnf);
 	
 	return $cnf;
 }
