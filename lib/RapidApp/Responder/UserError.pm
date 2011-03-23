@@ -3,6 +3,7 @@ package RapidApp::Responder::UserError;
 use Moose;
 extends 'RapidApp::Responder';
 
+use overload '""' => \&_stringify_static; # to-string operator overload
 use HTML::Entities;
 
 has 'userMessage' => ( is => 'rw', isa => 'Str', required => 1 );
@@ -36,6 +37,14 @@ sub writeResponse {
 		$c->stash->{longStatusText}= $text;
 		$c->forward('View::RapidApp::HttpStatus');
 	}
+}
+
+sub stringify {
+	return (shift)->userMessage;
+}
+
+sub _stringify_static {
+	return (shift)->stringify;
 }
 
 no Moose;

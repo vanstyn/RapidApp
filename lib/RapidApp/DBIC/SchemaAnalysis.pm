@@ -62,12 +62,12 @@ sub _build_related_columns {
 
 sub _build_key_constraints_per_source {
 	my $self= shift;
-	
+	# TODO: make this the new name for _build_col_depend_per_source
 }
 
 sub _build_dependable_keys_per_source {
 	my $self= shift;
-	
+	# TODO: if we start supporting multiple-column keys, this will list out which ones to test for
 }
 
 sub _build_auto_cols_per_source {
@@ -80,7 +80,8 @@ sub _build_auto_cols_per_source {
 		my $rsrc= $srcHash->{$srcN};
 		$result->{$srcN}= [ grep { $rsrc->column_info($_)->{is_auto_increment} } $rsrc->columns ];
 	}
-	DEBUG('export', 'auto id columns' => $result);
+	my $chn= $ENV{DEBUG_EXPORT}>1? 'export' : $ENV{DEBUG_IMPORT}>1? 'import' : $ENV{DEBUG_EXPORT_SCHEMA}? 'export_schema' : 'import_schema';
+	DEBUG($chn, 'auto id columns' => $result);
 	return $result;
 }
 
@@ -108,6 +109,8 @@ sub _build_col_depend_per_source {
 		
 		$result->{$srcN}= \@deps;
 	}
+	my $chn= $ENV{DEBUG_EXPORT}>1? 'export' : $ENV{DEBUG_IMPORT}>1? 'import' : $ENV{DEBUG_EXPORT_SCHEMA}? 'export_schema' : 'import_schema';
+	DEBUG($chn, 'all column dependencies' => $result);
 	return $result;
 }
 
@@ -134,7 +137,9 @@ sub _build_related_auto_id_columns {
 			}
 		}
 	}
-	DEBUG('export', 'all auto id col refs' => $result);
+	
+	my $chn= $ENV{DEBUG_EXPORT}>1? 'export' : $ENV{DEBUG_IMPORT}>1? 'import' : $ENV{DEBUG_EXPORT_SCHEMA}? 'export_schema' : 'import_schema';
+	DEBUG($chn, 'all auto id col refs' => $result);
 	return $result;
 }
 
@@ -146,7 +151,8 @@ sub _build_remap_fields_per_source {
 		$result->{$srcN}= [ grep { $self->is_auto_id_col($srcN.'.'.$_) } $srcHash->{$srcN}->columns ];
 	}
 	
-	DEBUG('export', 'fields which need remapped' => $result);
+	my $chn= $ENV{DEBUG_EXPORT}>1? 'export' : $ENV{DEBUG_IMPORT}>1? 'import' : $ENV{DEBUG_EXPORT_SCHEMA}? 'export_schema' : 'import_schema';
+	DEBUG($chn, 'fields which need remapped' => $result);
 	return $result;
 }
 
