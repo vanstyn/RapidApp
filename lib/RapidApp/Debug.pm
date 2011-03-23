@@ -39,7 +39,7 @@ sub _write {
 		$locInfo = $srcFile . ' line '. $srcLine . "\n";
 	}
 	my @argText= map { $self->_debug_data_to_text($_) } @args;
-	my $msg= join(' ', $locInfo, $color, @argText, Term::ANSIColor::CLEAR );
+	my $msg= join(' ', $locInfo, $color, @argText, Term::ANSIColor::CLEAR() );
 	
 	my $dest= $ch->dest || $self->dest || RapidApp::ScopedGlobals->get('log');
 	
@@ -115,7 +115,7 @@ use Moose;
 
 has '_owner'     => ( is => 'rw', weak_ref => 1, required => 1 );
 has 'name'       => ( is => 'ro', isa => 'Str', required => 1 );
-has 'color'      => ( is => 'rw', default => Term::ANSIColor::YELLOW );
+has 'color'      => ( is => 'rw', default => Term::ANSIColor::YELLOW() );
 has 'dest'       => ( is => 'rw' ); # log object or file handle
 has 'showSrcLoc' => ( is => 'rw', default => 1 );
 has 'autoFlush'  => ( is => 'rw', default => 0 );

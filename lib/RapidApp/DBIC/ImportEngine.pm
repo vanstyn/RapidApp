@@ -9,6 +9,13 @@ use RapidApp::JSON::MixedEncoder 'decode_json', 'encode_json';
 
 has 'schema' => ( is => 'ro', isa => 'DBIx::Class::Schema', required => 1 );
 
+has 'on_progress' => ( is => 'rw', isa => 'Maybe[CodeRef]' );
+has 'progress_period' => ( is => 'rw', isa => 'Int', default => -1, trigger => \&_on_progress_period_change );
+has 'next_progress' => ( is => 'rw', isa => 'Int', default => -1 );
+
+has 'records_read' => ( is => 'rw', isa => 'Int', default => 0 );
+has 'records_imported' => ( is => 'rw', isa => 'Int', default => 0 );
+
 with 'RapidApp::DBIC::SchemaAnalysis';
 
 # map of {ColKey}{read_id} => $saved_id
@@ -29,10 +36,23 @@ has 'records_failed_insert' => ( is => 'rw', isa => 'ArrayRef[ArrayRef]', defaul
 # map of {srcN}{primary_key} => 1
 #has 'processed' => ( is => 'ro', isa => 'HashRef[HashRef]', default => sub {{}} );
 
+sub _on_progress_period_change {
+	my $self= shift;
+	$self->next_progress($self->progress_period) if ($self->progress_period > 0);
+}
+
+sub _send_feedback_event {
+	my $self= shift;
+	my $code= $self->on_progress();
+	$code->() if $code;
+	$self->next_progress($self->progress_period);
+}
+
 sub import_records {
 	my ($self, $src)= @_;
 	my ($data, $cnt, $worklist);
 	$self->schema->txn_do( sub {
+		my $acn;
 		while (($data= $self->read_record($src))) {
 			$self->import_record($data);
 		}
@@ -80,9 +100,9 @@ sub report_insert_errors {
 	my $debug_fd= IO::File->new;
 	$debug_fd->open('/tmp/rapidapp_import_errors.txt', 'w') or die $!;
 	$debug_fd->print("Insertion Errors:\n");
-	for my $attempt (%{$self->{records_failed_insert}}) {
-		my ($srcN, $rec, $deps, $errMsg)= @_;
-		$debug_fd->print("insert $srcN\n\tRecord : ".encode_json($rec)."\n\tError  : $errMsg\n");
+	for my $attempt (@{$self->{records_failed_insert}}) {
+		my ($srcN, $rec, $deps, $remappedRec, $errMsg)= @$attempt;
+		$debug_fd->print("insert $srcN\n\tRecord   : ".encode_json($rec)."\n\tRemapped : ".encode_json($remappedRec)."\n\tError    : $errMsg\n");
 	}
 	$debug_fd->close();
 }
@@ -92,6 +112,8 @@ sub read_record {
 	my $line= $src->getline;
 	defined($line) or return undef;
 	chomp $line;
+	$self->{records_read}++;
+	$self->_send_feedback_event if (!--$self->{next_progress});
 	return decode_json($line);
 }
 
@@ -136,7 +158,7 @@ sub perform_insert {
 	my $self= shift;
 	my ($srcN, $rec, $deps, $remappedRec)= @_;
 	
-	DEBUG('export', 'perform_insert', $srcN, $rec);
+	DEBUG('import', 'perform_insert', $srcN, $rec);
 	
 	my $rs= $self->schema->resultset($srcN);
 	my $resultClass= $rs->result_class;
@@ -148,16 +170,21 @@ sub perform_insert {
 		if ($code= $resultClass->can('import_create')) {
 			$row= $resultClass->$code($rs, $remappedRec, $rec);
 		} else {
+			die if exists $remappedRec->{id};
 			$row= $rs->create($remappedRec);
 		}
+		$self->{records_imported}++;
+		$self->_send_feedback_event if (!--$self->{next_progress});
 	}
 	catch {
 		$err= $_;
+		$err= "$err" if (ref $err);
 	};
 	if ($err) {
 		# we'll try it again later
-		DEBUG('export', "\t[failed, deferred...]");
-		push @{$self->records_failed_insert}, [ @_ ];
+		DEBUG('import', "\t[failed, deferred...]");
+		push @{$self->records_failed_insert}, [ @_, $err ];
+		$self->_send_feedback_event if (!--$self->{next_progress});
 		return;
 	}
 	
@@ -166,13 +193,15 @@ sub perform_insert {
 	my @pending;
 	for my $colN (@autoCols) {
 		my $origVal= $rec->{$colN};
+		next unless defined $origVal;
+		
 		my $newVal= $row->get_column($colN);
 		my $colKey= $srcN.'.'.$colN;
 		($self->auto_id_map->{$colKey} ||= {})->{ $origVal }= $newVal;
 		my $pendingThisCol= $self->records_missing_keys->{$colKey} || {};
 		my $pendingThisKey= delete $pendingThisCol->{$origVal};
 		if ($pendingThisKey) {
-			DEBUG('export', "\t[resolved dep: $srcN.$colN  $origVal => $newVal");
+			DEBUG('import', "\t[resolved dep: $srcN.$colN  $origVal => $newVal");
 			push @pending, @$pendingThisKey;
 		}
 	}
@@ -204,7 +233,8 @@ sub process_dependencies {
 	for my $dep (@$deps) {
 		my $colN= $dep->{col};
 		my $oldVal= $rec->{$colN};
-		if (defined $oldVal) {
+		# only swap the value if it was given as a scalar.  Hashes indicate fancy DBIC stuff
+		if (defined $oldVal && !ref $oldVal) {
 			# find the new value for the key
 			my $newVal= $self->auto_id_map->{$dep->{origin_colKey}}->{$oldVal};
 			
@@ -213,7 +243,8 @@ sub process_dependencies {
 			if (!defined $newVal) {
 				my $pending= (($self->records_missing_keys->{$dep->{origin_colKey}} ||= {})->{$oldVal} ||= []);
 				push @$pending, [ @_ ];
-				DEBUG('export', "\t[delayed due to dependency: $srcN.$colN=$oldVal => ".$dep->{origin_colKey}."=?? ]");
+				DEBUG('import', "\t[delayed due to dependency: $srcN.$colN=$oldVal => ".$dep->{origin_colKey}."=?? ]");
+				$self->_send_feedback_event if (!--$self->{next_progress});
 				return undef;
 			}
 			# swap it
