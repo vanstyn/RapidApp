@@ -57,11 +57,6 @@ sub import_records {
 			$self->import_record($data);
 		}
 		
-		# if ($cnt= $self->records_missing_keys_count) {
-			# $self->report_missing_keys;
-			# die "$cnt records could not be added due to missing dependencies\nSee /tmp/rapidapp_import_errors.txt for details\n";
-		# }
-		
 		# keep trying to insert them until either no records get inserted, or until they all succeed
 		if (scalar @{$self->records_failed_insert}) {
 			do {
@@ -77,6 +72,11 @@ sub import_records {
 			}
 		}
 		
+		
+		if ($cnt= $self->records_missing_keys_count) {
+			$self->report_missing_keys;
+			die "$cnt records could not be added due to missing dependencies\nSee /tmp/rapidapp_import_errors.txt for details\n";
+		}
 	});
 }
 
