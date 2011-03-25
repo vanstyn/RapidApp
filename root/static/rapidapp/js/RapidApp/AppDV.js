@@ -125,6 +125,9 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	
 	set_field_editable: function(editEl,fieldname,index,Record) {
 		
+		//abort if its already editing:
+		if(editEl.hasClass('editing')) { return; }
+		
 		var dataWrap = editEl.child('div.data-wrapper');
 		var dataEl = editEl.child('div.data-holder');
 		var fieldEl = editEl.child('div.field-holder');
