@@ -554,6 +554,10 @@ html, body { height:100%; }
 }
 
 
+.editing-record .appdv-tt-generated .delete-record {
+	display: none !important;
+}
+
 /******************  END record-delete  *****************/
 
 

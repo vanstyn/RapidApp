@@ -102,7 +102,13 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	},
 	
 	add_record: function() {
-	
+		var node = this.getNode(0);
+		if(node) {
+			var nodeEl = new Ext.Element(node);
+			// abort if another record is already being updated:
+			if(nodeEl.parent().hasClass('record-update')) { return; }
+		}
+		
 		var Store = this.getStore();
 		
 		var recMaker = Ext.data.Record.create(Store.fields.items);
@@ -330,11 +336,11 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 					}
 				}
 			},this);
-
-			if(!success) { 
-				Store.rejectChanges();
-				return; 
+			
+			if(!success) {
+				return;
 			}
+			
 			
 			/***** REMOVE EDIT STATUS *****/
 			Ext.each(editEls,function(editEl) {
@@ -347,7 +353,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			Record.endEdit();
 			
 			if(Record.phantom && !save) {
-				return this.getStore().remove(Record);
+				Store.remove(Record);
 			}
 			
 			return Store.save();
