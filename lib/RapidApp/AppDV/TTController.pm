@@ -216,24 +216,65 @@ has 'submodule' => (
 			
 			my $Module = $self->AppDV->Module($name) or return '';
 			
-			my $cnf = {
-				%{ $Module->content },
-				
-				renderTarget => 'div.appdv-submodule.' . $name,
-				applyValue => $self->AppDV->record_pk
-			};
+			return $self->div_module_content($name,$Module);
 			
-			# Apply optional overrides:
-			$cnf = { %$cnf, %{ $self->AppDV->submodule_config_override->{$name} } } if ($self->AppDV->submodule_config_override->{$name});
-			
-			# Store component configs as serialized JSON to make sure
-			# they come out the same every time on the client side:
-			$self->AppDV->DVitems->{$name} = $self->AppDV->json->encode($cnf);
-			
-			return '<div class="appdv-submodule ' . $name . '"></div>';
 		});
 	}
 );
+
+
+sub get_Module {
+	my $self = shift;
+	my $path = shift;
+	
+	my $Module = $self->AppDV->get_Module($path) or return '';
+	
+	$path =~ s/\//\_/g;
+			
+	return $self->div_module_content($path,$Module);
+}
+
+
+sub autopanel {
+	my $self = shift;
+	my $url = shift;
+	my $params_enc = shift;
+	
+	my $params = {};
+	$params = $self->AppDV->json->decode($params_enc) if (defined $params_enc);
+	
+	return '<p>' . $url . '</p><p>' . Dumper($params) . '</p>';
+}
+
+
+
+
+
+
+sub div_module_content {
+	my $self = shift;
+	my $name = shift;
+	my $Module = shift;
+	
+	my $cnf = {
+		%{ $Module->content },
+		
+		renderTarget => 'div.appdv-submodule.' . $name,
+		applyValue => $self->AppDV->record_pk
+	};
+	
+	# Apply optional overrides:
+	$cnf = { %$cnf, %{ $self->AppDV->submodule_config_override->{$name} } } if ($self->AppDV->submodule_config_override->{$name});
+	
+	# Store component configs as serialized JSON to make sure
+	# they come out the same every time on the client side:
+	$self->AppDV->DVitems->{$name} = $self->AppDV->json->encode($cnf);
+	
+	return '<div class="appdv-submodule ' . $name . '"></div>';
+}
+
+
+
 
 
 has 'toggle' => (
