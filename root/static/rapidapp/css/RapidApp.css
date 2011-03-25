@@ -486,10 +486,11 @@ html, body { height:100%; }
 	float:left;
 	clear:both;
 	border-bottom-width: 1px;
+	border-bottom-style: dotted;
+	border-color: transparent;
 }
 
 .appdv-tt-generated .edit-record-toggle div:hover {
-	border-bottom-style: dotted;
 	border-color: blue;
 }
 
