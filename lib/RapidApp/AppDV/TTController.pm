@@ -234,21 +234,34 @@ sub get_Module {
 	return $self->div_module_content($path,$Module);
 }
 
-
-sub autopanel {
+# Example tt usage:
+# [% r.ajaxcmp('projects2','/main/explorer/projects2','{"p1":"p1val","p2":"p2val"}') %]
+sub ajaxcmp {
 	my $self = shift;
+	my $name = shift;
 	my $url = shift;
 	my $params_enc = shift;
 	
 	my $params = {};
 	$params = $self->AppDV->json->decode($params_enc) if (defined $params_enc);
 	
-	return '<p>' . $url . '</p><p>' . Dumper($params) . '</p>';
+	
+	my $cnf = {
+		xtype 	=> 'ajaxcmp',
+		applyCnf => {
+			plugins => [ 'autowidthtoolbars' ],
+			autoHeight => \1
+		},
+		renderTarget => 'div.appdv-submodule.' . $name,
+		applyValue => $self->AppDV->record_pk,
+		autoLoad	=> {
+			url		=> $url,
+			params	=> $params
+		},
+	};
+	
+	return $self->div_module($name,$cnf);
 }
-
-
-
-
 
 
 sub div_module_content {
@@ -258,10 +271,20 @@ sub div_module_content {
 	
 	my $cnf = {
 		%{ $Module->content },
-		
+		plugins => [ 'autowidthtoolbars' ],
+		autoHeight => \1,
 		renderTarget => 'div.appdv-submodule.' . $name,
 		applyValue => $self->AppDV->record_pk
 	};
+	
+	return $self->div_module($name,$cnf);
+}
+
+
+sub div_module {
+	my $self = shift;
+	my $name = shift;
+	my $cnf = shift;
 	
 	# Apply optional overrides:
 	$cnf = { %$cnf, %{ $self->AppDV->submodule_config_override->{$name} } } if ($self->AppDV->submodule_config_override->{$name});

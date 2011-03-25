@@ -25,3 +25,30 @@ Ext.ux.RapidApp.Plugin.EventHandlers = Ext.extend(Ext.util.Observable,{
 });
 Ext.preg('rappeventhandlers',Ext.ux.RapidApp.Plugin.EventHandlers);
 */
+
+
+/* 2011-03-25 by HV:
+ This is my solution to the problem described here:
+ http://www.sencha.com/forum/showthread.php?92215-Toolbar-resizing-problem
+*/
+Ext.ux.RapidApp.Plugin.AutoWidthToolbars = Ext.extend(Ext.util.Observable,{
+	init: function(cmp) {
+		if(! cmp.getTopToolbar) { return; }
+		cmp.on('afterrender',function(c) {
+			var tbar = c.getTopToolbar();
+			if(tbar) {
+				this.setAutoSize(tbar);
+			}
+			var bbar = c.getBottomToolbar();
+			if(bbar) {
+				this.setAutoSize(bbar);
+			}
+		},this);
+	},
+	setAutoSize: function(toolbar) {
+		var El = toolbar.getEl();
+		El.setSize('auto');
+		El.parent().setSize('auto');
+	}
+});
+Ext.preg('autowidthtoolbars',Ext.ux.RapidApp.Plugin.AutoWidthToolbars);
