@@ -40,6 +40,15 @@ sub div_clickable {
 }
 
 
+
+sub delete_record {
+	my $self = shift;
+	return $self->div_clickable('<div class="delete-record">Delete</div>');
+}
+
+
+
+
 sub div_editable_value{
 	my $self = shift;
 	my $name = shift;

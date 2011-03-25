@@ -223,12 +223,26 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		if(editEl) {
 			return this.handle_edit_record(target,editEl,Record,index,domEl);
 		}
+		
+		editEl = clickableEl.child('div.delete-record');
+		if(editEl) {
+			return this.handle_delete_record(target,editEl,Record,index,domEl);
+		}
 	},
 	get_fieldname_by_editEl: function(editEl) {
 		var fieldnameEl = editEl.child('div.field-name');
 		if(!fieldnameEl) { return false; }
 		
 		return fieldnameEl.dom.innerHTML;
+	},
+	handle_delete_record: function (target,editEl,Record,index,domEl) {
+	
+		console.log('delete-record');
+		var Store = this.getStore();
+		Store.remove(Record);
+		Store.save();
+	
+	
 	},
 	handle_edit_field: function (target,editEl,Record,index,domEl) {
 		
