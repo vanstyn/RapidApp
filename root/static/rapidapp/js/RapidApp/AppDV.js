@@ -135,6 +135,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		var cnf = {};
 		Ext.apply(cnf,this.FieldCmp_cnf[fieldname]);
 		Ext.apply(cnf,{
+			ownerCt: this,
+			Record: Record,
 			value: Record.data[fieldname],
 			//renderTo: dataWrap
 			renderTo: fieldEl
@@ -158,8 +160,6 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			// ungly way in FF.
 			cnf.contentEl = dataEl;
 		}
-		
-		cnf.ownerCt = this;
 		
 		var Field = Ext.create(cnf,'field');
 
