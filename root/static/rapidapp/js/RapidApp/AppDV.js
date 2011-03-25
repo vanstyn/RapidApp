@@ -35,6 +35,18 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		if(count !== 0){
 				this.renderItems(index, index + records.length - 1);
 		}
+		
+		var Record = records[0];
+		
+		var domEl = this.getNode(Record);
+		var editEl = new Ext.Element(domEl);
+		
+		this.handle_edit_record(editEl,editEl,Record,index,editEl);
+		//this.handle_edit_record(target,editEl,Record,index,domEl);
+		
+		//set_field_editable(editEl,fieldname,index,Record);
+		
+		//console.dir(Record);
 
 	},
 	
@@ -236,13 +248,16 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		return fieldnameEl.dom.innerHTML;
 	},
 	handle_delete_record: function (target,editEl,Record,index,domEl) {
-	
-		console.log('delete-record');
+		
+		// abort if the entire record is in edit mode:
+		if(domEl.hasClass('editing-record')) { return; }
+		
+		// abort if another record is already being updated:
+		if(domEl.parent().hasClass('record-update')) { return; }
+		
 		var Store = this.getStore();
 		Store.remove(Record);
-		Store.save();
-	
-	
+		if (!Record.phantom) { Store.save(); }
 	},
 	handle_edit_field: function (target,editEl,Record,index,domEl) {
 		
@@ -330,6 +345,11 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			domEl.removeClass('editing-record');	
 			domEl.parent().removeClass('record-update');
 			Record.endEdit();
+			
+			if(Record.phantom && !save) {
+				return this.getStore().remove(Record);
+			}
+			
 			return Store.save();
 		}
 		else {
