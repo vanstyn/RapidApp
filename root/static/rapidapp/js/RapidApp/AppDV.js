@@ -73,18 +73,9 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 				itemCnf.ownerCt = this;
 				if(itemCnf.renderTargets) {
 				
-					//console.dir(ns[i]);
-					//var nsEl = new Ext.Element(ns[i]);
-					//console.log('renderTargets: ' + itemCnf.renderTargets);
-					//console.dir(nsEl);
-					
-					//var targetNodes = nsEl.query(itemCnf.renderTargets);
-				
 					var targetNodes = Ext.DomQuery.jsSelect(itemCnf.renderTargets, ns[i]);
 					Ext.each(targetNodes,function(Node) {
-						
-						console.dir(Node);
-						
+
 						var cnf = {};
 						Ext.apply(cnf,itemCnf);
 						var NodeEl = new Ext.Element(Node);
