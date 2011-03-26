@@ -168,7 +168,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		editEl.addClass('editing');
 
 		var cnf = {};
-		Ext.apply(cnf,this.FieldCmp_cnf[fieldname]);
+		Ext.apply(cnf,Ext.decode(this.FieldCmp_cnf[fieldname]));
 		Ext.apply(cnf,{
 			ownerCt: this,
 			Record: Record,

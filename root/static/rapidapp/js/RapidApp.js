@@ -3110,9 +3110,9 @@ Ext.ux.RapidApp.AjaxCmp = Ext.extend(Ext.Component, {
 	
 	applyCnf: {},
 	
-	// deleteId: If set to true (default) the ID of the dynamically fetched
+	// deleteId: If set to true the ID of the dynamically fetched
 	// component will be deleted before its created
-	deleteId: true,
+	deleteId: false,
 	
 	initComponent: function() {
 		if(!Ext.isObject(this.autoLoad)) { throw 'autoLoad must be an object' };

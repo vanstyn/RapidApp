@@ -74,10 +74,12 @@ sub data_wrapper_div {
 sub div_edit_field {
 	my $self = shift;
 	my $name = shift;
+	my $display = shift;
+	$display = $name unless ($display);
 	return $self->div_editable_value($name,
 		'<div class="appdv-edit-field">' .	
 			'<table><tr>' .
-				'<td>' . $self->data_wrapper_div($name) . '</td>' .
+				'<td>' . $self->data_wrapper_div($display) . '</td>' .
 								
 				'<td class="icons">' .
 					'<div class="edit">&nbsp;</div>' .
@@ -117,7 +119,7 @@ has 'field' => (
 		return RapidApp::RecAutoload->new( process_coderef => sub {
 			my $name = shift;
 			my $Column = $self->AppDV->columns->{$name} or return '';
-			$self->FieldCmp->{$Column->name} = $Column->get_field_config;
+			$self->FieldCmp->{$Column->name} = $self->AppDV->json->encode($Column->get_field_config);
 			
 			return '<div class="' . $Column->name . '">{' . $Column->name . '}</div>';
 		});
@@ -135,11 +137,13 @@ has 'edit_field' => (
 		my $self = shift;
 		return RapidApp::RecAutoload->new( process_coderef => sub {
 			my $name = shift;
+			my $display = shift;
+			$display = $name unless ($display);
 			my $Column = $self->AppDV->columns->{$name} or return '';
 			
-			$self->AppDV->FieldCmp->{$Column->name} = $Column->get_field_config;
+			$self->AppDV->FieldCmp->{$Column->name} = $self->AppDV->json->encode($Column->get_field_config);
 
-			return $self->div_edit_field($Column->name);
+			return $self->div_edit_field($Column->name,$display);
 		});
 	}
 );
@@ -155,7 +159,7 @@ has 'edit_bigfield' => (
 			my $name = shift;
 			my $Column = $self->AppDV->columns->{$name} or return '';
 			
-			$self->AppDV->FieldCmp->{$Column->name} = $Column->get_field_config;
+			$self->AppDV->FieldCmp->{$Column->name} = $self->AppDV->json->encode($Column->get_field_config);
 
 			return $self->div_bigfield($Column->name);
 			
@@ -187,7 +191,7 @@ has 'edit_click_field' => (
 			my $name = shift;
 			my $Column = $self->AppDV->columns->{$name} or return '';
 			
-			$self->AppDV->FieldCmp->{$Column->name} = $Column->get_field_config;
+			$self->AppDV->FieldCmp->{$Column->name} = $self->AppDV->json->encode($Column->get_field_config);
 
 
 			
