@@ -281,6 +281,25 @@ sub div_module_content {
 }
 
 
+sub init_dynamic_ajaxcmp {
+	my $self = shift;
+	my $target = shift;
+	my $name = $target;
+	
+	$name =~ s/\./\_/g;
+	
+	my $cnf = {
+		renderTargets => $target
+	};
+	
+	$self->div_module($name,$cnf);
+	return '';
+}
+
+
+
+
+
 sub div_module {
 	my $self = shift;
 	my $name = shift;
