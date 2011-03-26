@@ -48,7 +48,7 @@ sub BUILD {
 	my $self = shift;
 
 	$self->apply_extconfig(
-		id					=> $self->instance_id,
+		#id					=> $self->instance_id,
 		xtype				=> 'appdv',
 		autoHeight		=> \1,
 		multiSelect		=> \1,
@@ -69,9 +69,11 @@ sub BUILD {
 
 sub load_xtemplate {
 	my $self = shift;
+	$self->apply_extconfig( id => $self->instance_id );
 	$self->apply_extconfig( tpl => $self->xtemplate );
 	$self->apply_extconfig( FieldCmp_cnf => $self->FieldCmp );
 	$self->apply_extconfig( items => [ values %{ $self->DVitems } ] );
+	#$self->apply_extconfig( id => undef );
 }
 
 

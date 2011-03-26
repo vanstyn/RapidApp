@@ -289,7 +289,7 @@ sub init_dynamic_ajaxcmp {
 	$name =~ s/\./\_/g;
 	
 	my $cnf = {
-		renderTargets => $target
+		renderDynTarget => $target
 	};
 	
 	$self->div_module($name,$cnf);

@@ -3105,8 +3105,15 @@ Ext.Ajax.on('beforerequest',Ext.ux.RapidApp.checkLocalTimezone);
  Container
 */
 Ext.ux.RapidApp.AjaxCmp = Ext.extend(Ext.Component, {
+	
 	autoLoad: null,
+	
 	applyCnf: {},
+	
+	// deleteId: If set to true (default) the ID of the dynamically fetched
+	// component will be deleted before its created
+	deleteId: true,
+	
 	initComponent: function() {
 		if(!Ext.isObject(this.autoLoad)) { throw 'autoLoad must be an object' };
 		if(!Ext.isObject(this.applyCnf)) { throw 'applyCnf must be an object' };
@@ -3121,7 +3128,11 @@ Ext.ux.RapidApp.AjaxCmp = Ext.extend(Ext.Component, {
 					Ext.apply(cmpconf,this.applyCnf);
 					cmpconf.renderTo = this.getEl();
 					
+					if(this.deleteId && cmpconf.id) { delete cmpconf.id };
+					
 					var Cmp = Ext.ComponentMgr.create(cmpconf,'panel');
+					this.component = Cmp;
+					Cmp.relayEvents(this,this.events);
 					Cmp.show();
 				}
 			},

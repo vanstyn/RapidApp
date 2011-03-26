@@ -59,6 +59,9 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	renderItems: function(startIndex, endIndex){
 		var ns = this.all.elements;
 		var args = [startIndex, 0];
+		
+		//console.dir(args);
+		
 		for(var i = startIndex; i <= endIndex; i++){
 			var r = args[args.length] = [];
 			for(var items = this.items, j = 0, len = items.length, c; j < len; j++){
@@ -71,22 +74,29 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 				// come out exactly the same every time:
 				var itemCnf = Ext.decode(items[j]);
 				itemCnf.ownerCt = this;
-				if(itemCnf.renderTargets) {
-				
-					var targetNodes = Ext.DomQuery.jsSelect(itemCnf.renderTargets, ns[i]);
-					Ext.each(targetNodes,function(Node) {
+
+				// renderDynTarget will look for a child div with class="encoded-params" containing
+				// JSON encoded additional params that will be dynamically applied to the
+				// config of the component being created. Essentially this allows part or all
+				// of the component config to be stored directly within the HTML markup. Typically
+				// the encoded-params div will have style="display:none;" to prevent the JSON
+				// from showing up on the page.
+				if(itemCnf.renderDynTarget) {
+					var Node = Ext.DomQuery.selectNode(itemCnf.renderDynTarget, ns[i]);
+					if(Node) {
 
 						var cnf = {};
 						Ext.apply(cnf,itemCnf);
-						var NodeEl = new Ext.Element(Node);
-						var encEl = NodeEl.child('div.encoded-params');
-						if(encEl) {
-							Ext.apply(cnf,Ext.decode(encEl.dom.innerHTML));
+
+						var encNode = Ext.DomQuery.selectNode('div.encoded-params', Node);
+						if(encNode) {
+							Ext.apply(cnf,Ext.decode(encNode.innerHTML));
 						}
-						var Cmp = Ext.create(cnf, this.defaultType);
-					
-						Cmp.render(Node);
-					});
+						
+						c = Ext.create(cnf, this.defaultType);
+						r[j] = c;
+						c.render(Node);
+					}
 				}
 				else {
 					c = Ext.create(itemCnf, this.defaultType);
@@ -101,20 +111,19 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 					else{
 						c.render(ns[i]);
 					}
-					
-					if(Ext.isFunction(c.setValue) && c.applyValue){
-						c.setValue(this.store.getAt(i).get(c.applyValue));
-						c.on(
-							'blur', 
-							function(f){
-								this.store.getAt(this.index).data[this.dataIndex] = f.getValue();
-							},
-							{store: this.store, index: i, dataIndex: c.applyValue}
-						);
-					}
-					
-				}
+				}	
 				
+				if(c && Ext.isFunction(c.setValue) && c.applyValue){
+					c.setValue(this.store.getAt(i).get(c.applyValue));
+					c.on(
+						'blur', 
+						function(f){
+							this.store.getAt(this.index).data[this.dataIndex] = f.getValue();
+						},
+						{store: this.store, index: i, dataIndex: c.applyValue}
+					);
+				}
+
 			}
 		}
 		this.components.splice.apply(this.components, args);
@@ -145,7 +154,6 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 		return Store.add(newRec);
 	},
-	
 	
 	set_field_editable: function(editEl,fieldname,index,Record) {
 		
