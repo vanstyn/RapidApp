@@ -60,9 +60,14 @@ sub upload_image: Local  {
 	
 	my $packet = {
 		success => \1,
-		img_tag => $tag
+		checksum => $checksum,
+		height => $height,
+		width => $width
 	};
 	
+	#$c->response->header('Content-Type' => 'text/plain');
+	
+	#return $c->res->body('{"stupid":"asshole"}');
 	return $c->res->body(JSON::PP::encode_json($packet));
 }
 
