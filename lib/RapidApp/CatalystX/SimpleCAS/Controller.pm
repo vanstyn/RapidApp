@@ -5,36 +5,32 @@ use namespace::autoclean;
 
 BEGIN { extends 'Catalyst::Controller' }
 
-use RapidApp::CatalystX::SimpleCAS::Store::Git;
+use RapidApp::CatalystX::SimpleCAS::Store::File;
 
 has 'Store' => (
 	is => 'ro',
 	lazy => 1,
 	default => sub {
 		my $self = shift;
-		return RapidApp::CatalystX::SimpleCAS::Store::Git->new(
-			git_dir => '/root/RapidApps/GreenSheet/simplecas-store'
+		return RapidApp::CatalystX::SimpleCAS::Store::File->new(
+			store_dir => '/root/RapidApps/GreenSheet/file_cas'
 		);
 	}
 );
 
 sub fetch_content: Local {
-    my ($self, $c, $sha1) = @_;
+    my ($self, $c, $checksum) = @_;
 	
-	use Data::Dumper;
-	
-	print STDERR Dumper($self->Store->GitRepo);
-	
-	unless($self->Store->content_exists($sha1)) {
+	unless($self->Store->content_exists($checksum)) {
 		$c->res->body('Does not exist');
 		return;
 	}
 	
-	my $type = $self->Store->content_mimetype($sha1) or die "Error reading mime type";
+	my $type = $self->Store->content_mimetype($checksum) or die "Error reading mime type";
 	
 	$c->response->header('Content-Type' => $type);
-	$c->response->header('Content-Disposition' => 'inline;filename="' . $sha1 . '"');
-	return $c->res->body( $self->Store->fetch_content_fh($sha1) );
+	$c->response->header('Content-Disposition' => 'inline;filename="' . $checksum . '"');
+	return $c->res->body( $self->Store->fetch_content_fh($checksum) );
 }
 
 
