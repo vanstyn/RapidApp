@@ -3,21 +3,11 @@ package RapidApp::Responder::UserError;
 use Moose;
 extends 'RapidApp::Responder';
 
-use overload '""' => \&_stringify_static; # to-string operator overload
+#use overload '""' => \&_stringify_static; # to-string operator overload
 use HTML::Entities;
 
 has 'userMessage' => ( is => 'rw', isa => 'Str', required => 1 );
 has 'isHtml' => ( is => 'rw', default => 0 );
-
-# treat single arguments as the attribute 'userMessage'
-around 'BUILDARGS' => sub {
-	my ($orig, $class, @args)= @_;
-	if (scalar(@args) == 1 && !ref $args[0]) {
-		unshift @args, 'userMessage';
-	}
-	
-	return $class->$orig(@args);
-};
 
 sub writeResponse {
 	my ($self, $c)= @_;
