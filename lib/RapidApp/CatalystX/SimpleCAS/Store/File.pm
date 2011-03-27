@@ -4,6 +4,7 @@ use warnings;
 use Moose;
 
 use File::MimeInfo::Magic;
+use Image::Size;
 use Digest::MD5::File qw(file_md5_hex);
 use IO::File;
 use Data::Dumper;
@@ -35,6 +36,30 @@ sub add_content_file {
 	
 	return $checksum;
 }
+
+
+sub add_content_file_mv {
+	my $self = shift;
+	my $file = shift;
+	
+	$self->init_store_dir;
+	
+	my $checksum = $self->file_checksum($file);
+	if ($self->content_exists($checksum)) {
+		unlink $file;
+		return $checksum
+	}
+	
+	my $save_path = $self->checksum_to_path($checksum,1);
+	
+	my $cmd = "mv '$file' '$save_path'";
+	qx{$cmd};
+	die "Failed to move file" if ($?);
+	
+	return $checksum;
+}
+
+
 
 sub split_checksum {
 	my $self = shift;
@@ -108,6 +133,20 @@ sub file_checksum  {
 	
 	return file_md5_hex($file);
 }
+
+
+sub image_size {
+	my $self = shift;
+	my $checksum = shift;
+	
+	my $content_type = $self->content_mimetype($checksum) or return undef;
+	my ($mime_type,$mime_subtype) = split(/\//,$content_type);
+	return undef unless ($mime_type eq 'image');
+	
+	my ($width,$height) = imgsize($self->checksum_to_path($checksum)) or return undef;
+	return ($width,$height);
+}
+
 
 
 #### --------------------- ####
