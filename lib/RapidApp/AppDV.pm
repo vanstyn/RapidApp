@@ -11,6 +11,9 @@ use RapidApp::Include qw(sugar perlutil);
 use Template;
 use RapidApp::AppDV::TTController;
 
+has 'apply_css_restrict' => ( is => 'ro', default => 0 );
+
+
 has 'TTController'  => (
 	is => 'ro',
 	isa => 'RapidApp::AppDV::TTController',
@@ -84,9 +87,11 @@ sub xtemplate_cnf {
 	
 	#TODO: make this more robust/better:	
 	my @classes = ();
-	push @classes, 'no_create' unless ($self->can('create_records'));
-	push @classes, 'no_update' unless ($self->can('update_records'));
-	push @classes, 'no_destroy' unless ($self->can('destroy_records'));
+	if($self->apply_css_restrict) {
+		push @classes, 'no_create' unless ($self->can('create_records'));
+		push @classes, 'no_update' unless ($self->can('update_records'));
+		push @classes, 'no_destroy' unless ($self->can('destroy_records'));
+	}
 	
 	return '<div class="' . join(' ',@classes) . '">' . $html_out . '</div>';
 }
