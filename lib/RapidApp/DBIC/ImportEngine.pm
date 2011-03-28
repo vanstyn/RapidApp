@@ -66,16 +66,19 @@ sub import_records {
 				$self->perform_insert(@$_) for (@$worklist);
 			} while (scalar( @{$self->records_failed_insert} ) < scalar(@$worklist));
 			
-			if ($cnt= scalar @{$self->records_failed_insert}) {
-				$self->report_insert_errors;
-				die "$cnt records could not be added due to errors\nSee /tmp/rapidapp_import_errors.txt for details\n";
+			if (!$ENV{IGNORE_INVALID_RECORDS}) {
+				if ($cnt= scalar @{$self->records_failed_insert}) {
+					$self->report_insert_errors;
+					die "$cnt records could not be added due to errors\nSee /tmp/rapidapp_import_errors.txt for details\n";
+				}
 			}
 		}
 		
-		
-		if ($cnt= $self->records_missing_keys_count) {
-			$self->report_missing_keys;
-			die "$cnt records could not be added due to missing dependencies\nSee /tmp/rapidapp_import_errors.txt for details\n";
+		if (!$ENV{IGNORE_INVALID_RECORDS}) {
+			if ($cnt= $self->records_missing_keys_count) {
+				$self->report_missing_keys;
+				die "$cnt records could not be added due to missing dependencies\nSee /tmp/rapidapp_import_errors.txt for details\n";
+			}
 		}
 	});
 }
