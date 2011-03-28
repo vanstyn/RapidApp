@@ -135,14 +135,18 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	},
 	
 	get_new_record: function(initData) {
+		
+		var Store = this.getStore();
+		
+		// abort if the Store doesn't have create in its API:
+		if(!Store.api.create) { return false; } 
+		
 		var node = this.getNode(0);
 		if(node) {
 			var nodeEl = new Ext.Element(node);
 			// abort if another record is already being updated:
 			if(nodeEl.parent().hasClass('record-update')) { return; }
 		}
-		
-		var Store = this.getStore();
 		
 		var recMaker = Ext.data.Record.create(Store.fields.items);
 		var newRec;
@@ -288,16 +292,23 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 		var editEl = clickableEl.child('div.editable-value');
 		if(editEl) {
+			// abort if the Store doesn't have update in its API:
+			if(!Store.api.update) { return; } 
 			return this.handle_edit_field(target,editEl,Record,index,domEl);
 		}
 		
 		editEl = clickableEl.child('div.edit-record-toggle');
 		if(editEl) {
+			// abort if the Store doesn't have update in its API and we're not already
+			// in edit mode from an Add operation:
+			if(!Store.api.update && !domEl.hasClass('editing-record')) { return; } 
 			return this.handle_edit_record(target,editEl,Record,index,domEl);
 		}
 		
 		editEl = clickableEl.child('div.delete-record');
 		if(editEl) {
+			// abort if the Store doesn't have destroy in its API:
+			if(!Store.api.destroy) { return; } 
 			return this.handle_delete_record(target,editEl,Record,index,domEl);
 		}
 	},
@@ -316,6 +327,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		if(domEl.parent().hasClass('record-update')) { return; }
 		
 		var Store = this.getStore();
+		
 		Store.remove(Record);
 		if (!Record.phantom) { Store.save(); }
 	},
@@ -326,6 +338,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 		// abort if another record is already being updated:
 		if(domEl.parent().hasClass('record-update')) { return; }
+		
+		var Store = this.getStore();
 		
 		var fieldname = this.get_fieldname_by_editEl(editEl);
 		if(!fieldname) { return; }
@@ -340,7 +354,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			
 			if(target.hasClass('save')) {
 				if(!this.save_field_data(editEl,fieldname,index,Record)) { return; }
-				this.getStore().save();
+				Store.save();
 			}
 			else {
 				if(!target.hasClass('cancel')) { return; }
@@ -361,13 +375,12 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			editEls.push(new Ext.Element(dom));
 		});
 		
-		
+		var Store = this.getStore();
 		//console.dir(editEls);
 		
-		if(domEl.hasClass('editing-record')) {  
-			var Store = this.getStore();
-			var save = false;
+		if(domEl.hasClass('editing-record')) {
 			
+			var save = false;
 			if(target.hasClass('save')) {
 				save = true;
 			}
@@ -415,11 +428,10 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		else {
 			// abort if another record is already being updated:
 			if(domEl.parent().hasClass('record-update')) { return; }
-		
+			
 			domEl.parent().addClass('record-update');
 			domEl.addClass('editing-record');
 			
-		
 			Ext.each(editEls,function(editEl) {
 				var fieldname = this.get_fieldname_by_editEl(editEl);
 				this.set_field_editable(editEl,fieldname,index,Record);

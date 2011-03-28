@@ -703,11 +703,10 @@ div.appdv-edit-bigfield {
 
 
 
-
-
-
-
-
+/* override to hide edit items if "no_update" is set: */
+.no_update .edit {
+	display: none !important;
+}
 
 
 
