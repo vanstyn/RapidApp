@@ -920,3 +920,33 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 .RapidApp-dt s {
 	display: none;
 }
+
+
+
+.r-simple-table table  {
+	border: 1px solid #DDDDDD;
+}
+
+.r-simple-table th, .r-simple-table td {
+	padding: 3px 8px 3px 3px;
+}
+
+.r-simple-table th {
+	padding-bottom: 2px;
+	font-weight: bold;
+	text-decoration: underline;
+}
+
+.r-simple-table tr {
+	background: white;
+}
+
+.r-simple-table tr:nth-child(2n+1) {
+	background: #F8F8F8;
+}
+
+.r-simple-table tr > td:first-child {
+	font-weight: bold;
+}
+
+
