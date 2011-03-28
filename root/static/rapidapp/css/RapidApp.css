@@ -703,10 +703,11 @@ div.appdv-edit-bigfield {
 
 
 
-/* override to hide edit items if "no_update" is set: */
-.no_update .edit {
+/* override to hide edit items if "no_update" is set and delete if no_destroy is set: */
+.no_update .edit, .no_destroy .delete-record {
 	display: none !important;
 }
+
 
 
 
