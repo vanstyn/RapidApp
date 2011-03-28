@@ -82,7 +82,7 @@ sub xtemplate_cnf {
 	$Template->process($self->tt_file,{ r => $self->TTController },\$html_out)
 		or die $Template->error;
 	
-	return $html_out;
+	return '<div class="can_edit">' . $html_out . '</div>';
 }
 
 

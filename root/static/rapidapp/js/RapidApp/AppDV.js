@@ -134,7 +134,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		this.components.splice(index, 1);
 	},
 	
-	get_new_record: function() {
+	get_new_record: function(initData) {
 		var node = this.getNode(0);
 		if(node) {
 			var nodeEl = new Ext.Element(node);
@@ -145,7 +145,13 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		var Store = this.getStore();
 		
 		var recMaker = Ext.data.Record.create(Store.fields.items);
-		var newRec = new recMaker;
+		var newRec;
+		if(initData){
+			newRec = new recMaker(initData);
+		}
+		else {
+			newRec = new recMaker;
+		}
 		
 		if(! Store.api.create) {
 			Ext.Msg.alert('Cannot add','No create function has been defined');
@@ -154,15 +160,15 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		return newRec;
 	},
 	
-	add_record: function() {
-		var newRec = this.get_new_record();
+	add_record: function(initData) {
+		var newRec = this.get_new_record(initData);
 		if (newRec) {
 			return this.getStore().add(newRec);
 		}
 	},
 	
-	insert_record: function() {
-		var newRec = this.get_new_record();
+	insert_record: function(initData) {
+		var newRec = this.get_new_record(initData);
 		if (newRec) {
 			return this.getStore().insert(0,newRec);
 		}
