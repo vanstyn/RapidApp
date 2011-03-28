@@ -36,6 +36,16 @@ has 'records_failed_insert' => ( is => 'rw', isa => 'ArrayRef[ArrayRef]', defaul
 # map of {srcN}{primary_key} => 1
 #has 'processed' => ( is => 'ro', isa => 'HashRef[HashRef]', default => sub {{}} );
 
+sub translate_key {
+	my ($self, $colkey, $val)= @_;
+	return ($self->auto_id_map->{$colkey} || {})->{$val};
+}
+
+sub set_translation {
+	my ($self, $colkey, $oldVal, $newVal)= @_;
+	($self->auto_id_map->{$colkey} ||= {})->{$oldVal}= $newVal;
+}
+
 sub _on_progress_period_change {
 	my $self= shift;
 	$self->next_progress($self->progress_period) if ($self->progress_period > 0);
@@ -66,16 +76,19 @@ sub import_records {
 				$self->perform_insert(@$_) for (@$worklist);
 			} while (scalar( @{$self->records_failed_insert} ) < scalar(@$worklist));
 			
-			if ($cnt= scalar @{$self->records_failed_insert}) {
-				$self->report_insert_errors;
-				die "$cnt records could not be added due to errors\nSee /tmp/rapidapp_import_errors.txt for details\n";
+			if (!$ENV{IGNORE_INVALID_RECORDS}) {
+				if ($cnt= scalar @{$self->records_failed_insert}) {
+					$self->report_insert_errors;
+					die "$cnt records could not be added due to errors\nSee /tmp/rapidapp_import_errors.txt for details\n";
+				}
 			}
 		}
 		
-		
-		if ($cnt= $self->records_missing_keys_count) {
-			$self->report_missing_keys;
-			die "$cnt records could not be added due to missing dependencies\nSee /tmp/rapidapp_import_errors.txt for details\n";
+		if (!$ENV{IGNORE_INVALID_RECORDS}) {
+			if ($cnt= $self->records_missing_keys_count) {
+				$self->report_missing_keys;
+				die "$cnt records could not be added due to missing dependencies\nSee /tmp/rapidapp_import_errors.txt for details\n";
+			}
 		}
 	});
 }
