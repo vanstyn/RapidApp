@@ -547,9 +547,25 @@ sub create {
 
 
 
-
-# not implemented yet:
-sub destroy {}
+sub destroy {
+	my $self = shift;
+	
+	my $params = $self->c->req->params;
+	my $rows = $self->json->decode($params->{rows});
+	delete $params->{rows};
+		
+	my $result = $self->destroy_handler->call($rows) or return {
+		success => \0,
+		msg => 'destroy failed'
+	};
+	
+	return $result if (ref($result) eq 'HASH' and $result->{success});
+	
+	return {
+		success => \1,
+		msg => 'destroy success'
+	};
+}
 
 
 has 'getStore' => ( is => 'ro', lazy => 1, default => sub { 

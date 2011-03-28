@@ -2,8 +2,8 @@ Ext.ns('Ext.ux.RapidApp.AppDV');
 
 
 Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
-	//defaultType: 'textfield',
-	initComponent : function(){
+	
+	initComponent: function(){
 			Ext.each(this.items,function(item) {
 				item.ownerCt = this;
 			},this);
@@ -13,13 +13,14 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			this.on('click',this.click_controller,this);
 	},
 	
-	refresh : function(){
+	refresh: function(){
 		Ext.destroy(this.components);
 		this.components = [];
 		Ext.ux.RapidApp.AppDV.DataView.superclass.refresh.call(this);
 		this.renderItems(0, this.store.getCount() - 1);
 	},
-	onUpdate : function(ds, record){
+	
+	onUpdate: function(ds, record){
 		var index = ds.indexOf(record);
 		if(index > -1){
 				this.destroyItems(index);
@@ -29,83 +30,158 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 				this.renderItems(index, index);
 		}
 	},
-	onAdd : function(ds, records, index){
+	
+	onAdd: function(ds, records, index){
 		var count = this.all.getCount();
 		Ext.ux.RapidApp.AppDV.DataView.superclass.onAdd.apply(this, arguments);
 		if(count !== 0){
-				this.renderItems(index, index + records.length - 1);
+			this.renderItems(index, index + records.length - 1);
 		}
-
+		
+		var Record = records[0];
+		var domEl = this.getNode(Record);
+		var editEl = new Ext.Element(domEl);
+		
+		this.handle_edit_record(editEl,editEl,Record,index,editEl);
 	},
 	
-	onRemove : function(ds, record, index){
+	onRemove: function(ds, record, index){
 		this.destroyItems(index);
 		Ext.ux.RapidApp.AppDV.DataView.superclass.onRemove.apply(this, arguments);
 	},
-	onDestroy : function(){
+	
+	onDestroy: function(){
 		Ext.ux.RapidApp.AppDV.DataView.superclass.onDestroy.call(this);
 		Ext.destroy(this.components);
 		this.components = [];
 	},
-	renderItems : function(startIndex, endIndex){
+	
+	renderItems: function(startIndex, endIndex){
 		var ns = this.all.elements;
 		var args = [startIndex, 0];
+		
+		//console.dir(args);
+		
 		for(var i = startIndex; i <= endIndex; i++){
-				var r = args[args.length] = [];
-				for(var items = this.items, j = 0, len = items.length, c; j < len; j++){
-				
-					// c = items[j].render ?
-					//	c = items[j].cloneConfig() :
+			var r = args[args.length] = [];
+			for(var items = this.items, j = 0, len = items.length, c; j < len; j++){
+			
+				// c = items[j].render ?
+				//	c = items[j].cloneConfig() :
+					
+				// RapidApp specific:
+				// Components are stored as serialized JSON to ensure they
+				// come out exactly the same every time:
+				var itemCnf = Ext.decode(items[j]);
+				itemCnf.ownerCt = this;
+
+				// renderDynTarget will look for a child div with class="encoded-params" containing
+				// JSON encoded additional params that will be dynamically applied to the
+				// config of the component being created. Essentially this allows part or all
+				// of the component config to be stored directly within the HTML markup. Typically
+				// the encoded-params div will have style="display:none;" to prevent the JSON
+				// from showing up on the page.
+				if(itemCnf.renderDynTarget) {
+					var Node = Ext.DomQuery.selectNode(itemCnf.renderDynTarget, ns[i]);
+					if(Node) {
+
+						var cnf = {};
+						Ext.apply(cnf,itemCnf);
+
+						var encNode = Ext.DomQuery.selectNode('div.encoded-params', Node);
+						if(encNode) {
+							Ext.apply(cnf,Ext.decode(encNode.innerHTML));
+						}
 						
-						// RapidApp specific:
-						// Components are stored as serialized JSON to ensure they
-						// come out exactly the same every time:
-						var itemCnf = Ext.decode(items[j]);
-						itemCnf.ownerCt = this;
-						c = Ext.create(itemCnf, this.defaultType);
-						
+						c = Ext.create(cnf, this.defaultType);
+						r[j] = c;
+						c.render(Node);
+					}
+				}
+				else {
+					c = Ext.create(itemCnf, this.defaultType);
 					r[j] = c;
+					
 					if(c.renderTarget){
 						c.render(Ext.DomQuery.selectNode(c.renderTarget, ns[i]));
-					}else if(c.applyTarget){
+					}
+					else if(c.applyTarget){
 						c.applyToMarkup(Ext.DomQuery.selectNode(c.applyTarget, ns[i]));
-					}else{
+					}
+					else{
 						c.render(ns[i]);
 					}
-					
-					if(Ext.isFunction(c.setValue) && c.applyValue){
-						c.setValue(this.store.getAt(i).get(c.applyValue));
-						c.on('blur', function(f){
+				}	
+				
+				if(c && Ext.isFunction(c.setValue) && c.applyValue){
+					c.setValue(this.store.getAt(i).get(c.applyValue));
+					c.on(
+						'blur', 
+						function(f){
 							this.store.getAt(this.index).data[this.dataIndex] = f.getValue();
-						}, {store: this.store, index: i, dataIndex: c.applyValue});
-					}
-					
+						},
+						{store: this.store, index: i, dataIndex: c.applyValue}
+					);
 				}
+
+			}
 		}
 		this.components.splice.apply(this.components, args);
 	},
-	destroyItems : function(index){
+	
+	destroyItems: function(index){
 		Ext.destroy(this.components[index]);
 		this.components.splice(index, 1);
 	},
 	
-	add_record: function() {
-	
+	get_new_record: function(initData) {
+		
 		var Store = this.getStore();
 		
+		// abort if the Store doesn't have create in its API:
+		if(!Store.api.create) { return false; } 
+		
+		var node = this.getNode(0);
+		if(node) {
+			var nodeEl = new Ext.Element(node);
+			// abort if another record is already being updated:
+			if(nodeEl.parent().hasClass('record-update')) { return; }
+		}
+		
 		var recMaker = Ext.data.Record.create(Store.fields.items);
-		var newRec = new recMaker;
+		var newRec;
+		if(initData){
+			newRec = new recMaker(initData);
+		}
+		else {
+			newRec = new recMaker;
+		}
 		
 		if(! Store.api.create) {
 			Ext.Msg.alert('Cannot add','No create function has been defined');
-			return;
+			return false;
 		}
-		
-		return Store.add(newRec);
+		return newRec;
 	},
 	
+	add_record: function(initData) {
+		var newRec = this.get_new_record(initData);
+		if (newRec) {
+			return this.getStore().add(newRec);
+		}
+	},
+	
+	insert_record: function(initData) {
+		var newRec = this.get_new_record(initData);
+		if (newRec) {
+			return this.getStore().insert(0,newRec);
+		}
+	},
 	
 	set_field_editable: function(editEl,fieldname,index,Record) {
+		
+		//abort if its already editing:
+		if(editEl.hasClass('editing')) { return; }
 		
 		var dataWrap = editEl.child('div.data-wrapper');
 		var dataEl = editEl.child('div.data-holder');
@@ -115,8 +191,10 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		editEl.addClass('editing');
 
 		var cnf = {};
-		Ext.apply(cnf,this.FieldCmp_cnf[fieldname]);
+		Ext.apply(cnf,Ext.decode(this.FieldCmp_cnf[fieldname]));
 		Ext.apply(cnf,{
+			ownerCt: this,
+			Record: Record,
 			value: Record.data[fieldname],
 			//renderTo: dataWrap
 			renderTo: fieldEl
@@ -140,8 +218,6 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			// ungly way in FF.
 			cnf.contentEl = dataEl;
 		}
-		
-		cnf.ownerCt = this;
 		
 		var Field = Ext.create(cnf,'field');
 
@@ -205,7 +281,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		var topmostEl = target.findParent('div.appdv-tt-generated.' + dv.id,null,true);
 		if(!topmostEl) { 
 			// Temporary: map to old function:
-			return Ext.ux.RapidApp.AppDV.click_handler.apply(this,arguments);
+			//return Ext.ux.RapidApp.AppDV.click_handler.apply(this,arguments);
 			return; 
 		}
 		var clickableEl = topmostEl.child('div.clickable');
@@ -216,12 +292,24 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 		var editEl = clickableEl.child('div.editable-value');
 		if(editEl) {
+			// abort if the Store doesn't have update in its API:
+			if(!Store.api.update) { return; } 
 			return this.handle_edit_field(target,editEl,Record,index,domEl);
 		}
 		
 		editEl = clickableEl.child('div.edit-record-toggle');
 		if(editEl) {
+			// abort if the Store doesn't have update in its API and we're not already
+			// in edit mode from an Add operation:
+			if(!Store.api.update && !domEl.hasClass('editing-record')) { return; } 
 			return this.handle_edit_record(target,editEl,Record,index,domEl);
+		}
+		
+		editEl = clickableEl.child('div.delete-record');
+		if(editEl) {
+			// abort if the Store doesn't have destroy in its API:
+			if(!Store.api.destroy) { return; } 
+			return this.handle_delete_record(target,editEl,Record,index,domEl);
 		}
 	},
 	get_fieldname_by_editEl: function(editEl) {
@@ -230,6 +318,19 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 		return fieldnameEl.dom.innerHTML;
 	},
+	handle_delete_record: function (target,editEl,Record,index,domEl) {
+		
+		// abort if the entire record is in edit mode:
+		if(domEl.hasClass('editing-record')) { return; }
+		
+		// abort if another record is already being updated:
+		if(domEl.parent().hasClass('record-update')) { return; }
+		
+		var Store = this.getStore();
+		
+		Store.remove(Record);
+		if (!Record.phantom) { Store.save(); }
+	},
 	handle_edit_field: function (target,editEl,Record,index,domEl) {
 		
 		// abort if the entire record is in edit mode:
@@ -237,6 +338,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 		// abort if another record is already being updated:
 		if(domEl.parent().hasClass('record-update')) { return; }
+		
+		var Store = this.getStore();
 		
 		var fieldname = this.get_fieldname_by_editEl(editEl);
 		if(!fieldname) { return; }
@@ -251,7 +354,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			
 			if(target.hasClass('save')) {
 				if(!this.save_field_data(editEl,fieldname,index,Record)) { return; }
-				this.getStore().save();
+				Store.save();
 			}
 			else {
 				if(!target.hasClass('cancel')) { return; }
@@ -272,13 +375,12 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			editEls.push(new Ext.Element(dom));
 		});
 		
-		
+		var Store = this.getStore();
 		//console.dir(editEls);
 		
-		if(domEl.hasClass('editing-record')) {  
-			var Store = this.getStore();
-			var save = false;
+		if(domEl.hasClass('editing-record')) {
 			
+			var save = false;
 			if(target.hasClass('save')) {
 				save = true;
 			}
@@ -301,11 +403,11 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 					}
 				}
 			},this);
-
-			if(!success) { 
-				Store.rejectChanges();
-				return; 
+			
+			if(!success) {
+				return;
 			}
+			
 			
 			/***** REMOVE EDIT STATUS *****/
 			Ext.each(editEls,function(editEl) {
@@ -316,16 +418,20 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			domEl.removeClass('editing-record');	
 			domEl.parent().removeClass('record-update');
 			Record.endEdit();
+			
+			if(Record.phantom && !save) {
+				Store.remove(Record);
+			}
+			
 			return Store.save();
 		}
 		else {
 			// abort if another record is already being updated:
 			if(domEl.parent().hasClass('record-update')) { return; }
-		
+			
 			domEl.parent().addClass('record-update');
 			domEl.addClass('editing-record');
 			
-		
 			Ext.each(editEls,function(editEl) {
 				var fieldname = this.get_fieldname_by_editEl(editEl);
 				this.set_field_editable(editEl,fieldname,index,Record);
@@ -336,6 +442,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 });
 Ext.reg('appdv', Ext.ux.RapidApp.AppDV.DataView);
 
+/*
 Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 	var target = event.getTarget(null,null,true);
 
@@ -440,7 +547,7 @@ Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
 	}
 }
 
-
+*/
 
 
 

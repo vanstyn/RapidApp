@@ -3,6 +3,7 @@ use Moose;
 use Term::ANSIColor;
 use Data::Dumper;
 use RapidApp::ScopedGlobals;
+use IO::Handle;
 
 has 'dest'     => ( is => 'rw', default => undef );
 has 'channels' => ( is => 'ro', isa => 'HashRef[RapidApp::Debug::Channel]', default => sub {{}} );
@@ -14,9 +15,11 @@ sub applyChannelConfig {
 		# for each debug channel definition, either create the channel or alter it
 		while (my ($key, $chCfg)= each %$cfg) {
 			$chCfg ||= {}; # undef is ok; we just set defaults if the channel doesn't exist or ignore otherwise.
-			defined $self->channels->{$key}
-				and $self->channels->{$key}->applyConfig($chCfg)
-				or $self->_create_channel($key, $chCfg);
+			if (defined $self->channels->{$key}) {
+				$self->channels->{$key}->applyConfig($chCfg)
+			} else {
+				$self->_create_channel($key, $chCfg);
+			}
 		}
 	}
 }
@@ -41,11 +44,20 @@ sub _write {
 	my @argText= map { $self->_debug_data_to_text($_) } @args;
 	my $msg= join(' ', $locInfo, $color, @argText, Term::ANSIColor::CLEAR() );
 	
-	my $dest= $ch->dest || $self->dest || RapidApp::ScopedGlobals->get('log');
+	my $dest= $ch->dest || $self->dest || RapidApp::ScopedGlobals->get('log') || _getStderrHandle();
 	
-	if (!defined $dest) { print STDERR $msg."\n"; }
-	elsif ($dest->can('debug')) { $dest->debug($msg); }
-	else { $dest->print($msg."\n"); }
+	my $code;
+	($code= $dest->can('debug'))? $dest->$code($msg) : $dest->print($msg."\n");
+	
+	if ($ch->autoFlush) {
+		($code= $dest->can('flush') || $dest->can('_flush')) && $dest->$code();
+	}
+}
+
+sub _getStderrHandle {
+	my $io= IO::Handle->new;
+	$io->fdopen(fileno(STDERR), "r");
+	return $io;
 }
 
 sub _autocreate_channel {
@@ -135,6 +147,7 @@ sub applyConfig {
 	while (my ($key, $val)= each %$cfg) {
 		$self->$key($val);
 	}
+	1;
 }
 
 no Moose;

@@ -486,10 +486,11 @@ html, body { height:100%; }
 	float:left;
 	clear:both;
 	border-bottom-width: 1px;
+	border-bottom-style: dotted;
+	border-color: transparent;
 }
 
 .appdv-tt-generated .edit-record-toggle div:hover {
-	border-bottom-style: dotted;
 	border-color: blue;
 }
 
@@ -525,6 +526,42 @@ html, body { height:100%; }
 }
 
 /******************  END edit-record-toggle  *****************/
+
+
+
+/******************  record-delete  *****************/
+
+.appdv-tt-generated .delete-record {
+	background:url(/static/rapidapp/images/cross.png) center right no-repeat;
+	padding:4px 18px 1px 1px;
+	width: 30;
+	cursor:	pointer;
+	font-size: 12px;
+	font-family: arial;
+	white-space:nowrap;
+	color: darkgray;
+	font-weight: bold;
+	float:left;
+	clear:both;
+	border-bottom-width: 1px;
+	border-color: transparent;
+	cursor:	pointer;
+}
+
+.appdv-tt-generated .delete-record:hover {
+	border-bottom-style: dotted;
+	border-color: blue;
+	color: blue;
+}
+
+
+.editing-record .appdv-tt-generated .delete-record {
+	display: none !important;
+}
+
+/******************  END record-delete  *****************/
+
+
 
 /*
 .appdv-editable-value {
@@ -666,10 +703,10 @@ div.appdv-edit-bigfield {
 
 
 
-
-
-
-
+/* override to hide edit items if "no_update" is set and delete if no_destroy is set: */
+.no_update .edit, .no_destroy .delete-record {
+	display: none !important;
+}
 
 
 
@@ -883,3 +920,33 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 .RapidApp-dt s {
 	display: none;
 }
+
+
+
+.r-simple-table table  {
+	border: 1px solid #DDDDDD;
+}
+
+.r-simple-table th, .r-simple-table td {
+	padding: 3px 8px 3px 3px;
+}
+
+.r-simple-table th {
+	padding-bottom: 2px;
+	font-weight: bold;
+	text-decoration: underline;
+}
+
+.r-simple-table tr {
+	background: white;
+}
+
+.r-simple-table tr:nth-child(2n+1) {
+	background: #F8F8F8;
+}
+
+.r-simple-table tr > td:first-child {
+	font-weight: bold;
+}
+
+

@@ -492,6 +492,49 @@ sub read_records {
 
 
 
+
+sub get_row_related_columns_flattened {
+	my $self = shift;
+	my $Row = shift;
+	
+	my $data = { $Row->get_columns };
+	foreach my $rel ( $Row->relationships ) {
+		next unless ( defined $Row->$rel and $Row->$rel->can('get_columns') );
+		my $reldata = { $Row->$rel->get_columns };
+		foreach my $col ( keys %$reldata ) {
+			$data->{$rel . '_' . $col} = $reldata->{$col};
+		}
+	}
+	
+	return $data;
+	
+}
+
+
+sub update_Row_and_compare_deep {
+	my $self = shift;
+	my $Row = shift;
+	my $update = shift;
+	
+	my $orig_data = $self->get_row_related_columns_flattened($Row);
+	$Row->update($update);
+	my $new_data = $self->get_row_related_columns_flattened($Row->get_from_storage);
+	
+	my @changes = ();
+			
+	foreach my $k (sort keys %$orig_data) {
+		next if ($orig_data->{$k} eq $new_data->{$k});
+		push @changes, [ $k, $orig_data->{$k}, $new_data->{$k} ];
+	}
+	
+	return \@changes;
+}
+
+
+
+
+
+
 #### --------------------- ####
 
 
