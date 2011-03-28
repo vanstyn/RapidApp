@@ -49,10 +49,11 @@ sub _build_related_columns {
 			while (my($foreign, $local)= each %{$relInfo->{cond}}) {
 				# swap them if they were reversed
 				if ($local =~ /^foreign/) { my $tmp= $foreign; $foreign= $local; $local= $tmp; }
-				$foreign =~ s/^foreign/$foreignSrcN/;
-				$local   =~ s/^self/$srcN/;
+				$foreign =~ s/^foreign/$foreignSrcN/ or $foreign= $foreignSrcN.'.'.$foreign;
+				$local   =~ s/^self/$srcN/ or $local= $srcN.'.'.$local;
 				($result->{$foreign} ||= {})->{$local}= 1;
 				($result->{$local} ||= {})->{$foreign}= 1;
+				DEBUG('debug', 'related: ', $foreign, $local) if $srcN eq 'Workspace';
 			}
 		}
 	}
@@ -101,7 +102,7 @@ sub _build_col_depend_per_source {
 		#    list of columns, and a list of values in a canonical maanner.
 		my $rsrc= $srcHash->{$srcN};
 		for my $colN ($rsrc->columns) {
-			my $colKey= $srcN.'.'.$colN;
+			my $colKey= $self->stringify_colkey($srcN, $colN);
 			my $originColKey= $self->related_auto_id_columns->{$colKey};
 			$originColKey && $originColKey ne $colKey
 				and push @deps, { col => $colN, origin_colKey => $originColKey };
@@ -122,7 +123,7 @@ sub _build_related_auto_id_columns {
 	my $srcHash= $self->valid_sources;
 	for my $srcN (keys %$srcHash) {
 		for my $colN (@{$self->auto_cols_per_source->{$srcN}}) {
-			my $colKey= $srcN.'.'.$colN;
+			my $colKey= $self->stringify_colkey($srcN, $colN);
 			
 			# this column depends on itself
 			$result->{$colKey}= $colKey;

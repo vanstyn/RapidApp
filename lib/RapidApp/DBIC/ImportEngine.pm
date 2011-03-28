@@ -36,6 +36,16 @@ has 'records_failed_insert' => ( is => 'rw', isa => 'ArrayRef[ArrayRef]', defaul
 # map of {srcN}{primary_key} => 1
 #has 'processed' => ( is => 'ro', isa => 'HashRef[HashRef]', default => sub {{}} );
 
+sub translate_key {
+	my ($self, $colkey, $val)= @_;
+	return ($self->auto_id_map->{$colkey} || {})->{$val};
+}
+
+sub set_translation {
+	my ($self, $colkey, $oldVal, $newVal)= @_;
+	($self->auto_id_map->{$colkey} ||= {})->{$oldVal}= $newVal;
+}
+
 sub _on_progress_period_change {
 	my $self= shift;
 	$self->next_progress($self->progress_period) if ($self->progress_period > 0);
