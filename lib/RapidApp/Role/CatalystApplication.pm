@@ -11,22 +11,19 @@ use Hash::Merge;
 use RapidApp::Log;
 use RapidApp::Debug;
 
+# initialize properties of our debug messages
+RapidApp::Debug->default_instance->applyChannelConfig({
+	'auth'          => { color => GREEN,     },
+	'controller'    => { color => MAGENTA,   },
+	'dbiclink'      => { color => MAGENTA,   },
+	'db'            => { color => BOLD.GREEN,},
+	'notifications' => { color => YELLOW,    },
+	'web1render'    => { color => CYAN,      },
+});
+
 sub rapidApp { (shift)->model("RapidApp"); }
 
 has 'request_id' => ( is => 'ro', default => sub { (shift)->rapidApp->requestCount; } );
-
-sub debug_config_defaults {
-	return {
-		channels => {
-			'auth'          => { color => GREEN,     },
-			'controller'    => { color => MAGENTA,   },
-			'dbiclink'      => { color => MAGENTA,   },
-			'db'            => { color => BOLD.GREEN,},
-			'notifications' => { color => YELLOW,    },
-			'web1render'    => { color => CYAN,      },
-		},
-	};
-}
 
 # An array of stack traces which were caught during the request
 # We assign this right at the end of around("dispatch")
@@ -49,7 +46,6 @@ around 'setup_components' => sub {
 	# At this point, we don't have a catalyst instance yet, just the package name.
 	# Catalyst has an amazing number of package methods that masquerade as instance methods later on.
 	&flushLog;
-	$app->config->{Debug}= Hash::Merge::merge( $app->config->{Debug}, debug_config_defaults() );
 	RapidApp::ScopedGlobals->applyForSub(
 		{ catalystClass => $app, log => $app->log },
 		sub {
@@ -68,7 +64,7 @@ sub processConfig {
 	my $log= $app->log;
 	my $logCfg= $app->config->{Debug} || {};
 	if ($logCfg->{channels}) {
-		$log->applyDebugChannels($logCfg->{channels});
+		RapidApp::Debug->default_instance->applyChannelConfig($logCfg->{channels});
 	}
 }
 
