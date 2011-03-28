@@ -56,6 +56,7 @@ sub ra_die {
 }
 
 sub usererr {
+	return RapidApp::Responder::UserError->new( userMessage => "" . shift(@_) . ""  ) if (scalar @_ == 1);
 	return RapidApp::Responder::UserError->new(@_);
 }
 

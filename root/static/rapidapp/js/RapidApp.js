@@ -3097,3 +3097,55 @@ Ext.ux.RapidApp.checkLocalTimezone = function(conn,options) {
 	options.headers['X-RapidApp-TimezoneOffset']= Ext.ux.RapidApp.userPrefs.timezoneOffset;
 };
 Ext.Ajax.on('beforerequest',Ext.ux.RapidApp.checkLocalTimezone);
+
+
+/*  Ext.ux.RapidApp.AjaxCmp
+ Works like Ext.ux.AutoPanel except renders directly to the
+ Element object instead of being added as an item to the
+ Container
+*/
+Ext.ux.RapidApp.AjaxCmp = Ext.extend(Ext.Component, {
+	
+	autoLoad: null,
+	
+	applyCnf: {},
+	
+	// deleteId: If set to true the ID of the dynamically fetched
+	// component will be deleted before its created
+	deleteId: false,
+	
+	initComponent: function() {
+		if(!Ext.isObject(this.autoLoad)) { throw 'autoLoad must be an object' };
+		if(!Ext.isObject(this.applyCnf)) { throw 'applyCnf must be an object' };
+		
+		this.ajaxReq = {
+			disableCaching: true,
+			success: function(response, opts) {
+				if(response.responseText) { 
+					var cmpconf = Ext.decode(response.responseText);
+					if(!Ext.isObject(cmpconf)) { throw 'responseText is not a JSON encoded object'; }
+					
+					Ext.apply(cmpconf,this.applyCnf);
+					cmpconf.renderTo = this.getEl();
+					
+					if(this.deleteId && cmpconf.id) { delete cmpconf.id };
+					
+					var Cmp = Ext.ComponentMgr.create(cmpconf,'panel');
+					this.component = Cmp;
+					Cmp.relayEvents(this,this.events);
+					Cmp.show();
+				}
+			},
+			scope: this
+		};
+		Ext.apply(this.ajaxReq,this.autoLoad);
+		
+		this.on('afterrender',function() {
+			Ext.Ajax.request(this.ajaxReq);
+		},this);
+		Ext.ux.RapidApp.AjaxCmp.superclass.initComponent.apply(this, arguments);
+	}
+});
+Ext.reg('ajaxcmp',Ext.ux.RapidApp.AjaxCmp);
+
+

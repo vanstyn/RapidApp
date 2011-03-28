@@ -103,6 +103,7 @@ Ext.ux.RapidApp.AppTab.treenav_click = function(node,event) {
 Ext.ux.RapidApp.AppTab.findParent_loadTarget = function(cnt) {
 	var loadTarget = null;
 	var parent = cnt.findParentBy(function(cmp) {
+		if (!cmp.getComponent) { return false;} 
 		loadTarget = cmp.getComponent('load-target');
 		if(loadTarget) { return true; }
 		return false;

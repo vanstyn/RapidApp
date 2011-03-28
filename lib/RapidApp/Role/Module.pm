@@ -249,6 +249,24 @@ sub THIS_MODULE {
 }
 
 
+# Gets a Module by / delim path
+sub get_Module {
+	my $self = shift;
+	my $path = shift or return $self->THIS_MODULE;
+	
+	my @parts = split('/',$path);
+	my $first = shift @parts;
+	# If $first is undef then the path is absolute (starts with '/'):
+	return $self->topmost_module->get_Module(join('/',@parts)) unless ($first);
+	
+	# If there are no more parts in the path, then the name is a direct submodule:
+	return $self->Module($first) unless (scalar @parts > 0);
+	
+	return $self->Module($first)->get_Module(join('/',@parts));
+}
+
+
+
 sub Module {
 	my $self = shift;
 	my $name = shift;

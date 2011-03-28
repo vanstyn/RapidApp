@@ -11,6 +11,9 @@ use RapidApp::Include qw(sugar perlutil);
 use Template;
 use RapidApp::AppDV::TTController;
 
+has 'apply_css_restrict' => ( is => 'ro', default => 0 );
+
+
 has 'TTController'  => (
 	is => 'ro',
 	isa => 'RapidApp::AppDV::TTController',
@@ -48,14 +51,12 @@ sub BUILD {
 	my $self = shift;
 
 	$self->apply_extconfig(
-		id					=> $self->instance_id,
 		xtype				=> 'appdv',
 		autoHeight		=> \1,
 		multiSelect		=> \1,
 		simpleSelect	=> \1,
 		overClass		=> 'record-over',
 		items => []
-		#tpl				=> $self->xtemplate
 	);
 	
 	
@@ -69,11 +70,31 @@ sub BUILD {
 
 sub load_xtemplate {
 	my $self = shift;
+	$self->apply_extconfig( id => $self->instance_id );
 	$self->apply_extconfig( tpl => $self->xtemplate );
 	$self->apply_extconfig( FieldCmp_cnf => $self->FieldCmp );
 	$self->apply_extconfig( items => [ values %{ $self->DVitems } ] );
 }
 
+sub xtemplate_cnf {
+	my $self = shift;
+	
+	my $html_out = '';
+	
+	my $Template = Template->new({ INCLUDE_PATH => $self->tt_include_path });
+	$Template->process($self->tt_file,{ r => $self->TTController },\$html_out)
+		or die $Template->error;
+	
+	#TODO: make this more robust/better:	
+	my @classes = ();
+	if($self->apply_css_restrict) {
+		push @classes, 'no_create' unless ($self->can('create_records'));
+		push @classes, 'no_update' unless ($self->can('update_records'));
+		push @classes, 'no_destroy' unless ($self->can('destroy_records'));
+	}
+	
+	return '<div class="' . join(' ',@classes) . '">' . $html_out . '</div>';
+}
 
 
 
@@ -87,25 +108,13 @@ sub xtemplate {
 }
 
 
+
 has 'DVitems' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 has 'FieldCmp' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 
-has 'xtemplate_cnf' => ( 
-	is => 'ro', 
-	isa => 'Str', 
-	lazy => 1,
-	default => sub {
-		my $self = shift;
-		
-		my $html_out = '';
-		
-		my $Template = Template->new({ INCLUDE_PATH => $self->tt_include_path });
-		$Template->process($self->tt_file,{ r => $self->TTController },\$html_out)
-			or die $Template->error;
-		
-		return $html_out;
-		}
-);
+
+
+
 
 # Dummy read_records:
 sub read_records {
