@@ -122,6 +122,7 @@ sub saveErrorReport {
 	undef @summaryParts;
 	
 	my $refId;
+	my $db_debug;
 	try {
 		local $Storable::forgive_me= 1; # ignore non-storable things
 		
@@ -172,6 +173,9 @@ sub saveErrorReport {
 		my $rs= $self->resultSource;
 		defined $rs or die "Missing ResultSource";
 		
+		
+		$db_debug= $rs->schema->storage->debug();
+		$rs->schema->storage->debug(0); # prevent spamming the console with binary data
 		my $row= $rs->resultset->create({
 			when    => $errReport->dateTime,
 			summary => $summary,
@@ -184,6 +188,7 @@ sub saveErrorReport {
 		$log->error("Failed to save exception to database: ".$_);
 		$refId= undef;
 	};
+	if ($db_debug) { $self->resultSource->schema->storage->debug($db_debug); }
 	return $refId;
 }
 
