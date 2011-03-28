@@ -85,14 +85,14 @@ sub xtemplate_cnf {
 	$Template->process($self->tt_file,{ r => $self->TTController },\$html_out)
 		or die $Template->error;
 	
+	return $html_out unless ($self->apply_css_restrict);
+	
 	#TODO: make this more robust/better:	
 	my @classes = ();
-	if($self->apply_css_restrict) {
-		push @classes, 'no_create' unless ($self->can('create_records'));
-		push @classes, 'no_update' unless ($self->can('update_records'));
-		push @classes, 'no_destroy' unless ($self->can('destroy_records'));
-	}
-	
+	push @classes, 'no_create' unless ($self->can('create_records'));
+	push @classes, 'no_update' unless ($self->can('update_records'));
+	push @classes, 'no_destroy' unless ($self->can('destroy_records'));
+
 	return '<div class="' . join(' ',@classes) . '">' . $html_out . '</div>';
 }
 
