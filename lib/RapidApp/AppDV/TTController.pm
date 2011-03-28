@@ -52,7 +52,9 @@ sub delete_record {
 sub div_editable_value{
 	my $self = shift;
 	my $name = shift;
+	
 	return $self->div_clickable(
+		
 		'<div class="editable-value">' .
 			'<div class="field-name" style="display:none;">' . $name . '</div>' .
 			(shift) .
@@ -63,8 +65,19 @@ sub div_editable_value{
 sub data_wrapper_div {
 	my $self = shift;
 	my $name = shift;
+	my $display = shift;
+	$display = $name unless ($display);
+	
+	my $div = '<div class="data-holder"';
+	
+	my $Column = $self->AppDV->columns->{$name};
+	if($Column) {
+		my $style = $Column->get_field_config->{data_wrapper_style};
+		$div .= ' style=" ' . $style . '"' if ($style);
+	}
+	
 	return '<div class="data-wrapper">' .
-		'<div class="data-holder">{' . $name . '}</div>' .
+		$div . '>{' . $display . '}</div>' .
 		'<div class="field-holder"></div>' .
 	'</div>' ;
 }
@@ -79,7 +92,7 @@ sub div_edit_field {
 	return $self->div_editable_value($name,
 		'<div class="appdv-edit-field">' .	
 			'<table><tr>' .
-				'<td>' . $self->data_wrapper_div($display) . '</td>' .
+				'<td>' . $self->data_wrapper_div($name,$display) . '</td>' .
 								
 				'<td class="icons">' .
 					'<div class="edit">&nbsp;</div>' .
@@ -99,9 +112,14 @@ sub div_bigfield {
 	my $name = shift;
 	my $display = shift;
 	$display = $name unless ($display);
+	
+	
+	
+	
+	
 	return $self->div_editable_value($name,
 		'<div class="appdv-edit-bigfield">' .
-			$self->data_wrapper_div($display)  . 
+			$self->data_wrapper_div($name,$display)  . 
 			'<div class="icons">' .
 				'<div class="edit">edit</div>' .
 				'<div class="cancel">cancel</div>' .
