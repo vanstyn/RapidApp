@@ -8,13 +8,17 @@ BEGIN { extends 'Catalyst::Controller' }
 use RapidApp::CatalystX::SimpleCAS::Store::File;
 use JSON::PP;
 
+has 'store_path' => ( is => 'ro', required => 1 );
+
+
 has 'Store' => (
 	is => 'ro',
 	lazy => 1,
 	default => sub {
 		my $self = shift;
 		return RapidApp::CatalystX::SimpleCAS::Store::File->new(
-			store_dir => '/root/RapidApps/GreenSheet/file_cas'
+			store_dir => $self->store_path
+			#store_dir => '/root/RapidApps/GreenSheet/file_cas'
 		);
 	}
 );
