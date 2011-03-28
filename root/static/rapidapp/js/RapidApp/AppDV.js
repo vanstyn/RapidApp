@@ -134,7 +134,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		this.components.splice(index, 1);
 	},
 	
-	add_record: function() {
+	get_new_record: function() {
 		var node = this.getNode(0);
 		if(node) {
 			var nodeEl = new Ext.Element(node);
@@ -149,10 +149,23 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 		if(! Store.api.create) {
 			Ext.Msg.alert('Cannot add','No create function has been defined');
-			return;
+			return false;
 		}
-		
-		return Store.add(newRec);
+		return newRec;
+	},
+	
+	add_record: function() {
+		var newRec = this.get_new_record();
+		if (newRec) {
+			return this.getStore().add(newRec);
+		}
+	},
+	
+	insert_record: function() {
+		var newRec = this.get_new_record();
+		if (newRec) {
+			return this.getStore().insert(0,newRec);
+		}
 	},
 	
 	set_field_editable: function(editEl,fieldname,index,Record) {
