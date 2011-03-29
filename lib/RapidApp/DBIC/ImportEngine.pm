@@ -16,6 +16,10 @@ has 'next_progress' => ( is => 'rw', isa => 'Int', default => -1 );
 has 'records_read' => ( is => 'rw', isa => 'Int', default => 0 );
 has 'records_imported' => ( is => 'rw', isa => 'Int', default => 0 );
 
+has 'commit_partial_import' => ( is => 'rw', isa => 'Bool', default => 0 );
+
+has 'data_is_dirty' => ( is => 'rw', isa => 'Bool', default => 0 );
+
 with 'RapidApp::DBIC::SchemaAnalysis';
 
 # map of {ColKey}{read_id} => $saved_id
@@ -76,48 +80,54 @@ sub import_records {
 				$self->perform_insert(@$_) for (@$worklist);
 			} while (scalar( @{$self->records_failed_insert} ) < scalar(@$worklist));
 			
-			if (!$ENV{IGNORE_INVALID_RECORDS}) {
-				if ($cnt= scalar @{$self->records_failed_insert}) {
-					$self->report_insert_errors;
-					die "$cnt records could not be added due to errors\nSee /tmp/rapidapp_import_errors.txt for details\n";
-				}
+			if ($cnt= scalar @{$self->records_failed_insert}) {
+				$self->report_insert_errors;
+				my $msg= "$cnt records could not be added due to errors\nSee /tmp/rapidapp_import_errors.txt for details\n";
+				$self->commit_partial_import? warn $msg : die $msg;
+				$self->data_is_dirty(1);
 			}
 		}
 		
-		if (!$ENV{IGNORE_INVALID_RECORDS}) {
-			if ($cnt= $self->records_missing_keys_count) {
-				$self->report_missing_keys;
-				die "$cnt records could not be added due to missing dependencies\nSee /tmp/rapidapp_import_errors.txt for details\n";
-			}
+		if ($cnt= $self->records_missing_keys_count) {
+			$self->report_missing_keys;
+			my $msg= "$cnt records could not be added due to missing dependencies\nSee /tmp/rapidapp_import_errors.txt for details\n";
+			$self->commit_partial_import? warn $msg : die $msg;
+			$self->data_is_dirty(1);
 		}
+		$self->data_is_dirty and warn "WARNING: Committing anyway via 'commit_partial_import'!!!";
 	});
+}
+
+has '_debug_fd' => ( is => 'rw', isa => 'IO::File', lazy_build => 1 );
+sub _build__debug_fd {
+	my $debug_fd= IO::File->new;
+	$debug_fd->open('/tmp/rapidapp_import_errors.txt', 'w') or die $!;
+	return $debug_fd;
 }
 
 sub report_missing_keys {
 	my $self= shift;
 	
-	my $debug_fd= IO::File->new;
-	$debug_fd->open('/tmp/rapidapp_import_errors.txt', 'w') or die $!;
+	my $debug_fd= $self->_debug_fd;
 	for my $colKey (keys %{$self->records_missing_keys}) {
 		while (my ($colVal, $recs)= each %{$self->records_missing_keys->{$colKey}}) {
 			$debug_fd->print("Required $colKey = '$colVal' :\n");
 			$debug_fd->print("\t".encode_json($_)."\n") for (@$recs);
 		}
 	}
-	$debug_fd->close();
+	$debug_fd->flush();
 }
 
 sub report_insert_errors {
 	my $self= shift;
 	
-	my $debug_fd= IO::File->new;
-	$debug_fd->open('/tmp/rapidapp_import_errors.txt', 'w') or die $!;
+	my $debug_fd= $self->_debug_fd;
 	$debug_fd->print("Insertion Errors:\n");
 	for my $attempt (@{$self->{records_failed_insert}}) {
 		my ($srcN, $rec, $deps, $remappedRec, $errMsg)= @$attempt;
 		$debug_fd->print("insert $srcN\n\tRecord   : ".encode_json($rec)."\n\tRemapped : ".encode_json($remappedRec)."\n\tError    : $errMsg\n");
 	}
-	$debug_fd->close();
+	$debug_fd->flush();
 }
 
 sub read_record {
