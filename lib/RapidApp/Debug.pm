@@ -56,7 +56,7 @@ sub _write {
 
 sub _getStderrHandle {
 	my $io= IO::Handle->new;
-	$io->fdopen(fileno(STDERR), "r");
+	$io->fdopen(fileno(STDERR), "w");
 	return $io;
 }
 
