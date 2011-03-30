@@ -34,20 +34,68 @@ sub records_missing_keys_count {
 	return $cnt;
 }
 
+has 'pending_inserts' => ( is => 'ro', isa => 'ArrayRef[ArrayRef]', default => sub {[]} );
+
 # array of [ [ $srcN, $rec, \@deps, $errMsg ], ... ]
 has 'records_failed_insert' => ( is => 'rw', isa => 'ArrayRef[ArrayRef]', default => sub {[]} );
 
 # map of {srcN}{primary_key} => 1
 #has 'processed' => ( is => 'ro', isa => 'HashRef[HashRef]', default => sub {{}} );
 
+has '_calc_dep_fn_per_source' => ( is => 'rw', isa => 'HashRef[CodeRef]', lazy_build => 1 );
+has '_proc_dep_fn_per_source' => ( is => 'rw', isa => 'HashRef[CodeRef]', lazy_build => 1 );
+
 sub translate_key {
 	my ($self, $colkey, $val)= @_;
-	return ($self->auto_id_map->{$colkey} || {})->{$val};
+	my $mapByCol= $self->auto_id_map->{$colkey};
+	return $mapByCol? $mapByCol->{$val} : undef;
 }
 
 sub set_translation {
-	my ($self, $colkey, $oldVal, $newVal)= @_;
-	($self->auto_id_map->{$colkey} ||= {})->{$oldVal}= $newVal;
+	my ($self, $colKey, $oldVal, $newVal)= @_;
+	my $mapByCol= $self->auto_id_map->{$colKey} ||= {};
+	$mapByCol->{$oldVal}= $newVal;
+	my @resolved= $self->_pop_delayed_inserts($colKey, $oldVal);
+	if (scalar @resolved) {
+		DEBUG('import', "\t[resolved dep: $colKey  $oldVal => $newVal ]");
+		push @{$self->pending_inserts}, @resolved;
+	}
+}
+
+sub push_delayed_insert {
+	my ($self, $colKey, $val, $insertParamArray)= @_;
+	my $pendingByCol= ($self->records_missing_keys->{$colKey} ||= {}); 
+	my $pendingByVal= ($pendingByCol->{$val} ||= []);
+	push @$pendingByVal, $insertParamArray;
+	$self->_send_feedback_event if (!--$self->{next_progress});
+}
+
+sub _pop_delayed_inserts {
+	my ($self, $colKey, $val)= @_;
+	my $pendingByCol= $self->records_missing_keys->{$colKey} or return;
+	my $pendingByKey= delete $pendingByCol->{$val} or return;
+	scalar keys %$pendingByCol or delete $self->records_missing_keys->{$colKey};
+	return @$pendingByKey;
+}
+
+sub _build__calc_dep_fn_per_source {
+	my $self= shift;
+	my $default= $self->can('calculate_dependencies'); # do it this way to pick up methods from subclasses
+	my %result= map {
+		$_ => $self->schema->resultset($_)->result_class->can('import_calculate_dependencies')
+				|| $default
+		} keys %{$self->valid_sources};
+	return \%result;
+}
+
+sub _build__proc_dep_fn_per_source {
+	my $self= shift;
+	my $default= $self->can('process_dependencies'); # do it this way to pick up methods from subclasses
+	my %result= map {
+		$_ => $self->schema->resultset($_)->result_class->can('import_process_dependencies')
+				|| $default
+		} keys %{$self->valid_sources};
+	return \%result;
 }
 
 sub _on_progress_period_change {
@@ -69,6 +117,10 @@ sub import_records {
 		my $acn;
 		while (($data= $self->read_record($src))) {
 			$self->import_record($data);
+			# now, insert any records that depended on this one (unless they have other un-met deps, in which case they get re-queued)
+			while (my $delayedInsert= shift @{$self->pending_inserts}) {
+				$self->_dep_resolve_and_insert(@$delayedInsert);
+			}
 		}
 		
 		# keep trying to insert them until either no records get inserted, or until they all succeed
@@ -78,7 +130,11 @@ sub import_records {
 				$self->records_failed_insert([]);
 				
 				$self->perform_insert(@$_) for (@$worklist);
-			} while (scalar( @{$self->records_failed_insert} ) < scalar(@$worklist));
+				# now, insert any records that depended on this one (unless they have other un-met deps, in which case they get re-queued)
+				while (my $delayedInsert= shift @{$self->pending_inserts}) {
+					$self->_dep_resolve_and_insert(@$delayedInsert);
+				}
+			} while (scalar( @{$self->records_failed_insert} ) != scalar(@$worklist));
 			
 			if ($cnt= scalar @{$self->records_failed_insert}) {
 				$self->report_insert_errors;
@@ -146,21 +202,12 @@ sub import_record {
 	my $srcN= $p{source};
 	my $rec= $p{data};
 	defined $self->valid_sources->{$srcN} or die "Cannot import records into source $srcN";
-	my $rs= $self->schema->resultset($srcN);
-	my $resultClass= $rs->result_class;
 	my $code;
 	
-	# first, handle potential import munging
-	if ($code= $resultClass->can('import_create_munge')) {
-		$rec= $resultClass->$code($rec);
-	}
+	$code= $self->_calc_dep_fn_per_source->{$srcN};
+	my $deps= $code->($self, $srcN, $rec);
 	
-	# then calculate dependencies on other rows
-	my $deps= ($code= $resultClass->can('calculate_record_dependencies'))?
-		$resultClass->$code($rec) : $self->calculate_dependencies($srcN, $rec);
-	
-	my $remapped= $self->process_dependencies($srcN, $rec, $deps);
-	$self->perform_insert($srcN, $rec, $deps, $remapped) if $remapped;
+	$self->_dep_resolve_and_insert($srcN, $rec, $deps);
 }
 
 sub get_primary_key_string {
@@ -181,7 +228,7 @@ sub perform_insert {
 	my $self= shift;
 	my ($srcN, $rec, $deps, $remappedRec)= @_;
 	
-	DEBUG('import', 'perform_insert', $srcN, $rec);
+	DEBUG('import', 'perform_insert', $srcN, $rec, '=>', $remappedRec);
 	
 	my $rs= $self->schema->resultset($srcN);
 	my $resultClass= $rs->result_class;
@@ -213,26 +260,28 @@ sub perform_insert {
 	
 	# record any auto-id values that got generated
 	my @autoCols= @{$self->auto_cols_per_source->{$srcN} || []};
-	my @pending;
 	for my $colN (@autoCols) {
 		my $origVal= $rec->{$colN};
 		next unless defined $origVal;
 		
 		my $newVal= $row->get_column($colN);
 		my $colKey= $srcN.'.'.$colN;
-		($self->auto_id_map->{$colKey} ||= {})->{ $origVal }= $newVal;
-		my $pendingThisCol= $self->records_missing_keys->{$colKey} || {};
-		my $pendingThisKey= delete $pendingThisCol->{$origVal};
-		if ($pendingThisKey) {
-			DEBUG('import', "\t[resolved dep: $srcN.$colN  $origVal => $newVal");
-			push @pending, @$pendingThisKey;
-		}
+		$self->set_translation($colKey, $origVal, $newVal);
 	}
+}
+
+sub _dep_resolve_and_insert {
+	my ($self, $srcN, $rec, $deps)= @_;
 	
-	# now, insert any records that depended on this one (unless they have other un-met deps, in which case they get re-queued)
-	for (@pending) {
-		my $remapped= $self->process_dependencies(@$_);
-		$self->perform_insert(@$_, $remapped) if $remapped;
+	my $resolveDepFn= $self->_proc_dep_fn_per_source->{$srcN};
+	
+	my $delayedCnt= $self->records_missing_keys_count;
+	my $remapped= $resolveDepFn->(@_);
+	if ($remapped) {
+		$self->perform_insert($srcN, $rec, $deps, $remapped);
+	} else {
+		$self->records_missing_keys_count > $delayedCnt
+			or die "process_dependencies must call push_delayed_insert if it can't remap the record";
 	}
 }
 
@@ -264,10 +313,8 @@ sub process_dependencies {
 			# if we don't know it yet, we depend on this foreign column value.
 			# queue this record for later insertion.
 			if (!defined $newVal) {
-				my $pending= (($self->records_missing_keys->{$dep->{origin_colKey}} ||= {})->{$oldVal} ||= []);
-				push @$pending, [ @_ ];
 				DEBUG('import', "\t[delayed due to dependency: $srcN.$colN=$oldVal => ".$dep->{origin_colKey}."=?? ]");
-				$self->_send_feedback_event if (!--$self->{next_progress});
+				$self->push_delayed_insert($dep->{origin_colKey}, $oldVal, [ $srcN, $rec, $deps ]);
 				return undef;
 			}
 			# swap it
