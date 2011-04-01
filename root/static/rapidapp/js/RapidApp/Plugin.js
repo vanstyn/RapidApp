@@ -57,17 +57,17 @@ Ext.ns('Ext.ux.RapidApp.Plugin.HtmlEditor');
 Ext.ux.RapidApp.Plugin.HtmlEditor.SimpleCAS_Image = Ext.extend(Ext.ux.form.HtmlEditor.Image,{
 	
 	onRender: function() {
-		  var btn = this.cmp.getToolbar().addButton({
+		var btn = this.cmp.getToolbar().addButton({
 				text: 'Insert Image',
 				iconCls: 'x-edit-image',
 				handler: this.selectImage,
 				scope: this,
 				tooltip: {
-					 title: this.langTitle
+					title: this.langTitle
 				},
 				overflowText: this.langTitle
-		  });
-	 },
+		});
+	},
 	
 	selectImage: function() {
 		var upload_field = {
@@ -116,4 +116,80 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.SimpleCAS_Image = Ext.extend(Ext.ux.form.HtmlE
 
 
 
+Ext.ux.RapidApp.Plugin.HtmlEditor.DVSelect = Ext.extend(Ext.util.Observable, {
+	
+	dataview: {
+		xtype: 'panel',
+		html: 'foo'
+	},
+	
+	
+	title: 'Select Item',
+	height: 400,
+	width: 500,
+	
+	getInsertStr: function(Record) {
+	
+	
+	},
+	
+	init: function(cmp){
+		this.cmp = cmp;
+		this.cmp.on('render', this.onRender, this);
+		this.cmp.on('initialize', this.onInit, this, {delay:100, single: true});
+	},
+	
+	onInit: function(){
+		
+	},
+	onRender: function() {
+		var btn = this.cmp.getToolbar().addButton({
+				iconCls: 'x-edit-image',
+				handler: this.loadDVSelect,
+				text: this.title,
+				scope: this,
+				//tooltip: {
+				//	title: this.langTitle
+				//},
+				//overflowText: this.langTitle
+		});
+	},
+	
+	insertContent: function(str) {
+		this.cmp.insertAtCursor(str);
+	},
+	
+	loadDVSelect: function() {
+	
+		this.win = new Ext.Window({
+			title: this.title,
+			layout: 'fit',
+			width: this.width,
+			height: this.height,
+			closable: true,
+			modal: true,
+			items: this.dataview,
+			buttons: [
+				{
+					text : 'Select',
+					scope: this,
+					handler : function() {
+						console.dir(this);
+					}
+				},
+				{
+					text : 'Cancel',
+					scope: this,
+					handler : function() {
+						this.win.close();
+					}
+				}
+			
+			]
+		});
+		
+		this.win.show();
+	}
+	
+});
 
