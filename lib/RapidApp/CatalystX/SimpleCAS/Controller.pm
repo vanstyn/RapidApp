@@ -5,6 +5,7 @@ use namespace::autoclean;
 
 BEGIN { extends 'Catalyst::Controller' }
 
+use RapidApp::CatalystX::SimpleCAS::Content;
 use RapidApp::CatalystX::SimpleCAS::Store::File;
 use JSON::PP;
 
@@ -22,6 +23,17 @@ has 'Store' => (
 		);
 	}
 );
+
+sub Content {
+	my $self = shift;
+	my $checksum = shift;
+	return RapidApp::CatalystX::SimpleCAS::Content->new(
+		Store		=> $self->Store,
+		checksum	=> $checksum
+	);
+}
+
+
 
 sub fetch_content: Local {
     my ($self, $c, $checksum) = @_;
