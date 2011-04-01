@@ -18,7 +18,7 @@ sub decode_json ($) { # decode
 }
 
 sub new {
-	return bless JSON::PP->new->utf8->allow_blessed->convert_blessed->allow_nonref, __PACKAGE__;
+	return bless JSON::PP->new->allow_blessed->convert_blessed->allow_nonref, __PACKAGE__;
 }
 
 sub object_to_json {

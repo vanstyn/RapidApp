@@ -9,7 +9,7 @@ use CatalystX::InjectComponent;
 use RapidApp::TraceCapture;
 use Hash::Merge;
 use RapidApp::Log;
-use RapidApp::Debug;
+use RapidApp::Debug 'DEBUG';
 
 # initialize properties of our debug messages
 RapidApp::Debug->default_instance->applyChannelConfig({
@@ -265,5 +265,128 @@ sub scream_color {
 	my $color = shift;
 	$c->log->debug("\n\n\n" . $color . BOLD . Dumper(\@_) . CLEAR . "\n\n\n");
 }
+
+#######################################################################################
+#  The following is mostly copy/pasted from Catalyst::Plugin::Unicode::Encoding.
+#  RapidApp aims to be "utf-8 everywhere", and this saves the user from the need to include
+#   that module, and allows us to extend it a bit at the same time.
+#######################################################################################
+
+use Encode 2.21 ();
+our $CHECK = Encode::FB_CROAK | Encode::LEAVE_SRC;
+our $codec = Encode::find_encoding('utf8') or die "Missing encoder for utf8";
+
+before 'finalize_headers' => \&properly_encode_response;
+after 'prepare_uploads' => \&properly_decode_request;
+after 'prepare_action' => \&properly_decode_action_params;
+
+sub properly_encode_response {
+	my $c= shift;
+	my @encoded;
+
+	$c->properly_encode_body && push @encoded, 'body';
+	
+	# also encode headers
+	for my $ra_hdr (grep { $_ =~ /^X-RapidApp/ } $c->response->headers->header_field_names) {
+		my @val= $c->response->headers->header($ra_hdr);
+		for (@val) {
+			if (utf8::is_utf8($_)) {
+				push @encoded, $ra_hdr;
+				$_= $codec->encode($_, $CHECK);
+			}
+		}
+		$c->response->headers->header($ra_hdr => \@val);
+	}
+	
+	DEBUG('controller', "Encoded to utf-8: ", @encoded);
+}
+
+sub properly_encode_body {
+	my $c= shift;
+	my $body = $c->response->body;
+
+	DEBUG('controller', "no body set at encode-time") unless defined($body);
+	return 0 unless defined($body);
+
+	my ($ct, $ct_enc) = $c->response->content_type;
+
+	# Only touch 'text-like' contents
+	if (! $c->response->content_type =~ m!^text|xml$|javascript$|/JSON$!) {
+		DEBUG('controller', "content-type is not a recognizable \"text\" format");
+		return 0 unless utf8::is_utf8($body);
+		$c->log->error("Body of response is unicode, but content type is not \"text\"... encoding at utf8 just in case, but you should fix the content type or the data!!!");
+	}
+
+	if ($ct_enc && $ct_enc =~ /charset=(.*?)$/) {
+		if (uc($1) ne $codec->mime_name) {
+			$c->log->warn("Unicode::Encoding is set to encode in '" .
+				$codec->mime_name .
+				"', content type is '$1', not encoding ");
+			return 0;
+		}
+	} else {
+		DEBUG('controller', "defaulting content-type charset to utf-8");
+		$c->res->content_type($c->res->content_type . "; charset=" . $codec->mime_name);
+	}
+
+	# Encode expects plain scalars (IV, NV or PV) and segfaults on ref's
+	if (ref(\$body) eq 'SCALAR') {
+		$c->response->body( $codec->encode( $body, $CHECK ) );
+		return 1;
+	}
+	return 0;
+}
+
+# Note we have to hook here as uploads also add to the request parameters
+sub properly_decode_request {
+	my $c = shift;
+	my @decoded;
+
+	for my $key (qw/ parameters query_parameters body_parameters /) {
+		for my $value ( values %{ $c->request->{$key} } ) {
+
+			# TODO: Hash support from the Params::Nested
+			if ( ref $value && ref $value ne 'ARRAY' ) {
+				next;
+			}
+			for ( ref($value) ? @{$value} : $value ) {
+				# N.B. Check if already a character string and if so do not try to double decode.
+				#      http://www.mail-archive.com/catalyst@lists.scsys.co.uk/msg02350.html
+				#      this avoids exception if we have already decoded content, and is _not_ the
+				#      same as not encoding on output which is bad news (as it does the wrong thing
+				#      for latin1 chars for example)..
+				if (!Encode::is_utf8( $_ )) {
+					push @decoded, $key;
+					$_ = $codec->decode( $_, $CHECK );
+				}
+			}
+		}
+	}
+	
+	for my $value ( values %{ $c->request->uploads } ) {
+		push @decoded, $value.'->{filename}';
+		for ( ref($value) eq 'ARRAY' ? @{$value} : $value ) {
+			$_->{filename} = $codec->decode( $_->{filename}, $CHECK );
+		}
+	}
+	
+	# also decode headers we care about
+	for my $ra_hdr (grep { $_ =~ /^X-RapidApp/ } $c->req->headers->header_field_names) {
+		my @val= $c->req->headers->header($ra_hdr);
+		push @decoded, $ra_hdr;
+		@val= map { $codec->decode($_, $CHECK) } @val;
+		$c->req->headers->header($ra_hdr => \@val);
+	}
+	DEBUG('controller', "Decoded from utf8: ", @decoded);
+}
+
+sub properly_decode_action_params {
+	my $c = shift;
+
+	foreach (@{$c->req->arguments}, @{$c->req->captures}) {
+		$_ = Encode::is_utf8( $_ ) ? $_ : $codec->decode( $_, $CHECK );
+	}
+}
+
 
 1;

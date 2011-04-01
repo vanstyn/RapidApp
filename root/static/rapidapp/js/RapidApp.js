@@ -195,7 +195,10 @@ Ext.override(Ext.data.Connection,{
 			// Optional changes/additions to the original request options:
 			if(Ext.isObject(newopts)) {
 				Ext.iterate(newopts,function(key,value){
-					Ext.apply(options[key],value);
+					if (Ext.isObject(options[key]))
+						Ext.apply(options[key],value);
+					else
+						options[key]= value;
 				});
 			}
 			thisConn.request(options);
@@ -475,6 +478,7 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 		};
 		
 		// Recall the original request, adding in the customprompt header ata:
+		// TODO: change "headers:" to "params:" when we're ready to convert CustomPrompt stuff into parameters
 		var newopts = { headers: headers };
 		btn.ownerCt.ownerCt.close();
 		return formpanel.success_callback(newopts);

@@ -372,6 +372,12 @@ sub render_data {
 	# do nothing if the body has been set
 	if (defined $self->c->response->body && length $self->c->response->body) {
 		$self->c->log->debug("(body set by user)");
+		
+		# check for the condition that will cause a "Wide character in syswrite" and give a better error message
+		if (utf8::is_utf8($self->c->response->body)) {
+			$self->c->response->content_type =~ /^text|xml$|javascript$|JSON$/
+				or $self->c->log->warn("Controller ".(ref $self)." returned unicode text but isn't using a \"text\" content type!");
+		}
 		return undef;
 	}
 	

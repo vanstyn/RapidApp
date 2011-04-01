@@ -87,7 +87,7 @@ sub setJsonBody {
 		);
 	}
 	else {
-		$c->res->content_type("application/json; charset=$encoding");
+		$c->res->content_type("text/javascript; charset=$encoding");
 		$c->res->body($json);
 	}
 }

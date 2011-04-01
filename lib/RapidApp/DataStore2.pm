@@ -57,7 +57,6 @@ has 'base_keys' => (
 	}
 );
 
-
 sub BUILD {
 	my $self = shift;
 	

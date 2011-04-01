@@ -241,11 +241,15 @@ sub gen_dbicerr {
 
 sub gen_custprompt {
 	my $self= shift;
+	my $text= ($self->customprompt_data && $self->customprompt_data->{text}) || 'Testing';
 	die RapidApp::Responder::CustomPrompt->new(
 		title	  => 'Testing CustomPrompt',
-		items	  => { xtype => 'box', html => '<h2>Testing</h2>' },
+		items	  => [
+			{ xtype => 'box', html => '<h2>'.$text.'</h2> ('.length($text).')' },
+			{ xtype => 'textarea', name => 'text', fieldLabel => 'text', height => '3em', width => '12em' },
+		],
 		buttons => [ 'It Works', "It doesn't work" ],
-		height  => 100,
+		height  => 200,
 		width   => 300,
 		formpanel_cnf => {
 			labelAlign	=> 'top'
