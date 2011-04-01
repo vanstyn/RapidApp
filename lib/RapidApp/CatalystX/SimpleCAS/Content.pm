@@ -25,7 +25,8 @@ has 'image_size' => (
 	lazy => 1,
 	default => sub {
 		my $self = shift;
-		return $self->Store->image_size($self->checksum);
+		my ($width,$height) = $self->Store->image_size($self->checksum);
+		return [$width,$height];
 	}
 );
 

@@ -120,17 +120,21 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.DVSelect = Ext.extend(Ext.util.Observable, {
 	
 	dataview: {
 		xtype: 'panel',
-		html: 'foo'
+		html: ''
 	},
-	
 	
 	title: 'Select Item',
 	height: 400,
 	width: 500,
 	
-	getInsertStr: function(Record) {
+	getInsertStr: function(Records) {
 	
 	
+	},
+	
+	constructor: function(cnf) {
+		Ext.apply(this,cnf);
+		//if (this.dataview_enc) { this.dataview = Ext.decode(this.dataview_enc); }
 	},
 	
 	init: function(cmp){
@@ -160,7 +164,11 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.DVSelect = Ext.extend(Ext.util.Observable, {
 	},
 	
 	loadDVSelect: function() {
-	
+
+		if (this.dataview_enc) { this.dataview = Ext.decode(this.dataview_enc); }
+		
+		this.dataview.itemId = 'dv';
+		
 		this.win = new Ext.Window({
 			title: this.title,
 			layout: 'fit',
@@ -174,7 +182,15 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.DVSelect = Ext.extend(Ext.util.Observable, {
 					text : 'Select',
 					scope: this,
 					handler : function() {
-						console.dir(this);
+						
+						var dv = this.win.getComponent('dv');
+						
+						var recs = dv.getSelectedRecords();
+						if (recs.length == 0) { return; }
+						
+						var str = this.getInsertStr(recs);
+						this.win.close();
+						return this.insertContent(str);
 					}
 				},
 				{
@@ -190,6 +206,6 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.DVSelect = Ext.extend(Ext.util.Observable, {
 		
 		this.win.show();
 	}
-	
 });
+Ext.preg('htmleditor-dvselect',Ext.ux.RapidApp.Plugin.HtmlEditor.DVSelect);
 

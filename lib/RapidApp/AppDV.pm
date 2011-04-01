@@ -30,7 +30,8 @@ has 'tt_include_path' => (
 	lazy => 1,
 	default => sub {
 		my $self = shift;
-		return $self->app->config->{RapidApp}->{rapidapp_root};
+		#return $self->app->config->{RapidApp}->{rapidapp_root};
+		return $self->app->config->{root}->stringify . '/templates';
 	}
 );
 
