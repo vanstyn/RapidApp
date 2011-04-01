@@ -5,7 +5,7 @@ use Moose;
 
 use File::MimeInfo::Magic;
 use Image::Size;
-use Digest::MD5::File qw(file_md5_hex);
+use Digest::SHA1;
 use IO::File;
 use Data::Dumper;
 
@@ -127,13 +127,19 @@ sub content_mimetype {
 	return mimetype($file);
 }
 
+
 sub file_checksum  {
 	my $self = shift;
 	my $file = shift;
 	
-	return file_md5_hex($file);
+	my $FH = IO::File->new();
+	$FH->open('< ' . $file);
+	$FH->binmode;
+	
+	my $sha1 = Digest::SHA1->new->addfile($FH)->hexdigest;
+	$FH->close;
+	return $sha1;
 }
-
 
 sub image_size {
 	my $self = shift;
@@ -147,6 +153,32 @@ sub image_size {
 	return ($width,$height);
 }
 
+
+
+sub content_size {
+	my $self = shift;
+	my $checksum = shift;
+	
+	my $file = $self->checksum_to_path($checksum);
+	
+	return $self->xstat($file)->{size};
+}
+
+
+sub xstat {
+	my $self = shift;
+	my $file = shift;
+
+	return undef unless (-e $file);
+
+	my $h = {};
+
+	($h->{dev},$h->{ino},$h->{mode},$h->{nlink},$h->{uid},$h->{gid},$h->{rdev},
+			 $h->{size},$h->{atime},$h->{mtime},$h->{ctime},$h->{blksize},$h->{blocks})
+						  = stat($file);
+
+	return $h;
+}
 
 
 #### --------------------- ####
