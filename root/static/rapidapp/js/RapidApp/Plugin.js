@@ -107,6 +107,9 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.SimpleCAS_Image = Ext.extend(Ext.ux.form.HtmlE
 	},
 
 	insertImage: function(img) {
+		if(!this.cmp.activated) {
+			this.cmp.onFirstFocus();
+		}
 		this.cmp.insertAtCursor(
 			'<img src="' + img.link_url + '" width=' + img.width + ' height=' + img.height + '>'
 		);
@@ -160,11 +163,14 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.DVSelect = Ext.extend(Ext.util.Observable, {
 	},
 	
 	insertContent: function(str) {
+		if(!this.cmp.activated) {
+			this.cmp.onFirstFocus();
+		}
 		this.cmp.insertAtCursor(str);
 	},
 	
 	loadDVSelect: function() {
-
+		
 		if (this.dataview_enc) { this.dataview = Ext.decode(this.dataview_enc); }
 		
 		this.dataview.itemId = 'dv';
