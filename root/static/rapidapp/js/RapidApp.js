@@ -195,10 +195,7 @@ Ext.override(Ext.data.Connection,{
 			// Optional changes/additions to the original request options:
 			if(Ext.isObject(newopts)) {
 				Ext.iterate(newopts,function(key,value){
-					if (Ext.isObject(options[key]))
-						Ext.apply(options[key],value);
-					else
-						options[key]= value;
+					Ext.apply(options[key],value);
 				});
 			}
 			thisConn.request(options);
@@ -478,7 +475,6 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 		};
 		
 		// Recall the original request, adding in the customprompt header ata:
-		// TODO: change "headers:" to "params:" when we're ready to convert CustomPrompt stuff into parameters
 		var newopts = { headers: headers };
 		btn.ownerCt.ownerCt.close();
 		return formpanel.success_callback(newopts);
@@ -2994,21 +2990,58 @@ Ext.ux.RapidApp.form.DateTime2 = Ext.extend(Ext.ux.form.DateTime ,{
 		this.on('select',this.updateValue,this);
 		this.relayEvents(this.df, ['change','select']);
 		this.relayEvents(this.tf, ['change','select']);
+		this.setMinMax();
+	},
+	
+	setMinMax: function(newDate) {
+		
 		if (this.minValue) {
 			var val = this.minValue;
 			var dt = Date.parseDate(val, this.hiddenFormat);
-			this.tf.setMinValue(dt);
 			this.df.setMinValue(dt);
+			
+			if (newDate && newDate.getDayOfYear() != dt.getDayOfYear()) {
+				this.setTimeFullRange();
+			}
+			else {
+				this.tf.setMinValue(dt);
+			}
 		}
 		if (this.maxValue) {
 			var val = this.maxValue;
 			var dt = Date.parseDate(val, this.hiddenFormat);
-			this.tf.setMaxValue(dt);
 			this.df.setMaxValue(dt);
+			
+			if (newDate && newDate.getDayOfYear() != dt.getDayOfYear()) {
+				this.setTimeFullRange();
+			}
+			else {
+				this.tf.setMaxValue(dt);
+			}
 		}
 	},
-	updateValue: function() {
+	
+	setTimeFullRange: function() {
+		var MaxDt = new Date();
+		MaxDt.setHours(23);
+		MaxDt.setMinutes(59);
+		MaxDt.setSeconds(59);
+		this.tf.setMaxValue(MaxDt);
+		
+		var MinDt = new Date();
+		MinDt.setHours(0);
+		MinDt.setMinutes(0);
+		MinDt.setSeconds(0);
+		this.tf.setMinValue(MinDt);
+	},
+	
+	updateValue: function(cmp,newVal) {
 		Ext.ux.RapidApp.form.DateTime2.superclass.updateValue.call(this);
+		
+		var newDate = null;
+		if(newVal && newVal.getDayOfYear) { newDate = newVal; }
+		
+		this.setMinMax(newDate);
 		this.fireEvent('updated',this);
 	}
 });

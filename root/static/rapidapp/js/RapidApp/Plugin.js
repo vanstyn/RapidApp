@@ -151,7 +151,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.DVSelect = Ext.extend(Ext.util.Observable, {
 				iconCls: 'x-edit-image',
 				handler: this.loadDVSelect,
 				text: this.title,
-				scope: this,
+				scope: this
 				//tooltip: {
 				//	title: this.langTitle
 				//},
