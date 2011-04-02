@@ -117,40 +117,44 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.SimpleCAS_Image = Ext.extend(Ext.ux.form.HtmlE
 });
 
 
-
-
 Ext.ux.RapidApp.Plugin.HtmlEditor.DVSelect = Ext.extend(Ext.util.Observable, {
 	
-	dataview: {
-		xtype: 'panel',
-		html: ''
-	},
+	// This should be defined in consuming class
+	dataview: { xtype: 'panel', 	html: '' },
+	
+	// This should be defined in consuming class
+	getInsertStr: function(Records) {},
 	
 	title: 'Select Item',
 	height: 400,
 	width: 500,
 	
-	getInsertStr: function(Records) {
-	
-	
-	},
-	
 	constructor: function(cnf) {
 		Ext.apply(this,cnf);
-		//if (this.dataview_enc) { this.dataview = Ext.decode(this.dataview_enc); }
 	},
 	
 	init: function(cmp){
 		this.cmp = cmp;
 		this.cmp.on('render', this.onRender, this);
-		this.cmp.on('initialize', this.onInit, this, {delay:100, single: true});
+		
+		if(Ext.isIE) {
+			// Need to do this in IE because if the user tries to insert an image before the editor
+			// is "activated" it will go no place. Unlike FF, in IE the only way to get it activated
+			// is to click in it. The editor will automatically enable its toolbar buttons again when
+			// its activated.
+			this.cmp.on('afterrender',this.disableToolbarInit, this,{delay:1000, single: true});
+		}
 	},
 	
-	onInit: function(){
-		
+	disableToolbarInit: function() {
+		if(!this.cmp.activated) {
+			this.cmp.getToolbar().disable();
+		}
 	},
+	
 	onRender: function() {
-		var btn = this.cmp.getToolbar().addButton({
+		
+		this.btn = this.cmp.getToolbar().addButton({
 				iconCls: 'x-edit-image',
 				handler: this.loadDVSelect,
 				text: this.title,
@@ -164,9 +168,11 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.DVSelect = Ext.extend(Ext.util.Observable, {
 	
 	insertContent: function(str) {
 		if(!this.cmp.activated) {
+			// This works in FF, but not in IE:
 			this.cmp.onFirstFocus();
 		}
 		this.cmp.insertAtCursor(str);
+
 	},
 	
 	loadDVSelect: function() {
@@ -206,7 +212,6 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.DVSelect = Ext.extend(Ext.util.Observable, {
 						this.win.close();
 					}
 				}
-			
 			]
 		});
 		
