@@ -10,24 +10,24 @@ use Moose::Role;
 use String::Random 'random_string';
 
 # called once per request, to dispatch the request on a newly constructed $c object
-around 'dispatch' => \&_apply_system_account_user_masquerade;
+before 'dispatch' => sub { (shift)->apply_system_account_user_masquerade; };
 
-sub _apply_system_account_user_masquerade {
-	my ($orig, $c, @args)= @_;
-	my $authKey= $c->request->headers->header('X-SystemAccountAuthKey');
+sub apply_system_account_user_masquerade {
+	my ($c, @args)= @_;
+	my $authKey= $c->request->headers->header('X-RapidApp-SystemAccountAuthKey');
 	if (defined $authKey) {
 		if ($authKey ne $c->get_system_account_auth_key) {
-			$c->delete_session('Attempt to use system account with invalid key');
-			$c->response->status(401);
-			return;
+			my $msg= 'Attempt to use system account with invalid key';
+			$c->delete_session($msg);
+			die $msg;
 		}
 		
-		my $masqUser= $c->request->headers->header('X-SystemAccountMasqueradeAs');
+		my $masqUser= $c->request->headers->header('X-RapidApp-SystemAccountMasqueradeAs');
 		my $userObj= $c->find_user({ id => $masqUser, sysAcctAuthKey => $authKey });
 		if (!defined $userObj) {
-			$c->delete_session('No such user $masqUser');
-			$c->response->status(401);
-			return;
+			my $msg= 'No such user $masqUser';
+			$c->delete_session($msg);
+			die $msg;
 		}
 		
 		# if we have a session, is it set up correctly?  If not, delete it and start a new one.
@@ -37,20 +37,23 @@ sub _apply_system_account_user_masquerade {
 		}
 		
 		# else create a new session
-		if (!$c->session_is_valid) {
-			$c->session->{isSystemAccount}= 1;
-			$c->set_authenticated($userObj);
-			$c->session->{RapidApp_username}= $userObj->get("username");
-		}
+		$c->masquerade_user_create_session($userObj) unless $c->session_is_valid;
 	}
-	$c->$orig(@args);
 };
+
+sub masquerade_user_create_session {
+	my ($c, $userObj)= @_;
+	$c->session->{isSystemAccount}= 1;
+	$c->set_authenticated($userObj);
+	$c->session->{RapidApp_username}= $userObj->get("username");
+	$userObj->userRowObject->discard_changes;
+}
 
 sub get_masquerade_headers_for_user {
 	my ($app, $uid)= @_;
 	return {
-		'X-SystemAccountAuthKey' => $app->get_system_account_auth_key,
-		'X-SystemAccountMasqueradeAs' => $uid,
+		'X-RapidApp-SystemAccountAuthKey' => $app->get_system_account_auth_key,
+		'X-RapidApp-SystemAccountMasqueradeAs' => $uid,
 	};
 }
 
