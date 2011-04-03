@@ -311,7 +311,7 @@ sub properly_encode_body {
 	my ($ct, $ct_enc) = $c->response->content_type;
 
 	# Only touch 'text-like' contents
-	if (! $c->response->content_type =~ m!^text|xml$|javascript$|/JSON$!) {
+	unless ($c->response->content_type =~ m!^text|xml$|javascript$|/JSON$!) {
 		DEBUG('controller', "content-type is not a recognizable \"text\" format");
 		return 0 unless utf8::is_utf8($body);
 		$c->log->error("Body of response is unicode, but content type is not \"text\"... encoding at utf8 just in case, but you should fix the content type or the data!!!");
