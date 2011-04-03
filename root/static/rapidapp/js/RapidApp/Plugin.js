@@ -57,17 +57,17 @@ Ext.ns('Ext.ux.RapidApp.Plugin.HtmlEditor');
 Ext.ux.RapidApp.Plugin.HtmlEditor.SimpleCAS_Image = Ext.extend(Ext.ux.form.HtmlEditor.Image,{
 	
 	onRender: function() {
-		  var btn = this.cmp.getToolbar().addButton({
+		var btn = this.cmp.getToolbar().addButton({
 				text: 'Insert Image',
 				iconCls: 'x-edit-image',
 				handler: this.selectImage,
 				scope: this,
 				tooltip: {
-					 title: this.langTitle
+					title: this.langTitle
 				},
 				overflowText: this.langTitle
-		  });
-	 },
+		});
+	},
 	
 	selectImage: function() {
 		var upload_field = {
@@ -107,6 +107,9 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.SimpleCAS_Image = Ext.extend(Ext.ux.form.HtmlE
 	},
 
 	insertImage: function(img) {
+		if(!this.cmp.activated) {
+			this.cmp.onFirstFocus();
+		}
 		this.cmp.insertAtCursor(
 			'<img src="' + img.link_url + '" width=' + img.width + ' height=' + img.height + '>'
 		);
@@ -114,6 +117,106 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.SimpleCAS_Image = Ext.extend(Ext.ux.form.HtmlE
 });
 
 
+Ext.ux.RapidApp.Plugin.HtmlEditor.DVSelect = Ext.extend(Ext.util.Observable, {
+	
+	// This should be defined in consuming class
+	dataview: { xtype: 'panel', 	html: '' },
+	
+	// This should be defined in consuming class
+	getInsertStr: function(Records) {},
+	
+	title: 'Select Item',
+	height: 400,
+	width: 500,
+	
+	constructor: function(cnf) {
+		Ext.apply(this,cnf);
+	},
+	
+	init: function(cmp){
+		this.cmp = cmp;
+		this.cmp.on('render', this.onRender, this);
+		
+		if(Ext.isIE) {
+			// Need to do this in IE because if the user tries to insert an image before the editor
+			// is "activated" it will go no place. Unlike FF, in IE the only way to get it activated
+			// is to click in it. The editor will automatically enable its toolbar buttons again when
+			// its activated.
+			this.cmp.on('afterrender',this.disableToolbarInit, this,{delay:1000, single: true});
+		}
+	},
+	
+	disableToolbarInit: function() {
+		if(!this.cmp.activated) {
+			this.cmp.getToolbar().disable();
+		}
+	},
+	
+	onRender: function() {
+		
+		this.btn = this.cmp.getToolbar().addButton({
+				iconCls: 'x-edit-image',
+				handler: this.loadDVSelect,
+				text: this.title,
+				scope: this
+				//tooltip: {
+				//	title: this.langTitle
+				//},
+				//overflowText: this.langTitle
+		});
+	},
+	
+	insertContent: function(str) {
+		if(!this.cmp.activated) {
+			// This works in FF, but not in IE:
+			this.cmp.onFirstFocus();
+		}
+		this.cmp.insertAtCursor(str);
 
-
+	},
+	
+	loadDVSelect: function() {
+		
+		if (this.dataview_enc) { this.dataview = Ext.decode(this.dataview_enc); }
+		
+		this.dataview.itemId = 'dv';
+		
+		this.win = new Ext.Window({
+			title: this.title,
+			layout: 'fit',
+			width: this.width,
+			height: this.height,
+			closable: true,
+			modal: true,
+			items: this.dataview,
+			buttons: [
+				{
+					text : 'Select',
+					scope: this,
+					handler : function() {
+						
+						var dv = this.win.getComponent('dv');
+						
+						var recs = dv.getSelectedRecords();
+						if (recs.length == 0) { return; }
+						
+						var str = this.getInsertStr(recs);
+						this.win.close();
+						return this.insertContent(str);
+					}
+				},
+				{
+					text : 'Cancel',
+					scope: this,
+					handler : function() {
+						this.win.close();
+					}
+				}
+			]
+		});
+		
+		this.win.show();
+	}
+});
+Ext.preg('htmleditor-dvselect',Ext.ux.RapidApp.Plugin.HtmlEditor.DVSelect);
 
