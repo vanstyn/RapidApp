@@ -637,6 +637,8 @@ Ext.ux.RapidApp.validateCsvEmailStr = function(v) {
 
 Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 
+	nodeProperty: 'dataValue',
+	
 	initComponent: function() {
 		
 		// Handle an initial value:
@@ -675,15 +677,13 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 
 	onTriggerClick: function() {
 
-		var thisTF = this;
-
 		var autoLoad = {
 			url: this.load_url
 		};
 
-		if (this.dataValue) {
+		if (this[this.nodeProperty]) {
 			autoLoad.params = {
-				node: this.dataValue
+				node: this[this.nodeProperty]
 			};
 		}
 
@@ -706,30 +706,22 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 					handler: function(btn) {
 						var app = btn.ownerCt.ownerCt.getComponent('app').items.first();
 
-						var data = thisTF.select_handler(app);
+						var data = this.select_handler(app);
+						if(data === false) { return; }
 
-						thisTF.dataValue = data.value;
+						this.dataValue = data.value;
 
-						thisTF.setValue(data.display);
+						this.setValue(data.display);
 						btn.ownerCt.ownerCt.close();
-
-
-						//console.dir(data);
-
-
-					}
-
+					},
+					scope: this
 				},
 				{
 					text: 'Cancel',
 					handler: function(btn) {
 						btn.ownerCt.ownerCt.close();
-
 					}
-
 				}
-
-
 			]
 		});
 

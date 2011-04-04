@@ -59,8 +59,12 @@ Ext.ux.RapidApp.AppTree.jump_to_node_id = function(tree,id) {
 
 		node.loaded = false;
 		node.expand(false,false,function(){
-			select_child(id,parents);
-			node.select();
+			if(parents.length > 0) {
+				select_child(id,parents);
+			}
+			else {
+				node.select();
+			}
 		});
 	}
 
