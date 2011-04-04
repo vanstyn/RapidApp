@@ -46,7 +46,6 @@ sub masquerade_user_create_session {
 	$c->session->{isSystemAccount}= 1;
 	$c->set_authenticated($userObj);
 	$c->session->{RapidApp_username}= $userObj->get("username");
-	$userObj->userRowObject->discard_changes;
 }
 
 sub get_masquerade_headers_for_user {
