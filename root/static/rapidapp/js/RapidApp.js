@@ -663,9 +663,10 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 		Ext.ux.RapidApp.CustomPickerField.superclass.initComponent.apply(this, arguments);
 	},
 
-	//getValue: function() {
-	//	return this.dataValue;
-	//},
+	getValue: function() {
+		if (this.dataValue) { return this.dataValue; }
+		return Ext.ux.RapidApp.CustomPickerField.superclass.getValue.apply(this, arguments);
+	},
 
 	setValue: function(val) {
 		var new_val = val;
