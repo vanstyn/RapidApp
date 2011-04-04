@@ -694,6 +694,7 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 		var autoLoad = this.getAutoLoad();
 		
 		var win = new Ext.Window({
+			Combo: this,
 			title: this.win_title,
 			layout: 'fit',
 			width: this.win_width,
