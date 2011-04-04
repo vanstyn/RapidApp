@@ -53,11 +53,7 @@ sub init_onreq {
 		tbar					=> $self->tbar,
 	);
 	
-	my $node;
-	$node = $self->root_node_name if ($self->show_root_node);
-	$node = $self->c->req->params->{node} if ($self->c->req->params->{node});
-	
-	return unless($node);
+	my $node = $self->init_jump_to_node or return;
 
 	$self->add_listener( 
 		afterrender => RapidApp::JSONFunc->new( raw => 1, func => 
@@ -66,6 +62,17 @@ sub init_onreq {
 			'}'
 		)
 	);
+}
+
+
+sub init_jump_to_node {
+	my $self = shift;
+	
+	my $node;
+	$node = $self->root_node_name if ($self->show_root_node);
+	$node = $self->c->req->params->{node} if ($self->c->req->params->{node});
+	
+	return $node;
 }
 
 

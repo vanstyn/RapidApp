@@ -663,9 +663,9 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 		Ext.ux.RapidApp.CustomPickerField.superclass.initComponent.apply(this, arguments);
 	},
 
-	getValue: function() {
-		return this.dataValue;
-	},
+	//getValue: function() {
+	//	return this.dataValue;
+	//},
 
 	setValue: function(val) {
 		var new_val = val;
@@ -675,8 +675,7 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 		Ext.ux.RapidApp.CustomPickerField.superclass.setValue.call(this, new_val);
 	},
 
-	onTriggerClick: function() {
-
+	getAutoLoad: function() {
 		var autoLoad = {
 			url: this.load_url
 		};
@@ -686,7 +685,14 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 				node: this[this.nodeProperty]
 			};
 		}
+		
+		return autoLoad;
+	},
+	
+	onTriggerClick: function() {
 
+		var autoLoad = this.getAutoLoad();
+		
 		var win = new Ext.Window({
 			title: this.win_title,
 			layout: 'fit',
