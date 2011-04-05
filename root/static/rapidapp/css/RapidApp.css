@@ -60,6 +60,10 @@ pre {
 .icon-funnel { background-image: url(/static/rapidapp/images/funnel.png) !important; }
 .icon-funnel-edit { background-image: url(/static/rapidapp/images/funnel_edit.png) !important; }
 
+.icon-expand-all { background-image: url(/static/rapidapp/images/expand-all.gif) !important; }
+.icon-collapse-all { background-image: url(/static/rapidapp/images/collapse-all.gif) !important; }
+
+
 .icon-bullet_key {
 	background-image: url(/static/rapidapp/images/bullet_key.png) !important;
 	background-repeat:no-repeat;
