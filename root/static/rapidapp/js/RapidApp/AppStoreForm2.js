@@ -76,6 +76,12 @@ Ext.ux.RapidApp.AppStoreForm2.clientvalidation_handler = function(FormPanel, val
 	var save_btn = FormPanel.getSaveBtn();
 	var add_btn = FormPanel.getAddBtn();
 	
+	if(this.forceInvalid) {
+		if (save_btn && !save_btn.disabled) save_btn.disable();
+		if (add_btn && !add_btn.disabled) add_btn.disable();
+		return;
+	}
+	
 	if (valid && FormPanel.getForm().isDirty()) {
 		if(save_btn) save_btn.enable();
 		if(add_btn) add_btn.enable();
