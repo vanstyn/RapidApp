@@ -716,10 +716,17 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 		return autoLoad;
 	},
 	
-	onTriggerClick: function() {
-
+	getPickerApp: function() {
 		var autoLoad = this.getAutoLoad();
-		
+		return {
+			xtype: 'autopanel',
+			itemId: 'app',
+			autoLoad: autoLoad,
+			layout: 'fit'
+		};
+	},
+	
+	onTriggerClick: function() {
 		var win = new Ext.Window({
 			Combo: this,
 			buttonAlign: this.buttonAlign,
@@ -729,14 +736,8 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 			height: this.win_height,
 			closable: true,
 			modal: true,
-			items: {
-				xtype: 'autopanel',
-				itemId: 'app',
-				autoLoad: autoLoad,
-				layout: 'fit'
-			},
+			items: this.getPickerApp(),
 			buttons: this.buttons
-			
 		});
 
 		win.show();
