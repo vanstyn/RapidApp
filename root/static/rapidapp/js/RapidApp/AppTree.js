@@ -207,12 +207,13 @@ Ext.ux.RapidApp.AppTree.del = function(tree,url) {
 Ext.ns('Ext.ux.RapidApp.AppTree');
 
 Ext.ux.RapidApp.AppTree.FilterPlugin = Ext.extend(Ext.util.Observable,{
+	
+	fieldIndex: 0,
+	
 	init: function(tree) {
+		if(tree.filterConfig) { Ext.apply(this,tree.filterConfig); }
 
-		tree.filter = new Ext.ux.tree.TreeFilterX(this);
-				
-		var Tbar = tree.getTopToolbar();
-		Tbar.insert(1, {
+		var fieldConfig = {
 			xtype:'trigger',
 			emptyText: 'Type to Find',
 			triggerClass:'x-form-clear-trigger',
@@ -235,8 +236,15 @@ Ext.ux.RapidApp.AppTree.FilterPlugin = Ext.extend(Ext.util.Observable,{
 					}
 				}}
 			}
-		});
-
+		};
+			
+		if(this.fieldConfig) {
+			Ext.apply(fieldConfig,this.fieldConfig);
+		}
+		
+		tree.filter = new Ext.ux.tree.TreeFilterX(tree);
+		var Tbar = tree.getTopToolbar();
+		Tbar.insert(this.fieldIndex, fieldConfig);
 	}
 });
 Ext.preg('apptree-filter',Ext.ux.RapidApp.AppTree.FilterPlugin);
