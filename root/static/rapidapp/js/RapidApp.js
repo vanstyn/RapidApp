@@ -639,6 +639,8 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 
 	nodeProperty: 'dataValue',
 	
+	buttonAlign: 'right',
+	
 	initComponent: function() {
 		
 		// Handle an initial value:
@@ -650,16 +652,33 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 			});
 		}
 		
-		this.setEditable(false);
+		this.buttons = [
+			{
+				text: 'Select',
+				handler: function(btn) {
+					var app = btn.ownerCt.ownerCt.getComponent('app').items.first();
 
-		var config = {
-			win_title: this.win_title,
-			win_height: this.win_height,
-			win_width: this.win_width,
-			load_url: this.load_url,
-			select_handler: this.select_handler
-		};
-		Ext.apply(this, Ext.apply(this.initialConfig, config));
+					var data = this.select_handler(app);
+					if(data === false) { return; }
+
+					this.dataValue = data.value;
+
+					this.setValue(data.display);
+					btn.ownerCt.ownerCt.close();
+				},
+				scope: this
+			},
+			{
+				text: 'Cancel',
+				handler: function(btn) {
+					btn.ownerCt.ownerCt.close();
+				}
+			}
+		];
+		
+		//this.setEditable(false);
+				//console.dir(this);
+		//this.constructor.superclass.constructor.prototype.initComponent.apply(this, arguments);
 		Ext.ux.RapidApp.CustomPickerField.superclass.initComponent.apply(this, arguments);
 	},
 
@@ -696,6 +715,7 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 		
 		var win = new Ext.Window({
 			Combo: this,
+			buttonAlign: this.buttonAlign,
 			title: this.win_title,
 			layout: 'fit',
 			width: this.win_width,
@@ -708,29 +728,8 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 				autoLoad: autoLoad,
 				layout: 'fit'
 			},
-			buttons: [
-				{
-					text: 'Select',
-					handler: function(btn) {
-						var app = btn.ownerCt.ownerCt.getComponent('app').items.first();
-
-						var data = this.select_handler(app);
-						if(data === false) { return; }
-
-						this.dataValue = data.value;
-
-						this.setValue(data.display);
-						btn.ownerCt.ownerCt.close();
-					},
-					scope: this
-				},
-				{
-					text: 'Cancel',
-					handler: function(btn) {
-						btn.ownerCt.ownerCt.close();
-					}
-				}
-			]
+			buttons: this.buttons
+			
 		});
 
 		win.show();

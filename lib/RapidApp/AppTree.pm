@@ -28,7 +28,7 @@ sub BUILD {
 		containerScroll 	=> \1,
 		autoScroll			=> \1,
 		animate				=> \1,
-		useArrows			=> \1
+		useArrows			=> \1,
 	);
 	
 	$self->apply_actions( nodes 	=> 'call_fetch_nodes' );
