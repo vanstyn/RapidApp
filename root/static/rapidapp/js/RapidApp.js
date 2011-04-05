@@ -641,6 +641,9 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 	
 	buttonAlign: 'right',
 	
+	afterSelectHandler: Ext.emptyFn,
+	afterSelectHandler_scope: null,
+	
 	initComponent: function() {
 		
 		// Handle an initial value:
@@ -665,6 +668,10 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 
 					this.setValue(data.display);
 					btn.ownerCt.ownerCt.close();
+					
+					var scope = this;
+					if(this.afterSelectHandler_scope) { scope = this.afterSelectHandler_scope; }
+					this.afterSelectHandler.call(scope,data,app,arguments);
 				},
 				scope: this
 			},
