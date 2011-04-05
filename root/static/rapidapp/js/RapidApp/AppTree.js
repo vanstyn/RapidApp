@@ -221,7 +221,7 @@ Ext.ux.RapidApp.AppTree.FilterPlugin = Ext.extend(Ext.util.Observable,{
 				this.setValue('');
 				tree.filter.clear();
 			},
-			id:'filter',
+			//id:'filter',
 			enableKeyEvents:true,
 			listeners:{
 				keyup:{buffer:150, fn:function(field, e) {
