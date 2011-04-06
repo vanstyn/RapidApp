@@ -6,8 +6,10 @@ use IO::Handle;
 use Try::Tiny;
 use RapidApp::Debug 'DEBUG';
 use RapidApp::JSON::MixedEncoder 'decode_json', 'encode_json';
+use Storable 'fd_retrieve';
 
 has 'schema' => ( is => 'ro', isa => 'DBIx::Class::Schema', required => 1 );
+has 'input_format' => ( is => 'ro', isa => 'Str', required => 1, default => 'JSON' );
 
 has 'on_progress' => ( is => 'rw', isa => 'Maybe[CodeRef]' );
 has 'progress_period' => ( is => 'rw', isa => 'Int', default => -1, trigger => \&_on_progress_period_change );
@@ -188,17 +190,28 @@ sub report_insert_errors {
 
 sub read_record {
 	my ($self, $src)= @_;
-	my $line= $src->getline;
-	defined($line) or return undef;
-	chomp $line;
-	$self->{records_read}++;
-	$self->_send_feedback_event if (!--$self->{next_progress});
-	return decode_json($line);
+	my $ret;
+	if ($self->input_format eq 'JSON') {
+		my $line= $src->getline;
+		defined($line) or return undef;
+		chomp $line;
+		$ret= decode_json($line);
+	} elsif ($self->input_format eq 'STORABLE') {
+		$ret= fd_retrieve($src);
+	} else {
+		die "Unknown input format ".$self->input_format;
+	}
+	
+	if ($ret) {
+		$self->{records_read}++;
+		$self->_send_feedback_event if (!--$self->{next_progress});
+	}
+	return $ret;
 }
 
 sub import_record {
 	my $self= shift;
-	my %p= validate(@_, { source => {type=>SCALAR}, data => {type=>HASHREF} });
+	my %p= validate(@_, { action => 0, source => {type=>SCALAR}, data => {type=>HASHREF}, search => 0 });
 	my $srcN= $p{source};
 	my $rec= $p{data};
 	defined $self->valid_sources->{$srcN} or die "Cannot import records into source $srcN";
