@@ -191,6 +191,9 @@ sub report_insert_errors {
 sub read_record {
 	my ($self, $src)= @_;
 	my $ret;
+	
+	return undef if $src->eof;
+	
 	if ($self->input_format eq 'JSON') {
 		my $line= $src->getline;
 		defined($line) or return undef;
@@ -198,6 +201,9 @@ sub read_record {
 		$ret= decode_json($line);
 	} elsif ($self->input_format eq 'STORABLE') {
 		$ret= fd_retrieve($src);
+		# we have the option to write an end-of-file record in the storable stream,
+		#   so that multiple things could be stored in the same file
+		return undef if ($ret eq 'EOF');
 	} else {
 		die "Unknown input format ".$self->input_format;
 	}
