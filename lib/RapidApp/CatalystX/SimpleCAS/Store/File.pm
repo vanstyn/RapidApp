@@ -30,9 +30,7 @@ sub add_content_file {
 	
 	my $save_path = $self->checksum_to_path($checksum,1);
 	
-	my $cmd = "ln '$file' '$save_path'";
-	qx{$cmd};
-	die "Failed to create link" if ($?);
+	link $file, $save_path or die "Failed to create link";
 	
 	return $checksum;
 }
@@ -52,9 +50,8 @@ sub add_content_file_mv {
 	
 	my $save_path = $self->checksum_to_path($checksum,1);
 	
-	my $cmd = "mv '$file' '$save_path'";
-	qx{$cmd};
-	die "Failed to move file" if ($?);
+	system('mv', $file, $save_path) == 0
+		or die "Failed to move file";
 	
 	return $checksum;
 }
@@ -133,7 +130,7 @@ sub file_checksum  {
 	my $file = shift;
 	
 	my $FH = IO::File->new();
-	$FH->open('< ' . $file);
+	$FH->open('< ' . $file) or die "$! : $file\n";
 	$FH->binmode;
 	
 	my $sha1 = Digest::SHA1->new->addfile($FH)->hexdigest;
