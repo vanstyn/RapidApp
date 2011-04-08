@@ -50,7 +50,7 @@ sub render {
 	$c->stash->{js_inc_list}= [ $renderCxt->getJsIncludeList ];
 	$c->stash->{header}= $renderCxt->getHeaderLiteral;
 	$c->stash->{content}= $renderCxt->getBody;
-	$c->stash->{template}= 'templates/rapidapp/web1_page.tt';
+	$c->stash->{template} = 'templates/rapidapp/web1_page.tt' unless ($c->stash->{template});
 	return $c->view('RapidApp::TT')->process($c);
 }
 

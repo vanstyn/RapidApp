@@ -11,7 +11,15 @@ use RapidApp::Include qw(sugar perlutil);
 use Template;
 use RapidApp::AppDV::TTController;
 
+use HTML::TokeParser::Simple;
+
 has 'apply_css_restrict' => ( is => 'ro', default => 0 );
+
+has 'extra_tt_vars' => (
+	is => 'ro',
+	isa => 'HashRef',
+	default => sub {{}}
+);
 
 
 has 'TTController'  => (
@@ -36,6 +44,16 @@ has 'tt_include_path' => (
 );
 
 has 'tt_file' => ( is => 'ro', isa => 'Str', required => 1 );
+has 'tt_file_web1' => ( is => 'ro', isa => 'Maybe[Str]', default => undef );
+
+
+sub is_web1_request {
+	my $self = shift;
+	my @args = reverse @{$self->c->req->args};
+	return 1 if ($args[0] =~ /web1\.0/);
+	return 0;
+}
+
 
 
 has 'submodule_config_override' => (
@@ -82,8 +100,16 @@ sub xtemplate_cnf {
 	
 	my $html_out = '';
 	
+	my $tt_vars = {
+		r	=> $self->TTController,
+		%{ $self->extra_tt_vars }
+	};
+	
+	my $tt_file = $self->tt_file;
+	$tt_file = $self->tt_file_web1 if ($self->tt_file_web1 and $self->is_web1_request);
+	
 	my $Template = Template->new({ INCLUDE_PATH => $self->tt_include_path });
-	$Template->process($self->tt_file,{ r => $self->TTController },\$html_out)
+	$Template->process($tt_file,$tt_vars,\$html_out)
 		or die $Template->error;
 	
 	return $html_out unless ($self->apply_css_restrict);
@@ -126,6 +152,85 @@ sub read_records {
 		rows => [{ $self->record_pk => 1 }]
 	};
 }
+
+
+ 
+sub web1_render {
+	my ($self, $renderCxt)= @_;
+	
+	$self->c->stash->{template} = 'templates/rapidapp/ext_page.tt';
+	
+	$renderCxt->write($self->web1_string_content);
+}
+
+sub web1_string_content {
+	my $self = shift;
+	my $xtemplate = $self->xtemplate_cnf;
+	return $self->render_xtemplate_with_tt($xtemplate);
+}
+
+
+
+
+sub render_xtemplate_with_tt {
+	my $self = shift;
+	my $xtemplate = shift;
+	
+	#return $xtemplate;
+	
+	my $parser = HTML::TokeParser::Simple->new(\$xtemplate);
+	
+	my $start = '';
+	my $inner = '';
+	my $end = '';
+	
+	while (my $token = $parser->get_token) {
+		unless ($token->is_start_tag('tpl')) {
+			$start .= $token->as_is;
+			next;
+		}
+		while (my $inToken = $parser->get_token) {
+			last if $inToken->is_end_tag('tpl');
+			
+			$inner .= $inToken->as_is;
+			
+
+			if ($inToken->is_start_tag('div')) {
+				my $class = $inToken->get_attr('class');
+				my ($junk,$submod) = split(/appdv-submodule\s+/,$class);
+				if ($submod) {
+					my $Module = $self->Module($submod);
+					$inner .= $Module->web1_string_content if ($Module and $Module->can('web1_string_content'));
+				}
+				
+			}
+		}
+		while (my $enToken = $parser->get_token) {
+			$end .= $enToken->as_is;
+		}
+		last;
+	}
+	
+	#$self->c->scream([$start,$inner,$end]);
+	
+	my $tpl = '{ FOREACH rows }' . $inner . '{ END }';
+	
+	my $html_out = '';
+	my $Template = Template->new({
+		START_TAG	=> '{',
+		END_TAG		=> '}'
+	});
+	
+	my $data = $self->DataStore->read;
+	
+	#$self->c->scream($data,$tpl);
+	
+	$Template->process(\$tpl,$data,\$html_out) or die usererr $Template->error;
+	
+	return $start . $html_out . $end;
+}
+
+
 
 
 
