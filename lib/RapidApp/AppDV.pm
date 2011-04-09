@@ -47,10 +47,17 @@ has 'tt_file' => ( is => 'ro', isa => 'Str', required => 1 );
 has 'tt_file_web1' => ( is => 'ro', isa => 'Maybe[Str]', default => undef );
 
 
+sub instance_id {
+	my $self = shift;
+	return 'appdv-' . $self->SUPER::instance_id;
+}
+
+
+
 sub is_web1_request {
 	my $self = shift;
 	my @args = reverse @{$self->c->req->args};
-	return 1 if ($args[0] =~ /web1\.0/);
+	return 1 if ($args[0] =~ /web1\.0$/);
 	return 0;
 }
 
@@ -110,7 +117,7 @@ sub xtemplate_cnf {
 	
 	my $Template = Template->new({ INCLUDE_PATH => $self->tt_include_path });
 	$Template->process($tt_file,$tt_vars,\$html_out)
-		or die $Template->error;
+		or die $Template->error . "  Template file: $tt_file";
 	
 	return $html_out unless ($self->apply_css_restrict);
 	
@@ -160,7 +167,16 @@ sub web1_render {
 	
 	$self->c->stash->{template} = 'templates/rapidapp/ext_page.tt';
 	
-	$renderCxt->write($self->web1_string_content);
+	my $html_out = $self->web1_string_content;
+	
+	my @classes = ();
+	push @classes, 'no_create';
+	push @classes, 'no_update';
+	push @classes, 'no_destroy';
+
+	$html_out = '<div class="' . join(' ',@classes) . '">' . $html_out . '</div>';
+	
+	$renderCxt->write($html_out);
 }
 
 sub web1_string_content {
@@ -217,15 +233,19 @@ sub render_xtemplate_with_tt {
 	
 	my $html_out = '';
 	my $Template = Template->new({
-		START_TAG	=> '{',
-		END_TAG		=> '}'
+		START_TAG	=> /\{/,
+		END_TAG		=> /\}/
 	});
 	
 	my $data = $self->DataStore->read;
 	
 	#$self->c->scream($data,$tpl);
 	
-	$Template->process(\$tpl,$data,\$html_out) or die usererr $Template->error;
+	$Template->process(\$tpl,$data,\$html_out) 
+		or die "Template error (" . $Template->error . ')' .
+		"\n\n" .
+		"  Template vars:\n" . Dumper($data) . "\n\n" .
+		"  Template contents:\n" . Dumper($tpl);
 	
 	return $start . $html_out . $end;
 }
