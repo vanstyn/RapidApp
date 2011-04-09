@@ -10,6 +10,8 @@
 
 	Ext.onReady(function(){
 
+        Ext.ux.RapidApp.HistoryInit();
+
 		[% IF onReady_first %] [% onReady_first %] [% END %]
 
 		var config_url = '[% config_url %]';
