@@ -18,6 +18,14 @@
  */
 
 Ext.ns('Ext.ux.RapidApp');
+
+Ext.ux.RapidApp.HistoryInit = function() {
+	Ext.History.init();
+	Ext.History.on('change', function(token) { Ext.ux.RapidApp.AutoHistory.handleHistChange(token); });
+	Ext.ux.RapidApp.AutoHistory.installSafeguard();
+};
+
+
 Ext.ux.RapidApp.AutoHistory= {
 	navIdx: 0,
 	wrapIdx: function(idx) { return idx > 99? (idx - 100) : (idx < 0? idx + 100 : idx); },
@@ -79,11 +87,7 @@ Ext.ux.RapidApp.AutoHistory= {
 	}
 };
 
-Ext.onReady(function() {
-	Ext.History.init();
-	Ext.History.on('change', function(token) { Ext.ux.RapidApp.AutoHistory.handleHistChange(token); });
-	Ext.ux.RapidApp.AutoHistory.installSafeguard();
-});
+
 
 Ext.override(Ext.TabPanel, {
 	initComponent_orig: Ext.TabPanel.prototype.initComponent,
