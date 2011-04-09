@@ -47,22 +47,6 @@ has 'tt_file' => ( is => 'ro', isa => 'Str', required => 1 );
 has 'tt_file_web1' => ( is => 'ro', isa => 'Maybe[Str]', default => undef );
 
 
-#sub instance_id {
-#	my $self = shift;
-#	return 'appdv-' . $self->SUPER::instance_id;
-#}
-
-
-
-sub is_web1_request {
-	my $self = shift;
-	my @args = reverse @{$self->c->req->args};
-	return 1 if ($args[0] =~ /web1\.0$/);
-	return 0;
-}
-
-
-
 has 'submodule_config_override' => (
 	is        => 'ro',
 	isa       => 'HashRef[HashRef]',
@@ -161,7 +145,6 @@ sub read_records {
 }
 
 
- 
 sub web1_render {
 	my ($self, $renderCxt)= @_;
 	
@@ -185,9 +168,7 @@ sub web1_string_content {
 	return $self->render_xtemplate_with_tt($xtemplate);
 }
 
-
-
-
+# This code is not yet fully working. It attemps to process an Ext.XTemplate with TT
 sub render_xtemplate_with_tt {
 	my $self = shift;
 	my $xtemplate = shift;
