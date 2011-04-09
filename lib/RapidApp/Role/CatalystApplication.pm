@@ -96,6 +96,7 @@ sub setupRapidApp {
 	# for each view, inject it if it doens't exist
 	injectUnlessExist( 'Catalyst::View::TT', 'View::RapidApp::TT' );
 	injectUnlessExist( 'RapidApp::View::Viewport', 'View::RapidApp::Viewport' );
+	injectUnlessExist( 'RapidApp::View::Printview', 'View::RapidApp::Printview' );
 	injectUnlessExist( 'RapidApp::View::JSON', 'View::RapidApp::JSON' );
 	injectUnlessExist( 'RapidApp::View::Web1Render', 'View::RapidApp::Web1Render' );
 	injectUnlessExist( 'RapidApp::View::HttpStatus', 'View::RapidApp::HttpStatus' );

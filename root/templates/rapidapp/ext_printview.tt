@@ -1,0 +1,43 @@
+﻿[% WRAPPER templates/rapidapp/ext_page.tt %]
+
+
+<script type="text/javascript">
+
+	Ext.onReady(function(){
+
+		[% IF onReady_first %] [% onReady_first %] [% END %]
+
+		var config_url = '[% config_url %]';
+		var config_params = [% IF config_params %] [% config_params %] [% ELSE %] {} [% END %]
+
+        Ext.Ajax.request({
+            url: config_url,
+            params: config_params,
+            success: function(response, opts) {
+				if(response.responseText) {
+					var cmpconf = Ext.decode(response.responseText);
+
+                    //TODO: Come up with a better/safer way to handle this scroll
+                    // logic:
+                    if(cmpconf.autoScroll && Ext.isObject(cmpconf.items)){
+                        cmpconf = cmpconf.items;
+                    }
+                    //console.dir(cmpconf);
+                    Ext.ComponentMgr.create(cmpconf,'panel').render(Ext.getBody());
+                }
+            }
+
+
+        });
+
+
+        //Ext.ComponentMgr.create(cnf,'autopanel').render('fullscreen-div');
+
+
+	});
+
+</script>
+
+<div id="fulllscreen-div"></div>
+
+[% END %]

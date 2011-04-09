@@ -47,10 +47,10 @@ has 'tt_file' => ( is => 'ro', isa => 'Str', required => 1 );
 has 'tt_file_web1' => ( is => 'ro', isa => 'Maybe[Str]', default => undef );
 
 
-sub instance_id {
-	my $self = shift;
-	return 'appdv-' . $self->SUPER::instance_id;
-}
+#sub instance_id {
+#	my $self = shift;
+#	return 'appdv-' . $self->SUPER::instance_id;
+#}
 
 
 
