@@ -563,6 +563,12 @@ html, body { height:100%; }
 	display: none !important;
 }
 
+@media print {
+    .appdv-tt-generated .delete-record {
+        display: none !important;
+    }
+}
+
 /******************  END record-delete  *****************/
 
 
@@ -762,8 +768,6 @@ div.appdv-edit-bigfield {
 
 
 */
-
-
 
 
 
