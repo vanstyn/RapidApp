@@ -311,6 +311,12 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			if(!Store.api.destroy) { return; } 
 			return this.handle_delete_record(target,editEl,Record,index,domEl);
 		}
+		editEl = clickableEl.child('div.print-view');
+		if(editEl) {
+			if(this.printview_url) {
+				window.open(this.printview_url,'print_view-' + this.id);
+			}
+		}
 	},
 	get_fieldname_by_editEl: function(editEl) {
 		var fieldnameEl = editEl.child('div.field-name');

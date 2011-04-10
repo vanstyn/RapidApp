@@ -84,6 +84,16 @@ sub load_xtemplate {
 	$self->apply_extconfig( tpl => $self->xtemplate );
 	$self->apply_extconfig( FieldCmp_cnf => $self->FieldCmp );
 	$self->apply_extconfig( items => [ values %{ $self->DVitems } ] );
+	
+	my $params = $self->c->req->params;
+	my @qry = ();
+	foreach my $p (keys %$params) {
+		push @qry, $p . '=' . $params->{$p};
+	}
+	
+	my $qry_str = join('&',@qry);
+	
+	$self->apply_extconfig( printview_url => $self->suburl('printview') . '?' . $qry_str );
 }
 
 sub xtemplate_cnf {
