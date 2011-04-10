@@ -1,6 +1,5 @@
 ﻿[% WRAPPER templates/rapidapp/ext_page.tt %]
 
-
 <script type="text/javascript">
 
 	Ext.onReady(function(){
@@ -9,6 +8,9 @@
 
 		var config_url = '[% config_url %]';
 		var config_params = [% IF config_params %] [% config_params %] [% ELSE %] {} [% END %]
+
+        var BodyEl = Ext.getBody();
+        BodyEl.addClass('rapidapp-printview');
 
         Ext.Ajax.request({
             url: config_url,
@@ -22,22 +24,13 @@
                     if(cmpconf.autoScroll && Ext.isObject(cmpconf.items)){
                         cmpconf = cmpconf.items;
                     }
-                    //console.dir(cmpconf);
-                    Ext.ComponentMgr.create(cmpconf,'panel').render(Ext.getBody());
+
+                    Ext.ComponentMgr.create(cmpconf,'panel').render(BodyEl);
                 }
             }
-
-
         });
-
-
-        //Ext.ComponentMgr.create(cnf,'autopanel').render('fullscreen-div');
-
-
 	});
 
 </script>
-
-<div id="fulllscreen-div"></div>
 
 [% END %]

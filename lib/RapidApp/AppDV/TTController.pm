@@ -46,7 +46,10 @@ sub delete_record {
 	return $self->div_clickable('<div class="delete-record">Delete</div>');
 }
 
-
+sub print_view {
+	my $self = shift;
+	return $self->div_clickable('<div class="print-view">Print View</div>');
+}
 
 
 sub div_editable_value{
