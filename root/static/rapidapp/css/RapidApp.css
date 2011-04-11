@@ -908,9 +908,9 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 }
 
 .read-only-formfield {
-	background-color: transparent;
-	border-color: transparent;
-	background-image:none;
+	background-color: transparent!important;
+	border-color: transparent!important;
+	background-image:none!important;
 	/*
 	# the normal text field has padding-top: 2px which makes the text sit towards
 	# the bottom of the field. We set top and bot here to move one of the px to the
