@@ -535,7 +535,7 @@ html, body { height:100%; }
 
 /******************  record-delete  *****************/
 
-.appdv-tt-generated .delete-record {
+.appdv-tt-generated .delete-record, .appdv-tt-generated .print-view {
 	background:url(/static/rapidapp/images/cross.png) center right no-repeat;
 	padding:4px 18px 1px 1px;
 	width: 30;
@@ -552,7 +552,15 @@ html, body { height:100%; }
 	cursor:	pointer;
 }
 
-.appdv-tt-generated .delete-record:hover {
+.appdv-tt-generated .print-view {
+    background:url(/static/rapidapp/images/printer.png) center right no-repeat;
+}
+
+.rapidapp-printview .appdv-tt-generated .print-view {
+    display: none !important;
+}
+
+.appdv-tt-generated .delete-record:hover, .appdv-tt-generated .print-view:hover {
 	border-bottom-style: dotted;
 	border-color: blue;
 	color: blue;
@@ -561,6 +569,12 @@ html, body { height:100%; }
 
 .editing-record .appdv-tt-generated .delete-record {
 	display: none !important;
+}
+
+@media print {
+    .appdv-tt-generated .delete-record {
+        display: none !important;
+    }
 }
 
 /******************  END record-delete  *****************/
@@ -762,8 +776,6 @@ div.appdv-edit-bigfield {
 
 
 */
-
-
 
 
 
