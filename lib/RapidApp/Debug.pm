@@ -113,7 +113,8 @@ sub global_write {
 sub any_channel_enabled {
 	my ($class, $chanList)= @_;
 	for (my $i=0; $i<scalar(@$chanList); $i++) {
-		return 1 if $ENV{'DEBUG_'.$chanList->[$i]} >= $chanList->[$i+1];
+		my $lev= $ENV{'DEBUG_'.$chanList->[$i]};
+		return 1 if defined $lev && $lev >= $chanList->[$i+1];
 	}
 	return 0;
 }
