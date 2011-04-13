@@ -7,9 +7,65 @@ use Try::Tiny;
 use RapidApp::Debug 'DEBUG';
 use RapidApp::JSON::MixedEncoder 'decode_json', 'encode_json';
 use Storable 'fd_retrieve';
+use RapidApp::DBIC::ImportEngine::Item;
+use RapidApp::DBIC::ImportEngine::ItemReader;
+use RapidApp::DBIC::SchemaAnalysis::Dependency;
+
+=head1 DESCRIPTION
+
+This engine facilitates the inserting of hashes which describe a row of a table.
+
+Its main feature is to remap fields in a record which refer to auto-increment columns in
+another table.  For instance, it will correctly handle
+  { action => 'insert', source => 'Foo', data => { id => 'x', value => 'aaaaa' } }
+  { action => 'insert', source => 'Foo', data => { id => 'y', parent_id => 'x', value => 'bbbbb' } }
+  { action => 'insert', source => 'Foo', data => { parent_id => 'y', value => 'ccccc' } }
+by translating from 'x' to the number generated for the auto_increment column <Foo.id> when
+inserting record 'x'.  All other records which refer to <Foo.id = 'x'> will get remapped to
+<Foo.id = ###>.  While I used strings in the example, it is just as valid to use the numbers from
+a previous incarnation of the database.  ImportEngine will not allow any values for auto-id fields
+to pass through without being translated.
+
+Another feature is that inserts will be re-ordered if necessary, such that a record which refers to
+an unknown key will be placed in a waiting list until that key is seen and inserted.
+
+=head1 BUGS
+
+Currently, there are situations where a record will get inserted before the required foreign
+constraint is met.  For instance, if <C.id> has a FK of <B.id> which has a FK of <A.id>, then
+an insert for table C will be tried as soon as the corresponding key is added to table A.
+Some additional logic could prevent this situation, but sometimes circular dependencies show up
+which would prevent any records form getting inserted at all.  Some fancy logic will be needed
+to solve this the "right way" (which may incolve inserting partial records and updating them later,
+and in other cases might just be better handled by disabling constraints temporarily).
+In the meantime, we just try inserting things repeatedly until
+they all succeed or until no progress is made.
+
+While DBIC supports fancy nested inserts and selects, we currently only translate keys for flat
+records.  I would love to support the full DBIC semantics, but it will require much more time
+to implement.
+
+  # Will not work yet!
+  # record A will get mapped to the correct Foo, but A.category will not get translated.
+  { action => 'insert', source => 'Category', data => { id => 'n', data => 'category of blah' } }
+  { action => 'insert', source => 'Foo', data => { id => 1, a => { category => 'n', data => 'blah' } } }
+
+Key translations do not happen for searches.  Implementing this would require a full-blown search
+logic processor.  Until this is implemented, do not write searches that depend on a generated key.
+However, the whole point of a search is to find generated IDs of existing records based on
+non-generated fields, so not being able to search on a generated field shouldn't be that big of
+a problem.
+
+  # Will not work yet!
+  # 'x' will not get translated to a Foo.id
+  { action => 'find', source => 'Foo', search => { parent_id => 'x' }, data => { id => 'y' } }
+
+=cut
 
 has 'schema' => ( is => 'ro', isa => 'DBIx::Class::Schema', required => 1 );
-has 'input_format' => ( is => 'ro', isa => 'Str', required => 1, default => 'JSON' );
+
+has 'reader' => ( is => 'rw', isa => 'RapidApp::DBIC::ImportEngine::ItemReader',
+	coerce => 1, trigger => \&setup_reader_itemClassForResultSource );
 
 has 'on_progress' => ( is => 'rw', isa => 'Maybe[CodeRef]' );
 has 'progress_period' => ( is => 'rw', isa => 'Int', default => -1, trigger => \&_on_progress_period_change );
@@ -25,6 +81,7 @@ has 'data_is_dirty' => ( is => 'rw', isa => 'Bool', default => 0 );
 with 'RapidApp::DBIC::SchemaAnalysis';
 
 # map of {ColKey}{read_id} => $saved_id
+# used by 'translate_key' and 'set_translation'
 has 'auto_id_map' => ( is => 'ro', isa => 'HashRef[HashRef[Str]]', default => sub {{}} );
 
 # map of {colKey}{missing_id} => [ [ $srcN, $rec, \@deps, $errMsg ], ... ]
@@ -36,7 +93,7 @@ sub records_missing_keys_count {
 	return $cnt;
 }
 
-has 'pending_inserts' => ( is => 'ro', isa => 'ArrayRef[ArrayRef]', default => sub {[]} );
+has 'pending_items' => ( is => 'ro', isa => 'ArrayRef[RapidApp::DBIC::ImportEngine::Item]', default => sub {[]} );
 
 # array of [ [ $srcN, $rec, \@deps, $errMsg ], ... ]
 has 'records_failed_insert' => ( is => 'rw', isa => 'ArrayRef[ArrayRef]', default => sub {[]} );
@@ -44,8 +101,13 @@ has 'records_failed_insert' => ( is => 'rw', isa => 'ArrayRef[ArrayRef]', defaul
 # map of {srcN}{primary_key} => 1
 #has 'processed' => ( is => 'ro', isa => 'HashRef[HashRef]', default => sub {{}} );
 
-has '_calc_dep_fn_per_source' => ( is => 'rw', isa => 'HashRef[CodeRef]', lazy_build => 1 );
-has '_proc_dep_fn_per_source' => ( is => 'rw', isa => 'HashRef[CodeRef]', lazy_build => 1 );
+#has '_calc_dep_fn_per_source' => ( is => 'rw', isa => 'HashRef[CodeRef]', lazy_build => 1 );
+#has '_proc_dep_fn_per_source' => ( is => 'rw', isa => 'HashRef[CodeRef]', lazy_build => 1 );
+
+sub BUILD {
+	my $self= shift;
+	$self->setup_reader_itemClassForResultSource($self->reader) if ($self->reader);
+}
 
 sub translate_key {
 	my ($self, $colkey, $val)= @_;
@@ -59,16 +121,16 @@ sub set_translation {
 	$mapByCol->{$oldVal}= $newVal;
 	my @resolved= $self->_pop_delayed_inserts($colKey, $oldVal);
 	if (scalar @resolved) {
-		DEBUG('import', "\t[resolved dep: $colKey  $oldVal => $newVal ]");
-		push @{$self->pending_inserts}, @resolved;
+		DEBUG('import', "\t[resolved dep: $colKey  $oldVal => $newVal, ".(scalar @resolved)." items queued ]");
+		push @{$self->pending_items}, @resolved;
 	}
 }
 
 sub push_delayed_insert {
-	my ($self, $colKey, $val, $insertParamArray)= @_;
+	my ($self, $colKey, $val, $importItem)= @_;
 	my $pendingByCol= ($self->records_missing_keys->{$colKey} ||= {}); 
 	my $pendingByVal= ($pendingByCol->{$val} ||= []);
-	push @$pendingByVal, $insertParamArray;
+	push @$pendingByVal, $importItem;
 	$self->_send_feedback_event if (!--$self->{next_progress});
 }
 
@@ -80,6 +142,13 @@ sub _pop_delayed_inserts {
 	return @$pendingByKey;
 }
 
+sub get_deps_for_source {
+	my ($self, $srcN)= @_;
+	my $deplist= $self->_deplist_per_source->{$srcN};
+	return $deplist? @$deplist : ();
+}
+
+=pod
 sub _build__calc_dep_fn_per_source {
 	my $self= shift;
 	my $default= $self->can('calculate_dependencies'); # do it this way to pick up methods from subclasses
@@ -99,6 +168,7 @@ sub _build__proc_dep_fn_per_source {
 		} keys %{$self->valid_sources};
 	return \%result;
 }
+=cut
 
 sub _on_progress_period_change {
 	my $self= shift;
@@ -114,36 +184,41 @@ sub _send_feedback_event {
 
 sub import_records {
 	my ($self, $src)= @_;
+	
+	# optionally set up a new reader
+	if (defined $src) {
+		(ref $src)->isa('IO::Handle')
+			and $src= { source => $src };
+		ref $src eq 'HASH'
+			and $src= RapidApp::DBIC::ImportEngine::ItemReader->factory_create($src);
+		$self->reader($src);
+	}
+	
 	my ($data, $cnt, $worklist);
 	$self->schema->txn_do( sub {
 		my $acn;
-		while (($data= $self->read_record($src))) {
-			$self->import_record($data);
-			# now, insert any records that depended on this one (unless they have other un-met deps, in which case they get re-queued)
-			while (my $delayedInsert= shift @{$self->pending_inserts}) {
-				$self->_dep_resolve_and_insert(@$delayedInsert);
+		while (($data= $self->next_item)) {
+			$self->process_item($data);
+		}
+		
+		# Inserts might fail if a constraint is not met.  Ideally our dependency system catches that, but this is a fall-back mechanism.
+		# Keep trying to insert them until either no records get inserted, or until they all succeed
+		my $prev_imported_count= -1;
+		while (scalar @{$self->records_failed_insert} && $self->records_imported > $prev_imported_count) {
+			$prev_imported_count= $self->records_imported;
+			push @{$self->pending_inserts}, map { $_->[0] } @{$self->records_failed_insert};
+			$self->records_failed_insert([]);
+			
+			while (($data= $self->next_item($src))) {
+				$self->process_item($data);
 			}
 		}
 		
-		# keep trying to insert them until either no records get inserted, or until they all succeed
-		if (scalar @{$self->records_failed_insert}) {
-			do {
-				$worklist= $self->records_failed_insert;
-				$self->records_failed_insert([]);
-				
-				$self->perform_insert(@$_) for (@$worklist);
-				# now, insert any records that depended on this one (unless they have other un-met deps, in which case they get re-queued)
-				while (my $delayedInsert= shift @{$self->pending_inserts}) {
-					$self->_dep_resolve_and_insert(@$delayedInsert);
-				}
-			} while (scalar( @{$self->records_failed_insert} ) != scalar(@$worklist));
-			
-			if ($cnt= scalar @{$self->records_failed_insert}) {
-				$self->report_insert_errors;
-				my $msg= "$cnt records could not be added due to errors\nSee /tmp/rapidapp_import_errors.txt for details\n";
-				$self->commit_partial_import? warn $msg : die $msg;
-				$self->data_is_dirty(1);
-			}
+		if ($cnt= scalar @{$self->records_failed_insert}) {
+			$self->report_insert_errors;
+			my $msg= "$cnt records could not be added due to errors\nSee /tmp/rapidapp_import_errors.txt for details\n";
+			$self->commit_partial_import? warn $msg : die $msg;
+			$self->data_is_dirty(1);
 		}
 		
 		if ($cnt= $self->records_missing_keys_count) {
@@ -170,7 +245,7 @@ sub report_missing_keys {
 	for my $colKey (keys %{$self->records_missing_keys}) {
 		while (my ($colVal, $recs)= each %{$self->records_missing_keys->{$colKey}}) {
 			$debug_fd->print("Required $colKey = '$colVal' :\n");
-			$debug_fd->print("\t".encode_json($_)."\n") for (@$recs);
+			$debug_fd->print("\t".encode_json({ %$_ })."\n") for (@$recs);
 		}
 	}
 	$debug_fd->flush();
@@ -188,26 +263,15 @@ sub report_insert_errors {
 	$debug_fd->flush();
 }
 
-sub read_record {
-	my ($self, $src)= @_;
-	my $ret;
+sub next_item {
+	my ($self)= @_;
 	
-	return undef if $src->eof;
-	
-	if ($self->input_format eq 'JSON') {
-		my $line= $src->getline;
-		defined($line) or return undef;
-		chomp $line;
-		$ret= decode_json($line);
-	} elsif ($self->input_format eq 'STORABLE') {
-		$ret= fd_retrieve($src);
-		# we have the option to write an end-of-file record in the storable stream,
-		#   so that multiple things could be stored in the same file
-		return undef if ($ret eq 'EOF');
-	} else {
-		die "Unknown input format ".$self->input_format;
-	}
-	
+	# if any previoud items are now ready to be processed, process them first
+	my $delayedItem= shift @{$self->pending_items};
+	return $delayedItem if $delayedItem;
+
+	# else read the next one form the stream
+	my $ret= $self->reader->next;
 	if ($ret) {
 		$self->{records_read}++;
 		$self->_send_feedback_event if (!--$self->{next_progress});
@@ -215,67 +279,50 @@ sub read_record {
 	return $ret;
 }
 
-sub import_record {
-	my $self= shift;
-	my %p= validate(@_, { action => 0, source => {type=>SCALAR}, data => {type=>HASHREF}, search => 0 });
-	my $srcN= $p{source};
-	my $rec= $p{data};
-	defined $self->valid_sources->{$srcN} or die "Cannot import records into source $srcN";
-	my $code;
+sub process_item {
+	my ($self, $importItem)= @_;
 	
-	$code= $self->_calc_dep_fn_per_source->{$srcN};
-	my $deps= $code->($self, $srcN, $rec);
+	$importItem->engine($self);
 	
-	$self->_dep_resolve_and_insert($srcN, $rec, $deps);
-}
-
-sub get_primary_key_string {
-	my ($self, $rsrc, $rec)= @_;
-	my @pkvals;
-	for my $colN ($rsrc->primary_columns) {
-		defined $rec->{$colN} or return '';  # primary key wasn't given.  Hopefully it gets autogenerated during insert.
-		push @pkvals, $rec->{$colN};
+	if ($importItem->resolve_dependencies) {
+		my $code= $importItem->can($importItem->action) or die (ref $importItem)." cannot perform action \"".$importItem->action."\"";
+		$importItem->$code;
+	} else {
+		my $depList= $importItem->dependencies;
+		defined $depList && scalar(@$depList) or die "resolve_dependencies must either return true, or build a list of dependencies";
+		
+		my $dep= $depList->[0];
+		my $colKey= $dep->colKey;
+		my $val= $importItem->data->{$dep->col};
+		DEBUG('import', "\t[delayed due to dependency: $colKey = $val  => ".$dep->origin_colKey." = ?? ]");
+		$self->push_delayed_insert($dep->origin_colKey, $val, $importItem);
+		return;
 	}
-	return stringify_pk(@pkvals);
 }
 
-sub stringify_pk {
-	join '', map { length($_).'|'.$_ } @_;
+sub perform_find {
+	my ($self, $srcN, $search, $bindData)= @_;
 }
 
 sub perform_insert {
-	my $self= shift;
-	my ($srcN, $rec, $deps, $remappedRec)= @_;
+	my ($self, $srcN, $rec, $remappedRec)= @_;
 	
 	DEBUG('import', 'perform_insert', $srcN, $rec, '=>', $remappedRec);
+	
+	defined $self->valid_sources->{$srcN} or die "Cannot import records into source $srcN";
 	
 	my $rs= $self->schema->resultset($srcN);
 	my $resultClass= $rs->result_class;
 	my ($code, $row);
 	
 	# perform the insert, possibly calling the Result class to do the work
-	my $err;
-	try {
-		if ($code= $resultClass->can('import_create')) {
-			$row= $resultClass->$code($rs, $remappedRec, $rec);
-		} else {
-			die if exists $remappedRec->{id};
-			$row= $rs->create($remappedRec);
-		}
-		$self->{records_imported}++;
-		$self->_send_feedback_event if (!--$self->{next_progress});
+	if ($code= $resultClass->can('import_create')) {
+		$row= $resultClass->$code($rs, $remappedRec, $rec);
+	} else {
+		$row= $rs->create($remappedRec);
 	}
-	catch {
-		$err= $_;
-		$err= "$err" if (ref $err);
-	};
-	if ($err) {
-		# we'll try it again later
-		DEBUG('import', "\t[failed, deferred...]");
-		push @{$self->records_failed_insert}, [ @_, $err ];
-		$self->_send_feedback_event if (!--$self->{next_progress});
-		return;
-	}
+	$self->{records_imported}++;
+	$self->_send_feedback_event if (!--$self->{next_progress});
 	
 	# record any auto-id values that got generated
 	my @autoCols= @{$self->auto_cols_per_source->{$srcN} || []};
@@ -289,60 +336,59 @@ sub perform_insert {
 	}
 }
 
-sub _dep_resolve_and_insert {
-	my ($self, $srcN, $rec, $deps)= @_;
+# TODO: we want to do away with this logic at some point, and just fail on DB insert errors
+sub try_again_later {
+	my ($self, $importItem, $errText)= @_;
 	
-	my $resolveDepFn= $self->_proc_dep_fn_per_source->{$srcN};
-	
-	my $delayedCnt= $self->records_missing_keys_count;
-	my $remapped= $resolveDepFn->(@_);
-	if ($remapped) {
-		$self->perform_insert($srcN, $rec, $deps, $remapped);
-	} else {
-		$self->records_missing_keys_count > $delayedCnt
-			or die "process_dependencies must call push_delayed_insert if it can't remap the record";
-	}
+	DEBUG('import', "\t[failed, deferred...]");
+	push @{$self->records_failed_insert}, [ $importItem, $errText ];
+	$self->_send_feedback_event if (!--$self->{next_progress});
+	return;
 }
 
-sub calculate_dependencies {
-	my ($self, $srcN, $rec)= @_;
-	return $self->col_depend_per_source->{$srcN} || [];
-}
-
-sub process_dependencies {
-	my $self= shift;
-	my ($srcN, $rec, $deps)= @_;
+sub default_build_remapped_data {
+	my ($self, $importItem)= @_;
 	
-	my $remappedRec= { %$rec };
+	my $remappedData= { %{$importItem->data} };
 	
 	# Delete values for auto-generated keys
 	# there should just be zero or one for auto_increment, but we might extend this to auto-datetimes too
-	my @autoCols= @{$self->auto_cols_per_source->{$srcN} || []};
-	delete $remappedRec->{$_} for (@autoCols);
+	my @autoCols= @{$self->auto_cols_per_source->{$importItem->source} || []};
+	delete $remappedData->{$_} for (@autoCols);
 	
-	# swap values of any fields that need remapped
-	for my $dep (@$deps) {
-		my $colN= $dep->{col};
-		my $oldVal= $rec->{$colN};
-		# only swap the value if it was given as a scalar.  Hashes indicate fancy DBIC stuff
-		if (defined $oldVal && !ref $oldVal) {
-			# find the new value for the key
-			my $newVal= $self->auto_id_map->{$dep->{origin_colKey}}->{$oldVal};
-			
-			# if we don't know it yet, we depend on this foreign column value.
-			# queue this record for later insertion.
-			if (!defined $newVal) {
-				DEBUG('import', "\t[delayed due to dependency: $srcN.$colN=$oldVal => ".$dep->{origin_colKey}."=?? ]");
-				$self->push_delayed_insert($dep->{origin_colKey}, $oldVal, [ $srcN, $rec, $deps ]);
-				return undef;
-			}
-			# swap it
-			$remappedRec->{$colN}= $newVal;
-		}
+	return $remappedData;
+}
+
+sub default_process_dependencies {
+	my ($self, $importItem)= @_;
+	my $srcN= $importItem->source;
+	my $deps= $importItem->dependencies;
+	
+	# nothing to do if all deps are resolved
+	scalar(@$deps) or return 1;
+	
+	# swap values of any fields that need remapped, and keep track of which we can't
+	my @newDeps= grep { !$_->resolve($self, $importItem) } @$deps;
+	
+	$importItem->dependencies(\@newDeps);
+	return scalar(@newDeps) == 0;
+}
+
+sub setup_reader_itemClassForResultSource {
+	my ($self, $reader)= @_;
+	my $clsMap= $reader->itemClassForResultSource;
+	defined $clsMap or $reader->itemClassForResultSource(($clsMap= {}));
+	
+	my $schemaCls= ref $self->schema or die "No schema selected";
+	my $default= ($schemaCls.'::ImportItem')->can('new')? $schemaCls.'::ImportItem' : undef;
+	
+	for my $srcN (keys %{$self->valid_sources}) {
+		my $customItemCls= $schemaCls.'::ImportItem::'.$srcN;
+		$customItemCls= undef unless $customItemCls->can('new');
+		$clsMap->{$srcN} ||= $customItemCls || $default;
 	}
 	
-	# the record will now get inserted
-	return $remappedRec;
+	# we've been modifying a ref to the one held by the reader, so nothing to do here
 }
 
 no Moose;

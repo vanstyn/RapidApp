@@ -2,6 +2,7 @@ package RapidApp::DBIC::SchemaAnalysis;
 use Moose::Role;
 
 use RapidApp::Debug 'DEBUG';
+use RapidApp::DBIC::SchemaAnalysis::Dependency;
 
 requires 'schema';
 
@@ -15,7 +16,7 @@ has 'related_columns' => ( is => 'ro', isa => 'HashRef[HashRef]', lazy_build => 
 has 'auto_cols_per_source' => ( is => 'ro', isa => 'HashRef[ArrayRef]', lazy_build => 1 );
 
 # map of {srcN} => \@deps
-has 'col_depend_per_source' => ( is => 'ro', isa => 'HashRef[ArrayRef]', lazy_build => 1 );
+has '_deplist_per_source' => ( is => 'ro', isa => 'HashRef[ArrayRef]', lazy_build => 1 );
 
 # map of {colKey} => colKey
 has 'related_auto_id_columns' => ( is => 'ro', isa => 'HashRef', lazy_build => 1 );
@@ -33,7 +34,7 @@ sub _build_valid_sources {
 	my %sources= map { $_ => $self->schema->source($_) }
 		grep { !$self->schema->resultset($_)->result_class->can('CONSTANT_VALUES') }
 			$self->schema->sources;
-	DEBUG('export', 'valid sources: ' => keys %sources);
+	DEBUG([ export => 2, import => 2, schema_analysis => 1 ], 'valid sources: ' => keys %sources);
 	return \%sources;
 }
 
@@ -57,7 +58,7 @@ sub _build_related_columns {
 			}
 		}
 	}
-	DEBUG('export', 'related columns' => $result);
+	DEBUG([ export => 2, import => 2, schema_analysis => 1 ], 'related columns' => $result);
 	return $result;
 }
 
@@ -81,12 +82,11 @@ sub _build_auto_cols_per_source {
 		my $rsrc= $srcHash->{$srcN};
 		$result->{$srcN}= [ grep { $rsrc->column_info($_)->{is_auto_increment} } $rsrc->columns ];
 	}
-	my $chn= $ENV{DEBUG_EXPORT}>1? 'export' : $ENV{DEBUG_IMPORT}>1? 'import' : $ENV{DEBUG_EXPORT_SCHEMA}? 'export_schema' : 'import_schema';
-	DEBUG($chn, 'auto id columns' => $result);
+	DEBUG([ export => 2, import => 2, schema_analysis => 1 ], 'auto id columns' => $result);
 	return $result;
 }
 
-sub _build_col_depend_per_source {
+sub _build__deplist_per_source {
 	my $self= shift;
 	
 	my $result= {};
@@ -105,13 +105,12 @@ sub _build_col_depend_per_source {
 			my $colKey= $self->stringify_colkey($srcN, $colN);
 			my $originColKey= $self->related_auto_id_columns->{$colKey};
 			$originColKey && $originColKey ne $colKey
-				and push @deps, { col => $colN, origin_colKey => $originColKey };
+				and push @deps, RapidApp::DBIC::SchemaAnalysis::Dependency->new( source => $srcN, col => $colN, origin_colKey => $originColKey );
 		}
 		
 		$result->{$srcN}= \@deps;
 	}
-	my $chn= $ENV{DEBUG_EXPORT}>1? 'export' : $ENV{DEBUG_IMPORT}>1? 'import' : $ENV{DEBUG_EXPORT_SCHEMA}? 'export_schema' : 'import_schema';
-	DEBUG($chn, 'all column dependencies' => $result);
+	DEBUG([ export => 2, import => 2, schema_analysis => 1 ], 'all column dependencies' => $result);
 	return $result;
 }
 
@@ -139,8 +138,7 @@ sub _build_related_auto_id_columns {
 		}
 	}
 	
-	my $chn= $ENV{DEBUG_EXPORT}>1? 'export' : $ENV{DEBUG_IMPORT}>1? 'import' : $ENV{DEBUG_EXPORT_SCHEMA}? 'export_schema' : 'import_schema';
-	DEBUG($chn, 'all auto id col refs' => $result);
+	DEBUG([ export => 2, import => 2, schema_analysis => 1 ], 'all auto id col refs' => $result);
 	return $result;
 }
 
@@ -152,8 +150,7 @@ sub _build_remap_fields_per_source {
 		$result->{$srcN}= [ grep { $self->is_auto_id_col($srcN.'.'.$_) } $srcHash->{$srcN}->columns ];
 	}
 	
-	my $chn= $ENV{DEBUG_EXPORT}>1? 'export' : $ENV{DEBUG_IMPORT}>1? 'import' : $ENV{DEBUG_EXPORT_SCHEMA}? 'export_schema' : 'import_schema';
-	DEBUG($chn, 'fields which need remapped' => $result);
+	DEBUG([ export => 2, import => 2, schema_analysis => 1 ], 'fields which need remapped' => $result);
 	return $result;
 }
 
