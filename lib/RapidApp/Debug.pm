@@ -26,7 +26,7 @@ sub applyChannelConfig {
 
 sub write {
 	my ($self, $chanName, @args)= @_;
-	return unless $ENV{'DEBUG_'.uc($chanName)};
+	return unless (ref $chanName? $self->any_channel_enabled($chanName) : $ENV{'DEBUG_'.uc($chanName)});
 	
 	goto &_write; # we don't want to mess up 'caller'
 }
@@ -103,11 +103,19 @@ sub default_instance {
 sub global_write {
 	my $class= shift;
 	my ($chanName, @args)= @_;
-	return unless $ENV{'DEBUG_'.uc($chanName)};
+	return unless (ref $chanName? $class->any_channel_enabled($chanName) : $ENV{'DEBUG_'.uc($chanName)});
 	
 	my $self= RapidApp::ScopedGlobals->get("Debug") || $class->default_instance;
 	unshift @_, $self;
 	goto &_write; # we don't want to mess up 'caller'
+}
+
+sub any_channel_enabled {
+	my ($class, $chanList)= @_;
+	for (my $i=0; $i<scalar(@$chanList); $i++) {
+		return 1 if $ENV{'DEBUG_'.$chanList->[$i]} >= $chanList->[$i+1];
+	}
+	return 0;
 }
 
 use Exporter qw( import );
