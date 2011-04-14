@@ -10,6 +10,10 @@ has 'channels' => ( is => 'ro', isa => 'HashRef[RapidApp::Debug::Channel]', defa
 
 sub applyChannelConfig {
 	my ($self, @args)= @_;
+	
+	# convert class context to object context
+	ref $self or return (shift)->default_instance->applyChannelConfig(@_);
+	
 	my $cfg= ref $args[0] eq 'HASH'? $args[0] : { @args };
 	if (keys(%$cfg)) {
 		# for each debug channel definition, either create the channel or alter it
