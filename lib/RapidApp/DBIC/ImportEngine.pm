@@ -36,7 +36,7 @@ constraint is met.  For instance, if <C.id> has a FK of <B.id> which has a FK of
 an insert for table C will be tried as soon as the corresponding key is added to table A.
 Some additional logic could prevent this situation, but sometimes circular dependencies show up
 which would prevent any records form getting inserted at all.  Some fancy logic will be needed
-to solve this the "right way" (which may incolve inserting partial records and updating them later,
+to solve this the "right way" (which may involve inserting partial records and updating them later,
 and in other cases might just be better handled by disabling constraints temporarily).
 In the meantime, we just try inserting things repeatedly until
 they all succeed or until no progress is made.
@@ -59,6 +59,10 @@ a problem.
   # Will not work yet!
   # 'x' will not get translated to a Foo.id
   { action => 'find', source => 'Foo', search => { parent_id => 'x' }, data => { id => 'y' } }
+
+And finally, I don't have support for multi-column keys.  However, I left room in the design for
+this.  We just don't happen to have any in our projects so far, so I didn't waste time implementing
+it.
 
 =cut
 
@@ -109,12 +113,17 @@ sub BUILD {
 	$self->setup_reader_itemClassForResultSource($self->reader) if ($self->reader);
 }
 
+# Return a new-db-key as a function of an old-db-key.
+# Returns undef if the translation isn't known yet.
 sub translate_key {
 	my ($self, $colkey, $val)= @_;
 	my $mapByCol= $self->auto_id_map->{$colkey};
 	return $mapByCol? $mapByCol->{$val} : undef;
 }
 
+# Define a mapping from an old-db-key to a new-db-key for a given colKey
+# (a colKey defines a key within a table, which is usually just "Table.Col")
+# This method has a side-effect of queueing all records which were waiting for this translation to be defined.
 sub set_translation {
 	my ($self, $colKey, $oldVal, $newVal)= @_;
 	my $mapByCol= $self->auto_id_map->{$colKey} ||= {};
@@ -126,6 +135,7 @@ sub set_translation {
 	}
 }
 
+# Tell the engine to delay processing of this item until a translation is known for the given colKey and value
 sub push_delayed_insert {
 	my ($self, $colKey, $val, $importItem)= @_;
 	my $pendingByCol= ($self->records_missing_keys->{$colKey} ||= {}); 
@@ -140,12 +150,6 @@ sub _pop_delayed_inserts {
 	my $pendingByKey= delete $pendingByCol->{$val} or return;
 	scalar keys %$pendingByCol or delete $self->records_missing_keys->{$colKey};
 	return @$pendingByKey;
-}
-
-sub get_deps_for_source {
-	my ($self, $srcN)= @_;
-	my $deplist= $self->_deplist_per_source->{$srcN};
-	return $deplist? @$deplist : ();
 }
 
 =pod
@@ -182,6 +186,7 @@ sub _send_feedback_event {
 	$self->next_progress($self->progress_period);
 }
 
+# Process all items in the input stream, and handle failures.
 sub import_records {
 	my ($self, $src)= @_;
 	
@@ -206,7 +211,7 @@ sub import_records {
 		my $prev_imported_count= -1;
 		while (scalar @{$self->records_failed_insert} && $self->records_imported > $prev_imported_count) {
 			$prev_imported_count= $self->records_imported;
-			push @{$self->pending_inserts}, map { $_->[0] } @{$self->records_failed_insert};
+			push @{$self->pending_items}, map { $_->[0] } @{$self->records_failed_insert};
 			$self->records_failed_insert([]);
 			
 			while (($data= $self->next_item($src))) {
@@ -263,6 +268,7 @@ sub report_insert_errors {
 	$debug_fd->flush();
 }
 
+# Get the next item to be processed, either from a waiting list or from the input stream.
 sub next_item {
 	my ($self)= @_;
 	
@@ -279,6 +285,10 @@ sub next_item {
 	return $ret;
 }
 
+# Process an items dependencies, or queue it for later.
+# If deps are met, we call an action on the Item, and consider the item completed.
+# Note: the item might not actually be complete after the action is run, but if not, it
+#   is the responsibility of the item to re-queue itself in whatever manner needed.
 sub process_item {
 	my ($self, $importItem)= @_;
 	
@@ -336,7 +346,8 @@ sub perform_insert {
 	}
 }
 
-# TODO: we want to do away with this logic at some point, and just fail on DB insert errors
+# TODO: we want to do away with this logic at some point, and just fail on DB insert errors.
+# But, first we need to have logic that will make sure the records get added in the correct sequence.
 sub try_again_later {
 	my ($self, $importItem, $errText)= @_;
 	
@@ -346,6 +357,8 @@ sub try_again_later {
 	return;
 }
 
+# This procedure is used by importItem to build the remapped record.
+# I put it here because I wanted to keep most of the engine logic in this file.
 sub default_build_remapped_data {
 	my ($self, $importItem)= @_;
 	
@@ -359,6 +372,8 @@ sub default_build_remapped_data {
 	return $remappedData;
 }
 
+# This procedure is used by importItem to process its dependencies.
+# I put it here because I wanted to keep most of the engine logic in this file.
 sub default_process_dependencies {
 	my ($self, $importItem)= @_;
 	my $srcN= $importItem->source;
@@ -374,6 +389,11 @@ sub default_process_dependencies {
 	return scalar(@newDeps) == 0;
 }
 
+# ResultSources can have special import item classes, such that any record for a particular source
+#   creates a subclass of RA::DBIC::IE::Item.  We expect them to be named [App::DB]::ImportItem::[Source]
+#   where [App::DB] is the package name of the schema, and [Source] is the name of the DBIC ResultSource.
+# This method builds a list of those classes, and then sets them in the reader, so that the reader can
+#   manufacture the correct Item object.
 sub setup_reader_itemClassForResultSource {
 	my ($self, $reader)= @_;
 	my $clsMap= $reader->itemClassForResultSource;

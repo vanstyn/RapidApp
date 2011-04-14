@@ -29,6 +29,12 @@ sub is_auto_id_col {
 	return defined $self->related_auto_id_columns->{$colKey};
 }
 
+sub get_deps_for_source {
+	my ($self, $srcN)= @_;
+	my $deplist= $self->_deplist_per_source->{$srcN};
+	return $deplist? @$deplist : ();
+}
+
 sub _build_valid_sources {
 	my $self= shift;
 	my %sources= map { $_ => $self->schema->source($_) }
@@ -62,9 +68,15 @@ sub _build_related_columns {
 	return $result;
 }
 
+sub _build_keys_per_source {
+	my $self= shift;
+	# TODO: make this calculate a list of RA::DBIC::Key objects for each source
+}
+
 sub _build_key_constraints_per_source {
 	my $self= shift;
 	# TODO: make this the new name for _build_col_depend_per_source
+	# have it calculate RA::DBIC::Key => RA::DBIC::Key
 }
 
 sub _build_dependable_keys_per_source {
@@ -173,6 +185,14 @@ sub get_primary_key_string {
 sub stringify_colkey {
 	my ($self, $table, @cols)= @_;
 	return $table.'.'.join('+', sort @cols);
+}
+
+# get the values of a key from a hash, by colKey
+sub get_key_val {
+	my ($self, $colKey, $rowHash)= @_;
+	my ($table, $colList)= split(/[.]/, $colKey);
+	my @cols= split(/[+]/, $colList);
+	return map { $rowHash->{$_} } @cols;
 }
 
 # This method stringifies a value for a key.

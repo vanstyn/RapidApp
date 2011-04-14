@@ -26,7 +26,7 @@ sub factory_create {
 	
 	my $fname= delete $params->{fileName};
 	if ($fname) {
-		$params->{source}= IO::File->open($params->{fileName}) or die $!;
+		$params->{source}= IO::File->new($params->{fileName}, 'r') or die $!;
 	}
 	
 	return $subclass->new($params);
@@ -69,6 +69,11 @@ extends 'RapidApp::DBIC::ImportEngine::ItemReader';
 
 use Storable 'fd_retrieve';
 
+sub BUILD {
+	my $self= shift;
+	binmode($self->source);
+}
+
 sub next {
 	my $self= shift;
 	my $src= $self->source;
@@ -91,6 +96,11 @@ extends 'RapidApp::DBIC::ImportEngine::ItemReader';
 
 use JSON::XS;
 my $json= JSON::XS->new();
+
+sub BUILD {
+	my $self= shift;
+	binmode($self->source, ':utf8');
+}
 
 sub next {
 	my $self= shift;
