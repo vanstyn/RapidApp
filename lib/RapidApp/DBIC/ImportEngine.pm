@@ -239,7 +239,7 @@ sub import_records {
 has '_debug_fd' => ( is => 'rw', isa => 'IO::File', lazy_build => 1 );
 sub _build__debug_fd {
 	my $debug_fd= IO::File->new;
-	$debug_fd->open('/tmp/rapidapp_import_errors.txt', 'w') or die $!;
+	$debug_fd->open('/tmp/rapidapp_import_errors.txt', '>:utf8') or die $!;
 	return $debug_fd;
 }
 
@@ -262,8 +262,11 @@ sub report_insert_errors {
 	my $debug_fd= $self->_debug_fd;
 	$debug_fd->print("Insertion Errors:\n");
 	for my $attempt (@{$self->{records_failed_insert}}) {
-		my ($srcN, $rec, $deps, $remappedRec, $errMsg)= @$attempt;
-		$debug_fd->print("insert $srcN\n\tRecord   : ".encode_json($rec)."\n\tRemapped : ".encode_json($remappedRec)."\n\tError    : $errMsg\n");
+		my ($importItem, $errMsg)= @$attempt;
+		$debug_fd->print(
+			"insert ".$importItem->source
+			."\n\tRecord   : ".encode_json($importItem->data)
+			."\n\tRemapped : ".encode_json($importItem->remapped_data)."\n\tError    : $errMsg\n");
 	}
 	$debug_fd->flush();
 }
@@ -335,8 +338,7 @@ sub perform_insert {
 	$self->_send_feedback_event if (!--$self->{next_progress});
 	
 	# record any auto-id values that got generated
-	my @autoCols= @{$self->auto_cols_per_source->{$srcN} || []};
-	for my $colN (@autoCols) {
+	for my $colN ($self->source_analysis->{$srcN}->autogen_cols) {
 		my $origVal= $rec->{$colN};
 		next unless defined $origVal;
 		
@@ -366,8 +368,7 @@ sub default_build_remapped_data {
 	
 	# Delete values for auto-generated keys
 	# there should just be zero or one for auto_increment, but we might extend this to auto-datetimes too
-	my @autoCols= @{$self->auto_cols_per_source->{$importItem->source} || []};
-	delete $remappedData->{$_} for (@autoCols);
+	delete $remappedData->{$_} for ($self->source_analysis->{$importItem->source}->autogen_cols);
 	
 	return $remappedData;
 }

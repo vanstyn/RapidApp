@@ -15,20 +15,18 @@ with 'RapidApp::DBIC::SchemaAnalysis';
 
 has 'exported_set' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 
-# sub mark_record_as_exported {
-	# my ($self, $sourceName, $pk)= @_;
-	# ref $pk
-		# and $pk= join("\t", @$pk);
-	# ($self->exported_set->{$sourceName} ||= {})->{$pk}= undef;
-# }
+has 'required_pk' => ( is => 'ro', isa => 'HashRef[HashRef]', default => sub {{}} );
+has 'seen_pk'     => ( is => 'ro', isa => 'HashRef[HashRef]', default => sub {{}} );
 
-# sub was_record_exported {
-	# my ($self, $sourceName, $pk)= @_;
-	# ref $pk
-		# and $pk= join("\t", @$pk);
-	# my $exported= ($self->exported_set->{$sourceName} ||= {});
-	# return exists $exported->{$pk};
-# }
+sub mark_pkVal_required {
+	my ($self, $pkVal)= @_;
+	($self->required_pk->{$pkVal->key} ||= {})->{$pkVal}= 1;
+}
+
+sub mark_pkVal_seen {
+	my ($self, $pkVal)= @_;
+	($self->seen_pk->{$pkVal->key} ||= {})->{$pkVal}= 1;
+}
 
 =pod
 
@@ -45,37 +43,27 @@ For each record in the resultset
     else build a search so that we can join up to it if the IDs of the new DB are different
 =cut
 sub export_resultset {
-	my ($self, $rs)= @_;
+	my ($self, $rs, $srcN, $depList)= @_;
 	
-	my $rsrc= $rs->result_source;
-	my $srcN= $rsrc->source_name;
-	my @deps= $self->get_deps_for_source($srcN);
+	$srcN ||= $rs->result_source->source_name;
+	$depList ||= [ $self->get_deps_for_source($srcN) ];
 	
 	while (my $row= $rs->next) {
-		$self->_export_row($srcN, \@deps, $row);
+		$self->export_row($row, $srcN, $depList);
 	}
 }
 
 sub export_row {
-	my ($self, $row)= @_;
-	my $srcN= $row->resultset->result_source->source_name;
-	my @deps= $self->get_deps_for_source($srcN);
-	$self->_export_row($srcN, \@deps, $row);
+	my ($self, $row, $srcN, $depList)= @_;
+	$srcN ||= $row->resultset->result_source->source_name;
+	$depList ||= [ $self->get_deps_for_source($srcN) ];
+	$self->export_rowHash($self->get_export_data($row), $srcN, $depList);
 }
 
-sub _export_row {
-	my ($self, $srcN, $depList, $row)= @_;
+sub export_rowHash {
+	my ($self, $rowHash, $srcN, $depList)= @_;
 	
-	my $code;
-	my $data= ($code= $row->can('get_export_data'))? $row->$code : $self->get_export_data($row);
-	for my $dep (@$depList) {
-		my $colN= $dep->col;
-		if (defined $data->{$colN}) {
-			# TODO - here, we need to record dependencies.... but don't bother for now.
-		}
-	}
-	
-	$self->create_acn_insert(source => $srcN, data => $data);
+	$self->create_acn_insert(source => $srcN, data => $rowHash, depList => $depList);
 }
 
 sub get_export_data {
@@ -85,19 +73,35 @@ sub get_export_data {
 
 sub create_acn_insert {
 	my $self= shift;
-	# TODO: record the primary key that we're writing, and then mark that off the dependency list if it was listed
-	$self->writer->write_insert(@_);
+	my %p= validate(@_, { source => 1, data => 1, depList => 0, pk => 0, pkVal => 0 });
+	
+	# TODO - here, we need to record dependencies.... but don't bother for now.
+	
+	# record the primary key that we're writing
+	$p{pk}    ||= $self->source_analysis->{$p{source}}->pk;
+	$p{pkVal} ||= $p{pk}->val_from_hash($p{data});
+	$self->mark_pkVal_seen($p{pkVal});
+	
+	$self->writer->write_insert(map { $_ => $p{$_} } qw(source data));
 }
 
 sub create_acn_update {
 	my $self= shift;
-	$self->writer->write_update(@_);
+	my %p= validate(@_, { source => 1, search => 1, data => 1, depList => 0 });
+	$self->writer->write_update(map { $_ => $p{$_} } qw(source search data));
 }
 
 sub create_acn_find {
 	my $self= shift;
-	# TODO: record the primary key that we're locating, and then mark that off the dependency list if it was listed
-	$self->writer->write_find(@_);
+	my %p= validate(@_, { source => 1, search => 1, data => 1, depList => 0, pk => 0 });
+	
+	# record the primary key that we're locating
+	$p{pk} ||= $self->source_analysis->{$p{source}}->pk;
+	# This line forces {data} to contain the primary key, which is something we wanted to validate
+	my $pkVal= $p{pk}->val_from_hash($p{data});
+	$self->mark_pkVal_seen($pkVal);
+	
+	$self->writer->write_find(map { $_ => $p{$_} } qw(source search data));
 }
 
 sub finish {

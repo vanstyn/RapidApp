@@ -26,7 +26,12 @@ sub new_from_hash {
 	my ($class, $key, @args)= @_;
 	die "First argument must be a Key" unless (ref $key)->isa('RapidApp::DBIC::Key');
 	my $hash= ref $args[0] eq 'HASH'? $args[0] : { @args };
-	return bless { key => $key, values => [ map { $hash->{$_} } $key->columns ] }, $class;
+	my @vals;
+	for my $colN ($key->columns) {
+		exists $hash->{$colN} or die "Key $key has no value in hash: {".join(', ', map { "$_ => ".$hash->{$_} } keys %$hash)."}";
+		push @vals, $hash->{$colN};
+	}
+	return bless { key => $key, values => \@vals }, $class;
 }
 
 sub source {
@@ -49,11 +54,7 @@ sub asHash {
 	my $self= shift;
 	my @v= $self->values;
 	my @c= $self->columns;
-	my %result;
-	for (my $i=0; $i<$#c; $i++) {
-		$result{$c[$i]}= $v[$i];
-	}
-	return $result;
+	return { map { $_, shift(@v) } @c };
 }
 
 # This method stringifies a value for a key.
@@ -66,7 +67,7 @@ sub asHash {
 sub stringify {
 	my $self= shift;
 	my @vals= $self->values;
-	scalar(@vals) eq 1 && return $vals[0];
+	scalar(@vals) eq 1 && return ''.$vals[0];
 	return join '+', map { length($_).'_'.$_ } @vals;
 }
 

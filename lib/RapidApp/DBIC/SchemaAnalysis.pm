@@ -3,17 +3,17 @@ use Moose::Role;
 
 use RapidApp::Debug 'DEBUG';
 use RapidApp::DBIC::SchemaAnalysis::Dependency;
+use RapidApp::DBIC::SchemaAnalysis::SourceAnalysis;
 
 requires 'schema';
+
+has 'source_analysis' => ( is => 'ro', isa => 'HashRef', lazy_build => 1 );
 
 # map of {srcN} => $rsrc
 has 'valid_sources' => (is => 'ro', isa => 'HashRef[DBIx::Class::ResultSource]', lazy_build => 1 );
 
 # map of {colKey}{colKey} => 1
 has 'related_columns' => ( is => 'ro', isa => 'HashRef[HashRef]', lazy_build => 1 );
-
-# map of {srcN} => [ $colN, ... ]
-has 'auto_cols_per_source' => ( is => 'ro', isa => 'HashRef[ArrayRef]', lazy_build => 1 );
 
 # map of {srcN} => \@deps
 has '_deplist_per_source' => ( is => 'ro', isa => 'HashRef[ArrayRef]', lazy_build => 1 );
@@ -42,6 +42,16 @@ sub _build_valid_sources {
 			$self->schema->sources;
 	DEBUG([ export => 2, import => 2, schema_analysis => 1 ], 'valid sources: ' => keys %sources);
 	return \%sources;
+}
+
+sub _build_source_analysis {
+	my $self= shift;
+	my %analysis= map {
+			$_ => RapidApp::DBIC::SchemaAnalysis::SourceAnalysis->new(source => $self->valid_sources->{$_})
+		} keys %{$self->valid_sources};
+	
+	DEBUG([ export => 2, import => 2, schema_analysis => 1 ], "src analysis:\n", map { ''.$_ } values %analysis);
+	return \%analysis;
 }
 
 sub _build_related_columns {
@@ -84,20 +94,6 @@ sub _build_dependable_keys_per_source {
 	# TODO: if we start supporting multiple-column keys, this will list out which ones to test for
 }
 
-sub _build_auto_cols_per_source {
-	my $self= shift;
-	
-	my $result= {};
-	# for each source...
-	my $srcHash= $self->valid_sources;
-	for my $srcN (keys %$srcHash) {
-		my $rsrc= $srcHash->{$srcN};
-		$result->{$srcN}= [ grep { $rsrc->column_info($_)->{is_auto_increment} } $rsrc->columns ];
-	}
-	DEBUG([ export => 2, import => 2, schema_analysis => 1 ], 'auto id columns' => $result);
-	return $result;
-}
-
 sub _build__deplist_per_source {
 	my $self= shift;
 	
@@ -114,7 +110,7 @@ sub _build__deplist_per_source {
 		#    list of columns, and a list of values in a canonical maanner.
 		my $rsrc= $srcHash->{$srcN};
 		for my $colN ($rsrc->columns) {
-			my $colKey= $self->stringify_colkey($srcN, $colN);
+			my $colKey= RapidApp::DBIC::Key->new_from_array($srcN, $colN).'';
 			my $originColKey= $self->related_auto_id_columns->{$colKey};
 			$originColKey && $originColKey ne $colKey
 				and push @deps, RapidApp::DBIC::SchemaAnalysis::Dependency->new( source => $srcN, col => $colN, origin_colKey => $originColKey );
@@ -133,8 +129,8 @@ sub _build_related_auto_id_columns {
 	# for all sources...
 	my $srcHash= $self->valid_sources;
 	for my $srcN (keys %$srcHash) {
-		for my $colN (@{$self->auto_cols_per_source->{$srcN}}) {
-			my $colKey= $self->stringify_colkey($srcN, $colN);
+		for my $colN ($self->source_analysis->{$srcN}->autogen_cols) {
+			my $colKey= RapidApp::DBIC::Key->new_from_array($srcN, $colN).'';
 			
 			# this column depends on itself
 			$result->{$colKey}= $colKey;
@@ -165,6 +161,10 @@ sub _build_remap_fields_per_source {
 	DEBUG([ export => 2, import => 2, schema_analysis => 1 ], 'fields which need remapped' => $result);
 	return $result;
 }
+
+=pod
+
+The following were replaced with RapidApp::DBIC::Key and RapidApp::DBIC::KeyVal utility methods
 
 sub get_primary_key_string {
 	my ($self, $rsrc, $rec)= @_;
@@ -208,5 +208,5 @@ sub stringify_key_val {
 	scalar(@vals) eq 1 && ref $vals[0] eq 'ARRAY' and return @vals= @{$vals[0]};
 	return join '', map { length($_).'~'.$_ } @vals;
 }
-
+=cut
 1;
