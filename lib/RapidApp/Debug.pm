@@ -29,14 +29,8 @@ sub applyChannelConfig {
 }
 
 sub write {
-	my ($self, $chanName, @args)= @_;
-	return unless (ref $chanName? $self->any_channel_enabled($chanName) : $ENV{'DEBUG_'.uc($chanName)});
-	
-	goto &_write; # we don't want to mess up 'caller'
-}
-
-sub _write {
-	my ($self, $chanName, @args)= @_;
+	my ($self, $chanNameOrList, @args)= @_;
+	my $chanName= _chan_enabled($chanNameOrList) or return;
 	my $ch= $self->channels->{$chanName} || $self->_autocreate_channel($chanName);
 	my $color= $ch->color;
 	my $locInfo= '';
@@ -104,21 +98,28 @@ sub default_instance {
 	return $INSTANCE ||= $class->new();
 }
 
+sub _chan_enabled {
+	my $chanName= shift;
+	return __PACKAGE__->any_channel_enabled($chanName) if ref $chanName;
+	return $ENV{'DEBUG_'.uc($chanName)}? $chanName : undef;
+}
+
 sub global_write {
 	my $class= shift;
-	my ($chanName, @args)= @_;
-	return unless (ref $chanName? $class->any_channel_enabled($chanName) : $ENV{'DEBUG_'.uc($chanName)});
+	my $chanName= _chan_enabled(shift);
+	return unless $chanName;
 	
 	my $self= RapidApp::ScopedGlobals->get("Debug") || $class->default_instance;
+	unshift @_, $chanName;
 	unshift @_, $self;
-	goto &_write; # we don't want to mess up 'caller'
+	goto &write; # we don't want to mess up 'caller'
 }
 
 sub any_channel_enabled {
 	my ($class, $chanList)= @_;
-	for (my $i=0; $i<scalar(@$chanList); $i++) {
-		my $lev= $ENV{'DEBUG_'.$chanList->[$i]};
-		return 1 if defined $lev && $lev >= $chanList->[$i+1];
+	for (my $i=0; $i<scalar(@$chanList); $i+=2) {
+		my $lev= $ENV{'DEBUG_'.uc($chanList->[$i])};
+		return $chanList->[$i] if defined $lev && $lev >= $chanList->[$i+1];
 	}
 	return 0;
 }
