@@ -69,7 +69,7 @@ it.
 has 'schema' => ( is => 'ro', isa => 'DBIx::Class::Schema', required => 1 );
 
 has 'reader' => ( is => 'rw', isa => 'RapidApp::DBIC::ImportEngine::ItemReader',
-	coerce => 1, trigger => \&setup_reader_itemClassForResultSource );
+	coerce => 1, trigger => \&_setup_reader );
 
 has 'on_progress' => ( is => 'rw', isa => 'Maybe[CodeRef]' );
 has 'progress_period' => ( is => 'rw', isa => 'Int', default => -1, trigger => \&_on_progress_period_change );
@@ -110,7 +110,8 @@ has 'records_failed_insert' => ( is => 'rw', isa => 'ArrayRef[ArrayRef]', defaul
 
 sub BUILD {
 	my $self= shift;
-	$self->setup_reader_itemClassForResultSource($self->reader) if ($self->reader);
+	$self->load_custom_import_items(ref $self->schema);
+	$self->_setup_reader($self->reader) if ($self->reader);
 }
 
 # Return a new-db-key as a function of an old-db-key.
@@ -295,10 +296,8 @@ sub next_item {
 sub process_item {
 	my ($self, $importItem)= @_;
 	
-	$importItem->engine($self);
-	
 	if ($importItem->resolve_dependencies) {
-		my $code= $importItem->can($importItem->action) or die (ref $importItem)." cannot perform action \"".$importItem->action."\"";
+		my $code= $importItem->can($importItem->action) or die ref($importItem)." cannot perform action \"".$importItem->action."\"";
 		$importItem->$code;
 	} else {
 		my $depList= $importItem->dependencies;
@@ -315,6 +314,34 @@ sub process_item {
 
 sub perform_find {
 	my ($self, $srcN, $search, $bindData)= @_;
+	
+	DEBUG('import', 'perform_find', $srcN, $search, $bindData);
+	
+	defined $self->valid_sources->{$srcN} or die "Cannot update records in source $srcN";
+	
+	my $rs= $self->schema->resultset($srcN);
+	my $resultClass= $rs->result_class;
+	my ($code, $row);
+	
+	# perform search, and then bind the PK of the found row.  Fail if not found.
+	if ($code= $resultClass->can('import_find')) {
+		$row= $resultClass->$code($rs, $search, $bindData);
+	} else {
+		my @rows= $rs->search($search)->all();
+		scalar(@rows) or die "No row matching ".encode_json($search);
+		scalar(@rows) == 1 or die "Can't resolve row; multiple rows match ".encode_json($search);
+		$row= $rows[0];
+	}
+	
+	# record any auto-id values that were bound
+	for my $colN ($self->source_analysis->{$srcN}->autogen_cols) {
+		my $origVal= $bindData->{$colN};
+		next unless defined $origVal;
+		
+		my $newVal= $row->get_column($colN);
+		my $colKey= $srcN.'.'.$colN;
+		$self->set_translation($colKey, $origVal, $newVal);
+	}
 }
 
 sub perform_insert {
@@ -346,6 +373,31 @@ sub perform_insert {
 		my $colKey= $srcN.'.'.$colN;
 		$self->set_translation($colKey, $origVal, $newVal);
 	}
+}
+
+sub perform_update {
+	my ($self, $srcN, $search, $data, $remapped_data)= @_;
+	
+	DEBUG('import', 'perform_update', $srcN, $search, $data, '=>', $remapped_data);
+	
+	defined $self->valid_sources->{$srcN} or die "Cannot update records in source $srcN";
+	
+	my $rs= $self->schema->resultset($srcN);
+	my $resultClass= $rs->result_class;
+	my ($code, $row);
+	
+	# perform search, and then update the found row.  Fail if not found.
+	if ($code= $resultClass->can('import_update')) {
+		$row= $resultClass->$code($rs, $search, $remapped_data, $data);
+	} else {
+		my @rows= $rs->search($search)->all();
+		scalar(@rows) or die "No row matching ".encode_json($search);
+		scalar(@rows) == 1 or die "Can't resolve row; multiple rows match ".encode_json($search);
+		$rows[0]->update($remapped_data);
+	}
+	
+	$self->{records_imported}++;
+	$self->_send_feedback_event if (!--$self->{next_progress});
 }
 
 # TODO: we want to do away with this logic at some point, and just fail on DB insert errors.
@@ -390,13 +442,33 @@ sub default_process_dependencies {
 	return scalar(@newDeps) == 0;
 }
 
+use Module::Find;
+
+sub load_custom_import_items {
+	my ($self, $schemaCls)= @_;
+	
+	DEBUG('import', 'Loading custom import-item modules...');
+	
+	my @tryLoad= grep { $_ =~ /::ImportItem$/ } findsubmod( $schemaCls );
+	push @tryLoad, findsubmod $schemaCls.'::ImportItem';
+	foreach my $m (@tryLoad) {
+		DEBUG('import', '   ', $m);
+		eval " require $m; import $m ; ";
+		die $@ if $@;
+	}
+}
+
+
 # ResultSources can have special import item classes, such that any record for a particular source
 #   creates a subclass of RA::DBIC::IE::Item.  We expect them to be named [App::DB]::ImportItem::[Source]
 #   where [App::DB] is the package name of the schema, and [Source] is the name of the DBIC ResultSource.
 # This method builds a list of those classes, and then sets them in the reader, so that the reader can
 #   manufacture the correct Item object.
-sub setup_reader_itemClassForResultSource {
+sub _setup_reader {
 	my ($self, $reader)= @_;
+	
+	$reader->engine($self);
+	
 	my $clsMap= $reader->itemClassForResultSource;
 	defined $clsMap or $reader->itemClassForResultSource(($clsMap= {}));
 	

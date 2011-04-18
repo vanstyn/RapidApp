@@ -5,10 +5,10 @@ use Moose;
 use Try::Tiny;
 
 # the operation this item describes, "insert", "update", "find"
-has 'action' => ( is => 'rw', isa => 'Str', default => 'insert' );
+has 'action' => ( is => 'rw', isa => 'Str', default => 'insert', ,required => 1 );
 
 # the name of the DBIC source to perform the operation on
-has 'source' => ( is => 'rw', isa => 'Str' );
+has 'source' => ( is => 'rw', isa => 'Str', required => 1 );
 
 # the data which should be inserted or used for update
 has 'data'   => ( is => 'rw', isa => 'Maybe[HashRef]' );
@@ -16,17 +16,8 @@ has 'data'   => ( is => 'rw', isa => 'Maybe[HashRef]' );
 # the search criteria which should be used to locate a record for "find" or "update"
 has 'search' => ( is => 'rw', isa => 'Maybe[HashRef]' );
 
-sub serialize {
-	my $self= shift;
-	my @saveFields= qw(source data search);
-	push @saveFields, 'action' if $self->action ne 'insert';
-	my $ret= map { $_ => $self->{$_} } grep { defined $self->{$_} } @saveFields;
-	$ret->{class}= ref $self if ref $self ne __PACKAGE__;
-	return $ret;
-}
-
 # reference to the engine which should be used for calculations
-has 'engine' => ( is => 'rw', isa => 'RapidApp::DBIC::ImportEngine', weak_ref => 1 );
+has 'engine' => ( is => 'ro', isa => 'RapidApp::DBIC::ImportEngine', weak_ref => 1, required => 1 );
 
 # an array of source/key/value items which describe other records which must be imported first
 has 'dependencies' => ( is => 'rw', lazy_build => 1 );
@@ -62,6 +53,11 @@ sub insert {
 		$err= "$err" if (ref $err);
 		$self->engine->try_again_later($self, $err);
 	};
+}
+
+sub update {
+	my $self= shift;
+	$self->engine->perform_update($self->source, $self->search, $self->data, $self->remapped_data);
 }
 
 __PACKAGE__->meta->make_immutable;

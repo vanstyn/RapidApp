@@ -8,6 +8,7 @@ use Moose::Util::TypeConstraints;
 coerce __PACKAGE__, from "HashRef" => via { __PACKAGE__->factory_create($_) };
 
 has 'source' => ( is => 'rw', isa => 'IO::Handle', required => 1 );
+has 'engine' => ( is => 'rw', isa => 'RapidApp::DBIC::ImportEngine', weak_ref => 1 );
 has 'itemClassForResultSource' => ( is => 'rw', isa => 'HashRef[String]', default => sub {{}} );
 
 sub factory_create {
@@ -52,6 +53,7 @@ sub inflate {
 	my ($self, $itemHash)= @_;
 	my $cls= delete $itemHash->{class}
 		|| $self->classForDbicSource($itemHash->{source});
+	$itemHash->{engine}= $self->engine;
 	return $cls->new($itemHash);
 }
 
