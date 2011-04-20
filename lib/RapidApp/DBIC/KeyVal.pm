@@ -22,13 +22,24 @@ sub new_from_array {
 	return bless { key => $key, values => \@vals }, $class;
 }
 
+sub new_from_row {
+	my ($class, $key, $row)= @_;
+	$class->new_from_array($key, map { $row->$_ } $key->columns);
+}
+
 sub new_from_hash {
+	my ($class, $key, @args)= @_;
+	(shift)->new_from_hash_if_exists(@_)
+		or die "Key $key has no value in hash: ".RapidApp::Debug->default_instance->_debug_data_to_text(@args);
+}
+
+sub new_from_hash_if_exists {
 	my ($class, $key, @args)= @_;
 	die "First argument must be a Key" unless (ref $key)->isa('RapidApp::DBIC::Key');
 	my $hash= ref $args[0] eq 'HASH'? $args[0] : { @args };
 	my @vals;
 	for my $colN ($key->columns) {
-		exists $hash->{$colN} or die "Key $key has no value in hash: {".join(', ', map { "$_ => ".$hash->{$_} } keys %$hash)."}";
+		exists $hash->{$colN} or return undef;
 		push @vals, $hash->{$colN};
 	}
 	return bless { key => $key, values => \@vals }, $class;

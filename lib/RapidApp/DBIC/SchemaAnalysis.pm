@@ -4,6 +4,7 @@ use Moose::Role;
 use RapidApp::Debug 'DEBUG';
 use RapidApp::DBIC::SchemaAnalysis::Dependency;
 use RapidApp::DBIC::SchemaAnalysis::SourceAnalysis;
+use RapidApp::DBIC::SchemaAnalysis::Constraint;
 
 requires 'schema';
 
@@ -37,10 +38,7 @@ sub get_deps_for_source {
 
 sub _build_valid_sources {
 	my $self= shift;
-	my %sources= map { $_ => $self->schema->source($_) }
-		grep { !$self->schema->resultset($_)->result_class->can('CONSTANT_VALUES') }
-			$self->schema->sources;
-	DEBUG([ export => 2, import => 2, schema_analysis => 1 ], 'valid sources: ' => keys %sources);
+	my %sources= map { $_ => $self->schema->source($_) } $self->schema->sources;
 	return \%sources;
 }
 

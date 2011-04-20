@@ -153,28 +153,6 @@ sub _pop_delayed_inserts {
 	return @$pendingByKey;
 }
 
-=pod
-sub _build__calc_dep_fn_per_source {
-	my $self= shift;
-	my $default= $self->can('calculate_dependencies'); # do it this way to pick up methods from subclasses
-	my %result= map {
-		$_ => $self->schema->resultset($_)->result_class->can('import_calculate_dependencies')
-				|| $default
-		} keys %{$self->valid_sources};
-	return \%result;
-}
-
-sub _build__proc_dep_fn_per_source {
-	my $self= shift;
-	my $default= $self->can('process_dependencies'); # do it this way to pick up methods from subclasses
-	my %result= map {
-		$_ => $self->schema->resultset($_)->result_class->can('import_process_dependencies')
-				|| $default
-		} keys %{$self->valid_sources};
-	return \%result;
-}
-=cut
-
 sub _on_progress_period_change {
 	my $self= shift;
 	$self->next_progress($self->progress_period) if ($self->progress_period > 0);

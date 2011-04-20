@@ -13,19 +13,41 @@ has 'writer' => ( is => 'rw', isa => 'RapidApp::DBIC::ImportEngine::ItemWriter',
 
 with 'RapidApp::DBIC::SchemaAnalysis';
 
-has 'exported_set' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
+#has 'exported_set' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 
-has 'required_pk' => ( is => 'ro', isa => 'HashRef[HashRef]', default => sub {{}} );
-has 'seen_pk'     => ( is => 'ro', isa => 'HashRef[HashRef]', default => sub {{}} );
+has '_required_pk' => ( is => 'ro', isa => 'HashRef[HashRef]', default => sub {{}} );
+has '_seen_pk'     => ( is => 'ro', isa => 'HashRef[HashRef]', default => sub {{}} );
+
+sub BUILD {
+	my $self= shift;
+	# mark all records built-in to the schema as "seen".
+	for my $sa (values %{$self->source_analysis}) {
+		$self->mark_pkVal_seen($_->{pkVal}) for $sa->schema_defined_rows;
+	}
+}
 
 sub mark_pkVal_required {
 	my ($self, $pkVal)= @_;
-	($self->required_pk->{$pkVal->key} ||= {})->{$pkVal}= 1;
+	return if $self->seen_pkVal($pkVal);
+	($self->_required_pk->{$pkVal->key} ||= {})->{$pkVal}= $pkVal;
 }
 
 sub mark_pkVal_seen {
 	my ($self, $pkVal)= @_;
-	($self->seen_pk->{$pkVal->key} ||= {})->{$pkVal}= 1;
+	($self->_seen_pk->{$pkVal->key} ||= {})->{$pkVal}= $pkVal;
+	my $hash= $self->_required_pk->{$pkVal->key};
+	delete $hash->{$pkVal} if $hash;
+}
+
+sub seen_pkVal {
+	my ($self, $pkVal)= @_;
+	my $hash= $self->_seen_pk->{$pkVal->key};
+	return $hash && $hash->{$pkVal};
+}
+
+sub get_missing_deps {
+	my ($self)= @_;
+	return map { values %{$_} } values %{$self->_required_pk};
 }
 
 =pod
@@ -55,7 +77,7 @@ sub export_resultset {
 
 sub export_row {
 	my ($self, $row, $srcN, $depList)= @_;
-	$srcN ||= $row->resultset->result_source->source_name;
+	$srcN ||= $row->result_source->source_name;
 	$depList ||= [ $self->get_deps_for_source($srcN) ];
 	$self->export_rowHash($self->get_export_data($row), $srcN, $depList);
 }
@@ -75,13 +97,30 @@ sub create_acn_insert {
 	my $self= shift;
 	my %p= validate(@_, { source => 1, data => 1, depList => 0, pk => 0, pkVal => 0 });
 	
-	# TODO - here, we need to record dependencies.... but don't bother for now.
+	# check whether we've done this row already
+	my $sa= $self->source_analysis->{$p{source}};
+	$p{pk}    ||= $sa->pk;
+	$p{pkVal} ||= $p{pk}->val_from_hash($p{data});
+	if ($self->seen_pkVal($p{pkVal})) {
+		DEBUG('export', $p{pkVal}, "has been exported already, skipping");
+		return;
+	}
+	
+	# find foreign key values and list them as required
+	for my $fkc ($sa->fk_constraints) {
+		my $lkVal= $fkc->local_key->val_from_hash_if_exists($p{data});
+		if ($lkVal) {
+			# The foreign key and local key in a constraint are guaranteed
+			#   to have their columns in matching sequence
+			my $fkVal= $fkc->foreign_key->val_from_array($lkVal->values);
+			$self->mark_pkVal_required($fkVal);
+		}
+	}
 	
 	# record the primary key that we're writing
-	$p{pk}    ||= $self->source_analysis->{$p{source}}->pk;
-	$p{pkVal} ||= $p{pk}->val_from_hash($p{data});
 	$self->mark_pkVal_seen($p{pkVal});
 	
+	# emit a record
 	$self->writer->write_insert(map { $_ => $p{$_} } qw(source data));
 }
 
@@ -99,6 +138,10 @@ sub create_acn_find {
 	$p{pk} ||= $self->source_analysis->{$p{source}}->pk;
 	# This line forces {data} to contain the primary key, which is something we wanted to validate
 	my $pkVal= $p{pk}->val_from_hash($p{data});
+	if ($self->seen_pkVal($pkVal)) {
+		DEBUG('export', $pkVal, "has been exported already, skipping");
+		return;
+	}
 	$self->mark_pkVal_seen($pkVal);
 	
 	$self->writer->write_find(map { $_ => $p{$_} } qw(source search data));
