@@ -100,8 +100,8 @@ sub create_acn_insert {
 	# check whether we've done this row already
 	my $sa= $self->source_analysis->{$p{source}};
 	$p{pk}    ||= $sa->pk;
-	$p{pkVal} ||= $p{pk}->val_from_hash($p{data});
-	if ($self->seen_pkVal($p{pkVal})) {
+	$p{pkVal} ||= $p{pk}->val_from_hash_if_exists($p{data});
+	if ($p{pkVal} && $self->seen_pkVal($p{pkVal})) {
 		DEBUG('export', $p{pkVal}, "has been exported already, skipping");
 		return;
 	}
@@ -118,7 +118,7 @@ sub create_acn_insert {
 	}
 	
 	# record the primary key that we're writing
-	$self->mark_pkVal_seen($p{pkVal});
+	$self->mark_pkVal_seen($p{pkVal}) if $p{pkVal};
 	
 	# emit a record
 	$self->writer->write_insert(map { $_ => $p{$_} } qw(source data));
