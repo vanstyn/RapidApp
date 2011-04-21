@@ -332,9 +332,7 @@ Ext.ux.RapidApp.AppTree.ServerFilterPlugin = Ext.extend(Ext.util.Observable,{
 			delete tree.next_load_params;
 			tree.searchField.setValue('');
 		};
-		
-		var Filter = this;
-		
+
 		var loader = tree.getLoader();
 		loader.on("beforeload",function(){
 			this.baseParams = {};
@@ -358,6 +356,7 @@ Ext.ux.RapidApp.AppTree.ServerFilterPlugin = Ext.extend(Ext.util.Observable,{
 			},
 			runSearch: function() {
 				var val = this.getRawValue();
+				if(val == '') { return this.onTrigger1Click(); }
 				tree.next_load_params = {
 					search: val,
 					recursive: true
@@ -372,9 +371,8 @@ Ext.ux.RapidApp.AppTree.ServerFilterPlugin = Ext.extend(Ext.util.Observable,{
 					buffer: 150, 
 					fn: function(field, e) {
 						if(Ext.EventObject.ESC == e.getKey()) {
-							field.onTriggerClick();
+							field.onTrigger1Click();
 						}
-						//else {
 						else if (Ext.EventObject.ENTER == e.getKey()){
 							return field.runSearch();
 						}
@@ -388,8 +386,6 @@ Ext.ux.RapidApp.AppTree.ServerFilterPlugin = Ext.extend(Ext.util.Observable,{
 		}
 		
 		tree.searchField = new Ext.form.TwinTriggerField(fieldConfig);
-		
-		//tree.searchField = Ext.ComponentMgr.create(fieldConfig);
 		var Tbar = tree.getTopToolbar();
 		Tbar.insert(this.fieldIndex,tree.searchField);
 	}
