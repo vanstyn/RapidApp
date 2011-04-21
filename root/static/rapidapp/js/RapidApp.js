@@ -658,6 +658,7 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 		this.buttons = [
 			{
 				text: 'Select',
+				itemId: 'select',
 				handler: function(btn) {
 					var app = btn.ownerCt.ownerCt.getComponent('app').items.first();
 
