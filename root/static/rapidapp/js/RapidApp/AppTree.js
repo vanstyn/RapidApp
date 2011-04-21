@@ -347,11 +347,24 @@ Ext.ux.RapidApp.AppTree.ServerFilterPlugin = Ext.extend(Ext.util.Observable,{
 		if(tree.filterConfig) { Ext.apply(this,tree.filterConfig); }
 
 		var fieldConfig = {
-			xtype:'trigger',
 			emptyText: 'Type to Find',
-			triggerClass:'x-form-clear-trigger',
-			onTriggerClick:function() {
+			trigger1Class:'x-form-clear-trigger',
+			trigger2Class: 'x-form-search-trigger',
+			onTrigger1Click: function() {
 				Ext.ux.RapidApp.AppTree.reload(tree);
+			},
+			onTrigger2Click:function() {
+				this.runSearch.call(this);
+			},
+			runSearch: function() {
+				var val = this.getRawValue();
+				tree.next_load_params = {
+					search: val,
+					recursive: true
+				};
+				tree.root.collapse();
+				tree.root.loaded = false;
+				tree.root.expand();
 			},
 			enableKeyEvents:true,
 			listeners:{
@@ -363,15 +376,7 @@ Ext.ux.RapidApp.AppTree.ServerFilterPlugin = Ext.extend(Ext.util.Observable,{
 						}
 						//else {
 						else if (Ext.EventObject.ENTER == e.getKey()){
-
-							var val = field.getRawValue();
-							tree.next_load_params = {
-								search: val,
-								recursive: true
-							};
-							tree.root.collapse();
-							tree.root.loaded = false;
-							tree.root.expand();
+							return field.runSearch();
 						}
 					}
 				}
@@ -382,7 +387,9 @@ Ext.ux.RapidApp.AppTree.ServerFilterPlugin = Ext.extend(Ext.util.Observable,{
 			Ext.apply(fieldConfig,this.fieldConfig);
 		}
 		
-		tree.searchField = Ext.ComponentMgr.create(fieldConfig);
+		tree.searchField = new Ext.form.TwinTriggerField(fieldConfig);
+		
+		//tree.searchField = Ext.ComponentMgr.create(fieldConfig);
 		var Tbar = tree.getTopToolbar();
 		Tbar.insert(this.fieldIndex,tree.searchField);
 	}
