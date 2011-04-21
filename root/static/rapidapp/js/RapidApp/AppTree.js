@@ -251,38 +251,7 @@ Ext.ux.RapidApp.AppTree.reload1 = function(tree) {
 
 
 
-Ext.ux.RapidApp.AppTree.reload = function(tree,recursive) {
-	var pnode = tree.root;
-	
-	if(tree && tree.filter && tree.filter.searchField) {
-		tree.filter.searchField.onTriggerClick();
-	}
-	
-	var expand_func;
-	expand_func = function(node) {
-		console.log('root node expanded');
-		this.un('expand',expand_func);
-	}
-	pnode.on('expand',expand_func,pnode);
-	
-	pnode.collapse();
-	pnode.loaded = false;
-	var loader = tree.getLoader();
-	
-	//recursive = true;
-	
-	if(recursive) {
-		var rfunc;
-		rfunc = function(treeLoader,node) {
-			console.log('rfunc');
-			this.baseParams.recursive = true;
-			this.un("beforeload",rfunc);
-		}
-		loader.on("beforeload",rfunc,loader);
-	}
-	
-	pnode.expand();
-}
+
 
 
 Ext.ns('Ext.ux.RapidApp.AppTree');
@@ -318,6 +287,7 @@ Ext.ux.RapidApp.AppTree.FilterPlugin = Ext.extend(Ext.util.Observable,{
 							//Filter.treeLoadAll();
 							var callback = function() {
 								var val = field.getRawValue();
+								Ext.ux.RapidApp.AppTree.set_next_treeload_params(tree,{search:val});
 								var re = new RegExp('.*' + val + '.*', 'i');
 								tree.filter.clear();
 								tree.filter.filter(re, 'text');
@@ -341,6 +311,83 @@ Ext.ux.RapidApp.AppTree.FilterPlugin = Ext.extend(Ext.util.Observable,{
 	}
 });
 Ext.preg('apptree-filter',Ext.ux.RapidApp.AppTree.FilterPlugin);
+
+
+
+Ext.ux.RapidApp.AppTree.reload = function(tree,recursive) {
+	if(Ext.isFunction(tree.onReload)) { tree.onReload.call(tree); }
+	tree.root.collapse();
+	tree.root.loaded = false;
+	tree.root.expand();
+}
+
+Ext.ux.RapidApp.AppTree.ServerFilterPlugin = Ext.extend(Ext.util.Observable,{
+	
+	fieldIndex: 0,
+	
+	init: function(tree) {
+		this.tree = tree;
+		
+		tree.onReload = function() {
+			delete tree.next_load_params;
+			tree.searchField.setValue('');
+		};
+		
+		var Filter = this;
+		
+		var loader = tree.getLoader();
+		loader.on("beforeload",function(){
+			this.baseParams = {};
+			if(tree.next_load_params) {
+				this.baseParams = tree.next_load_params;
+				delete tree.next_load_params;
+			}
+		});
+		
+		if(tree.filterConfig) { Ext.apply(this,tree.filterConfig); }
+
+		var fieldConfig = {
+			xtype:'trigger',
+			emptyText: 'Type to Find',
+			triggerClass:'x-form-clear-trigger',
+			onTriggerClick:function() {
+				Ext.ux.RapidApp.AppTree.reload(tree);
+			},
+			enableKeyEvents:true,
+			listeners:{
+				keyup:{
+					buffer: 150, 
+					fn: function(field, e) {
+						if(Ext.EventObject.ESC == e.getKey()) {
+							field.onTriggerClick();
+						}
+						//else {
+						else if (Ext.EventObject.ENTER == e.getKey()){
+
+							var val = field.getRawValue();
+							tree.next_load_params = {
+								search: val,
+								recursive: true
+							};
+							tree.root.collapse();
+							tree.root.loaded = false;
+							tree.root.expand();
+						}
+					}
+				}
+			}
+		};
+			
+		if(this.fieldConfig) {
+			Ext.apply(fieldConfig,this.fieldConfig);
+		}
+		
+		tree.searchField = Ext.ComponentMgr.create(fieldConfig);
+		var Tbar = tree.getTopToolbar();
+		Tbar.insert(this.fieldIndex,tree.searchField);
+	}
+});
+Ext.preg('apptree-serverfilter',Ext.ux.RapidApp.AppTree.ServerFilterPlugin);
 
 
 
