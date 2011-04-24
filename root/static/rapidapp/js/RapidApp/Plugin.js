@@ -56,6 +56,14 @@ Ext.preg('autowidthtoolbars',Ext.ux.RapidApp.Plugin.AutoWidthToolbars);
 Ext.ns('Ext.ux.RapidApp.Plugin.HtmlEditor');
 Ext.ux.RapidApp.Plugin.HtmlEditor.SimpleCAS_Image = Ext.extend(Ext.ux.form.HtmlEditor.Image,{
 	
+	constructor: function(cnf) {
+		Ext.apply(this,cnf);
+	},
+	
+	maxImageWidth: null,
+	
+	resizeWarn: false,
+	
 	onRender: function() {
 		var btn = this.cmp.getToolbar().addButton({
 				text: 'Insert Image',
@@ -90,15 +98,32 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.SimpleCAS_Image = Ext.extend(Ext.ux.form.HtmlE
 		
 		var callback = function(form,res) {
 			var img = Ext.decode(res.response.responseText);
+			
+			if(this.resizeWarn && img.resized) {
+				Ext.Msg.show({
+					title:'Notice: Image Resized',
+					msg: 
+						'The image has been resized by the server.<br><br>' +
+						'Original Size: <b>' + img.orig_width + 'x' + img.orig_height + '</b><br><br>' +
+						'New Size: <b>' + img.width + 'x' + img.height + '</b>'
+					,
+					buttons: Ext.Msg.OK,
+					icon: Ext.MessageBox.INFO
+				});
+			}
+			
 			img.link_url = '/simplecas/fetch_content/' + img.checksum;
 			this.insertImage(img);
 		};
+		
+		var url = '/simplecas/upload_image';
+		if(this.maxImageWidth) { url += '/' + this.maxImageWidth; }
 		
 		Ext.ux.RapidApp.WinFormPost.call(this,{
 			title: 'Insert Image',
 			width: 430,
 			height:140,
-			url:'/simplecas/upload_image',
+			url: url,
 			useSubmit: true,
 			fileUpload: true,
 			fieldset: fieldset,
@@ -115,7 +140,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.SimpleCAS_Image = Ext.extend(Ext.ux.form.HtmlE
 		);
 	}
 });
-
+Ext.preg('htmleditor-casimage',Ext.ux.RapidApp.Plugin.HtmlEditor.SimpleCAS_Image);
 
 Ext.ux.RapidApp.Plugin.HtmlEditor.DVSelect = Ext.extend(Ext.util.Observable, {
 	

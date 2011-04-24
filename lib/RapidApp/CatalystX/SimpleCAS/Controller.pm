@@ -9,6 +9,8 @@ use RapidApp::CatalystX::SimpleCAS::Content;
 use RapidApp::CatalystX::SimpleCAS::Store::File;
 use JSON::PP;
 use MIME::Base64;
+use Image::Resize;
+use String::Random;
 
 has 'store_class' => ( is => 'ro', default => 'RapidApp::CatalystX::SimpleCAS::Store::File' );
 has 'store_path' => ( is => 'ro', required => 1 );
@@ -63,13 +65,32 @@ sub upload_content: Local  {
 
 
 sub upload_image: Local  {
-	my ($self, $c) = @_;
+	my ($self, $c, $maxwidth) = @_;
 
 	my $upload = $c->req->upload('Filedata') or die "no upload object";
 	my $checksum = $self->Store->add_content_file_mv($upload->tempname) or die "Failed to add content";
 	
-	my ($width,$height) = $self->Store->image_size($checksum);
+	my $resized = \0;
 	
+	my ($width,$height) = $self->Store->image_size($checksum);
+	my ($orig_width,$orig_height) = ($width,$height);
+	if (defined $maxwidth and $width > $maxwidth) {
+		my $ratio = $maxwidth/$width;
+		my $newheight = int($ratio * $height);
+		
+		my $image = Image::Resize->new($self->Store->checksum_to_path($checksum));
+		my $gd = $image->resize($maxwidth,$newheight);
+		
+		my $tmpfile = '/tmp/' . String::Random->new->randregex('[a-z0-9A-Z]{15}');
+		open(FH, '> ' . $tmpfile);
+		print FH $gd->jpeg();
+		close(FH);
+		
+		my $newchecksum = $self->Store->add_content_file_mv($tmpfile);
+		
+		($checksum,$width,$height) = ($newchecksum,$maxwidth,$newheight);
+		$resized = \1;
+	}
 	
 	my $tag = '<img src="/simplecas/fetch_content/' . $checksum . '"';
 	$tag .= ' width=' . $width . ' height=' . $height if ($width and $height);
@@ -79,12 +100,12 @@ sub upload_image: Local  {
 		success => \1,
 		checksum => $checksum,
 		height => $height,
-		width => $width
+		width => $width,
+		resized => $resized,
+		orig_width => $orig_width,
+		orig_height => $orig_height
 	};
 	
-	#$c->response->header('Content-Type' => 'text/plain');
-	
-	#return $c->res->body('{"stupid":"asshole"}');
 	return $c->res->body(JSON::PP::encode_json($packet));
 }
 
