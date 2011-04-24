@@ -8,6 +8,7 @@ BEGIN { extends 'Catalyst::Controller' }
 use RapidApp::CatalystX::SimpleCAS::Content;
 use RapidApp::CatalystX::SimpleCAS::Store::File;
 use JSON::PP;
+use MIME::Base64;
 
 has 'store_class' => ( is => 'ro', default => 'RapidApp::CatalystX::SimpleCAS::Store::File' );
 has 'store_path' => ( is => 'ro', required => 1 );
@@ -88,5 +89,19 @@ sub upload_image: Local  {
 }
 
 
+sub upload_echo_base64: Local  {
+	my ($self, $c) = @_;
+
+	my $upload = $c->req->upload('Filedata') or die "no upload object";
+	
+	my $base64 = encode_base64($upload->slurp,'');
+	
+	my $packet = {
+		success => \1,
+		echo_content => $base64
+	};
+	
+	return $c->res->body(JSON::PP::encode_json($packet));
+}
 
 1;
