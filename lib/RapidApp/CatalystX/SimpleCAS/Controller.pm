@@ -70,6 +70,8 @@ sub upload_image: Local  {
 	my $upload = $c->req->upload('Filedata') or die "no upload object";
 	my $checksum = $self->Store->add_content_file_mv($upload->tempname) or die "Failed to add content";
 	
+	my ($type,$subtype) = split(/\//,$upload->type);
+	
 	my $resized = \0;
 	
 	my ($width,$height) = $self->Store->image_size($checksum);
@@ -81,9 +83,12 @@ sub upload_image: Local  {
 		my $image = Image::Resize->new($self->Store->checksum_to_path($checksum));
 		my $gd = $image->resize($maxwidth,$newheight);
 		
+		my $method = 'png';
+		$method = $subtype if ($gd->can($subtype));
+		
 		my $tmpfile = '/tmp/' . String::Random->new->randregex('[a-z0-9A-Z]{15}');
 		open(FH, '> ' . $tmpfile);
-		print FH $gd->jpeg();
+		print FH $gd->$method;
 		close(FH);
 		
 		my $newchecksum = $self->Store->add_content_file_mv($tmpfile);
