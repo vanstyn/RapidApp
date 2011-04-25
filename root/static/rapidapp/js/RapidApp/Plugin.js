@@ -303,15 +303,15 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHtmlFile = Ext.extend(Ext.util.Observable,
 		};
 		
 		var callback = function(form,res) {
-			var packet = Ext.decode(res.response.responseText);		
-			this.replaceContent(base64.decode(packet.echo_content));
+			var packet = Ext.decode(res.response.responseText);
+			this.replaceContent(packet.content);
 		};
 		
 		Ext.ux.RapidApp.WinFormPost.call(this,{
 			title: 'Load html file',
 			width: 430,
 			height:140,
-			url:'/simplecas/upload_echo_base64',
+			url:'/simplecas/texttranscode/transcode_html',
 			useSubmit: true,
 			fileUpload: true,
 			fieldset: fieldset,

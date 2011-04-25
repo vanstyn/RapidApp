@@ -6,6 +6,7 @@ use RapidApp::RapidApp;
 use RapidApp::ScopedGlobals 'sEnv';
 use Scalar::Util 'blessed';
 use CatalystX::InjectComponent;
+use RapidApp::CatalystX::SimpleCAS::TextTranscode;
 use RapidApp::TraceCapture;
 use Hash::Merge;
 use RapidApp::Log;
@@ -92,6 +93,7 @@ sub setupRapidApp {
 	# Enable the DirectLink feature, if asked for
 	$app->rapidApp->enableDirectLink
 		and injectUnlessExist( 'RapidApp::Controller::DirectLink', 'Controller::RapidApp::DirectLink' );
+	injectUnlessExist( 'RapidApp::CatalystX::SimpleCAS::TextTranscode', 'Controller::SimpleCas::TextTranscode' );
 	
 	# for each view, inject it if it doens't exist
 	injectUnlessExist( 'Catalyst::View::TT', 'View::RapidApp::TT' );
