@@ -381,7 +381,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile = Ext.extend(Ext.util.Observable, {
 		
 		var callback = function(form,res) {
 			var packet = Ext.decode(res.response.responseText);
-			var url = '/simplecas/fetch_content/' + packet.checksum;
+			var url = '/simplecas/fetch_content/' + packet.checksum + '/' + packet.filename;
 			var link = '<a href="' + url + '">' + packet.filename + '</a>';
 			this.insertContent(link);
 		};
@@ -401,4 +401,34 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile = Ext.extend(Ext.util.Observable, {
 Ext.preg('htmleditor-insertfile',Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile);
 
 
+Ext.ns('Ext.ux.RapidApp.Plugin');
+Ext.ux.RapidApp.Plugin.ClickableLinks = Ext.extend(Ext.util.Observable, {
+	
+	constructor: function(cnf) {
+		Ext.apply(this,cnf);
+	},
+	
+	init: function(cmp){
+		this.cmp = cmp;
+		this.cmp.on('render', this.onRender, this);
+	},
+	
+	onRender: function() {
+		var el = this.cmp.getEl();
 
+		Ext.EventManager.on(el, {
+			'click': this.onClick,
+			buffer: 100,
+			scope: this
+		});		
+	},
+	
+	onClick: function(e,el,o) {
+		var Element = new Ext.Element(el);
+		var href = Element.getAttribute('href');
+		if (href && href != '#') {
+			document.location.href = href;
+		}
+	}
+});
+Ext.preg('clickablelinks',Ext.ux.RapidApp.Plugin.ClickableLinks);

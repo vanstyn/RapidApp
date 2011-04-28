@@ -39,7 +39,10 @@ sub Content {
 
 
 sub fetch_content: Local {
-    my ($self, $c, $checksum) = @_;
+   my ($self, $c, $checksum, $filename) = @_;
+	
+	my $disposition = 'inline;filename="' . $checksum . '"';
+	$disposition = 'attachment;filename=' . $filename if ($filename);
 	
 	unless($self->Store->content_exists($checksum)) {
 		$c->res->body('Does not exist');
@@ -49,7 +52,7 @@ sub fetch_content: Local {
 	my $type = $self->Store->content_mimetype($checksum) or die "Error reading mime type";
 	
 	$c->response->header('Content-Type' => $type);
-	$c->response->header('Content-Disposition' => 'inline;filename="' . $checksum . '"');
+	$c->response->header('Content-Disposition' => $disposition);
 	return $c->res->body( $self->Store->fetch_content_fh($checksum) );
 }
 
