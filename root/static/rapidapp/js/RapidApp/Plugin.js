@@ -401,6 +401,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile = Ext.extend(Ext.util.Observable, {
 Ext.preg('htmleditor-insertfile',Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile);
 
 
+
 Ext.ns('Ext.ux.RapidApp.Plugin');
 Ext.ux.RapidApp.Plugin.ClickableLinks = Ext.extend(Ext.util.Observable, {
 	
@@ -410,7 +411,19 @@ Ext.ux.RapidApp.Plugin.ClickableLinks = Ext.extend(Ext.util.Observable, {
 	
 	init: function(cmp){
 		this.cmp = cmp;
-		this.cmp.on('render', this.onRender, this);
+		
+		// if HtmlEditor:
+		if(this.cmp.onEditorEvent) {
+			var onEditorEvent_orig = this.cmp.onEditorEvent;
+			var plugin = this;
+			this.cmp.onEditorEvent = function(e) {
+				if(e.type == 'click') {  plugin.onClick.apply(this,arguments);  }
+				onEditorEvent_orig.apply(this,arguments);
+			}
+		}
+		else {
+			this.cmp.on('render', this.onRender, this);
+		}
 	},
 	
 	onRender: function() {
