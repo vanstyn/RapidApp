@@ -115,6 +115,26 @@ sub upload_image: Local  {
 }
 
 
+sub upload_file : Local {
+	my ($self, $c) = @_;
+	
+	my $upload = $c->req->upload('Filedata') or die "no upload object";
+	my $checksum = $self->Store->add_content_file_mv($upload->tempname) or die "Failed to add content";
+	
+	my $Content = $self->Content($checksum);
+	
+	my $packet = {
+		success	=> \1,
+		filename => $upload->filename,
+		checksum	=> $Content->checksum,
+		mimetype	=> $Content->mimetype
+	};
+	
+	return $c->res->body(JSON::PP::encode_json($packet));
+}
+
+
+
 sub upload_echo_base64: Local  {
 	my ($self, $c) = @_;
 

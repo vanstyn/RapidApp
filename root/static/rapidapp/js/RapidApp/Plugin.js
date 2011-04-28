@@ -322,3 +322,83 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHtmlFile = Ext.extend(Ext.util.Observable,
 });
 Ext.preg('htmleditor-loadhtml',Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHtmlFile);
 
+
+Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile = Ext.extend(Ext.util.Observable, {
+	
+	title: 'Insert File',
+	height: 400,
+	width: 500,
+	
+	constructor: function(cnf) {
+		Ext.apply(this,cnf);
+	},
+	
+	init: function(cmp){
+		this.cmp = cmp;
+		this.cmp.on('render', this.onRender, this);
+	},
+	
+	onRender: function() {
+		
+		this.btn = this.cmp.getToolbar().addButton({
+				iconCls: 'icon-page-white-world',
+				handler: this.selectFile,
+				text: this.title,
+				scope: this
+				//tooltip: {
+				//	title: this.langTitle
+				//},
+				//overflowText: this.langTitle
+		});
+	},
+	
+	insertContent: function(str) {
+		if(!this.cmp.activated) {
+			// This works in FF, but not in IE:
+			this.cmp.onFirstFocus();
+		}
+		this.cmp.insertAtCursor(str);
+	},
+	
+	selectFile: function() {
+		var upload_field = {
+			xtype: 'fileuploadfield',
+			emptyText: 'Select file',
+			fieldLabel:'Select File',
+			name: 'Filedata',
+			buttonText: 'Browse',
+			width: 300
+		};
+		
+		var fieldset = {
+			style: 'border: none',
+			hideBorders: true,
+			xtype: 'fieldset',
+			labelWidth: 70,
+			border: false,
+			items:[ upload_field ]
+		};
+		
+		var callback = function(form,res) {
+			var packet = Ext.decode(res.response.responseText);
+			var url = '/simplecas/fetch_content/' + packet.checksum;
+			var link = '<a href="' + url + '">' + packet.filename + '</a>';
+			this.insertContent(link);
+		};
+		
+		Ext.ux.RapidApp.WinFormPost.call(this,{
+			title: 'Insert file',
+			width: 430,
+			height:140,
+			url:'/simplecas/upload_file',
+			useSubmit: true,
+			fileUpload: true,
+			fieldset: fieldset,
+			success: callback
+		});
+	}
+});
+Ext.preg('htmleditor-insertfile',Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile);
+
+
+
