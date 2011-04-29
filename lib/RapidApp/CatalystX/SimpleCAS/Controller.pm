@@ -39,7 +39,10 @@ sub Content {
 
 
 sub fetch_content: Local {
-    my ($self, $c, $checksum) = @_;
+   my ($self, $c, $checksum, $filename) = @_;
+	
+	my $disposition = 'inline;filename="' . $checksum . '"';
+	$disposition = 'attachment;filename=' . $filename if ($filename);
 	
 	unless($self->Store->content_exists($checksum)) {
 		$c->res->body('Does not exist');
@@ -49,7 +52,7 @@ sub fetch_content: Local {
 	my $type = $self->Store->content_mimetype($checksum) or die "Error reading mime type";
 	
 	$c->response->header('Content-Type' => $type);
-	$c->response->header('Content-Disposition' => 'inline;filename="' . $checksum . '"');
+	$c->response->header('Content-Disposition' => $disposition);
 	return $c->res->body( $self->Store->fetch_content_fh($checksum) );
 }
 
@@ -113,6 +116,34 @@ sub upload_image: Local  {
 	
 	return $c->res->body(JSON::PP::encode_json($packet));
 }
+
+
+sub upload_file : Local {
+	my ($self, $c) = @_;
+	
+	my $upload = $c->req->upload('Filedata') or die "no upload object";
+	my $checksum = $self->Store->add_content_file_mv($upload->tempname) or die "Failed to add content";
+	
+	my @css_class = ('filelink');
+	
+	my @parts = split(/\./,$upload->filename);
+	my $file_ext = lc(pop @parts);
+	
+	push @css_class, $file_ext if (scalar @parts > 0);
+	
+	my $Content = $self->Content($checksum);
+	
+	my $packet = {
+		success	=> \1,
+		filename => $upload->filename,
+		checksum	=> $Content->checksum,
+		mimetype	=> $Content->mimetype,
+		css_class => join(' ',@css_class)
+	};
+	
+	return $c->res->body(JSON::PP::encode_json($packet));
+}
+
 
 
 sub upload_echo_base64: Local  {

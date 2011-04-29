@@ -32,6 +32,7 @@
 
 <!-- <link rel="stylesheet" type="text/css" href="/static/rapidapp/js/MultilineToolbar/MultilineToolbar.css" /> -->
 
+<link rel="stylesheet" type="text/css" href="/static/rapidapp/css/filelink.css" />
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/css/RapidApp.css" />
 
 <link rel="stylesheet" type="text/css" href="/static/rapidapp/css/header.css" />

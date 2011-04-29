@@ -322,3 +322,134 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHtmlFile = Ext.extend(Ext.util.Observable,
 });
 Ext.preg('htmleditor-loadhtml',Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHtmlFile);
 
+
+Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile = Ext.extend(Ext.util.Observable, {
+	
+	title: 'Insert File',
+	height: 400,
+	width: 500,
+	
+	constructor: function(cnf) {
+		Ext.apply(this,cnf);
+	},
+	
+	init: function(cmp){
+		this.cmp = cmp;
+		this.cmp.on('render', this.onRender, this);
+		
+		var getDocMarkup_orig = this.cmp.getDocMarkup;
+		this.cmp.getDocMarkup = function() {
+			return '<link rel="stylesheet" type="text/css" href="/static/rapidapp/css/filelink.css" />' +
+				getDocMarkup_orig.apply(this,arguments);
+		}
+	},
+	
+	onRender: function() {
+		
+		//this.addCssLinkTag.call(this);
+		
+		this.btn = this.cmp.getToolbar().addButton({
+				iconCls: 'icon-page-white-world',
+				handler: this.selectFile,
+				text: this.title,
+				scope: this
+				//tooltip: {
+				//	title: this.langTitle
+				//},
+				//overflowText: this.langTitle
+		});
+	},
+	
+	insertContent: function(str) {
+		if(!this.cmp.activated) {
+			// This works in FF, but not in IE:
+			this.cmp.onFirstFocus();
+		}
+		this.cmp.insertAtCursor(str);
+	},
+	
+	selectFile: function() {
+		var upload_field = {
+			xtype: 'fileuploadfield',
+			emptyText: 'Select file',
+			fieldLabel:'Select File',
+			name: 'Filedata',
+			buttonText: 'Browse',
+			width: 300
+		};
+		
+		var fieldset = {
+			style: 'border: none',
+			hideBorders: true,
+			xtype: 'fieldset',
+			labelWidth: 70,
+			border: false,
+			items:[ upload_field ]
+		};
+		
+		var callback = function(form,res) {
+			var packet = Ext.decode(res.response.responseText);
+			var url = '/simplecas/fetch_content/' + packet.checksum + '/' + packet.filename;
+			var link = '<a class="' + packet.css_class + '" href="' + url + '">' + packet.filename + '</a>';
+			this.insertContent(link);
+		};
+		
+		Ext.ux.RapidApp.WinFormPost.call(this,{
+			title: 'Insert file',
+			width: 430,
+			height:140,
+			url:'/simplecas/upload_file',
+			useSubmit: true,
+			fileUpload: true,
+			fieldset: fieldset,
+			success: callback
+		});
+	}
+});
+Ext.preg('htmleditor-insertfile',Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile);
+
+
+
+Ext.ns('Ext.ux.RapidApp.Plugin');
+Ext.ux.RapidApp.Plugin.ClickableLinks = Ext.extend(Ext.util.Observable, {
+	
+	constructor: function(cnf) {
+		Ext.apply(this,cnf);
+	},
+	
+	init: function(cmp){
+		this.cmp = cmp;
+		
+		// if HtmlEditor:
+		if(this.cmp.onEditorEvent) {
+			var onEditorEvent_orig = this.cmp.onEditorEvent;
+			var plugin = this;
+			this.cmp.onEditorEvent = function(e) {
+				if(e.type == 'click') {  plugin.onClick.apply(this,arguments);  }
+				onEditorEvent_orig.apply(this,arguments);
+			}
+		}
+		else {
+			this.cmp.on('render', this.onRender, this);
+		}
+	},
+	
+	onRender: function() {
+		var el = this.cmp.getEl();
+
+		Ext.EventManager.on(el, {
+			'click': this.onClick,
+			buffer: 100,
+			scope: this
+		});		
+	},
+	
+	onClick: function(e,el,o) {
+		var Element = new Ext.Element(el);
+		var href = Element.getAttribute('href');
+		if (href && href != '#') {
+			document.location.href = href;
+		}
+	}
+});
+Ext.preg('clickablelinks',Ext.ux.RapidApp.Plugin.ClickableLinks);
