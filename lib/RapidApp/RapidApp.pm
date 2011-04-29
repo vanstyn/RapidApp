@@ -43,6 +43,13 @@ has 'saveErrorReports'  => ( is => 'rw', isa => 'Bool', default => 0 );
 has 'errorReportStore'  => ( is => 'rw', isa => 'Maybe[RapidApp::Role::ErrorReportStore|Str]',
 	lazy => 1, default => sub { RapidApp::FileErrorStore->new } );
 
+has 'postprocessing_tasks' => ( is => 'rw', isa => 'ArrayRef', default => sub {[]} );
+
+sub add_postprocessing_task {
+	my $self= shift;
+	push @{$self->postprocessing_tasks}, @_;
+}
+
 sub resolveErrorReportStore {
 	my $self= shift;
 	my $store= $self->errorReportStore;
@@ -180,13 +187,28 @@ sub cleanupAfterRequest {
 		$c->log->info(sprintf("Module init (ONREQUEST) took %0.3f seconds", $c->stash->{onrequest_time_elapsed}));
 		$c->log->info(sprintf("Cleanup took %0.3f seconds", $elapsed));
 	}
+	
+	if (scalar @{$self->postprocessing_tasks}) {
+		my ($sec0, $msec0)= $c->debug && gettimeofday;
+		while (my $sub= shift @{$self->postprocessing_tasks}) {
+			$sub->($c);
+			$self->cleanDirtyModules($c);
+		}
+		
+		if ($c->debug) {
+			my ($sec1, $msec1)= gettimeofday;
+			my $elapsed= ($sec1-$sec0)+($msec1-$msec0)*.000001;
+			
+			$c->log->info(sprintf("Post-processing tasks took %0.3f seconds", $elapsed));
+		}
+	}
 }
 
 sub cleanDirtyModules {
 	my ($self, $c)= @_;
 	my @modules= values %{$self->dirtyModules};
 	for my $module (@modules) {
-		DEBUG(controller => ' >> CLEARING ' . $module->module_path);
+		DEBUG('controller', ' >> CLEARING', $module->module_path);
 		$module->reset_per_req_attrs;
 	}
 	%{$self->dirtyModules}= ();
