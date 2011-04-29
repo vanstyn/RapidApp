@@ -111,7 +111,8 @@ sub upload_image: Local  {
 		width => $width,
 		resized => $resized,
 		orig_width => $orig_width,
-		orig_height => $orig_height
+		orig_height => $orig_height,
+		filename => $self->safe_filename($upload->filename),
 	};
 	
 	return $c->res->body(JSON::PP::encode_json($packet));
@@ -135,7 +136,7 @@ sub upload_file : Local {
 	
 	my $packet = {
 		success	=> \1,
-		filename => $upload->filename,
+		filename => $self->safe_filename($upload->filename),
 		checksum	=> $Content->checksum,
 		mimetype	=> $Content->mimetype,
 		css_class => join(' ',@css_class)
@@ -143,6 +144,17 @@ sub upload_file : Local {
 	
 	return $c->res->body(JSON::PP::encode_json($packet));
 }
+
+
+sub safe_filename {
+	my $self = shift;
+	my $filename = shift;
+	
+	my @parts = split(/[\\\/]/,$filename);
+	return pop @parts;
+}
+
+
 
 
 

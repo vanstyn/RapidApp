@@ -112,7 +112,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.SimpleCAS_Image = Ext.extend(Ext.ux.form.HtmlE
 				});
 			}
 			
-			img.link_url = '/simplecas/fetch_content/' + img.checksum;
+			img.link_url = '/simplecas/fetch_content/' + img.checksum + '/' + img.filename;
 			this.insertImage(img);
 		};
 		
@@ -345,9 +345,6 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile = Ext.extend(Ext.util.Observable, {
 	},
 	
 	onRender: function() {
-		
-		//this.addCssLinkTag.call(this);
-		
 		this.btn = this.cmp.getToolbar().addButton({
 				iconCls: 'icon-page-white-world',
 				handler: this.selectFile,
