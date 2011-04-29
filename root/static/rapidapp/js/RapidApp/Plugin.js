@@ -382,7 +382,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile = Ext.extend(Ext.util.Observable, {
 		var callback = function(form,res) {
 			var packet = Ext.decode(res.response.responseText);
 			var url = '/simplecas/fetch_content/' + packet.checksum + '/' + packet.filename;
-			var link = '<a href="' + url + '">' + packet.filename + '</a>';
+			var link = '<a class="' + packet.css_class + '" href="' + url + '">' + packet.filename + '</a>';
 			this.insertContent(link);
 		};
 		

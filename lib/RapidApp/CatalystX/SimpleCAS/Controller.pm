@@ -124,13 +124,21 @@ sub upload_file : Local {
 	my $upload = $c->req->upload('Filedata') or die "no upload object";
 	my $checksum = $self->Store->add_content_file_mv($upload->tempname) or die "Failed to add content";
 	
+	my @css_class = ('filelink');
+	
+	my @parts = split(/\./,$upload->filename);
+	my $file_ext = lc(pop @parts);
+	
+	push @css_class, $file_ext if (scalar @parts > 0);
+	
 	my $Content = $self->Content($checksum);
 	
 	my $packet = {
 		success	=> \1,
 		filename => $upload->filename,
 		checksum	=> $Content->checksum,
-		mimetype	=> $Content->mimetype
+		mimetype	=> $Content->mimetype,
+		css_class => join(' ',@css_class)
 	};
 	
 	return $c->res->body(JSON::PP::encode_json($packet));
