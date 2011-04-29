@@ -336,9 +336,17 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile = Ext.extend(Ext.util.Observable, {
 	init: function(cmp){
 		this.cmp = cmp;
 		this.cmp.on('render', this.onRender, this);
+		
+		var getDocMarkup_orig = this.cmp.getDocMarkup;
+		this.cmp.getDocMarkup = function() {
+			return '<link rel="stylesheet" type="text/css" href="/static/rapidapp/css/filelink.css" />' +
+				getDocMarkup_orig.apply(this,arguments);
+		}
 	},
 	
 	onRender: function() {
+		
+		//this.addCssLinkTag.call(this);
 		
 		this.btn = this.cmp.getToolbar().addButton({
 				iconCls: 'icon-page-white-world',
