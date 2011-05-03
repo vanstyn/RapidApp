@@ -186,8 +186,12 @@ sub renderTrace_brief {
 
 sub _hashToStr {
 	my $hash= shift;
-	return '{ '.(join ', ', map { $_.'="'.$hash->{$_}.'"' } sort keys %$hash).' }';
+	return join ', ', map { $_.'='.(defined $hash->{$_}? '"'.$hash->{$_}.'"' : '<undef>') } sort keys %$hash;
 };
+sub _arrayToStr {
+	my $array= shift;
+	return join ', ', map { defined $_? $_ : '<undef>' } @$array;
+}
 sub _trimAtLen {
 	my ($len, $str)= @_;
 	$str =~ s/ /&nbsp;/g;
@@ -197,8 +201,8 @@ sub briefString {
 	my $value= shift;
 	!defined $value and return '<undef>';
 	!ref $value and return _trimAtLen(200, $value);
-	ref $value eq 'HASH' and return _trimAtLen(70, _hashToStr($value));
-	ref $value eq 'ARRAY' and return '['._trimAtLen(70, join(', ', @$value)).']';
+	ref $value eq 'HASH' and return '{'._trimAtLen(70, _hashToStr($value)).'}';
+	ref $value eq 'ARRAY' and return '['._trimAtLen(70, _arrayToStr($value)).']';
 	return _trimAtLen(70, ''.$value);
 }
 
