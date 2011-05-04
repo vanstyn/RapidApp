@@ -112,6 +112,8 @@ Ext.ux.RapidApp.AppStoreForm2.store_load_handler = function(store,records,option
 Ext.ux.RapidApp.AppStoreForm2.store_create_handler = function(store,action,result,res,rs) {
 	if(action != "create"){ return; }
 
+	console.dir(arguments);
+	
 	var panel = store.formpanel;
 	if(!res.raw.loadCfg && !panel.closetab_on_create) { return; }
 
