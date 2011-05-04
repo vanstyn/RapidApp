@@ -468,6 +468,11 @@ Ext.ux.RapidApp.Plugin.Combo.AppSuperBox = Ext.extend(Ext.util.Observable, {
 		
 		if(this.cmp.fieldLabel) { this.itemLabel = this.cmp.fieldLabel; }
 		
+		Ext.copyTo(this,this.cmp,[
+			'createItemClass',
+			'createItemHandler'
+		]);
+		
 		Ext.apply(this.cmp,{
 			xtype: 'superboxselect', // <-- no effect, the xtype should be set to this in the consuming class
 			classField: 'cls',
