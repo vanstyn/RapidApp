@@ -470,7 +470,8 @@ Ext.ux.RapidApp.Plugin.Combo.AppSuperBox = Ext.extend(Ext.util.Observable, {
 		
 		Ext.copyTo(this,this.cmp,[
 			'createItemClass',
-			'createItemHandler'
+			'createItemHandler',
+			'default_cls'
 		]);
 		
 		Ext.apply(this.cmp,{
@@ -509,10 +510,12 @@ Ext.ux.RapidApp.Plugin.Combo.AppSuperBox = Ext.extend(Ext.util.Observable, {
 			// Original handler:
 			this.constructor.prototype.onViewClick.apply(this,arguments);
 		};
-		
 	},
 	
 	createItemCallback: function(data) {
+		if(! data[this.classField] && this.default_cls) {
+			data[this.classField] = this.default_cls;
+		}
 		var Store = this.getStore();
 		var recMaker = Ext.data.Record.create(Store.fields.items);
 		var newRec = new recMaker(data);
