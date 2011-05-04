@@ -966,3 +966,29 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 	font-weight: bold;
 }
 
+
+
+.appsuperbox-create-item {
+	background:url(/static/rapidapp/images/add.png) center right no-repeat;
+	padding:0px 18px 1px 1px;
+	width: 30;
+	cursor:	pointer;
+	font-size: 12px;
+	font-family: arial;
+	white-space:nowrap;
+	color: darkgray;
+	font-weight: bold;
+	float:left;
+	clear:both;
+	border-bottom-width: 1px;
+	border-color: transparent;
+	cursor:	pointer;
+}
+
+.appsuperbox-create-item:hover {
+	border-bottom-style: dotted;
+	border-color: blue;
+	color: blue;
+}
+
+

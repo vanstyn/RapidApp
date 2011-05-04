@@ -455,7 +455,7 @@ Ext.preg('clickablelinks',Ext.ux.RapidApp.Plugin.ClickableLinks);
 Ext.ns('Ext.ux.RapidApp.Plugin.Combo');
 Ext.ux.RapidApp.Plugin.Combo.AppSuperBox = Ext.extend(Ext.util.Observable, {
 	
-	createItemClass: 'create-item',
+	createItemClass: 'appsuperbox-create-item',
 	createItemHandler: null,
 	itemLabel: 'items',
 	
@@ -528,7 +528,7 @@ Ext.ux.RapidApp.Plugin.Combo.AppSuperBox = Ext.extend(Ext.util.Observable, {
 			'<div class="x-superboxselect x-superboxselect-stacked">',
 					'<ul>',
 						'<li>',
-							'<div style="float:right;" class="' + this.createItemClass + '">Create New</div>',
+							'<div style="float:right;"><div class="' + this.createItemClass + '">Create New</div></div>',
 							'<div>',
 								'Add ' + this.itemLabel + ':',
 							'</div>',
