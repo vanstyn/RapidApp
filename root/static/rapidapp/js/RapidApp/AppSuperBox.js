@@ -11,6 +11,7 @@ Ext.ux.RapidApp.AppSuperBox = Ext.extend(Ext.ux.form.SuperBoxSelect, {
 		
 		// Handle create item instead of normal handler:
 		if (target.hasClass(this.createItemClass)) {
+			this.collapse();
 			return this.createItemHandler.apply(this,arguments);
 		}
 
@@ -21,6 +22,28 @@ Ext.ux.RapidApp.AppSuperBox = Ext.extend(Ext.ux.form.SuperBoxSelect, {
 	createItemHandler: function() {
 		
 		console.dir('createItemHandler()');
+		
+		
+		var win = new Ext.Window({
+			title: "AppSuperBox ADD",
+			layout: 'fit',
+			width: 650,
+			height: 550,
+			closable: true,
+			modal: true,
+			items: {
+				xtype: 'autopanel',
+				autoLoad: {
+					url: '/main/explorer/organizations/add'
+				},
+				layout: 'fit'
+
+			}
+		});
+
+		win.show();
+
+		
 		
 	}
 

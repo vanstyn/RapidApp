@@ -121,17 +121,17 @@ Ext.ux.RapidApp.AppStoreForm2.store_create_handler = function(store,action,resul
 	var tp, tab;
 	if(panel.closetab_on_create) {
 		tp = panel.findParentByType("apptabpanel");
-		tab = tp.getActiveTab();
+		if (tp) { tab = tp.getActiveTab(); }
 	}
 
 	// Automatically load "loadCfg" if it exists in the response:
 	if(res.raw.loadCfg) {
 		var loadTarget = Ext.ux.RapidApp.AppTab.findParent_loadTarget(panel);
-		loadTarget.loadContent(res.raw.loadCfg);
+		if (loadTarget) { loadTarget.loadContent(res.raw.loadCfg); }
 	}
 
 	// close the tab:
-	if(panel.closetab_on_create) {
+	if(panel.closetab_on_create && tp && tab) {
 		tp.remove(tab);
 	}
 }
