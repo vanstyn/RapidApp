@@ -590,13 +590,15 @@ sub _build_store_load_code {
 	return $self->getStore_code . '.load()';
 }
 
+# TODO: get a more reliable way to access the store - use local references and scope
+# instead of relying on a global ID:
 has 'store_load_fn' => ( is => 'ro', isa => 'RapidApp::JSONFunc', lazy => 1, default => sub {
 	my $self = shift;
 	return RapidApp::JSONFunc->new( raw => 1, func =>
 		'function() {' .
 			'var storeId = "' . $self->storeId . '";' .
-			'var store = Ext.StoreMgr.lookup(storeId);' .
-			'store.load();' .
+			'var storeByLookup = Ext.StoreMgr.lookup(storeId);' .
+			'if(storeByLookup) { storeByLookup.load(); }' .
 		'}'
 	);
 });
