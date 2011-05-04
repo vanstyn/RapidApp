@@ -1485,6 +1485,8 @@ Ext.override(Ext.Container, {
 
 Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 	
+	cmpListeners: null,
+	
 	cmpConfig: {},
 	
 	initComponent: function() {
@@ -1497,6 +1499,13 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 					
 					var conf = Ext.decode(response.responseText);
 					Ext.apply(conf,container.cmpConfig);
+					
+					if(container.cmpListeners) {
+						conf.initComponent = function() {
+							this.on(container.cmpListeners);
+							this.constructor.prototype.initComponent.call(this);
+						};
+					}
 
 					if(container.items.getCount() > 0) { container.removeAll(true); }
 					
