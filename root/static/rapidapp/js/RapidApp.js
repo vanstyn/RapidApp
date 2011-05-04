@@ -1483,219 +1483,37 @@ Ext.override(Ext.Container, {
 });
 
 
-
-/*
 Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
+	
+	cmpConfig: {},
+	
 	initComponent: function() {
-		var id = this.id;
-		var imported_data;
-			var config = {
-				//onRemove: function(c) {
-					//alert('foo');
-				//	var Forms = c.findByType('form');
-				//	for (f in Forms) {
-				//		try { Forms[f].destroy(); } catch(err) {}
-				//	}
-				//},
-				renderer: {
-					disableCaching: true,
-					render: function(el, response, updater, callback) {
-						if (!updater.isUpdating()) {
-							try {
-								imported_data = eval('(' + response.responseText + ')');
-							}
-							catch(err) {
-								return eval(response.responseText);
-							}
-							var container = Ext.getCmp(id);
-							/*
-							//Destroy any Forms if they exist:
-							if (container && container.rendered) {
-								//alert(container.rendered);
-								//alert(container.getXType());
-								//var childForm = container.findByType('form');
-								var Forms = container.findByType('form');
-								for (f in Forms) { try {
-									var BasicForm = Forms[f].getForm();
-									var fields = BasicForm.getFieldValues();
-									for (i in fields) {
-										BasicForm.remove(i);
-									}
+		
+		var container = this;
+		this.renderer = {
+			disableCaching: true,
+			render: function(el, response, updater, callback) {
+				if (!updater.isUpdating()) {
+					
+					var conf = Ext.decode(response.responseText);
+					Ext.apply(conf,container.cmpConfig);
 
-
-									//try { Forms[f].removeAll(true); Forms[f].destroy(); } catch(err) {}
-								} catch(err) {} }
-
-
-								//if (childForm && typof(childForm) == 'object') { alert("'" + childForm + "'"); }
-
-								//if (childForm && childForm != '')  { alert('"' + eval(typeof(childForm.prototype.destroy)) + '"'); }
-
-								//if (childForm && childForm != '')  { childForm.destroy(); }
-
-								//if (childForm) { alert('"' + Ext.type(childForm) + '"'); }
-
-								//if (childForm) { alert('"' + Ext.util.JSON.encode(childForm) + '"'); }
-
-								//if (childForm) { try { childForm.destroy(); } catch(err) { } }
-
-								//if (childForm) { try { childForm.destroy(); } catch(err) { alert('"' + err + '"'); } }
-							}
-							// ---
-							*/
-							/*
-
-							// --- NEW TRY LINE:
-							try { container.removeAll(true); } catch(err) { try { container.removeAll(true); } catch(err) {} }
-							container.insert(0,imported_data);
-							container.doLayout();
-							if (imported_data.rendered_eval) { eval(imported_data.rendered_eval); }
-						}
-					}
+					if(container.items.getCount() > 0) { container.removeAll(true); }
+					
+					el.dom.innerHTML = '';
+					container.insert(0,conf);
+					container.doLayout();
+					
+					// This is legacy and should probably be removed:
+					if (conf.rendered_eval) { eval(conf.rendered_eval); }
 				}
-			};
-			Ext.apply(this, Ext.apply(this.initialConfig, config));
-		Ext.ux.AutoPanel.superclass.initComponent.apply(this, arguments);
+			}
+		};
+
+		Ext.ux.AutoPanel.superclass.initComponent.call(this);
 	}
 });
 Ext.reg('autopanel',Ext.ux.AutoPanel);
-*/
-
-
-
-
-
-
-Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
-	initComponent: function() {
-
-		var id = this.id;
-		var imported_data;
-			var config = {
-				renderer: {
-					disableCaching: true,
-					render: function(el, response, updater, callback) {
-						if (!updater.isUpdating()) {
-							try {
-								imported_data = eval('(' + response.responseText + ')');
-							}
-							catch(err) {
-								return eval(response.responseText);
-							}
-							var container = Ext.getCmp(id);
-
-							el.dom.innerHTML = '';
-							// --- NEW TRY LINE:
-							try { container.removeAll(true); } catch(err) { try { container.removeAll(true); } catch(err) {} }
-							container.insert(0,imported_data);
-							container.doLayout();
-							if (imported_data.rendered_eval) { eval(imported_data.rendered_eval); }
-						}
-					}
-				}
-			};
-			Ext.apply(this, Ext.apply(this.initialConfig, config));
-		Ext.ux.AutoPanel.superclass.initComponent.apply(this, arguments);
-	}
-});
-Ext.reg('autopanel',Ext.ux.AutoPanel);
-
-
-
-/*
-Ext.ux.JsonAutoPanel = Ext.extend(Ext.Panel, {
-	initComponent: function() {
-
-		var id = this.id;
-		var imported_data;
-			var config = {
-				renderer: {
-					disableCaching: true,
-					render_old: function(el, response, updater, callback) {
-						if (!updater.isUpdating()) {
-							try {
-								imported_data = eval('(' + response.responseText + ')');
-							}
-							catch(err) {
-								return eval(response.responseText);
-							}
-							var container = Ext.getCmp(id);
-
-
-							// --- NEW TRY LINE:
-							try { container.removeAll(true); } catch(err) { try { container.removeAll(true); } catch(err) {} }
-							container.insert(0,imported_data);
-							container.doLayout();
-							if (imported_data.rendered_eval) { eval(imported_data.rendered_eval); }
-						}
-					},
-					render_blah: function(el, response, updateManager, callback) {
-						var responseText = response.responseText;
-						responseText = responseText.trim();
-						//if (response.getResponseHeader['Content-Type'].indexOf('json') > -1) {
-							// response is JSON
-							// clear loading text
-							el.dom.innerHTML = '';
-							//var data = Ext.util.JSON.decode(responseText);
-
-							var data = eval('(' + response.responseText + ')');
-
-							var pnl = response.argument.options.container || response.argument.scope;
-
-							alert(typeof(pnl));
-
-							if (pnl.add) {
-
-								alert('foo');
-
-								pnl.add(data);
-								pnl.doLayout();
-							}
-							if (callback) {
-								callback(data);
-							}
-
-						//} else {
-							// response is HTML, call regular update
-						//	el.update(response.responseText, updateManager.loadScripts, callback);
-						//}
-					},
-					render: function(el, response, updater, callback) {
-						if (!updater.isUpdating()) {
-							try {
-								imported_data = eval('(' + response.responseText + ')');
-							}
-							catch(err) {
-								return eval(response.responseText);
-							}
-							//var container = Ext.getCmp(id);
-
-							el.dom.innerHTML = '';
-							var newComponent = new Ext.Container(imported_data);
-							newComponent.render(el);
-
-
-							// --- NEW TRY LINE:
-							//try { container.removeAll(true); } catch(err) { try { container.removeAll(true); } catch(err) {} }
-							//container.insert(0,imported_data);
-							//container.doLayout();
-							//if (imported_data.rendered_eval) { eval(imported_data.rendered_eval); }
-						}
-					}
-				}
-			};
-			Ext.apply(this, Ext.apply(this.initialConfig, config));
-		Ext.ux.JsonAutoPanel.superclass.initComponent.apply(this, arguments);
-	}
-});
-Ext.reg('jsonautopanel',Ext.ux.JsonAutoPanel);
-
-
-
-
-*/
-
-
 
 
 
