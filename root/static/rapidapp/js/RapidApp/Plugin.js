@@ -454,16 +454,34 @@ Ext.preg('clickablelinks',Ext.ux.RapidApp.Plugin.ClickableLinks);
 
 Ext.ns('Ext.ux.RapidApp.Plugin.Combo');
 Ext.ux.RapidApp.Plugin.Combo.AppSuperBox = Ext.extend(Ext.util.Observable, {
-	constructor: function(cnf) { 	Ext.apply(this,cnf); 	},
 	
 	createItemClass: 'create-item',
 	createItemHandler: null,
+	itemLabel: 'items',
+	
+	constructor: function(cnf) { 	
+		Ext.apply(this,cnf); 	
+	},
 	
 	init: function(cmp){
 		this.cmp = cmp;
 		
+		if(this.cmp.fieldLabel) { this.itemLabel = this.cmp.fieldLabel; }
+		
 		Ext.apply(this.cmp,{
-			xtype: 'superboxselect' // <-- no effect, the xtype should be set to this in the consuming class
+			xtype: 'superboxselect', // <-- no effect, the xtype should be set to this in the consuming class
+			classField: 'cls',
+			extraItemCls: 'x-superboxselect-x-flag',
+			expandBtnCls: 'icon-roles_expand_sprite',
+			listEmptyText: '(no more available ' + this.itemLabel + ')',
+			emptyText: '(none)',
+			listAlign: 'tr?',
+			itemSelector: 'li.x-superboxselect-item',
+			stackItems: true
+		});
+		
+		Ext.applyIf(this.cmp,{
+			tpl: this.getDefaultTpl()
 		});
 		
 		if (this.createItemHandler) {
@@ -495,6 +513,26 @@ Ext.ux.RapidApp.Plugin.Combo.AppSuperBox = Ext.extend(Ext.util.Observable, {
 		var newRec = new recMaker(data);
 		Store.insert(0,newRec);
 		this.addRecord(newRec);
+	},
+	
+	getDefaultTpl: function() {
+		return new Ext.XTemplate(
+			'<div class="x-superboxselect x-superboxselect-stacked">',
+					'<ul>',
+						'<li>',
+							'<div style="float:right;" class="' + this.createItemClass + '">Create New</div>',
+							'<div>',
+								'Add ' + this.itemLabel + ':',
+							'</div>',
+						'</li>',
+						'<tpl for=".">',
+							'<li class="x-superboxselect-item x-superboxselect-x-flag {' + this.cmp.classField + '}">',
+								'{' + this.cmp.displayField + '}',
+							'</li>',
+						'</tpl>',
+					'</ul>',
+				'</div>'
+		);
 	}
 	
 });
