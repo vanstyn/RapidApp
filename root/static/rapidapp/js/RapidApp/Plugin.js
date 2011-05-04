@@ -450,3 +450,54 @@ Ext.ux.RapidApp.Plugin.ClickableLinks = Ext.extend(Ext.util.Observable, {
 	}
 });
 Ext.preg('clickablelinks',Ext.ux.RapidApp.Plugin.ClickableLinks);
+
+
+Ext.ns('Ext.ux.RapidApp.Plugin.Combo');
+Ext.ux.RapidApp.Plugin.Combo.AppSuperBox = Ext.extend(Ext.util.Observable, {
+	constructor: function(cnf) { 	Ext.apply(this,cnf); 	},
+	
+	createItemClass: 'create-item',
+	createItemHandler: null,
+	
+	init: function(cmp){
+		this.cmp = cmp;
+		
+		Ext.apply(this.cmp,{
+			xtype: 'superboxselect' // <-- no effect, the xtype should be set to this in the consuming class
+		});
+		
+		if (this.createItemHandler) {
+			this.initCreateItems();
+		}
+	},
+		
+	initCreateItems: function() {
+		var plugin = this;
+		this.cmp.onViewClick = function() {
+			var event = arguments[arguments.length - 1]; // <-- last passed argument, the event object;
+			var target = event.getTarget(null,null,true);
+			
+			// Handle create item instead of normal handler:
+			if (target.hasClass(plugin.createItemClass)) {
+				this.collapse();
+				return plugin.createItemHandler.call(this,plugin.createItemCallback);
+			}
+
+			// Original handler:
+			this.constructor.prototype.onViewClick.apply(this,arguments);
+		};
+		
+	},
+	
+	createItemCallback: function(data) {
+		var Store = this.getStore();
+		var recMaker = Ext.data.Record.create(Store.fields.items);
+		var newRec = new recMaker(data);
+		Store.insert(0,newRec);
+		this.addRecord(newRec);
+	}
+	
+});
+Ext.preg('appsuperbox',Ext.ux.RapidApp.Plugin.Combo.AppSuperBox);
+
+
