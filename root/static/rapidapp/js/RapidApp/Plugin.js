@@ -527,7 +527,7 @@ Ext.ux.RapidApp.Plugin.Combo.AppSuperBox = Ext.extend(Ext.util.Observable, {
 		return new Ext.XTemplate(
 			'<div class="x-superboxselect x-superboxselect-stacked">',
 					'<ul>',
-						'<li>',
+						'<li style="padding-bottom:2px;">',
 							'<div style="float:right;"><div class="' + this.createItemClass + '">Create New</div></div>',
 							'<div>',
 								'Add ' + this.itemLabel + ':',

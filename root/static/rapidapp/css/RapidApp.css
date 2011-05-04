@@ -970,7 +970,7 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 
 .appsuperbox-create-item {
 	background:url(/static/rapidapp/images/add.png) center right no-repeat;
-	padding:0px 18px 1px 1px;
+	padding:0px 18px 0px 1px;
 	width: 30;
 	cursor:	pointer;
 	font-size: 12px;
