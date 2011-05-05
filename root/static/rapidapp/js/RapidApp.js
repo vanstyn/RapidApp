@@ -497,13 +497,15 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 	});
 	
 	// Cancel:
-	buttons.push({
-		xtype: 'button',
-		text: 'Cancel',
-		handler: function(btn) {
-			btn.ownerCt.ownerCt.close();
-		}
-	});
+	if(!data.noCancel) {
+		buttons.push({
+			xtype: 'button',
+			text: 'Cancel',
+			handler: function(btn) {
+				btn.ownerCt.ownerCt.close();
+			}
+		});
+	}
 	
 	var formpanel = {
 		xtype: 'form',
