@@ -88,10 +88,10 @@ a.filelink.ical, a.filelink.ics {
 	background-image: url(/static/rapidapp/images/date_14x14.png) !important;
 }
 
-a.filelink.zip1, a.filelink.7z, a.filelink.gz, a.filelink.bz2, a.filelink.tgz, a.filelink.zipx {
-	background-image: url(/static/rapidapp/images/page_white_zip_14x14.png) !important;
+a.filelink.zip, a.filelink.zipx  {
+	background-image: url(/static/rapidapp/images/page_white_compressed_14x14.png) !important;
 }
 
-a.filelink.zip {
-	background-image: url(/static/rapidapp/images/date_14x14.png) !important;
+a.filelink.bz2, a.filelink.tgz, a.filelink.gz, a.filelink.pkg  {
+	background-image: url(/static/rapidapp/images/page_white_zip_14x14.png) !important;
 }
