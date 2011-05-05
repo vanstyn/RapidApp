@@ -52,7 +52,7 @@ a.filelink.png, a.filelink.jpg, a.filelink.jpeg, a.filelink.gif, a.filelink.tiff
 	background-image: url(/static/rapidapp/images/picture_14x14.png) !important;
 }
 
-a.filelink.avi, a.filelink.mpg, a.filelink.mpeg, a.filelink.mp4, a.filelink.mov {
+a.filelink.avi, a.filelink.mpg, a.filelink.mpeg, a.filelink.mp4, a.filelink.mov, a.filelink.wmv, a.filelink.m4v, a.filelink.asf {
 	background-image: url(/static/rapidapp/images/film_14x14.png) !important;
 }
 
