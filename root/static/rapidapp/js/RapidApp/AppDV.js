@@ -369,6 +369,9 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			this.cancel_field_editable(editEl,fieldname,index,Record);
 		}
 		else {
+			// require-edit-click is set by "edit-bigfield" to disallow going into edit mode unless the
+			// "edit" element itself was clicked:
+			if(target.findParent('div.require-edit-click') && !target.hasClass('edit')) { return; }
 			this.set_field_editable(editEl,fieldname,index,Record);
 		}
 		
