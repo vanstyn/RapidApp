@@ -465,6 +465,8 @@ Ext.ux.RapidApp.Plugin.Combo.Addable = Ext.extend(Ext.util.Observable, {
 	init: function(cmp){
 		this.cmp = cmp;
 		
+		Ext.apply(this.cmp,{ classField: 'cls' });
+		
 		Ext.copyTo(this,this.cmp,[
 			'createItemClass',
 			'createItemHandler',
@@ -536,7 +538,6 @@ Ext.ux.RapidApp.Plugin.Combo.AppSuperBox = Ext.extend(Ext.ux.RapidApp.Plugin.Com
 		
 		Ext.apply(this.cmp,{
 			xtype: 'superboxselect', // <-- no effect, the xtype should be set to this in the consuming class
-			classField: 'cls',
 			extraItemCls: 'x-superboxselect-x-flag',
 			expandBtnCls: 'icon-roles_expand_sprite',
 			listEmptyText: '(no more available ' + this.itemLabel + ')',
