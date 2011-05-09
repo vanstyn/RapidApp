@@ -453,11 +453,10 @@ Ext.preg('clickablelinks',Ext.ux.RapidApp.Plugin.ClickableLinks);
 
 
 Ext.ns('Ext.ux.RapidApp.Plugin.Combo');
-Ext.ux.RapidApp.Plugin.Combo.AppSuperBox = Ext.extend(Ext.util.Observable, {
+Ext.ux.RapidApp.Plugin.Combo.Addable = Ext.extend(Ext.util.Observable, {
 	
 	createItemClass: 'appsuperbox-create-item',
 	createItemHandler: null,
-	itemLabel: 'items',
 	
 	constructor: function(cnf) { 	
 		Ext.apply(this,cnf); 	
@@ -466,7 +465,7 @@ Ext.ux.RapidApp.Plugin.Combo.AppSuperBox = Ext.extend(Ext.util.Observable, {
 	init: function(cmp){
 		this.cmp = cmp;
 		
-		if(this.cmp.fieldLabel) { this.itemLabel = this.cmp.fieldLabel; }
+		Ext.apply(this.cmp,{ classField: 'cls' });
 		
 		Ext.copyTo(this,this.cmp,[
 			'createItemClass',
@@ -474,21 +473,14 @@ Ext.ux.RapidApp.Plugin.Combo.AppSuperBox = Ext.extend(Ext.util.Observable, {
 			'default_cls'
 		]);
 		
-		Ext.apply(this.cmp,{
-			xtype: 'superboxselect', // <-- no effect, the xtype should be set to this in the consuming class
-			classField: 'cls',
-			extraItemCls: 'x-superboxselect-x-flag',
-			expandBtnCls: 'icon-roles_expand_sprite',
-			listEmptyText: '(no more available ' + this.itemLabel + ')',
-			emptyText: '(none)',
-			listAlign: 'tr?',
-			itemSelector: 'li.x-superboxselect-item',
-			stackItems: true
-		});
-		
 		Ext.applyIf(this.cmp,{
 			tpl: this.getDefaultTpl()
 		});
+		
+		if(Ext.isString(this.cmp.tpl)) {
+			var tpl = this.getTplPrepend() + this.cmp.tpl;
+			this.cmp.tpl = tpl;
+		}
 		
 		if (this.createItemHandler) {
 			this.initCreateItems();
@@ -520,7 +512,42 @@ Ext.ux.RapidApp.Plugin.Combo.AppSuperBox = Ext.extend(Ext.util.Observable, {
 		var recMaker = Ext.data.Record.create(Store.fields.items);
 		var newRec = new recMaker(data);
 		Store.insert(0,newRec);
-		this.addRecord(newRec);
+		this.onSelect(newRec,0);
+	},
+	
+	getTplPrepend: function() {
+		return '<div style="float:right;"><div class="' + this.createItemClass + '">Create New</div></div>';
+	},
+	
+	getDefaultTpl: function() {
+		return 
+			'<div class="x-combo-list-item">shit &nbsp;</div>' +
+			'<tpl for="."><div class="x-combo-list-item">{' + this.cmp.displayField + '}</div></tpl>';
+	}
+});
+Ext.preg('combo-addable',Ext.ux.RapidApp.Plugin.Combo.Addable);
+
+Ext.ux.RapidApp.Plugin.Combo.AppSuperBox = Ext.extend(Ext.ux.RapidApp.Plugin.Combo.Addable, {
+	
+	itemLabel: 'items',
+	
+	init: function(cmp){
+		this.cmp = cmp;
+		
+		if(this.cmp.fieldLabel) { this.itemLabel = this.cmp.fieldLabel; }
+		
+		Ext.apply(this.cmp,{
+			xtype: 'superboxselect', // <-- no effect, the xtype should be set to this in the consuming class
+			extraItemCls: 'x-superboxselect-x-flag',
+			expandBtnCls: 'icon-roles_expand_sprite',
+			listEmptyText: '(no more available ' + this.itemLabel + ')',
+			emptyText: '(none)',
+			listAlign: 'tr?',
+			itemSelector: 'li.x-superboxselect-item',
+			stackItems: true
+		});
+		
+		Ext.ux.RapidApp.Plugin.Combo.AppSuperBox.superclass.init.apply(this,arguments);
 	},
 	
 	getDefaultTpl: function() {
@@ -545,5 +572,4 @@ Ext.ux.RapidApp.Plugin.Combo.AppSuperBox = Ext.extend(Ext.util.Observable, {
 	
 });
 Ext.preg('appsuperbox',Ext.ux.RapidApp.Plugin.Combo.AppSuperBox);
-
 

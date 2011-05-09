@@ -52,7 +52,7 @@ a.filelink.png, a.filelink.jpg, a.filelink.jpeg, a.filelink.gif, a.filelink.tiff
 	background-image: url(/static/rapidapp/images/picture_14x14.png) !important;
 }
 
-a.filelink.avi, a.filelink.mpg, a.filelink.mpeg, a.filelink.mp4, a.filelink.mov {
+a.filelink.avi, a.filelink.mpg, a.filelink.mpeg, a.filelink.mp4, a.filelink.mov, a.filelink.wmv, a.filelink.m4v, a.filelink.asf {
 	background-image: url(/static/rapidapp/images/film_14x14.png) !important;
 }
 
@@ -88,10 +88,10 @@ a.filelink.ical, a.filelink.ics {
 	background-image: url(/static/rapidapp/images/date_14x14.png) !important;
 }
 
-a.filelink.zip1, a.filelink.7z, a.filelink.gz, a.filelink.bz2, a.filelink.tgz, a.filelink.zipx {
-	background-image: url(/static/rapidapp/images/page_white_zip_14x14.png) !important;
+a.filelink.zip, a.filelink.zipx  {
+	background-image: url(/static/rapidapp/images/page_white_compressed_14x14.png) !important;
 }
 
-a.filelink.zip {
-	background-image: url(/static/rapidapp/images/date_14x14.png) !important;
+a.filelink.bz2, a.filelink.tgz, a.filelink.gz, a.filelink.pkg  {
+	background-image: url(/static/rapidapp/images/page_white_zip_14x14.png) !important;
 }

@@ -116,12 +116,8 @@ sub div_bigfield {
 	my $display = shift;
 	$display = $name unless ($display);
 	
-	
-	
-	
-	
 	return $self->div_editable_value($name,
-		'<div class="appdv-edit-bigfield">' .
+		'<div class="appdv-edit-bigfield require-edit-click">' .
 			$self->data_wrapper_div($name,$display)  . 
 			'<div class="icons">' .
 				'<div class="edit">edit</div>' .
