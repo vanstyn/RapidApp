@@ -188,10 +188,15 @@ sub cleanupAfterRequest {
 		$c->log->info(sprintf("Cleanup took %0.3f seconds", $elapsed));
 	}
 	
+	# Now that the request is done, we can run post-processing tasks.
+	# These might also get modules dirty, so we clean again after each one.
 	if (scalar @{$self->postprocessing_tasks}) {
 		my ($sec0, $msec0)= $c->debug && gettimeofday;
 		while (my $sub= shift @{$self->postprocessing_tasks}) {
-			$sub->($c);
+			RapidApp::ScopedGlobals->applyForSub(
+				{ catalystInstance => $c },
+				sub { $sub->($c); }
+			);
 			$self->cleanDirtyModules($c);
 		}
 		
