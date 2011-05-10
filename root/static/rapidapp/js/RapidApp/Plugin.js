@@ -491,12 +491,14 @@ Ext.ux.RapidApp.Plugin.Combo.Addable = Ext.extend(Ext.util.Observable, {
 		var plugin = this;
 		this.cmp.onViewClick = function() {
 			var event = arguments[arguments.length - 1]; // <-- last passed argument, the event object;
-			var target = event.getTarget(null,null,true);
-			
-			// Handle create item instead of normal handler:
-			if (target.hasClass(plugin.createItemClass)) {
-				this.collapse();
-				return plugin.createItemHandler.call(this,plugin.createItemCallback);
+			if(event) {
+				var target = event.getTarget(null,null,true);
+				
+				// Handle create item instead of normal handler:
+				if (target.hasClass(plugin.createItemClass)) {
+					this.collapse();
+					return plugin.createItemHandler.call(this,plugin.createItemCallback);
+				}
 			}
 
 			// Original handler:
