@@ -18,7 +18,6 @@ RapidApp::Debug->default_instance->applyChannelConfig({
 	'controller'    => { color => MAGENTA,   },
 	'dbiclink'      => { color => MAGENTA,   },
 	'db'            => { color => BOLD.GREEN,},
-	'notifications' => { color => YELLOW,    },
 	'web1render'    => { color => CYAN,      },
 });
 
