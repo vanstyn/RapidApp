@@ -192,7 +192,10 @@ sub cleanupAfterRequest {
 	# These might also get modules dirty, so we clean again after each one.
 	if (scalar @{$self->postprocessing_tasks}) {
 		my ($sec0, $msec0)= $c->debug && gettimeofday;
+		my $reqid= $c->request_id;
+		my $i= 1;
 		while (my $sub= shift @{$self->postprocessing_tasks}) {
+			local $c->{request_id}= $reqid.'.'.$i++;
 			RapidApp::ScopedGlobals->applyForSub(
 				{ catalystInstance => $c },
 				sub { $sub->($c); }
