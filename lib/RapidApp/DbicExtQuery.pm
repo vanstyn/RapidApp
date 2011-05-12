@@ -166,7 +166,6 @@ sub data_fetch {
 		}
 	}
 	
-	
 	# vv ---
 	# Add composit_fields from dbf_virtual_fields to the column list:
 	if($params->{columns} and $self->dbf_virtual_fields) {
@@ -185,30 +184,17 @@ sub data_fetch {
 	}
 	# ^^ ---
 
-
 	my $Attr		= $params->{Attr_spec};		# <-- Optional custom Attr_spec override
 	my $Search	= $params->{Search_spec};	# <-- Optional custom Search_spec override
 	
 	$Attr 		= $self->Attr_spec($params) unless (defined $Attr);
 	$Search 		= $self->Search_spec($params,$extra_search) unless (defined $Search);
 	
-	#use Data::Dumper;
-	#print STDERR BOLD .GREEN . Dumper($Attr) . CLEAR;
-	
-	my @rows = $self->ResultSet->search($Search,$Attr)->all;
-	
-	
-	#my $rs = $self->ResultSet->search($Search,$Attr);
-	
-	my $count_Attr = Clone::clone($Attr);
-	delete $count_Attr->{page} if (defined $count_Attr->{page}); # <-- ##  need to delete page and rows attrs to prevent the
-	delete $count_Attr->{rows} if (defined $count_Attr->{rows}); # <-- ##  totalCount from including only the current page
+	my $Rs = $self->ResultSet->search($Search,$Attr);
 	
 	return {
-		totalCount	=> $self->ResultSet->search($Search,$count_Attr)->count,
-		rows			=> \@rows
-		#totalCount => $rs->count,
-		#rs => $rs
+		rows			=> [ $Rs->all ],
+		totalCount	=> $Rs->pager->total_entries,
 	};
 }
 
