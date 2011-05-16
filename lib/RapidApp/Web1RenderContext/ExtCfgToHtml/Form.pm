@@ -76,7 +76,8 @@ sub render_xtype_checkbox {
 	my $val= $cfg->{value};
 	ref $val eq 'SCALAR'
 		and $val= $$val;
-	$renderCxt->write('<span class="checkvalue">'.($val? "[Yes]":"[No]").'</span>');
+	#$renderCxt->write('<span class="checkvalue">'.($val? "[Yes]":"[No]").'</span>');
+	render_xtype_textfield($self, $renderCxt, { value => ($val? "Yes":"No") });
 }
 
 no Moose;

@@ -10,7 +10,8 @@ sub render_xtype_superboxselect {
 sub render_xtype_htmleditor {
 	my ($self, $renderCxt, $cfg)= @_;
 	$renderCxt->incCSS('/static/rapidapp/css/web1_ExtJSMisc.css');
-	$renderCxt->write("<div class='xt-htmleditor'>".(length($cfg->{value})? $cfg->{value} : "&nbsp;")."</div>\n");
+	$renderCxt->incCSS('/static/rapidapp/css/web1_ExtJSBasic.css');
+	$renderCxt->write("<div class='xt-htmleditor'><div class='reset'>".(length($cfg->{value})? $cfg->{value} : "&nbsp;")."</div></div>\n");
 }
 
 sub render_xtype_hopshtmleditor {

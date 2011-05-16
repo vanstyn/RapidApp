@@ -5,8 +5,13 @@
 	margin: 0px;
 }
 
+.xt-appcombo2 {
+	padding: 0.2em 0.2em 0.2em 0.5em;
+}
+
 .xt-appcombo2 ul {
-	list-style-type: circle;
+	list-style-type: disc;
 	list-style-position: inside;
 	margin-left: .3em;
 }
+
