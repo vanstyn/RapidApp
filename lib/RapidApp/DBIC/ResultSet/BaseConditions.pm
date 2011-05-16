@@ -7,6 +7,18 @@ extends 'DBIx::Class::ResultSet';
 use RapidApp::Include qw(sugar perlutil);
 use Clone;
 
+around 'BUILDARGS' => sub {
+	my ($orig, $class, @args)= @_;
+	# The correct parameters are a ResultSource, and args hash.
+	# Some versions of some DBIC packages pass only a ResultSource.
+	# If the arg hash is missing, NonMoose won't work its magic, and the program dies.
+	# So, for maximum compatibility, we add an empty arg hash if it is missing.
+	if (scalar(@args) == 1 && blessed($args[0]) && $args[0]->isa('DBIx::Class::ResultSource')) {
+		push @args, {};
+	}
+	$class->$orig(@args);
+};
+
 sub c { RapidApp::ScopedGlobals->get('catalystInstance'); }
 
 has 'base_search_conditions' => ( is => 'ro', default => undef );
