@@ -1,6 +1,8 @@
-package RapidApp::DBIC::ImportEngine::PortableItem;
+package RapidApp::DBIC::PortableItem;
 
-use Moose;
+use Moose::Role;
+
+has 'engine' => ( is => 'ro', required => 1 );
 
 =head1 NAME
 
@@ -14,17 +16,29 @@ It doesn't have much functionality, but defines the interface for subclasses to 
 
 =head1 METHODS
 
-=head2 $class->createFromFrozen( engine => $engine, data => \%hash )
+=head2 $class->createFromHash( engine => $engine, hash => \%hash )
 
 This factory method creates a PortableItem from a serialized hash.
+
+=cut
+
+requires 'createFromHash';
 
 =head2 $class->createFromRow( engine => $engine, row => $DBIx::Class::Row )
 
 This factory method creates a PortableItem that constructs itself from a DBIC row object.
 
-=head2 $self->freeze()
+=cut
+
+requires 'createFromRow';
+
+=head2 $self->toHash()
 
 This returns a hash suitable for serialization.
+
+=cut
+
+requires 'toHash';
 
 =head2 $self->getUpdateTarget
 
@@ -33,12 +47,16 @@ has one.  For import, this method must perform a lookup to find an appropriate u
 After insertion during import, this method should return the updated rows.
 For export, this method just returns the row object we were constructed with.
 
-If this item
-is not represented by a distinct "root row", this method can return a hash or array of Row
-objects.  The hash should not be nested, to aid generic code to iterate through the rows objects.
+If this item is not represented by a distinct "root row", this method can return a hash or
+array of Row objects.  The hash/array should not be nested, to aid generic code to iterate
+through the rows objects.
 
 If this item has not been inserted and no appropriate update target exists, this method returns
 undef.
+
+=cut
+
+requires 'getUpdateTarget';
 
 =head2 $self->insert( clone => 0, user_option => $identifier )
 
@@ -50,6 +68,10 @@ Whether the logical item exists in storage can be determined by getUpdateTarget.
 
 Returns true if the insert suceeded, or false if it failed permanently.  For temporary failures,
 it returns a hash describing the situation.  See B<merge>.
+
+=cut
+
+requires 'insert';
 
 =head2 $self->merge( mode => ('passive' | 'update' | 'overwrite'), user_option => $identifier )
 
@@ -64,7 +86,7 @@ Returns a hash describing the situation, of the form
 	{
 		status => 'complete' | 'progress' | 'fail',
 		require_pk => $RapidApp::DBIC::KeyVal,
-		user_intervention => { problem => $identifier, prompt => $text, options => [ text => identifier, ] },
+		user_intervention => { problem => $identifier, prompt => $text, options => [ text => identifier, ... ] },
 		post_process => $CODE,
 	}
 
@@ -102,5 +124,6 @@ of this logical item.
 
 =cut
 
-__PACKAGE__->meta->make_immutable;
+requires 'merge';
+
 1;
