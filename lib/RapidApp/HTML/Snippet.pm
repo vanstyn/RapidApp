@@ -3,6 +3,8 @@ use Moose;
 
 use RapidApp::Include qw(sugar perlutil);
 
+use RapidApp::HTML::Snippet::TagProcessor;
+
 use CSS::Inliner;
 use HTML::TokeParser::Simple;
 
@@ -17,7 +19,7 @@ has 'store_tags' => (
 	default => sub {{
 		style		=> '',
 		head		=> '',
-		title		=> ''
+		body		=> ''
 	}}
 );
 
@@ -26,8 +28,6 @@ has 'store_tags_opened' => (
 	isa => 'HashRef[Bool]',
 	default => sub {{}}
 );
-
-
 
 has 'strip_tags' => (
 	is => 'ro',
@@ -38,9 +38,68 @@ has 'strip_tags' => (
 );
 
 
+has 'tag_processors' => ( 
+	is => 'ro', 
+	traits => [ 'Array' ],
+	isa => 'ArrayRef[HashRef]', 
+	default => sub {[]},
+	handles => {
+		all_tag_processors => 'elements'
+	}
+);
+
+has 'Processors' => (
+	is => 'ro',
+	traits => [ 'Array' ],
+	isa => 'ArrayRef[RapidApp::HTML::Snippet::TagProcessor]',
+	default => sub {[]},
+	handles => {
+		add_Processor => 'push',
+		all_Processors => 'elements'
+	}
+);
+
+has 'Processors_hash' => (
+	is => 'ro',
+	isa => 'HashRef[ArrayRef[RapidApp::HTML::Snippet::TagProcessor]]',
+	lazy => 1,
+	default => sub {
+		my $self = shift;
+		my $hash = {};
+		
+		foreach my $Processor ($self->all_Processors) {
+			$hash->{$Processor->tag} = [] unless (defined $hash->{$Processor->tag});
+			push @{$hash->{$Processor->tag}}, $Processor;
+		}
+		
+		return $hash;
+	}
+);
+
+
+has 'active_Processors' => ( is => 'ro', isa => 'HashRef[RapidApp::HTML::Snippet::TagProcessor]', default => sub {{}} );
+
+sub all_active_processors {
+	my $self = shift;
+	my @list = ();
+	foreach my $k (keys %{$self->active_Processors}) {
+		push @list, $self->active_Processors->{$k};
+	}
+	return @list;
+}
+
+
+
 
 sub BUILD {
 	my $self = shift;
+	
+	foreach my $conf ($self->all_tag_processors) {
+		$conf->{Snippet} = $self;
+		$self->add_Processor(
+			RapidApp::HTML::Snippet::TagProcessor->new($conf)
+		);
+	}
 	
 }
 
@@ -56,6 +115,8 @@ sub current_token_content {
 	my $self = shift;
 	
 	my $nostore = '';
+	
+	$self->call_Processors;
 	
 	if ($self->current_token->is_tag) {
 		my $type = $self->current_token->get_tag;
@@ -77,6 +138,24 @@ sub current_token_content {
 	
 	return $self->current_token->as_is unless ($strip);
 	return '';
+}
+
+sub call_Processors {
+	my $self = shift;
+	
+	if ($self->current_token->is_start_tag) {
+		my $type = $self->current_token->get_tag;
+		if (defined $self->Processors_hash->{$type}) {
+			foreach my $Processor (@{$self->Processors_hash->{$type}}) {
+				$Processor->process;
+			}
+		}
+	}
+	
+	foreach my $Processor ($self->all_active_processors) {
+		$Processor->process;
+	}
+	
 }
 
 
@@ -113,6 +192,9 @@ sub preprocess {
 }
 
 
+
+=pod
+# Not currently used:
 sub get_inner_advance {
 	my $self = shift;
 	my $include_tag = shift;
@@ -137,7 +219,7 @@ sub get_inner_advance {
 	}
 	die "Error: premature end of document";
 }
-
+=cut
 
 
 
