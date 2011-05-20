@@ -8,6 +8,7 @@ use RapidApp::HTML::Snippet::TagProcessor;
 use CSS::Inliner;
 use CSS::Tiny;
 use HTML::TokeParser::Simple;
+use String::Random;
 
 has 'html' => ( is => 'rw', isa => 'Str', required => 1 );
 has 'css' => ( is => 'rw', isa => 'Maybe[Str]', default => undef );
@@ -96,6 +97,15 @@ has 'Processors_hash' => (
 
 
 has 'active_Processors' => ( is => 'ro', isa => 'HashRef[RapidApp::HTML::Snippet::TagProcessor]', default => sub {{}} );
+
+has 'wrap_snippet' => ( is => 'ro', isa => 'Bool', default => 0 );
+
+has 'div_wrap_class' => (
+	is => 'ro',
+	isa => 'Str',
+	lazy => 1,
+	default => sub { 'snippet-wrap-' . String::Random->new->randregex('[a-z0-9A-Z]{8}') }
+);
 
 sub all_active_processors {
 	my $self = shift;
@@ -220,7 +230,16 @@ sub preprocess {
 
 sub processed_css {
 	my $self = shift;
+	
+	return $self->css unless ($self->wrap_snippet);
+	
 	my $CSS = CSS::Tiny->read_string($self->css);
+	
+	foreach my $sel (keys %$CSS) {
+		$CSS->{'div.' . $self->div_wrap_class . ' ' . $sel} = $CSS->{$sel};
+		delete $CSS->{$sel};
+	}
+	
 	return $CSS->write_string;
 }
 
@@ -238,14 +257,30 @@ sub body_inner {
 
 sub body_with_style {
 	my $self = shift;
-	return
+	my $string = 
 		'<!DOCTYPE html>' . "\n" .
 		'<style type="text/css">' . "\n" . 
-			$self->css . "\n" .
-			#$self->processed_css . "\n" .
-		'</style>' . "\n" .
-		$self->html;
-		#$self->body_inner;
+			#$self->css . "\n" .
+			$self->processed_css . "\n" .
+		'</style>' . "\n";
+		#$self->html;
+		
+		return $string . $self->body_inner unless ($self->wrap_snippet);
+		
+		return $string . '<div class="' . $self->div_wrap_class . '">' .
+		
+		$self->body_inner .
+		
+		'</div>';
+}
+
+sub body_with_style_inlined {
+	my $self = shift;
+	
+	my $inliner = CSS::Inliner->new;
+	$inliner->read({ html => $self->body_with_style });
+	
+	return $inliner->inlinify;
 }
 
 
