@@ -38,6 +38,23 @@ has 'strip_tags' => (
 );
 
 
+has 'parent_tags' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
+
+before 'current_token_content' => sub {
+	my $self = shift;
+	return unless ($self->current_token->is_start_tag);
+	my $type = $self->current_token->get_tag;
+	$self->parent_tags->{$type}++;
+};
+
+after 'current_token_content' => sub {
+	my $self = shift;
+	return unless ($self->current_token->is_end_tag);
+	my $type = $self->current_token->get_tag;
+	$self->parent_tags->{$type}-- if ($self->parent_tags->{$type} > 0);
+};
+
+
 has 'tag_processors' => ( 
 	is => 'ro', 
 	traits => [ 'Array' ],
@@ -114,10 +131,9 @@ sub next_token {
 sub current_token_content {
 	my $self = shift;
 	
-	my $nostore = '';
-	
 	$self->call_Processors;
 	
+	my $nostore = '';
 	if ($self->current_token->is_tag) {
 		my $type = $self->current_token->get_tag;
 		
@@ -128,17 +144,26 @@ sub current_token_content {
 		}
 	}
 	
-	my $strip = 0;
-	
 	foreach my $type (keys %{$self->store_tags_opened}) {
 		next unless ($self->store_tags_opened->{$type});
-		$strip = 1 if ($self->strip_tags->{$type});
-		$self->store_tags->{$type} .= $self->current_token->as_is unless ($nostore eq $type);
+		$self->store_tags->{$type} .= $self->current_token->as_is unless ($nostore eq $type or $self->strip_current($type));
 	}
-	
-	return $self->current_token->as_is unless ($strip);
+		
+	return $self->current_token->as_is unless ($self->strip_current);
 	return '';
 }
+
+sub strip_current {
+	my $self = shift;
+	my $exclude = shift;
+	foreach my $type (keys %{$self->strip_tags}) {
+		next unless ($self->strip_tags->{$type});
+		return 1 if ($self->parent_tags->{$type} and $exclude ne $type);
+	}
+	return 0;
+}
+
+
 
 sub call_Processors {
 	my $self = shift;
@@ -190,6 +215,17 @@ sub preprocess {
 	
 	return $self->html($htmlout);
 }
+
+
+sub body_inner {
+	my $self = shift;
+	return $self->store_tags->{body} if (
+		defined $self->store_tags->{body} and 
+		$self->store_tags->{body} ne ''
+	);
+	return $self->html;
+}
+
 
 
 
