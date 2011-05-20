@@ -6,6 +6,7 @@ use RapidApp::Include qw(sugar perlutil);
 use RapidApp::HTML::Snippet::TagProcessor;
 
 use CSS::Inliner;
+use CSS::Tiny;
 use HTML::TokeParser::Simple;
 
 has 'html' => ( is => 'rw', isa => 'Str', required => 1 );
@@ -155,7 +156,7 @@ sub current_token_content {
 
 sub strip_current {
 	my $self = shift;
-	my $exclude = shift;
+	my $exclude = shift || '';
 	foreach my $type (keys %{$self->strip_tags}) {
 		next unless ($self->strip_tags->{$type});
 		return 1 if ($self->parent_tags->{$type} and $exclude ne $type);
@@ -217,6 +218,15 @@ sub preprocess {
 }
 
 
+sub processed_css {
+	my $self = shift;
+	my $CSS = CSS::Tiny->read_string($self->css);
+	return $CSS->write_string;
+}
+
+
+
+
 sub body_inner {
 	my $self = shift;
 	return $self->store_tags->{body} if (
@@ -224,6 +234,18 @@ sub body_inner {
 		$self->store_tags->{body} ne ''
 	);
 	return $self->html;
+}
+
+sub body_with_style {
+	my $self = shift;
+	return
+		'<!DOCTYPE html>' . "\n" .
+		'<style type="text/css">' . "\n" . 
+			$self->css . "\n" .
+			#$self->processed_css . "\n" .
+		'</style>' . "\n" .
+		$self->html;
+		#$self->body_inner;
 }
 
 
