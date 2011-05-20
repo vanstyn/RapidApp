@@ -11,6 +11,33 @@ has 'css' => ( is => 'rw', isa => 'Maybe[Str]', default => undef );
 has 'Parser' => ( is => 'rw',	isa => 'HTML::TokeParser::Simple' );
 has 'current_token' => ( is => 'rw', isa => 'Maybe[Object]', default => undef );
 
+has 'store_tags' => (
+	is => 'ro',
+	isa => 'HashRef[Str]',
+	default => sub {{
+		style		=> '',
+		head		=> '',
+		title		=> ''
+	}}
+);
+
+has 'store_tags_opened' => (
+	is => 'ro',
+	isa => 'HashRef[Bool]',
+	default => sub {{}}
+);
+
+
+
+has 'strip_tags' => (
+	is => 'ro',
+	isa => 'HashRef[Bool]',
+	default => sub {{
+		style		=> 1,
+	}}
+);
+
+
 
 sub BUILD {
 	my $self = shift;
@@ -22,28 +49,35 @@ sub next_token {
 	my $self = shift;
 	my $token = $self->Parser->get_token || return undef;
 	$self->current_token($token);
-	
-	
-	print "              -> " . $self->current_token->get_tag . "\n" if ($self->current_token->is_start_tag);
-	
 	return $self->current_token;
 }
 
-sub next_as_is {
-	my $self = shift;
-	$self->next_token || return undef;
-	return $self->current_token_content;
-}
-
-
 sub current_token_content {
 	my $self = shift;
-	return $self->current_token->as_is;
+	
+	my $nostore = '';
+	
+	if ($self->current_token->is_tag) {
+		my $type = $self->current_token->get_tag;
+		
+		if (defined $self->store_tags->{$type}) {
+			$self->store_tags_opened->{$type} = 1 if ($self->current_token->is_start_tag);
+			$self->store_tags_opened->{$type} = 0 if ($self->current_token->is_end_tag);
+			$nostore = $type;
+		}
+	}
+	
+	my $strip = 0;
+	
+	foreach my $type (keys %{$self->store_tags_opened}) {
+		next unless ($self->store_tags_opened->{$type});
+		$strip = 1 if ($self->strip_tags->{$type});
+		$self->store_tags->{$type} .= $self->current_token->as_is unless ($nostore eq $type);
+	}
+	
+	return $self->current_token->as_is unless ($strip);
+	return '';
 }
-
-
-
-
 
 
 
@@ -66,14 +100,14 @@ sub preprocess {
 	$self->Parser(HTML::TokeParser::Simple->new($htmlref));
 	
 	while ($self->next_token) {
-		if ($self->current_token->is_start_tag('style')) {
-			$self->append_css($self->get_inner_advance);
-			next;
-		}
+		#if ($self->current_token->is_start_tag('style')) {
+		#	$self->append_css($self->get_inner_advance);
+		#	next;
+		#}
 		$htmlout .= $self->current_token_content;
 	}
 	
-	print "reached end\n";
+	$self->append_css($self->store_tags->{style});
 	
 	return $self->html($htmlout);
 }
