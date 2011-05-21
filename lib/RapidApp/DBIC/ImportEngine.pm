@@ -444,11 +444,9 @@ sub _setup_reader {
 	my $default= ($schemaCls.'::ImportItem')->can('new')? $schemaCls.'::ImportItem' : undef;
 	
 	for my $srcN (keys %{$self->valid_sources}) {
-		my $portableItemCls= $schemaCls.'::PortableItem::'.$srcN;
-		$portableItemCls= undef unless $portableItemCls->can('createFromHash');
 		my $customItemCls= $schemaCls.'::ImportItem::'.$srcN;
 		$customItemCls= undef unless $customItemCls->can('new');
-		$clsMap->{$srcN} ||= $portableItemCls || $customItemCls || $default;
+		$clsMap->{$srcN} ||= $customItemCls || $default;
 	}
 	
 	# we've been modifying a ref to the one held by the reader, so nothing to do here
