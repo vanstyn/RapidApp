@@ -66,7 +66,7 @@ it.
 
 =cut
 
-has 'schema' => ( is => 'ro', isa => 'DBIx::Class::Schema', required => 1 );
+extends 'RapidApp::DBIC::EngineBase';
 
 has 'reader' => ( is => 'rw', isa => 'RapidApp::DBIC::ImportEngine::ItemReader',
 	coerce => 1, trigger => \&_setup_reader );
@@ -110,7 +110,6 @@ has 'records_failed_insert' => ( is => 'rw', isa => 'ArrayRef[ArrayRef]', defaul
 
 sub BUILD {
 	my $self= shift;
-	$self->load_custom_import_items(ref $self->schema);
 	$self->_setup_reader($self->reader) if ($self->reader);
 }
 
@@ -274,19 +273,25 @@ sub next_item {
 sub process_item {
 	my ($self, $importItem)= @_;
 	
-	if ($importItem->resolve_dependencies) {
-		my $code= $importItem->can($importItem->action) or die ref($importItem)." cannot perform action \"".$importItem->action."\"";
-		$importItem->$code;
-	} else {
-		my $depList= $importItem->dependencies;
-		defined $depList && scalar(@$depList) or die "resolve_dependencies must either return true, or build a list of dependencies";
-		
-		my $dep= $depList->[0];
-		my $colKey= $dep->colKey;
-		my $val= $importItem->data->{$dep->col};
-		DEBUG('import', "\t[delayed due to dependency: $colKey = $val  => ".$dep->origin_colKey." = ?? ]");
-		$self->push_delayed_insert($dep->origin_colKey, $val, $importItem);
-		return;
+	if ($importItem->does('RapidApp::DBIC::PortableItem')) {
+		$importItem->insert;
+		# TODO: check for partial processing, and queue for next attempt
+	}
+	else {
+		if ($importItem->resolve_dependencies) {
+			my $code= $importItem->can($importItem->action) or die ref($importItem)." cannot perform action \"".$importItem->action."\"";
+			$importItem->$code;
+		} else {
+			my $depList= $importItem->dependencies;
+			defined $depList && scalar(@$depList) or die "resolve_dependencies must either return true, or build a list of dependencies";
+			
+			my $dep= $depList->[0];
+			my $colKey= $dep->colKey;
+			my $val= $importItem->data->{$dep->col};
+			DEBUG('import', "\t[delayed due to dependency: $colKey = $val  => ".$dep->origin_colKey." = ?? ]");
+			$self->push_delayed_insert($dep->origin_colKey, $val, $importItem);
+			return;
+		}
 	}
 }
 
@@ -420,21 +425,6 @@ sub default_process_dependencies {
 	return scalar(@newDeps) == 0;
 }
 
-use Module::Find;
-
-sub load_custom_import_items {
-	my ($self, $schemaCls)= @_;
-	
-	DEBUG('import', 'Loading custom import-item modules...');
-	
-	my @tryLoad= grep { $_ =~ /::ImportItem$/ } findsubmod( $schemaCls );
-	push @tryLoad, findsubmod $schemaCls.'::ImportItem';
-	foreach my $m (@tryLoad) {
-		DEBUG('import', '   ', $m);
-		eval " require $m; import $m ; ";
-		die $@ if $@;
-	}
-}
 
 
 # ResultSources can have special import item classes, such that any record for a particular source
@@ -454,9 +444,11 @@ sub _setup_reader {
 	my $default= ($schemaCls.'::ImportItem')->can('new')? $schemaCls.'::ImportItem' : undef;
 	
 	for my $srcN (keys %{$self->valid_sources}) {
+		my $portableItemCls= $schemaCls.'::PortableItem::'.$srcN;
+		$portableItemCls= undef unless $portableItemCls->can('createFromHash');
 		my $customItemCls= $schemaCls.'::ImportItem::'.$srcN;
 		$customItemCls= undef unless $customItemCls->can('new');
-		$clsMap->{$srcN} ||= $customItemCls || $default;
+		$clsMap->{$srcN} ||= $portableItemCls || $customItemCls || $default;
 	}
 	
 	# we've been modifying a ref to the one held by the reader, so nothing to do here

@@ -53,8 +53,12 @@ sub inflate {
 	my ($self, $itemHash)= @_;
 	my $cls= delete $itemHash->{class}
 		|| $self->classForDbicSource($itemHash->{source});
-	$itemHash->{engine}= $self->engine;
-	return $cls->new($itemHash);
+	if ($cls->can('createFromHash')) {
+		return $cls->createFromHash(engine => $self->engine, hash => $itemHash->{data});
+	} else {
+		$itemHash->{engine}= $self->engine;
+		return $cls->new($itemHash);
+	}
 }
 
 sub classForDbicSource {

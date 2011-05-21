@@ -7,11 +7,9 @@ use RapidApp::Debug 'DEBUG';
 use RapidApp::JSON::MixedEncoder 'encode_json';
 use RapidApp::DBIC::ImportEngine::ItemWriter;
 
-has 'schema' => ( is => 'ro', isa => 'DBIx::Class::Schema', required => 1 );
+extends 'RapidApp::DBIC::EngineBase';
 
 has 'writer' => ( is => 'rw', isa => 'RapidApp::DBIC::ImportEngine::ItemWriter', coerce => 1 );
-
-with 'RapidApp::DBIC::SchemaAnalysis';
 
 #has 'exported_set' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 
@@ -75,6 +73,11 @@ sub export_resultset {
 	}
 }
 
+sub export_item {
+	my ($self, $item)= @_;
+	$self->writer->write_insert(source => undef, class => ref $item, data => $item->toHash());
+}
+
 sub export_row {
 	my ($self, $row, $srcN, $depList)= @_;
 	$srcN ||= $row->result_source->source_name;
@@ -95,7 +98,7 @@ sub get_export_data {
 
 sub create_acn_insert {
 	my $self= shift;
-	my %p= validate(@_, { source => 1, data => 1, depList => 0, pk => 0, pkVal => 0 });
+	my %p= validate(@_, { source => 1, class => 0, data => 1, depList => 0, pk => 0, pkVal => 0 });
 	
 	# check whether we've done this row already
 	my $sa= $self->source_analysis->{$p{source}};
@@ -121,7 +124,7 @@ sub create_acn_insert {
 	$self->mark_pkVal_seen($p{pkVal}) if $p{pkVal};
 	
 	# emit a record
-	$self->writer->write_insert(map { $_ => $p{$_} } qw(source data));
+	$self->writer->write_insert(map { $_ => $p{$_} } qw(source class data));
 }
 
 sub create_acn_update {

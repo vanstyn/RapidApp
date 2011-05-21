@@ -35,7 +35,7 @@ sub factory_create {
 
 sub write_insert {
 	my $self= shift;
-	my %p= validate(@_, { source => {type=>SCALAR}, data => {type=>HASHREF} });
+	my %p= validate(@_, { source => 1, class => 0, data => {type=>HASHREF} });
 	$self->_writeHash(\%p);
 }
 
