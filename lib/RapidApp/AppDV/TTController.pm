@@ -295,11 +295,11 @@ sub div_module_content {
 	my $Module = shift;
 	
 	my $cnf = {
-		%{ $Module->content },
 		plugins => [ 'autowidthtoolbars' ],
 		autoHeight => \1,
 		renderTarget => 'div.appdv-submodule.' . $name,
-		applyValue => $self->AppDV->record_pk
+		applyValue => $self->AppDV->record_pk,
+		%{ $Module->content }
 	};
 	
 	return $self->div_module($name,$cnf);
