@@ -15,6 +15,8 @@ has 'css' => ( is => 'rw', isa => 'Maybe[Str]', default => undef );
 has 'Parser' => ( is => 'rw',	isa => 'HTML::TokeParser::Simple' );
 has 'current_token' => ( is => 'rw', isa => 'Maybe[Object]', default => undef );
 
+has 'expand_stylesheet_links' => ( is => 'ro', isa => 'Bool', default => 1 );
+
 has 'store_tags' => (
 	is => 'ro',
 	isa => 'HashRef[Str]',
@@ -129,15 +131,59 @@ sub BUILD {
 		);
 	}
 	
+	$self->add_Processor(RapidApp::HTML::Snippet::TagProcessor->new({
+		Snippet	=> $self,
+		tag		=> 'link',
+		single_token => 1,
+		selector => sub {
+			my $token = shift;
+			return 1 if ($token->get_attr('href') and $token->get_attr('type') eq 'text/css');
+			return 0;
+		},
+		processor => sub {
+			my $proc = shift;
+			my $token = shift;
+			my $uri = $token->get_attr('href');
+			my $content = $proc->Snippet->fetch_uri_content($uri);
+			return undef unless ($content);
+			
+			$proc->Snippet->append_css($content);
+			
+			$content = '<style type="type/css">' . "\n" . 
+				$content . 
+			'</style>' . "\n";
+		}
+	})) if ($self->expand_stylesheet_links);
+	
 }
 
 
 sub next_token {
 	my $self = shift;
+	
+	$self->as_is_overload(undef);
+	
 	my $token = $self->Parser->get_token || return undef;
 	$self->current_token($token);
 	return $self->current_token;
 }
+
+
+has 'as_is_overload' => ( is => 'rw', isa => 'Maybe[Str]', default => undef );
+
+sub current_token_as_is {
+	my $self = shift;
+	
+	my $overload = $self->as_is_overload;
+	if($overload) {
+		$self->as_is_overload(undef);
+		return $overload;
+	}
+	
+	return $self->current_token->as_is;
+}
+
+
 
 sub current_token_content {
 	my $self = shift;
@@ -157,10 +203,10 @@ sub current_token_content {
 	
 	foreach my $type (keys %{$self->store_tags_opened}) {
 		next unless ($self->store_tags_opened->{$type});
-		$self->store_tags->{$type} .= $self->current_token->as_is unless ($nostore eq $type or $self->strip_current($type));
+		$self->store_tags->{$type} .= $self->current_token_as_is unless ($nostore eq $type or $self->strip_current($type));
 	}
 		
-	return $self->current_token->as_is unless ($self->strip_current);
+	return $self->current_token_as_is unless ($self->strip_current);
 	return '';
 }
 
@@ -183,13 +229,15 @@ sub call_Processors {
 		my $type = $self->current_token->get_tag;
 		if (defined $self->Processors_hash->{$type}) {
 			foreach my $Processor (@{$self->Processors_hash->{$type}}) {
-				$Processor->process;
+				my $output = $Processor->process;
+				$self->as_is_overload($output) if ($output and ref(\$output) eq 'SCALAR' and length($output) > 1);
 			}
 		}
 	}
 	
 	foreach my $Processor ($self->all_active_processors) {
-		$Processor->process;
+		my $output = $Processor->process;
+		$self->as_is_overload($output) if ($output and ref(\$output) eq 'SCALAR' and length($output) > 1);
 	}
 	
 }
@@ -281,6 +329,24 @@ sub body_with_style_inlined {
 	$inliner->read({ html => $self->body_with_style });
 	
 	return $inliner->inlinify;
+}
+
+sub fetch_uri_content {
+	my $self = shift;
+	my $uri = shift;
+	
+	my $content = '';
+	
+	if (-f $uri) {
+		open FILE, "< $uri" or return undef;
+		while(<FILE>) {
+			$content .= $_;
+		}
+		close FILE;
+		return $content;
+	}
+	
+	# TODO: LWP fetch:
 }
 
 
