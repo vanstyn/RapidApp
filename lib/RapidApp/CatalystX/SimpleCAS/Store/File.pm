@@ -18,6 +18,21 @@ sub init_store_dir {
 	mkdir $self->store_dir or die "Failed to create directory: " . $self->store_dir;
 }
 
+sub add_content {
+	my $self = shift;
+	my $data = shift;
+	
+	$self->init_store_dir;
+	
+	my $checksum = $self->calculate_checksum($data);
+	return $checksum if ($self->content_exists($checksum));
+	
+	my $save_path = $self->checksum_to_path($checksum,1);
+	my $fd= IO::File->new($save_path, '>:raw') or die $!;
+	$fd->write($data);
+	$fd->close;
+	return $checksum;
+}
 
 sub add_content_file {
 	my $self = shift;
@@ -124,6 +139,13 @@ sub content_mimetype {
 	return mimetype($file);
 }
 
+sub calculate_checksum {
+	my $self = shift;
+	my $data = shift;
+	
+	my $sha1 = Digest::SHA1->new->add($data)->hexdigest;
+	return $sha1;
+}
 
 sub file_checksum  {
 	my $self = shift;
