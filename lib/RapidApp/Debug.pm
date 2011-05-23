@@ -75,7 +75,7 @@ sub _debug_data_to_text {
 	my ($self, $data)= @_;
 	defined $data or return '<undef>';
 	ref $data or return $data;
-	ref $data eq 'CODE' and return &$data;
+	ref $data eq 'CODE' and return $self->_debug_data_to_text(&$data);
 	my $dump= Data::Dumper->new([$data], [''])->Indent(1)->Maxdepth(5)->Dump;
 	$dump= substr($dump, 4, length($dump)-6); # trim off "$ = " and ";\n"
 	length($dump) < 80 # inline short hashes
