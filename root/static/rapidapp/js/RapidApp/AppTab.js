@@ -113,6 +113,10 @@ Ext.ux.RapidApp.AppTab.findParent_loadTarget = function(cnt) {
 
 Ext.ux.RapidApp.AppTab.cnt_init_loadTarget = function(cnt) {
 	cnt.loadTargetObj = Ext.ux.RapidApp.AppTab.findParent_loadTarget(cnt);
+	// If a lodTarget wasn't found above, ball back to the global id:
+	if(!cnt.loadTargetObj) {
+		cnt.loadTargetObj = Ext.getCmp('main-load-target');
+	}
 }
 
 
