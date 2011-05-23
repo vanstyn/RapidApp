@@ -71,7 +71,7 @@ __PACKAGE__->meta->make_immutable;
 package RapidApp::DBIC::ImportEngine::ItemWriter::Storable;
 
 use Moose;
-extends 'RapidApp::DBIC::ImportEngine::ItemReader';
+extends 'RapidApp::DBIC::ImportEngine::ItemWriter';
 
 use Storable 'nstore_fd';
 

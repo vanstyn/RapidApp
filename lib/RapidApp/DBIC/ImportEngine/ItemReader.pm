@@ -33,6 +33,10 @@ sub factory_create {
 	return $subclass->new($params);
 }
 
+sub _read_record {
+	die "abstract method";
+}
+
 =head2 $self->next
 
 This method reads the next item object, or returns undef if no more exist in the stream.
@@ -41,7 +45,9 @@ On error, it calls die.
 
 =cut
 sub next {
-	die "abstract method";
+	my $self= shift;
+	my $itemHash= $self->_read_record;
+	return $itemHash && $self->inflate($itemHash);
 }
 
 =head2 $self->inflate( \%itemHash )
@@ -80,7 +86,7 @@ sub BUILD {
 	binmode($self->source);
 }
 
-sub next {
+sub _read_record {
 	my $self= shift;
 	my $src= $self->source;
 	$src->eof and return undef;
@@ -90,7 +96,7 @@ sub next {
 	#   so that multiple things could be stored in the same file
 	return undef if ($itemHash eq 'EOF');
 	
-	return $self->inflate($itemHash);
+	return $itemHash;
 }
 
 __PACKAGE__->meta->make_immutable;
@@ -108,7 +114,7 @@ sub BUILD {
 	binmode($self->source, ':utf8');
 }
 
-sub next {
+sub _read_record {
 	my $self= shift;
 	my $src= $self->source;
 	$src->eof and return undef;
@@ -120,7 +126,7 @@ sub next {
 	my $itemHash= $json->decode($line);
 	defined $itemHash or die "Error decoding line: \"$line\"";
 	
-	return $self->inflate($itemHash);
+	return $itemHash;
 }
 
 __PACKAGE__->meta->make_immutable;
