@@ -53,7 +53,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		
 		var grid = this.grid;
 		var add_to_cmp = this.grid.getBottomToolbar() || this.grid.getTopToolbar();
-		if(add_to_cmp) { add_to_cmp.add('-',this.filtersBtn) };
+		if(add_to_cmp && !grid.hide_filtersBtn) { add_to_cmp.add('-',this.filtersBtn) };
 	},
 	
 	setFields: function() {
