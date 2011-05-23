@@ -137,8 +137,19 @@ sub xtemplate {
 
 
 
-has 'DVitems' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
-has 'FieldCmp' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
+has 'DVitems' => ( 
+	is => 'ro', 
+	traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ], 
+	isa => 'HashRef', 
+	default => sub {{}} 
+);
+
+has 'FieldCmp' => ( 
+	is => 'ro', 
+	traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ], 
+	isa => 'HashRef', 
+	default => sub {{}} 
+);
 
 
 
