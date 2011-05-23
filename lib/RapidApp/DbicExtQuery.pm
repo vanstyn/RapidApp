@@ -141,7 +141,7 @@ has '_no_search_fields_hash' => (
 
 
 
-sub data_fetch {
+sub build_data_fetch_resultset {
 	my $self = shift;
 	my $params = shift or return undef;
 	my $extra_search = shift;
@@ -190,8 +190,12 @@ sub data_fetch {
 	$Attr 		= $self->Attr_spec($params) unless (defined $Attr);
 	$Search 		= $self->Search_spec($params,$extra_search) unless (defined $Search);
 	
-	my $Rs = $self->ResultSet->search($Search,$Attr);
-	
+	return $self->ResultSet->search($Search,$Attr);
+}
+
+sub data_fetch {
+	my $self= shift;
+	my $Rs= $self->build_data_fetch_resultset(@_);
 	return {
 		rows			=> [ $Rs->all ],
 		totalCount	=> $Rs->pager->total_entries,
