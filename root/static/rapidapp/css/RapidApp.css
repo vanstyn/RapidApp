@@ -895,12 +895,14 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 }
 
 
-.x-superboxselect-x-flag {
+.x-superboxselect-x-flag, body.ext-ie7 .x-superboxselect-x-flag, body.ext-ie6 .x-superboxselect-x-flag {
 	background-image: url(/static/ext/resources/images/default/s.gif);
 	background-repeat: no-repeat;
 	background-position:  2px center;
-	text-indent: 17px !important;
+	padding-left: 21px !important;
+	/*text-indent: 17px !important;*/
 }
+
 
 /*
 .x-superboxselect-item-close {background: url(close.png) no-repeat scroll left 0px; border: none; cursor: default; font-size: 1px; height: 16px;padding:0; position: absolute; right: 0px; top: 2px; width: 13px;display:block;cursor:pointer;}
