@@ -5,8 +5,22 @@
 */
 Ext.ns('Ext.ux.RapidApp.AppCombo2');
 Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
-
-	nativeSetValue: Ext.form.ComboBox.prototype.setValue,
+	
+	lastValueClass: '',
+	
+	nativeSetValue: function(v) {
+		if (this.valueCssField) {
+			var record = this.findRecord(this.valueField, v);
+			if (record) {
+				var addclass = record.data[this.valueCssField];
+				if (addclass) { 
+					this.el.replaceClass(this.lastValueClass,addclass);
+					this.lastValueClass = addclass;
+				}
+			}
+		}
+		return Ext.form.ComboBox.prototype.setValue.apply(this,arguments);
+	},
 	
 	setValue: function(v){
 		
