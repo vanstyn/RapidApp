@@ -70,7 +70,7 @@ sub db_cascade {
 
 sub no_dbic_cascade { dbic_cascade(0) }
 sub dbic_cascade {
-	my $enable= defined $_[0]? 1 : $_[0];
+	my $enable= defined $_[0]? $_[0] : 1;
 	return
 		cascade_copy => $enable,
 		cascade_delete => $enable;
@@ -78,7 +78,7 @@ sub dbic_cascade {
 
 sub no_deploy { deploy(0) }
 sub deploy {
-	my $enable= defined $_[0]? 1 : $_[0];
+	my $enable= defined $_[0]? $_[0] : 1;
 	return is_foreign_key_constraint => $enable;
 }
 
