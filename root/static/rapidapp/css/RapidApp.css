@@ -900,6 +900,7 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 	background-repeat: no-repeat;
 	background-position:  2px center;
 	padding-left: 21px !important;
+	white-space: normal !important;
 	/*text-indent: 17px !important;*/
 }
 

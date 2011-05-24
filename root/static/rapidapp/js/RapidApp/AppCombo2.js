@@ -51,7 +51,7 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
 		if (this.value_addClass) {
 			this.el.addClass(this.value_addClass);
 		}
-	},
+	}
 
 });
 Ext.reg('appcombo2', Ext.ux.RapidApp.AppCombo2.ComboBox);
