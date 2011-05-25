@@ -224,6 +224,8 @@ Ext.ux.MultiFilter.defaultConditionMap = {
 	'is not equal to'			: '!=',
 	'before'						: '<',
 	'after'						: '>',
+	'less than'				: '<',
+	'greater than'			: '>',
 	
 	'contains'					: 'contains',
 	'starts with'				: 'starts_with',
