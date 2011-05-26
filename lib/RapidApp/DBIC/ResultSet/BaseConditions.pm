@@ -83,6 +83,17 @@ sub search_rs {
 	$attr = {} unless ($attr);
 	$attr->{BaseConditions}++;
 	
+	DEBUG(db => (ref $self) =>
+		base_search_conditions => $self->base_search_conditions, "\n",
+		base_search_attrs => $self->base_search_attrs, "\n",
+		search => $search, "\n",
+		attrs => $attr);
+	
+	# fix group-by columns requirement for strict mode
+	# if ($self->base_search_attrs->{group_by} && $self->base_search_attrs->{columns}) {
+		# my %grpCols= @{ $self->base_search_attrs->{group_by} }, (grep { !ref $_ } @{ $self->base_search_attrs->{columns} });
+		# $self->base_search_attrs->{group_by}= [ keys %grpCols ];
+	# }
 	my $ResultSet = $self->SUPER::search_rs($self->base_search_conditions,$self->base_search_attrs);
 	return $ResultSet->SUPER::search_rs($search,$attr);
 }
