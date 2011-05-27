@@ -169,6 +169,8 @@ sub _build_join_map {
 			
 			if (ref($join) eq 'HASH') {
 				foreach my $rel (keys %$join) {
+					$map->{$Source->source_name}->{$rel} = 1;
+					
 					my $info = $Source->relationship_info($rel);
 					my $subSource = $Source->schema->source($info->{class});
 					$recurse->($subSource,$join->{$rel});
@@ -178,46 +180,50 @@ sub _build_join_map {
 		}
 		else {
 			$map->{$Source->source_name}->{$join} = 1;
-		
 		}
 	};
 	
 	$recurse->($self->ResultSource,$self->joins);
-	
+	DEBUG('foo', jons => $self->joins, "\n", map => $map, );
 	return $map;
 }
 
 has 'join_col_prefix_map' => (
 	is => 'ro',
 	isa => 'HashRef',
-	lazy => 1,
-	default => sub {
-		my $self = shift;
-		my $map = {};
-		foreach my $join (@{$self->joins}) {
-			$map->{$self->hashref_concat_recurse($join)} = 1;
-		}
-		return $map;
-	}
-);
+	lazy_build => 1 );
 
-sub hashref_concat_recurse {
-	my ($self, @list) = @_;
-	
-	my @join_list = ();
-	foreach my $ele (@list) {
-		if (ref($ele)) {
-			die "only hashrefs or strings are supported" unless (ref($ele) eq 'HASH');
-			push @join_list, $self->hashref_concat_recurse(%$ele);
-		}
-		else {
-			push @join_list, $ele;
-		}
+sub _build_join_col_prefix_map {
+	my $self= shift;
+	my $map = {};
+	my @todo= ( [ '', $self->joins ] );
+	while (my $next= pop @todo) {
+		my ($prefix, $node)= @$next;
+		if (ref $node eq 'ARRAY') {
+			# need to process each element of the array, using the same prefix
+			for my $item (@$node) {
+				if (!ref $item) {
+					$map->{$prefix.$item}= 1;
+				} else {
+					push @todo, [ $prefix, $item ];
+				}
+			}
+		} elsif (ref $node eq 'HASH') {
+			# register each key of the hash
+			# then register the value, unless it isn't a scalar, then queue it
+			while (my ($key, $val)= each %$node) {
+				$map->{$prefix.$key}= 1;
+				if (!ref $val) {
+					$map->{$prefix.$key.'_'.$val}= 1;
+				} else {
+					push @todo, [ $prefix.$key.'_', $val ];
+				}
+			}
+		} else { die "Unexpected reftype: ".ref($node); }
 	}
-	my $str = join('_',@join_list);
-	return $str;
+	DEBUG('dbiclink', joins => $self->joins, col_prefix_map => $map);
+	return $map;
 }
-
 
 has 'limit_dbiclink_columns' => (
 	is => 'ro',
