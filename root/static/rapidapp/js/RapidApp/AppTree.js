@@ -107,7 +107,15 @@ Ext.ux.RapidApp.AppTree.add = function(tree,cfg) {
 		{
 			xtype: 'textfield',
 			name: 'name',
-			fieldLabel: 'Name'
+			fieldLabel: 'Name',
+			listeners: {
+				'afterrender': function() { 
+					// try to focus the field:
+					this.focus('',10); 
+					this.focus('',200);
+					this.focus('',500);
+				}
+			}
 		}
 	];
 
