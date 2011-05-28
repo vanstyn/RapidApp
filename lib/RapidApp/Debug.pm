@@ -39,7 +39,8 @@ sub write {
 		$srcFile =~ s|^.*lib/||;
 		$locInfo = $srcFile . ' line '. $srcLine . "\n";
 	}
-	my @argText= map { $self->_debug_data_to_text($_) } @args;
+	my $maxLen= $ch->maxMsgLen;
+	my @argText= map { $self->_debug_data_to_text($_, $maxLen) } @args;
 	my $msg= join(' ', $locInfo, $color, @argText, Term::ANSIColor::CLEAR() );
 	
 	my $dest= $ch->dest || $self->dest || RapidApp::ScopedGlobals->get('log') || _getStderrHandle();
@@ -72,16 +73,17 @@ sub _create_channel {
 }
 
 sub _debug_data_to_text {
-	my ($self, $data)= @_;
+	my ($self, $data, $maxLen)= @_;
+	$maxLen ||= 2000;
 	defined $data or return '<undef>';
 	ref $data or return $data;
-	ref $data eq 'CODE' and return $self->_debug_data_to_text(&$data);
-	my $dump= Data::Dumper->new([$data], [''])->Indent(1)->Maxdepth(5)->Dump;
-	$dump= substr($dump, 4, length($dump)-6); # trim off "$ = " and ";\n"
+	ref $data eq 'CODE' and return $self->_debug_data_to_text(&$data, $maxLen);
+	my $dump= Data::Dumper->new([$data], [''])->Terse(1)->Indent(1)->Maxdepth(5)->Dump;
+	#$dump= substr($dump, 4, length($dump)-6); # trim off "$ = " and ";\n"
 	length($dump) < 80 # inline short hashes
 		and $dump =~ s/\n\s*/ /g;
 	length($dump) > 2000 # truncate long hashes
-		and $dump= substr($dump, 0, 2000)."\n[...]\n";
+		and $dump= substr($dump, 0, $maxLen)."\n[...]\n";
 	return $dump;
 }
 
@@ -145,6 +147,7 @@ has 'color'      => ( is => 'rw', default => Term::ANSIColor::YELLOW() );
 has 'dest'       => ( is => 'rw' ); # log object or file handle
 has 'showSrcLoc' => ( is => 'rw', default => 1 );
 has 'autoFlush'  => ( is => 'rw', default => 0 );
+has 'maxMsgLen'  => ( is => 'rw', default => 2000 );
 
 sub enabled {
 	my ($self, $newVal)= @_;
