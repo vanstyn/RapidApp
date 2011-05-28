@@ -20,6 +20,7 @@ our $VERSION = '0.1';
 use DateTime::Format::Flexible;
 use DateTime;
 
+use RapidApp::Debug 'DEBUG';
 use RapidApp::Include qw(sugar perlutil);
 
 
@@ -36,6 +37,7 @@ has 'joins'    					=> ( is => 'rw',	required => 0, 	isa => 'ArrayRef', default 
 has 'implied_joins'				=> ( is => 'rw',  required => 0,    isa => 'Bool',     default => 0 );
 
 has 'group_by'    				=> ( is => 'ro',	default => undef	);
+has 'distinct'    				=> ( is => 'ro',	default => 0 );
 has 'prefetch'    				=> ( is => 'ro',	default => undef	);
 
 has 'base_search_set'    		=> ( is => 'ro',	default => undef );
@@ -215,7 +217,6 @@ sub Attr_spec {
 	push @cols, @{$params->{columns}} if (ref($params->{columns}) eq 'ARRAY');
 	push @cols, @{$self->columns} if (scalar(@{$self->columns}));
 	
-	
 	# -- Extract cols from multifilters:
 	# Most of this logic is duplicated in the Search_spec method. Would be nice to find a 
 	# better way to handle this:
@@ -325,17 +326,21 @@ sub Attr_spec {
 			push @{$attr->{'as'}}, $extName;
 		}
 		
-		# Delete unused joins/relationships for performance:
-		my @newjoins = ();
-		foreach my $relation (@{$attr->{join}}) {
-			foreach my $needed (keys %$in_use) {
-				if ($self->multiCheck($needed,$relation)) {
-					push @newjoins, $relation;
-					last;
-				}
-			}
-		}
-		$attr->{join} = \@newjoins;
+		
+		# Delete unused joins/relationships for performance.
+		# Also, remove duplicate joins
+		my $newJoins= {};
+		$self->simplify_joins($newJoins, $attr->{join}, $in_use);
+		$attr->{join}= $newJoins;
+		# foreach my $relation (@{$attr->{join}}) {
+			# foreach my $needed (keys %$in_use) {
+				# if ($self->multiCheck($needed,$relation)) {
+					# push @newjoins, $relation;
+					# last;
+				# }
+			# }
+		# }
+		# $attr->{join} = \@newjoins;
 		
 	}
 	else {
@@ -360,6 +365,7 @@ sub Attr_spec {
 	# --
 	$attr->{prefetch} = $self->prefetch if (defined $self->prefetch);
 	$attr->{group_by} = $self->group_by if (defined $self->group_by);
+	$attr->{distinct} = 1 if $self->distinct;
 	
 	return $attr;
 }
@@ -426,8 +432,51 @@ sub multiCheck {
 	return 0;
 }
 
+=pod
+This function converts things like
+  [ { a => b },
+    { a => { b => c } },
+    a,
+    a => [ d, f ],
+  ]
+into
+  { a => { b => { c => {}, }, d => {}, f => {} } }
+resulting in a minimum of joined tables.
 
+This routine would be a little nicer if the output were
+  { a => [ { b => c }, d, f ] }
+but that would be a lot of work, and nothing to gain.
 
+=cut
+sub simplify_joins {
+	my ($self, $container, $joins, $neededSet)= @_;
+	
+	if (!ref $joins) {
+		return 0 unless $neededSet->{$joins};
+		$container->{$joins}= {};
+		return 1;
+	}
+	
+	if (ref $joins eq 'HASH') {
+		my $used= 0;
+		while (my ($k, $v)= each %$joins) {
+			my $inner= $container->{$k} || {};
+			if ($self->simplify_joins($inner, $v, $neededSet) || $neededSet->{$k}) {
+				$container->{$k}= $inner;
+				$used= 1;
+			}
+		}
+		return $used;
+	}
+	
+	if (ref $joins eq 'ARRAY') {
+		my $used= 0;
+		for (@$joins) {
+			$used += $self->simplify_joins($container, $_, $neededSet);
+		}
+		return $used > 0;
+	}
+}
 
 =pod
 sub addToFlatHashref {

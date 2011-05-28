@@ -14,6 +14,7 @@ use Moose::Util::TypeConstraints;
 
 has 'joins' => ( is => 'ro', default => sub {[]} );
 has 'group_by' => ( is => 'ro', isa => 'Maybe[Str|ArrayRef]', default => undef );
+has 'distinct' => ( is => 'ro', isa => 'Bool', default => 0 );
 
 has 'base_search_set' => ( is => 'ro',	default => undef );
 has 'fieldname_transforms' => ( is => 'ro', default => sub {{}});
@@ -99,6 +100,7 @@ sub _build_DbicExtQuery {
 		no_search_fields			=> $no_search_fields,
 		literal_dbf_colnames		=> $self->literal_dbf_colnames,
 		joins 						=> $self->joins,
+		distinct						=> $self->distinct,
 		#implied_joins			=> 1
 		#group_by				=> [ 'me.id' ],
 	};
@@ -184,7 +186,7 @@ sub _build_join_map {
 	};
 	
 	$recurse->($self->ResultSource,$self->joins);
-	DEBUG('foo', jons => $self->joins, "\n", map => $map, );
+	DEBUG('dbiclink', jons => $self->joins, "\n", map => $map, );
 	return $map;
 }
 
@@ -337,7 +339,7 @@ around 'BUILD' => sub {
 			
 			$self->apply_columns( $colname => $opts );
 			
-			DEBUG(dbiclink => BOLD . ref($self) . ': ' . $colname, sub { $self->log->flush });
+			DEBUG(dbiclink => BOLD . ref($self) . ': ' . $colname);
 			
 			# -- Build combos (dropdowns) for every related field (for use in multifilters currently):
 			if ($prefix and not ($ENV{NO_REL_COMBOS} or $self->no_rel_combos)) {
