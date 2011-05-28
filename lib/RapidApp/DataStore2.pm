@@ -598,7 +598,8 @@ has 'store_load_fn' => ( is => 'ro', isa => 'RapidApp::JSONFunc', lazy => 1, def
 		'function() {' .
 			'var storeId = "' . $self->storeId . '";' .
 			'var storeByLookup = Ext.StoreMgr.lookup(storeId);' .
-			'if(storeByLookup) { storeByLookup.load(); }' .
+			# Temp changed load() to reload() for HOPS ticket #87 - fixme mike
+			'if(storeByLookup) { storeByLookup.reload(); }' .
 		'}'
 	);
 });
