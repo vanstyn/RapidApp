@@ -3028,14 +3028,14 @@ Ext.reg('ajaxcmp',Ext.ux.RapidApp.AjaxCmp);
  I couldn't get normal checkbox to work properly within AppDV - 2011-05-29 by HV
 */
 Ext.ux.RapidApp.LogicalCheckbox = Ext.extend(Ext.form.Checkbox,{
-	defaultAutoCreate : { tag: 'div', cls: 'x-logical-checkbox icon-checkbox-no' },
+	defaultAutoCreate : { tag: 'div', cls: 'x-logical-checkbox icon-checkbox-clear' },
 	setValue: function(v) {
 		Ext.ux.RapidApp.LogicalCheckbox.superclass.setValue.apply(this,arguments);
 		if (v) {
-			this.el.replaceClass('icon-checkbox-no','icon-checkbox-yes');
+			this.el.replaceClass('icon-checkbox-clear','icon-checkbox');
 		}
 		else {
-			this.el.replaceClass('icon-checkbox-yes','icon-checkbox-no');
+			this.el.replaceClass('icon-checkbox','icon-checkbox-clear');
 		}
 	},
 	onClick: function() {
