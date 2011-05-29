@@ -3022,4 +3022,30 @@ Ext.ux.RapidApp.AjaxCmp = Ext.extend(Ext.Component, {
 });
 Ext.reg('ajaxcmp',Ext.ux.RapidApp.AjaxCmp);
 
+/* 
+ This works just like checkbox except it renders a simple div and toggles a class
+ instead of using a real "input" type=checkbox element. I needed to create this because
+ I couldn't get normal checkbox to work properly within AppDV - 2011-05-29 by HV
+*/
+Ext.ux.RapidApp.LogicalCheckbox = Ext.extend(Ext.form.Checkbox,{
+	defaultAutoCreate : { tag: 'div', cls: 'x-logical-checkbox icon-checkbox-no' },
+	setValue: function(v) {
+		Ext.ux.RapidApp.LogicalCheckbox.superclass.setValue.apply(this,arguments);
+		if (v) {
+			this.el.replaceClass('icon-checkbox-no','icon-checkbox-yes');
+		}
+		else {
+			this.el.replaceClass('icon-checkbox-yes','icon-checkbox-no');
+		}
+	},
+	onClick: function() {
+		if (this.checked) {
+			this.setValue(false);
+		}
+		else {
+			this.setValue(true);
+		}
+	}
+});
+Ext.reg('logical-checkbox',Ext.ux.RapidApp.LogicalCheckbox);
 
