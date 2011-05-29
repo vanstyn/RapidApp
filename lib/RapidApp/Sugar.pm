@@ -56,7 +56,11 @@ sub ra_die {
 }
 
 sub usererr {
-	return RapidApp::Responder::UserError->new( userMessage => "" . shift(@_) . ""  ) if (scalar @_ == 1);
+	if (scalar @_ == 1) {
+		# If the passed arg is already a UserError object, return it as-is:
+		return $_[0] if (ref($_[0]) eq 'RapidApp::Responder::UserError');
+		return RapidApp::Responder::UserError->new( userMessage => "" . shift(@_) . ""  );
+	}
 	return RapidApp::Responder::UserError->new(@_);
 }
 
