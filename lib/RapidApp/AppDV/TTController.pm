@@ -342,27 +342,20 @@ sub div_module {
 
 
 
-
-
-has 'toggle' => (
-	is => 'ro',
-	lazy => 1,
-	default => sub {
-		my $self = shift;
-		return {
-			edit => $self->div_clickable(
-				'<div class="edit-record-toggle">' .
-					'<div class="edit">Edit</div>' .
-					'<div class="save">Save</div>' .
-					'<div class="cancel">Cancel</div>' .
-				'</div>'
-			),
-							
-			select	=> '<div class="appdv-toggle select"></div>'
-		};
-	}
-);
-
+sub toggle {
+	my $self = shift;
+	return {
+		edit => $self->div_clickable(
+			'<div class="edit-record-toggle">' .
+				'<div class="edit">Edit</div>' .
+				'<div class="save">Save</div>' .
+				'<div class="cancel">Cancel</div>' .
+			'</div>'
+		),
+						
+		select	=> '<div class="appdv-toggle select"></div>'
+	};
+}
 
 
 
