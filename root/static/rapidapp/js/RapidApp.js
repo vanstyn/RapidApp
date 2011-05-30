@@ -3081,6 +3081,13 @@ Ext.ux.RapidApp.AjaxCmp = Ext.extend(Ext.Component, {
 					var cmpconf = Ext.decode(response.responseText);
 					if(!Ext.isObject(cmpconf)) { throw 'responseText is not a JSON encoded object'; }
 					
+					// preserve plugins:
+					if (Ext.isArray(cmpconf.plugins) && Ext.isArray(this.applyCnf.plugins)) {
+						Ext.each(cmpconf.plugins,function(plugin) {
+							this.applyCnf.plugins.push(plugin);
+						},this);
+					}
+					
 					Ext.apply(cmpconf,this.applyCnf);
 					cmpconf.renderTo = this.getEl();
 					

@@ -575,3 +575,42 @@ Ext.ux.RapidApp.Plugin.Combo.AppSuperBox = Ext.extend(Ext.ux.RapidApp.Plugin.Com
 });
 Ext.preg('appsuperbox',Ext.ux.RapidApp.Plugin.Combo.AppSuperBox);
 
+
+Ext.ns('Ext.ux.RapidApp.Plugin');
+Ext.ux.RapidApp.Plugin.ReloadServerEvents = Ext.extend(Ext.util.Observable, {
+	
+	constructor: function(cnf) {
+		Ext.apply(this,cnf);
+	},
+	
+	init: function(cmp){
+		this.cmp = cmp;
+		if(Ext.isArray(this.cmp.reloadEvents)) {
+			this.cmp.on('render', this.onRender, this);
+		}
+	},
+	
+	onRender: function() {
+
+		var handler = {
+			id: this.cmp.id,
+			func: function() {
+				var store = null;
+				if(Ext.isFunction(this.getStore)) { store = this.getStore(); }
+				if(! store) { store = this.store; }
+				if(store && Ext.isFunction(store.reload)) {
+					store.reload();
+				}
+			}
+		};
+		
+		Ext.each(this.cmp.reloadEvents,function(event) {
+			Ext.ux.RapidApp.EventObject.attachServerEvents(handler,event);
+		});
+	}
+	
+});
+Ext.preg('reload-server-events',Ext.ux.RapidApp.Plugin.ReloadServerEvents);
+
+
+
