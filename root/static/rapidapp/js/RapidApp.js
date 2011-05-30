@@ -5,6 +5,88 @@ Ext.ns('Ext.log');
 Ext.log = function() {};
 
 Ext.ns('Ext.ux.RapidApp');
+	
+/* Global Server Event Object */
+Ext.ux.RapidApp.EventObjectClass = Ext.extend(Ext.util.Observable,{
+	constructor: function(config) {
+		this.addEvents('serverevent');
+		Ext.ux.RapidApp.EventObjectClass.superclass.constructor.call(this,config);
+		this.on('serverevent',this.onServerEvent,this);
+	},
+	
+	Fire: function() {
+		var a = arguments;
+		var arg_list = [ "'serverevent'" ];
+		for( i = 0; i < a.length; i++) {
+			arg_list.push('a[' + i + ']');
+		}
+		var eval_str = 'this.fireEvent(' + arg_list.join(',') + ');';
+		eval( eval_str );
+	},
+	
+	handlerMap: {},
+	
+	attachServerEvents: function() {
+		var a = Array.prototype.slice.call(arguments, 0);
+		var handler = a.shift();
+		Ext.each(a,function(event) {
+			this.attachHandlerToEvent(handler,event);
+		},this);
+	},
+	
+	attachHandlerToEvent: function(handler,event) {
+		if(! Ext.isObject(handler) || ! Ext.isFunction(handler.func) || ! Ext.isString(handler.id)) {
+			throw "handler must be an object with func and id";
+		}
+		
+		if (! Ext.isArray(this.handlerMap[event])) { this.handlerMap[event] = []; }
+
+		var skip = false;
+		Ext.each(this.handlerMap[event],function(item) {
+			// Skip adding if its already in the list:
+			if (handler.id == item.id) {
+				skip = true;
+			};
+		});
+		
+		if(skip) { return; }
+		
+		return this.handlerMap[event].push(handler);
+	},
+	
+	onServerEvent: function() {
+		var events = Array.prototype.slice.call(arguments, 0);
+		var handlers = [];
+		var seenIds = {};
+		
+		Ext.each(events,function(event) {
+			if(Ext.isArray(this.handlerMap[event])) {
+				Ext.each(this.handlerMap[event],function(handler) {
+					if(!seenIds[handler.id]++) {
+						handlers.push(handler);
+					}
+				},this);
+			}
+		},this);
+		
+		return this.callHandlers(handlers);
+	},
+	
+	callHandlers: function(handlers) {
+		Ext.each(handlers,function(handler) {
+			var scope = Ext.getCmp(handler.id);
+			if (scope) {
+				handler.func.call(scope);
+			}
+			else {
+				// TODO: remove the invalid id from handlerMap
+				
+			}
+		},this);
+	}
+});
+Ext.ux.RapidApp.EventObject = new Ext.ux.RapidApp.EventObjectClass();
+	
 
 Ext.ns('Ext.ux.RapidApp.userPrefs');
 Ext.ux.RapidApp.userPrefs.timezone= 'America/New_York';
