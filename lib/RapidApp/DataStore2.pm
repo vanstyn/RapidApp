@@ -20,6 +20,7 @@ has 'store_use_xtype'	=> ( is => 'ro', default => 0 );
 has 'store_autoLoad'		=> ( is => 'rw', default => sub {\0} );
 has 'reload_on_save' 	=> ( is => 'ro', default => 1 );
 
+has 'max_pagesize'		=> ( is => 'ro', isa => 'Maybe[Int]', default => undef );
 
 has 'read_raw_mungers' => (
 	traits    => [ 'Array' ],
@@ -382,12 +383,39 @@ sub read {
 	# params is optional
 	my ($self, $params)= @_;
 	
+	$self->enforce_max_pagesize;
+	
 	my $data = $self->read_raw($params);
 	
 	return $self->meta_json_packet($data);
 }
 
-
+sub enforce_max_pagesize {
+	my $self = shift;
+	my $params = $self->c->req->params;
+	
+	return unless (
+		$self->max_pagesize and	(
+			not defined $params->{limit} or 
+			$params->{limit} > $self->max_pagesize or
+			not defined $params->{start}
+		)
+	);
+	
+	my $new_params = {};
+	$new_params->{start} = 0 unless (defined $params->{start});
+	$new_params->{limit} = $self->max_pagesize if (
+		not defined $params->{limit} or 
+		$params->{limit} > $self->max_pagesize
+	);
+	
+	%$params = (
+		%$params,
+		%$new_params
+	);
+	
+	$self->c->log->info(ref($self) . '->enforce_max_pagesize: request params modified: ' . Dumper($new_params)); 
+}
 
 sub read_raw {
 	# params is optional
@@ -598,8 +626,7 @@ has 'store_load_fn' => ( is => 'ro', isa => 'RapidApp::JSONFunc', lazy => 1, def
 		'function() {' .
 			'var storeId = "' . $self->storeId . '";' .
 			'var storeByLookup = Ext.StoreMgr.lookup(storeId);' .
-			# Temp changed load() to reload() for HOPS ticket #87 - fixme mike
-			'if(storeByLookup) { storeByLookup.reload(); }' .
+			'if(storeByLookup) { storeByLookup.load(); }' .
 		'}'
 	);
 });

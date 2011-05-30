@@ -10,6 +10,8 @@ use RapidApp::DataStore2;
 has 'record_pk'			=> ( is => 'ro', default => 'id' );
 has 'DataStore_class'	=> ( is => 'ro', default => 'RapidApp::DataStore2' );
 
+has 'max_pagesize'		=> ( is => 'ro', isa => 'Maybe[Int]', default => undef );
+
 has 'DataStore' => (
 	is			=> 'rw',
 	isa		=> 'RapidApp::DataStore2',
@@ -54,7 +56,10 @@ sub BUILD {}
 before 'BUILD' => sub {
 	my $self = shift;
 
-	my $store_params = { record_pk => $self->record_pk };
+	my $store_params = { 
+		record_pk 		=> $self->record_pk,
+		max_pagesize	=> $self->max_pagesize
+	};
 	
 	if ($self->can('create_records')) {
 		$self->apply_flags( can_create => 1 ) unless ($self->flag_defined('can_create'));
