@@ -465,8 +465,22 @@ sub set_response_callback {
 }
 
 
-
-
+has 'response_server_events' => (
+	is => 'ro',
+	isa => 'ArrayRef[Str]',
+	traits => [ 'Array' ],
+	default => sub {[]},
+	handles => {
+		add_response_server_events	=> 'push',
+		all_response_server_events	=> 'uniq'
+	}
+);
+after 'add_response_server_events' => sub {
+	my $self = shift;
+	$self->c->response->header( 
+		'X-RapidApp-ServerEvents' => $self->json->encode([ $self->all_response_server_events ]) 
+	);
+};
 
 
 

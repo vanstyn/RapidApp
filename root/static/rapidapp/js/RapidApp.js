@@ -450,6 +450,16 @@ Ext.ux.RapidApp.handleCustomServerDirectives= function(response, continue_curren
 		this.response = response;
 		Ext.ux.RapidApp.handleServerCallBack.call(this,servercallback);
 	}
+	
+	var serverevents = response.getResponseHeader('X-RapidApp-ServerEvents');
+	if (serverevents) {
+		Ext.ux.RapidApp.handleServerEvents(serverevents);
+	}
+}
+
+Ext.ux.RapidApp.handleServerEvents = function(headerdata) {
+	var events = Ext.decode(headerdata);
+	Ext.ux.RapidApp.EventObject.Fire.apply(Ext.ux.RapidApp.EventObject,events);
 }
 
 // returns whether or not to keep processing the request
