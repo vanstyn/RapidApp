@@ -87,6 +87,24 @@ has 'id' => (
 	traits => [ 'RapidApp::Role::GridColParam' ] 
 );
 
+has 'no_column' => ( 
+	is => 'rw', 
+	default => sub {\0},
+	traits => [ 'RapidApp::Role::GridColParam' ] 
+);
+
+has 'no_multifilter' => ( 
+	is => 'rw', 
+	default => sub {\0},
+	traits => [ 'RapidApp::Role::GridColParam' ] 
+);
+
+has 'no_quick_search' => ( 
+	is => 'rw', 
+	default => sub {\0},
+	traits => [ 'RapidApp::Role::GridColParam' ] 
+);
+
 has 'data_type'	=> ( is => 'rw', default => undef );
 
 has 'filter'	=> ( is => 'rw', default => undef, traits => [ 'RapidApp::Role::GridColParam' ]  );

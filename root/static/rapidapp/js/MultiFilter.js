@@ -59,19 +59,18 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 	setFields: function() {
 		var fields = [];
 		
-		//this.store.fields.each(function(item,index,length) {
-		//	fields.push(item.name);
-		//});
+		//var columns = this.grid.getColumnModel().config;
+		var columns = this.grid.initialConfig.columns;
 		
 		if(! this.grid.no_multifilter_fields) { this.grid.no_multifilter_fields = {}; }
-		Ext.each(this.grid.getColumnModel().config,function(item) {
-			if (! this.grid.no_multifilter_fields[item.dataIndex]) {
-				fields.push(item.dataIndex);
+		Ext.each(columns,function(column) {
+			if (! this.grid.no_multifilter_fields[column.dataIndex] && ! column.no_multifilter) {
+				fields.push(column.dataIndex);
 			}
 		},this);
 		
 		this.Criteria = Ext.extend(Ext.ux.MultiFilter.Criteria,{
-			gridColumns: this.grid.getColumnModel().config,
+			gridColumns: columns,
 			fieldList: fields
 		});
 	},

@@ -190,6 +190,13 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 
 	initComponent: function() {
 		
+		// remove columns with 'no_column' set to true:
+		var new_columns = []
+		Ext.each(this.columns,function(column,index,arr) {
+			if(!column.no_column) { new_columns.push(column); }
+		},this);
+		this.columns = new_columns;
+		
 		var bbar_items = [];
 		if(Ext.isArray(this.bbar)) { bbar_items = this.bbar; }
 		
@@ -231,7 +238,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 			if (this.gridsearch_remote) { grid_search_cnf['mode'] = 'remote'; }
 
 			if(!this.plugins){ this.plugins = []; }
-			this.plugins.push(new Ext.ux.grid.Search(grid_search_cnf));
+			//this.plugins.push(new Ext.ux.grid.Search(grid_search_cnf));
+			this.plugins.push(new Ext.ux.RapidApp.Plugin.GridQuickSearch(grid_search_cnf));
 		}
 		// ---------------------------- //
 		
