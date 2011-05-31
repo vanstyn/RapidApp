@@ -190,12 +190,16 @@ sub options_menu {
 	my $items = $self->options_menu_items or return undef;
 	return undef unless (ref($items) eq 'ARRAY') && scalar(@$items);
 	
+	my $buttonId = $self->instance_id . '-options-menu-btn';
+	
 	return {
 		xtype    => 'button',
+		id			=> $buttonId,
 		text     => '<div class="'.$self->button_text_cls.'">Options</div>',
 		iconCls  => 'icon-gears-24x24',
 		scale    => $self->button_scale,
 		menu => {
+			buttonId => $buttonId,
 			items	=> $items
 		}
 	};
