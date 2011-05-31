@@ -228,10 +228,10 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 		if (this.gridsearch && this.tbar) {
 
 			var grid_search_cnf = {
-				iconCls:'icon-zoom',
+				//iconCls:'icon-zoom',
 				autoFocus:false,
 				mode: 'local', // local or remote
-				width: 300,
+				width: 250,
 				position: 'top'
 			};
 

@@ -638,7 +638,7 @@ Ext.extend(Ext.ux.RapidApp.Plugin.GridQuickSearch, Ext.util.Observable, {
 	/**
 	 * @cfg {String} searchText Text to display on menu button
 	 */
-	 searchText:'Search'
+	 searchText:'Quick Search'
 
 	/**
 	 * @cfg {String} searchTipText Text to display as input tooltip. Set to '' for no tooltip
@@ -660,7 +660,8 @@ Ext.extend(Ext.ux.RapidApp.Plugin.GridQuickSearch, Ext.util.Observable, {
 	/**
 	 * @cfg {String} iconCls Icon class for menu button (defaults to "icon-magnifier")
 	 */
-	,iconCls:'icon-magnifier'
+	//,iconCls:'icon-magnifier'
+	,iconCls: null
 
 	/**
 	 * @cfg {String/Array} checkIndexes Which indexes to check by default. Can be either 'all' for all indexes
