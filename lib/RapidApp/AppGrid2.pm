@@ -245,10 +245,14 @@ sub tbar_items {
 	
 	push @{$arrayref}, '->';
 	
-	push @{$arrayref}, $self->add_button if (defined $self->add_record_class);
+	push @{$arrayref}, $self->add_button if (
+		defined $self->add_record_class and
+		$self->show_add_button
+	);
 
 	return (scalar @{$arrayref} > 1) ? $arrayref : undef;
 }
+sub show_add_button { 1 }
 
 sub add_button {
 	my $self = shift;
