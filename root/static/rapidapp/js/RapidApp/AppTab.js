@@ -190,6 +190,12 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 
 	initComponent: function() {
 		
+		// -- vv -- 
+		// Enable Ext.ux.RapidApp.Plugin.GridHmenuColumnsToggle plugin:
+		if(!this.plugins){ this.plugins = []; }
+		this.plugins.push('grid-hmenu-columns-toggle');
+		// -- ^^ --
+		
 		// remove columns with 'no_column' set to true:
 		var new_columns = []
 		Ext.each(this.columns,function(column,index,arr) {

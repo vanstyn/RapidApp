@@ -3148,3 +3148,81 @@ Ext.ux.RapidApp.LogicalCheckbox = Ext.extend(Ext.form.Checkbox,{
 });
 Ext.reg('logical-checkbox',Ext.ux.RapidApp.LogicalCheckbox);
 
+
+/*
+ Ext.ux.RapidApp.menu.ToggleSubmenuItem
+ 2011-06-08 by HV
+
+ Works like Ext.menu.Item, except the submenu (if defined) is not displayed on mouse-over.
+ The item has to be clicked to display the submenu, and then it stays displayed until the item
+ is clicked a second time or if the user clicks outside the menu. This is in contrast to the
+ normal Item submenu behavior which operates on mouse-over and disapears if you accidently
+ move the mouse outside the border of the item and the menu (which is really easy to do when
+ you move the cursor from the item to the menu, and is very frustrating to users).
+
+ This class also provides a loading icon feature which will convert the item icon into a loading
+ spinner icon after the item is clicked until the sub menu is shown. This is useful because it
+ can sometimes take several seconds to show the menu when there are are lot of items.
+
+ If there is no 'menu' or if a handler is defined, this class behaves exactly the same as
+ Ext.menu.Item
+*/
+Ext.ns('Ext.ux.RapidApp.menu');
+Ext.ux.RapidApp.menu.ToggleSubmenuItem = Ext.extend(Ext.menu.Item,{
+	
+	submenuShowPending: false,
+	showMenuLoadMask: null,
+	loadingIconCls: 'icon-loading', // <-- set this to null to disable the loading icon feature
+	
+	initComponent: function() {
+		if(this.menu && !this.handler) {
+			
+			this.itemCls = 'x-menu-item x-menu-item-arrow';
+			
+			this.origMenu = this.menu;
+			delete this.menu;
+			
+			if (typeof this.origMenu.getEl != "function") {
+				this.origMenu = new Ext.menu.Menu(this.origMenu);
+			}
+			
+			this.origMenu.on('show',this.onSubmenuShow,this);
+			this.origMenu.allowOtherMenus = true;
+			
+			this.handler = function(btn) {
+				if(this.submenuShowPending) { return; }
+				
+				if(this.origMenu.isVisible()) {
+					this.origMenu.hide();
+					this.setShowPending(false);
+				}
+				else {
+					this.setShowPending(true);
+					this.origMenu.show.defer(100,this.origMenu,[btn.getEl(),'tr?']);
+				}
+			}
+		}
+		Ext.ux.RapidApp.menu.ToggleSubmenuItem.superclass.initComponent.call(this);
+	},
+	
+	onSubmenuShow: function() {
+		this.setShowPending(false);
+	},
+	
+	setShowPending: function(val) {
+		if(val) {
+			this.submenuShowPending = true;
+			if(this.loadingIconCls) {
+				this.setIconClass(this.loadingIconCls);
+			}
+		}
+		else {
+			this.submenuShowPending = false;
+			if(this.loadingIconCls) {
+				this.setIconClass(this.initialConfig.iconCls);
+			}
+		}
+	}
+});
+Ext.reg('menutoggleitem',Ext.ux.RapidApp.menu.ToggleSubmenuItem);
+

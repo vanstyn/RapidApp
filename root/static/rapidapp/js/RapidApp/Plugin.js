@@ -1107,4 +1107,35 @@ Ext.extend(Ext.ux.RapidApp.Plugin.GridQuickSearch, Ext.util.Observable, {
 
 
 
+/*
+ Ext.ux.RapidApp.Plugin.GridHmenuColumnsToggle
+ 2011-06-08 by HV
+
+ Plugin for Ext.grid.GridPanel that converts the 'Columns' hmenu submenu item
+ into a Ext.ux.RapidApp.menu.ToggleSubmenuItem (instead of Ext.menu.Item)
+
+ See the Ext.ux.RapidApp.menu.ToggleSubmenuItem class for more details.
+*/
+Ext.ux.RapidApp.Plugin.GridHmenuColumnsToggle = Ext.extend(Ext.util.Observable,{
+	init: function(cmp) {
+		this.cmp = cmp;
+		cmp.on('afterrender',this.onAfterrender,this);
+	},
+	
+	onAfterrender: function() {
+		
+		var hmenu = this.cmp.view.hmenu;
+		var colsItem = hmenu.getComponent('columns');
+		if (!colsItem) { return; }
+		colsItem.hide();
+		
+		hmenu.add(Ext.apply(Ext.apply({},colsItem.initialConfig),{
+			xtype: 'menutoggleitem',
+			itemId:'columns-new'
+		}));
+	}
+});
+Ext.preg('grid-hmenu-columns-toggle',Ext.ux.RapidApp.Plugin.GridHmenuColumnsToggle);
+
+
 
