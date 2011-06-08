@@ -60,7 +60,7 @@ sub relation {
 	$pkg->$relType($name, $peerClass, $fieldMap, { @opts });
 }
 
-sub no_db_cascade { no_db_cascade(0) }
+sub no_db_cascade { db_cascade('RESTRICT') }
 sub db_cascade {
 	my $mode= scalar(@_)? $_[0] : 'CASCADE';
 	return
