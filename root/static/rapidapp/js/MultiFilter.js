@@ -121,7 +121,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			title: 'MultiFilter',
 			layout: 'anchor',
 			width: 750,
-			height: 600,
+			height: 500,
 			closable: true,
 			modal: true,
 			

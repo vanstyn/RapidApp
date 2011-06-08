@@ -42,6 +42,7 @@ has 'DataStore' => (
 		apply_store_config		=> 'apply_extconfig',
 		valid_colname				=> 'valid_colname',
 		apply_columns_ordered	=> 'apply_columns_ordered',
+		batch_apply_opts_existing => 'batch_apply_opts_existing'
 		
 	
 	}

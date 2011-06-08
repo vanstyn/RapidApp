@@ -310,6 +310,31 @@ sub set_sort {
 	return $self->apply_config( sort_spec => { %opt } );
 }
 
+# batch_apply_opts_existing():
+# Same as batch_apply_opts except columns that do not already exist
+# are pruned out of columns and column_order
+sub batch_apply_opts_existing {
+	my $self = shift;
+	my %opts = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	foreach my $opt (keys %opts) {
+		if ($opt eq 'columns' and ref($opts{$opt}) eq 'HASH') {		
+			foreach my $col (keys %{$opts{$opt}}) {
+				delete $opts{$opt}->{$col} unless (defined $self->columns->{$col});
+			}				
+		}
+		elsif ($opt eq 'column_order') {
+			my @new_list = ();
+			foreach my $col (@{$opts{$opt}}) {
+				next unless (defined $self->columns->{$col});
+				push @new_list, $col;
+			}
+			@{$opts{$opt}} = @new_list;
+		}				
+	}
+	
+	return $self->batch_apply_opts(\%opts);
+}
 
 sub batch_apply_opts {
 	my $self = shift;
