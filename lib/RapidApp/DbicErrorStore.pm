@@ -4,6 +4,7 @@ use Moose;
 with 'RapidApp::Role::ErrorReportStore';
 
 use RapidApp::Include 'perlutil';
+use RapidApp::Debug 'DEBUG';
 
 use Storable ('freeze', 'thaw');
 

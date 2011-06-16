@@ -232,6 +232,7 @@ sub onError {
 		my $report= RapidApp::ErrorReport->new(
 			exception => $err,
 			traces => \@traces,
+			debugInfo => $c->_collect_debug_info_for_error_report,
 		);
 		
 		# save the report
@@ -255,6 +256,25 @@ sub onError {
 	
 	$c->view('RapidApp::OnError')->process($c);
 	$c->clear_errors;
+}
+
+sub _collect_debug_info_for_error_report {
+	my $c= shift;
+	my $info= {};
+	# absolutely do not let this code stop us from saving the report
+	try {
+		$info->{path}=   $c->request->path;
+		$info->{params}= $c->request->parameters;
+		$info->{uid}=    defined $c->user? $c->user->id : 'no user';
+		$info->{uname}=  defined $c->user? $c->user->username : '??';
+		$info->{isSys}=  $c->session->{isSystemAccount}? 'yes':'no';
+	}
+	catch {
+		my $msg= ''.$_;
+		$msg= substr($msg, 0, 64).'...' if length($msg) > 64;
+		$info->{err}= "(error building debug info: '$msg')";
+	};
+	return $info;
 }
 
 sub scream {

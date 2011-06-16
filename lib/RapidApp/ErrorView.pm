@@ -73,9 +73,9 @@ sub BUILD {
 	$self->add_formpanel_items(
 		{ name => 'id',        fieldLabel => 'ID' },
 		{ name => 'dateTime',  fieldLabel => 'Date' },
+		{ name => 'debugInfo', fieldLabel => 'Info' },
 		{ name => 'exception', fieldLabel => 'Error' },
 		{ name => 'traces',    fieldLabel => 'Stack' },
-		{ name => 'debugInfo', fieldLabel => 'Info' },
 	);
 	
 	$self->DataStore->apply_flags(
@@ -135,9 +135,13 @@ sub read_records {
 	$htmlRenderCxt->data2html($errReport->debugInfo);
 	my $infoStr= $htmlRenderCxt->getBody;
 	
+	# TODO: when RapidApp has global timezone support, swap this for the user's timezone.
+	my $date= $errReport->dateTime;
+	$date->set_time_zone('local') if $date;
+	
 	my $row= {
 		id => $id,
-		dateTime => $errReport->dateTime->ymd .' '. $errReport->dateTime->hms,
+		dateTime => $date? $date->ymd .' '. $date->hms : '<not recorded>',
 		exception => $exceptionStr,
 		traces => $traceStr,
 		debugInfo => $infoStr,

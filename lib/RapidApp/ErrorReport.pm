@@ -4,11 +4,12 @@ use Moose;
 use RapidApp::Error;
 use Scalar::Util 'reftype';
 use RapidApp::Data::DeepMap ':map_fn';
+use RapidApp::Debug 'DEBUG';
 
 our $TRIMMER;
 our $MAX_DEPTH;
 
-has 'dateTime' => ( is => 'rw', isa => 'DateTime', required => 1, lazy_build => 1 );
+has 'dateTime' => ( is => 'rw', isa => 'DateTime', required => 1, builder => '_build_dateTime' );
 sub _build_dateTime {
 	my $self= shift;
 	my $d= DateTime->from_epoch(epoch => time, time_zone => 'UTC');
