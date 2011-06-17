@@ -36,6 +36,12 @@ sub BUILD {
 	$self->apply_actions( add 		=> 'call_add_node' ) if ($self->can('add_node'));
 	$self->apply_actions( delete 	=> 'call_delete_node' ) if ($self->can('delete_node'));
 	
+	if($self->can('rename_node')) {
+		$self->add_listener( contextmenu => 'Ext.ux.RapidApp.AppTree_contextmenu_handler' );
+		$self->apply_actions( rename 	=> 'call_rename_node' );
+		$self->apply_extconfig( rename_node_url => $self->suburl('rename') );
+	}
+	
 	
 	$self->add_ONREQUEST_calls('init_onreq');
 	
@@ -140,7 +146,12 @@ sub call_delete_node {
 	return $self->delete_node($node,$recursive);
 }
 
-
+sub call_rename_node {
+	my $self = shift;
+	my $name = $self->c->req->params->{name};
+	my $node = $self->c->req->params->{node};
+	return $self->rename_node($node,$name);
+}
 
 
 has 'root_node' => ( is => 'ro', lazy => 1, default => sub {

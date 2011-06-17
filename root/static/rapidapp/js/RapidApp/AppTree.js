@@ -1,5 +1,72 @@
 Ext.ns('Ext.ux.RapidApp');
 
+Ext.ux.RapidApp.AppTree_contextmenu_handler = function(node,e) {
+	var tree = node.getOwnerTree();
+
+	var items = [
+		{
+			xtype: 'textfield',
+			name: 'name',
+			fieldLabel: 'Name',
+			value: node.attributes.text,
+			anchor: '100%',
+			listeners: {
+				'afterrender': function() { 
+					// try to focus the field:
+					this.focus('',10); 
+					this.focus('',200);
+					this.focus('',500);
+				}
+			}
+		}
+	];
+
+	var fieldset = {
+		xtype: 'fieldset',
+		style: 'border: none',
+		hideBorders: true,
+		labelWidth: 40,
+		border: false,
+		items: items
+	};
+
+	//var node = Ext.ux.RapidApp.AppTree.get_selected_node(tree);
+	var id = node.id;
+
+	var winform_cfg = {
+		title: "Rename",
+		height: 130,
+		width: 350,
+		url: tree.rename_node_url,
+		useSubmit: true,
+		params: {
+			node: id
+		},
+		fieldset: fieldset,
+		
+		success: function(response,options) {
+			var res = options.result;
+			if(res.new_name) {
+				node.setText(res.new_name);
+			}
+		}
+		
+		/*
+		success: function(response) {
+			var node_exp = node;
+			if(node_exp.isLeaf() && node.parentNode) { node_exp = node.parentNode; }
+			tree.getLoader().load(node_exp,function(tp){
+				node_exp.expand();
+			});
+		}
+		*/
+		
+	};
+	
+	//Ext.apply(winform_cfg,cfg);
+	Ext.ux.RapidApp.WinFormPost(winform_cfg);
+}
+
 Ext.ux.RapidApp.AppTree_select_handler = function(tree) {
 
 	var node = tree.getSelectionModel().getSelectedNode();
