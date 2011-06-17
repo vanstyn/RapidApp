@@ -64,6 +64,7 @@ pre {
 .icon-collapse-all { background-image: url(/static/rapidapp/images/collapse-all.gif) !important; }
 
 .icon-page-white-world { background-image: url(/static/rapidapp/images/page_white_world.png) !important; }
+.icon-textfield-rename { background-image: url(/static/rapidapp/images/textfield_rename.png) !important; }
 
 .x-logical-checkbox {
 	width: 16px;

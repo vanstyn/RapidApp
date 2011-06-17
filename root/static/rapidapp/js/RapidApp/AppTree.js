@@ -1,6 +1,6 @@
 Ext.ns('Ext.ux.RapidApp');
 
-Ext.ux.RapidApp.AppTree_contextmenu_handler = function(node,e) {
+Ext.ux.RapidApp.AppTree_rename_node = function(node) {
 	var tree = node.getOwnerTree();
 
 	var items = [
@@ -30,9 +30,6 @@ Ext.ux.RapidApp.AppTree_contextmenu_handler = function(node,e) {
 		items: items
 	};
 
-	//var node = Ext.ux.RapidApp.AppTree.get_selected_node(tree);
-	var id = node.id;
-
 	var winform_cfg = {
 		title: "Rename",
 		height: 130,
@@ -40,7 +37,7 @@ Ext.ux.RapidApp.AppTree_contextmenu_handler = function(node,e) {
 		url: tree.rename_node_url,
 		useSubmit: true,
 		params: {
-			node: id
+			node: node.id
 		},
 		fieldset: fieldset,
 		
@@ -50,21 +47,26 @@ Ext.ux.RapidApp.AppTree_contextmenu_handler = function(node,e) {
 				node.setText(res.new_name);
 			}
 		}
-		
-		/*
-		success: function(response) {
-			var node_exp = node;
-			if(node_exp.isLeaf() && node.parentNode) { node_exp = node.parentNode; }
-			tree.getLoader().load(node_exp,function(tp){
-				node_exp.expand();
-			});
-		}
-		*/
-		
 	};
 	
-	//Ext.apply(winform_cfg,cfg);
 	Ext.ux.RapidApp.WinFormPost(winform_cfg);
+}
+
+
+Ext.ux.RapidApp.AppTree_contextmenu_handler = function(node,e) {
+
+		var menu = new Ext.menu.Menu({
+			items: [{
+				iconCls: 'icon-textfield-rename',
+				text: 'Rename',
+				handler: function(item) {
+					Ext.ux.RapidApp.AppTree_rename_node(node);
+				}
+			}]
+		});
+		node.select();
+		menu.showAt(e.getXY());
+		//menu.show(node.ui.getEl());
 }
 
 Ext.ux.RapidApp.AppTree_select_handler = function(tree) {
