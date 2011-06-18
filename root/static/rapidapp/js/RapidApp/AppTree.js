@@ -14,6 +14,10 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	rename_node_iconCls: 'icon-textfield-rename',
 	rename_node_url: null,
 	
+	node_action_reload: true,
+	node_action_expandall: true,
+	node_action_collapseall: true,
+	
 	use_contextmenu: false,
 	setup_tbar: false,
 	
@@ -21,6 +25,48 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		
 		if(!this.node_actions) {
 			this.node_actions = [];
+			
+			if(this.node_action_reload) {
+				this.node_actions.push({
+					text: 'Reload',
+					iconCls: 'icon-refresh',
+					handler: this.nodeReload,
+					rootValid: true,
+					leafValid: false,
+					noTbar: false,
+					tbarIconOnly: true
+				});
+			}
+			
+			if(this.node_action_expandall) {
+				this.node_actions.push({
+					text: 'Expand All',
+					iconCls: 'icon-expand-all',
+					handler: this.nodeExpandAll,
+					rootValid: true,
+					leafValid: false,
+					noTbar: false,
+					tbarIconOnly: true
+				});
+			}
+			
+			if(this.node_action_collapseall) {
+				this.node_actions.push({
+					text: 'Collapse All',
+					iconCls: 'icon-collapse-all',
+					handler: this.nodeCollapseAll,
+					rootValid: true,
+					leafValid: false,
+					noTbar: false,
+					tbarIconOnly: true
+				});
+			}
+			
+			
+			if(this.node_actions.length > 0) {
+				this.node_actions.push('-');
+			}
+			
 			if(this.rename_node_url) {
 				this.node_actions.push({
 					text: this.rename_node_text,
@@ -62,6 +108,11 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 					this.node_actions.push(action);
 				},this);
 			}
+			
+			// Remove the divider if it is the last item:
+			if(this.node_actions.length > 0 && this.node_actions[this.node_actions.length - 1] == '-') {
+				this.node_actions.pop();
+			}
 		}
 		
 		if(this.setup_tbar) {
@@ -98,6 +149,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	},
 	
 	actionValidForNode: function(action,node) {
+		if(!node) { return false; }
 		if(!action.rootValid && node == this.root) { return false; }
 		if(!action.leafValid && node.isLeaf()) { return false; }
 		return true;
@@ -153,6 +205,8 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		var menuItems = [];
 		Ext.each(this.node_actions,function(action) {
 			if(Ext.isString(action)) {
+				// Prevent adding a divider as the first item:
+				if(action == '-' && menuItems.length == 0) { return; }
 				menuItems.push(action);
 				return;
 			}
@@ -166,37 +220,6 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			
 		},this);
 		
-		
-		/*
-		if (this.rename_node_url && node != this.root) {
-			menuItems.push({
-				text: this.rename_node_text,
-				iconCls: this.rename_node_iconCls,
-				handler: function() { this.nodeRename(node); },
-				scope: this
-			});
-		}
-		
-		if (this.delete_node_url && node != this.root) {
-			menuItems.push({
-				text: this.delete_node_text,
-				iconCls: this.delete_node_iconCls,
-				handler: function() { this.nodeDelete(node); },
-				scope: this
-			});
-		}
-		
-		if (this.add_node_url && !node.isLeaf()) {
-			menuItems.push({
-				text: this.add_node_text,
-				iconCls: this.add_node_iconCls,
-				handler: function() { this.nodeAdd(node); },
-				scope: this
-			});
-		}
-		*/
-		
-		// Do not show an empty menu
 		if(menuItems.length == 0){ return false; }
 		
 		var menu = new Ext.menu.Menu({ items: menuItems });
@@ -210,6 +233,18 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		this.getLoader().load(node,function(tp){
 			node.expand();
 		});
+	},
+	
+	nodeExpandAll: function(node) {
+		if(!node) { node = this.activeNonLeafNode(); }
+		if(node.isLeaf() && node.parentNode) { node = node.parentNode; }
+		node.expand(true);
+	},
+	
+	nodeCollapseAll: function(node) {
+		if(!node) { node = this.activeNonLeafNode(); }
+		if(node.isLeaf() && node.parentNode) { node = node.parentNode; }
+		node.collapse(true);
 	},
 	
 	nodeRename: function(node) {

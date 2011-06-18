@@ -99,6 +99,8 @@ pre {
 .icon-gears-24x24 { background-image: url(/static/rapidapp/images/gears_24x24.png) !important; }
 
 .icon-loading { background-image: url(/static/ext/resources/images/default/grid/loading.gif) !important; }
+.icon-refresh { background-image: url(/static/ext/resources/images/gray/grid/refresh.gif) !important; }
+
 
 .tbar-title-medium {
 	font-size:175% !important;

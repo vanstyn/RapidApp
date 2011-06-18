@@ -13,6 +13,8 @@ has 'delete_button_iconCls' => ( is => 'ro', isa => 'Str', default => 'icon-dele
 has 'use_contextmenu' => ( is => 'ro', isa => 'Bool', default => 0 );
 has 'setup_tbar' => ( is => 'ro', isa => 'Bool', default => 0 );
 
+has 'extra_node_actions' => ( is => 'ro', isa => 'Maybe[ArrayRef]', lazy => 1, default => undef );
+
 sub BUILD {
 	my $self = shift;
 	$self->apply_extconfig(
@@ -27,6 +29,7 @@ sub BUILD {
 	
 	$self->apply_extconfig( use_contextmenu => \1 ) if ($self->use_contextmenu);
 	$self->apply_extconfig( setup_tbar => \1 ) if ($self->setup_tbar);
+	$self->apply_extconfig( extra_node_actions => $self->extra_node_actions ) if ($self->extra_node_actions);
 	
 	$self->apply_extconfig(
 		add_node_text 			=> $self->add_button_text,
