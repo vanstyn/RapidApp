@@ -191,28 +191,6 @@ has 'tbar' => ( is => 'ro', lazy => 1, default => sub {
 sub add_button {
 	my $self = shift;
 	
-	my $items = [
-		{
-			xtype		=> 'textfield',
-			name		=> 'name',
-			fieldLabel	=> 'Name'
-		}
-	];
-	
-	my $fieldset = {
-		style 			=> 'border: none',
-		hideBorders 	=> \1,
-		xtype 			=> 'fieldset',
-		labelWidth 		=> 60,
-		border 			=> \0,
-		items 			=> $items,
-	};
-	
-	my $cfg = {
-		url => $self->suburl('/add'),
-		title => $self->add_button_text
-	};
-	
 	return RapidApp::JSONFunc->new(
 		func => 'new Ext.Button', 
 		parm => {
@@ -222,8 +200,7 @@ sub add_button {
 				raw => 1, 
 				func => 'function(btn) { ' . 
 					'var tree = btn.ownerCt.ownerCt;'.
-					'Ext.ux.RapidApp.AppTree.add(tree,' . $self->json->encode($cfg) . ');' .
-					
+					'tree.nodeAdd(tree.activeNonLeafNode());' .				
 				'}'
 			)
 	});
@@ -236,13 +213,14 @@ sub delete_button {
 	return RapidApp::JSONFunc->new(
 		func => 'new Ext.Button', 
 		parm => {
-			text 		=> $self->delete_button_text,
+			tooltip		=> $self->delete_button_text,
 			iconCls	=> $self->delete_button_iconCls,
 			handler 	=> RapidApp::JSONFunc->new( 
 				raw => 1, 
 				func => 'function(btn) { ' . 
 					'var tree = btn.ownerCt.ownerCt;'.
-					'Ext.ux.RapidApp.AppTree.del(tree,"' . $self->suburl('/delete') . '");' .
+					'tree.nodeDelete(tree.getSelectionModel().getSelectedNode());' .
+					#'Ext.ux.RapidApp.AppTree.del(tree,"' . $self->suburl('/delete') . '");' .
 					
 				'}'
 			)

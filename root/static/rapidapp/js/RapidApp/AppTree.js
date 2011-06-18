@@ -23,7 +23,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 
 		var menuItems = [];
 		
-		if (this.rename_node_url) {
+		if (this.rename_node_url && node != this.root) {
 			menuItems.push({
 				text: this.rename_node_text,
 				iconCls: this.rename_node_iconCls,
@@ -32,7 +32,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			});
 		}
 		
-		if (this.delete_node_url) {
+		if (this.delete_node_url && node != this.root) {
 			menuItems.push({
 				text: this.delete_node_text,
 				iconCls: this.delete_node_iconCls,
@@ -81,12 +81,18 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	},
 	
 	nodeDelete: function(node) {
+		if (! node) { 
+			Ext.Msg.alert('Nothing selected to Delete','You must select an item to delete.');
+			return;
+		}
+		// Ignore attempts to delete the root node:
+		if(node == this.root) { return; }
 		var tree = this;
 		var params = { node: node.id };
 
 		var ajaxFunc = function() {
 			Ext.Ajax.request({
-				url: this.delete_node_url,
+				url: tree.delete_node_url,
 				params: params,
 				success: function() {
 					node.parentNode.removeChild(node,true);
@@ -196,6 +202,20 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			}
 		};
 		Ext.ux.RapidApp.WinFormPost(winform_cfg);
+	},
+	
+	activeNonLeafNode: function() {
+		var node = this.getSelectionModel().getSelectedNode();
+		if(node) {
+			// If this is a leaf node, it can't have childred, so use the parent node:
+			if(node.isLeaf() && node.parentNode) { 
+				node = node.parentNode;
+			}
+		}
+		else {
+			node = this.root;
+		}
+		return node;
 	}
 	
 });
