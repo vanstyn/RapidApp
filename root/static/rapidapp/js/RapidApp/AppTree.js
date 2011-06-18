@@ -14,15 +14,135 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	rename_node_iconCls: 'icon-textfield-rename',
 	rename_node_url: null,
 	
+	use_contextmenu: false,
+	setup_tbar: false,
+	
 	initComponent: function() {
-		this.on('contextmenu',this.onContextmenu,this);
+		
+		if(!this.node_actions) {
+			this.node_actions = [];
+			if(this.rename_node_url) {
+				this.node_actions.push({
+					text: this.rename_node_text,
+					iconCls: this.rename_node_iconCls,
+					handler: this.nodeRename,
+					rootValid: false,
+					leafValid: true,
+					noTbar: false,
+					tbarIconOnly: true
+				});
+			}
+			
+			if(this.delete_node_url) {
+				this.node_actions.push({
+					text: this.delete_node_text,
+					iconCls: this.delete_node_iconCls,
+					handler: this.nodeDelete,
+					rootValid: false,
+					leafValid: true,
+					noTbar: false,
+					tbarIconOnly: true
+				});
+			}
+			
+			if(this.add_node_url) {
+				this.node_actions.push({
+					text: this.add_node_text,
+					iconCls: this.add_node_iconCls,
+					handler: this.nodeAdd,
+					rootValid: true,
+					leafValid: false,
+					noTbar: false,
+					tbarIconOnly: false
+				});
+			}
+				
+			if(Ext.isArray(this.extra_node_actions)) {
+				Ext.each(this.extra_node_actions,function(action) {
+					this.node_actions.push(action);
+				},this);
+			}
+		}
+		
+		if(this.setup_tbar) {
+		
+			var init_tbar_items = [];
+			if(Ext.isArray(this.tbar)) { init_tbar_items = this.tbar; }
+			if(!Ext.isObject(this.tbar)) {
+				this.tbar = {
+					xtype: 'toolbar',
+					enableOverflow: true,
+					items: init_tbar_items
+				};
+			}
+			
+			var tbar_items = this.getTbarActionsButtons();
+			if(tbar_items.length > 0) {
+				this.tbar.items.push('->');
+				Ext.each(tbar_items,function(item) {
+					this.tbar.items.push(item);
+				},this);
+			}
+		}
+		
+		if(this.use_contextmenu) { 
+			this.on('contextmenu',this.onContextmenu,this);
+		}
 		Ext.ux.RapidApp.AppTree.superclass.initComponent.call(this);
+	},
+	
+	actionValidForNode: function(action,node) {
+		if(!action.rootValid && node == this.root) { return false; }
+		if(!action.leafValid && node.isLeaf()) { return false; }
+		return true;
+	},
+	
+	getTbarActionsButtons: function() {
+		var items = [];
+		Ext.each(this.node_actions,function(action) {
+			if(Ext.isString(action)) {
+				items.push(action);
+				return;
+			}
+			var cnf = {
+				xtype: 'button',
+				text: action.text,
+				iconCls: action.iconCls,
+				handler: function() {
+					var node = this.getSelectionModel().getSelectedNode();
+					action.handler.call(this,node);
+				},
+				scope: this
+			};
+			if (action.tbarIconOnly) {
+				cnf.tooltip = cnf.text;
+				delete cnf.text;
+			}
+			items.push(cnf);
+		},this);
+		return items;
 	},
 	
 	onContextmenu: function(node,e) {
 
 		var menuItems = [];
+		Ext.each(this.node_actions,function(action) {
+			if(Ext.isString(action)) {
+				menuItems.push(action);
+				return;
+			}
+			if(!this.actionValidForNode(action,node)) { return; }
+			menuItems.push({
+				text: action.text,
+				iconCls: action.iconCls,
+				handler: function() { action.handler.call(this,node); },
+				scope: this
+			});
+			
+		},this);
 		
+		
+		/*
 		if (this.rename_node_url && node != this.root) {
 			menuItems.push({
 				text: this.rename_node_text,
@@ -49,6 +169,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 				scope: this
 			});
 		}
+		*/
 		
 		// Do not show an empty menu
 		if(menuItems.length == 0){ return false; }
@@ -59,6 +180,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	},
 	
 	nodeReload: function(node) {
+		if(!node) { node = this.activeNonLeafNode(); }
 		if(node.isLeaf() && node.parentNode) { node = node.parentNode; }
 		this.getLoader().load(node,function(tp){
 			node.expand();
@@ -66,6 +188,8 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	},
 	
 	nodeRename: function(node) {
+		if(!node) { node = this.activeNonLeafNode(); }
+		if(node == this.root) { return; }
 		return this.nodeApplyDialog(node,{
 			title: this.rename_node_text,
 			url: this.rename_node_url,
@@ -74,6 +198,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	},
 	
 	nodeAdd: function(node) {
+		if(!node) { node = this.activeNonLeafNode(); }
 		return this.nodeApplyDialog(node,{
 			title: this.add_node_text,
 			url: this.add_node_url

@@ -10,6 +10,9 @@ has 'add_button_iconCls' => ( is => 'ro', isa => 'Str', default => 'icon-add' );
 has 'delete_button_text' => ( is => 'ro', isa => 'Str', default => 'Delete' );
 has 'delete_button_iconCls' => ( is => 'ro', isa => 'Str', default => 'icon-delete' );
 
+has 'use_contextmenu' => ( is => 'ro', isa => 'Bool', default => 0 );
+has 'setup_tbar' => ( is => 'ro', isa => 'Bool', default => 0 );
+
 sub BUILD {
 	my $self = shift;
 	$self->apply_config(
@@ -20,6 +23,8 @@ sub BUILD {
 		autoScroll			=> \1,
 		animate				=> \1,
 		useArrows			=> \1,
+		use_contextmenu	=> $self->use_contextmenu,
+		setup_tbar			=> $self->setup_tbar
 	);
 	
 	$self->apply_extconfig(
@@ -38,7 +43,7 @@ sub BUILD {
 	}
 	
 	if($self->can('delete_node')) {
-		$self->apply_actions( delete 	=> 'call_delete_node' );
+		$self->apply_actions( delete 	=> 'call_delete_node' ); 
 		$self->apply_extconfig( delete_node_url => $self->suburl('delete') );
 	}
 	
@@ -170,6 +175,7 @@ has 'root_node' => ( is => 'ro', lazy => 1, default => sub {
 
 has 'tbar' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
+	return ['->'];
 	
 	my $tbar = [];
 
@@ -200,7 +206,8 @@ sub add_button {
 				raw => 1, 
 				func => 'function(btn) { ' . 
 					'var tree = btn.ownerCt.ownerCt;'.
-					'tree.nodeAdd(tree.activeNonLeafNode());' .				
+					'tree.nodeAdd();' .
+					#'tree.nodeAdd(tree.activeNonLeafNode());' .				
 				'}'
 			)
 	});
