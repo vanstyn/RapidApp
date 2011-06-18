@@ -88,6 +88,12 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		if(this.use_contextmenu) { 
 			this.on('contextmenu',this.onContextmenu,this);
 		}
+		
+		this.on('afterrender',function() {
+			this.getSelectionModel().on('selectionchange',function(selMod,node) {
+				this.notifyActionButtons(node);
+			},this);
+		},this);
 		Ext.ux.RapidApp.AppTree.superclass.initComponent.call(this);
 	},
 	
@@ -95,6 +101,14 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		if(!action.rootValid && node == this.root) { return false; }
 		if(!action.leafValid && node.isLeaf()) { return false; }
 		return true;
+	},
+	
+	notifyActionButtons: function(node) {
+		Ext.each(this.tbarActionsButtons,function(btn) {
+			if(btn.notifyCurrentNode) {
+				btn.notifyCurrentNode.call(btn,node);
+			}
+		},this);
 	},
 	
 	getTbarActionsButtons: function() {
@@ -105,6 +119,8 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 				return;
 			}
 			var cnf = {
+				tree: this,
+				nodeAction: action,
 				xtype: 'button',
 				text: action.text,
 				iconCls: action.iconCls,
@@ -116,11 +132,20 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			};
 			if (action.tbarIconOnly) {
 				cnf.tooltip = cnf.text;
+				cnf.overflowText = cnf.text;
 				delete cnf.text;
 			}
-			items.push(cnf);
+			
+			cnf.notifyCurrentNode = function(node) {
+				var valid = this.tree.actionValidForNode(this.nodeAction,node);
+				this.setDisabled(!valid);
+			}
+			
+			var button = new Ext.Button(cnf);
+			items.push(button);
 		},this);
-		return items;
+		this.tbarActionsButtons = items;
+		return this.tbarActionsButtons;
 	},
 	
 	onContextmenu: function(node,e) {

@@ -15,7 +15,7 @@ has 'setup_tbar' => ( is => 'ro', isa => 'Bool', default => 0 );
 
 sub BUILD {
 	my $self = shift;
-	$self->apply_config(
+	$self->apply_extconfig(
 		xtype					=> 'apptree',
 		border				=> \0,
 		layout				=> 'fit',
@@ -23,9 +23,10 @@ sub BUILD {
 		autoScroll			=> \1,
 		animate				=> \1,
 		useArrows			=> \1,
-		use_contextmenu	=> $self->use_contextmenu,
-		setup_tbar			=> $self->setup_tbar
 	);
+	
+	$self->apply_extconfig( use_contextmenu => \1 ) if ($self->use_contextmenu);
+	$self->apply_extconfig( setup_tbar => \1 ) if ($self->setup_tbar);
 	
 	$self->apply_extconfig(
 		add_node_text 			=> $self->add_button_text,
@@ -175,6 +176,7 @@ has 'root_node' => ( is => 'ro', lazy => 1, default => sub {
 
 has 'tbar' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
+	return undef;
 	return ['->'];
 	
 	my $tbar = [];
