@@ -220,6 +220,7 @@ Ext.ux.MultiFilter.defaultConditionMap = {
 
 	'is'							: '=',
 	'is equal to'				: '=',
+	'equal to'					: '=',
 	'is not equal to'			: '!=',
 	'before'						: '<',
 	'after'						: '>',
