@@ -22,6 +22,13 @@ sub BUILD {
 		useArrows			=> \1,
 	);
 	
+	$self->apply_extconfig(
+		add_node_text 			=> $self->add_button_text,
+		add_node_iconCls		=> $self->add_button_iconCls,
+		delete_node_text		=> $self->delete_button_text,
+		delete_node_iconCls	=> $self->delete_button_iconCls
+	);
+	
 	$self->apply_actions( nodes 	=> 'call_fetch_nodes' );
 	$self->apply_actions( node 	=> 'call_fetch_node' ) if ($self->can('fetch_node'));
 	
