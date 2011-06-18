@@ -4,25 +4,16 @@ extends 'RapidApp::AppCmp';
 
 use RapidApp::Include qw(sugar perlutil);
 
-#use RapidApp::MooseX::ClassAttrSugar;
-#setup_apply_methods_for('config');
-#setup_apply_methods_for('listeners');
 
-#apply_default_config(
-#		xtype					=> 'treepanel',
-#		border				=> \0,
-#		layout				=> 'fit',
-#		containerScroll 	=> \1,
-#		autoScroll			=> \1,
-#		animate				=> \1,
-#		useArrows			=> \1
-#);
-
+has 'add_button_text' => ( is => 'ro', isa => 'Str', default => 'Add' );
+has 'add_button_iconCls' => ( is => 'ro', isa => 'Str', default => 'icon-add' );
+has 'delete_button_text' => ( is => 'ro', isa => 'Str', default => 'Delete' );
+has 'delete_button_iconCls' => ( is => 'ro', isa => 'Str', default => 'icon-delete' );
 
 sub BUILD {
 	my $self = shift;
 	$self->apply_config(
-		xtype					=> 'treepanel',
+		xtype					=> 'apptree',
 		border				=> \0,
 		layout				=> 'fit',
 		containerScroll 	=> \1,
@@ -33,18 +24,23 @@ sub BUILD {
 	
 	$self->apply_actions( nodes 	=> 'call_fetch_nodes' );
 	$self->apply_actions( node 	=> 'call_fetch_node' ) if ($self->can('fetch_node'));
-	$self->apply_actions( add 		=> 'call_add_node' ) if ($self->can('add_node'));
-	$self->apply_actions( delete 	=> 'call_delete_node' ) if ($self->can('delete_node'));
+	
+	if($self->can('add_node')) {
+		$self->apply_actions( add 	=> 'call_add_node' );
+		$self->apply_extconfig( add_node_url => $self->suburl('add') );
+	}
+	
+	if($self->can('delete_node')) {
+		$self->apply_actions( delete 	=> 'call_delete_node' );
+		$self->apply_extconfig( delete_node_url => $self->suburl('delete') );
+	}
 	
 	if($self->can('rename_node')) {
-		$self->add_listener( contextmenu => 'Ext.ux.RapidApp.AppTree_contextmenu_handler' );
 		$self->apply_actions( rename 	=> 'call_rename_node' );
 		$self->apply_extconfig( rename_node_url => $self->suburl('rename') );
 	}
 	
-	
 	$self->add_ONREQUEST_calls('init_onreq');
-	
 }
 
 
@@ -181,26 +177,9 @@ has 'tbar' => ( is => 'ro', lazy => 1, default => sub {
 });
 
 
-#before 'content' => sub {
-#	my $self = shift;
-#	
-#	$self->set_afterrender;
-#	
-#	$self->apply_config(
-#		id						=> $self->instance_id,
-#		dataUrl				=> $self->suburl('/nodes'),
-#		rootVisible			=> $self->show_root_node ? \1 : \0,
-#		root					=> $self->root_node,
-#		tbar					=> $self->tbar,
-#	);
-#};
 
 
 
-has 'add_button_text' => ( is => 'ro', isa => 'Str', default => 'Add' );
-has 'add_button_iconCls' => ( is => 'ro', isa => 'Str', default => 'icon-add' );
-has 'delete_button_text' => ( is => 'ro', isa => 'Str', default => 'Delete' );
-has 'delete_button_iconCls' => ( is => 'ro', isa => 'Str', default => 'icon-delete' );
 
 sub add_button {
 	my $self = shift;

@@ -1,8 +1,218 @@
 Ext.ns('Ext.ux.RapidApp');
 
+Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
+	
+	add_node_text: 'Add',
+	add_node_iconCls: 'icon-add',
+	add_node_url: null,
+	
+	delete_node_text: 'Delete',
+	delete_node_iconCls: 'icon-delete',
+	delete_node_url: null,
+	
+	rename_node_text: 'Rename',
+	rename_node_iconCls: 'icon-textfield-rename',
+	rename_node_url: null,
+	
+	initComponent: function() {
+		this.on('contextmenu',this.onContextmenu,this);
+		Ext.ux.RapidApp.AppTree.superclass.initComponent.call(this);
+	},
+	
+	onContextmenu: function(node,e) {
+
+		var menuItems = [];
+		
+		if (this.rename_node_url) {
+			menuItems.push({
+				text: this.rename_node_text,
+				iconCls: this.rename_node_iconCls,
+				handler: function() { this.nodeRename(node); },
+				scope: this
+			});
+		}
+		
+		if (this.delete_node_url) {
+			menuItems.push({
+				text: this.delete_node_text,
+				iconCls: this.delete_node_iconCls,
+				handler: function() { this.nodeDelete(node); },
+				scope: this
+			});
+		}
+		
+		if (this.add_node_url && !node.isLeaf()) {
+			menuItems.push({
+				text: this.add_node_text,
+				iconCls: this.add_node_iconCls,
+				handler: function() { this.nodeAdd(node); },
+				scope: this
+			});
+		}
+		
+		// Do not show an empty menu
+		if(menuItems.length == 0){ return false; }
+		
+		var menu = new Ext.menu.Menu({ items: menuItems });
+		node.select();
+		menu.showAt(e.getXY());
+	},
+	
+	nodeReload: function(node) {
+		if(node.isLeaf() && node.parentNode) { node = node.parentNode; }
+		this.getLoader().load(node,function(tp){
+			node.expand();
+		});
+	},
+	
+	nodeRename: function(node) {
+		return this.nodeApplyDialog(node,{
+			title: this.rename_node_text,
+			url: this.rename_node_url,
+			value: node.attributes.text
+		});
+	},
+	
+	nodeAdd: function(node) {
+		return this.nodeApplyDialog(node,{
+			title: this.add_node_text,
+			url: this.add_node_url
+		});
+	},
+	
+	nodeDelete: function(node) {
+		var tree = this;
+		var params = { node: node.id };
+
+		var ajaxFunc = function() {
+			Ext.Ajax.request({
+				url: this.delete_node_url,
+				params: params,
+				success: function() {
+					node.parentNode.removeChild(node,true);
+					//var pnode = node.parentNode;
+					//tree.getLoader().load(pnode,function(tp){
+					//	pnode.expand();
+					//});
+				}
+			});
+		};
+
+		var Func = ajaxFunc;
+
+		if (node.hasChildNodes()) {
+			params['recursive'] = true;
+			Func = function() {
+				Ext.ux.RapidApp.confirmDialogCall(
+					'Confirm Recursive Delete',
+					'"' + node.attributes.text + '" contains child items, they will all be deleted.<br><br>' +
+					 'Are you sure you want to continue ?',
+					ajaxFunc
+				);
+			}
+		}
+
+		Ext.ux.RapidApp.confirmDialogCall(
+			'Confirm Delete',
+			'Really delete "' + node.attributes.text + '" ?',
+			Func
+		);
+	},
+	
+	nodeApplyDialog: function(node,opt) {
+		var tree = this;
+		var cnf = Ext.apply({
+			url: null, // <-- url is required
+			title: 'Apply Node',
+			name: 'name',
+			fieldLabel: 'Name',
+			labelWidth: 40,
+			height: 130,
+			width: 350,
+			value: null
+		},opt);
+		
+		if(!cnf.url) { throw "url is a required parameter"; }
+		
+		var items = [
+			{
+				xtype: 'textfield',
+				name: cnf.name,
+				fieldLabel: cnf.fieldLabel,
+				value: cnf.value,
+				anchor: '100%',
+				listeners: {
+					'afterrender': function() { 
+						// try to focus the field:
+						this.focus('',10); this.focus('',200); this.focus('',500);
+					}
+				}
+			}
+		];
+
+		var fieldset = {
+			xtype: 'fieldset',
+			style: 'border: none',
+			hideBorders: true,
+			labelWidth: cnf.labelWidth,
+			border: false,
+			items: items
+		};
+
+		var winform_cfg = {
+			title: cnf.title,
+			height: cnf.height,
+			width: cnf.width,
+			url: cnf.url,
+			useSubmit: true,
+			params: {
+				node: node.id
+			},
+			fieldset: fieldset,
+			
+			success: function(response,options) {
+				var res = options.result;
+				
+				// if 'new_text' is supplied in the response then update the text of current node
+				if (res.new_text) {
+					node.setText(res.new_text);
+				}
+				
+				// if 'child' is supplied in the response then we add it as a child to the current node
+				if (res.child) {
+					var newChild = tree.getLoader().createNode(res.child);
+					node.expand();
+					node.appendChild(newChild);
+					//newChild.ensureVisible();
+				}
+				
+				// If neither 'child' nor 'new_text' is in the reponse we reload the node
+				if(!res.new_text && !res.child) {
+					tree.nodeReload(node);
+					
+				}
+				
+				
+			}
+		};
+		Ext.ux.RapidApp.WinFormPost(winform_cfg);
+	}
+	
+});
+Ext.reg('apptree',Ext.ux.RapidApp.AppTree);
+
+
+
 Ext.ux.RapidApp.AppTree_rename_node = function(node) {
 	var tree = node.getOwnerTree();
 
+	return tree.nodeApplyDialog(node,{
+		title: "Rename",
+		url: tree.rename_node_url,
+		value: node.attributes.text
+	});
+	
+	
 	var items = [
 		{
 			xtype: 'textfield',
