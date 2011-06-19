@@ -21,7 +21,11 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	use_contextmenu: false,
 	setup_tbar: false,
 	
+	
+	
 	initComponent: function() {
+		
+		this.initDragAndDrop();
 		
 		if(!this.node_actions) {
 			this.node_actions = [];
@@ -145,7 +149,88 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 				this.notifyActionButtons(node);
 			},this);
 		},this);
+		
+		
+		
 		Ext.ux.RapidApp.AppTree.superclass.initComponent.call(this);
+	},
+	
+	initDragAndDrop: function() {
+		if(this.copy_node_url || this.move_node_url) {
+			this.enableDD = true;
+			this.ddAppendOnly = true;
+			this.on('beforenodedrop',this.beforeNodeDropHandler,this);
+		}
+	},
+	
+	beforeNodeDropHandler: function(dropEvent) {
+		if(!dropEvent.point == 'append') { return; } // <-- nothing but 'append' should get this far
+		if(this.nodeDropMenu(dropEvent.data.node,dropEvent.target,dropEvent.rawEvent)) {
+			// If we're here it means that the menu has been displayed.
+			// We are setting these attributes to prevent the "repair" ui
+			// since we have to run an async round-trip to the server
+			dropEvent.cancel = true;
+			dropEvent.dropStatus = true;
+		}
+	},
+	
+	nodeDropMenu: function(node,target,e) {
+
+		var menuItems = [];
+		
+		if(this.copy_node_url) {
+			menuItems.push({
+				text: 'Copy here',
+				iconCls: 'icon-element-copy',
+				handler: function() { 
+					this.nodeCopyMove(node,target,this.copy_node_url); 
+				},
+				scope: this
+			});
+		}
+		
+		if(this.move_node_url) {
+			menuItems.push({
+				text: 'Move here',
+				iconCls: 'icon-element-into',
+				handler: function() { 
+					this.nodeCopyMove(node,target,this.move_node_url,true); 
+				},
+				scope: this
+			});
+		}
+		
+		if(!menuItems.length) { return false; }
+		
+		menuItems.push('-',{
+			text: 'Cancel',
+			iconCls: 'x-tool x-tool-close',
+			handler: Ext.emptyFn
+		});
+		
+		var menu = new Ext.menu.Menu({ items: menuItems });
+		var pos = e.getXY();
+		pos[0] = pos[0] + 10;
+		pos[1] = pos[1] + 5;
+		menu.showAt(pos);
+		return true;
+	},
+	
+	nodeCopyMove: function(node,target,url,remSrc) {
+		Ext.Ajax.request({
+			url: url,
+			params: { 
+				node: node.id,
+				target: target.id
+			},
+			scope: this,
+			success: function() {
+				if(remSrc) {
+					node.parentNode.removeChild(node,true);
+				}
+				this.nodeReload(target);
+			}
+		});
 	},
 	
 	actionValidForNode: function(action,node) {
@@ -224,7 +309,10 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		
 		var menu = new Ext.menu.Menu({ items: menuItems });
 		node.select();
-		menu.showAt(e.getXY());
+		var pos = e.getXY();
+		pos[0] = pos[0] + 10;
+		pos[1] = pos[1] + 5;
+		menu.showAt(pos);
 	},
 	
 	nodeReload: function(node) {
@@ -733,17 +821,6 @@ Ext.ux.RapidApp.AppTree.ensure_recursive_load = function(tree,callback,scope) {
 	
 	pnode.expand(true,false);
 }
-
-
-Ext.ux.RapidApp.AppTree.reload1 = function(tree) {
-	Ext.ux.RapidApp.AppTree.ensure_recursive_load(tree,function(){
-		console.log('reloaded');
-	});
-}
-
-
-
-
 
 
 Ext.ns('Ext.ux.RapidApp.AppTree');

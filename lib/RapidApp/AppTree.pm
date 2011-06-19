@@ -56,6 +56,16 @@ sub BUILD {
 		$self->apply_extconfig( rename_node_url => $self->suburl('rename') );
 	}
 	
+	if($self->can('copy_node')) {
+		$self->apply_actions( copy => 'call_copy_node' );
+		$self->apply_extconfig( copy_node_url => $self->suburl('copy') );
+	}
+	
+	if($self->can('move_node')) {
+		$self->apply_actions( move => 'call_move_node' );
+		$self->apply_extconfig( move_node_url => $self->suburl('move') );
+	}
+	
 	$self->add_ONREQUEST_calls('init_onreq');
 }
 
@@ -163,6 +173,20 @@ sub call_rename_node {
 	my $name = $self->c->req->params->{name};
 	my $node = $self->c->req->params->{node};
 	return $self->rename_node($node,$name);
+}
+
+sub call_copy_node {
+	my $self = shift;
+	my $node = $self->c->req->params->{node};
+	my $target = $self->c->req->params->{target};
+	return $self->copy_node($node,$target);
+}
+
+sub call_move_node {
+	my $self = shift;
+	my $node = $self->c->req->params->{node};
+	my $target = $self->c->req->params->{target};
+	return $self->move_node($node,$target);
 }
 
 
