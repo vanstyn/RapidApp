@@ -44,9 +44,9 @@ sub blob      {
 	return data_type => $tname, size => $size;
 }
 sub text      {
-	my $result= blob(@_);
-	$result =~ s/blob/text/;
-	$result;
+	my @result= blob(@_);
+	$result[1] =~ s/blob/text/;
+	return @result;
 }
 
 sub relation {
