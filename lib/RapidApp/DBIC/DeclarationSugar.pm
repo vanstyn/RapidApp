@@ -5,7 +5,7 @@ use warnings;
 use Exporter 'import';
 
 our @EXPORT= qw(
-	col smallint integer bigint char varchar binary varbinary blob date datetime
+	col smallint integer bigint char varchar binary varbinary blob text date datetime
 	unsigned not_null auto_inc fk default
 	relation db_cascade no_db_cascade dbic_cascade no_dbic_cascade deploy no_deploy
 );
@@ -42,6 +42,11 @@ sub blob      {
 	my $tname= ($size > 0xFFFFFF? 'longblob' : ($size > 0xFFFF? 'mediumblob' : ($size > 0xFF? 'blob' : 'tinyblob')));
 	
 	return data_type => $tname, size => $size;
+}
+sub text      {
+	my $result= blob(@_);
+	$result =~ s/blob/text/;
+	$result;
 }
 
 sub relation {
