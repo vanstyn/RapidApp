@@ -113,10 +113,12 @@ sub saveErrorReport {
 		defined $rs or die "Missing ResultSource";
 		
 		my $serialized= $self->serializeErrorReport($errReport);
+		my $when= $errReport->dateTime->clone();
+		#$when->set_time_zone('local'); # use local timezone for the appgrid display
 		
 		$self->_suppressDbicTrace(sub {
 			$refId= $self->_createRecord({
-				when    => $errReport->dateTime,
+				when    => $when,
 				summary => $summary,
 				report  => $serialized,
 			});

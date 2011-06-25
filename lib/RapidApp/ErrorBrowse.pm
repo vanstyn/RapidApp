@@ -73,6 +73,8 @@ sub options_menu_items {
 	return [
 		{ text => 'Generate Internal Error', handler => $self->getjs_simpleRequestor($self->suburl('item/gen_error')) },
 		{ text => 'Generate User Error',     handler => $self->getjs_simpleRequestor($self->suburl('item/gen_usererror')) },
+		{ text => 'Generate User-facing exception', handler => $self->getjs_simpleRequestor($self->suburl('item/gen_userexception')) },
+		{ text => 'Generate User-facing exception 2', handler => $self->getjs_simpleRequestor($self->suburl('item/gen_userexception_complex')) },
 		{ text => 'Generate Perl Exception', handler => $self->getjs_simpleRequestor($self->suburl('item/gen_die')) },
 		{ text => 'Generate DBIC Exception', handler => $self->getjs_simpleRequestor($self->suburl('item/gen_dbicerr')) },
 		{ text => 'Generate CustomPrompt',   handler => $self->getjs_simpleRequestor($self->suburl('item/gen_custprompt')) },

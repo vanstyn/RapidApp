@@ -3065,7 +3065,7 @@ Ext.ux.RapidApp.renderUtcDate= function(dateStr) {
 Ext.ux.RapidApp.checkLocalTimezone = function(conn,options) {
 	if (!options.headers) { options.headers= {}; }
 	var dt= new Date();
-	Ext.ux.RapidApp.userPrefs.timezoneOffset= dt.getTimezoneOffset();
+	Ext.ux.RapidApp.userPrefs.timezoneOffset= -dt.getTimezoneOffset();
 	options.headers['X-RapidApp-TimezoneOffset']= Ext.ux.RapidApp.userPrefs.timezoneOffset;
 };
 Ext.Ajax.on('beforerequest',Ext.ux.RapidApp.checkLocalTimezone);

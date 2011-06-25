@@ -3,6 +3,7 @@ package RapidApp::View::HttpStatus;
 use strict;
 use warnings;
 use HTTP::Status;
+use RapidApp::Include 'sugar', 'perlutil';
 
 use base 'Catalyst::View::TT';
 
@@ -18,6 +19,15 @@ sub process {
 	
 	my $stat= $c->response->status;
 	
+	my $err= $c->stash->{exception};
+	if ($err && blessed($err)) {
+		$err->can('userMessageTitle')
+			and $c->stash->{shortStatusText} ||= $err->userMessageTitle;
+		
+		$err->can('userMessage')
+			and $c->stash->{longStatusText} ||= $err->userMessage;
+	}
+	
 	$c->stash->{statusCode}      ||= $stat;
 	$c->stash->{shortStatusText} ||= HTTP::Status::status_message($stat);
 	$c->stash->{longStatusText}  ||= $_longMessages{$stat} || "<no details>";
@@ -31,9 +41,13 @@ sub process {
 		$c->stash->{template} = 'templates/rapidapp/http-status.tt';
 	}
 	
+	$c->stash->{commentSubmitPath}= $c->rapidApp->errorAddCommentPath .'/addComment';
+	
 	if (exists $c->stash->{exceptionRefId} and !$c->stash->{exceptionRefId}) {
 		$c->stash->{exceptionRefFailure}= 1; # we don't have "defined" or "exists" in TT, so add a more convenient variable
 	}
+	
+	$c->stash->{longStatusText}= ashtml $c->stash->{longStatusText};
 	
 	$self->SUPER::process($c);
 }

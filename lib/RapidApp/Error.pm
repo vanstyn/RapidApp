@@ -9,42 +9,13 @@ use Devel::StackTrace::WithLexicals;
 use RapidApp::Data::DeepMap;
 use Scalar::Util 'blessed', 'reftype';
 
-sub dieConverter {
-	local $SIG{__DIE__}= undef;
-	print STDERR "\ndieConverter: ".Data::Dumper->new([@_])->Maxdepth(2)->Dump."\n";
-	die ref $_[0]? $_[0] : &capture(join(' ', grep { defined $_ } @_), { lateTrace => 0 });
-}
-
-=head2 $err= capture( $someError, \%constructorArgs )
-
-This function attempts to capture the details of some other exception object (or just a string)
-and pull them into the fields of a RapidApp::Error::WrappedError.  This allows all code in
-RapidApp to convert anything that happens to get caught into a Error object so that the handy
-methods like "trace" and "isUserError" can be used.
-
-The second (optional) parameter specifies additional arguments to RapidApp::Error::WrappedError->new.
-If the object is already a RapidApp::Error derivative, the arguments are ignored.
-
-=cut
-sub capture {
-	local $SIG{__DIE__}= undef;
-	print STDERR "\ncapture: ".Data::Dumper->new([@_])->Maxdepth(2)->Dump."\n";
-	
-	# allow leniency if we're called as a package method
-	shift if !ref $_[0] && $_[0] eq __PACKAGE__;
-	my ($errObj, $ctorArgs)= @_;
-	
-	defined $errObj && blessed($errObj) && $errObj->isa('RapidApp::Error')
-		and return $errObj;
-	
-	$ctorArgs ||= {};
-	exists $ctorArgs->{lateTrace} or $ctorArgs->{lateTrace}= 1;
-	
-	return RapidApp::Error::WrappedError->new(captured => $errObj, %$ctorArgs);
+sub BUILD {
+	my $self= shift;
+	defined $self->message_fn || $self->has_message or die "Must specify message for message_fn";
 }
 
 has 'message_fn' => ( is => 'rw', isa => 'CodeRef' );
-has 'message' => ( is => 'rw', isa => 'Str', lazy_build => 1 );
+has 'message' => ( is => 'rw', lazy_build => 1 );
 sub _build_message {
 	my $self= shift;
 	return $self->message_fn->($self);
@@ -56,11 +27,7 @@ sub _build_userMessage {
 	my $self= shift;
 	return defined $self->userMessage_fn? $self->userMessage_fn->($self) : undef;
 }
-
-sub isUserError {
-	my $self= shift;
-	return defined $self->userMessage || defined $self->userMessage_fn;
-}
+has 'userMessageTitle' => ( is => 'rw' );
 
 has 'timestamp' => ( is => 'rw', isa => 'Int', default => sub { time } );
 has 'dateTime' => ( is => 'rw', isa => 'DateTime', lazy_build => 1 );
@@ -84,47 +51,6 @@ sub _build_srcLoc {
 
 has 'data' => ( is => 'rw', isa => 'HashRef', lazy => 1, default => sub {{}} );
 has 'cause' => ( is => 'rw' );
-
-=pod
-has 'traceArgs' => ( is => 'ro', lazy => 1, default => sub {{ frame_filter => \&ignoreSelfFrameFilter }} );
-sub collectTraceArgs {
-	my $self= shift;
-	return $self->traceArgs;
-}
-has 'trace' => ( is => 'rw', lazy => 1, builder => '_build_trace' );
-sub _build_trace {
-	my $self= shift;
-	my $args= $self->collectTraceArgs;
-	my $class= 'Devel::StackTrace';
-	if (exists $args->{TRACE_CLASS}) {
-		$class= $args->{TRACE_CLASS};
-		delete $args->{TRACE_CLASS};
-	}
-	my $result= $class->new(%$args);
-	return $result;
-}
-sub ignoreSelfFrameFilter {
-	my $params= shift;
-	my ($from, $subName)= (''.$params->{caller}->[0], ''.$params->{caller}->[3]);
-	return 0 if $from =~ /^RapidApp::Error(:.+)?$/;
-	return 0 if $subName =~ /^RapidApp::Error:.*?:(_build_trace|BUILD)$/;
-	return 1;
-}
-=cut
-around 'BUILDARGS' => sub {
-	my ($orig, $class, @args)= @_;
-	my $params= ref $args[0] eq 'HASH'? $args[0]
-		: (scalar(@args) == 1? { message => $args[0] } : { @args } );
-	
-	return $class->$orig($params);
-};
-
-sub BUILD {
-	my $self= shift;
-	#$self->trace; # activate the trace
-	defined($self->message_fn) || $self->has_message or die "Require one of message or message_fn";
-	RapidApp::ScopedGlobals->log->warn(Data::Dumper::Dumper($self));
-}
 
 sub dump {
 	my $self= shift;
@@ -151,7 +77,7 @@ sub dump {
 
 sub as_string {
 	my $self= shift;
-	return $self->message#.' at '.$self->srcLoc;
+	return $self->message . ''; #.' at '.$self->srcLoc;
 }
 
 # called by Perl, on this package only (not a method lookup)
@@ -161,7 +87,5 @@ sub _stringify_object {
 
 no Moose;
 __PACKAGE__->meta->make_immutable;
-
-require RapidApp::Error::WrappedError;
 
 1;

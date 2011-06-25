@@ -48,33 +48,10 @@ sub process {
 		$c->view('RapidApp::JSON')->process($c);
 	}
 	else {
-		$c->res->status(500);
-		my $userMessage= (blessed($err) && $err->can('userMessage') && $err->userMessage);
-		if (defined $userMessage && length $userMessage) {
-			$c->stash->{longStatusText}= $userMessage;
-		}
+		$c->res->status((blessed($err) && $err->isa('RapidApp::Responder::UserError'))? 200 : 500);
 		$c->stash->{exception}= $err;
 		$c->view('RapidApp::HttpStatus')->process($c);
 	}
 }
-
-=pod
-	if ($c->rapidApp->saveErrors) {
-		$log->info("Writing ".scalar(@$traces)." exception trace(s) to ".$RapidApp::TraceCapture::TRACE_OUT_FILE);
-		for my $trace (@$traces) {
-			$ENV{FULL_TRACE} || $c->request->params->{fullTrace}?
-				RapidApp::TraceCapture::writeFullTrace($trace)
-				: RapidApp::TraceCapture::writeQuickTrace($trace);
-		}
-
-=pod
-		defined $self->exceptionStore or die "saveErrors is set, but no exceptionStore is defined";
-		my $store= $self->exceptionStore;
-		ref $store or $store= $c->model($store);
-		my $refId= $store->saveException($err);
-		if (!$err->isUserError || $self->reportIdForUserErrors) {
-			$c->stash->{exceptionRefId}= $refId;
-		}
-=cut
 
 1;

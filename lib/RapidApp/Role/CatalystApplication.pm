@@ -242,7 +242,6 @@ sub onError {
 			or $log->error("Failed to save error report");
 		$c->stash->{exceptionRefId}= $reportId;
 		$c->stash->{exceptionPromptForComment}= $reportId && $errorStore->updateEnabled && $c->rapidApp->errorAddCommentPath;
-		DEBUG(foo => $c->req->path, $c->rapidApp->errorAddCommentPath, index($c->req->path, $c->rapidApp->errorAddCommentPath));
 		$c->stash->{exceptionFailedToAddComment}= index($c->req->path, substr($c->rapidApp->errorAddCommentPath,1)) >= 0;
 	}
 	elsif ($c->debug) {

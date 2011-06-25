@@ -52,7 +52,15 @@ sub addComment {
 		$errStore->updateErrorReport($errId, $report);
 	}
 	
-	defined $comment
+	my $rct= $self->c->stash->{requestContentType};
+	if ($rct eq 'JSON' || $rct eq 'text/x-rapidapp-form-response') {
+		return [ success => \1, msg => 'Thank you' ];
+	}
+	else {
+		$self->c->res->status(200);
+		$self->c->res->content_type('text/html');
+		$self->c->res->body("Thank you");
+	}
 }
 
 1;

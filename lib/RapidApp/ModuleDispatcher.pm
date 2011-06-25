@@ -38,24 +38,4 @@ sub dispatch {
 	return $result;
 }
 
-
-=pod
-sub dieConverter {
-	die $_[0] if ref $_[0];
-	my $stopTrace= 0;
-	die &RapidApp::Error::capture(
-		join(' ', @_),
-		{ lateTrace => 0, traceArgs => { frame_filter => sub { noCatalystFrameFilter(\$stopTrace, @_) } } }
-	);
-}
-
-sub noCatalystFrameFilter {
-	my ($stopTrace, $params)= @_;
-	return 0 if $$stopTrace;
-	my ($pkg, $subName)= ($params->{caller}->[0], $params->{caller}->[3]);
-	return 0 if ($pkg eq __PACKAGE__ && $subName =~ /^RapidApp::Error:/);
-	$$stopTrace= $subName eq __PACKAGE__.'::dispatch';
-	return RapidApp::Error::ignoreSelfFrameFilter($params);
-}
-=cut
 1;

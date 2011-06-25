@@ -55,6 +55,8 @@ sub BUILD {
 		gen_die => 'gen_die',
 		gen_error => 'gen_error',
 		gen_usererror => 'gen_usererror',
+		gen_userexception => 'gen_userexception',
+		gen_userexception_complex => 'gen_userexception_complex',
 		gen_dbicerr => 'gen_dbicerr',
 		gen_custprompt => 'gen_custprompt',
 	);
@@ -146,7 +148,7 @@ sub read_records {
 		exception => $exceptionStr,
 		traces => $traceStr,
 		debugInfo => $infoStr,
-		userComment => $errReport->userComment,
+		userComment => ashtml $errReport->userComment,
 	};
 	return {
 		results	=> 1,
@@ -233,12 +235,24 @@ sub gen_die {
 }
 
 sub gen_error {
-	die RapidApp::Error->new("Generating an exception using the RapidApp::Error class");
+	die RapidApp::Error->new(message => "Generating an exception using the RapidApp::Error class");
 }
 
 sub gen_usererror {
-	die usererr "PEBKAC";
+	die usererr "PEBKAC", title => 'cusotm title';
 }
+
+sub gen_userexception {
+	die userexception "There's a reason this happened...", { a =>1, b => 2, c => 3 };
+}
+
+sub gen_userexception_complex {
+	die userexception
+		rawhtml "<h2>There's a reason this happened...</h2><p>Stuff, and stuff</p><p>More stuff!</p>",
+		title => 'This is a friendly error',
+		data => { a =>1, b => 2, c => 3 };
+}
+
 
 sub gen_dbicerr {
 	my $self= shift;

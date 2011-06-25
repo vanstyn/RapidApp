@@ -7,7 +7,7 @@
 </head>
 <body>
 	<h2>HTTP [% statusCode %]</h2>
-	<h4>[% longStatusText | html %]</h4>
+	<h4>[% longStatusText %]</h4>
 	
 	[% IF exceptionRefFailure %]
 	<p>The details of this error could not be saved.</p>
@@ -15,6 +15,15 @@
 	<p>The details of this error have been kept for analysis.<br/>
 	Reference number [% IF debug && errorViewPath %]<a href="[% errorViewPath %]/?id=[% exceptionRefId %]" target="_blank">[% exceptionRefId %]</a>[% ELSE %][% exceptionRefId %][% END %]
 	</p>
+		[% IF exceptionPromptForComment %]
+		<br/>
+		<p>To aid in troubleshooting, please tell us what you were doing at the time of the error</p>
+		<form action="[% commentSubmitPath %]" method="post">
+			<input type="hidden" name="errId" value="[% exceptionRefId %]"/>
+			<textarea name="comment"></textarea><br/>
+			<input type="submit" value="Send Comment" />
+		</form>
+		[% END %]
 	[% END %]
 </body>
 </html>

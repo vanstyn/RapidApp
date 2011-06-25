@@ -30,24 +30,11 @@ sub process {
 		$c->res->status(500);
 		
 		my $msg= $self->getUserMessage($err) || 'An internal error occured';
+		my $title= $self->getUserMessageTitle($err) || 'Error';
 		
+		# This flag prevents infinite error reporting if adding a comment throws an error
+		# See Role::CatalystApplication
 		if ($c->stash->{exceptionFailedToAddComment}) {
-			
-		# if we died trying to append a comment to an error, don't go recursive on them...
-		# my $errAddCommentPath= ''.$c->rapidApp->errorAddCommentPath;
-		# my $path= ''.$c->req->path;
-		# my $path2= substr($path, 1);
-		# unless ($path2 eq $errAddCommentPath) {
-			# IO::File->new("> /tmp/a")->print($path2);
-			# IO::File->new("> /tmp/b")->print($errAddCommentPath);
-			# for (my $i=0; $i < length($path2); $i++) {
-				# if (substr($path2, $i, 1) ne substr($errAddCommentPath, $i, 1)) {
-					# die "substr($path2, $i, 1) ne substr($errAddCommentPath, $i, 1)\n";
-				# }
-			# }
-			# die "WTF";
-		# }
-			DEBUG(foo => 'got here');
 			$msg = "Unable to add your message to the error report.<br/>However, The error has still been reported.";
 		}
 		# If exceptionRefId exists, we mention something about it to the user.
@@ -63,7 +50,7 @@ sub process {
 			}
 			if ($c->stash->{exceptionPromptForComment}) {
 				$formCfg= {
-					title => "Error",
+					title => $title,
 					height => 250,
 					width => 370,
 					url => $c->rapidApp->errorAddCommentPath .'/addComment',
@@ -96,6 +83,7 @@ sub process {
 			rows			=> [],
 			results		=> 0,
 			msg			=> $msg,
+			title       => $title,
 			winform     => $formCfg,
 		};
 	}
@@ -141,9 +129,18 @@ sub getUserMessage {
 	my ($self, $err)= @_;
 	blessed($err) or return undef;
 	my $method= $err->can('userMessage') || return undef;
-	my $str= $err->$method();
+	my $str= ashtml $err->$method();
 	defined $str && length($str) or return undef;
-	return join('<br/>', encode_entities(split '\n', $str));
+	return $str;
+}
+
+sub getUserMessageTitle {
+	my ($self, $err)= @_;
+	blessed($err) or return undef;
+	my $method= $err->can('userMessageTitle') || return undef;
+	my $str= ashtml $err->$method();
+	defined $str && length $str or return undef;
+	return $str;
 }
 
 1;

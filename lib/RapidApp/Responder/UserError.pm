@@ -6,25 +6,20 @@ extends 'RapidApp::Responder';
 #use overload '""' => \&_stringify_static; # to-string operator overload
 use HTML::Entities;
 
-has 'userMessage' => ( is => 'rw', isa => 'Str', required => 1 );
-has 'isHtml' => ( is => 'rw', default => 0 );
+has userMessage      => ( is => 'rw', isa => 'Str', required => 1 );
+has userMessageTitle => ( is => 'rw', isa => 'Str' );
+sub isHtml { return (ref (shift)->userMessage)->isa('RapidApp::HTML::RawHtml'); }
 
 sub writeResponse {
 	my ($self, $c)= @_;
 	
-	my $text= $self->userMessage;
-	if (!$self->isHtml) {
-		$text= join('<br />', encode_entities(split "\n", $text));
-	}
-	
 	my $rct= $c->stash->{requestContentType};
+	$c->stash->{exception}= $self;
 	if ($rct eq 'JSON' || $rct eq 'text/x-rapidapp-form-response') {
-		$c->stash->{exception}= $self;
 		$c->forward('View::RapidApp::JSON');
 	}
 	else {
-		$c->response->status(500);
-		$c->stash->{longStatusText}= $text;
+		$c->response->status(200);
 		$c->forward('View::RapidApp::HttpStatus');
 	}
 }
