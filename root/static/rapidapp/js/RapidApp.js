@@ -212,7 +212,12 @@ Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
 			var data = response.result || Ext.decode(response.responseText, true) || {};
 			var title = data.title || 'Error';
 			var msg = data.msg || 'unknown error - Ext.ux.RapidApp.ajaxCheckException';
-			Ext.ux.RapidApp.errMsgHandler(title,msg);
+			if (data.winform) {
+				Ext.ux.RapidApp.WinFormPost(data.winform);
+			}
+			else {
+				Ext.ux.RapidApp.errMsgHandler(title,msg);
+			}
 		}
 		
 		var warning = response.getResponseHeader('X-RapidApp-Warning');
@@ -439,6 +444,7 @@ Ext.ux.RapidApp.handleCustomServerDirectives= function(response, continue_curren
 	if (customprompt)
 		return Ext.ux.RapidApp.handleCustomPrompt(customprompt,success_callback_repeat);
 	
+	// If it was an exception, it got handled/displayed already in ajaxCheckException, so don't process further.
 	if(response.getResponseHeader('X-RapidApp-Exception'))
 		return;
 	

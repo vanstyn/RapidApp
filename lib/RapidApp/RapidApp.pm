@@ -61,6 +61,7 @@ sub resolveErrorReportStore {
 # The module can be specified in the config, or it will be automatically set by the first
 #    module of that type which gets loaded.
 has 'errorViewPath' => ( is => 'rw', isa => 'Str' ); # ErrorView
+has 'errorAddCommentPath' => ( is => 'rw', isa => 'Str' ); # ErrorCommentHandler
 has 'appAuthPath'   => ( is => 'rw', isa => 'Str' ); # AppAuth
 
 sub BUILD {

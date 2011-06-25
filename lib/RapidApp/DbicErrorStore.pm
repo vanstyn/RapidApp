@@ -6,8 +6,6 @@ with 'RapidApp::Role::ErrorReportStore';
 use RapidApp::Include 'perlutil';
 use RapidApp::Debug 'DEBUG';
 
-use Storable ('freeze', 'thaw');
-
 =head1 NAME
 
 RapidApp::DbicExceptionStore;
@@ -15,8 +13,6 @@ RapidApp::DbicExceptionStore;
 =cut
 
 has 'resultSource'      => ( is => 'rw', isa => 'DBIx::Class::ResultSource' );
-has 'maxSerializedSize' => ( is => 'rw', default => 4*1024*1024 );
-has 'maxCloneDepth'     => ( is => 'rw', default => 6 );
 
 =head1 ATTRIBUTES
 
@@ -25,17 +21,6 @@ has 'maxCloneDepth'     => ( is => 'rw', default => 6 );
 =item resultSource
 
 The DBIC ResultSource matching the required schema (below)
-
-=item maxSerializedSize
-
-The maximum size in bytes allowed for a serialized report.  Reports will be repeatedly trimmed
-until they are below this size.
-
-=item maxCloneDepth
-
-When trimmed, this setting determines how deeply to clone a given node of the report.  The report
-is repeatedly cloned with shallower and shallower depths until it fits within the maxSerializedSize.
-The trimming attempts start with this depth, and step smaller if needed.
 
 =back
 
@@ -123,77 +108,37 @@ sub saveErrorReport {
 	undef @summaryParts;
 	
 	my $refId;
-	my $db_debug;
+	my $rs= $self->resultSource;
 	try {
-		local $Storable::forgive_me= 1; # ignore non-storable things
-		
-		my ($serialized, $serializedSize)= (undef, 0x7FFFFFFF);
-		
-		if ($ENV{DEBUG_ERROR_STORE}) {
-			open my $file, ">", "/tmp/Dump_$errReport";
-			$file->print(Dumper($errReport));
-			$file->close;
-		}
-		
-		for (my $maxDepth= $self->maxCloneDepth; $maxDepth > 2; $maxDepth--) {
-			try {
-				my $trimErr= $errReport->getTrimmedClone($maxDepth);
-				$trimErr->apply_debugInfo(freezeInfo => "Exception object trimmed to depth $maxDepth");
-				$serialized= freeze( $trimErr );
-				$serializedSize= defined $serialized? length($serialized) : -1;
-			}
-			catch {
-				$log->warn("Error serialization failed, attempting to trim further...");
-			};
-			last if (defined $serialized && $serializedSize < $self->maxSerializedSize);
-			$log->warn("Error serialization was $serializedSize bytes, attempting to trim further...");
-		}
-		
-		# last ditch attempt at saving something
-		if (!defined $serialized || $serializedSize >= $self->maxSerializedSize) {
-			my $errMsg= 'Exception could not be stringified!';
-			try {
-				$errMsg= ''.$errReport->exception;
-				$errMsg= substr($errMsg, 0, $self->maxSerializedSize - 600); # I actually measured the frozen size of the hash below with no message to be 405 bytes
-			}
-			catch { };
-			my $trimErr= RapidApp::ErrorReport->new(
-				dateTime => $errReport->dateTime,
-				exception => $errMsg,
-				traces => [],
-				debugInfo => {
-					freezeInfo => "Exception object could not be serialized",
-					smallestTrimmedErrorSize => $serializedSize,
-					maxSize => $self->maxSerializedSize,
-					numTraces => scalar(@{$errReport->traces}),
-				},
-			);
-			$serialized= freeze( $trimErr );
-		}
-		
-		my $rs= $self->resultSource;
 		defined $rs or die "Missing ResultSource";
 		
+		my $serialized= $self->serializeErrorReport($errReport);
 		
-		$db_debug= $rs->schema->storage->debug();
-		$rs->schema->storage->debug(0); # prevent spamming the console with binary data
-		my $row= $rs->resultset->create({
-			when    => $errReport->dateTime,
-			summary => $summary,
-			report  => $serialized,
+		$self->_suppressDbicTrace(sub {
+			$refId= $self->_createRecord({
+				when    => $errReport->dateTime,
+				summary => $summary,
+				report  => $serialized,
+			});
 		});
-		$refId= $row->id;
+		
 		$log->info("Exception saved as refId ".$refId);
 	}
 	catch {
 		$log->error("Failed to save exception to database: ".$_);
 		$refId= undef;
 	};
-	if ($db_debug) { $self->resultSource->schema->storage->debug($db_debug); }
 	return $refId;
 }
 
-=head2 $err= $store->loadException( $id )
+# Having this as a separate method allows for subclasses to fill in extra fields
+sub _createRecord {
+	my ($self, $argHash)= @_;
+	my $row= $self->resultSource->resultset->create($argHash);
+	return $row->id;
+}
+
+=head2 $err= $store->loadErrorReport( $id )
 
 =cut
 sub loadErrorReport {
@@ -202,16 +147,48 @@ sub loadErrorReport {
 	my $rs= $self->resultSource;
 	defined $rs or die "Missing ResultSource";
 	
-	my $row= $rs->resultset->find($id);
-	defined $row or die "No excption exists for id $id";
+	my $row= $rs->resultset->single({ id => $id });
+	defined $row or die "No such error report $id";
 	
 	my $serialized= $row->report;
 	RapidApp::ScopedGlobals->log->debug('Read '.length($serialized).' bytes of serialized error');
-	my $errReport= thaw($serialized);
-	defined $errReport or die "Failed to deserialize exception";
+	my $errReport= $self->deserializeErrorReport($serialized);
+	
 	return $errReport;
 }
 
+=head2 $err= $store->updateErrorReport( $id, $report )
+
+=cut
+sub updateErrorReport {
+	my ($self, $id, $report)= @_;
+	my $row= $self->resultSource->resultset->single({ id => $id });
+	defined $row or die "No such error report $id";
+	my $serialized= $self->serializeErrorReport( $report );
+	$self->_suppressDbicTrace(sub {
+		$row->update({ report => $serialized });
+	});
+}
+
+sub _suppressDbicTrace {
+	my ($self, $code)= @_;
+	my ($db_debug, $err, $ret);
+	my $rs= $self->resultSource;
+	try {
+		$db_debug= $rs->schema->storage->debug();
+		$rs->schema->storage->debug(0); # prevent spamming the console with binary data
+		$ret= $code->();
+	}
+	catch {
+		$err= @_;
+	};
+	# turn traces back on if we turned them off
+	if ($db_debug && $rs && $rs->schema && $rs->schema->storage) {
+		$rs->schema->storage->debug($db_debug);
+	}
+	defined $err and die $err;
+	return $ret;
+}
 
 
 1;

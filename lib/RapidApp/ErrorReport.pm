@@ -18,6 +18,8 @@ sub _build_dateTime {
 
 has 'exception' => ( is => 'rw', required => 1 );
 
+has 'userComment' => ( is => 'rw' );
+
 has 'traces' => ( is => 'rw', isa => 'ArrayRef', required => 1 );
 
 has 'debugInfo' => (

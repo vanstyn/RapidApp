@@ -71,11 +71,12 @@ sub BUILD {
 	);
 	
 	$self->add_formpanel_items(
-		{ name => 'id',        fieldLabel => 'ID' },
-		{ name => 'dateTime',  fieldLabel => 'Date' },
-		{ name => 'debugInfo', fieldLabel => 'Info' },
-		{ name => 'exception', fieldLabel => 'Error' },
-		{ name => 'traces',    fieldLabel => 'Stack' },
+		{ name => 'id',          fieldLabel => 'ID' },
+		{ name => 'dateTime',    fieldLabel => 'Date' },
+		{ name => 'debugInfo',   fieldLabel => 'Info' },
+		{ name => 'userComment', fieldLabel => 'Comment' },
+		{ name => 'exception',   fieldLabel => 'Error' },
+		{ name => 'traces',      fieldLabel => 'Stack' },
 	);
 	
 	$self->DataStore->apply_flags(
@@ -145,6 +146,7 @@ sub read_records {
 		exception => $exceptionStr,
 		traces => $traceStr,
 		debugInfo => $infoStr,
+		userComment => $errReport->userComment,
 	};
 	return {
 		results	=> 1,
