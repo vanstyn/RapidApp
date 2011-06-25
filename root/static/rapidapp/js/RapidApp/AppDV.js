@@ -39,6 +39,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		}
 		
 		var Record = records[0];
+		this.currentEditRecord = Record;
+		
 		var domEl = this.getNode(Record);
 		var editEl = new Ext.Element(domEl);
 		
@@ -376,8 +378,29 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		}
 		
 	},
-	handle_edit_record: function (target,editEl,Record,index,domEl) {
+	beginEditRecord: function(Record) {
+		Record.beginEdit();
+		this.currentEditRecord = Record;
+	},
+	endEditRecord: function(Record) {
+		Record.endEdit();
+		this.currentEditRecord = null;
+	},
+	simulateSaveClick: function() {
 		
+		var Record = this.currentEditRecord;
+		if(!Record) { return; }
+		
+		var domEl = this.getNode(Record);
+		var editEl = new Ext.Element(domEl);
+
+		var saveTargetEl = editEl.child('div.save');		
+		var index = this.getStore().indexOf(Record);
+
+		return this.handle_edit_record(saveTargetEl,editEl,Record,index,editEl);
+	},
+	handle_edit_record: function (target,editEl,Record,index,domEl) {
+
 		var editDoms = domEl.query('div.editable-value');
 		var editEls = [];
 		Ext.each(editDoms,function(dom) {
@@ -397,7 +420,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 				if(!target.hasClass('cancel')) { return; }
 			}
 			
-			Record.beginEdit();
+			//Record.beginEdit();
+			this.beginEditRecord(Record);
 		
 			var success = true;
 			/***** SAVE RECORDS *****/
@@ -426,7 +450,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			
 			domEl.removeClass('editing-record');	
 			domEl.parent().removeClass('record-update');
-			Record.endEdit();
+			//Record.endEdit();
+			this.endEditRecord(Record);
 			
 			if(Record.phantom && !save) {
 				Store.remove(Record);
