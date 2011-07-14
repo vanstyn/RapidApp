@@ -403,11 +403,23 @@ sub set_columns_order {
 
 #############
 
+sub params_from_request {
+	my $self= shift;
+	
+	my $params= $self->c->req->params;
+	if (defined $params->{orig_params}) {
+		$params= $self->json->decode($params->{orig_params});
+	}
+	
+	return $params;
+}
 
 sub read {
 	# params is optional
 	my ($self, $params)= @_;
 	
+	# only touch request if params were not supplied
+	$params ||= $self->params_from_request;
 	$self->enforce_max_pagesize($params);
 	
 	my $data = $self->read_raw($params);
@@ -445,10 +457,7 @@ sub read_raw {
 	
 	my $data;
 	if (defined $self->read_handler and $self->has_flag('can_read')) {
-		if (!$params) {
-			my $reqPrm= $self->c->req->params;
-			$params= defined $reqPrm->{orig_params}? $self->json->decode($reqPrm->{orig_params}) : $reqPrm;
-		}
+		$params ||= $self->params_from_request;
 		
 		$data = $self->read_handler->call($params);
 		
