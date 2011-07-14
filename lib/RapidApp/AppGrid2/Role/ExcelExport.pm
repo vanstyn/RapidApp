@@ -6,8 +6,7 @@ use Moose::Role;
 
 use Spreadsheet::WriteExcel;
 use RapidApp::Spreadsheet::ExcelTableWriter;
-
-use Term::ANSIColor qw(:constants);
+use RapidApp::Include qw(perlutil sugar);
 
 sub BUILD {}
 before 'BUILD' => sub {
@@ -37,28 +36,39 @@ around 'options_menu_items' => sub {
 	return $items;
 };
 
-
 sub excel_read {
 	my $self = shift;
 	my $params = $self->c->req->params;
 	
-	my $columns = $self->column_order;
-	$columns = $self->json->decode($params->{columns}) if (defined $params->{columns});
+	# Get the list of desired columns from the query parameters.
+	# If not specified, we use all defined columns.
+	my $columns= ($params->{columns})
+		? $self->json->decode($params->{columns})
+		: $self->column_order;
+	
+	# filter out columns that we can't use, and also build the column definitions for ExcelTableWriter
+	my @colDefs = ();
+	foreach my $col (@$columns) {
+		my $field = $self->columns->{$col} or die "column $col does not exist in columns hash";
+		next if ($field->name eq 'icon');
+		next if ${ $field->no_column };
+		next unless (defined $field->header and defined $field->name);
+		push @colDefs, {
+			name => $field->name,
+			label => $field->header
+		};
+	}
+	
+	# Restrict columns to the set we chose to keep.
+	# Note that the previous ref is a constant, and would be bad if we modified it.
+	$columns= [ map { $_->{name} } @colDefs ];
+
+	# override the columns that DataStore is fetching
+	#$self->c->req->params->{columns}= $self->json->encode($columns);
+	my $data = $self->DataStore->read({%$params, columns => $columns, ignore_page_size => 1});
 	
 	my $dlData = '';
 	open my $fd, '>', \$dlData;
-	
-	my $data = $self->DataStore->read;
-	
-	my @headers = ();
-	my @fields = ();
-	foreach my $col (@$columns) {
-		my $field = $self->columns->{$col} or die "column $col does not exist in columns hash";
-		next if ($field->{name} eq 'icon');
-		next unless (defined $field->{header} and defined $field->{name});
-		push @headers, $field->{header};
-		push @fields, $field->{name};
-	}
 	
 	my $xls = Spreadsheet::WriteExcel->new($fd);
 	$xls->set_properties(
@@ -71,27 +81,17 @@ sub excel_read {
 	my $tw = RapidApp::Spreadsheet::ExcelTableWriter->new(
 		wbook		=> $xls,
 		wsheet	=> $ws,
-		columns	=> \@headers
+		columns	=> \@colDefs,
+		ignoreUnknownRowKeys => 1,
 	);
 	
 	#$tw->writePreamble('Clippard Instrument Laboratory');
 	#$tw->writePreamble('Export of Project Data');
 	#$tw->writePreamble();
 	
-	# This doesn't work do to bug in RapidApp::Spreadsheet::ExcelTableWriter:
-	#foreach my $row (@{ $data->{rows} }) {
-	#	$tw->writeRow($row)
-	#}
-	
-
 	foreach my $row (@{ $data->{rows} }) {
-		my @r = ();
-		foreach my $fname (@fields) {
-			push @r, $row->{$fname};
-		}
-		$tw->writeRow(@r);
+		$tw->writeRow($row)
 	}
-
 
 	$tw->autosizeColumns();
 	$xls->close();
