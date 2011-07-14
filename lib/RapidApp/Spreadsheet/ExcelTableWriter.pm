@@ -87,6 +87,7 @@ has 'columns'  => ( is => 'rw', isa => 'ArrayRef', required => 1 );
 has 'rowStart' => ( is => 'rw', isa => 'Int', required => 1, default => 0 );
 has 'colStart' => ( is => 'rw', isa => 'Int', required => 1, default => 0 );
 has 'headerFormat' => ( is => 'rw', lazy_build => 1 );
+has 'ignoreUnknownRowKeys' => ( is => 'rw', isa => 'Bool', default => 0 );
 
 sub _build_headerFormat {
 	my $self= shift;
@@ -294,10 +295,10 @@ sub rowHashToArray {
 	}
 	
 	# elaborate error check, to be helpful....
-	if (scalar(keys(%$hash)) != $seen) {
+	if (!$self->ignoreUnknownRowKeys && scalar(keys(%$hash)) != $seen) {
 		my %tmphash= %$hash;
 		map { delete $tmphash{$_->name} } @{$self->columns};
-		die "Unused keys in row hash: ".join(',',keys(%tmphash));
+		warn "Unused keys in row hash: ".join(',',keys(%tmphash));
 	}
 	return $result;
 }
