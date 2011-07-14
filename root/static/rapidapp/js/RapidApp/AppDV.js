@@ -316,7 +316,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		editEl = clickableEl.child('div.print-view');
 		if(editEl) {
 			if(this.printview_url) {
-				window.open(this.printview_url,'print_view-' + this.id);
+				window.open(this.printview_url,'');
 			}
 		}
 	},
