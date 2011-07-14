@@ -450,15 +450,18 @@ sub dbic_to_ext_type {
 
 
 sub read_records {
-	my $self = shift;
-
-	my $params = $self->c->req->params;
+	my ($self, $params)= @_;
+	
+	# only touch request if params were not supplied
+	$params ||= $self->c->req->params;
 	
 	delete $params->{query} if (defined $params->{query} and $params->{query} eq '');
 	
-	if(defined $params->{columns} and not ref($params->{columns})) {
-		my $decoded = $self->json->decode($params->{columns});
-		$params->{columns} = $decoded;
+	if (defined $params->{columns}) {
+		if (!ref $params->{columns}) {
+			my $decoded = $self->json->decode($params->{columns});
+			$params->{columns} = $decoded;
+		}
 		
 		# If custom columns have been provided, we have to make sure that the record_pk is among them.
 		# This is required to properly support the "item" page which is opened by double-clicking
@@ -478,7 +481,7 @@ sub read_records {
 		}
 		
 		$params->{columns} = $newcols;
-	};
+	}
 	
 	my @arg = ( $params );
 	push @arg, $self->read_extra_search_set if ($self->can('read_extra_search_set'));

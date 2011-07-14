@@ -408,7 +408,7 @@ sub read {
 	# params is optional
 	my ($self, $params)= @_;
 	
-	$self->enforce_max_pagesize;
+	$self->enforce_max_pagesize($params);
 	
 	my $data = $self->read_raw($params);
 	
@@ -416,16 +416,13 @@ sub read {
 }
 
 sub enforce_max_pagesize {
-	my $self = shift;
-	my $params = $self->c->req->params;
+	my ($self, $params)= @_;
 	
-	return unless (
-		$self->max_pagesize and	(
-			not defined $params->{limit} or 
-			$params->{limit} > $self->max_pagesize or
-			not defined $params->{start}
-		)
-	);
+	return if !$self->max_pagesize || $params->{ignore_page_size};
+	return unless
+		not defined $params->{limit} or 
+		$params->{limit} > $self->max_pagesize or
+		not defined $params->{start};
 	
 	my $new_params = {};
 	$new_params->{start} = 0 unless (defined $params->{start});
