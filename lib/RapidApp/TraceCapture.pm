@@ -45,10 +45,17 @@ the environment variable TRACE_OUT_FILE, or default to /tmp/RapidApp_Error_Trace
 
 sub initTraceOutputFile {
 	my $fname= $ENV{TRACE_OUT_FILE} || '/tmp/RapidApp_Error_Traces';
-	my $fd= IO::File->new("> $fname");
-	my $now= DateTime->now;
-	$fd->print("<html><body><h2>RapidApp Application started at ".$now->ymd.' '.$now->hms."</h2>\n\n");
-	$fd->close;
+	-e $fname and unlink($fname);
+	if (-e $fname) { $fname .= '-'.$$; unlink $fname; }
+	
+	try {
+		my $fd= IO::File->new("> $fname") or die "Trace file '$fname' cannot be written.  Error traces will not be available.\n";
+		my $now= DateTime->now;
+		$fd->print("<html><body><h2>RapidApp Application started at ".$now->ymd.' '.$now->hms."</h2>\n\n");
+		$fd->close;
+	} catch {
+		emitMessage(''.$_);
+	}
 	return $fname;
 }
 
@@ -68,10 +75,15 @@ sub emitMessage {
 	}
 }
 
+sub openTraceFile {
+	my $fd= IO::File->new(">> $TRACE_OUT_FILE") or die "trace file '$TRACE_OUT_FILE' is unwriteable";
+	return $fd;
+}
+
 sub writeQuickTrace {
 	my $trace= shift || Devel::StackTrace->new;
 	try {
-		my $fd= IO::File->new(">> $TRACE_OUT_FILE");
+		my $fd= openTraceFile();
 		my @frames= $trace->frames;
 		$fd->print("<div style='margin:0.2em 1em 2em 1em; font-size:10pt'>\n");
 		for my $frame (@frames) {
@@ -101,7 +113,7 @@ sub traceLogName {
 sub writeFullTrace {
 	my $trace= shift || Devel::StackTrace->new;
 	try {
-		my $fd= IO::File->new(">> $TRACE_OUT_FILE");
+		my $fd= openTraceFile();
 		$fd->print($trace->as_html."\n<br/><br/><br/>\n");
 		$fd->close();
 	}
