@@ -3371,7 +3371,7 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 		var grid = this.grid;
 		var cmConfig = grid.getColumnModel().config;
 		
-		grid.selModel = new Ext.grid.CheckboxSelectionModel();
+		//grid.selModel = new Ext.grid.CheckboxSelectionModel();
 		
 		this.localFields = [];
 		
@@ -3396,12 +3396,30 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 			store: this.localStore,
 			columns: cmConfig,
 			autoExpandColumn: grid.autoExpandColumn,
+			enableHdMenu: false,
+			enableColumnMove: false,
 			viewConfig: grid.viewConfig
 		});
 		
+		this.addButton = new Ext.Button({
+			text: 'Add',
+			iconCls: 'icon-arrow-left',
+			iconAlign: 'left',
+			handler: function() {
+				cmp.addRowsSelected.call(cmp);
+			},
+			disabled: true
+		});
 		
-		
-		
+		this.removeButton = new Ext.Button({
+			text: 'Remove',
+			iconCls: 'icon-arrow-right',
+			iconAlign: 'right',
+			handler: function() {
+				cmp.removeRowsSelected.call(cmp);
+			},
+			disabled: true
+		});
 		
 		this.items = [
 			{
@@ -3418,14 +3436,7 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 					left: 0
 				},
 				buttons: [
-					{
-						text: 'Remove',
-						iconCls: 'icon-arrow-right',
-						iconAlign: 'right',
-						handler: function() {
-							cmp.removeRowsSelected.call(cmp);
-						}
-					},
+					this.removeButton,
 					' ',' ',' ' // <-- spacing
 				]
 			},
@@ -3439,14 +3450,7 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 				buttonAlign: 'left',
 				buttons: [
 					' ',' ',	' ', // <-- spacing
-					{
-						text: 'Add',
-						iconCls: 'icon-arrow-left',
-						iconAlign: 'left',
-						handler: function() {
-							cmp.addRowsSelected.call(cmp);
-						}
-					},
+					this.addButton,
 					'->',
 					{
 						text: 'Ok',
@@ -3480,6 +3484,16 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 				this.addSelected(Record);
 			},this);
 		}
+		
+		var localSelMod = this.localGrid.getSelectionModel();
+		var selMod = this.grid.getSelectionModel();
+		
+		localSelMod.on('selectionchange',this.onSelectionChange,this);
+		selMod.on('selectionchange',this.onSelectionChange,this);
+		
+		// When one grid is clicked clear the other:
+		localSelMod.on('rowselect',function(){ selMod.clearSelections(); },this);
+		selMod.on('rowselect',function(){ localSelMod.clearSelections(); },this);
 		
 		Ext.ux.RapidApp.AppGridSelector.superclass.initComponent.call(this);
 	},
@@ -3528,6 +3542,21 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 			if(v) { ids.push(k); }
 		},this);
 		return ids;
+	},
+	
+	onSelectionChange: function(sm) {
+		this.leftSelectionCheck.call(this);
+		this.rightSelectionCheck.call(this);
+	},
+	
+	leftSelectionCheck: function() {
+		var sm = this.localGrid.getSelectionModel();
+		this.removeButton.setDisabled(!sm.hasSelection());
+	},
+	
+	rightSelectionCheck: function() {
+		var sm = this.grid.getSelectionModel();
+		this.addButton.setDisabled(!sm.hasSelection());
 	}
 	
 });
