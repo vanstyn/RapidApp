@@ -3366,6 +3366,9 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 	},
 
 	initComponent: function() {
+		
+		this.addEvents( 'selectionsave' );
+		
 		var cmp = this;
 		
 		this.selectedIdMap = {};
@@ -3460,13 +3463,14 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 					{
 						text: 'Save & Close',
 						handler: function() {
-							
+							cmp.fireEvent('selectionsave',cmp.getSelectedIds());
+							cmp.tryClosePage();
 						}
 					},
 					{
 						text: 'Cancel',
 						handler: function() {
-							cmp.ownerCt.ownerCt.close();
+							cmp.tryClosePage();
 						}
 					}
 				]
@@ -3561,6 +3565,13 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 	rightSelectionCheck: function() {
 		var sm = this.grid.getSelectionModel();
 		this.addButton.setDisabled(!sm.hasSelection());
+	},
+	
+	tryClosePage: function() {
+		if (! this.ownerCt) { return; }
+		if (this.ownerCt.closable) { return this.ownerCt.close(); }
+		if (! this.ownerCt.ownerCt) { return; }
+		if (this.ownerCt.ownerCt.closable) { return this.ownerCt.ownerCt.close(); }
 	}
 	
 });
