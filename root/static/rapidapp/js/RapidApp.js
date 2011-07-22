@@ -3232,3 +3232,101 @@ Ext.ux.RapidApp.menu.ToggleSubmenuItem = Ext.extend(Ext.menu.Item,{
 });
 Ext.reg('menutoggleitem',Ext.ux.RapidApp.menu.ToggleSubmenuItem);
 
+
+Ext.ns('Ext.ux.RapidApp');
+Ext.ux.RapidApp.GridSelectSetDialog = Ext.extend(Ext.Window, {
+
+	grid: null,
+	initSelectedIds: [],
+	
+	//private:
+	selectedIdMap: {},
+	localGrid: null,
+	localFields: null,
+	localStore: null,
+		
+	layout: 'hbox',
+	layoutConfig: {
+		align: 'stretch',
+		pack: 'start'
+	},
+		
+	initComponent: function() {
+		
+		this.selectedIdMap = {};
+		Ext.each(this.initSelectedIds,function(id){
+			this.selectedIdMap[id] = true;
+		},this);
+		
+		var grid = this.grid;
+		var cmConfig = grid.getColumnModel().config;
+		
+		this.localFields = [];
+		
+		Ext.each(cmConfig,function(item) {
+			this.localFields.push({ name: item.dataIndex });
+		},this);
+		
+		this.localStore = new Ext.data.JsonStore({ fields: this.localFields });
+		
+		var cmp = this;
+		
+		this.localGrid = {
+			flex: 1,
+			xtype: 'grid',
+			store: this.localStore,
+			columns: cmConfig,
+			autoExpandColumn: grid.autoExpandColumn,
+			viewConfig: grid.viewConfig,
+			listeners: {
+				rowdblclick: function(grid,index,e) {
+					var Record = grid.getStore().getAt(index);
+					cmp.unSelect(Record);
+				}
+			}
+		};
+		
+		grid.flex = 1;
+		
+		this.items = [
+			this.localGrid,
+			grid
+		];
+		
+		grid.getStore().on('load',this.applyFilter,this);
+		
+		grid.on('rowdblclick',function(grid,index,e) {
+			var Record = this.grid.getStore().getAt(index);
+			this.addSelected(Record);
+		},this);
+		
+		Ext.ux.RapidApp.GridSelectSetDialog.superclass.initComponent.call(this);
+	},
+	
+	applyFilter: function() {
+		var Store = this.grid.getStore();
+		Store.filter([{
+			fn: function(Record) {
+				return ! this.selectedIdMap[Record.get(Store.idProperty)];
+			},
+			scope: this
+		}]);
+	},
+	
+	addSelected: function(Record) {
+		var Store = this.grid.getStore();
+		this.localStore.add(Record);
+		this.selectedIdMap[Record.data[Store.idProperty]] = true;
+		this.applyFilter();
+	},
+	
+	unSelect: function(Record) {
+		var Store = this.grid.getStore();
+		this.localStore.remove(Record);
+		delete this.selectedIdMap[Record.data[Store.idProperty]];
+		this.applyFilter();
+	}
+	
+});
+Ext.reg('grid-selectset-dialog',Ext.ux.RapidApp.GridSelectSetDialog);
+
