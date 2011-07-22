@@ -3345,6 +3345,11 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 	dblclickAdd: true,
 	dblclickRemove: false,
 	
+	leftTitle: 'Selected',
+	leftIconCls: 'icon-checkbox-yes',
+	rightTitle: 'Not Selected',
+	rightIconCls: 'icon-checkbox-no',
+	
 	//private:
 	selectedIdMap: {},
 	localGrid: null,
@@ -3423,8 +3428,8 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 		
 		this.items = [
 			{
-				title: 'Selected',
-				iconCls: 'icon-checkbox-yes',
+				title: this.leftTitle,
+				iconCls: this.leftIconCls,
 				flex: 1,
 				layout: 'fit',
 				hideBorders: true,
@@ -3441,8 +3446,8 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 				]
 			},
 			{
-				title: 'Not Selected',
-				iconCls: 'icon-checkbox-no',
+				title: this.rightTitle,
+				iconCls: this.rightIconCls,
 				flex: 1,
 				layout: 'fit',
 				hideBorders: true,
@@ -3453,7 +3458,7 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 					this.addButton,
 					'->',
 					{
-						text: 'Ok',
+						text: 'Save & Close',
 						handler: function() {
 							
 						}
@@ -3463,8 +3468,7 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 						handler: function() {
 							cmp.ownerCt.ownerCt.close();
 						}
-					},
-					
+					}
 				]
 			}
 		];
