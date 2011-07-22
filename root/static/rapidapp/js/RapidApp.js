@@ -3342,6 +3342,9 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 	grid: null,
 	initSelectedIds: [],
 	
+	dblclickAdd: true,
+	dblclickRemove: false,
+	
 	//private:
 	selectedIdMap: {},
 	localGrid: null,
@@ -3360,8 +3363,6 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 	initComponent: function() {
 		var cmp = this;
 		
-		console.dir(this.grid);
-
 		this.selectedIdMap = {};
 		Ext.each(this.initSelectedIds,function(id){
 			this.selectedIdMap[id] = true;
@@ -3369,6 +3370,8 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 		
 		var grid = this.grid;
 		var cmConfig = grid.getColumnModel().config;
+		
+		grid.selModel = new Ext.grid.CheckboxSelectionModel();
 		
 		this.localFields = [];
 		
@@ -3388,19 +3391,17 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 		
 		this.on('afterrender',function(){ this.localStore.load(); },this);
 		
-		this.localGrid = {
+		this.localGrid = new Ext.grid.GridPanel({
 			xtype: 'grid',
 			store: this.localStore,
 			columns: cmConfig,
 			autoExpandColumn: grid.autoExpandColumn,
-			viewConfig: grid.viewConfig,
-			listeners: {
-				rowdblclick: function(grid,index,e) {
-					var Record = grid.getStore().getAt(index);
-					cmp.unSelect(Record);
-				}
-			}
-		};
+			viewConfig: grid.viewConfig
+		});
+		
+		
+		
+		
 		
 		this.items = [
 			{
@@ -3416,6 +3417,17 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 					bottom: 0,
 					left: 0
 				},
+				buttons: [
+					{
+						text: 'Remove',
+						iconCls: 'icon-arrow-right',
+						iconAlign: 'right',
+						handler: function() {
+							cmp.removeRowsSelected.call(cmp);
+						}
+					},
+					' ',' ',' ' // <-- spacing
+				]
 			},
 			{
 				title: 'Not Selected',
@@ -3423,16 +3435,51 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 				flex: 1,
 				layout: 'fit',
 				hideBorders: true,
-				items: grid
+				items: grid,
+				buttonAlign: 'left',
+				buttons: [
+					' ',' ',	' ', // <-- spacing
+					{
+						text: 'Add',
+						iconCls: 'icon-arrow-left',
+						iconAlign: 'left',
+						handler: function() {
+							cmp.addRowsSelected.call(cmp);
+						}
+					},
+					'->',
+					{
+						text: 'Ok',
+						handler: function() {
+							
+						}
+					},
+					{
+						text: 'Cancel',
+						handler: function() {
+							cmp.ownerCt.ownerCt.close();
+						}
+					},
+					
+				]
 			}
 		];
 		
 		grid.getStore().on('load',this.applyFilter,this);
+			
+		if(this.dblclickRemove) {
+			this.localGrid.on('rowdblclick',function(grid,index,e) {
+				var Record = grid.getStore().getAt(index);
+				cmp.unSelect(Record);
+			},this);
+		}
 		
-		grid.on('rowdblclick',function(grid,index,e) {
-			var Record = this.grid.getStore().getAt(index);
-			this.addSelected(Record);
-		},this);
+		if(this.dblclickAdd) {
+			grid.on('rowdblclick',function(grid,index,e) {
+				var Record = this.grid.getStore().getAt(index);
+				this.addSelected(Record);
+			},this);
+		}
 		
 		Ext.ux.RapidApp.AppGridSelector.superclass.initComponent.call(this);
 	},
@@ -3445,6 +3492,20 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 			},
 			scope: this
 		}]);
+	},
+	
+	addRowsSelected: function() {
+		var sm = this.grid.getSelectionModel();
+		Ext.each(sm.getSelections(),function(Record) {
+			this.addSelected(Record);
+		},this);
+	},
+	
+	removeRowsSelected: function() {
+		var sm = this.localGrid.getSelectionModel();
+		Ext.each(sm.getSelections(),function(Record) {
+			this.unSelect(Record);
+		},this);
 	},
 	
 	addSelected: function(Record) {

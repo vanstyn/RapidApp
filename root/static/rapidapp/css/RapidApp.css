@@ -96,6 +96,8 @@ pre {
 
 .icon-arrow-up { background-image: url(/static/rapidapp/images/arrow_up.png) !important; }
 .icon-arrow-down { background-image: url(/static/rapidapp/images/arrow_down.png) !important; }
+.icon-arrow-left { background-image: url(/static/rapidapp/images/arrow_left.png) !important; }
+.icon-arrow-right { background-image: url(/static/rapidapp/images/arrow_right.png) !important; }
 .icon-arrow-divide { background-image: url(/static/rapidapp/images/arrow_divide.png) !important; }
 
 .icon-gears { background-image: url(/static/rapidapp/images/gears.png) !important; }
