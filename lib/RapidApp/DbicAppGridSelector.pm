@@ -23,7 +23,7 @@ sub get_ResultSet {
 	return $Rs unless (defined $self->c->req->params->{id_in});
 	
 	my $in = $self->json->decode($self->c->req->params->{id_in});
-	return $Rs->search({ $self->record_pk => { '-in' => $in }});
+	return $Rs->search({ 'me.' . $self->record_pk => { '-in' => $in }});
 }
 
 

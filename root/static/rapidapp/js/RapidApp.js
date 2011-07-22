@@ -3350,6 +3350,8 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 	rightTitle: 'Not Selected',
 	rightIconCls: 'icon-checkbox-no',
 	
+	baseParams: {},
+	
 	//private:
 	selectedIdMap: {},
 	localGrid: null,
@@ -3378,9 +3380,8 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 		
 		var grid = this.grid;
 		var cmConfig = grid.getColumnModel().config;
-		
-		//grid.selModel = new Ext.grid.CheckboxSelectionModel();
-		
+		var store = grid.getStore();
+
 		this.localFields = [];
 		
 		Ext.each(cmConfig,function(item) {
@@ -3389,13 +3390,19 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 		
 		this.localStore = new Ext.data.JsonStore({ 
 			fields: this.localFields,
-			api: grid.getStore().api,
+			api: store.api,
 			listeners: {
-				beforeload: function(store,opts) {
-					store.baseParams['id_in'] = Ext.encode(cmp.getSelectedIds());
+				beforeload: function(Store,opts) {
+					Store.baseParams['id_in'] = Ext.encode(cmp.getSelectedIds());
 				}
 			}
 		});
+		
+		//Apply any baseParams to the store:
+		Ext.iterate(this.baseParams,function(k,v) {
+			this.localStore.setBaseParam(k,v);
+			store.setBaseParam(k,v);
+		},this);
 		
 		this.on('afterrender',function(){ this.localStore.load(); },this);
 		
@@ -3477,7 +3484,7 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 			}
 		];
 		
-		grid.getStore().on('load',this.applyFilter,this);
+		store.on('load',this.applyFilter,this);
 			
 		if(this.dblclickRemove) {
 			this.localGrid.on('rowdblclick',function(grid,index,e) {
