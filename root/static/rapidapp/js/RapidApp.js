@@ -3350,6 +3350,8 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 	rightTitle: 'Not Selected',
 	rightIconCls: 'icon-checkbox-no',
 	
+	showCountsInTitles: true,
+	
 	baseParams: {},
 	
 	//private:
@@ -3438,6 +3440,8 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 		
 		this.items = [
 			{
+				
+				itemId: 'left-panel',
 				title: this.leftTitle,
 				iconCls: this.leftIconCls,
 				flex: 1,
@@ -3456,6 +3460,7 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 				]
 			},
 			{
+				itemId: 'right-panel',
 				title: this.rightTitle,
 				iconCls: this.rightIconCls,
 				flex: 1,
@@ -3521,6 +3526,7 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 			},
 			scope: this
 		}]);
+		this.updateTitleCounts();
 	},
 	
 	addRowsSelected: function() {
@@ -3579,6 +3585,23 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 		if (this.ownerCt.closable) { return this.ownerCt.close(); }
 		if (! this.ownerCt.ownerCt) { return; }
 		if (this.ownerCt.ownerCt.closable) { return this.ownerCt.ownerCt.close(); }
+	},
+	
+	getSelectedCount: function() {
+		var count = 0;
+		Ext.iterate(this.selectedIdMap,function() { count++; });
+		return count;
+	},
+	
+	updateTitleCounts: function() {
+		if(! this.showCountsInTitles) { return; }
+		
+		var total = this.grid.getStore().getTotalCount();
+		var selected = this.getSelectedCount();
+		var adjusted = total - selected;
+		
+		this.getComponent('left-panel').setTitle(this.leftTitle + ' (' + selected + ')');
+		this.getComponent('right-panel').setTitle(this.rightTitle + ' (' + adjusted + ')');
 	}
 	
 });
