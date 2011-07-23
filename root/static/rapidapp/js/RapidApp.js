@@ -3601,7 +3601,14 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 		var adjusted = total - selected;
 		
 		this.getComponent('left-panel').setTitle(this.leftTitle + ' (' + selected + ')');
-		this.getComponent('right-panel').setTitle(this.rightTitle + ' (' + adjusted + ')');
+		
+		var right_panel = this.getComponent('right-panel');
+		if(selected > total) {
+			right_panel.setTitle(this.rightTitle);
+		}
+		else {
+			right_panel.setTitle(this.rightTitle + ' (' + adjusted + ')');
+		}
 	}
 	
 });
