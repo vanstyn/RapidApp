@@ -213,13 +213,14 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
 		
 		if(this.pageSize) {
 			Ext.apply(this.bbar,{
-				xtype:	'paging',
+				xtype:	'rapidapp-paging',
 				store: this.store,
 				pageSize: this.pageSize,
 				displayInfo : true,
 				prependButtons: true,
 				items: []
 			});
+			if(this.maxPageSize) { this.bbar.maxPageSize = this.maxPageSize; }
 		}
 		
 		// ----- MultiFilters: ----- //

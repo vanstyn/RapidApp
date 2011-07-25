@@ -3614,4 +3614,71 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 });
 Ext.reg('appgridselector',Ext.ux.RapidApp.AppGridSelector);
 
+Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
+
+	allowChangePageSize: true,
+	maxPageSize: 500,
+
+	initComponent: function() {
+
+		if(this.allowChangePageSize) {
+
+			var paging = this;
+
+			this.pageSizeField = new Ext.form.NumberField({
+				itemCls: 'rapp-margin-bottom-0',
+				fieldLabel: 'Items per page',
+				width: 35,
+				maxValue: this.maxPageSize,
+				minValue: 1,
+				regex: /^\d+$/, // <-- only allow integers
+				enableKeyEvents:true,
+				listeners:{
+					keyup:{
+						buffer: 150,
+						fn: function(field, e) {
+							if (Ext.EventObject.ENTER == e.getKey()){
+								if(field.validate()) {
+									var size = field.getValue();
+									if (size != paging.pageSize) {
+										paging.pageSize = size;
+										paging.doLoad();
+									}
+									field.ownerCt.hide();
+								}
+								else {
+									field.markInvalid();
+								}
+							}
+						}
+					}
+				}
+			});
+
+			var orig_text = this.beforePageText;
+			this.beforePageText = {
+				xtype: 'button',
+				text: orig_text,
+				menu: {
+					layout: 'form',
+					showSeparator: false,
+					labelAlign: 'right',
+					labelWidth: 90,
+					items: this.pageSizeField,
+					listeners: {
+						beforeshow: function() {
+							paging.pageSizeField.setValue(paging.pageSize);
+						},
+						show: function() {
+							paging.pageSizeField.focus('',200);
+						}
+					}
+				}
+			};
+		}
+
+		Ext.ux.RapidApp.PagingToolbar.superclass.initComponent.call(this);
+	}
+});
+Ext.reg('rapidapp-paging',Ext.ux.RapidApp.PagingToolbar);
 

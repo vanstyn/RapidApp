@@ -57,15 +57,16 @@ sub get_record_loadContentCnf {
 	};
 }
 
-
-has '+max_pagesize' => ( default => 25 );
+has 'init_pagesize' => ( is => 'ro', isa => 'Int', default => 25 );
+has '+max_pagesize' => ( default => 500 );
 
 sub BUILD {
 	my $self = shift;
 	
 	$self->apply_config(
 		xtype						=> 'appgrid2',
-		pageSize					=> $self->max_pagesize,
+		pageSize					=> $self->init_pagesize,
+		maxPageSize				=> $self->max_pagesize,
 		stripeRows				=> \1,
 		columnLines				=> \1,
 		use_multifilters		=> \1,

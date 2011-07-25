@@ -9,6 +9,10 @@ pre {
 	word-wrap: break-word; /* Internet Explorer 5.5+ */
 }
 
+.rapp-margin-bottom-0 {
+	margin-bottom: 0px;
+}
+
 .icon-server_database { background-image: url(/static/rapidapp/images/server_database.png) !important; }
 .icon-arrow_refresh_small { background-image: url(/static/rapidapp/images/arrow_refresh_small.png) !important; }
 .icon-database { background-image: url(/static/rapidapp/images/database.png) !important; }
