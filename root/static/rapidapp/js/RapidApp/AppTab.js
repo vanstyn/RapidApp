@@ -218,7 +218,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.EditorGridPanel,{
 				pageSize: this.pageSize,
 				displayInfo : true,
 				prependButtons: true,
-				items: []
+				items: bbar_items
 			});
 			if(this.maxPageSize) { this.bbar.maxPageSize = this.maxPageSize; }
 		}
