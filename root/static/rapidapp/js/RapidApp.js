@@ -3682,3 +3682,11 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 });
 Ext.reg('rapidapp-paging',Ext.ux.RapidApp.PagingToolbar);
 
+
+Ext.ux.RapidApp.IconClsRenderFn = function(val) {
+	if (val == null || val === "") { return Ext.ux.showNull(val); }
+	//return '<div style="width:16px;height:16px;" class="' + val + '"></div>';
+	return '<div class="with-icon ' + val + '">' + val + '</div>';
+}
+
+

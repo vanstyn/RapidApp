@@ -55,3 +55,82 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
 
 });
 Ext.reg('appcombo2', Ext.ux.RapidApp.AppCombo2.ComboBox);
+
+
+
+// TODO: Make this the parent class of and merge with AppCombo2 above:
+Ext.ux.RapidApp.AppCombo2.CssCombo = Ext.extend(Ext.form.ComboBox,{
+	
+	lastValueClass: '',
+	
+	clearCss: false,
+	
+	setValue: function(v) {
+
+		if (this.valueCssField) {
+			var record = this.findRecord(this.valueField, v);
+			if (record) {
+				var addclass = record.data[this.valueCssField];
+				if (addclass) { 
+					this.el.replaceClass(this.lastValueClass,addclass);
+					this.lastValueClass = addclass;
+				}
+			}
+			else {
+				if(this.clearCss) {
+					this.el.removeClass(this.lastValueClass);
+				}
+			}
+		}
+		return Ext.form.ComboBox.prototype.setValue.apply(this,arguments);
+	}
+});
+
+
+
+Ext.ux.RapidApp.AppCombo2.IconCombo = Ext.extend(Ext.ux.RapidApp.AppCombo2.CssCombo,{
+	mode: 'local',
+	triggerAction: 'all',
+	editable: false,
+	value_list: false,
+	valueField: 'valueField',
+	displayField: 'displayField',
+	valueCssField: 'valueCssField',
+	cls: 'with-icon',
+	clearCss: true,
+	initComponent: function() {
+		if (this.value_list) {
+			var data = [];
+			Ext.each(this.value_list,function(item,index){
+				if(Ext.isArray(item)) {
+					data.push([item[0],item[1],item[2]]);
+				}
+				else {
+					data.push([item,item,item]);
+				}
+			});
+			this.store = new Ext.data.ArrayStore({
+				fields: [
+					this.valueField,
+					this.displayField,
+					this.valueCssField
+				],
+				data: data
+			});
+		}
+		
+		this.tpl = 
+			'<tpl for=".">' +
+				'<div class="x-combo-list-item">' +
+					'<div class="with-icon {' + this.valueCssField + '}">' +
+						'{' + this.displayField + '}' +
+					'</div>' +
+				'</div>' +
+			'</tpl>';
+		
+		Ext.ux.RapidApp.AppCombo2.IconCombo.superclass.initComponent.apply(this,arguments);
+	}
+});
+Ext.reg('icon-combo',Ext.ux.RapidApp.AppCombo2.IconCombo);
+
+

@@ -13,6 +13,12 @@ pre {
 	margin-bottom: 0px;
 }
 
+.with-icon {
+	height: 16px;
+	padding-left: 18px;
+	background-repeat: no-repeat;
+}
+
 .icon-server_database { background-image: url(/static/rapidapp/images/server_database.png) !important; }
 .icon-arrow_refresh_small { background-image: url(/static/rapidapp/images/arrow_refresh_small.png) !important; }
 .icon-database { background-image: url(/static/rapidapp/images/database.png) !important; }
