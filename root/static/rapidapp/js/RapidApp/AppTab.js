@@ -152,7 +152,7 @@ Ext.ux.RapidApp.AppTab.gridrow_nav = function(grid,index,e) {
 }
 
 
-Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,{
+Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.EditorGridPanel,{
 
 	filteredRecordData: function(data) {
 		// Return data as-is if primary_columns is not set:

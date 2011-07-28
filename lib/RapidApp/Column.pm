@@ -69,6 +69,15 @@ has 'width' => (
 );
 
 
+has 'editor' => ( 
+	is => 'rw', lazy => 1, 
+	default => undef,
+	traits => [ 'RapidApp::Role::GridColParam' ] 
+);
+
+
+
+
 has 'tpl' => ( 
 	is => 'rw', lazy => 1, 
 	default => undef,
