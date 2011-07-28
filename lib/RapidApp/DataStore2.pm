@@ -77,7 +77,7 @@ sub BUILD {
 	);
 	
 	$self->add_listener( write => RapidApp::JSONFunc->new( raw => 1, func => 
-		'function(store, action, result, res, rs) { store.load(); }' 
+		'function(store, action, result, res, rs) { store.reload(); }' 
 	)) if ($self->reload_on_save);
 	
 	
