@@ -77,7 +77,6 @@ has 'editor' => (
 
 
 
-
 has 'tpl' => ( 
 	is => 'rw', lazy => 1, 
 	default => undef,
@@ -114,6 +113,13 @@ has 'no_quick_search' => (
 	traits => [ 'RapidApp::Role::GridColParam' ] 
 );
 
+has 'extra_meta_data' => ( 
+	is => 'rw', lazy => 1, 
+	default => undef,
+	traits => [ 'RapidApp::Role::GridColParam' ] 
+);
+
+
 has 'data_type'	=> ( is => 'rw', default => undef );
 
 has 'filter'	=> ( is => 'rw', default => undef, traits => [ 'RapidApp::Role::GridColParam' ]  );
@@ -134,11 +140,23 @@ sub _set_render_fn {
 	my ($self,$new,$old) = @_;
 	return unless ($new);
 	
-	#use Data::Dumper;
-	#print STDERR YELLOW . BOLD . Dumper
-	
 	$self->xtype('templatecolumn');
 	$self->tpl('{[' . $new . '(values.' . $self->name . ',values)]}');
+}
+
+has 'renderer' => ( 
+	is => 'rw', lazy => 1, 
+	default => undef,
+	traits => [ 'RapidApp::Role::GridColParam' ],
+	trigger => \&_set_renderer
+);
+
+sub _set_renderer {
+	my ($self,$new,$old) = @_;
+	return unless ($new);
+	
+	$self->xtype(undef);
+	$self->tpl(undef);
 }
 
 
@@ -150,7 +168,7 @@ sub apply_attributes {
 	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	foreach my $attr ($self->meta->get_all_attributes) {
-		next unless (defined $new{$attr->name});
+		next unless (exists $new{$attr->name});
 		$attr->set_value($self,$new{$attr->name});
 		delete $new{$attr->name};
 	}
@@ -168,7 +186,7 @@ sub applyIf_attributes {
 	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	foreach my $attr ($self->meta->get_all_attributes) {
-		next unless (defined $new{$attr->name});
+		next unless (exists $new{$attr->name});
 		$attr->set_value($self,$new{$attr->name}) unless ($attr->get_value($self)); # <-- only set attrs that aren't already set
 		delete $new{$attr->name};
 	}
