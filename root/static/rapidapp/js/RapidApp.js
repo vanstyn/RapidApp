@@ -202,7 +202,14 @@ Ext.override(Ext.ux.form.SuperBoxSelect,{
 
 
 Ext.ux.RapidApp.errMsgHandler = function(title,msg) {
-	Ext.Msg.alert(title,Ext.util.Format.nl2br(msg));
+	//Ext.Msg.alert(title,Ext.util.Format.nl2br(msg));
+	Ext.Msg.show({
+		title: title,
+		msg: Ext.util.Format.nl2br(msg),
+		buttons: Ext.Msg.OK,
+		icon: Ext.Msg.ERROR,
+		minWidth: 275
+	});
 }
 
 Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {

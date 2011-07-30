@@ -6,7 +6,7 @@ extends 'RapidApp::Responder';
 #use overload '""' => \&_stringify_static; # to-string operator overload
 use HTML::Entities;
 
-has userMessage      => ( is => 'rw', isa => 'Str', required => 1 );
+has userMessage      => ( is => 'rw', isa => 'Str|Object', required => 1 );
 has userMessageTitle => ( is => 'rw', isa => 'Str' );
 sub isHtml { return (ref (shift)->userMessage)->isa('RapidApp::HTML::RawHtml'); }
 
