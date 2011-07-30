@@ -567,12 +567,16 @@ sub create {
 	
 	# we don't actually care about the new record, so we simply give the store back
 	# the row it gave to us. We have to make sure that pk (primary key) is set to 
-	# something or else it will throw an error
-	$rows->{$self->record_pk} = 'dummy-key';
+	# something or else it will throw an error (update: bypass this failsafe if more
+	# than one row was provided in the request, that is, if its an array instead of
+	# a hash)
+	$rows->{$self->record_pk} = 'dummy-key' if (ref($rows) eq 'HASH');
 	
 	# If the id of the new record was provided in the response, we'll use it:
 	$rows = $result->{rows} if (ref($result) and defined $result->{rows} and defined $result->{rows}->{$self->record_pk});
 	
+	# Use the provided rows if its an array. Assume the record_pk is provided in each row:
+	$rows = $result->{rows} if (ref($result) and ref($result->{rows}) eq 'ARRAY');
 	
 	if (ref($result) and defined $result->{success} and defined $result->{msg}) {
 		$result->{rows} = $rows;

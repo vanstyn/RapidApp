@@ -253,8 +253,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.EditorGridPanel,{
 
 		// ---- Delete support:
 		if (this.delete_url) {
-			this.sm = new Ext.grid.CheckboxSelectionModel();
-			this.columns.unshift(this.sm);
+			this.checkbox_selections = true;
 			var storeId = this.store.storeId;
 			var deleteBtn = new Ext.Button({
 				text: 'delete',
@@ -291,6 +290,12 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.EditorGridPanel,{
 				deleteBtn,
 				'-'
 			);
+		}
+		
+		
+		if(this.checkbox_selections) {
+			this.sm = new Ext.grid.CheckboxSelectionModel();
+			this.columns.unshift(this.sm);
 		}
 
 		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.initComponent.call(this);
