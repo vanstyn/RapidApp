@@ -10,6 +10,53 @@ use Scalar::Util 'blessed', 'reftype';
 use HTML::Entities;
 use RapidApp::Sugar;
 
+=head1 NAME
+
+RapidApp::View::JSON
+
+=head1 DESCRIPTION
+
+This view displays content as a JSON packet that will be used by RapidApp's
+client-side javascript.
+
+It also handles the awkwardness of passing data back through ExtJS's form
+submissions.  Form submissions require the data to be returned as *html*
+so that the browser doesn't screw it up, and then the rendered text of the
+HTML should be valid JSON that the Javascript uses.
+
+In addition, it handles error reporting via custom HTTP headers which cause
+the client side to pop up dialog boxes letting the user know the error report
+number, and allowing the user to add comments about what caused the crash.
+
+=head1 ERROR API
+
+See RapidApp::Role::CatalystApplication->onError for the top-level of error handling.
+
+Errors are passed to this view through the stash parameters
+  exception                   # the exception object or string
+  exceptionRefId              # the reference ID if the exception was saved into a report
+  exceptionPromptForComment   # whether to prompt the user with a textbox to describe what they were doing
+  exceptionFailedToAddComment # prevents loops when saving an error report comment throws an error
+
+If the exception is an object which supports methods "userMessage" or "userMessageTitle", they
+will be used.  Else generic strings like "An internal error occured" will be used.
+
+Errors are passed to the client side via
+  X-RapidApp-Exception   # set to 1 (true) if the payload is an error
+  body                   # a hash of parameters for displaying the error
+    exception            # true
+    msg                  # The error message to display to the user
+    title                # The title of the error message
+    winform              # the form used if we want to prompt for comments (overrides msg and title)
+
+Other parameters are also passed to the client to smooth things over if they were
+accidentally processed by unintended code.
+
+Also note that the RapidApp::Responder::UserError isn't really an error, but uses much
+of the error handling program flow.
+
+=cut
+
 has 'encoding' => ( is => 'rw', isa => 'Str', default => 'utf-8' );
 
 has 'encoder' => ( is => 'rw', isa => 'RapidApp::JSON::MixedEncoder', lazy_build => 1 );
@@ -95,6 +142,8 @@ sub process {
 	$self->setJsonBody($c, $json);
 }
 
+# Either set the body to a json packet (for normal ajax requests) or html-encoded json
+#   for file-upload forms.
 sub setJsonBody {
 	my ($self, $c, $json)= @_;
 	

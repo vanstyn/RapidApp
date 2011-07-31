@@ -239,7 +239,7 @@ sub gen_error {
 }
 
 sub gen_usererror {
-	die usererr "PEBKAC", title => 'cusotm title';
+	die usererr rawhtml "<h1>PEBKAC</h1>", title => rawhtml('cusotm <b>title</b>');
 }
 
 sub gen_userexception {

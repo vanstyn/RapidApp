@@ -210,6 +210,19 @@ sub flushLog {
 	}
 }
 
+=head2 onError
+
+This method handles the logic of what to do in the event of an error.
+
+First, note that we have nifty "Responder" objects that can be thrown as exceptions
+but which are not actually errors.  Those objects do not come through here, but they
+later use some of the error logic in View::HttpStatus and View::JSON
+
+This method checks to see if the error should be saved as error reports, and if so,
+generates the report, saves it, and sets stash parameters so that View::JSON and
+View::HttpStatus can display the report details.
+
+=cut
 sub onError {
 	my $c= shift;
 	my $log= $c->log;

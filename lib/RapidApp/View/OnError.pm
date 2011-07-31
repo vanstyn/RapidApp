@@ -21,9 +21,19 @@ This is installed into the user's app as MyApp::View::RapidApp::OnError.
 
 This is called whenever errors are added to the Catalyst instance and the body was not set.
 
-Default behavior for this routine is to log the exception, optionally record it to a file
-(or other ExceptionStore) and render it as either a RapidApp exception (for JSON requests)
-or as a HTTP-500.
+Default behavior for this routine is to log the exception, optionally record it
+to a file (or other ExceptionStore) and render it as either a RapidApp exception
+(for JSON requests) or as a HTTP-500.
+
+See RapidApp::Role::CatalystApplication->onError for the top-level of the error
+handling logic.
+
+See RapidApp::View::JSON for the way errors are sent through to the client via
+special HTTP headers.
+
+See RapidApp::View::HttpStatus and the corresponding TT template for a similar
+(but much simpler) view of error handling that is used when we're dealing with
+a web 1.0 request.
 
 =cut
 

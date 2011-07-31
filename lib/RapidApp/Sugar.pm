@@ -35,20 +35,29 @@ sub perreq {
 # JSON shortcuts
 #
 
+# encode the object into JSON text, with automatic handling for RawJavascript
 sub asjson {
 	scalar(@_) == 1 or die "Expected single argument";
 	return RapidApp::JSON::MixedEncoder::encode_json($_[0]);
 }
 
+# Bless a string as RawJavascript so that it doesn't get encoded as JSON data during asjson
 sub rawjs {
 	scalar(@_) == 1 && ref $_[0] eq '' or die "Expected single string argument";
 	return RapidApp::JSON::RawJavascript->new(js=>$_[0]);
 }
 
+# Encode a mix of javascript and data into appropriate objects that will get converted
+#  to JSON properly during "asjson".
+#
+# Example:  mixedjs "function() { my data=", { a => $foo, b => $bar }, "; Ext.msg.alert(data); }";
+# See ScriptWithData for more details.
+#
 sub mixedjs {
 	return RapidApp::JSON::ScriptWithData->new(@_);
 }
 
+# Take a string of text/plain and convert it to text/html.  This handles "RawHtml" objects.
 sub ashtml {
 	my $text= shift;
 	return "$text" if ref($text) && ref($text)->isa('RapidApp::HTML::RawHtml');
@@ -56,26 +65,24 @@ sub ashtml {
 	return join('<br />', map { encode_entities($_) } split("\n", "$text"));
 }
 
+# Bless a scalar to indicate the scalar is already html, and doesn't need converted.
 sub rawhtml {
 	my $html= shift;
 	# any other arguments we were given, we pass back in hopes that we're part of a function call that needed them.
 	return RapidApp::HTML::RawHtml->new($html), @_;
 }
 
-# Exception constructors
+=head2 usererr $message, key => $value, key => $value
 
-=head1 Exceptions
+Shorthand notation to create a UserError, to inform the user they did something wrong.
+First argument is a scalar of text (or a RawHtml scalar of html)
+Second through N arguments are hash keys to apply to the UserError constructor.
 
-To throw data that gets captured in an error report, with a generic user-facing message:
-  die $data;
-
-To throw data that gets captured in an error report, with a custom user-facing message:
-  die userexception "Description of what shouldn't have happened", $data;
-
-To throw a message to the user with no data and no error report:
+Examples:
+  # To throw a message to the user with no data and no error report:
   die usererr "Hey you moron, don't do that";
 
-To specify that your message is html already:
+  # To specify that your message is html already:
   die usererr rawhtml "<h2>Hell Yeah</h2>";
 
 =cut
@@ -85,7 +92,6 @@ my %keyAliases = (
 	umsg => 'userMessage',
 	title => 'userMessageTitle',
 );
-
 sub usererr {
 	my $log= RapidApp::ScopedGlobals->get('log');
 	my %args= ();
@@ -117,6 +123,22 @@ sub usererr {
 	
 	return RapidApp::Responder::UserError->new(\%args);
 }
+
+=head2 userexception $message, key => $value, key => $value, \%data
+
+Shorthand notation for creating a RapidApp::Error which also informs the user about why the error occured.
+First argument is the message displayed to the user (can be a RawHtml object).
+Last argument is a hash of data that should be saved for the error report.
+( the last argument is equivalent to a value for an implied hash key of "data" )
+
+Examples:
+  # Die with a custom user-facing message (in plain text), and a title made of html.
+  die userexception "Description of what shouldn't have happened", title => rawhtml "<h1>ERROR</h1>";
+  
+  # Capture some data for the error report, as we show this message to the user.
+  die userexception "Description of what shouldn't have happened", $some_debug_info;
+  
+=cut
 
 sub userexception {
 	my $log= RapidApp::ScopedGlobals->get('log');

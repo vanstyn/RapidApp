@@ -9,6 +9,20 @@ use Devel::StackTrace::WithLexicals;
 use RapidApp::Data::DeepMap;
 use Scalar::Util 'blessed', 'reftype';
 
+=head1 NAME
+
+RapidApp::Error
+
+=head1 DESCRIPTION
+
+This is a fancy error class which has some features like 'userMessage' that play a special
+role in RapidApp handling.  RapidApp does not require this error to be used for anything,
+but you might find it convenient.
+
+See RapidApp::View::JSON for details about how errors are rendered.
+
+=cut
+
 sub BUILD {
 	my $self= shift;
 	defined $self->message_fn || $self->has_message or die "Must specify message for message_fn";
@@ -21,12 +35,15 @@ sub _build_message {
 	return $self->message_fn->($self);
 }
 
+# used by RapidApp::View::OnError
 has 'userMessage_fn' => ( is => 'rw', isa => 'CodeRef' );
 has 'userMessage' => ( is => 'rw', lazy_build => 1 );
 sub _build_userMessage {
 	my $self= shift;
 	return defined $self->userMessage_fn? $self->userMessage_fn->($self) : undef;
 }
+
+# used by RapidApp::View::OnError
 has 'userMessageTitle' => ( is => 'rw' );
 
 has 'timestamp' => ( is => 'rw', isa => 'Int', default => sub { time } );
