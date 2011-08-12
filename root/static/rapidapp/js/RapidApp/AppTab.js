@@ -292,8 +292,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.EditorGridPanel,{
 			);
 		}
 		
-		// Remove the bbar if its empty:
-		if (this.bbar.items.length == 0) { delete this.bbar; }
+		// Remove the bbar if its empty and there is no pageSize set:
+		if (this.bbar.items.length == 0 && !this.pageSize) { delete this.bbar; }
 		
 		if(this.checkbox_selections) {
 			this.sm = new Ext.grid.CheckboxSelectionModel();
