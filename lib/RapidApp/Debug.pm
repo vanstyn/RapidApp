@@ -51,6 +51,7 @@ sub write {
 	if ($ch->autoFlush) {
 		($code= $dest->can('flush') || $dest->can('_flush')) && $dest->$code();
 	}
+	1;
 }
 
 sub _getStderrHandle {
@@ -109,7 +110,7 @@ sub _chan_enabled {
 sub global_write {
 	my $class= shift;
 	my $chanName= _chan_enabled(shift);
-	return unless $chanName;
+	return 1 unless $chanName;
 	
 	my $self= RapidApp::ScopedGlobals->get("Debug") || $class->default_instance;
 	unshift @_, $chanName;
