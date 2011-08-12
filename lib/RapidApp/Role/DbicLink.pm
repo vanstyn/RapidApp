@@ -485,8 +485,28 @@ sub read_records {
 	
 	my @arg = ( $params );
 	push @arg, $self->read_extra_search_set if ($self->can('read_extra_search_set'));
-	my $data = $self->DbicExtQuery->data_fetch(@arg);
 
+	#my $data = $self->DbicExtQuery->data_fetch(@arg);
+
+
+  my $Rs = $self->DbicExtQuery->build_data_fetch_resultset(@arg);
+  
+  # -- vv -- support for id_in:
+  if ($params->{id_in}) {
+    my $in;
+    $in = $params->{id_in} if (ref($params->{id_in}) eq 'ARRAY');
+    $in = $self->json->decode($params->{id_in}) unless ($in);
+	  $Rs = $Rs->search({ 'me.' . $self->record_pk => { '-in' => $in }});
+  }
+  # -- ^^ --
+
+  my $data = {
+		rows			=> [ $Rs->all ],
+		totalCount	=> $Rs->pager->total_entries,
+	};
+	
+  # TODO: stop doing this...
+  # don't iterate rows calling get_columns!! Use something like HashRefInflator!!
 	my $rows = [];
 	foreach my $row (@{$data->{rows}}) {
 		my $hash = { $row->get_columns };
