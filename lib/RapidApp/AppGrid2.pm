@@ -45,6 +45,13 @@ has 'add_button_cnf' => ( is => 'ro', default => sub {
 	}
 });
 
+# Either based on open_record_class, or can be set manually in the constructor:
+has 'open_record_url' => ( is => 'ro', isa => 'Maybe[Str]', lazy => 1, default => sub {
+  my $self = shift;
+  return $self->Module('item',1)->base_url if ($self->open_record_class);
+  return undef;
+});
+
 
 # get_record_loadContentCnf is used on a per-row basis to set the 
 # options used to load the row in a tab when double-clicked
@@ -83,12 +90,6 @@ sub BUILD {
 		%{ $self->include_columns_hash } = ();
 	}
 	
-	if (defined $self->open_record_class or defined $self->add_record_class) {
-		$self->add_listener(	beforerender => RapidApp::JSONFunc->new( raw => 1, func => 
-			'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' 
-		));
-	}
-	
 	if (defined $self->open_record_class) {
 		$self->apply_init_modules( item => $self->open_record_class );
 		
@@ -97,10 +98,6 @@ sub BUILD {
 		$self->Module('item',1)->DataStore->add_listener( write => $self->DataStore->store_load_fn ) if (
 			$self->Module('item',1)->does('RapidApp::Role::DataStore2')
 		);
-		
-		$self->add_listener( rowdblclick => RapidApp::JSONFunc->new( raw => 1, func => 
-			'Ext.ux.RapidApp.AppTab.gridrow_nav' 
-		));
 	}
 	
 	if (defined $self->add_record_class) {
@@ -112,6 +109,24 @@ sub BUILD {
 			$self->Module('add',1)->does('RapidApp::Role::DataStore2')
 		);
 	}
+	
+	
+	
+	if (defined $self->open_record_url or defined $self->add_record_class) {
+		$self->add_listener(	beforerender => RapidApp::JSONFunc->new( raw => 1, func => 
+			'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' 
+		));
+	}
+	
+	if (defined $self->open_record_url) {
+    $self->add_listener( rowdblclick => RapidApp::JSONFunc->new( raw => 1, func => 
+			'Ext.ux.RapidApp.AppTab.gridrow_nav' 
+		));
+  }
+	
+	
+	
+	
 	
 	$self->apply_actions( save_search => 'save_search' ) if ( $self->can('save_search') );
 	$self->apply_actions( delete_search => 'delete_search' ) if ( $self->can('delete_search') );
@@ -152,7 +167,7 @@ sub add_loadContentCnf_read_munger {
 	# This data is used when a row is double clicked on to open the open_record_class
 	# module in the loadContent handler (JS side object). This is currently AppTab
 	# but could be other JS classes that support the same API
-	if (defined $self->open_record_class) {
+	if (defined $self->open_record_url) {
 		foreach my $record (@{$result->{rows}}) {
 			my $loadCfg = {};
 			# support merging from existing loadContentCnf already contained in the record data:
@@ -164,8 +179,8 @@ sub add_loadContentCnf_read_munger {
 			);
 			
 			$loadCfg->{autoLoad} = {} unless (defined $loadCfg->{autoLoad});
-			$loadCfg->{autoLoad}->{url} = $self->Module('item')->base_url unless (defined $loadCfg->{autoLoad}->{url});
-			
+			#$loadCfg->{autoLoad}->{url} = $self->Module('item')->base_url unless (defined $loadCfg->{autoLoad}->{url});
+			$loadCfg->{autoLoad}->{url} = $self->open_record_url unless (defined $loadCfg->{autoLoad}->{url});
 			
 			$record->{loadContentCnf} = $self->json->encode($loadCfg);
 		}
