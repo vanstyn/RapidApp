@@ -535,6 +535,8 @@ Ext.ux.RapidApp.handleServerCallBack = function(headerdata) {
 
 Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 
+	var win;
+	
 	// Defaults
 	var data = {
 		title: 'Untitled X-RapidApp-CustomPrompt',
@@ -565,6 +567,10 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 	Ext.apply(data,Ext.decode(headerdata));
 	if(! data.formpanel_cnf) { data.formpanel_cnf = {}; }
 	
+	if(data.validate) {
+		default_formpanel_cnf.monitorValid = true;
+	}
+	
 	Ext.apply(default_formpanel_cnf,data.formpanel_cnf);
 	data.formpanel_cnf = default_formpanel_cnf;
 	
@@ -581,7 +587,8 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 		
 		// Recall the original request, adding in the customprompt header ata:
 		var newopts = { headers: headers };
-		btn.ownerCt.ownerCt.close();
+		//btn.ownerCt.ownerCt.close();
+		win.close();
 		return formpanel.success_callback(newopts);
 	}
 	
@@ -592,6 +599,10 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 			xtype: 'button',
 			text: text,
 			handler: btn_handler
+		}
+		
+		if(data.validate) {
+			btn.formBind = true;
 		}
 		
 		if(data.buttonIcons[text]) {
@@ -607,7 +618,8 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 			xtype: 'button',
 			text: 'Cancel',
 			handler: function(btn) {
-				btn.ownerCt.ownerCt.close();
+				//btn.ownerCt.ownerCt.close();
+				win.close();
 			}
 		});
 	}
@@ -618,12 +630,13 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 		autoScroll: true,
 		//anchor: '100% 100%',
 		items: data.items,
+		buttons: buttons,
 		success_callback: success_callback // <-- storing this here so we can use it in the btn handler
 	};
 	
 	Ext.apply(formpanel,data.formpanel_cnf);
 
-	var win = new Ext.Window({
+	win = new Ext.Window({
 		title: data.title,
 		layout: 'fit',
 		width: data.width,
@@ -631,8 +644,9 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 		closable: true,
 		modal: true,
 		//autoScroll: true,
-		items: formpanel,
-		buttons: buttons
+		//buttons: buttons,
+		items: formpanel
+		
 	});
 
 	win.show();
