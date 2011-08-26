@@ -125,6 +125,11 @@ has 'extra_meta_data' => (
 	traits => [ 'RapidApp::Role::GridColParam' ] 
 );
 
+has 'css' => ( 
+	is => 'rw', lazy => 1, 
+	default => undef,
+	traits => [ 'RapidApp::Role::GridColParam' ] 
+);
 
 has 'listeners' => ( 
 	is => 'rw', lazy => 1, 
