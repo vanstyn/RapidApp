@@ -213,6 +213,7 @@ Ext.ux.RapidApp.errMsgHandler = function(title,msg) {
 }
 
 Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
+	if (!response || !response.getResponseHeader) return;
 	try {
 		var exception = response.getResponseHeader('X-RapidApp-Exception');
 		if (exception) {
