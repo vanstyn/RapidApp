@@ -6,6 +6,14 @@
 Ext.ns('Ext.ux.RapidApp.AppCombo2');
 Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
 	
+	initComponent: function() {
+    Ext.ux.RapidApp.AppCombo2.ComboBox.superclass.initComponent.call(this);
+    if (this.baseParams) {
+      Ext.apply(this.getStore().baseParams,this.baseParams);
+    }
+	
+	},
+	
 	lastValueClass: '',
 	
 	nativeSetValue: function(v) {

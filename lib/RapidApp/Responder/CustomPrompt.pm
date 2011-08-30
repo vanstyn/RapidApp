@@ -15,6 +15,7 @@ has 'buttonIcons'	=> ( is => 'ro', isa => 'Maybe[HashRef[Str]]', default => unde
 has 'items'			=> ( is => 'ro', isa => 'Maybe[ArrayRef|HashRef]', default => undef );
 has 'formpanel_cnf'	=> ( is => 'ro', isa => 'Maybe[HashRef]', default => undef );
 has 'noCancel'			=> ( is => 'ro', default => undef );
+has 'validate'			=> ( is => 'ro', default => undef );
 
 sub customprompt_data {
 	my $self = shift;
@@ -29,6 +30,7 @@ sub customprompt_data {
 	$data->{items} 			= $self->items if (defined $self->items);
 	$data->{formpanel_cnf} 	= $self->formpanel_cnf if (defined $self->formpanel_cnf);
 	$data->{noCancel}			= $self->noCancel if (defined $self->noCancel);
+	$data->{validate}			= $self->validate if (defined $self->validate);
 
 	return $data;
 }
