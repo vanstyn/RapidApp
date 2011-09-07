@@ -3712,3 +3712,203 @@ Ext.ux.RapidApp.IconClsRenderFn = function(val) {
 }
 
 
+/*
+  BgTaskRenderPanel
+  
+  Renders the interface to the BgTask supervisor process.
+  
+  At the moment, this doesn't include any buttons or an input blank, but those will likely
+  be future options on this class.  (or, perhaps create a BgTaskInterface which contains a BgTaskRenderPanel)
+*/
+
+Ext.ux.RapidApp.BgTaskRenderPanel= Ext.extend(Ext.Panel, {
+	controllerUrl: null,  // URL to a controller implementing BgTaskRenderHandler
+	callbackParams: null, // Extra parameters supplied to Get or Post when coming back to the controller
+	
+	running: false,
+	updateInProgress: false,
+	
+	updateInterval: 2000,
+	scrollbackLines: 500,
+	errorCount: 0,
+	
+	lines: [],
+	
+	lineOffsets: [],
+	
+	/* The box structure we use is a border layout, with a scrollable panel inside, with a simple div in it
+	   that we write all our HTML into */
+	constructor: function(config) {
+		var self= this;
+		config= Ext.apply({
+				layout: 'border',
+				items: [
+					{ xtype: 'panel', itemId: 'scroller', region: 'center', autoScroll: true,
+						items: [
+							{ xtype: 'box', itemId: 'textBlock', cls: 'bgtask-terminal', html: '<div>connecting...</div>' },
+							{ xtype: 'spacer', itemId: 'bottom', width:1, height:1 }
+						]
+					}
+				]
+			},
+			config
+		);
+		Ext.ux.RapidApp.BgTaskRenderPanel.superclass.constructor.call(this, config);
+		this.controllerUrl= config.controllerUrl;
+		this.callbackParams= config.callbackParams? Ext.apply( {}, config.callbackParams ) : {};
+		if (config.initStart) {
+			this.start();
+		}
+	},
+	
+	/* Refresh the HTML content of the window with the data stored in this.lines.
+	   This also accounts for proper scrolling. */
+	refresh: function() {
+		var scroller= this.getComponent('scroller');
+		var textBlock= scroller.getComponent('textBlock');
+		var scroller= textBlock.getEl().dom.parentNode;
+		var isAtBottom= (scroller.scrollTop + scroller.clientHeight > scroller.scrollHeight - 15);
+		textBlock.getEl().first().replaceWith({
+			tag: 'div',
+			html: this.lines.join('<br />')
+		});
+		if (isAtBottom) {
+			scroller.scrollTop= scroller.scrollHeight;
+		}
+	},
+	
+	/* Update this.lines and this.lineOffsets with the new data from the parameters.
+	   The values of this.lineOffsets and newLineOffsets are used to determine which lines get overwritten. */
+	applyNewLines: function(newLines, newLineOffsets) {
+		if (newLines.length != newLineOffsets.length)
+			return Ext.Msg.alert('Error', 'Problem communicating with server.  Please refresh page');
+		if (newLines.length < 1)
+			return;
+		
+		while (this.lines.length > 0 && this.lineOffsets[this.lineOffsets.length - 1] >= newLineOffsets[0]) {
+			this.lines.pop();
+			this.lineOffsets.pop();
+		}
+		
+		this.lines= this.lines.concat(newLines);
+		this.lineOffsets= this.lineOffsets.concat(newLineOffsets);
+		if (this.lines.length > this.scrollbackLines) {
+			this.lines= this.lines.slice(-this.scrollbackLines);
+			this.lineOffsets= this.lineOffsets.slice(-this.scrollbackLines);
+		}
+	},
+	
+	/* Begin polling for updates */
+	start: function() {
+		this.running= true;
+		this.initiatePoll();
+	},
+	
+	/* Stop polling for updates */
+	stop: function() {
+		this.running= false;
+	},
+	
+	/* Internal method which begins one update, and schedules itself to recur, based on various flags.
+	   No update is performed if the window is not visible.
+	   No update is performed if another update is in progress (safeguard against overlapping updates)
+	   Updates are stopped completely if the last few attempts errored out.
+	   Updates are stopped completely if the window has been destroyed.
+	   Method is rescheduled if updates are enabled and the method isn't already scheduled.
+	   
+	   Update requests are handled in this.processLinesAndStatus
+	*/
+	initiatePoll: function() {
+		var self= this;
+		if (!this.updateInProgress && this.checkVisibility()) {
+			this.updateInProgress= true;
+			Ext.Ajax.request({
+				url: this.controllerUrl + '/readOutput',
+				params: Ext.apply(
+					{ lastLineOfs: this.lineOffsets.length > 0? this.lineOffsets[ this.lineOffsets.length - 1 ] : 0 },
+					this.callbackParams
+				),
+				disableCaching: true,
+				callback: function(options, success, res) {
+					self.updateInProgress= false;
+					if (success) {
+						self.errorCount= 0;
+						try {
+							var ret= Ext.util.JSON.decode(res.responseText);
+							if (ret.success) {
+								self.processLinesAndStatus(ret);
+							}
+							else { self.errorCount++; }
+						}
+						catch (err) { self.errorCount++; }
+					}
+					else { self.errorCount++; }
+				}
+			});
+		}
+		
+		if (!self.ownerCt || self.errorCount > 5) self.stop();
+		
+		if (this.running && !self.timerActive) {
+			self.timerActive= true;
+			window.setTimeout(function() { self.timerActive= false; self.initiatePoll(); }, this.updateInterval);
+		}
+	},
+	
+	/* Handle the update response from the server.
+	   Appends any new lines received.
+	   Displays special markup if the job terminated.
+	   Calls this.refresh to update the screen.
+	*/
+	processLinesAndStatus: function(params) {
+		if (params.reset) {
+			this.lines= [''];
+			this.lineOffsets= [0];
+		}
+		// check for errors, or end of program
+		var eof= params.streamInfo.eof;
+		var err= params.streamInfo.error;
+		var errMsg= params.streamInfo.errMsg;
+		var exited= 'exit' in params.exitStatus;
+		var exitCode= params.exitStatus.exit;
+		var sig= params.exitStatus.signal;
+		
+		if (eof || err || exited) {
+			this.stop();
+			var appendix= '<hr />';
+			if (err) {
+				appendix= appendix+'<span style="color:red">Error reading stream'+(errMsg? ': '+errMsg : '')+'</span>';
+			} else if (eof) {
+				appendix= appendix+'<span style="color:green">[ eof ]</span>';
+			}
+			
+			if (sig) {
+				appendix = appendix
+					+ '<br /><span style="color:red">Task exited on signal '+sig+'</span>';
+			} else if (exited) {
+				appendix = appendix
+					+ '<br /><span style="color:'+(exitCode? 'red':'green')
+					+'">Task exited with code '+exitCode+'</span>';
+			}
+			
+			if (!params.lines.length) {
+				params.lines.push('');
+				params.lineOffsets.push(0);
+			}
+			params.lines.push(params.lines.pop() + appendix);
+		}
+		this.applyNewLines(params.lines, params.lineOffsets);
+		this.refresh();
+	},
+	
+	/* Determine whether this window and all the parents up to the viewport are visible. */
+	checkVisibility: function() {
+		var cmp= this;
+		while (cmp) {
+			if (cmp.hidden) return false;
+			if (cmp.xtype && cmp.xtype == 'dyncontainer') return true;
+			cmp= cmp.ownerCt;
+		}
+		return false;
+	}
+});
