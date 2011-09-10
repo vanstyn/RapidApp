@@ -63,6 +63,39 @@ our $TRACE_OUT_FILE= initTraceOutputFile;
 our @TRACES= ();
 our $LAST_THROWN_OBJ_STR;
 
+sub saveExceptionsDuringCall {
+	my $code= shift;
+	my ($ret, @ret);
+	try {
+		local $SIG{__DIE__}= \&captureTrace;
+		if (wantarray) { @ret= &$code(@_) } else { $ret= &$code(@_) };
+		# clear any stack traces we might have picked up, since none were uncaught
+		collectTraces();
+	}
+	catch {
+		my $err= $_;
+		my @traces= collectTraces();
+		if (@traces) {
+			emitMessage("Writing ".scalar(@traces)." exception trace(s) to $TRACE_OUT_FILE");
+			emitMessage("Set env DEBUG_FULL_TRACE=1 to get html with function arguments");
+			
+			for my $trace (@traces) {
+				try {
+					$ENV{DEBUG_FULL_TRACE}
+						and writeFullTrace($trace)
+						or writeQuickTrace($trace);
+				}
+				catch {
+					emitMessage("Failed to write exception trace");
+				}
+			}
+		}
+		die $err;
+	};
+	return @ret if wantarray;
+	return $ret if defined wantarray;
+}
+
 sub emitMessage {
 	my $msg= shift;
 	my $log= sEnv->get("log");
