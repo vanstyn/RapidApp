@@ -463,3 +463,20 @@ Ext.ux.RapidApp.confirmDialogCall = function(title,msg,fn) {
 			}
 	});
 }
+
+
+/*
+ If this is used as the column renderer for an AppGrid2 column,
+ the same icon used in the tab when a row is opened will be displayed
+ to the left of the value of the cell for the given column (assumes 16x16 icon)
+ this is pulled out of the 'loadContentCnf' JSON encoded data
+*/
+Ext.ux.RapidApp.AppTab.iconClsColumnRenderer = function(value, metaData, record, rowIndex, colIndex, store) {
+  if (record.data.loadContentCnf) {
+    var loadCfg = Ext.decode(record.data.loadContentCnf);
+    if(loadCfg.iconCls) {
+      metaData.css = 'grid-cell-with-icon ' + loadCfg.iconCls;
+    }
+  }
+  return value;
+}
