@@ -30,6 +30,7 @@ has 'read_raw_mungers' => (
 	handles => {
 		all_read_raw_mungers		=> 'elements',
 		add_read_raw_mungers		=> 'push',
+		insert_read_raw_mungers	=> 'unshift',
 		has_no_read_raw_mungers => 'is_empty',
 	}
 );
