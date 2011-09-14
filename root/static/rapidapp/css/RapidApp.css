@@ -19,6 +19,13 @@ pre {
 	background-repeat: no-repeat;
 }
 
+.grid-cell-with-icon {
+	height: 16px;
+	text-indent: 16px;
+	background-repeat: no-repeat;
+	background-position: 2px;
+}
+
 .icon-server_database { background-image: url(/static/rapidapp/images/server_database.png) !important; }
 .icon-arrow_refresh_small { background-image: url(/static/rapidapp/images/arrow_refresh_small.png) !important; }
 .icon-database { background-image: url(/static/rapidapp/images/database.png) !important; }

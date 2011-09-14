@@ -178,8 +178,11 @@ sub add_loadContentCnf_read_munger {
 				%{ $loadCfg }
 			);
 			
-			$loadCfg->{autoLoad} = {} unless (defined $loadCfg->{autoLoad});
-			#$loadCfg->{autoLoad}->{url} = $self->Module('item')->base_url unless (defined $loadCfg->{autoLoad}->{url});
+			unless (defined $loadCfg->{autoLoad}) {
+				$loadCfg->{autoLoad} = {};
+				$loadCfg->{autoLoad}->{url} = $loadCfg->{url} if ($loadCfg->{url});
+			}
+			
 			$loadCfg->{autoLoad}->{url} = $self->open_record_url unless (defined $loadCfg->{autoLoad}->{url});
 			
 			$record->{loadContentCnf} = $self->json->encode($loadCfg);
