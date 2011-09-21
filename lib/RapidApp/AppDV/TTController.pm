@@ -94,7 +94,7 @@ sub div_edit_field {
 	$display = $name unless ($display);
 	return $self->div_editable_value($name,
 		'<div class="appdv-edit-field">' .	
-			'<table><tr>' .
+			'<table border="0" cellpadding="0" cellspacing="0"><tr>' .
 				'<td>' . $self->data_wrapper_div($name,$display) . '</td>' .
 								
 				'<td class="icons">' .

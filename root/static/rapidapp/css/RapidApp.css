@@ -684,7 +684,8 @@ html, body { height:100%; }
 
 
 .appdv-edit-field td.icons .edit {
-	background:url(/static/rapidapp/images/pencil_tiny.png) center center no-repeat;
+  width: 14px;
+	background:url(/static/rapidapp/images/pencil_tiny.png) right center no-repeat;
 }
 
 .appdv-edit-field td.icons .save {
