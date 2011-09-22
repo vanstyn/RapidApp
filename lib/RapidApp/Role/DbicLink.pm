@@ -7,7 +7,8 @@ use Moose::Role;
 use RapidApp::Include qw(sugar perlutil);
 
 use RapidApp::DbicAppCombo;
-
+use RapidApp::DBIC::RelationTreeSpec;
+use RapidApp::DBIC::RelationTreeFlattener;
 use Switch;
 
 use Moose::Util::TypeConstraints;
@@ -290,6 +291,48 @@ has '_exclude_dbiclink_columns_hash' => (
 	}
 );
 
+has relationTreeSpec => ( is => 'ro', isa => 'RapidApp::DBIC::RelationTreeSpec', lazy_build => 1 );
+sub _build_relationTreeSpec {
+	my $self= shift;
+	
+	# DbicLink has all its configuration parameters defined in terms of the concatenated name.
+	# In retrospect, it would have been more convenient to configure it in terms of the DBIC name,
+	#  and hopefully the API can move in that direction now that we have this object to play with.
+	# Here, we try to convert those concatenated names back to the DBIC name.
+	
+	my @spec;
+	my @worklist= ( [ $self->ResultSource, [] ] );
+	while (@worklist) {
+		my ($source, $path)= @{ pop @worklist };
+		my $srcN= $source->source_name;
+		
+		for my $colN ($source->columns) {
+			my $concatName= join('_', @$path, $colN);
+			next unless ($self->has_no_limit_dbiclink_columns or $self->has_limit_dbiclink_column($concatName));
+			next if ($self->has_exclude_dbiclink_column($concatName));
+			next unless ($self->valid_colname($concatName));
+			
+			push @spec, join('.', @$path, $colN); # use it
+		}
+		
+		for my $relN ($source->relationships) {
+			# only follow prefixes that are defined in the joins:
+			next unless (defined $self->join_map->{$srcN}->{$relN});
+			my $prefix= join('_', @$path, $relN);
+			next unless $self->join_col_prefix_map->{$prefix};
+			
+			push @worklist, [ $source->related_source($relN), [ @$path, $relN ] ];
+		}
+	}
+	
+	return RapidApp::DBIC::RelationTreeSpec->new(source => $self->ResultSource, colSpec => \@spec);
+}
+
+has relationTreeFlattener => ( is => 'ro', isa => 'RapidApp::DBIC::RelationTreeFlattener', lazy_build => 1 );
+sub _build_relationTreeFlattener {
+	RapidApp::DBIC::RelationTreeFlattener->new(spec => $_[0]->relationTreeSpec);
+}
+
 sub BUILD {}
 around 'BUILD' => sub {
 	my $orig = shift;
@@ -313,81 +356,55 @@ around 'BUILD' => sub {
 		remoteSort => \1
 	);
 	
+	# TODO, fieldname_transforms needs calculated elsewhere
+	
 	my $addColRecurse;
 	$addColRecurse = sub {
-		my $Source = shift;
-		my $rel_name = shift;
-		my $prefix = shift;
+		my ($path, $relTreeSpec, $rs)= @_;
 		
-		foreach my $column ($Source->columns) {
-			
-			#print STDERR '      ' . GREEN . BOLD . ref($self) . ': ' . $column . CLEAR . "\n";
-			my $colname = $column;
-			$colname = $prefix . '_' . $column if ($prefix);
-			
-			next unless ($self->has_no_limit_dbiclink_columns or $self->has_limit_dbiclink_column($colname));
-			next if ($self->has_exclude_dbiclink_column($colname));
-			
-			next unless ($self->valid_colname($colname));
-
-			$self->fieldname_transforms->{$colname} = $rel_name . '.' . $column unless ($colname eq $column);
-			
-			my $opts = { name => $colname };
-			my $col_info = $Source->column_info($column);
-			my $type = $self->dbic_to_ext_type($col_info->{data_type});
-			$opts->{filter}->{type} = $type if ($type);
-			
-			$self->apply_columns( $colname => $opts );
-			
-			DEBUG(dbiclink => BOLD . ref($self) . ': ' . $colname);
-			
-			# -- Build combos (dropdowns) for every related field (for use in multifilters currently):
-			if ($prefix and not ($ENV{NO_REL_COMBOS} or $self->no_rel_combos)) {
-				
-				
-				my $module_name = 'combo_' . $colname;
-				$self->apply_modules(
-					$module_name => {
-						class	=> 'RapidApp::DbicAppCombo',
-						params	=> {
-							#valueField		=> $self->record_pk,
-							valueField		=> ($Source->primary_columns)[0],
-							name				=> $column,
-							ResultSource	=> $Source
-						}
-					}
-				) ;
-				
-				#print STDERR '       ' . CYAN . BOLD . 'apply_columns: ' . $colname . CLEAR . "\n";
-				$self->apply_columns(
-					$colname => { rel_combo_field_cnf => $self->Module($module_name)->content }
-				);
+		for my $key (keys %$relTreeSpec) {
+			if (ref $relTreeSpec->{$key}) { # if it is a relation...
+				my $relName= $key;
+				my $subSource= $rs->related_source($relName);
+				$addColRecurse->([ @$path, $relName ], $relTreeSpec->{$key}, $subSource);
 			}
-			# --
-		}
-
-		foreach my $rel ($Source->relationships) {
-			#print STDERR '     ' . RED . 'rel: ' . $rel . '  (' . $Source->source_name . ')' . CLEAR . "\n";
-			next unless (defined $self->join_map->{$Source->source_name}->{$rel});
-			#print STDERR '     ' . GREEN . 'source: ' . $Source->source_name . CLEAR . "\n";
-			my $info = $Source->relationship_info($rel);
-			
-			#$self->log->debug(YELLOW . BOLD . Dumper($info) . CLEAR);
-			
-			#next unless ($info->{attrs}->{accessor} eq 'single');
-
-			my $subSource = $Source->schema->source($info->{class});
-			my $new_prefix = $rel;
-			$new_prefix = $prefix . '_' . $rel if ($prefix);
-			
-			# only follow prefixes that are defined in the joins:
-			#print STDERR '     ' . RED . BOLD . '$addColRecurse: ' . $new_prefix . CLEAR . "\n";
-			$addColRecurse->($subSource,$rel,$new_prefix) if ($self->join_col_prefix_map->{$new_prefix});
-			
+			else { # else if it is a column...
+				my $colName= $key;
+				my $flatName= $self->relationTreeFlattener->colToFlatKey(@$path, $key);
+				if (@$path) {
+					$self->fieldname_transforms->{$flatName} = $path->[-1] . '.' . $colName;
+				}
+				
+				my $opts = { name => $flatName };
+				
+				my $type = $self->dbic_to_ext_type($rs->column_info($colName)->{data_type});
+				$opts->{filter}{type} = $type if ($type);
+				
+				# -- Build combos (dropdowns) for every related field (for use in multifilters currently):
+				if (scalar(@$path) and not ($ENV{NO_REL_COMBOS} or $self->no_rel_combos)) {
+					
+					my $module_name = 'combo_' . $flatName;
+					$self->apply_modules(
+						$module_name => {
+							class	=> 'RapidApp::DbicAppCombo',
+							params	=> {
+								#valueField		=> $self->record_pk,
+								valueField    => ($rs->primary_columns)[0],
+								name          => $colName,
+								ResultSource  => $rs,
+							}
+						}
+					);
+					
+					$opts->{rel_combo_field_cnf}= $self->Module($module_name)->content;
+				}
+				
+				$self->apply_columns( $flatName => $opts );
+			}
 		}
 	};
 	
-	$addColRecurse->($self->ResultSource);
+	$addColRecurse->([], $self->relationTreeSpec->relationTree, $self->ResultSource);
 	
 	$self->add_ONREQUEST_calls('check_can_delete_rows');
 };
