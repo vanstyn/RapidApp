@@ -10,7 +10,7 @@ RapidApp::DBIC::RelationTreeFlattener
 
   my $spec= RapidApp::DBIC::RelationTreeSpec->new(
     source => $db->source('Object'),
-    colSpec => [qw( user.* contact.* creator_id owner_id is_deleted contact.timezone.ofs )]
+    colSpec => [qw( user.* -user.password contact.* creator_id owner_id is_deleted contact.timezone.ofs )]
   );
   
   my $flattener= RapidApp::DBIC::RelationTreeFlattener->new(spec => $spec);
@@ -19,10 +19,10 @@ RapidApp::DBIC::RelationTreeFlattener
     creator_id => 5,
     owner_id => 7,
     is_deleted => 0,
-    user => { name => 'foo', password => 'yes' },
+    user => { username => 'foo', department => 'billing' },
     contact => {
       first => 'John',
-      last => 'Doe'
+      last => 'Doe',
       timezone => { ofs => -500 }
     },
   };
@@ -30,8 +30,8 @@ RapidApp::DBIC::RelationTreeFlattener
     creator_id => 5,
     owner_id => 7,
     is_deleted => 0,
-    user_name => 'foo',
-    user_password => 'yes',
+    user_username => 'foo',
+    user_department => 'billing',
     contact_first => 'John',
     contact_last => 'Doe',
     contact_timezone_ofs => -500,
@@ -78,25 +78,23 @@ has ignoreUnexpected => ( is => 'rw', default => sub { 1 } );
 has _colmap          => ( is => 'ro', lazy => 1, builder => '_build__colmap' );
 sub _build__colmap {
 	my $self= shift;
-	my $map= { toTree => {}, toFlat => {} };
-	my $relTree= $self->spec->relationTree;
-	_build_colmap_at_node($map, [], $relTree);
-}
-
-sub _build_colmap_at_node {
-	my ($map, $path, $node)= @_;
-	for my $key (keys %$node) {
-		if (ref $node->{$key}) {
-			_build_colmap_at_node($map, [ @$path, $key ], $node->{$key})
-		}
-		else {
-			my $flatName= join('_', @$path, $key);
-			my $treePath= [ @$path, $key ];
-			$map->{toFlat}{ _pathToKey(@$treePath) }= $flatName;
-			$map->{toTree}{$flatName}= $treePath;
+	my (%toTree, %toFlat);
+	my @worklist= ( [ [], $self->spec->relationTree ] );
+	while (@worklist) {
+		my ($path, $node)= @{ pop @worklist };
+		for my $key (keys %$node) {
+			if (ref $node->{$key}) {
+				push @worklist, [ [ @$path, $key ], $node->{$key} ];
+			}
+			else {
+				my $flatName= join('_', @$path, $key);
+				my $treePath= [ @$path, $key ];
+				$toFlat{ _pathToKey(@$treePath) }= $flatName;
+				$toTree{$flatName}= $treePath;
+			}
 		}
 	}
-	$map;
+	return { toTree => \%toTree, toFlat => \%toFlat };
 }
 
 sub _pathToKey {
@@ -116,19 +114,20 @@ sub _checkNamingConvention {
 
 sub flatten {
 	my ($self, $hash)= @_;
-	$self->_flattenNode({}, [], $self->spec->relationTree, $hash);
-}
-
-sub _flattenNode {
-	my ($self, $result, $path, $spec, $node)= @_;
-	for my $key (keys %$node) {
-		if (ref $spec->{$key}) {
-			$self->_flattenNode($result, [ @$path, $key ], $spec->{$key}, $node->{$key});
-		} else {
-			if (my $flatName= $self->_colmap->{toFlat}{ _pathToKey(@$path, $key) }) {
-				$result->{$flatName}= $node->{$key};
-			} elsif (!$self->{ignoreUnexpected}) {
-				die "Illegal column/relation encountered: ".join('.',@$path,$key);
+	my $toFlat= $self->_colmap->{toFlat};
+	my $result= {};
+	my @worklist= ( [ [], $hash, $self->spec->relationTree ] );
+	while (@worklist) {
+		my ($path, $node, $spec)= @{ pop @worklist };
+		for my $key (keys %$node) {
+			if (ref $spec->{$key}) {
+				push @worklist, [ [ @$path, $key ], $node->{$key}, $spec->{$key} ];
+			} else {
+				if (my $flatName= $toFlat->{ _pathToKey(@$path, $key) }) {
+					$result->{$flatName}= $node->{$key};
+				} elsif (!$self->{ignoreUnexpected}) {
+					die "Illegal column/relation encountered: ".join('.',@$path,$key);
+				}
 			}
 		}
 	}
