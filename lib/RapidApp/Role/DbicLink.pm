@@ -333,10 +333,130 @@ sub _build_relationTreeFlattener {
 	RapidApp::DBIC::RelationTreeFlattener->new(spec => $_[0]->relationTreeSpec);
 }
 
+
+# -- vv -- 2011-09-22 by HV -- New update support
+
+has 'dbiclink_updatable' => ( is => 'ro', isa => 'Bool', default => 0 );
+
+# dbiclink_updatable_relationships:
+# Should be a list of relationship/join names that will be updated along with 
+# the base row. 
+# For multi-level relationships, separate with '.' 
+# for example:
+# If these joins were defined: [ 'owner', { 'project' => 'status' } ]
+# To set them as writable set dbiclink_updatable_relationships to: [ 'owner', 'project.status' ]
+has 'dbiclink_updatable_relationships' => ( is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]} );
+
+has 'relationTreeFlattenerPruned' => ( is => 'ro', isa => 'RapidApp::DBIC::RelationTreeFlattener', lazy_build => 1 );
+sub _build_relationTreeFlattenerPruned {
+	my $self = shift;
+	
+	my @exps = ( '/^[^.]+$/' );
+	foreach my $rel (@{$self->dbiclink_updatable_relationships}) {
+		push @exps, '/^' . quotemeta($rel . '.') . '[^.]+$/';
+	}
+	
+	my $grepEval = 'grep { ' . join(' or ',@exps) . ' } @{$self->relationTreeSpec->allCols}';
+	
+	my $objCols = [ eval $grepEval ];
+	
+	return RapidApp::DBIC::RelationTreeFlattener->new(
+		spec => RapidApp::DBIC::RelationTreeSpec->new(
+			colSpec => $objCols, 
+			source => $self->ResultSource
+		)
+	);
+}
+
+# Accepts a hash of flattened record data as sent from the ExtJS Store client
+# and unflattens it back into a tree hash, pruning/excluding columns from 
+# joins/rels that are not in dbiclink_updatable_relationships
+sub unflatten_prune_update_packet {
+	my $self = shift;
+	my $data = shift;
+	
+	my $tree = $self->relationTreeFlattenerPruned->restore($data);
+	
+	return $tree;
+}
+
+sub Row_tree_update_recursive {
+	my $self = shift;
+	my $Row = shift;
+	my $tree = shift;
+	
+	my $base = {};
+	my $rels = {};
+	
+	foreach my $k (keys %$tree) {
+		if (ref($tree->{$k}) eq 'HASH') {
+			$rels->{$k} = $tree->{$k};
+			next;
+		}
+		$base->{$k} = $tree->{$k};
+	}
+	
+	$Row->update($base);
+	
+	foreach my $rel (keys %$rels) {
+		$Row->can($rel) 
+			or die '"' . $rel . '" is not an accessor method of Row object; Row_tree_update_recursive failed.';
+		
+		my $Related = $Row->$rel;
+		
+		$Related->isa('DBIx::Class::Row') 
+			or die '"' . $rel . '" (' . ref($Related) . ') is not a DBIx::Class::Row object; Row_tree_update_recursive failed.';
+		
+		$self->Row_tree_update_recursive($Related,$rels->{$rel});
+	}
+}
+
+# Gets programatically added as a method named 'update_records' (see BUILD modifier method below)
+sub _dbiclink_update_records {
+	my $self = shift;
+	my $params = shift;
+	
+	my $arr = $params;
+	$arr = [ $params ] if (ref($params) eq 'HASH');
+	
+	my $Rs = $self->ResultSource->resultset;
+	
+	try {
+		$self->ResultSource->schema->txn_do(sub {
+			foreach my $data (@$arr) {
+				my $Row = $Rs->find($data->{$self->record_pk}) or die usererr "Failed to find row.";
+				my $tree = $self->unflatten_prune_update_packet($data);
+				$self->Row_tree_update_recursive($Row,$tree);
+			}
+		});
+	}
+	catch {
+		my $err = shift;
+		die usererr rawhtml $self->make_dbic_exception_friendly($err), title => 'Database Error';
+	};
+	
+	# TODO: return the new state of the updated rows instead of just true:
+	return 1;
+}
+# -- ^^ --
+
+
+
+
+
 sub BUILD {}
 around 'BUILD' => sub {
 	my $orig = shift;
 	my $self = shift;
+	
+	# -- vv -- Introspective code:
+	# Dynamically toggle the addition of an 'update_records' method
+	# The existence of this method is part of the DataStore2 API
+	$self->meta->add_method('update_records',$self->meta->get_method('_dbiclink_update_records')) if (
+		$self->dbiclink_updatable and 
+		not $self->can('update_records')
+	);
+	# -- ^^ --
 	
 	$self->apply_extconfig( no_multifilter_fields => $self->_no_search_fields_hash );
 
@@ -408,6 +528,7 @@ around 'BUILD' => sub {
 	
 	$self->add_ONREQUEST_calls('check_can_delete_rows');
 };
+
 
 
 sub check_can_delete_rows {
@@ -581,6 +702,21 @@ sub update_Row_and_compare_deep {
 
 
 
+sub make_dbic_exception_friendly {
+	my $self = shift;
+	my $exception = shift;
+	my $msg = "" . $exception . "";
+	
+	my @parts = split(/DBD\:\:mysql\:\:st execute failed\:\s*/,$msg);
+	return $exception unless (scalar @parts > 1);
+	
+	$msg = $parts[1];
+	
+	@parts = split(/\s*\[/,$msg);
+
+	return '<center><pre>' . $parts[0] . "</pre></center>";
+	return $parts[0];
+}
 
 
 #### --------------------- ####
