@@ -62,9 +62,27 @@ sub colSpec {
 	$_[0]->{colSpec};
 }
 
+# returns a nested hash of relation and column names, with relations => {} and columns => 1
 sub relationTree {
 	(scalar(@_) == 1) or croak "Can't set relationTree";
 	$_[0]->{relationTree};
+}
+
+# returns a long list of "relation[...].column" names
+sub allCols {
+	my $self= shift;
+	return $self->{allCols} ||= do {
+		my @ret;
+		my @todo= ( [ [], $self->relationTree ] );
+		while (@todo) {
+			my ($path, $node)= @{ pop @todo };
+			for (keys %$node) {
+				if (ref $node->{$_}) { push @todo, [[ @$path, $_ ], $node->{$_} ]; }
+				else { push @ret, join('.',@$path,$_) }
+			}
+		}
+		[ sort @ret ];
+	};
 }
 
 =head1 METHODS
@@ -136,7 +154,7 @@ sub colSpec {
 	return $self->{colSpec};
 }
 
-for (qw( relationTree )) {
+for (qw( relationTree allCols )) {
 	eval "sub $_ { croak 'Cannot call $_() until after resolve()'; }";
 }
 

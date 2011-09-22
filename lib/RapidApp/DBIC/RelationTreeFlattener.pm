@@ -134,6 +134,12 @@ sub flatten {
 	$result;
 }
 
+sub colToFlatKey {
+	my $self= shift;
+	my $path= ref($_[0]) eq 'ARRAY'? $_[0] : [ @_ ];
+	return $self->_colmap->{toFlat}{ _pathToKey( @$path ) };
+}
+
 =head2 $hashTree= $self->restore( $flatHash )
 
 =cut
@@ -152,6 +158,13 @@ sub restore {
 		}
 	}
 	$result;
+}
+
+sub flatKeyToCol {
+	my ($self, $key)= @_;
+	my $colPath= $self->_colmap->{toTree}{$key};
+	# make a copy, to ensure it doesn't get modified
+	return $colPath? [ @$colPath ] : undef;
 }
 
 1;
