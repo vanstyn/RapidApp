@@ -79,7 +79,7 @@ has _colmap          => ( is => 'ro', lazy => 1, builder => '_build__colmap' );
 sub _build__colmap {
 	my $self= shift;
 	my (%toTree, %toFlat);
-	my @worklist= ( [ [], $self->spec->relationTree ] );
+	my @worklist= ( [ [], $self->spec->colTree ] );
 	while (@worklist) {
 		my ($path, $node)= @{ pop @worklist };
 		for my $key (keys %$node) {
@@ -116,7 +116,7 @@ sub flatten {
 	my ($self, $hash)= @_;
 	my $toFlat= $self->_colmap->{toFlat};
 	my $result= {};
-	my @worklist= ( [ [], $hash, $self->spec->relationTree ] );
+	my @worklist= ( [ [], $hash, $self->spec->colTree ] );
 	while (@worklist) {
 		my ($path, $node, $spec)= @{ pop @worklist };
 		for my $key (keys %$node) {

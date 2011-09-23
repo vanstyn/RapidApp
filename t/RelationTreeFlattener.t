@@ -1,39 +1,20 @@
 #! /usr/bin/perl
 
-package FakeSource;
-
-our %sources= (
-	Object   => bless({ columns => [qw[ id owner_id creator_id is_deleted ]], rels => { user => 'User', contact => 'Contact', owner => 'User', creator => 'User' } }),
-	User     => bless({ columns => [qw[ object_id username password ]], rels => {} }),
-	Contact  => bless({ columns => [qw[ object_id first last timezone_id ]], rels => { timezone => 'Timezone' } }),
-	Timezone => bless({ columns => [qw[ id name abbrev ofs ]], rels => {} }),
-);
-
-sub columns {
-	@{ $_[0]->{columns} }
-}
-sub has_relationship {
-	$_[0]->{rels}->{$_[1]}
-}
-sub related_source {
-	my $srcN= $_[0]->{rels}->{$_[1]};
-	$sources{$srcN};
-}
-
-package FakeSchema;
-sub source {
-	$FakeSource::sources{$_[1]} or die "No such source: $_[1]";
-}
-
-package main;
 use strict;
 use Test::More;
 use Try::Tiny;
 
+use lib 't/lib';
+use FakeSchema;
+my $db= FakeSchema->new({
+	Object   => bless({ columns => [qw[ id owner_id creator_id is_deleted ]], rels => { user => 'User', contact => 'Contact', owner => 'User', creator => 'User' } }),
+	User     => bless({ columns => [qw[ object_id username password ]], rels => {} }),
+	Contact  => bless({ columns => [qw[ object_id first last timezone_id ]], rels => { timezone => 'Timezone' } }),
+	Timezone => bless({ columns => [qw[ id name abbrev ofs ]], rels => {} }),
+});
+
 use_ok('RapidApp::DBIC::RelationTreeSpec');
 use_ok('RapidApp::DBIC::RelationTreeFlattener');
-
-my $db= 'FakeSchema';
 
 my $spec= RapidApp::DBIC::RelationTreeSpec->new(
 	source => $db->source('Object'),
