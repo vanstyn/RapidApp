@@ -75,7 +75,14 @@ sub _build__no_search_fields_hash {
 
 
 
-has 'get_ResultSet_Handler' => ( is => 'ro', isa => 'Maybe[RapidApp::Handler]', lazy => 1, default => undef );
+has 'get_ResultSet_Handler' => ( is => 'ro', isa => 'Maybe[RapidApp::Handler]', lazy => 1, default => sub {
+	my $self = shift;
+	return undef unless ($self->can('get_ResultSet'));
+	return RapidApp::Handler->new(
+		scope	=> $self,
+		method	=> 'get_ResultSet'
+	);
+});
 
 has 'literal_dbf_colnames' => ( is => 'ro', isa => 'ArrayRef', default => sub {[]} );
 
