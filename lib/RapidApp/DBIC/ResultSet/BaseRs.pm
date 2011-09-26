@@ -2,7 +2,6 @@ package RapidApp::DBIC::ResultSet::BaseRs;
 use base 'DBIx::Class::ResultSet';
 
 use RapidApp::Include qw(sugar perlutil);
-use RapidApp::Data::Dmap;
 use Clone qw(clone);
 
 # This ResultSet class is simple and elegant. It extends the standard
@@ -65,24 +64,28 @@ sub native_rs {
 	my $self = shift;
 	my $Rs = $self->search_rs({},{ where => {} });
 	
-	my $new_ref = {};
-	my $old_ref = $Rs->{attrs}->{_base_rs_condition_ref};
+	my $type = ref($Rs->{attrs}->{_base_rs_condition_ref}) or return $self;
 	
-	# 1. Find the base condition within the current where and replace it with an empty hashref:
-	dmap { return $new_ref if ($_ == $old_ref); return $_; } $Rs->{attrs}->{where};
+	# 1. Save the contents of the base condition:
+	my $orig_cond = clone($Rs->{attrs}->{_base_rs_condition_ref});
 	
-	# 2. Clone the where clause hashref in its current state:
+	# 2. Temporarily set the base condition to be empty: 
+	%{ $Rs->{attrs}->{_base_rs_condition_ref} } = () if ($type eq 'HASH');
+	@{ $Rs->{attrs}->{_base_rs_condition_ref} } = () if ($type eq 'ARRAY');
+	
+	# 3. Clone the where clause hashref in its current state with the empty base condition:
 	my $where = clone($Rs->{attrs}->{where});
 	
-	# 3. Find the empty hashref from step 1 and replace it with the original:
-	dmap { return $old_ref if ($_ == $new_ref); return $_; } $Rs->{attrs}->{where};
+	# 4. Set the base condition back to its original contents:
+	%{ $Rs->{attrs}->{_base_rs_condition_ref} } = %$orig_cond if ($type eq 'HASH');
+	@{ $Rs->{attrs}->{_base_rs_condition_ref} } = @$orig_cond if ($type eq 'ARRAY');
 	
-	# 4. Use the new where clause for this ResultSet object
+	# 5. Use the new where clause for this ResultSet object
 	$Rs->{attrs} = { %{$Rs->{attrs}}, where => $where };
 	
 	### -- vv -- Proof that this is working as expected:
-	#print STDERR YELLOW . "New WHERE:\n" . Dumper($Rs->search_rs->{attrs}->{where}) . CLEAR;
-	#print STDERR GREEN . "\nOriginal WHERE:\n" .Dumper($self->search_rs->{attrs}->{where}) . CLEAR;
+	print STDERR YELLOW . "New WHERE:\n" . Dumper($Rs->search_rs->{attrs}->{where}) . CLEAR;
+	print STDERR GREEN . "\nOriginal WHERE:\n" .Dumper($self->search_rs->{attrs}->{where}) . CLEAR;
 	### -- ^^ --
 	
 	return $Rs;
