@@ -84,8 +84,8 @@ sub native_rs {
 	$Rs->{attrs} = { %{$Rs->{attrs}}, where => $where };
 	
 	### -- vv -- Proof that this is working as expected:
-	print STDERR YELLOW . "New WHERE:\n" . Dumper($Rs->search_rs->{attrs}->{where}) . CLEAR;
-	print STDERR GREEN . "\nOriginal WHERE:\n" .Dumper($self->search_rs->{attrs}->{where}) . CLEAR;
+	#print STDERR YELLOW . "New WHERE:\n" . Dumper($Rs->search_rs->{attrs}->{where}) . CLEAR;
+	#print STDERR GREEN . "\nOriginal WHERE:\n" .Dumper($self->search_rs->{attrs}->{where}) . CLEAR;
 	### -- ^^ --
 	
 	return $Rs;
