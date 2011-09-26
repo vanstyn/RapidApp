@@ -1,5 +1,6 @@
 package RapidApp::DBIC::RelationTreeFlattener;
 use Moo;
+use RapidApp::DBIC::ColPath;
 use RapidApp::DBIC::RelationTreeSpec;
 
 =head1 NAME
@@ -79,26 +80,20 @@ has _colmap          => ( is => 'ro', lazy => 1, builder => '_build__colmap' );
 sub _build__colmap {
 	my $self= shift;
 	my (%toTree, %toFlat);
-	my @worklist= ( [ [], $self->spec->colTree ] );
-	while (@worklist) {
-		my ($path, $node)= @{ pop @worklist };
-		for my $key (keys %$node) {
-			if (ref $node->{$key}) {
-				push @worklist, [ [ @$path, $key ], $node->{$key} ];
+	for my $col ($self->spec->colList) {
+		my $flatName= join('_', @$col);
+		$toFlat{$col->key}= $flatName;
+		if (exists $toTree{$flatName}) {
+			if (ref($toTree{$flatName}) eq 'ARRAY') {
+				push @{ $toTree{$flatName} }, $col;
+			} else {
+				carp "Columns $col and $toTree{$flatName} both map to the key $flatName";
+				$toTree{$flatName}= [ $toTree{$flatName}, $col ];
 			}
-			else {
-				my $flatName= join('_', @$path, $key);
-				my $treePath= [ @$path, $key ];
-				$toFlat{ _pathToKey(@$treePath) }= $flatName;
-				$toTree{$flatName}= $treePath;
-			}
+			$toTree{$flatName}= $col;
 		}
 	}
 	return { toTree => \%toTree, toFlat => \%toFlat };
-}
-
-sub _pathToKey {
-	join '', map { length($_).$_ } @_
 }
 
 sub _checkNamingConvention {
@@ -111,7 +106,7 @@ sub _checkNamingConvention {
 =head2 $flatHash= $self->flatten( $hashTree )
 
 =cut
-
+use RapidApp::Debug "DEBUG";
 sub flatten {
 	my ($self, $hash)= @_;
 	my $toFlat= $self->_colmap->{toFlat};
@@ -123,7 +118,14 @@ sub flatten {
 			if (ref $spec->{$key}) {
 				push @worklist, [ [ @$path, $key ], $node->{$key}, $spec->{$key} ];
 			} else {
-				if (my $flatName= $toFlat->{ _pathToKey(@$path, $key) }) {
+				DEBUG(foo => col => [@$path, $key], colKey => RapidApp::DBIC::ColPath::key([@$path, $key]));
+				if (my $flatName= $toFlat->{ RapidApp::DBIC::ColPath::key([@$path, $key]) }) {
+					# Check for case where two columns map to the same key
+					if (exists $result->{$flatName}) {
+						if (!ref($result->{$flatName}) || !ref($node->{$key}) || $result->{$flatName} ne $node->{$key}) {
+							croak "Conflicting values written to $flatName: $colPath = $node->{$key}, but other column was $result->{$flatName}";
+						}
+					}
 					$result->{$flatName}= $node->{$key};
 				} elsif (!$self->{ignoreUnexpected}) {
 					die "Illegal column/relation encountered: ".join('.',@$path,$key);
@@ -134,6 +136,11 @@ sub flatten {
 	$result;
 }
 
+=head2 $keyName= $self->colToFlatKey( \@colPath )
+
+Converts a column specified by relation path into the name of a key used for the flattened view.
+
+=cut
 sub colToFlatKey {
 	my $self= shift;
 	my $path= ref($_[0]) eq 'ARRAY'? $_[0] : [ @_ ];
@@ -142,17 +149,22 @@ sub colToFlatKey {
 
 =head2 $hashTree= $self->restore( $flatHash )
 
-=cut
+Take a flattened hash and restore it to its treed form.
 
+=cut
 sub restore {
 	my ($self, $hash)= @_;
 	my $toTree= $self->_colmap->{toTree};
 	my $result= {};
 	for my $key (keys %$hash) {
-		if (my $path= $toTree->{$key}) {
-			my $node= $result;
-			for (@$path[0..$#$path-1]) { $node= ($node->{$_} ||= {}) }
-			$node->{$path->[-1]}= $hash->{$key};
+		if (exists $toTree->{$key}) {
+			if (ref($toTree->{$key}) eq 'ARRAY') {
+				for my $colPath (@{ $toTree->{$key} }) {
+					$colPath->assignToHashTree( $result, $hash->{$key} );
+				}
+			} else {
+				$toTree->{$key}->assignToHashTree( $result, $hash->{$key} );
+			}
 		} elsif (!$self->{ignoreUnexpected}) {
 			die "Illegal flattened field name encountered: $key";
 		}
@@ -160,11 +172,52 @@ sub restore {
 	$result;
 }
 
+=head2 $colPath= $self->flatKeyToCol( $key )
+
+Returns the column (or columns!) that map to the specified flat key.
+
+In scalar context, only returns one column, since there ought to only be one.
+
+=cut
 sub flatKeyToCol {
 	my ($self, $key)= @_;
 	my $colPath= $self->_colmap->{toTree}{$key};
-	# make a copy, to ensure it doesn't get modified
-	return $colPath? [ @$colPath ] : undef;
+	return undef unless defined $colPath;
+	return $colPath unless ref($colPath) eq 'ARRAY';
+	return wantarray? @$colPath : $colPath->[0];
+}
+
+=head2 $newFlattener= $self->subset( @colspec || \@colspec || $relationTreeSpec )
+
+This method creates a new RelationTreeFlattener which only deals with a subset of the
+columns of the current one.   An especially useful feature of this method is that the
+new RelationTreeFlattener uses the same name mapping as the current one, which might
+not be the case if you were to create a RelationTreeFlattener from the smaller column
+list.
+
+=cut
+sub subset {
+	my ($self, @colSpec)= @_;
+	my $colSubset= $self->spec->insersect(@colSpec);
+	my $curMap= $self->_colmap->{toFlat};
+	my (%toTree, %toFlat);
+	for my $col ($colSubset->colList) {
+		my $key= $col->key;
+		my $flatName= $curMap->{$key};
+		$toFlat{$key}= $flatName;
+		if (exists $toTree{$flatName}) {
+			# user has already been warned.  So just do it.
+			ref($toTree{$flatName}) eq 'ARRAY'
+				or $toTree{$flatName}= [ $toTree{$flatName} ];
+			push @{ $toTree{$flatName} }, $col;
+		}
+	}
+	return $self->new(
+		spec => $colSubset,
+		namingConvention => $self->namingConvention,
+		ignoreUnexpected => $self->ignoreUnexpected,
+		_colmap => { toTree => \%toTree, toFlat => \%toFlat }
+	);
 }
 
 1;
