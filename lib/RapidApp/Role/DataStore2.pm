@@ -49,9 +49,16 @@ has 'DataStore' => (
 );
 
 
-
+has 'defer_to_store_module' => ( is => 'ro', isa => 'Maybe[Object]', lazy => 1, default => undef ); 
 
 has 'DataStore_build_params' => ( is => 'ro', default => undef, isa => 'Maybe[HashRef]' );
+
+around 'columns' => sub {
+	my $orig = shift;
+	my $self = shift;
+	return $self->$orig(@_) unless (defined $self->defer_to_store_module);
+	return $self->defer_to_store_module->columns(@_);
+};
 
 sub BUILD {}
 before 'BUILD' => sub {
@@ -107,8 +114,6 @@ sub store_init_onrequest {
 	# Simulate direct ONREQUEST:
 	$self->Module('store');
 	
-
-	
 	$self->apply_extconfig( columns => $self->DataStore->column_list );
 	$self->apply_extconfig( sort => $self->DataStore->get_extconfig_param('sort_spec') );
 }
@@ -117,6 +122,7 @@ sub store_init_onrequest {
 sub apply_store_to_extconfig {
 	my $self = shift;
 	$self->apply_extconfig( store => $self->Module('store')->JsonStore );
+	$self->apply_extconfig( store => $self->defer_to_store_module->getStore ) if (defined $self->defer_to_store_module);
 }
 
 
