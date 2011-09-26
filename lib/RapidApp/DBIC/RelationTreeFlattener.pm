@@ -2,6 +2,7 @@ package RapidApp::DBIC::RelationTreeFlattener;
 use Moo;
 use RapidApp::DBIC::ColPath;
 use RapidApp::DBIC::RelationTreeSpec;
+use Carp;
 
 =head1 NAME
 
@@ -73,32 +74,41 @@ Whether or not unexpected hash keys should generate exceptions.  Defaults to tru
 =cut
 
 has spec             => ( is => 'ro', required => 1 );
-has namingConvention => ( is => 'rw', isa => \&_checkNamingConvention, default => sub { "_concat_" } );
+has namingConvention => ( is => 'rw', isa => \&_checkNamingConvention, default => sub { "concat_" } );
 has ignoreUnexpected => ( is => 'rw', default => sub { 1 } );
 
 has _colmap          => ( is => 'ro', lazy => 1, builder => '_build__colmap' );
 sub _build__colmap {
 	my $self= shift;
 	my (%toTree, %toFlat);
+	my $calcFlatName= $self->can('calcFlatName_'.$self->namingConvention);
 	for my $col ($self->spec->colList) {
-		my $flatName= join('_', @$col);
+		my $flatName= $calcFlatName->($self, $col);
 		$toFlat{$col->key}= $flatName;
-		if (exists $toTree{$flatName}) {
-			if (ref($toTree{$flatName}) eq 'ARRAY') {
-				push @{ $toTree{$flatName} }, $col;
-			} else {
-				carp "Columns $col and $toTree{$flatName} both map to the key $flatName";
-				$toTree{$flatName}= [ $toTree{$flatName}, $col ];
-			}
-			$toTree{$flatName}= $col;
-		}
+		croak "Columns '$col' and '$toTree{$flatName}' both map to the key '$flatName'"
+			if exists $toTree{$flatName};
+		$toTree{$flatName}= $col;
 	}
 	return { toTree => \%toTree, toFlat => \%toFlat };
 }
 
+sub calcFlatName_concat_ {
+	my ($self, $col)= @_;
+	join('_', @$col)
+}
+
+sub calcFlatName_concat__ {
+	my ($self, $col)= @_;
+	join('__', @$col)
+}
+
+sub calcFlatName_brief {
+	my ($self, $col)= @_;
+	'c'.join('', map { length($_).$_ } (scalar(@$col) > 1)? @$col[-2..-1] : ($col->[0]) );
+}
+
 sub _checkNamingConvention {
-	# only one supported, for now.
-	die "Unsupported naming convention: $_[0]" unless $_[0] eq '_concat_';
+	__PACKAGE__->can('calcFlatName_'.$_[0]) or die "Can't resolve method for naming convention ".$_[0];
 }
 
 =head1 METHODS
@@ -118,14 +128,7 @@ sub flatten {
 			if (ref $spec->{$key}) {
 				push @worklist, [ [ @$path, $key ], $node->{$key}, $spec->{$key} ];
 			} else {
-				DEBUG(foo => col => [@$path, $key], colKey => RapidApp::DBIC::ColPath::key([@$path, $key]));
 				if (my $flatName= $toFlat->{ RapidApp::DBIC::ColPath::key([@$path, $key]) }) {
-					# Check for case where two columns map to the same key
-					if (exists $result->{$flatName}) {
-						if (!ref($result->{$flatName}) || !ref($node->{$key}) || $result->{$flatName} ne $node->{$key}) {
-							croak "Conflicting values written to $flatName: $colPath = $node->{$key}, but other column was $result->{$flatName}";
-						}
-					}
 					$result->{$flatName}= $node->{$key};
 				} elsif (!$self->{ignoreUnexpected}) {
 					die "Illegal column/relation encountered: ".join('.',@$path,$key);
@@ -158,13 +161,7 @@ sub restore {
 	my $result= {};
 	for my $key (keys %$hash) {
 		if (exists $toTree->{$key}) {
-			if (ref($toTree->{$key}) eq 'ARRAY') {
-				for my $colPath (@{ $toTree->{$key} }) {
-					$colPath->assignToHashTree( $result, $hash->{$key} );
-				}
-			} else {
-				$toTree->{$key}->assignToHashTree( $result, $hash->{$key} );
-			}
+			$toTree->{$key}->assignToHashTree( $result, $hash->{$key} );
 		} elsif (!$self->{ignoreUnexpected}) {
 			die "Illegal flattened field name encountered: $key";
 		}
@@ -181,10 +178,7 @@ In scalar context, only returns one column, since there ought to only be one.
 =cut
 sub flatKeyToCol {
 	my ($self, $key)= @_;
-	my $colPath= $self->_colmap->{toTree}{$key};
-	return undef unless defined $colPath;
-	return $colPath unless ref($colPath) eq 'ARRAY';
-	return wantarray? @$colPath : $colPath->[0];
+	return $self->_colmap->{toTree}{$key};
 }
 
 =head2 $newFlattener= $self->subset( @colspec || \@colspec || $relationTreeSpec )
@@ -205,12 +199,7 @@ sub subset {
 		my $key= $col->key;
 		my $flatName= $curMap->{$key};
 		$toFlat{$key}= $flatName;
-		if (exists $toTree{$flatName}) {
-			# user has already been warned.  So just do it.
-			ref($toTree{$flatName}) eq 'ARRAY'
-				or $toTree{$flatName}= [ $toTree{$flatName} ];
-			push @{ $toTree{$flatName} }, $col;
-		}
+		$toTree{$flatName}= $col;
 	}
 	return $self->new(
 		spec => $colSubset,

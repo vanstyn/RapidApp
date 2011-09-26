@@ -3,6 +3,7 @@ use strict;
 use warnings;
 use Params::Validate;
 use Carp;
+use RapidApp::DBIC::ColPath;
 
 =head1 NAME
 
@@ -33,7 +34,7 @@ It lets you specify columns, wildcard "*" columns, and exclusions "-".  You can 
 names of DBIC relations using dot notation, and they will be followed.
 
 This package is used by other useful packages like RelationTreeExtractor and RelationTreeFlattener
-and DbicLink to reduce the burden of having to use weird attributes to describe which columns
+and DbicLink to reduce the burden of having to use awkward attributes to describe which columns
 should be part of the result.
 
 =head1 ATTRIBUTES
@@ -65,7 +66,7 @@ sub colSpec {
 			my ($prefix, $node)= @{ pop @todo };
 			for (keys %$node) {
 				if (ref $node->{$_}) { push @todo, [ $prefix.$_.'.', $node->{$_} ] }
-				else { push @ret, $prefix.$_.'.' }
+				else { push @ret, $prefix.$_ }
 			}
 		}
 		\@ret;
@@ -87,7 +88,7 @@ sub colArray {
 			my ($path, $node)= @_;
 			for (sort keys %$node) {
 				if (ref $node->{$_}) { $recurse->( [ @$path, $_ ], $node->{$_} ); }
-				else { push @ret, [ @$path, $_ ] }
+				else { push @ret, RapidApp::DBIC::ColPath->new(@$path, $_) }
 			}
 		};
 		$recurse->( [], $_[0]->colTree );
@@ -107,11 +108,11 @@ sub colList {
 
 =head2 colTree : hash[ rel => rel => ... => col => 1 ]
 
-The tree of relations and columns that the spec referred to.  This is only available
-if you passed a "source" to the constructor, or if you called "->resolve($source)".
+The tree of relations and columns that the spec refers to.
+This is the most definitive attribute, and the only one that
+is never lazily built.
 
 =cut
-
 sub colTree {
 	(scalar(@_) == 1) or croak "Can't set coltree";
 	$_[0]->{colTree};
@@ -127,7 +128,6 @@ Example:
   relTree: { baz => {} }
 
 =cut
-
 sub relTree {
 	(scalar(@_) == 1) or croak "Can't set relTree";
 	return $_[0]->{relTree} ||= do {
