@@ -63,7 +63,7 @@ sub _get_apply_base_rs {
 # way of doing this. 
 sub native_rs {
 	my $self = shift;
-	my $Rs = $self->search_rs;
+	my $Rs = $self->search_rs({},{ where => {} });
 	
 	my $new_ref = {};
 	my $old_ref = $Rs->{attrs}->{_base_rs_condition_ref};
