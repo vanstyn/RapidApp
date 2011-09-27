@@ -139,15 +139,15 @@ sub flatten {
 	$result;
 }
 
-=head2 $keyName= $self->colToFlatKey( \@colPath )
+=head2 $keyName= $self->colToFlatKey( @colPath || \@colPath || $ColPath )
 
 Converts a column specified by relation path into the name of a key used for the flattened view.
 
 =cut
 sub colToFlatKey {
 	my $self= shift;
-	my $path= ref($_[0]) eq 'ARRAY'? $_[0] : [ @_ ];
-	return $self->_colmap->{toFlat}{ _pathToKey( @$path ) };
+	my $colPath= RapidApp::DBIC::ColPath->coerce(@_);
+	return $self->_colmap->{toFlat}{$colPath->key};
 }
 
 =head2 $hashTree= $self->restore( $flatHash )

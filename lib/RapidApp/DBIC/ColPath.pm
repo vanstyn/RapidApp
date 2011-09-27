@@ -3,6 +3,11 @@ use strict;
 use warnings;
 use overload '""' => sub { $_[0]->toString }; # to-string operator overload
 
+sub coerce {
+	my $class= shift;
+	return (scalar(@_) && defined $_[0] && $_[0]->isa($class))? $_[0] : $class->new(@_);
+}
+
 sub new {
 	my $class= shift;
 	die "Cannot create ColPath with 0 elements" unless scalar(@_);

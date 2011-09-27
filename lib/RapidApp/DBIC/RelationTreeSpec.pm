@@ -4,6 +4,7 @@ use warnings;
 use Params::Validate;
 use Carp;
 use RapidApp::DBIC::ColPath;
+use RapidApp::Debug 'DEBUG';
 
 =head1 NAME
 
@@ -287,10 +288,11 @@ sub resolveSpec {
 	my $tree= {};
 	$class->validateSpec($spec);
 	for my $specItem (@$spec) {
-		my $remove= ($specItem =~ s/^-//)? 1 : 0;   # is it an exclusion rule?
-		my @parts= split(/\./, $specItem);  # split a.b.c into [ 'a', 'b', 'c' ]
+		my $remove= substr($specItem, 0, 1) eq '-';   # is it an exclusion rule?
+		my @parts= split(/\./, $remove? substr($specItem,1) : $specItem);  # split a.b.c into [ 'a', 'b', 'c' ]
 		_resolve_spec_item($tree, $source, $remove, @parts); # apply this spec to $tree
 	}
+	DEBUG(colspec => spec => $spec, 'resolve as tree:', $tree);
 	$tree;
 }
 
@@ -304,6 +306,7 @@ sub _resolve_spec_item {
 	} elsif ($source->has_relationship($item)) {
 		if (@subparts) {
 			_resolve_spec_item($tree->{$item} ||= {}, $source->related_source($item), $remove, @subparts);
+			delete $tree->{$item} unless scalar keys %{ $tree->{$item} };
 		} elsif ($remove) {
 			delete $tree->{$item};
 		} else {
