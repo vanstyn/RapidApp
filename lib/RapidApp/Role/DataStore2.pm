@@ -1,11 +1,13 @@
 package RapidApp::Role::DataStore2;
 use Moose::Role;
-
 use strict;
 
 use RapidApp::Include qw(sugar perlutil);
 
 use RapidApp::DataStore2;
+
+has 'TableSpec' => ( is => 'rw', isa => 'Maybe[RapidApp::TableSpec]', default => undef );
+has 'TableSpec_applied' => ( is => 'rw', isa => 'Bool', default => 0 );
 
 has 'record_pk'			=> ( is => 'ro', default => 'id' );
 has 'DataStore_class'	=> ( is => 'ro', default => 'RapidApp::DataStore2' );
@@ -107,6 +109,29 @@ before 'BUILD' => sub {
 	$self->add_ONREQUEST_calls('store_init_onrequest');
 	$self->add_ONREQUEST_calls_late('apply_store_to_extconfig');
 };
+
+
+after 'BUILD' => sub {
+	my $self = shift;
+
+	## Apply the TableSpec if its defined ##
+	$self->apply_TableSpec_config if ($self->TableSpec);
+};
+
+
+sub apply_TableSpec_config {
+	my $self = shift;
+	$self->TableSpec or return;
+	$self->TableSpec_applied and return;
+	
+	my $prop_names = [ RapidApp::Column->meta->get_attribute_list ];
+	my $columns = $self->TableSpec->columns_properties_limited($prop_names);
+	
+	$self->apply_columns($columns);
+	$self->set_columns_order(0,$self->TableSpec->column_names_ordered);
+	
+	$self->TableSpec_applied(1);
+}
 
 
 sub defer_DataStore {

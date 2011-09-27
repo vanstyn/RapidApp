@@ -391,6 +391,9 @@ sub set_columns_order {
 		die "can't set the order of columns that do not already exist (" . join(',',@remaining) . ')';
 	}
 	
+	my $last_indx = (scalar @pruned);
+	$offset = $last_indx if ($offset > $last_indx);
+	
 	splice(@pruned,$offset,0,@cols);
 	
 	@{ $self->column_order } = @pruned;

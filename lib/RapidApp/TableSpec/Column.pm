@@ -51,12 +51,12 @@ sub all_properties_hash {
 }
 
 # Returns a hashref of properties that match the list/hash supplied:
-sub properties_set {
+sub properties_limited {
 	my $self = shift;
 	my $map;
 	
 	if (ref($_[0]) eq 'HASH') 		{	$map = shift;								}
-	elsif (ref($_[0]) eq 'ARRAY')	{	$map = { map { $_ => 1 } @$_[0] };	}
+	elsif (ref($_[0]) eq 'ARRAY')	{	$map = { map { $_ => 1 } @{$_[0]} };	}
 	else 									{	$map = { map { $_ => 1 } @_ };			}
 	
 	my $properties = $self->all_properties_hash;

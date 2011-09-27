@@ -31,6 +31,26 @@ sub column_list_ordered {
 	return sort { $a->order <=> $b->order } $self->column_list; 
 }
 
+sub column_names_ordered {
+	my $self = shift;
+	my @list = ();
+	
+	foreach my $Column ($self->column_list_ordered) {
+		push @list, $Column->name;
+	}
+	return @list;
+}
+
+
+sub columns_properties_limited {
+	my $self = shift;
+	my $hash = {};
+	foreach my $Column ($self->column_list) {
+		$hash->{$Column->name} = $Column->properties_limited(@_);
+	}
+	return $hash;
+}
+
 
 sub add_columns {
 	my $self = shift;
