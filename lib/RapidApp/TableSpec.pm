@@ -21,9 +21,15 @@ has 'columns'  => (
 		 apply_columns		=> 'set',
 		 get_column			=> 'get',
 		 has_column			=> 'exists',
-		 column_list		=> 'values'
+		 column_list		=> 'values',
+		 num_columns		=> 'count'
 	}
 );
+
+sub column_list_ordered {
+	my $self = shift;
+	return sort { $a->order <=> $b->order } $self->column_list; 
+}
 
 
 sub add_columns {
@@ -35,11 +41,27 @@ sub add_columns {
 		$Column = $col if (ref($col) eq 'RapidApp::TableSpec::Column');
 		$Column = RapidApp::TableSpec::Column->new($col) unless ($Column);
 		
+		$Column->order($self->num_columns + 1) unless (defined $Column->order);
+		
 		#die "A column named " . $Column->name . ' already exists.' if (defined $self->has_column($Column->name));
 		
 		$self->apply_columns( $Column->name => $Column );
 	}
 }
+
+
+sub apply_column_properties { 
+	my $self = shift;
+	
+	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	my $hash = \%new;
+	
+	foreach my $col (keys %$hash) {
+		my $Column = $self->get_column($col) or die "apply_column_properties failed - no such column '$col'";
+		$Column->set_properties($hash->{$col});
+	}
+}
+
 
 
 

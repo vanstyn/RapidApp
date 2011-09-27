@@ -16,6 +16,7 @@ has 'label' => ( is => 'rw', isa => 'Str', lazy => 1, default => sub {
 	return $self->name;
 });
 
+has 'order' => ( is => 'rw', isa => 'Maybe[Int]', default => undef );
 
 
 has '_other_properties' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
@@ -48,6 +49,29 @@ sub all_properties_hash {
 	}
 	return $hash;
 }
+
+# Returns a hashref of properties that match the list/hash supplied:
+sub properties_set {
+	my $self = shift;
+	my $map;
+	
+	if (ref($_[0]) eq 'HASH') 		{	$map = shift;								}
+	elsif (ref($_[0]) eq 'ARRAY')	{	$map = { map { $_ => 1 } @$_[0] };	}
+	else 									{	$map = { map { $_ => 1 } @_ };			}
+	
+	my $properties = $self->all_properties_hash;
+	
+	my @keys = grep { $map->{$_} } keys %$properties;
+	
+	my $set = {};
+	foreach my $key (@keys) {
+		$set->{$key} = $properties->{$key};
+	}
+	
+	return $set;
+}
+
+
 
 
 no Moose;
