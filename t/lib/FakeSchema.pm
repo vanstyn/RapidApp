@@ -9,10 +9,19 @@ sub schema {
 	$_[0]->{schema}
 }
 sub columns {
-	@{ $_[0]->{columns} }
+	@{ $_[0]->{cols} }
+}
+sub primary_columns {
+	$_[0]->{pk} ||= [ $_[0]->columns ];
+}
+sub relationships {
+	keys %{$_[0]{rels}};
 }
 sub has_column {
 	scalar grep { $_ eq $_[1] } $_[0]->columns;
+}
+sub column_info {
+	{ data_type => 'varchar', size => 32 };
 }
 sub has_relationship {
 	$_[0]->{rels}->{$_[1]}
@@ -32,6 +41,7 @@ sub new {
 	my $self= bless { sources => $sources }, $class;
 	for my $srcN (keys %$sources) {
 		$sources->{$srcN}{name}= $srcN;
+		$sources->{$srcN}{columns} and $sources->{$srcN}{cols}= delete $sources->{$srcN}{columns};
 		weaken( $sources->{$srcN}{schema}= $self );
 		bless $sources->{$srcN}, 'FakeSource';
 	}
