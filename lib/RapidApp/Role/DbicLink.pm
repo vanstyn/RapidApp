@@ -448,8 +448,28 @@ sub _dbiclink_update_records {
 # -- ^^ --
 
 
+## -- vv -- TableSpec Support
+has 'ignore_Result_TableSpec' => ( is => 'ro', isa => 'Bool', default => 0 );
 
+sub get_Result_class_TableSpec {
+	my $self = shift;
+	my $name = $self->ResultSource->source_name;
+	my $Class = $self->ResultSource->schema->class($name);
+	return $Class->TableSpec if ($Class->can('TableSpec'));
+	return undef;
+}
 
+has 'TableSpec' => (
+	is => 'ro',
+	isa => 'Maybe[RapidApp::TableSpec]',
+	lazy => 1, 
+	default => sub {
+		my $self = shift;
+		return undef if ($self->ignore_Result_TableSpec);
+		return $self->get_Result_class_TableSpec;
+	}
+);
+# -- ^^ --
 
 sub BUILD {}
 around 'BUILD' => sub {
