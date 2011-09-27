@@ -4240,6 +4240,50 @@ Ext.ux.grid.PropertyGrid = Ext.extend(Ext.grid.EditorGridPanel, {
 });
 Ext.reg("propertygrid2", Ext.ux.grid.PropertyGrid);
 
-
 /***********  -- ^^^ -- Ext.ux.grid.PropertyGrid -- ^^^ -- **********/
 /********************************************************************/
+
+
+Ext.ns('Ext.ux.RapidApp');
+Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
+	
+	initComponent: function() {
+		
+		this.bindStore = this.store;
+		delete this.store;
+		
+		this.bindStore.on('load',this.loadFirstRecord,this);
+		
+		this.fields = this.columns;
+		delete this.columns;
+		
+		Ext.each(this.fields,function(field) {
+			field.id = field.dataIndex;
+		});
+		
+		Ext.ux.RapidApp.AppPropertyGrid.superclass.initComponent.call(this);
+		
+		this.on('propertychange',this.onPropertyChange,this);
+	},
+	
+	onPropertyChange: function(source,recordId,value,oldValue) {
+		this.bindRecord.beginEdit();
+		this.bindRecord.set(recordId,value);
+		this.bindRecord.endEdit();
+		this.bindRecord.store.save();
+	},
+	
+	getBindStore: function() {
+		return this.bindStore;
+	},
+	
+	loadFirstRecord: function() {
+		this.bindRecord = this.getBindStore().getAt(0);
+		this.loadRecord(this.bindRecord.copy());
+	}
+});
+Ext.reg('apppropertygrid', Ext.ux.RapidApp.AppPropertyGrid);
+
+
+
+
