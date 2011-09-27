@@ -4254,8 +4254,10 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		
 		this.bindStore.on('load',this.loadFirstRecord,this);
 		
-		this.fields = this.columns;
-		delete this.columns;
+		if(this.columns && ! this.fields) {
+			this.fields = this.columns;
+			delete this.columns;
+		}
 		
 		Ext.each(this.fields,function(field) {
 			field.id = field.dataIndex;
