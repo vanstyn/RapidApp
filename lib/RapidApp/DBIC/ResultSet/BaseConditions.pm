@@ -7,6 +7,17 @@ extends 'DBIx::Class::ResultSet';
 use RapidApp::Include qw(sugar perlutil);
 use Clone;
 
+##
+##
+##
+##
+##    DEPRICATED  - use RapidApp::DBIC::ResultSet::BaseRs instead
+##
+##
+##
+##
+
+
 around 'BUILDARGS' => sub {
 	my ($orig, $class, @args)= @_;
 	# The correct parameters are a ResultSource, and args hash.

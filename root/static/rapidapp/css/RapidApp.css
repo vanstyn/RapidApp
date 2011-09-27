@@ -727,6 +727,7 @@ html, body { height:100%; }
 
 div.appdv-edit-bigfield {
 	position:relative;
+	min-height: 20px;
 }
 
 .editing-record .appdv-edit-bigfield .icons div, .record-update .appdv-edit-bigfield .icons div {
