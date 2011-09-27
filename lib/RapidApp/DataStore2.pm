@@ -634,18 +634,21 @@ sub destroy {
 has 'getStore' => ( is => 'ro', lazy => 1, default => sub { 
 	my $self = shift;
 	return $self->JsonStore;
-	#return $self->JsonStore unless ($self->has_JsonStore); # Return the JsonStore constructor if it hasn't been called yet
-	return RapidApp::JSONFunc->new( 
-		raw => 1, 
-		func => $self->getStore_code
-	);
 });
-
 
 has 'getStore_code' => ( is => 'ro', lazy_build => 1 );
 sub _build_getStore_code {
 	my $self = shift;
 	return 'Ext.StoreMgr.lookup("' . $self->storeId . '")';
+}
+
+has 'getStore_func' => ( is => 'ro', lazy_build => 1 );
+sub _build_getStore_func {
+	my $self = shift;
+	return RapidApp::JSONFunc->new( 
+		raw => 1, 
+		func => $self->getStore_code
+	);
 }
 
 has 'store_load_code' => ( is => 'ro', lazy_build => 1 );

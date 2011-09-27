@@ -36,6 +36,7 @@ has 'DataStore' => (
 #		record_pk					=> 'record_pk',
 		getStore						=> 'getStore',
 		getStore_code				=> 'getStore_code',
+		getStore_func				=> 'getStore_func',
 		store_load_code			=> 'store_load_code',
 		store_listeners			=> 'listeners',
 		apply_store_listeners	=> 'apply_listeners',
@@ -130,10 +131,7 @@ sub apply_store_to_extconfig {
 	my $self = shift;
 	
 	if (defined $self->defer_to_store_module) {
-		$self->apply_extconfig( store => RapidApp::JSONFunc->new( 
-			raw => 1, 
-			func => $self->defer_to_store_module->getStore_code
-		));
+		$self->apply_extconfig( store => $self->defer_DataStore->getStore_func );
 	}
 	else {
 		$self->apply_extconfig( store => $self->Module('store')->JsonStore );
