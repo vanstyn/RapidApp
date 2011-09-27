@@ -1,5 +1,5 @@
 package RapidApp::DBIC::Component::TableSpec;
-use base 'DBIx::Class::Core';
+use base 'DBIx::Class';
 
 # DBIx::Class Component: ties a RapidApp::TableSpec object to
 # a Result class for use in configuring various modules that
@@ -11,26 +11,46 @@ use RapidApp::TableSpec;
 
 __PACKAGE__->mk_classdata( 'TableSpec' );
 
-my $PKG;
-
-# Find the package that loaded us:
-for(my $i = 0; $i<10; $i++) {
-	my $cur = caller($i);
-	next if ($cur =~ /^Class\:\:C3/);
-	if ($cur->can('table')) {
-		$PKG = $cur;
-		last;
+sub apply_TableSpec {
+	my $self = shift;
+	
+	$self->TableSpec(RapidApp::TableSpec->new( name => $self->table ));
+	
+	foreach my $col ($self->columns) {
+		$self->TableSpec->add_columns( { name => $col } ); 
 	}
 }
 
-__PACKAGE__->TableSpec(RapidApp::TableSpec->new( name => $PKG->table ));
 	
-foreach my $col ($PKG->columns) {
-	__PACKAGE__->TableSpec->add_columns( { name => $col } ); 
+sub TableSpec_add_columns_from_related {
+	my $self = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	my $rels = \%opt;
+	
+	foreach my $rel (keys %$rels) {
+		my $conf = $rels->{$rel};
+	
+		my $info = $self->relationship_info($rel);
+		my $TableSpec = $info->{class}->TableSpec or next;
+		
+		foreach my $Column ($TableSpec->column_list_ordered) {
+			my $properties = $Column->all_properties_hash;
+			$properties->{name} = $rel . '_' . $properties->{name};
+			
+			$properties->{header} = $conf->{header_prefix} . $properties->{header} if ($conf->{header_prefix});
+			
+			%$properties = ( %$properties, %{ $conf->{column_properties}->{$Column->name} } ) if (
+				defined $conf->{column_properties} and
+				defined $conf->{column_properties}->{$Column->name}
+			);
+			
+			$self->TableSpec->add_columns($properties);
+		
+		}
+	}
+
 }
-
-	
-
 
 
 1;
