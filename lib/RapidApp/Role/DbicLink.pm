@@ -110,7 +110,7 @@ sub _build_DbicExtQuery {
 		no_search_fields        => $no_search_fields,
 		literal_dbf_colnames    => $self->literal_dbf_colnames,
 		joins                   => $self->joins,
-		extColMap               => $self->relationTreeFlattener,
+		extColMap               => $self->dbiclink_columns_flattener,
 		distinct                => $self->distinct,
 		#implied_joins			=> 1
 		#group_by				=> [ 'me.id' ],
@@ -301,102 +301,24 @@ has '_exclude_dbiclink_columns_hash' => (
 	}
 );
 
-has colSpec => ( 
+# dbiclink_colspec is a user-friendly configuration parameter of a list of
+# DBIC column names, in "relation.relation.col" notation.
+# It is used to builc dbiclink_columns_spec and dbiclink_columns_flattener on demand.
+# Those are in turn used for calculating dbiclink_columns_writeable from dbiclink_colspec_writeable
+has dbiclink_colspec => ( 
 	is => 'ro',
 	traits => [ 'Array' ],
 	isa => 'ArrayRef[Str]',
 	lazy_build => 1,
 	handles => {
-		colSpecList => 'elements',
-		addColSpec => 'push',
-		hasColSpec => 'count',
+		dbiclink_colspec_list => 'elements',
+		apply_dbiclink_colspec => 'push',
+		dbiclink_colspec_count => 'count',
 	}
 );
-sub _build_colSpec {
+sub _build_dbiclink_colspec {
 	return [];
 }
-
-has colNamingConvention => ( is => 'rw', isa => 'Str', default => 'concat_' );
-
-sub relationTreeSpec { $_[0]->relationTreeFlattener->spec }
-
-sub _build_flattener_from_dbiclink_columns {
-	my $self= shift;
-	
-	# DbicLink has all its configuration parameters defined in terms of the concatenated name.
-	# In retrospect, it would have been more convenient to configure it in terms of the DBIC name,
-	#  and hopefully the API can move in that direction now that we have this object to play with.
-	# Here, we try to convert those concatenated names back to the DBIC name.
-	
-	my @spec;
-	my @worklist= ( [ $self->ResultSource, [] ] );
-	while (@worklist) {
-		my ($source, $path)= @{ pop @worklist };
-		my $srcN= $source->source_name;
-		
-		for my $colN ($source->columns) {
-			my $concatName= join('_', @$path, $colN);
-			next unless ($self->has_no_limit_dbiclink_columns or $self->has_limit_dbiclink_column($concatName));
-			next if ($self->has_exclude_dbiclink_column($concatName));
-			next unless ($self->valid_colname($concatName));
-			
-			push @spec, join('.', @$path, $colN); # use it
-		}
-		
-		for my $relN ($source->relationships) {
-			# only follow prefixes that are defined in the joins:
-			next unless (defined $self->join_map->{$srcN}->{$relN});
-			my $prefix= join('_', @$path, $relN);
-			next unless $self->join_col_prefix_map->{$prefix};
-			
-			push @worklist, [ $source->related_source($relN), [ @$path, $relN ] ];
-		}
-	}
-	
-	# We also have logic to handle and attempt to automatically resolve name conflicts.
-	# With the simple concatenation with "_", columns like project.status_id and project.status.id
-	# can end up with the same mapped name.  We work around it by adding excludes to the colSpec
-	# until we can successfully create a mapper.
-	
-	my $result;
-	while (!$result) {
-		try {
-			DEBUG(colspec => 'colSpec =>', \@spec);
-			my $relSpec= RapidApp::DBIC::RelationTreeSpec->new(source => $self->ResultSource, colSpec => \@spec);
-			my $flattener= RapidApp::DBIC::RelationTreeFlattener->new(spec => $relSpec, namingConvention => $self->colNamingConvention);
-			$flattener->_colmap; # this will trigger an exception if any column names conflict
-			$result= $flattener;
-		} catch {
-			$_ =~ /'([^']+)' and '([^']+)'/ or die "$_\nCan't determine which columns conflict, so can't resolve";
-			# exclude the deeper column, because in most cases it is an Enum table which we don't want to modify.
-			my $exclude= (scalar split /\./, $1) > (scalar split /\./, $2)? $1 : $2;
-			my $cls= ref $self;
-			warn "Conflicting columns in $cls: '$1', '$2'\n".
-			     "Automatically excluding '$exclude', but you should specify $cls->addColSpec('-offendingCol')\n".
-			     "You can also specify $cls->colNamingConvention('brief') for a name mapping that is guaranteed not to conflict.\n";
-			push @spec, '-'.$exclude;
-		};
-	}
-	$result;
-}
-
-has relationTreeFlattener => ( is => 'ro', isa => 'RapidApp::DBIC::RelationTreeFlattener', lazy_build => 1 );
-sub _build_relationTreeFlattener {
-	my $self= shift;
-	# if the user is using the "colSpec" interface, we create the flattener directly.
-	# Else, we try to build the spec from the previous "dbiclink_columns" API.
-	if ($self->hasColSpec) {
-		my $relSpec= RapidApp::DBIC::RelationTreeSpec->new(source => $self->ResultSource, colSpec => $self->colSpec);
-		return RapidApp::DBIC::RelationTreeFlattener->new(spec => $relSpec, namingConvention => $self->colNamingConvention);
-	} else {
-		return $self->_build_flattener_from_dbiclink_columns;
-	}
-}
-
-
-# -- vv -- 2011-09-22 by HV -- New update support
-
-has 'dbiclink_updatable' => ( is => 'ro', isa => 'Bool', default => 0 );
 
 # dbiclink_updatable_relationships:
 # Should be a list of relationship/join names that will be updated along with 
@@ -405,37 +327,123 @@ has 'dbiclink_updatable' => ( is => 'ro', isa => 'Bool', default => 0 );
 # for example:
 # If these joins were defined: [ 'owner', { 'project' => 'status' } ]
 # To set them as writable set dbiclink_updatable_relationships to: [ 'owner', 'project.status' ]
-has 'dbiclink_updatable_relationships' => ( is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]} );
 
-has 'relationTreeFlattenerPruned' => ( is => 'ro', isa => 'RapidApp::DBIC::RelationTreeFlattener', lazy_build => 1 );
-sub _build_relationTreeFlattenerPruned {
-	my $self = shift;
-	
-	my @exps = ( '/^[^.]+$/' );
-	foreach my $rel (@{$self->dbiclink_updatable_relationships}) {
-		push @exps, '/^' . quotemeta($rel . '.') . '[^.]+$/';
+# dbiclink_colspec_writeable is a user-friendly configuration parameter of a list of
+# DBIC column names, in "relation.relation.col" notation.
+#
+# NOTE: A column must be listed in dbiclink_colspec to be considered.
+#       The writeable list is only a mask which gets applied to that other list.
+# NOTE2: Nothing actually becomes writeable unless "dbiclink_updateable" is set to
+#        true before BUILD.
+has dbiclink_colspec_writeable => ( 
+	is => 'ro',
+	traits => [ 'Array' ],
+	isa => 'ArrayRef[Str]',
+	lazy_build => 1,
+	handles => {
+		dbiclink_colspec_writeable_list => 'elements',
+		apply_dbiclink_colspec_writeable => 'push',
+		dbiclink_colspec_writeable_count => 'count',
 	}
-	
-	my $grepEval = 'grep { ' . join(' or ',@exps) . ' } @{$self->relationTreeSpec->allCols}';
-	
-	my $objCols = [ eval $grepEval ];
-	
-	return RapidApp::DBIC::RelationTreeFlattener->new(
-		spec => RapidApp::DBIC::RelationTreeSpec->new(
-			colSpec => $objCols, 
-			source => $self->ResultSource
-		)
-	);
+);
+sub _build_dbiclink_colspec_writeable {
+	return [];
+}
+
+# dbiclink_col_naming_convention is a configuration parameter for how column names will be generated.
+# It can only be changed before dbiclink_columns_flattener has been created.
+has dbiclink_col_naming_convention => ( is => 'rw', isa => 'Str', default => 'concat_' );
+
+# dbiclink_columns_spec is dbiclink_colspec in object form, and fully resolved against the ResultSource.
+sub dbiclink_columns_spec { $_[0]->dbiclink_columns_flattener->spec }
+
+# dbiclink_columns_flattener maps DBIC column names to Ext names and back.
+has dbiclink_columns_flattener => ( is => 'ro', isa => 'RapidApp::DBIC::RelationTreeFlattener', lazy_build => 1 );
+sub _build_dbiclink_columns_flattener {
+	my $self= shift;
+	# if the user is using the "colSpec" interface, we create the flattener directly.
+	# Else, we try to build the spec from the previous "dbiclink_columns" API.
+	if ($self->dbiclink_colspec_count) {
+		my $relSpec= RapidApp::DBIC::RelationTreeSpec->new(source => $self->ResultSource, colSpec => $self->dbiclink_colspec);
+		return RapidApp::DBIC::RelationTreeFlattener->new(spec => $relSpec, namingConvention => $self->dbiclink_col_naming_convention);
+	} else {
+		
+		# DbicLink has all its configuration parameters defined in terms of the concatenated name.
+		# In retrospect, it would have been more convenient to configure it in terms of the DBIC name,
+		#  and hopefully the API can move in that direction now that we have this object to play with.
+		# Here, we try to convert those concatenated names back to the DBIC name.
+		
+		my @spec;
+		my @worklist= ( [ $self->ResultSource, [] ] );
+		while (@worklist) {
+			my ($source, $path)= @{ pop @worklist };
+			my $srcN= $source->source_name;
+			
+			for my $colN ($source->columns) {
+				my $concatName= join('_', @$path, $colN);
+				next unless ($self->has_no_limit_dbiclink_columns or $self->has_limit_dbiclink_column($concatName));
+				next if ($self->has_exclude_dbiclink_column($concatName));
+				next unless ($self->valid_colname($concatName));
+				
+				push @spec, join('.', @$path, $colN); # use it
+			}
+			
+			for my $relN ($source->relationships) {
+				# only follow prefixes that are defined in the joins:
+				next unless (defined $self->join_map->{$srcN}->{$relN});
+				my $prefix= join('_', @$path, $relN);
+				next unless $self->join_col_prefix_map->{$prefix};
+				
+				push @worklist, [ $source->related_source($relN), [ @$path, $relN ] ];
+			}
+		}
+		
+		# We also have logic to handle and attempt to automatically resolve name conflicts.
+		# With the simple concatenation with "_", columns like project.status_id and project.status.id
+		# can end up with the same mapped name.  We work around it by adding excludes to the colSpec
+		# until we can successfully create a mapper.
+		
+		my $result;
+		while (!$result) {
+			try {
+				DEBUG(colspec => 'colSpec =>', \@spec);
+				my $relSpec= RapidApp::DBIC::RelationTreeSpec->new(source => $self->ResultSource, colSpec => \@spec);
+				my $flattener= RapidApp::DBIC::RelationTreeFlattener->new(spec => $relSpec, namingConvention => $self->dbiclink_col_naming_convention);
+				$flattener->_colmap; # this will trigger an exception if any column names conflict
+				$result= $flattener;
+			} catch {
+				$_ =~ /'([^']+)' and '([^']+)'/ or die "$_\nCan't determine which columns conflict, so can't resolve";
+				# exclude the deeper column, because in most cases it is an Enum table which we don't want to modify.
+				my $exclude= (scalar split /\./, $1) > (scalar split /\./, $2)? $1 : $2;
+				my $cls= ref $self;
+				warn "Conflicting columns in $cls: '$1', '$2'\n".
+					 "Automatically excluding '$exclude', but you should specify $cls->apply_dbic_colspec('-offendingCol')\n".
+					 "You can also specify $cls->dbiclink_col_naming_convention('brief') for a name mapping that is guaranteed not to conflict.\n";
+				push @spec, '-'.$exclude;
+			};
+		}
+		return $result;
+	}
+}
+
+# -- vv -- 2011-09-22 by HV -- New update support
+
+has 'dbiclink_updatable' => ( is => 'ro', isa => 'Bool', default => 0 );
+
+has dbiclink_writeable_flattener => ( is => 'ro', isa => 'RapidApp::DBIC::RelationTreeFlattener', lazy_build => 1 );
+sub _build_dbiclink_writeable_flattener {
+	my $self = shift;
+	return $self->dbiclink_columns_flattener->subset( $self->dbiclink_colspec_writeable );
 }
 
 # Accepts a hash of flattened record data as sent from the ExtJS Store client
 # and unflattens it back into a tree hash, pruning/excluding columns from 
-# joins/rels that are not in dbiclink_updatable_relationships
+# joins/rels that are not in dbiclink_colspec_writeable
 sub unflatten_prune_update_packet {
 	my $self = shift;
 	my $data = shift;
 	
-	my $tree = $self->relationTreeFlattenerPruned->restore($data);
+	my $tree = $self->dbiclink_writeable_flattener->restore($data);
 	
 	return $tree;
 }
@@ -500,23 +508,21 @@ sub _dbiclink_update_records {
 }
 # -- ^^ --
 
-
-
+before BUILD => sub {
+	my $self= shift;
+	# Dynamically toggle the addition of an 'update_records' method
+	# The existence of this method is part of the DataStore2 API
+	$self->meta->add_method('update_records', $self->meta->find_method_by_name('_dbiclink_update_records')) if (
+		$self->dbiclink_updatable and 
+		not $self->can('update_records')
+	);
+};
 
 
 sub BUILD {}
 around 'BUILD' => sub {
 	my $orig = shift;
 	my $self = shift;
-	
-	# -- vv -- Introspective code:
-	# Dynamically toggle the addition of an 'update_records' method
-	# The existence of this method is part of the DataStore2 API
-	$self->meta->add_method('update_records',$self->meta->get_method('_dbiclink_update_records')) if (
-		$self->dbiclink_updatable and 
-		not $self->can('update_records')
-	);
-	# -- ^^ --
 	
 	$self->apply_extconfig( no_multifilter_fields => $self->_no_search_fields_hash );
 
@@ -548,7 +554,7 @@ around 'BUILD' => sub {
 			}
 			else { # else if it is a column...
 				my $colName= $key;
-				my $flatName= $self->relationTreeFlattener->colToFlatKey(@$path, $key);
+				my $flatName= $self->dbiclink_columns_flattener->colToFlatKey(@$path, $key);
 				if (@$path) {
 					$self->fieldname_transforms->{$flatName} = $path->[-1] . '.' . $colName;
 				}
@@ -582,7 +588,7 @@ around 'BUILD' => sub {
 		}
 	};
 	
-	$addColRecurse->([], $self->relationTreeSpec->colTree, $self->ResultSource);
+	$addColRecurse->([], $self->dbiclink_columns_spec->colTree, $self->ResultSource);
 	
 	$self->add_ONREQUEST_calls('check_can_delete_rows');
 };

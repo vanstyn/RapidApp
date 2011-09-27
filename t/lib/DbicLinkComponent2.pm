@@ -16,7 +16,7 @@ our $db= FakeSchema->new({
 
 has '+no_rel_combos' => ( default => 1 );
 
-sub _build_colSpec {
+sub _build_dbiclink_colspec {
 	[qw[ * b.* -b.id -a3 ]]
 }
 
