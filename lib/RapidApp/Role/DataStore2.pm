@@ -108,21 +108,36 @@ before 'BUILD' => sub {
 };
 
 
+sub defer_DataStore {
+	my $self = shift;
+	return $self->DataStore unless (defined $self->defer_to_store_module);
+	return $self->defer_to_store_module->DataStore if ($self->defer_to_store_module->can('DataStore'));
+	return $self->defer_to_store_module;
+}
+
 sub store_init_onrequest {
 	my $self = shift;
 	
 	# Simulate direct ONREQUEST:
 	$self->Module('store');
 	
-	$self->apply_extconfig( columns => $self->DataStore->column_list );
-	$self->apply_extconfig( sort => $self->DataStore->get_extconfig_param('sort_spec') );
+	$self->apply_extconfig( columns => $self->defer_DataStore->column_list );
+	$self->apply_extconfig( sort => $self->defer_DataStore->get_extconfig_param('sort_spec') );
 }
 
 
 sub apply_store_to_extconfig {
 	my $self = shift;
-	$self->apply_extconfig( store => $self->Module('store')->JsonStore );
-	$self->apply_extconfig( store => $self->defer_to_store_module->getStore ) if (defined $self->defer_to_store_module);
+	
+	if (defined $self->defer_to_store_module) {
+		$self->apply_extconfig( store => RapidApp::JSONFunc->new( 
+			raw => 1, 
+			func => $self->defer_to_store_module->getStore_code
+		));
+	}
+	else {
+		$self->apply_extconfig( store => $self->Module('store')->JsonStore );
+	}
 }
 
 
