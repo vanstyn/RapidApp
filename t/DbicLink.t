@@ -11,6 +11,7 @@ use lib 't/lib';
 use FakeApp;
 use FakeSchema;
 use_ok 'DbicLinkComponent1';
+use_ok 'DbicLinkComponent2';
 
 $SIG{__WARN__}= sub { diag("Warn: ", @_); };
 
@@ -22,12 +23,21 @@ sub test_flattener_from_joins {
 	is_deeply( $f->spec->colTree, { foo_bar => 1 }, 'Correct columns created');
 }
 
+sub test_dbicquery {
+	my $cmp= DbicLinkComponent2->new(module_name => 'DbicLinkComponent2', parent_module_ref => undef, module_path => '/', );
+	ok($cmp, 'Component created');
+	ok($cmp->DbicExtQuery, 'Created DbicExtQuery');
+	is_deeply($cmp->DbicExtQuery->ExtNamesToDbFields, $cmp->expected_ExtNamesToDbFields, 'ExtNamesToDbFields');
+	is_deeply($cmp->DbicExtQuery->joins, $cmp->expected_joins, 'joins');
+}
+
 RapidApp::ScopedGlobals->applyForSub(
 	{ catalystClass => 'FakeApp', log => bless( {}, 'LogToDiag')},
 	sub {
 		RapidApp::TraceCapture::saveExceptionsDuringCall(
 			sub {
 				subtest 'Flattener from Joins' => \&test_flattener_from_joins;
+				subtest 'DbicExtQuery Creation' => \&test_dbicquery;
 				done_testing;
 			}
 		)

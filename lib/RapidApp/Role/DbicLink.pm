@@ -3,10 +3,12 @@ package RapidApp::Role::DbicLink;
 
 use strict;
 use Moose::Role;
+use Hash::Merge;
 
 use RapidApp::Include qw(sugar perlutil);
 
 use RapidApp::DbicAppCombo;
+use RapidApp::DbicExtQuery;
 use RapidApp::DBIC::RelationTreeSpec;
 use RapidApp::DBIC::RelationTreeFlattener;
 use Switch;
@@ -101,14 +103,15 @@ sub _build_DbicExtQuery {
 	push @$no_search_fields, keys %{$self->dbf_virtual_fields} if ($self->dbf_virtual_fields);
 	
 	my $cnf = {
-		ResultSource				=> $self->ResultSource,
-		get_ResultSet_Handler	=> $self->get_ResultSet_Handler,
-		ExtNamesToDbFields 		=> $self->fieldname_transforms,
-		dbf_virtual_fields		=> $self->dbf_virtual_fields,
-		no_search_fields			=> $no_search_fields,
-		literal_dbf_colnames		=> $self->literal_dbf_colnames,
-		joins 						=> $self->joins,
-		distinct						=> $self->distinct,
+		ResultSource            => $self->ResultSource,
+		get_ResultSet_Handler   => $self->get_ResultSet_Handler,
+		ExtNamesToDbFields      => $self->fieldname_transforms,
+		dbf_virtual_fields      => $self->dbf_virtual_fields,
+		no_search_fields        => $no_search_fields,
+		literal_dbf_colnames    => $self->literal_dbf_colnames,
+		joins                   => $self->joins,
+		extColMap               => $self->relationTreeFlattener,
+		distinct                => $self->distinct,
 		#implied_joins			=> 1
 		#group_by				=> [ 'me.id' ],
 	};
@@ -298,17 +301,20 @@ has '_exclude_dbiclink_columns_hash' => (
 	}
 );
 
-has colSpec => (
+has colSpec => ( 
 	is => 'ro',
 	traits => [ 'Array' ],
 	isa => 'ArrayRef[Str]',
-	default   => sub { [] },
+	lazy_build => 1,
 	handles => {
 		colSpecList => 'elements',
 		addColSpec => 'push',
 		hasColSpec => 'count',
 	}
 );
+sub _build_colSpec {
+	return [];
+}
 
 has colNamingConvention => ( is => 'rw', isa => 'Str', default => 'concat_' );
 

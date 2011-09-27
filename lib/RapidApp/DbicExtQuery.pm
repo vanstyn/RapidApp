@@ -26,22 +26,53 @@ use RapidApp::Include qw(sugar perlutil);
 
 #### --------------------- ####
 
-has 'ResultSource'				=> ( is => 'ro',	required => 1, 	isa => 'DBIx::Class::ResultSource'			);
-has 'ExtNamesToDbFields'      => ( is => 'rw',	required => 0, 	isa => 'HashRef', default => sub{ {} } 	);
+# The root ResultSource of the query.
+# All joins and unqualified columns are relative to this.
+has 'ResultSource'            => ( is => 'ro',	required => 1, 	isa => 'DBIx::Class::ResultSource' );
+
+# Specify this to use a specialized ResultSet for the query.
+# If not specified, ResultSource->resultset will be used.
+has 'get_ResultSet_Handler'   => ( is => 'ro',  isa => 'Maybe[RapidApp::Handler]', default => undef );
+
+# TODO: document this...
 has 'dbf_virtual_fields'      => ( is => 'ro',	required => 0, 	isa => 'Maybe[HashRef]', default => undef 	);
-has 'no_search_fields'			=> ( is => 'rw',	required => 0, 	isa => 'HashRef', default => sub{ {} } 	);
-has 'columns'                 => ( is => 'rw',  required => 0,    isa => 'ArrayRef', default => sub{ [] }   );
 
-# be careful! joins can slow queries considerably
-has 'joins'    					=> ( is => 'rw',	required => 0, 	isa => 'ArrayRef', default => sub{ [] } 	);
-has 'implied_joins'				=> ( is => 'rw',  required => 0,    isa => 'Bool',     default => 0 );
+# This is an input parameter only.  Changing it after the constructor has no effect.
+# Any field listed here will be used literally in the query without translation.
+# These get translated into entries in ExtNamedToDbFields.
+has 'literal_dbf_colnames'    => ( is => 'ro',  required => 0,  isa => 'ArrayRef[Str]' );
 
-has 'group_by'    				=> ( is => 'ro',	default => undef	);
-has 'distinct'    				=> ( is => 'ro',	default => 0 );
-has 'prefetch'    				=> ( is => 'ro',	default => undef	);
+# This list will be added to the query in addition to any that were specified in the request parameters.
+# The column names here are in Ext naming convention.
+has 'mandatory_columns'       => ( is => 'ro',  required => 0,  isa => 'ArrayRef', default => sub{ [] } );
 
-has 'base_search_set'    		=> ( is => 'ro',	default => undef );
+# These fields will be removed from search requests.
+has 'no_search_fields'        => ( is => 'ro',  required => 0,  isa => 'ArrayRef[Str]', default => sub { [] } );
 
+# This maps Ext column names to dotted "relation.relation.col" names
+# This is an input parameter used to build or augment ExtNamesToDbFields.
+# ExtNamesToDbFields is the final authority.
+has 'extColMap'               => ( is => 'rw',  required => 0,  isa => 'RapidApp::DBIC::RelationTreeFlattener' );
+
+# This maps Ext named columns to "RelName.ColName" format used by DBIC.
+# This map can be populated by the caller, but it will be augmented with
+# dbf_virtual_fields and mandatory_columns and extColMap.
+has 'ExtNamesToDbFields'      => ( is => 'rw',	required => 0, 	isa => 'HashRef', default => sub{ {} } 	);
+
+# 'joins' is the total list of possible joins for the query.
+# Joins may be eliminated based on whether they are needed.
+# You may specify joins to the constructor, but they will be merged with any
+# found in extColMap, so you only need to specify this if you are doing
+# something special.
+has 'joins'                   => ( is => 'rw',  required => 0,  isa => 'ArrayRef', default => sub {[]} );
+
+# These should probably just be applied to the ResultSet in get_ResultSet_Handler
+has 'group_by'                => ( is => 'ro',	default => undef	);
+has 'distinct'                => ( is => 'ro',	default => 0 );
+has 'prefetch'                => ( is => 'ro',	default => undef	);
+
+# TODO: document me
+has 'base_search_set'         => ( is => 'ro',	default => undef );
 
 
 ###########################################################################################
@@ -51,16 +82,43 @@ sub c { return RapidApp::ScopedGlobals->get("catalystInstance"); }
 sub BUILD {
 	my $self = shift;
 	
+	# merge everything into ExtNamesToDbFields
 	if ($self->dbf_virtual_fields) {
 		foreach my $col (keys %{ $self->dbf_virtual_fields }) {
-			$self->ExtNamesToDbFields->{$col} = $col;
-			$self->add_literal_dbf_colnames($col);
+			$self->ExtNamesToDbFields->{$col}= $col;
 		}
 	}
+	if ($self->literal_dbf_colnames) {
+		foreach my $col (@{ $self->literal_dbf_colnames }) {
+			$self->ExtNamesToDbFields->{$col}= $col;
+		}
+	}
+	if ($self->extColMap) {
+		for my $extCol ($self->extColMap->getAllFlatKeys) {
+			my $colPath= $self->extColMap->flatKeyToCol($extCol);
+			my $dbicName= (scalar(@$colPath) > 1)?
+				  $colPath->[-2].'.'.$colPath->[-1]
+				: 'me.'.$colPath->[0]; # <-- http://www.mail-archive.com/dbix-class@lists.scsys.co.uk/msg02386.html
+			$self->ExtNamesToDbFields->{$extCol}= $dbicName;
+		}
+	}
+	
+	# check mandatory_columns, just in case
+	if ($self->mandatory_columns) {
+		for my $col (@{ $self->mandatory_columns }) {
+			defined $self->ExtNamesToDbFields->{$col}
+				or die "Unknown mandatory column '$col': not listed in literal_dbf_colnames, dbf_virtual_fields, extColMap, or ExtNamedToDbFields";
+		}
+	}
+	
+	# Now merge and simplify all the joins we know about
+	my $mergedJoins= {};
+	$self->simplify_joins($mergedJoins, $self->extColMap->spec->relTree, undef) if $self->extColMap;
+	$self->simplify_joins($mergedJoins, $self->joins, undef) if $self->joins;
+	$self->joins([ $mergedJoins ]);
+	
+	DEBUG( dbicextquery => 'Ext2DB =>', $self->ExtNamesToDbFields, 'joins =>', $self->joins );
 }
-
-
-has 'get_ResultSet_Handler' => ( is => 'ro', isa => 'Maybe[RapidApp::Handler]', default => undef );
 
 sub ResultSet {
 	my $self = shift;
@@ -68,7 +126,7 @@ sub ResultSet {
 	return $self->ResultSource->resultset;
 }
 
-
+# TODO: document me
 has 'base_search_set_list' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	return undef unless (defined $self->base_search_set and $self->base_search_set ne '');
@@ -79,69 +137,18 @@ has 'base_search_set_list' => ( is => 'ro', lazy => 1, default => sub {
 	return [ $self->base_search_set ];
 });
 
+# Build a map from the array we were given in the constructor
+has '_forbidden_search_fields' => ( is => 'ro', lazy => 1, default => sub{
+	my $self= shift;
+	return { map { $_ => 1 } @{ $self->no_search_fields } }
+});
 
-has 'literal_dbf_colnames' => (
-	is => 'ro',
-	traits => [ 'Array' ],
-	isa => 'ArrayRef[Str]',
-	default   => sub { [] },
-	handles => {
-		all_literal_dbf_colnames		=> 'elements',
-		add_literal_dbf_colnames		=> 'push',
-		has_no_literal_dbf_colnames 	=> 'is_empty',
-	}
-);
-
-has '_literal_dbf_colnames_hash' => (
-	traits    => [ 'Hash' ],
-	is        => 'ro',
-	isa       => 'HashRef[Bool]',
-	handles   => {
-		has_literal_dbf_colname				=> 'exists',
-	},
-	lazy => 1,
-	default => sub {
-		my $self = shift;
-		my $h = {};
-		foreach my $col ($self->all_literal_dbf_colnames) {
-			$h->{$col} = 1;
-		}
-		return $h;
-	}
-);
-
-
-has 'no_search_fields' => (
-	is => 'ro',
-	traits => [ 'Array' ],
-	isa => 'ArrayRef[Str]',
-	default   => sub { [] },
-	handles => {
-		all_no_search_fields		=> 'uniq',
-		add_no_search_fields		=> 'push',
-		has_no_no_search_fields 	=> 'is_empty',
-	}
-);
-
-has '_no_search_fields_hash' => (
-	traits    => [ 'Hash' ],
-	is        => 'ro',
-	isa       => 'HashRef[Bool]',
-	handles   => {
-		is_no_search_field				=> 'exists',
-	},
-	lazy => 1,
-	default => sub {
-		my $self = shift;
-		my $h = {};
-		foreach my $col ($self->all_no_search_fields) {
-			$h->{$col} = 1;
-		}
-		return $h;
-	}
-);
-
-
+sub search_permitted {
+	my ($self, $fieldName)= @_;
+	return 0 if $self->_forbidden_search_fields->{$fieldName};
+	return 0 if $self->_forbidden_search_fields->{$self->ExtNamedToDbFields->{$fieldName} || ''};
+	return 1;
+}
 
 sub build_data_fetch_resultset {
 	my $self = shift;
@@ -213,9 +220,8 @@ sub Attr_spec {
 	my $start = 0;
 	my $count = 1000000;
 	
-	my @cols = ();
+	my @cols = @{ $self->mandatory_columns };
 	push @cols, @{$params->{columns}} if (ref($params->{columns}) eq 'ARRAY');
-	push @cols, @{$self->columns} if (scalar(@{$self->columns}));
 	
 	# -- Extract cols from multifilters:
 	# Most of this logic is duplicated in the Search_spec method. Would be nice to find a 
@@ -244,15 +250,13 @@ sub Attr_spec {
 	}
 	# --
 	
-	
-	
 	my $columns = [];
 	# Remove duplicates:
 	my %Seen = ();
-   foreach my $col (@cols) {
+	foreach my $col (@cols) {
 		next if $Seen{$col}++;
 		push @$columns, $col;
-   }
+	}
 	
 	if (defined $params->{start} and defined $params->{limit}) {
 		$start = $params->{start};
@@ -269,95 +273,56 @@ sub Attr_spec {
 	if (defined $params->{sort} and defined $params->{dir}) {
 		# optionally convert table column name to db field name
 		my $dbfName= $self->ExtNamesToDbFields->{$params->{sort}};
-		defined $dbfName or $dbfName= $params->{sort};
-		
-		#Set the relationship to "me" if none is specified:
-		$dbfName = 'me.' . $dbfName unless ($dbfName =~ /\./ or $self->has_literal_dbf_colname($dbfName));
-		
-		if (lc($params->{dir}) eq 'desc') {
-			$attr->{order_by} = { -desc => $dbfName };
-		}
-		elsif (lc($params->{dir}) eq 'asc') {
-			$attr->{order_by} = { -asc => $dbfName };
+		if (defined $dbfName) {
+			if (lc($params->{dir}) eq 'desc') {
+				$attr->{order_by} = { -desc => $dbfName };
+			}
+			elsif (lc($params->{dir}) eq 'asc') {
+				$attr->{order_by} = { -asc => $dbfName };
+			}
+		} else {
+			$self->c->log->error('Client supplied unknown sort-by field "'.$params->{sort}.'" in Ext Query!  Not sorting.');
 		}
 	}
 	
-	# --
-	# Join attr support:
-	if (scalar(@{$self->joins})) {
+	# Start with all joins.  Reduce them as needed, below.
+	if (scalar @{$self->joins}) {
 		$attr->{join}= $self->joins;
-	}
-	# implied joins with either use all defined values in the name-hash, or just those associated with desired 'columns'
-	elsif ($self->implied_joins) {
-		my $dbfNames= ();
-		if (scalar(@{$columns})) {
-			foreach my $colName (@{$columns}) {
-				my $dbfName= $self->ExtNamesToDbFields->{$colName};
-				push @$dbfNames, defined $dbfName? $dbfName : $colName;
-			}
-		}
-		else {
-			$dbfNames= [ values %{$self->ExtNamesToDbFields} ]; 
-		}
-		$attr->{join}= $self->_find_implied_joins($dbfNames);
 	}
 	
 	# optional add to prefetch:
 	#$attr->{prefetch} = [];
 	#foreach my $rel (@{$attr->{join}}) {		push @{$attr->{prefetch}}, $rel;	}
-	if (scalar(@{$columns})) {
+	
+	# Either the user specifies a list of columns, or we use all columns.
+	if (scalar @$columns) {
 		$attr->{'select'} = [];
 		$attr->{'as'} = [];
 		my $in_use = {};
-		foreach my $extName (@{$columns}) {
+		for my $extName (@$columns) {
 			my $dbfName = $self->ExtNamesToDbFields->{$extName};
 			if (defined $dbfName) {
 				my ($relationship,$ffield) = split(/\./,$dbfName);
-				$in_use->{$relationship} = 1;
+				$in_use->{$relationship} = 1 unless $relationship eq 'me';
+				push @{$attr->{'select'}}, $self->transform_select_item($dbfName);
+				push @{$attr->{'as'}}, $extName;
 			}
 			else {
-				$dbfName = $extName;
+				$self->c->log->error('Client requested an unknown column "'.$extName.'" in Ext Query!  Ignoring it.');
 			}
-			
-			#Set the relationship to "me" if none is specified:
-			$dbfName = 'me.' . $dbfName unless ($dbfName =~ /\./ or $self->has_literal_dbf_colname($dbfName));
-			
-			push @{$attr->{'select'}}, $self->transform_select_item($dbfName);
-			push @{$attr->{'as'}}, $extName;
 		}
 		
-		
 		# Delete unused joins/relationships for performance.
-		# Also, remove duplicate joins
 		my $newJoins= {};
 		$self->simplify_joins($newJoins, $attr->{join}, $in_use);
 		$attr->{join}= $newJoins;
-		# foreach my $relation (@{$attr->{join}}) {
-			# foreach my $needed (keys %$in_use) {
-				# if ($self->multiCheck($needed,$relation)) {
-					# push @newjoins, $relation;
-					# last;
-				# }
-			# }
-		# }
-		# $attr->{join} = \@newjoins;
-		
 	}
 	else {
 		$attr->{'+select'} = [];
 		$attr->{'+as'} = [];
 		
 		foreach my $k (keys %{$self->ExtNamesToDbFields}) {
-			#my @trans = reverse split(/\./,$self->ExtNamesToDbFields->{$k});
-			#my $t = shift @trans;
-			#$t = shift(@trans) . '.' . $t if (scalar @trans > 0);
-			
 			my $t = $self->ExtNamesToDbFields->{$k};
-			
-			#if ($self->implied_joins) { 
-			#	my $j = $self->hash_to_join($t) or next;
-			#	push @{$attr->{join}}, $j;
-			#}
 			push @{$attr->{'+select'}}, $self->transform_select_item($t);
 			push @{$attr->{'+as'}}, $k;
 		}
@@ -370,69 +335,13 @@ sub Attr_spec {
 	return $attr;
 }
 
-sub _find_implied_joins {
-	my $self= shift;
-	my $dbfNames= shift;
-	
-	my $joinTree= {};
-	foreach my $dbfName (@$dbfNames) {
-		my @parts = split(/\./, $dbfName);
-		my $curHash= $joinTree;
-		for (my $i=0; $i<$#parts; $i++) { # skip the last part
-			defined $curHash->{$parts[$i]} or $curHash->{$parts[$i]}= {};
-			$curHash= $curHash->{$parts[$i]};
-		}
-	}
-	
-	return $self->_build_join_for_hash($joinTree);
-}
+=head2 $self->simplify_joins( \%simplifiedResult, $joinSpec, \%requiredSetOfRelations || undef);
 
-sub _build_join_for_hash {
-	my $self= shift;
-	my $joinTree= shift;
-	my @result= ();
-	while (my ($reln,$subjoin) = each %$joinTree) {
-		my $subCnt= scalar(keys(%$subjoin));
-		if ($subCnt == 0) {
-			push @result, $reln;
-		}
-		else {
-			push @result, { $reln => $self->_build_join_for_hash($subjoin) };
-		}
-	}
-	return $result[0] if scalar(@result) == 1;
-	return \@result;
-}
+Take all data in $joinSpec (which can be anything DBIC will accept, which
+includes hashes and arrays) and eliminate any relation not mentioned in
+\%requiredSetOfRelations.  If %requiredSetOfRelations is undef, no relations
+are eliminated.
 
-
-sub multiCheck {
-	my $self = shift;
-	my $string = shift;
-	my $test = shift;
-	
-	unless (ref($test)) {
-		return 1 if ($string eq $test);
-		return 0;
-	}
-	
-	if (ref($test) eq 'HASH') {
-		foreach my $i (keys %$test, values %$test) {
-			return 1 if ($self->multiCheck($string,$i));
-		}
-		return 0;
-	}
-	
-	if (ref($test) eq 'ARRAY') {
-		foreach my $i (@$test) {
-			return 1 if ($self->multiCheck($string,$i));
-		}
-		return 0;
-	}
-	
-	return 0;
-}
-
-=pod
 This function converts things like
   [ { a => b },
     { a => { b => c } },
@@ -447,22 +356,27 @@ This routine would be a little nicer if the output were
   { a => [ { b => c }, d, f ] }
 but that would be a lot of work, and nothing to gain.
 
+Note that for DBIC, regardless of nesting, the relations must each have unique
+names, which is why %requiredSetOfRelations is a one-level hash rather than
+a tree of hashes.  However, the joins must be specified to DBIC as a tree.
+
 =cut
 sub simplify_joins {
-	my ($self, $container, $joins, $neededSet)= @_;
+	my ($self, $simplifiedNode, $joins, $neededSet)= @_;
+	return 0 unless defined $joins;
 	
 	if (!ref $joins) {
-		return 0 unless $neededSet->{$joins};
-		$container->{$joins}= {};
+		return 0 unless (!defined $neededSet || $neededSet->{$joins});
+		$simplifiedNode->{$joins}= {};
 		return 1;
 	}
 	
 	if (ref $joins eq 'HASH') {
 		my $used= 0;
 		while (my ($k, $v)= each %$joins) {
-			my $inner= $container->{$k} || {};
-			if ($self->simplify_joins($inner, $v, $neededSet) || $neededSet->{$k}) {
-				$container->{$k}= $inner;
+			my $inner= $simplifiedNode->{$k} || {};
+			if ($self->simplify_joins($inner, $v, $neededSet) || (!defined $neededSet || $neededSet->{$k})) {
+				$simplifiedNode->{$k}= $inner;
 				$used= 1;
 			}
 		}
@@ -472,7 +386,7 @@ sub simplify_joins {
 	if (ref $joins eq 'ARRAY') {
 		my $used= 0;
 		for (@$joins) {
-			$used += $self->simplify_joins($container, $_, $neededSet);
+			$used += $self->simplify_joins($simplifiedNode, $_, $neededSet);
 		}
 		return $used > 0;
 	}
@@ -522,13 +436,14 @@ sub Search_spec {
 		if (defined $filters and ref($filters) eq 'ARRAY') {
 			foreach my $filter (@$filters) {
 				my $field = $filter->{field};
-				# optionally convert table column name to db field name
-				my $dbfName= $self->ExtNamesToDbFields->{$filter->{field}};
+				next unless $self->search_permitted($field);
 				
-				next if ($self->is_no_search_field($dbfName) or $self->is_no_search_field($field));
-				
-				$field = 'me.' . $field; # <-- http://www.mail-archive.com/dbix-class@lists.scsys.co.uk/msg02386.html
-				defined $dbfName or $dbfName= $field;
+				# convert table column name to db field name
+				my $dbfName= $self->ExtNamesToDbFields->{$field};
+				if (!defined $dbfName) {
+					$self->c->log->warn("Client supplied Unknown filter-field '$field' in Ext Query!");
+					next;
+				}
 				
 				##
 				## String type filter:
@@ -601,13 +516,14 @@ sub Search_spec {
 		my $fields = JSON::PP::decode_json($params->{fields});
 		if (defined $fields and ref($fields) eq 'ARRAY') {
 			foreach my $field (@$fields) {
-				# optionally convert table column name to db field name
+				next unless $self->search_permitted($field);
+				
+				# convert table column name to db field name
 				my $dbfName= $self->ExtNamesToDbFields->{$field};
-				
-				next if ($self->is_no_search_field($dbfName) or $self->is_no_search_field($field));
-				
-				$field = 'me.' . $field; # <-- http://www.mail-archive.com/dbix-class@lists.scsys.co.uk/msg02386.html
-				defined $dbfName or $dbfName= $field;
+				if (!defined $dbfName) {
+					$self->c->log->warn("Client supplied Unknown filter-field '$field' in Ext Query!");
+					next;
+				}
 				
 				#next if ($set_filters->{$field});
 				push @$search, { $dbfName => { like =>  '%' . $params->{query} . '%' } };
@@ -628,13 +544,15 @@ sub Search_spec {
 				return $map_dbfnames->($multi->{'-or'}) if (defined $multi->{'-or'});
 				
 				foreach my $f (keys %$multi) {
-					# optionally convert table column name to db field name
+					# convert table column name to db field name
 					my $dbfName = $self->ExtNamesToDbFields->{$f};
+					if (!defined $dbfName) {
+						$self->c->log->error("Client supplied Unknown multifilter-field '$f' in Ext Query!");
+						next;
+					}
 					
 					#next if ($self->is_no_search_field($dbfName) or $self->is_no_search_field($f));
 					
-					my $field = 'me.' . $f; # <-- http://www.mail-archive.com/dbix-class@lists.scsys.co.uk/msg02386.html
-					defined $dbfName or $dbfName = $field;
 					$multi->{$dbfName} = $multi->{$f};
 					delete $multi->{$f};
 					

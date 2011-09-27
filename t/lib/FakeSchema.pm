@@ -1,6 +1,9 @@
+package DBIx::Class::ResultSource;
+package DBIx::Class::Schema;
 package FakeSource;
 use strict;
 use Carp;
+our @ISA= ('DBIx::Class::ResultSource'); # for isa tests
 
 sub source_name {
 	$_[0]->{name};
@@ -35,6 +38,7 @@ package FakeSchema;
 use strict;
 use Scalar::Util 'weaken';
 use Carp;
+our @ISA= ('DBIx::Class::Schema'); # for isa tests
 
 sub new {
 	my ($class, $sources)= @_;

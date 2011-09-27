@@ -181,6 +181,11 @@ sub flatKeyToCol {
 	return $self->_colmap->{toTree}{$key};
 }
 
+sub getAllFlatKeys {
+	my $self= shift;
+	return keys %{ $self->_colmap->{toTree} };
+}
+
 =head2 $newFlattener= $self->subset( @colspec || \@colspec || $relationTreeSpec )
 
 This method creates a new RelationTreeFlattener which only deals with a subset of the
