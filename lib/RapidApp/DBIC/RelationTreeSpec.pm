@@ -132,12 +132,12 @@ Example:
 sub relTree {
 	(scalar(@_) == 1) or croak "Can't set relTree";
 	return $_[0]->{relTree} ||= do {
-		my ($recurse, $ret)= {};
+		my ($recurse, $ret);
 		$recurse= sub {
 			my ($dst, $src)= @_;
 			$recurse->( ($dst->{$_} ||= {}), $src->{$_} ) for grep { ref $src->{$_} } keys %$src;
 		};
-		$recurse->( $ret, $_[0]->{relTree} );
+		$recurse->( $ret= {}, $_[0]->{colTree} );
 		$ret;
 	};
 }

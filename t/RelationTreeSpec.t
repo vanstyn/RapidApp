@@ -65,6 +65,15 @@ sub test_resolve {
 	done_testing;
 }
 
+sub test_relTree {
+	sub specA { RapidApp::DBIC::RelationTreeSpec->new(source => $db->source('A'), colSpec => [ @_ ]) }
+	
+	is_deeply(
+		specA(qw[ b.c.blah c.d.col5 ])->relTree,
+		{ b => { c => {} }, c => { d => {} } },
+		'double nested join');
+}
+
 sub test_union {
 	sub unionA { RapidApp::DBIC::RelationTreeSpec->new(source => $db->source('A'), colSpec => $_[0])->union($_[1])->colTree }
 	
@@ -124,6 +133,7 @@ sub test_subtract {
 
 subtest 'Spec Validity' => \&test_spec;
 subtest 'Resolve Correctness' => \&test_resolve;
+subtest 'Relation Tree' => \&test_relTree;
 subtest 'Union' => \&test_union;
 subtest 'Intersect' => \&test_intersect;
 subtest 'Subtract' => \&test_subtract;
