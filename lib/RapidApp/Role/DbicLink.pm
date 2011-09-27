@@ -291,8 +291,23 @@ has '_exclude_dbiclink_columns_hash' => (
 	}
 );
 
-has relationTreeSpec => ( is => 'ro', isa => 'RapidApp::DBIC::RelationTreeSpec', lazy_build => 1 );
-sub _build_relationTreeSpec {
+has colSpec => (
+	is => 'ro',
+	traits => [ 'Array' ],
+	isa => 'ArrayRef[Str]',
+	default   => sub { [] },
+	handles => {
+		colSpecList => 'elements',
+		addColSpec => 'push',
+		hasColSpec => 'count',
+	}
+);
+
+has colNamingConvention => ( is => 'rw', isa => 'Str', default => 'concat_' );
+
+sub relationTreeSpec { $_[0]->relationTreeFlattener->spec }
+
+sub _build_flattener_from_dbiclink_columns {
 	my $self= shift;
 	
 	# DbicLink has all its configuration parameters defined in terms of the concatenated name.
@@ -325,12 +340,44 @@ sub _build_relationTreeSpec {
 		}
 	}
 	
-	return RapidApp::DBIC::RelationTreeSpec->new(source => $self->ResultSource, colSpec => \@spec);
+	# We also have logic to handle and attempt to automatically resolve name conflicts.
+	# With the simple concatenation with "_", columns like project.status_id and project.status.id
+	# can end up with the same mapped name.  We work around it by adding excludes to the colSpec
+	# until we can successfully create a mapper.
+	
+	my $result;
+	while (!$result) {
+		try {
+			DEBUG(colspec => 'colSpec =>', \@spec);
+			my $relSpec= RapidApp::DBIC::RelationTreeSpec->new(source => $self->ResultSource, colSpec => \@spec);
+			my $flattener= RapidApp::DBIC::RelationTreeFlattener->new(spec => $relSpec, namingConvention => $self->colNamingConvention);
+			$flattener->_colmap; # this will trigger an exception if any column names conflict
+			$result= $flattener;
+		} catch {
+			$_ =~ /'([^']+)' and '([^']+)'/ or die "$_\nCan't determine which columns conflict, so can't resolve";
+			# exclude the deeper column, because in most cases it is an Enum table which we don't want to modify.
+			my $exclude= (scalar split /\./, $1) > (scalar split /\./, $2)? $1 : $2;
+			my $cls= ref $self;
+			warn "Conflicting columns in $cls: '$1', '$2'\n".
+			     "Automatically excluding '$exclude', but you should specify $cls->addColSpec('-offendingCol')\n".
+			     "You can also specify $cls->colNamingConvention('brief') for a name mapping that is guaranteed not to conflict.\n";
+			push @spec, '-'.$exclude;
+		};
+	}
+	$result;
 }
 
 has relationTreeFlattener => ( is => 'ro', isa => 'RapidApp::DBIC::RelationTreeFlattener', lazy_build => 1 );
 sub _build_relationTreeFlattener {
-	RapidApp::DBIC::RelationTreeFlattener->new(spec => $_[0]->relationTreeSpec);
+	my $self= shift;
+	# if the user is using the "colSpec" interface, we create the flattener directly.
+	# Else, we try to build the spec from the previous "dbiclink_columns" API.
+	if ($self->hasColSpec) {
+		my $relSpec= RapidApp::DBIC::RelationTreeSpec->new(source => $self->ResultSource, colSpec => $self->colSpec);
+		return RapidApp::DBIC::RelationTreeFlattener->new(spec => $relSpec, namingConvention => $self->colNamingConvention);
+	} else {
+		return $self->_build_flattener_from_dbiclink_columns;
+	}
 }
 
 
@@ -476,8 +523,6 @@ around 'BUILD' => sub {
 		remoteSort => \1
 	);
 	
-	# TODO, fieldname_transforms needs calculated elsewhere
-	
 	my $addColRecurse;
 	$addColRecurse = sub {
 		my ($path, $relTreeSpec, $rs)= @_;
@@ -524,7 +569,7 @@ around 'BUILD' => sub {
 		}
 	};
 	
-	$addColRecurse->([], $self->relationTreeSpec->relationTree, $self->ResultSource);
+	$addColRecurse->([], $self->relationTreeSpec->colTree, $self->ResultSource);
 	
 	$self->add_ONREQUEST_calls('check_can_delete_rows');
 };

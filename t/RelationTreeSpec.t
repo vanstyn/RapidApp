@@ -53,6 +53,11 @@ sub test_resolve {
 		{ b => { map { $_ => 1 } grep { $_ ne 'xx' } $db->source('B')->columns } },
 		'wildcard and exclusion');
 	
+	is_deeply(
+		resolveSpecA(qw( foo b.xx -b.xx )),
+		{ foo => 1 },
+		'eliminate unneeded relations');
+	
 	ok do { try { resolveSpecA(qw( y )); 0 } catch { 1; } }, 'invalid column throws error';
 	ok do { try { validateSpec(qw( b.c.y )); 0 } catch { 1; } }, 'invalid relationship throws error';
 	ok do { try { validateSpec(qw( b.xx.xx )); 0 } catch { 1; } }, 'invalid col used as rel throws error';
