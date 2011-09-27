@@ -157,6 +157,9 @@ sub _set_render_fn {
 	my ($self,$new,$old) = @_;
 	return unless ($new);
 	
+	# renderer takes priority over render_fn
+	return if (defined $self->renderer);
+	
 	$self->xtype('templatecolumn');
 	$self->tpl('{[' . $new . '(values.' . $self->name . ',values)]}');
 }
@@ -175,8 +178,6 @@ sub _set_renderer {
 	$self->xtype(undef);
 	$self->tpl(undef);
 }
-
-
 
 
 
