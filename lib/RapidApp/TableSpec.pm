@@ -29,8 +29,8 @@ has 'columns'  => (
 );
 after 'apply_columns' => sub { (shift)->prune_invalid_columns };
 
-has 'limit_columns' => ( is => 'rw', isa => 'Maybe[ArrayRef[Str]]', default => undef );
-has 'exclude_columns' => ( is => 'rw', isa => 'Maybe[ArrayRef[Str]]', default => undef );
+has 'limit_columns' => ( is => 'rw', isa => 'Maybe[ArrayRef[Str]]', default => undef, trigger => \&prune_invalid_columns );
+has 'exclude_columns' => ( is => 'rw', isa => 'Maybe[ArrayRef[Str]]', default => undef, trigger => \&prune_invalid_columns );
 
 sub prune_invalid_columns {
 	my $self = shift;
@@ -111,10 +111,30 @@ sub apply_column_properties {
 }
 
 
+
 sub copy {
 	my $self = shift;
-	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-
+	my %opts = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	my %attr = ();
+	my %other = ();
+	
+	foreach my $opt (keys %opts) {
+		if ($self->meta->find_attribute_by_name($opt)) {
+			$attr{$opt} = $opts{$opt};
+		}
+		else {
+			$other{$opt} = $opts{$opt};
+		}
+	}
+	
+	my $Copy = $self->meta->clone_object($self,%attr);
+	
+	foreach my $key (keys %other) {
+		$Copy->$key($other{$key}) if ($Copy->can($key));
+	}
+	
+	return $Copy;
 }
 
 

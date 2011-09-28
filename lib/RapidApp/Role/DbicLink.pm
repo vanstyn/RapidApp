@@ -455,8 +455,11 @@ sub get_Result_class_TableSpec {
 	my $self = shift;
 	my $name = $self->ResultSource->source_name;
 	my $Class = $self->ResultSource->schema->class($name);
-	return $Class->TableSpec if ($Class->can('TableSpec'));
-	return undef;
+	return undef unless ($Class->can('TableSpec'));
+	return $Class->TableSpec->copy( 
+		limit_columns => $self->limit_dbiclink_columns,
+		exclude_columns => $self->exclude_dbiclink_columns,
+	);
 }
 
 has 'TableSpec' => (
