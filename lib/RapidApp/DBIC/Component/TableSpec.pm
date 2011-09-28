@@ -37,12 +37,32 @@ sub TableSpec_add_columns_from_related {
 		$conf = {} unless (ref($conf) eq 'HASH');
 		$conf->{column_property_transforms}->{name} = sub { $rel . '_' . (shift) };
 	
-		my $info = $self->relationship_info($rel);
+		my $info = $self->relationship_info($rel) or next;
 		my $TableSpec = $info->{class}->TableSpec->copy($conf) or next;
 		
 		$self->TableSpec->add_columns_from_TableSpec($TableSpec);
 	}
 }
+
+
+sub TableSpec_setup_editor_dropdowns {
+	my $self = shift;
+	foreach my $colspec (@_) { 
+	
+		my ($rel,$col) = split(/\./,$colspec,2);
+		
+		die "Invalid colspec '$colspec'" unless ($col);
+		my $info = $self->relationship_info($rel) or die "Relationship '$rel' not found.";
+		
+		scream($info);
+		
+		#print STDERR CYAN . BOLD . Dumper
+	
+	
+	
+	}
+}
+
 
 
 1;

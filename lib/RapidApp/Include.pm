@@ -79,6 +79,7 @@ sub rapidapp_base {
 	calleruse 'RapidApp::Web1RenderContext';
 	calleruse 'RapidApp::DbicExtQuery';
 	calleruse 'RapidApp::Web1RenderContext';
+	calleruse 'RapidApp::Functions';
 }
 
 sub extjs {
@@ -89,5 +90,6 @@ sub extjs {
 sub sugar {
 	calleruse 'RapidApp::Sugar';
 }
+
 
 1;
