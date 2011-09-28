@@ -5,6 +5,7 @@ extends 'RapidApp::AppCmp';
 use strict;
 use RapidApp::Include qw(sugar perlutil);
 use String::Random;
+use RapidApp::Column;
 
 
 has 'create_handler'		=> ( is => 'ro', default => undef,	isa => 'Maybe[RapidApp::Handler]' );

@@ -58,6 +58,7 @@ sub nonblock_msgpipe_child_main {
 	my ($in, $out)= @_;
 	my $pipe= RapidApp::BgTask::MsgPipeNB->new(socket => $in);
 	my $exit= AE::cv;
+	eval 'use IO::File';
 	my $target= IO::File->new();
 	$pipe->rmiTargetObj( $target );
 	$pipe->autoRMI( 1 );
@@ -246,7 +247,8 @@ sub test_blocking_rmi_to_nonblock_server {
 		my $got= $pipe->callRemoteMethod($method, $params);
 		is_deeply($got, $expect, $descrip);
 	}
-	
+
+	eval 'use IO::File;';
 	my $file_contents= IO::File->new("< $fname")->getline;
 	is( $file_contents, "abcde\n", 'file contents of remote written file' );
 	

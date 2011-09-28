@@ -1,6 +1,8 @@
 package RapidApp::DBIC::RelationTreeFlattener;
 use Moo;
+use RapidApp::DBIC::ColPath;
 use RapidApp::DBIC::RelationTreeSpec;
+use Carp;
 
 =head1 NAME
 
@@ -72,38 +74,41 @@ Whether or not unexpected hash keys should generate exceptions.  Defaults to tru
 =cut
 
 has spec             => ( is => 'ro', required => 1 );
-has namingConvention => ( is => 'rw', isa => \&_checkNamingConvention, default => sub { "_concat_" } );
+has namingConvention => ( is => 'rw', isa => \&_checkNamingConvention, default => sub { "concat_" } );
 has ignoreUnexpected => ( is => 'rw', default => sub { 1 } );
 
 has _colmap          => ( is => 'ro', lazy => 1, builder => '_build__colmap' );
 sub _build__colmap {
 	my $self= shift;
 	my (%toTree, %toFlat);
-	my @worklist= ( [ [], $self->spec->relationTree ] );
-	while (@worklist) {
-		my ($path, $node)= @{ pop @worklist };
-		for my $key (keys %$node) {
-			if (ref $node->{$key}) {
-				push @worklist, [ [ @$path, $key ], $node->{$key} ];
-			}
-			else {
-				my $flatName= join('_', @$path, $key);
-				my $treePath= [ @$path, $key ];
-				$toFlat{ _pathToKey(@$treePath) }= $flatName;
-				$toTree{$flatName}= $treePath;
-			}
-		}
+	my $calcFlatName= $self->can('calcFlatName_'.$self->namingConvention);
+	for my $col ($self->spec->colList) {
+		my $flatName= $calcFlatName->($self, $col);
+		$toFlat{$col->key}= $flatName;
+		croak "Columns '$col' and '$toTree{$flatName}' both map to the key '$flatName'"
+			if exists $toTree{$flatName};
+		$toTree{$flatName}= $col;
 	}
 	return { toTree => \%toTree, toFlat => \%toFlat };
 }
 
-sub _pathToKey {
-	join '', map { length($_).$_ } @_
+sub calcFlatName_concat_ {
+	my ($self, $col)= @_;
+	join('_', @$col)
+}
+
+sub calcFlatName_concat__ {
+	my ($self, $col)= @_;
+	join('__', @$col)
+}
+
+sub calcFlatName_brief {
+	my ($self, $col)= @_;
+	'c'.join('', map { length($_).$_ } (scalar(@$col) > 1)? @$col[-2..-1] : ($col->[0]) );
 }
 
 sub _checkNamingConvention {
-	# only one supported, for now.
-	die "Unsupported naming convention: $_[0]" unless $_[0] eq '_concat_';
+	__PACKAGE__->can('calcFlatName_'.$_[0]) or die "Can't resolve method for naming convention ".$_[0];
 }
 
 =head1 METHODS
@@ -111,19 +116,19 @@ sub _checkNamingConvention {
 =head2 $flatHash= $self->flatten( $hashTree )
 
 =cut
-
+use RapidApp::Debug "DEBUG";
 sub flatten {
 	my ($self, $hash)= @_;
 	my $toFlat= $self->_colmap->{toFlat};
 	my $result= {};
-	my @worklist= ( [ [], $hash, $self->spec->relationTree ] );
+	my @worklist= ( [ [], $hash, $self->spec->colTree ] );
 	while (@worklist) {
 		my ($path, $node, $spec)= @{ pop @worklist };
 		for my $key (keys %$node) {
 			if (ref $spec->{$key}) {
 				push @worklist, [ [ @$path, $key ], $node->{$key}, $spec->{$key} ];
 			} else {
-				if (my $flatName= $toFlat->{ _pathToKey(@$path, $key) }) {
+				if (my $flatName= $toFlat->{ RapidApp::DBIC::ColPath::key([@$path, $key]) }) {
 					$result->{$flatName}= $node->{$key};
 				} elsif (!$self->{ignoreUnexpected}) {
 					die "Illegal column/relation encountered: ".join('.',@$path,$key);
@@ -134,25 +139,29 @@ sub flatten {
 	$result;
 }
 
+=head2 $keyName= $self->colToFlatKey( @colPath || \@colPath || $ColPath )
+
+Converts a column specified by relation path into the name of a key used for the flattened view.
+
+=cut
 sub colToFlatKey {
 	my $self= shift;
-	my $path= ref($_[0]) eq 'ARRAY'? $_[0] : [ @_ ];
-	return $self->_colmap->{toFlat}{ _pathToKey( @$path ) };
+	my $colPath= RapidApp::DBIC::ColPath->coerce(@_);
+	return $self->_colmap->{toFlat}{$colPath->key};
 }
 
 =head2 $hashTree= $self->restore( $flatHash )
 
-=cut
+Take a flattened hash and restore it to its treed form.
 
+=cut
 sub restore {
 	my ($self, $hash)= @_;
 	my $toTree= $self->_colmap->{toTree};
 	my $result= {};
 	for my $key (keys %$hash) {
-		if (my $path= $toTree->{$key}) {
-			my $node= $result;
-			for (@$path[0..$#$path-1]) { $node= ($node->{$_} ||= {}) }
-			$node->{$path->[-1]}= $hash->{$key};
+		if (exists $toTree->{$key}) {
+			$toTree->{$key}->assignToHashTree( $result, $hash->{$key} );
 		} elsif (!$self->{ignoreUnexpected}) {
 			die "Illegal flattened field name encountered: $key";
 		}
@@ -160,11 +169,49 @@ sub restore {
 	$result;
 }
 
+=head2 $colPath= $self->flatKeyToCol( $key )
+
+Returns the column (or columns!) that map to the specified flat key.
+
+In scalar context, only returns one column, since there ought to only be one.
+
+=cut
 sub flatKeyToCol {
 	my ($self, $key)= @_;
-	my $colPath= $self->_colmap->{toTree}{$key};
-	# make a copy, to ensure it doesn't get modified
-	return $colPath? [ @$colPath ] : undef;
+	return $self->_colmap->{toTree}{$key};
+}
+
+sub getAllFlatKeys {
+	my $self= shift;
+	return keys %{ $self->_colmap->{toTree} };
+}
+
+=head2 $newFlattener= $self->subset( @colspec || \@colspec || $relationTreeSpec )
+
+This method creates a new RelationTreeFlattener which only deals with a subset of the
+columns of the current one.   An especially useful feature of this method is that the
+new RelationTreeFlattener uses the same name mapping as the current one, which might
+not be the case if you were to create a RelationTreeFlattener from the smaller column
+list.
+
+=cut
+sub subset {
+	my ($self, @colSpec)= @_;
+	my $colSubset= $self->spec->insersect(@colSpec);
+	my $curMap= $self->_colmap->{toFlat};
+	my (%toTree, %toFlat);
+	for my $col ($colSubset->colList) {
+		my $key= $col->key;
+		my $flatName= $curMap->{$key};
+		$toFlat{$key}= $flatName;
+		$toTree{$flatName}= $col;
+	}
+	return $self->new(
+		spec => $colSubset,
+		namingConvention => $self->namingConvention,
+		ignoreUnexpected => $self->ignoreUnexpected,
+		_colmap => { toTree => \%toTree, toFlat => \%toFlat }
+	);
 }
 
 1;
