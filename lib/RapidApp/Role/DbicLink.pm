@@ -506,6 +506,33 @@ sub _dbiclink_update_records {
 }
 # -- ^^ --
 
+## -- vv -- TableSpec Support
+has 'ignore_Result_TableSpec' => ( is => 'ro', isa => 'Bool', default => 0 );
+
+sub get_Result_class_TableSpec {
+	my $self = shift;
+	my $name = $self->ResultSource->source_name;
+	my $Class = $self->ResultSource->schema->class($name);
+	return undef unless ($Class->can('TableSpec'));
+	return $Class->TableSpec->copy( 
+		limit_columns => $self->limit_dbiclink_columns,
+		exclude_columns => $self->exclude_dbiclink_columns,
+	);
+}
+
+has 'TableSpec' => (
+	is => 'ro',
+	isa => 'Maybe[RapidApp::TableSpec]',
+	lazy => 1, 
+	default => sub {
+		my $self = shift;
+		return undef if ($self->ignore_Result_TableSpec);
+		return $self->get_Result_class_TableSpec;
+	}
+);
+# -- ^^ --
+
+sub BUILD {}
 before BUILD => sub {
 	my $self= shift;
 	# Dynamically toggle the addition of an 'update_records' method
@@ -515,9 +542,6 @@ before BUILD => sub {
 		not $self->can('update_records')
 	);
 };
-
-
-sub BUILD {}
 around 'BUILD' => sub {
 	my $orig = shift;
 	my $self = shift;

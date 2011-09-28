@@ -103,6 +103,18 @@ sub _load_root_module {
 	return $self->rootModule($self->rootModuleClass->timed_new($mParams));
 }
 
+# Execute arbitrary code setup earlier in the init process that needs
+# to be called after the RapidApp Module tree has been loaded.
+# See RapidApp::Functions::rapidapp_add_global_init_coderef() for more info
+our @GLOBAL_INIT_CODEREFS = ();
+after '_load_root_module' => sub {
+	my $self = shift;
+	foreach my $coderef (@GLOBAL_INIT_CODEREFS) {
+		$coderef->($self->rootModule);
+	}
+};
+
+
 sub performModulePreload {
 	my $self= shift;
 	

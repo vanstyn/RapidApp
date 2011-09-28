@@ -292,16 +292,6 @@ sub _collect_debug_info_for_error_report {
 	return $info;
 }
 
-sub scream {
-	my $c = shift;
-	return $c->scream_color(YELLOW,@_);
-}
-
-sub scream_color {
-	my $c = shift;
-	my $color = shift;
-	$c->log->debug("\n\n\n" . $color . BOLD . Dumper(\@_) . CLEAR . "\n\n\n");
-}
 
 #######################################################################################
 #  The following is mostly copy/pasted from Catalyst::Plugin::Unicode::Encoding.

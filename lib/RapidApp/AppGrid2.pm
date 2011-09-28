@@ -1,22 +1,15 @@
 package RapidApp::AppGrid2;
-
-
 use strict;
 use Moose;
-
 extends 'RapidApp::AppCmp';
+with 'RapidApp::Role::DataStore2';
 
 use RapidApp::Include qw(sugar perlutil);
 
-#use RapidApp::DataStore2;
-
-with 'RapidApp::Role::DataStore2';
-
 use Try::Tiny;
-
 use RapidApp::Column;
 
-has 'record_pk'			=> ( is => 'ro', default => 'id' );
+#has 'record_pk'			=> ( is => 'ro', default => 'id' );
 has 'DataStore_class'	=> ( is => 'ro', default => 'RapidApp::DataStore2', isa => 'ClassName' );
 
 
@@ -110,8 +103,6 @@ sub BUILD {
 		);
 	}
 	
-	
-	
 	if (defined $self->open_record_url or defined $self->add_record_class) {
 		$self->add_listener(	beforerender => RapidApp::JSONFunc->new( raw => 1, func => 
 			'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' 
@@ -123,10 +114,6 @@ sub BUILD {
 			'Ext.ux.RapidApp.AppTab.gridrow_nav' 
 		));
   }
-	
-	
-	
-	
 	
 	$self->apply_actions( save_search => 'save_search' ) if ( $self->can('save_search') );
 	$self->apply_actions( delete_search => 'delete_search' ) if ( $self->can('delete_search') );
