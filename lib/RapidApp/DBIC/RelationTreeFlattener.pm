@@ -197,7 +197,7 @@ list.
 =cut
 sub subset {
 	my ($self, @colSpec)= @_;
-	my $colSubset= $self->spec->insersect(@colSpec);
+	my $colSubset= $self->spec->intersect(@colSpec);
 	my $curMap= $self->_colmap->{toFlat};
 	my (%toTree, %toFlat);
 	for my $col ($colSubset->colList) {
@@ -206,7 +206,7 @@ sub subset {
 		$toFlat{$key}= $flatName;
 		$toTree{$flatName}= $col;
 	}
-	return $self->new(
+	return (ref $self)->new(
 		spec => $colSubset,
 		namingConvention => $self->namingConvention,
 		ignoreUnexpected => $self->ignoreUnexpected,

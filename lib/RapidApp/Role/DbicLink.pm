@@ -416,7 +416,7 @@ sub _build_dbiclink_columns_flattener {
 				# exclude the deeper column, because in most cases it is an Enum table which we don't want to modify.
 				my $exclude= (scalar split /\./, $1) > (scalar split /\./, $2)? $1 : $2;
 				my $cls= ref $self;
-				warn "Conflicting columns in $cls: '$1', '$2'.  Resolving by excluding '$exclude'";
+				warn "Conflicting columns in $cls: '$1', '$2'.  Automatically excluding '$exclude'\n";
 				push @spec, '-'.$exclude;
 			};
 		}
