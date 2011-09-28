@@ -13,6 +13,13 @@ our $VERSION = '0.1';
 
 
 has 'name' => ( is => 'ro', isa => 'Str', required => 1 );
+has 'header_prefix' => ( is => 'ro', isa => 'Maybe[Str]', default => undef );
+
+# Hash of CodeRefs to programatically change Column properties
+has 'column_property_transforms' => ( is => 'ro', isa => 'Maybe[HashRef[CodeRef]]', default => undef );
+
+# Hash of static changes to apply to named properties of all Columns
+has 'column_properties' => ( is => 'ro', isa => 'Maybe[HashRef]', default => undef );
 
 has 'columns'  => (
 	traits	=> ['Hash'],
@@ -24,10 +31,47 @@ has 'columns'  => (
 		 get_column			=> 'get',
 		 has_column			=> 'exists',
 		 column_list		=> 'values',
+		 column_names		=> 'keys',
 		 num_columns		=> 'count'
 	}
 );
 after 'apply_columns' => sub { (shift)->prune_invalid_columns };
+around 'column_list' => sub {
+	my $orig = shift;
+	my $self = shift;
+	my @names = $self->column_names;
+	my @list = ();
+	foreach my $name (@names) {
+		# Force column_list to go through get_column so its logic gets called:
+		push @list, $self->get_column($name);
+	}
+	return @list;
+};
+around 'get_column' => sub {
+	my $orig = shift;
+	my $self = shift;
+	my $Column = $self->$orig(@_);
+	
+	return $Column unless (defined $self->column_property_transforms);
+	my $trans = $self->column_property_transforms;
+	
+	my $cur_props = $Column->all_properties_hash;
+	my %change_props = ();
+	
+	foreach my $prop (keys %$trans) {
+		next unless (defined $cur_props->{$prop});
+		$change_props{$prop} = $trans->{$prop}->($cur_props->{$prop});
+	}
+	
+	%change_props = ( %change_props, %{ $self->column_properties->{$Column->name} } ) if (
+		defined $self->column_properties and
+		defined $self->column_properties->{$Column->name}
+	);
+	
+	return $Column->copy(%change_props);
+};
+
+
 
 has 'limit_columns' => ( is => 'rw', isa => 'Maybe[ArrayRef[Str]]', default => undef, trigger => \&prune_invalid_columns );
 has 'exclude_columns' => ( is => 'rw', isa => 'Maybe[ArrayRef[Str]]', default => undef, trigger => \&prune_invalid_columns );
@@ -135,6 +179,16 @@ sub copy {
 	}
 	
 	return $Copy;
+}
+
+sub add_columns_from_TableSpec {
+	my $self = shift;
+	my $TableSpec = shift;
+	
+	foreach my $Column ($TableSpec->column_list_ordered) {
+		$Column->clear_order;
+		$self->add_columns($Column);
+	}
 }
 
 

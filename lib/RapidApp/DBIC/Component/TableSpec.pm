@@ -25,7 +25,7 @@ sub apply_TableSpec {
 	}
 }
 
-	
+
 sub TableSpec_add_columns_from_related {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
@@ -34,32 +34,14 @@ sub TableSpec_add_columns_from_related {
 	
 	foreach my $rel (keys %$rels) {
 		my $conf = $rels->{$rel};
+		$conf = {} unless (ref($conf) eq 'HASH');
+		$conf->{column_property_transforms}->{name} = sub { $rel . '_' . (shift) };
 	
 		my $info = $self->relationship_info($rel);
-		my $TableSpec = $info->{class}->TableSpec or next;
+		my $TableSpec = $info->{class}->TableSpec->copy($conf) or next;
 		
-		foreach my $Column ($TableSpec->column_list_ordered) {
-			my $properties = $Column->all_properties_hash;
-			$properties->{name} = $rel . '_' . $properties->{name};
-			
-			$properties->{header} = $conf->{header_prefix} . $properties->{header} if (
-				$conf->{header_prefix} and
-				$properties->{header}
-			);
-			
-			%$properties = ( %$properties, %{ $conf->{column_properties}->{$Column->name} } ) if (
-				defined $conf->{column_properties} and
-				defined $conf->{column_properties}->{$Column->name}
-			);
-			
-			delete $properties->{order};
-			delete $properties->{label};
-			
-			$self->TableSpec->add_columns($properties);
-		
-		}
+		$self->TableSpec->add_columns_from_TableSpec($TableSpec);
 	}
-
 }
 
 
