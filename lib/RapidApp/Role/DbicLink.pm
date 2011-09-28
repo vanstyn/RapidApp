@@ -416,9 +416,7 @@ sub _build_dbiclink_columns_flattener {
 				# exclude the deeper column, because in most cases it is an Enum table which we don't want to modify.
 				my $exclude= (scalar split /\./, $1) > (scalar split /\./, $2)? $1 : $2;
 				my $cls= ref $self;
-				warn "Conflicting columns in $cls: '$1', '$2'\n".
-					 "Automatically excluding '$exclude', but you should specify $cls->apply_dbic_colspec('-offendingCol')\n".
-					 "You can also specify $cls->dbiclink_col_naming_convention('brief') for a name mapping that is guaranteed not to conflict.\n";
+				warn "Conflicting columns in $cls: '$1', '$2'.  Resolving by excluding '$exclude'";
 				push @spec, '-'.$exclude;
 			};
 		}
@@ -555,9 +553,9 @@ around 'BUILD' => sub {
 			else { # else if it is a column...
 				my $colName= $key;
 				my $flatName= $self->dbiclink_columns_flattener->colToFlatKey(@$path, $key);
-				if (@$path) {
-					$self->fieldname_transforms->{$flatName} = $path->[-1] . '.' . $colName;
-				}
+				#if (@$path) {
+				#	$self->fieldname_transforms->{$flatName} = $path->[-1] . '.' . $colName;
+				#}
 				
 				my $opts = { name => $flatName };
 				
