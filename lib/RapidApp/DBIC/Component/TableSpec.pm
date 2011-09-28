@@ -13,8 +13,12 @@ __PACKAGE__->mk_classdata( 'TableSpec' );
 
 sub apply_TableSpec {
 	my $self = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
-	$self->TableSpec(RapidApp::TableSpec->new( name => $self->table ));
+	$self->TableSpec(RapidApp::TableSpec->new( 
+		name => $self->table,
+		%opt
+	));
 	
 	foreach my $col ($self->columns) {
 		$self->TableSpec->add_columns( { name => $col } ); 
@@ -38,12 +42,18 @@ sub TableSpec_add_columns_from_related {
 			my $properties = $Column->all_properties_hash;
 			$properties->{name} = $rel . '_' . $properties->{name};
 			
-			$properties->{header} = $conf->{header_prefix} . $properties->{header} if ($conf->{header_prefix});
+			$properties->{header} = $conf->{header_prefix} . $properties->{header} if (
+				$conf->{header_prefix} and
+				$properties->{header}
+			);
 			
 			%$properties = ( %$properties, %{ $conf->{column_properties}->{$Column->name} } ) if (
 				defined $conf->{column_properties} and
 				defined $conf->{column_properties}->{$Column->name}
 			);
+			
+			delete $properties->{order};
+			delete $properties->{label};
 			
 			$self->TableSpec->add_columns($properties);
 		

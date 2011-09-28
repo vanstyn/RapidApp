@@ -11,10 +11,10 @@ our $VERSION = '0.1';
 
 has 'name' => ( is => 'ro', isa => 'Str', required => 1 );
 
-has 'label' => ( is => 'rw', isa => 'Str', lazy => 1, default => sub {
-	my $self = shift;
-	return $self->name;
-});
+#has 'label' => ( is => 'rw', isa => 'Str', lazy => 1, default => sub {
+#	my $self = shift;
+#	return $self->name;
+#});
 
 has 'order' => ( is => 'rw', isa => 'Maybe[Int]', default => undef );
 
@@ -29,7 +29,7 @@ sub set_properties {
 	
 	foreach my $key (keys %$hash) {
 		my $attr = $self->meta->get_attribute($key);
-		if ($attr) {
+		if ($attr and $attr->has_write_method) {
 			$self->$key($hash->{$key});
 		}
 		else {
