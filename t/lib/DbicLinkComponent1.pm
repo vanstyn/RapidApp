@@ -10,7 +10,7 @@ with 'RapidApp::Role::DbicLink';
 use FakeSchema;
 
 our $db= FakeSchema->new({
-	A   => { cols => [qw[ foo_bar ]], rels => { foo => 'Foo' } },
+	A   => { cols => [qw[ id foo_bar ]], rels => { foo => 'Foo' } },
 	Foo => { cols => [qw[ bar ]], rels => {} },
 });
 

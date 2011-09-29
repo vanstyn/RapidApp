@@ -298,11 +298,14 @@ sub resolveSpec {
 
 sub _resolve_spec_item {
 	my ($tree, $source, $remove, $item, @subparts)= @_;
-	
 	if ($item eq '*') {
 		for ($source->columns) {
 			_resolve_spec_item($tree, $source, $remove, $_, @subparts);
 		}
+	} elsif ($source->has_column($item)) {
+		if (@subparts) { croak "Cannot access $item.".join('.',@subparts)."; $item is a column"; }
+		elsif ($remove) { delete $tree->{$item}; }
+		else { $tree->{$item}= 1; }
 	} elsif ($source->has_relationship($item)) {
 		if (@subparts) {
 			_resolve_spec_item($tree->{$item} ||= {}, $source->related_source($item), $remove, @subparts);
@@ -312,10 +315,6 @@ sub _resolve_spec_item {
 		} else {
 			$tree->{$item} ||= {};
 		}	
-	} elsif ($source->has_column($item)) {
-		if (@subparts) { croak "Cannot access $item.".join('.',@subparts)."; $item is a column"; }
-		elsif ($remove) { delete $tree->{$item}; }
-		else { $tree->{$item}= 1; }
 	} else {
 		croak "No such column or relationship '$item' in source ".$source->source_name;
 	}

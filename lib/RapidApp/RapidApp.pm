@@ -5,6 +5,7 @@ use namespace::autoclean;
 extends 'Catalyst::Model';
 
 use RapidApp::Include 'perlutil', 'sugar';
+use RapidApp::Debug 'DEBUG';
 use RapidApp::ScopedGlobals 'sEnv';
 use Time::HiRes qw(gettimeofday);
 use RapidApp::Role::ErrorReportStore;

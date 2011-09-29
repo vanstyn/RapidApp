@@ -30,6 +30,10 @@ use RapidApp::Include qw(sugar perlutil);
 # All joins and unqualified columns are relative to this.
 has 'ResultSource'            => ( is => 'ro',	required => 1, 	isa => 'DBIx::Class::ResultSource' );
 
+# Some Ext components require a single primary key column.
+# If your table doens't have a single column pk, you need to fake it.
+has 'record_pk'               => ( is => 'ro',  required => 1,  isa => 'Str' );
+
 # Specify this to use a specialized ResultSet for the query.
 # If not specified, ResultSource->resultset will be used.
 has 'get_ResultSet_Handler'   => ( is => 'ro',  isa => 'Maybe[RapidApp::Handler]', default => undef );
@@ -42,10 +46,6 @@ has 'dbf_virtual_fields'      => ( is => 'ro',	required => 0, 	isa => 'Maybe[Has
 # These get translated into entries in ExtNamedToDbFields.
 has 'literal_dbf_colnames'    => ( is => 'ro',  required => 0,  isa => 'ArrayRef[Str]' );
 
-# This list will be added to the query in addition to any that were specified in the request parameters.
-# The column names here are in Ext naming convention.
-has 'mandatory_columns'       => ( is => 'ro',  required => 0,  isa => 'ArrayRef', default => sub{ [] } );
-
 # These fields will be removed from search requests.
 has 'no_search_fields'        => ( is => 'ro',  required => 0,  isa => 'ArrayRef[Str]', default => sub { [] } );
 
@@ -56,7 +56,7 @@ has 'extColMap'               => ( is => 'rw',  required => 0,  isa => 'RapidApp
 
 # This maps Ext named columns to "RelName.ColName" format used by DBIC.
 # This map can be populated by the caller, but it will be augmented with
-# dbf_virtual_fields and mandatory_columns and extColMap.
+# dbf_virtual_fields and extColMap.
 has 'ExtNamesToDbFields'      => ( is => 'rw',	required => 0, 	isa => 'HashRef', default => sub{ {} } 	);
 
 # 'joins' is the total list of possible joins for the query.
@@ -103,13 +103,9 @@ sub BUILD {
 		}
 	}
 	
-	# check mandatory_columns, just in case
-	if ($self->mandatory_columns) {
-		for my $col (@{ $self->mandatory_columns }) {
-			defined $self->ExtNamesToDbFields->{$col}
-				or die "Unknown mandatory column '$col': not listed in literal_dbf_colnames, dbf_virtual_fields, extColMap, or ExtNamedToDbFields";
-		}
-	}
+	# Make sure the record_pk is included somewhere.
+	croak "record_pk '".$self->record_pk."' was not included in extColMap or dbf_virtual_fields or literal_dbf_colnames!"
+		unless $self->ExtNamesToDbFields->{$self->record_pk};
 	
 	# Now merge and simplify all the joins we know about
 	my $mergedJoins= {};
@@ -143,6 +139,7 @@ has '_forbidden_search_fields' => ( is => 'ro', lazy => 1, default => sub{
 	return { map { $_ => 1 } @{ $self->no_search_fields } }
 });
 
+# When deciding if a field is searchable, check both the Ext and Dbic names.
 sub search_permitted {
 	my ($self, $fieldName)= @_;
 	return 0 if $self->_forbidden_search_fields->{$fieldName};
@@ -193,11 +190,10 @@ sub build_data_fetch_resultset {
 	}
 	# ^^ ---
 
-	my $Attr		= $params->{Attr_spec};		# <-- Optional custom Attr_spec override
-	my $Search	= $params->{Search_spec};	# <-- Optional custom Search_spec override
-	
-	$Attr 		= $self->Attr_spec($params) unless (defined $Attr);
-	$Search 		= $self->Search_spec($params,$extra_search) unless (defined $Search);
+	# Attr and Search can be overridden via $params.
+	# else we calculate them.
+	my $Attr   = $params->{Attr_spec} || $self->Attr_spec($params);
+	my $Search = $params->{Search_spec} || $self->Search_spec($params,$extra_search);
 	
 	return $self->ResultSet->search($Search,$Attr);
 }
@@ -211,6 +207,15 @@ sub data_fetch {
 	};
 }
 
+sub data_fetch_as_hashes {
+	my $self= shift;
+	my $rs= $self->build_data_fetch_resultset(@_)->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
+	return {
+		rows       => [ $rs->all ],
+		totalCount => $rs->pager->total_entries,
+	}
+}
+
 sub Attr_spec {
 	my $self = shift;
 	my $params = shift;
@@ -220,7 +225,7 @@ sub Attr_spec {
 	my $start = 0;
 	my $count = 1000000;
 	
-	my @cols = @{ $self->mandatory_columns };
+	my @cols;
 	push @cols, @{$params->{columns}} if (ref($params->{columns}) eq 'ARRAY');
 	
 	# -- Extract cols from multifilters:
@@ -250,13 +255,9 @@ sub Attr_spec {
 	}
 	# --
 	
-	my $columns = [];
 	# Remove duplicates:
 	my %Seen = ();
-	foreach my $col (@cols) {
-		next if $Seen{$col}++;
-		push @$columns, $col;
-	}
+	my $columns = [ grep { ! $Seen{$_}++ } @cols ];
 	
 	if (defined $params->{start} and defined $params->{limit}) {
 		$start = $params->{start};
@@ -321,7 +322,7 @@ sub Attr_spec {
 		$attr->{'+select'} = [];
 		$attr->{'+as'} = [];
 		
-		foreach my $k (keys %{$self->ExtNamesToDbFields}) {
+		foreach my $k (sort keys %{$self->ExtNamesToDbFields}) {
 			my $t = $self->ExtNamesToDbFields->{$k};
 			push @{$attr->{'+select'}}, $self->transform_select_item($t);
 			push @{$attr->{'+as'}}, $k;
@@ -544,14 +545,15 @@ sub Search_spec {
 				return $map_dbfnames->($multi->{'-or'}) if (defined $multi->{'-or'});
 				
 				foreach my $f (keys %$multi) {
+					# Not sure why this is commented out.
+					# next unless $self->search_permitted($f);
+					
 					# convert table column name to db field name
 					my $dbfName = $self->ExtNamesToDbFields->{$f};
 					if (!defined $dbfName) {
 						$self->c->log->error("Client supplied Unknown multifilter-field '$f' in Ext Query!");
 						next;
 					}
-					
-					#next if ($self->is_no_search_field($dbfName) or $self->is_no_search_field($f));
 					
 					$multi->{$dbfName} = $multi->{$f};
 					delete $multi->{$f};
@@ -613,6 +615,16 @@ sub Search_spec {
 	
 	push @$filter_search, @{ $self->base_search_set_list } if (defined $self->base_search_set_list);
 	push @$filter_search, @{ $extra_search } if (defined $extra_search);
+	
+	# -- vv -- support for id_in:
+	if ($params->{id_in}) {
+		my $in;
+		$in = $params->{id_in} if (ref($params->{id_in}) eq 'ARRAY');
+		$in = $self->json->decode($params->{id_in}) unless ($in);
+		my $id_col= $self->ExtNamesToDbFields->{$self->record_pk};
+		push @$filter_search, { $id_col => { '-in' => $in } };
+	}
+	# -- ^^ --
 	
 	if (scalar @$filter_search > 0) {
 		#unshift @$search, { -and => $filter_search };

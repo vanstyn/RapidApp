@@ -147,7 +147,7 @@ has 'name'       => ( is => 'ro', isa => 'Str', required => 1 );
 has 'color'      => ( is => 'rw', default => Term::ANSIColor::YELLOW() );
 has 'dest'       => ( is => 'rw' ); # log object or file handle
 has 'showSrcLoc' => ( is => 'rw', default => 1 );
-has 'autoFlush'  => ( is => 'rw', default => 0 );
+has 'autoFlush'  => ( is => 'rw', default => 1 );
 has 'maxMsgLen'  => ( is => 'rw', default => 2000 );
 
 sub enabled {
