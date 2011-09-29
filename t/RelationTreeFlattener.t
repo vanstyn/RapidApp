@@ -49,14 +49,16 @@ is_deeply( $flattener->flatten($treed), $flattened, 'flatten a tree' );
 is_deeply( $flattener->restore($flattened), $treed, 'restore a tree' );
 
 $db= FakeSchema->new({
-	A => { columns => [qw[ b_id ]], rels => { b => 'B' } },
-	B => { columns => [qw[ id ]], rels => { } },
+	A => { columns => [qw[ b_id ]],     rels => { b => 'B' } },
+	B => { columns => [qw[ id ]],       rels => { c => 'C' } },
+	C => { columns => [],               rels => { d => 'D' } },
+	D => { columns => [qw[ d1 d2 d3 ]], rels => {} },
 });
 
 # test case where column flat keyname is ambiguous
 $spec= RapidApp::DBIC::RelationTreeSpec->new(
 	source => $db->source('A'),
-	colSpec => [qw( * b.* )]
+	colSpec => [qw( * b.* b.c.d.* )]
 );
 ok do {
 	try { RapidApp::DBIC::RelationTreeFlattener->new(spec => $spec, ignoreUnexpected => 0)->_colmap; 0 }
@@ -66,8 +68,22 @@ ok do {
 
 $flattener= RapidApp::DBIC::RelationTreeFlattener->new(spec => $spec, ignoreUnexpected => 0, namingConvention => 'brief');
 $treed= { b_id => 'foo', b => { id => 'bar' } };
-$flattened= { c4b_id => 'foo', c1b2id => 'bar' };
+$flattened= { b_id => 'foo', b__id => 'bar' };
 is_deeply( $flattener->flatten($treed), $flattened, 'flatten using brief naming convention' );
 is_deeply( $flattener->restore($flattened), $treed, 'restore using brief naming convention' );
+
+$treed= { b => { c => { d => { d1 => 'foo', d2 => 'bar' } } } };
+$flattened= { d__d1 => 'foo', d__d2 => 'bar' };
+is_deeply( $flattener->flatten($treed), $flattened, 'flatten using brief naming convention' );
+is_deeply( $flattener->restore($flattened), $treed, 'restore using brief naming convention' );
+
+$flattener= RapidApp::DBIC::RelationTreeFlattener->new(spec => $spec, ignoreUnexpected => 0, namingConvention => 'sequential');
+my $f_subset= $flattener->subset(qw( b.c.d.d2 b.* b.c.* ));
+my $col= RapidApp::DBIC::ColPath->new('b','id');
+is( $f_subset->colToFlatKey($col), $flattener->colToFlatKey($col), "subset retains mapping for $col" );
+$col= RapidApp::DBIC::ColPath->new('b','c','d','d2');
+is( $f_subset->colToFlatKey($col), $flattener->colToFlatKey($col), "subset retains mapping for $col" );
+$col= RapidApp::DBIC::ColPath->new('b','c','d','d1');
+is( $f_subset->colToFlatKey($col), undef, "subset no longer maps $col" );
 
 done_testing;

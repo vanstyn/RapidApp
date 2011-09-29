@@ -104,7 +104,12 @@ sub calcFlatName_concat__ {
 
 sub calcFlatName_brief {
 	my ($self, $col)= @_;
-	'c'.join('', map { length($_).$_ } (scalar(@$col) > 1)? @$col[-2..-1] : ($col->[0]) );
+	join('__', (scalar(@$col) > 1)? @$col[-2..-1] : ($col->[0]) );
+}
+
+sub calcFlatName_sequential {
+	my ($self, $col)= @_;
+	'c'.$self->{_nextSequentialColNum}++;
 }
 
 sub _checkNamingConvention {
@@ -131,7 +136,7 @@ sub flatten {
 				if (my $flatName= $toFlat->{ RapidApp::DBIC::ColPath::key([@$path, $key]) }) {
 					$result->{$flatName}= $node->{$key};
 				} elsif (!$self->{ignoreUnexpected}) {
-					die "Illegal column/relation encountered: ".join('.',@$path,$key);
+					croak "Column/relation '".join('.',@$path,$key)."' is not part of the spec for this flattener";
 				}
 			}
 		}
