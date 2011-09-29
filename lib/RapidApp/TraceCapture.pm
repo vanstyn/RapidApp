@@ -158,7 +158,7 @@ sub writeFullTrace {
 sub captureTrace {
 	my $errStr= "".$_[0];
 	
-	# do not record multiple stack traces for an error which is getting re-thrown frm a catch
+	# do not record multiple stack traces for an error which is getting re-thrown from a catch
 	return unless !defined $LAST_THROWN_OBJ_STR or $errStr ne $LAST_THROWN_OBJ_STR;
 	$LAST_THROWN_OBJ_STR= $errStr;
 	
@@ -176,8 +176,7 @@ sub collectTraces {
 END {
 	if (scalar(@TRACES)) {
 		emitMessage "Unexpected call to exit... Dumping traces to $TRACE_OUT_FILE";
-		for my $trace (@TRACES) { writeFullTrace($trace); }
-		@TRACES= ();
+		for my $trace (collectTraces()) { writeFullTrace($trace) }
 	}
 }
 
