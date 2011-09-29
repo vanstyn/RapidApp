@@ -20,7 +20,7 @@ sub test_flattener_from_joins {
 	ok($cmp, 'Component created');
 	my $f= $cmp->dbiclink_columns_flattener();
 	ok($f, 'Flattener created');
-	is_deeply( $f->spec->colTree, { foo_bar => 1 }, 'Correct columns created');
+	is_deeply( $f->spec->colTree, { foo_bar => 1, id => 1}, 'Correct columns created');
 }
 
 sub test_dbicquery {

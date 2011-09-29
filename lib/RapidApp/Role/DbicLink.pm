@@ -6,7 +6,7 @@ use Moose::Role;
 use Hash::Merge;
 
 use RapidApp::Include qw(sugar perlutil);
-
+use RapidApp::Debug 'DEBUG';
 use RapidApp::DbicAppCombo;
 use RapidApp::DbicExtQuery;
 use RapidApp::DBIC::RelationTreeSpec;
@@ -26,18 +26,16 @@ has 'dbf_virtual_fields'      => ( is => 'ro',	required => 0, 	isa => 'Maybe[Has
 
 has 'primary_columns' => ( is => 'rw', default => sub {[]}, isa => 'ArrayRef');
 
+# These two parameters affect the results returned from read_records.
 has 'always_fetch_columns' => ( is => 'ro', default => undef );
 has 'never_fetch_columns' => ( is => 'ro', default => sub {[]}, isa => 'ArrayRef');
 
 has 'never_fetch_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	return {} unless (defined $self->never_fetch_columns);
-	my $h = {};
-	foreach my $col (@{$self->never_fetch_columns}) {
-		$h->{$col} = 1;
-	}
-	return $h;
+	return { map { $_ => 1 } @{$self->never_fetch_columns} };
 });
+
 
 has 'no_search_fields' => (
 	is => 'ro',
@@ -45,7 +43,6 @@ has 'no_search_fields' => (
 	isa => 'ArrayRef[Str]',
 	builder => '_build_no_search_fields',
 	handles => {
-		all_no_search_fields		=> 'uniq',
 		add_no_search_fields		=> 'push',
 		has_no_no_search_fields 	=> 'is_empty',
 	}
@@ -58,24 +55,18 @@ has '_no_search_fields_hash' => (
 	is        => 'ro',
 	isa       => 'HashRef[Bool]',
 	handles   => {
-		is_no_search_field				=> 'exists',
+		is_no_search_field   => 'exists',
+		all_no_search_fields => 'keys',
 	},
 	lazy => 1,
 	builder => '_build__no_search_fields_hash',
 );
 sub _build__no_search_fields_hash {
 	my $self = shift;
-	my $h = {};
-	my @list = $self->all_no_search_fields;
-	push @list, keys %{$self->dbf_virtual_fields} if ($self->dbf_virtual_fields);
-	foreach my $col (@list) {
-		$h->{$col} = 1;
-	}
-	return $h;
+	return {
+		map { $_ => 1 } @{$self->no_search_fields}, keys %{$self->dbf_virtual_fields || {}}
+	};
 }
-
-
-
 
 has 'get_ResultSet_Handler' => ( is => 'ro', isa => 'Maybe[RapidApp::Handler]', lazy => 1, default => sub {
 	my $self = shift;
@@ -98,22 +89,18 @@ sub ResultSet {
 has 'DbicExtQuery' => ( is => 'ro', lazy_build => 1 );
 sub _build_DbicExtQuery {
 	my $self = shift;
-	
-	my $no_search_fields = [ $self->all_no_search_fields ];
-	push @$no_search_fields, keys %{$self->dbf_virtual_fields} if ($self->dbf_virtual_fields);
-	
+	DEBUG(dbiclink => 'building DbicExtQuery.  flattener=>', $self->dbiclink_columns_flattener);
 	my $cnf = {
 		ResultSource            => $self->ResultSource,
 		get_ResultSet_Handler   => $self->get_ResultSet_Handler,
+		record_pk               => $self->record_pk,
 		ExtNamesToDbFields      => $self->fieldname_transforms,
 		dbf_virtual_fields      => $self->dbf_virtual_fields,
-		no_search_fields        => $no_search_fields,
+		no_search_fields        => [ $self->all_no_search_fields ],
 		literal_dbf_colnames    => $self->literal_dbf_colnames,
 		joins                   => $self->joins,
 		extColMap               => $self->dbiclink_columns_flattener,
 		distinct                => $self->distinct,
-		#implied_joins			=> 1
-		#group_by				=> [ 'me.id' ],
 	};
 	
 	$cnf->{group_by} = $self->group_by if (defined $self->group_by);
@@ -197,7 +184,7 @@ sub _build_join_map {
 	};
 	
 	$recurse->($self->ResultSource,$self->joins);
-	DEBUG('dbiclink', jons => $self->joins, "\n", map => $map, );
+	DEBUG('dbiclink', joins => $self->joins, "\n", join_map => $map, );
 	return $map;
 }
 
@@ -379,6 +366,7 @@ sub _build_dbiclink_columns_flattener {
 			my ($source, $path)= @{ pop @worklist };
 			my $srcN= $source->source_name;
 			
+			DEBUG(dbiclink => ref($self), ' - including', $srcN, '(', $source->columns, ')');
 			for my $colN ($source->columns) {
 				my $concatName= join('_', @$path, $colN);
 				next unless ($self->has_no_limit_dbiclink_columns or $self->has_limit_dbiclink_column($concatName));
@@ -403,28 +391,24 @@ sub _build_dbiclink_columns_flattener {
 		# can end up with the same mapped name.  We work around it by adding excludes to the colSpec
 		# until we can successfully create a mapper.
 		
-		my $result;
-		while (!$result) {
-			try {
-				DEBUG(colspec => 'colSpec =>', \@spec);
-				my $relSpec= RapidApp::DBIC::RelationTreeSpec->new(source => $self->ResultSource, colSpec => \@spec);
-				my $flattener= RapidApp::DBIC::RelationTreeFlattener->new(spec => $relSpec, namingConvention => $self->dbiclink_col_naming_convention);
-				$flattener->_colmap; # this will trigger an exception if any column names conflict
-				$result= $flattener;
-			} catch {
-				$_ =~ /'([^']+)' and '([^']+)'/ or die "$_\nCan't determine which columns conflict, so can't resolve";
+		my $relSpec= RapidApp::DBIC::RelationTreeSpec->new(source => $self->ResultSource, colSpec => \@spec);
+		my $flattener= RapidApp::DBIC::RelationTreeFlattener->new(
+			spec => $relSpec,
+			namingConvention => $self->dbiclink_col_naming_convention,
+			conflictResolver => sub {
+				my ($col1, $col2)= @_;
 				# exclude the deeper column, because in most cases it is an Enum table which we don't want to modify.
-				my $exclude= (scalar split /\./, $1) > (scalar split /\./, $2)? $1 : $2;
+				my $keep= scalar(@$col1) < scalar(@$col2)? $col1 : $col2;
+				my $exclude= scalar(@$col1) >= scalar(@$col2)? $col1 : $col2;
 				my $cls= ref $self;
-				warn "Conflicting columns in $cls: '$1', '$2'.  Automatically excluding '$exclude'\n";
-				push @spec, '-'.$exclude;
-			};
-		}
-		return $result;
+				warn "Conflicting columns in $cls: '$col1', '$col2'.  Automatically excluding '$exclude'\n";
+				return $keep;
+			}
+		);
+		DEBUG(dbiclink => 'colSpec =>', \@spec, 'spec =>', { %$relSpec, source => '...' }, 'flattener =>', { %$flattener, spec => '...' } );
+		return $flattener;
 	}
 }
-
-# -- vv -- 2011-09-22 by HV -- New update support
 
 has 'dbiclink_updatable' => ( is => 'ro', isa => 'Bool', default => 0 );
 
@@ -446,65 +430,6 @@ sub unflatten_prune_update_packet {
 	return $tree;
 }
 
-sub Row_tree_update_recursive {
-	my $self = shift;
-	my $Row = shift;
-	my $tree = shift;
-	
-	my $base = {};
-	my $rels = {};
-	
-	foreach my $k (keys %$tree) {
-		if (ref($tree->{$k}) eq 'HASH') {
-			$rels->{$k} = $tree->{$k};
-			next;
-		}
-		$base->{$k} = $tree->{$k};
-	}
-	
-	$Row->update($base);
-	
-	foreach my $rel (keys %$rels) {
-		$Row->can($rel) 
-			or die '"' . $rel . '" is not an accessor method of Row object; Row_tree_update_recursive failed.';
-		
-		my $Related = $Row->$rel;
-		
-		$Related->isa('DBIx::Class::Row') 
-			or die '"' . $rel . '" (' . ref($Related) . ') is not a DBIx::Class::Row object; Row_tree_update_recursive failed.';
-		
-		$self->Row_tree_update_recursive($Related,$rels->{$rel});
-	}
-}
-
-# Gets programatically added as a method named 'update_records' (see BUILD modifier method below)
-sub _dbiclink_update_records {
-	my $self = shift;
-	my $params = shift;
-	
-	my $arr = $params;
-	$arr = [ $params ] if (ref($params) eq 'HASH');
-	
-	my $Rs = $self->ResultSource->resultset;
-	
-	try {
-		$self->ResultSource->schema->txn_do(sub {
-			foreach my $data (@$arr) {
-				my $Row = $Rs->find($data->{$self->record_pk}) or die usererr "Failed to find row.";
-				my $tree = $self->unflatten_prune_update_packet($data);
-				$self->Row_tree_update_recursive($Row,$tree);
-			}
-		});
-	}
-	catch {
-		my $err = shift;
-		die usererr rawhtml $self->make_dbic_exception_friendly($err), title => 'Database Error';
-	};
-	
-	# TODO: return the new state of the updated rows instead of just true:
-	return 1;
-}
-# -- ^^ --
 
 ## -- vv -- TableSpec Support
 has 'ignore_Result_TableSpec' => ( is => 'ro', isa => 'Bool', default => 0 );
@@ -615,6 +540,10 @@ around 'BUILD' => sub {
 	$self->add_ONREQUEST_calls('check_can_delete_rows');
 };
 
+after BUILD => sub {
+	my $self= shift;
+	$self->DbicExtQuery; # make sure this gets built now, and not on each request
+};
 
 
 sub check_can_delete_rows {
@@ -667,12 +596,10 @@ sub dbic_to_ext_type {
 }
 
 
-
-
-
-
-
-
+# This is the meat of serving data requests.
+#   * calculate a list of columns which should be selected,
+#   * call DbicExtQuery to get the ResultSet,
+#   * build hashes form the result
 sub read_records {
 	my ($self, $params)= @_;
 	
@@ -680,6 +607,7 @@ sub read_records {
 	$params ||= $self->c->req->params;
 	
 	delete $params->{query} if (defined $params->{query} and $params->{query} eq '');
+	
 	
 	if (defined $params->{columns}) {
 		if (!ref $params->{columns}) {
@@ -710,42 +638,99 @@ sub read_records {
 	my @arg = ( $params );
 	push @arg, $self->read_extra_search_set if ($self->can('read_extra_search_set'));
 
-	#my $data = $self->DbicExtQuery->data_fetch(@arg);
-
-
-  my $Rs = $self->DbicExtQuery->build_data_fetch_resultset(@arg);
-  
-  # -- vv -- support for id_in:
-  if ($params->{id_in}) {
-    my $in;
-    $in = $params->{id_in} if (ref($params->{id_in}) eq 'ARRAY');
-    $in = $self->json->decode($params->{id_in}) unless ($in);
-	  $Rs = $Rs->search({ 'me.' . $self->record_pk => { '-in' => $in }});
-  }
-  # -- ^^ --
-
-  my $data = {
-		rows			=> [ $Rs->all ],
-		totalCount	=> $Rs->pager->total_entries,
-	};
+	# Build the query
+	my $Rs = $self->DbicExtQuery->build_data_fetch_resultset(@arg);
 	
-  # TODO: stop doing this...
-  # don't iterate rows calling get_columns!! Use something like HashRefInflator!!
-	my $rows = [];
-	foreach my $row (@{$data->{rows}}) {
-		my $hash = { $row->get_columns };
-		push @$rows, $hash;
-	}
+	# don't use Row objects
+	$Rs= $Rs->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
 	
-	my $result = {
-		results		=> $data->{totalCount},
-		rows		=> $rows
+	return {
+		rows    => [ $Rs->all ],
+		results => $Rs->pager->total_entries,
 	};
-
-	return $result;
 }
 
+sub Row_tree_update_recursive {
+	my $self = shift;
+	my $Row = shift;
+	my $tree = shift;
+	
+	my $base = {};
+	my $rels = {};
+	
+	foreach my $k (keys %$tree) {
+		if (ref($tree->{$k}) eq 'HASH') {
+			$rels->{$k} = $tree->{$k};
+			next;
+		}
+		$base->{$k} = $tree->{$k};
+	}
+	
+	$Row->update($base);
+	
+	foreach my $rel (keys %$rels) {
+		$Row->can($rel) 
+			or die '"' . $rel . '" is not an accessor method of Row object; Row_tree_update_recursive failed.';
+		
+		my $Related = $Row->$rel;
+		
+		$Related->isa('DBIx::Class::Row') 
+			or die '"' . $rel . '" (' . ref($Related) . ') is not a DBIx::Class::Row object; Row_tree_update_recursive failed.';
+		
+		$self->Row_tree_update_recursive($Related,$rels->{$rel});
+	}
+}
 
+# Gets programatically added as a method named 'update_records' (see BUILD modifier method above)
+# 
+# This first runs updates on each supplied (and allowed) relation.
+# It then re-runs a read_records to tell the client what the new values are.
+#
+sub _dbiclink_update_records {
+	my $self = shift;
+	my $params = shift;
+	
+	my $arr = $params;
+	$arr = [ $params ] if (ref($params) eq 'HASH');
+	
+	my $Rs = $self->ResultSource->resultset;
+	
+	try {
+		$self->ResultSource->schema->txn_do(sub {
+			foreach my $data (@$arr) {
+				my $pkVal= $data->{$self->record_pk};
+				defined $pkVal or die ref($self)."->update_records: Record is missing primary key '".$self->record_pk."'";
+				my $Row = $Rs->search({ $self->record_pk => $pkVal })->next or die usererr "Failed to find row.";
+				my $tree = $self->unflatten_prune_update_packet($data);
+				$self->Row_tree_update_recursive($Row,$tree);
+			}
+		});
+	}
+	catch {
+		my $err = shift;
+		die usererr rawhtml $self->make_dbic_exception_friendly($err), title => 'Database Error';
+	};
+	
+	# Find out what columns we need, and get the key of each record
+	my $readParams= { columns => [], id_in => [] };
+	my %cols= ();
+	my @ids= ();
+	foreach my $data (@$arr) {
+		$cols{$_}= 1 for keys %$data;
+		push @ids, $data->{$self->record_pk};
+	}
+	
+	for my $trace (RapidApp::TraceCapture::collectTraces()) { RapidApp::TraceCapture::writeQuickTrace($trace) }
+	#RapidApp::TraceCapture::writeFullTrace;
+	
+	# Return the new state of the updated rows.
+	my $dataResult= $self->read_records({ columns => [ keys %cols ], id_in => \@ids });
+	return {
+		%$dataResult,
+		success => \1,
+		msg => 'Update Succeeded'
+	}
+}
 
 
 sub get_row_related_columns_flattened {
@@ -762,10 +747,14 @@ sub get_row_related_columns_flattened {
 	}
 	
 	return $data;
-	
 }
 
-
+# This function performs an update on a row, then builds a hash of new and old values,
+# (using flattened names) and makes a list of changes,
+#
+# Unfortunately, there is no guarantee that the row is of the ResultSource we're
+# configured for, so we can't use dbiclink_columns_flattener.
+#
 sub update_Row_and_compare_deep {
 	my $self = shift;
 	my $Row = shift;
@@ -776,7 +765,7 @@ sub update_Row_and_compare_deep {
 	my $new_data = $self->get_row_related_columns_flattened($Row->get_from_storage);
 	
 	my @changes = ();
-			
+	
 	foreach my $k (sort keys %$orig_data) {
 		next if ($orig_data->{$k} eq $new_data->{$k});
 		push @changes, [ $k, $orig_data->{$k}, $new_data->{$k} ];
