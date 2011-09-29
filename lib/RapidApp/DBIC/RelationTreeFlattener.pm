@@ -73,22 +73,53 @@ Whether or not unexpected hash keys should generate exceptions.  Defaults to tru
 
 =cut
 
-has spec             => ( is => 'ro', required => 1 );
-has namingConvention => ( is => 'rw', isa => \&_checkNamingConvention, default => sub { "concat_" } );
-has ignoreUnexpected => ( is => 'rw', default => sub { 1 } );
+has spec              => ( is => 'ro', required => 1 );
+has namingConvention  => ( is => 'rw', isa => \&_checkNamingConvention, default => sub { "concat_" } );
+has ignoreUnexpected  => ( is => 'rw', default => sub { 1 } );
 
-has _colmap          => ( is => 'ro', lazy => 1, builder => '_build__colmap' );
-sub _build__colmap {
+has _conflictResolver => ( is => 'ro', default => undef, init_arg => 'conflictResolver' ); # only used during constructor
+has _colmap           => ( is => 'ro' );
+
+sub BUILD {
 	my $self= shift;
+	# in case it is a closure, we want to release the resolver after the constructor is over.
+	my $resolver= delete $self->{_conflictResolver};
+	# we could declare lazy_build, but it isn't really lazy
+	$self->{_colmap} ||= $self->_build__colmap($resolver);
+}
+
+sub _build__colmap {
+	my ($self, $resolver)= @_;
 	my (%toTree, %toFlat);
+	my @excludes;
+	
 	my $calcFlatName= $self->can('calcFlatName_'.$self->namingConvention);
 	for my $col ($self->spec->colList) {
 		my $flatName= $calcFlatName->($self, $col);
-		$toFlat{$col->key}= $flatName;
-		croak "Columns '$col' and '$toTree{$flatName}' both map to the key '$flatName'"
-			if exists $toTree{$flatName};
-		$toTree{$flatName}= $col;
+		if (defined $toTree{$flatName}) {
+			if ($resolver) {
+				my $choice= $resolver->($col, $toTree{$flatName});
+				if ("$choice" eq "$col") {
+					push @excludes, "$toTree{$flatName}";
+					delete $toFlat{$toTree{$flatName}};
+					$toFlat{$col->key}= $flatName;
+					$toTree{$flatName}= $col;
+				} else {
+					push @excludes, "$col";
+				}
+			} else {
+				croak "Columns '$col' and '$toTree{$flatName}' both map to the key '$flatName'";
+			}
+		} else {
+			$toFlat{$col->key}= $flatName;
+			$toTree{$flatName}= $col;
+		}
 	}
+	if (@excludes) {
+		# need to update the spec to match our new exclusions
+		$self->{spec}= $self->spec->subtract( @excludes );
+	}
+	
 	return { toTree => \%toTree, toFlat => \%toFlat };
 }
 
@@ -211,7 +242,7 @@ sub subset {
 		$toFlat{$key}= $flatName;
 		$toTree{$flatName}= $col;
 	}
-	return (ref $self)->new(
+	return ref($self)->new(
 		spec => $colSubset,
 		namingConvention => $self->namingConvention,
 		ignoreUnexpected => $self->ignoreUnexpected,
