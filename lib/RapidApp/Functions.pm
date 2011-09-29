@@ -5,15 +5,15 @@ use Class::MOP::Class;
 
 use Term::ANSIColor qw(:constants);
 use Data::Dumper;
-use RapidApp::RapidApp;
+use RapidApp::RootModule;
 
 sub scream {
-	scream_color(YELLOW,@_);
+	scream_color(YELLOW . BOLD,@_);
 }
 
 sub scream_color {
 	my $color = shift;
-	print STDERR YELLOW . BOLD . "\n" . Dumper(\@_) . CLEAR . "\n";
+	print STDERR $color . "\n" . Dumper(\@_) . CLEAR . "\n";
 }
 
 # The coderefs supplied here get called immediately after the
@@ -21,7 +21,7 @@ sub scream_color {
 sub rapidapp_add_global_init_coderef {
 	foreach my $ref (@_) {
 		ref($ref) eq 'CODE' or die "rapidapp_add_global_init_coderef: argument is not a CodeRef: " . Dumper($ref);
-		push @RapidApp::RapidApp::GLOBAL_INIT_CODEREFS, $ref;
+		push @RapidApp::RootModule::GLOBAL_INIT_CODEREFS, $ref;
 	}
 }
 

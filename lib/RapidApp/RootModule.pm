@@ -25,8 +25,19 @@ You can just as easily write your own root module.
 RootModule enables the auto_viewport capability of Controller by default.
 
 =cut
+
+our @GLOBAL_INIT_CODEREFS = ();
+
 sub BUILD {
 	my $self= shift;
+	
+	# Execute arbitrary code setup earlier in the init process that needs
+	# to be called after the RapidApp Module tree has been loaded
+	# See RapidApp::Functions::rapidapp_add_global_init_coderef() for more info
+	foreach my $coderef (@RapidApp::RootModule::GLOBAL_INIT_CODEREFS) {
+		$coderef->($self);
+	}
+	
 	$self->auto_web1(1);
 	$self->auto_viewport(1);
 }

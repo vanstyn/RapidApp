@@ -51,6 +51,8 @@ sub TableSpec_setup_editor_dropdowns {
 	
 		my $colname = $colspec;
 		$colname =~ s/\./\_/g;
+		
+		my $Column = $self->TableSpec->get_column($colname);
 	
 		my ($rel,$col) = split(/\./,$colspec,2);
 		
@@ -80,9 +82,10 @@ sub TableSpec_setup_editor_dropdowns {
 				$module_name => {
 					class	=> 'RapidApp::DbicAppCombo',
 					params	=> {
-						valueField    => ($Source->primary_columns)[0],
-						name          => $colname,
-						ResultSource  => $Source,
+						valueField		=> ($Source->primary_columns)[0],
+						displayField	=> $col,
+						name				=> $colname,
+						ResultSource	=> $Source,
 					}
 				}
 			);
@@ -92,6 +95,10 @@ sub TableSpec_setup_editor_dropdowns {
 			# TODO: apply the config to the Column object...
 			
 			scream(ref($Module));
+			
+			$Column->set_properties( editor => $Module->content );
+			
+			scream($Column);
 			
 			#my $Module = $rootModule
 			
