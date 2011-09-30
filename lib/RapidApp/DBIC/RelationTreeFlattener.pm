@@ -48,11 +48,13 @@ This module takes a tree of DBIC data and flattens it into a simple hash that ca
 used by things that expect a single-level hash, like ExtJS's Stores, and all the
 components based on Stores like AppStoreForm2.
 
-The key names of the flattened hash are chosen by concatenating the path of relations
-that lead up to a column, separated by underscore.  This is not guaranteed to work in
-all cases, though, because underscore is often used in column names.  In the future,
-this module might support other naming schemes, such as simple incrementing numeric
-key names, or flatten to an array rather than a hash.
+In the default naming convention, the key names of the flattened hash are chosen by
+concatenating the path of relations that lead up to a column, separated by underscore.
+This is not guaranteed to work in all cases, though, because underscore is often used
+in column names.
+
+Other naming conventions can work around this problem.  However, they have not been
+tested yet with the rest of RapidApp.  So, for now, stick with "concat_"
 
 =head1 ATTRIBUTES
 
@@ -64,12 +66,14 @@ attribute "ignoreUnexpected".
 
 =head2 namingConvention : enum
 
-The naming convention to use for flattening column names.  Defaults to only supported
-value of "_concat_"
+The naming convention to use for flattening column names.  Defaults to standard "concat_"
+system of DbicLink / DataStore2, which joins relation and columns with underscore.
+
+Other (untested) schemes are "concat__" and "brief".
 
 =head2 ignoreUnexpected : bool
 
-Whether or not unexpected hash keys should generate exceptions.  Defaults to true.
+Whether or not unexpected hash keys should generate exceptions.  Defaults to true (ignore them).
 
 =cut
 
@@ -151,6 +155,22 @@ sub _checkNamingConvention {
 
 =head2 $flatHash= $self->flatten( $hashTree )
 
+Takes a tree of values and converts it to a flattened hash.
+
+Example:
+
+  {
+    foo => 12,
+    bar => { baz => 13 }
+  }
+
+Becomes:
+
+  {
+    foo => 12,
+    bar_baz => 13,
+  }
+
 =cut
 use RapidApp::Debug "DEBUG";
 sub flatten {
@@ -190,6 +210,8 @@ sub colToFlatKey {
 
 Take a flattened hash and restore it to its treed form.
 
+Reverse of ->flatten();
+
 =cut
 sub restore {
 	my ($self, $hash)= @_;
@@ -207,9 +229,7 @@ sub restore {
 
 =head2 $colPath= $self->flatKeyToCol( $key )
 
-Returns the column (or columns!) that map to the specified flat key.
-
-In scalar context, only returns one column, since there ought to only be one.
+Returns the column that maps to the specified flat key.
 
 =cut
 sub flatKeyToCol {
@@ -217,6 +237,12 @@ sub flatKeyToCol {
 	return $self->_colmap->{toTree}{$key};
 }
 
+
+=head2 $colPath= $self->flatKeyToCol( $key )
+
+Returns a list (not arrayref) of all flat key names supported by this flattener.
+
+=cut
 sub getAllFlatKeys {
 	my $self= shift;
 	return keys %{ $self->_colmap->{toTree} };
@@ -226,9 +252,9 @@ sub getAllFlatKeys {
 
 This method creates a new RelationTreeFlattener which only deals with a subset of the
 columns of the current one.   An especially useful feature of this method is that the
-new RelationTreeFlattener uses the same name mapping as the current one, which might
-not be the case if you were to create a RelationTreeFlattener from the smaller column
-list.
+new RelationTreeFlattener uses the exact same name mapping as the current one, which
+might not be the case if you were to create a RelationTreeFlattener from the smaller
+column list.
 
 =cut
 sub subset {

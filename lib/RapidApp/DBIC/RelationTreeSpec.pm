@@ -19,11 +19,11 @@ RapidApp::DBIC::RelationTreeSpec
       foo.*
       foo.bar.*
       baz.col1
-	  baz.col5
-	  blah.*
-	  -blah.internal
-	  -blah.secret
-	)],
+      baz.col5
+      blah.*
+      -blah.internal
+      -blah.secret
+    )],
   );
   
 =head1 DESCRIPTION
@@ -36,7 +36,7 @@ names of DBIC relations using dot notation, and they will be followed.
 
 This package is used by other useful packages like RelationTreeExtractor and RelationTreeFlattener
 and DbicLink to reduce the burden of having to use awkward attributes to describe which columns
-should be part of the result.
+should or should not be part of the result.
 
 =head1 ATTRIBUTES
 
@@ -52,8 +52,8 @@ sub source {
 
 =head2 colSpec : array[scalar]
 
-The exact structure that was passed to the constructor.  It can be modified only if the
-spec has not been resolved.
+The exact structure that was passed to the constructor.  It is read-only.
+( in fact, this entire class is read-only )
 
 =cut
 sub colSpec {
@@ -78,8 +78,17 @@ sub colSpec {
 
 An array of all columns, each as an arrayref of relation names followed by a column name.
 
+The columns are each blessed as RapidApp::DBIC::ColPath, but feel free to use them as arrays.
+
 This list is sorted alphabetically by relation and column name.
 
+Example return value:
+  [
+    bless([ 'foo', 'bar', 'col1' ], RapidApp::DBIC::ColPath),
+    bless([ 'foo', 'bar', 'col2' ], RapidApp::DBIC::ColPath),
+    bless([ 'id' ], RapidApp::DBIC::ColPath)
+  ]
+  
 =cut
 sub colArray {
 	(scalar(@_) == 1) or croak "Can't set colArray";
@@ -99,7 +108,7 @@ sub colArray {
 
 =head2 colList : list( array[scalar] )
 
-This is simply the de-referenced $self->colArray
+This is simply the de-referenced $self->colArray.  Handy when you want to iterate them.
 
 =cut
 sub colList {
@@ -113,6 +122,17 @@ The tree of relations and columns that the spec refers to.
 This is the most definitive attribute, and the only one that
 is never lazily built.
 
+Example return value:
+  {
+    foo => {
+      bar => {
+        col1 => 1,
+        col2 => 1,
+      },
+    },
+    id => 1
+  }
+
 =cut
 sub colTree {
 	(scalar(@_) == 1) or croak "Can't set coltree";
@@ -123,10 +143,12 @@ sub colTree {
 
 Returns a tree of only the relations. Same as colTree, but minus the columns.
 
-Example:
-
-  colTree: { foo => 1, bar => 2, baz => { a => 1, b => 2, c => 3 } }
-  relTree: { baz => {} }
+Example return value:
+  {
+    foo => {
+      bar => {}
+    }
+  }
 
 =cut
 sub relTree {
@@ -146,6 +168,10 @@ sub relTree {
 
 =head2 $class->new( source => $optionalDbicSource, colSpec => \@colList )
 
+Create a new RelationTreeSpec, from the colSpec, using the source to resolve wildcards.
+
+(You can also pass "colTree" as a parameter, but make sure it is correctly built!)
+
 =cut
 
 sub new {
@@ -161,8 +187,8 @@ sub new {
 Takes either a arrayref of column specifications, a direct list of column specifications, or another
 RelationTreeSpec object.
 
-Calculates a new RelationTreeSpec object which is the intersection of the columns in common
-between the two sets of columns.
+Calculates a new RelationTreeSpec object which is the intersection of the columns and relations
+in common between the two sets.
 
 =cut
 sub intersect {
@@ -195,8 +221,7 @@ sub intersect {
 Takes either a arrayref of column specifications, a direct list of column specifications, or another
 RelationTreeSpec object.
 
-Calculates a new RelationTreeSpec object which is the intersection of the columns in common
-between the two sets of columns.
+Calculates a new RelationTreeSpec object which includes all columns and relations of each.
 
 =cut
 
@@ -277,8 +302,10 @@ sub validateSpec {
 
 =head2 $colTree= $class->resolveSpec( $dbicSource, $colSpec )
 
-This method is usually run during the constructor, but can be used to avoid creating
-objects and just cut to the chase.
+Calculate a colTree from a colSpec.
+
+This method is usually run during the constructor, but can be used externally
+to avoid creating objects and just cut to the chase.
 
 =cut
 sub resolveSpec {
