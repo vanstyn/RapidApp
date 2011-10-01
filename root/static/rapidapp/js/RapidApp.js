@@ -4253,6 +4253,7 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		delete this.store;
 		
 		this.bindStore.on('load',this.loadFirstRecord,this);
+		this.bindStore.on('update',this.loadFirstRecord,this);
 		
 		if(this.columns && ! this.fields) {
 			this.fields = this.columns;
