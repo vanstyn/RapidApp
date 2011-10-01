@@ -27,7 +27,7 @@ has 'dbf_virtual_fields'      => ( is => 'ro',	required => 0, 	isa => 'Maybe[Has
 has 'primary_columns' => ( is => 'rw', default => sub {[]}, isa => 'ArrayRef');
 
 # These two parameters affect the results returned from read_records.
-has 'always_fetch_columns' => ( is => 'ro', default => undef );
+has 'always_fetch_columns' => ( is => 'ro', default => sub {[]}, isa => 'ArrayRef');
 has 'never_fetch_columns' => ( is => 'ro', default => sub {[]}, isa => 'ArrayRef');
 
 has 'never_fetch_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
