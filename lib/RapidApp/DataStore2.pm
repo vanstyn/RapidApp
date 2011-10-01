@@ -37,6 +37,21 @@ has 'read_raw_mungers' => (
 );
 
 
+has 'update_mungers' => (
+	traits    => [ 'Array' ],
+	is        => 'ro',
+	isa       => 'ArrayRef[RapidApp::Handler]',
+	default   => sub { [] },
+	handles => {
+		all_update_mungers		=> 'elements',
+		add_update_mungers		=> 'push',
+		insert_update_mungers	=> 'unshift',
+		has_no_update_mungers 	=> 'is_empty',
+	}
+);
+
+
+
 has 'base_params_mungers' => (
 	traits    => [ 'Array', 'RapidApp::Role::PerRequestBuildDefReset' ],
 	is        => 'ro',
@@ -549,6 +564,12 @@ sub update {
 		foreach my $k (keys %$orig_params) {
 			next if (defined $params->{$k});
 			$params->{$k} = $orig_params->{$k};
+		}
+	}
+	
+	unless ($self->has_no_update_mungers) {
+		foreach my $Handler ($self->all_update_mungers) {
+			$Handler->call($rows);
 		}
 	}
 	

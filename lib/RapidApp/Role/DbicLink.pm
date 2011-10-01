@@ -745,7 +745,12 @@ sub _dbiclink_update_records {
 	
 	# Return the new state of the updated rows.
 	#my $dataResult= $self->read_records({ columns => [ keys %cols ], id_in => \@ids });
-	my $dataResult= $self->DataStore->read({ columns => [ keys %cols ], id_in => \@ids });
+	#my $dataResult= $self->DataStore->read({ columns => [ keys %cols ], id_in => \@ids });
+	
+	#my $dataResult= $self->DataStore->read({ columns => [ keys %cols ], id_in => \@ids });
+	
+	my $dataResult= $self->DataStore->read({ columns => [ keys %{ $arr->[0] } ], id_in => \@ids });
+	
 	return {
 		%$dataResult,
 		success => \1,

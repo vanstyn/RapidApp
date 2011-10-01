@@ -31,10 +31,12 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
 	},
 	
 	setValue: function(v){
+	
+    this.apply_field_css();
+	
+    if (!v || v == '') { return this.nativeSetValue(v); }
 		
 		this.getStore().baseParams['valueqry'] = v;
-		this.apply_field_css();
-		
 		var combo = this;
 		if(this.valueField){
 			var r = this.findRecord(this.valueField, v);
