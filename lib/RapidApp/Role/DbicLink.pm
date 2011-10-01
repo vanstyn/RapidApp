@@ -291,7 +291,7 @@ has '_exclude_dbiclink_columns_hash' => (
 # dbiclink_colspec is a user-friendly configuration parameter of a list of
 # DBIC column names, in "relation.relation.col" notation.
 # It is used to builc dbiclink_columns_spec and dbiclink_columns_flattener on demand.
-# Those are in turn used for calculating dbiclink_columns_writeable from dbiclink_colspec_writeable
+# Those are in turn used for calculating dbiclink_columns_updatable from dbiclink_colspec_updatable
 has dbiclink_colspec => ( 
 	is => 'ro',
 	traits => [ 'Array' ],
@@ -315,25 +315,25 @@ sub _build_dbiclink_colspec {
 # If these joins were defined: [ 'owner', { 'project' => 'status' } ]
 # To set them as writable set dbiclink_updatable_relationships to: [ 'owner', 'project.status' ]
 
-# dbiclink_colspec_writeable is a user-friendly configuration parameter of a list of
+# dbiclink_colspec_updatable is a user-friendly configuration parameter of a list of
 # DBIC column names, in "relation.relation.col" notation.
 #
 # NOTE: A column must be listed in dbiclink_colspec to be considered.
-#       The writeable list is only a mask which gets applied to that other list.
-# NOTE2: Nothing actually becomes writeable unless "dbiclink_updateable" is set to
+#       The updatable list is only a mask which gets applied to that other list.
+# NOTE2: Nothing actually becomes updatable unless "dbiclink_updateable" is set to
 #        true before BUILD.
-has dbiclink_colspec_writeable => ( 
+has dbiclink_colspec_updatable => ( 
 	is => 'ro',
 	traits => [ 'Array' ],
 	isa => 'ArrayRef[Str]',
 	lazy_build => 1,
 	handles => {
-		dbiclink_colspec_writeable_list => 'elements',
-		apply_dbiclink_colspec_writeable => 'push',
-		dbiclink_colspec_writeable_count => 'count',
+		dbiclink_colspec_updatable_list => 'elements',
+		apply_dbiclink_colspec_updatable => 'push',
+		dbiclink_colspec_updatable_count => 'count',
 	}
 );
-sub _build_dbiclink_colspec_writeable {
+sub _build_dbiclink_colspec_updatable {
 	return [];
 }
 
@@ -412,20 +412,20 @@ sub _build_dbiclink_columns_flattener {
 
 has 'dbiclink_updatable' => ( is => 'ro', isa => 'Bool', default => 0 );
 
-has dbiclink_writeable_flattener => ( is => 'ro', isa => 'RapidApp::DBIC::RelationTreeFlattener', lazy_build => 1 );
-sub _build_dbiclink_writeable_flattener {
+has dbiclink_updatable_flattener => ( is => 'ro', isa => 'RapidApp::DBIC::RelationTreeFlattener', lazy_build => 1 );
+sub _build_dbiclink_updatable_flattener {
 	my $self = shift;
-	return $self->dbiclink_columns_flattener->subset( $self->dbiclink_colspec_writeable );
+	return $self->dbiclink_columns_flattener->subset( $self->dbiclink_colspec_updatable );
 }
 
 # Accepts a hash of flattened record data as sent from the ExtJS Store client
 # and unflattens it back into a tree hash, pruning/excluding columns from 
-# joins/rels that are not in dbiclink_colspec_writeable
+# joins/rels that are not in dbiclink_colspec_updatable
 sub unflatten_prune_update_packet {
 	my $self = shift;
 	my $data = shift;
 	
-	my $tree = $self->dbiclink_writeable_flattener->restore($data);
+	my $tree = $self->dbiclink_updatable_flattener->restore($data);
 	
 	return $tree;
 }
@@ -460,11 +460,22 @@ has 'TableSpec' => (
 sub BUILD {}
 before BUILD => sub {
 	my $self= shift;
+	
+	if ($self->dbiclink_updatable and not $self->can('update_records')) {
+	
+		scream('SETUP UPDATE!');
+	
+	}
+	
+	
+	
+	
 	# Dynamically toggle the addition of an 'update_records' method
 	# The existence of this method is part of the DataStore2 API
 	$self->meta->add_method('update_records', $self->meta->find_method_by_name('_dbiclink_update_records')) if (
-		$self->dbiclink_updatable and 
-		not $self->can('update_records')
+		$self->dbiclink_updatable
+		#$self->dbiclink_updatable and 
+		#not $self->can('update_records')
 	);
 };
 around 'BUILD' => sub {
