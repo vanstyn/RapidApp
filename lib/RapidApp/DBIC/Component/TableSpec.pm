@@ -8,6 +8,7 @@ use base 'DBIx::Class';
 use RapidApp::Include qw(sugar perlutil);
 
 use RapidApp::TableSpec;
+use RapidApp::DbicAppCombo2;
 
 __PACKAGE__->mk_classdata( 'TableSpec' );
 
@@ -85,7 +86,8 @@ sub TableSpec_setup_editor_dropdowns {
 						valueField		=> ($Source->primary_columns)[0],
 						displayField	=> $col,
 						name				=> $colname,
-						ResultSource	=> $Source,
+						ResultSource	=> $Source
+						#ResultSet		=> $Source->resultset,
 					}
 				}
 			);
@@ -95,6 +97,10 @@ sub TableSpec_setup_editor_dropdowns {
 			# TODO: apply the config to the Column object...
 			
 			scream(ref($Module));
+			
+			#$Module->DataStore;
+			
+			$Module->call_ONREQUEST_handlers;
 			
 			$Column->set_properties( editor => $Module->content );
 			

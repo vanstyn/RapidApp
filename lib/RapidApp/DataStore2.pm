@@ -133,6 +133,12 @@ sub store_init_onrequest {
 
 sub JsonStore {
 	my $self = shift;
+	
+	return {
+		%{ $self->content },
+		xtype => 'jsonstore'
+	} if ($self->store_use_xtype);
+	
 	return RapidApp::JSONFunc->new( 
 		func => 'new Ext.data.JsonStore',
 		parm => $self->content

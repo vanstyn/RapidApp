@@ -153,9 +153,7 @@ sub ONREQUEST {
 	
 	#$self->new_clear_per_req_attrs;
 	
-	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_early);
-	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls);
-	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_late);
+	$self->call_ONREQUEST_handlers;
 	
 	$self->ONREQUEST_called(1);
 	
@@ -165,6 +163,13 @@ sub ONREQUEST {
 	
 	#$self->log->debug(sprintf(GREEN."ONREQUEST for %s took %0.3f seconds".CLEAR, $self->module_path, $elapsed));
 	return $self;
+}
+
+sub call_ONREQUEST_handlers {
+	my $self = shift;
+	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_early);
+	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls);
+	$self->call_rapidapp_handlers($self->all_ONREQUEST_calls_late);
 }
 
 
