@@ -471,28 +471,20 @@ has 'TableSpec' => (
 );
 # -- ^^ --
 
-sub BUILD {}
-before BUILD => sub {
+
+before DataStore2_BUILD => sub {
 	my $self= shift;
-	
-	if ($self->dbiclink_updatable and not $self->can('update_records')) {
-	
-		scream('SETUP UPDATE!');
-	
-	}
-	
-	
-	
-	
 	# Dynamically toggle the addition of an 'update_records' method
 	# The existence of this method is part of the DataStore2 API
 	$self->meta->add_method('update_records', $self->meta->find_method_by_name('_dbiclink_update_records')) if (
-		$self->dbiclink_updatable
-		#$self->dbiclink_updatable and 
-		#not $self->can('update_records')
+		$self->dbiclink_updatable and 
+		not $self->can('update_records')
 	);
 };
-around 'BUILD' => sub {
+
+sub BUILD {}
+around 'BUILD' => sub { &DbicLink_around_BUILD(@_) };
+sub DbicLink_around_BUILD {
 	my $orig = shift;
 	my $self = shift;
 	
@@ -506,6 +498,9 @@ around 'BUILD' => sub {
 	$self->$orig(@_);
 	
 	$self->apply_primary_columns($self->record_pk); # <-- should be redundant
+	
+	# currently this is needed for "delete_row" support -- different from "destroy" and will
+	# probably be removed at which point this should also be removed (maybe)
 	$self->apply_primary_columns($self->ResultSource->primary_columns);
 	
 	$self->apply_config(primary_columns => $self->primary_columns);
@@ -563,12 +558,12 @@ around 'BUILD' => sub {
 	$addColRecurse->([], $self->dbiclink_columns_spec->colTree, $self->ResultSource);
 	
 	$self->add_ONREQUEST_calls('check_can_delete_rows');
-};
+}
 
-after BUILD => sub {
-	my $self= shift;
-	$self->DbicExtQuery; # make sure this gets built now, and not on each request
-};
+#after BUILD => sub {
+#	my $self= shift;
+#	$self->DbicExtQuery; # make sure this gets built now, and not on each request
+#};
 
 
 sub check_can_delete_rows {
@@ -749,7 +744,8 @@ sub _dbiclink_update_records {
 	#RapidApp::TraceCapture::writeFullTrace;
 	
 	# Return the new state of the updated rows.
-	my $dataResult= $self->read_records({ columns => [ keys %cols ], id_in => \@ids });
+	#my $dataResult= $self->read_records({ columns => [ keys %cols ], id_in => \@ids });
+	my $dataResult= $self->DataStore->read({ columns => [ keys %cols ], id_in => \@ids });
 	return {
 		%$dataResult,
 		success => \1,

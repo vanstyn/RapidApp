@@ -63,8 +63,11 @@ around 'columns' => sub {
 	return $self->defer_to_store_module->columns(@_);
 };
 
+
+# We are doing it this way so we can hook into this exact spot with method modifiers in other places:
 sub BUILD {}
-before 'BUILD' => sub {
+before 'BUILD' => sub { (shift)->DataStore2_BUILD };
+sub DataStore2_BUILD {
 	my $self = shift;
 
 	my $store_params = { 
@@ -108,7 +111,7 @@ before 'BUILD' => sub {
 	
 	$self->add_ONREQUEST_calls('store_init_onrequest');
 	$self->add_ONREQUEST_calls_late('apply_store_to_extconfig');
-};
+}
 
 
 after 'BUILD' => sub {
