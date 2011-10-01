@@ -60,7 +60,7 @@ sub TableSpec_setup_editor_dropdowns {
 		die "Invalid colspec '$colspec'" unless ($col);
 		my $info = $self->relationship_info($rel) or die "Relationship '$rel' not found.";
 		
-		scream($info);
+		#scream($info);
 		
 		my $foreign_col = $self->get_foreign_column_from_cond($info->{cond});
 		
@@ -81,36 +81,27 @@ sub TableSpec_setup_editor_dropdowns {
 			my $module_name = $self->table . '_' . $colname;
 			$TableSpecModule->apply_init_modules(
 				$module_name => {
-					class	=> 'RapidApp::DbicAppCombo',
+					class	=> 'RapidApp::DbicAppCombo2',
 					params	=> {
 						valueField		=> ($Source->primary_columns)[0],
 						displayField	=> $col,
 						name				=> $colname,
-						ResultSource	=> $Source
-						#ResultSet		=> $Source->resultset,
+						ResultSet		=> $Source->resultset,
 					}
 				}
 			);
 			my $Module = $TableSpecModule->Module($module_name);
 			
-			
-			# TODO: apply the config to the Column object...
-			
-			scream(ref($Module));
-			
-			#$Module->DataStore;
-			
+			# -- vv -- This is required in order to get all of the params applied
 			$Module->call_ONREQUEST_handlers;
+			$Module->DataStore->call_ONREQUEST_handlers;
+			# -- ^^ --
 			
-			$Column->set_properties( editor => $Module->content );
+			my $editor = $Module->content;
 			
-			scream($Column);
+			#scream_color(GREEN . BOLD,$editor);
 			
-			#my $Module = $rootModule
-			
-			#scream($rootModule);
-		
-		
+			$Column->set_properties( editor => $editor );
 		
 		});	
 	}

@@ -125,8 +125,11 @@ sub store_init_onrequest {
 		#columns 					=> $self->column_list
 	);
 	
-	my $params = $self->get_store_base_params;
-	$self->apply_extconfig( baseParams => $params ) if (defined $params);
+	# If there is no Catalyst request, we can't get the base params:
+	if (defined $self->c) {
+		my $params = $self->get_store_base_params;
+		$self->apply_extconfig( baseParams => $params ) if (defined $params);
+	}
 	
 }
 

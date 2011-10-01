@@ -8,9 +8,9 @@ use RapidApp::Include qw(sugar perlutil);
 
 has 'ResultSet' => ( is => 'ro', isa => 'Object', required => 1 );
 
-has '+DataStore_build_params' => ( default => sub {{
-	store_use_xtype => 1
-}});
+#has '+DataStore_build_params' => ( default => sub {{
+#	store_use_xtype => 1
+#}});
 
 
 sub BUILD {
