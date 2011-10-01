@@ -322,20 +322,34 @@ sub _build_dbiclink_colspec {
 #       The updatable list is only a mask which gets applied to that other list.
 # NOTE2: Nothing actually becomes updatable unless "dbiclink_updateable" is set to
 #        true before BUILD.
-has dbiclink_colspec_updatable => ( 
-	is => 'ro',
-	traits => [ 'Array' ],
-	isa => 'ArrayRef[Str]',
-	lazy_build => 1,
-	handles => {
-		dbiclink_colspec_updatable_list => 'elements',
-		apply_dbiclink_colspec_updatable => 'push',
-		dbiclink_colspec_updatable_count => 'count',
+#has dbiclink_colspec_updatable => ( 
+#	is => 'ro',
+#	traits => [ 'Array' ],
+#	isa => 'ArrayRef[Str]',
+#	lazy_build => 1,
+#	handles => {
+#		dbiclink_colspec_updatable_list => 'elements',
+#		apply_dbiclink_colspec_updatable => 'push',
+#		dbiclink_colspec_updatable_count => 'count',
+#	}
+#);
+#sub _build_dbiclink_colspec_updatable {
+#	return [];
+#}
+
+has 'dbiclink_colspec_updatable' => ( is => 'ro', isa => 'ArrayRef', lazy => 1, default => sub {
+	my $self = shift;
+	my @list = ( '*' );
+	foreach my $rel (@{ $self->dbiclink_updatable_relationships }) {
+		push @list, $rel . '.*';
 	}
-);
-sub _build_dbiclink_colspec_updatable {
-	return [];
-}
+	return \@list;
+});
+
+has 'dbiclink_updatable_relationships' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy_build => 1 );
+sub _build_dbiclink_updatable_relationships {[]}
+
+
 
 # dbiclink_col_naming_convention is a configuration parameter for how column names will be generated.
 # It can only be changed before dbiclink_columns_flattener has been created.
