@@ -720,7 +720,7 @@ sub _dbiclink_update_records {
 		push @ids, $data->{$self->record_pk};
 	}
 	
-	for my $trace (RapidApp::TraceCapture::collectTraces()) { RapidApp::TraceCapture::writeQuickTrace($trace) }
+	#for my $trace (RapidApp::TraceCapture::collectTraces()) { RapidApp::TraceCapture::writeQuickTrace($trace) }
 	#RapidApp::TraceCapture::writeFullTrace;
 	
 	# Return the new state of the updated rows.
