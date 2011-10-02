@@ -2,6 +2,8 @@ package RapidApp::TableSpec::Column;
 use strict;
 use Moose;
 
+use RapidApp::Include qw(sugar perlutil);
+
 # This configuration class defines behaviors of tables and
 # columns in a general way that can be used in different places
 
@@ -56,15 +58,14 @@ sub update_valid_properties {
 sub set_properties {
 	my $self = shift;
 	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-	my $hash = \%new;
 	
-	foreach my $key (keys %$hash) {
+	foreach my $key (keys %new) {
 		my $attr = $self->meta->get_attribute($key);
 		if ($attr and $attr->has_write_method) {
-			$self->$key($hash->{$key});
+			$self->$key($new{$key});
 		}
 		else {
-			$self->_other_properties->{$key} = $hash->{$key};
+			$self->_other_properties->{$key} = $new{$key};
 		}
 	}
 }
@@ -120,7 +121,13 @@ sub copy {
 		}
 	}
 	
-	my $Copy = $self->meta->clone_object($self,%attr);
+	my $Copy = $self->meta->clone_object(
+		$self,
+		%attr, 
+		# This shouldn't be required, but is. The clone doesn't clone _other_properties!
+		_other_properties => { %{ $self->_other_properties } }
+	);
+	
 	$Copy->set_properties(%other);
 
 	return $Copy;

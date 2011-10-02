@@ -6,7 +6,6 @@ use Moose;
 # columns in a general way that can be used in different places
 
 use RapidApp::Include qw(sugar perlutil);
-
 use RapidApp::TableSpec::Column;
 
 our $VERSION = '0.1';
@@ -52,9 +51,14 @@ around 'get_column' => sub {
 	my $self = shift;
 	my $Column = $self->$orig(@_);
 	
-	return $Column unless (defined $self->column_property_transforms);
-	my $trans = $self->column_property_transforms;
+	return $Column unless (
+		defined $self->column_property_transforms or (
+			defined $self->column_properties and
+			defined $self->column_properties->{$Column->name}
+		)
+	);
 	
+	my $trans = $self->column_property_transforms;
 	my $cur_props = $Column->all_properties_hash;
 	my %change_props = ();
 	
