@@ -29,7 +29,7 @@ has 'read_raw_mungers' => (
 	isa       => 'ArrayRef[RapidApp::Handler]',
 	default   => sub { [] },
 	handles => {
-		all_read_raw_mungers		=> 'elements',
+		all_read_raw_mungers		=> 'uniq',
 		add_read_raw_mungers		=> 'push',
 		insert_read_raw_mungers	=> 'unshift',
 		has_no_read_raw_mungers => 'is_empty',
@@ -43,7 +43,7 @@ has 'update_mungers' => (
 	isa       => 'ArrayRef[RapidApp::Handler]',
 	default   => sub { [] },
 	handles => {
-		all_update_mungers		=> 'elements',
+		all_update_mungers		=> 'uniq',
 		add_update_mungers		=> 'push',
 		insert_update_mungers	=> 'unshift',
 		has_no_update_mungers 	=> 'is_empty',
@@ -58,7 +58,7 @@ has 'base_params_mungers' => (
 	isa       => 'ArrayRef[RapidApp::Handler]',
 	default   => sub { [] },
 	handles => {
-		all_base_params_mungers		=> 'elements',
+		all_base_params_mungers		=> 'uniq',
 		add_base_params_mungers		=> 'push',
 		has_no_base_params_mungers => 'is_empty',
 	}
@@ -274,6 +274,9 @@ sub apply_columns {
 		}
 		
 		$self->columns->{$name}->apply_attributes(%{$column{$name}});
+		
+		$self->add_read_raw_mungers($self->columns->{$name}->read_raw_munger) if ($self->columns->{$name}->read_raw_munger);
+		$self->add_update_mungers($self->columns->{$name}->update_munger) if ($self->columns->{$name}->update_munger);
 	}
 	
 	return $self->apply_config(columns => $self->column_list);

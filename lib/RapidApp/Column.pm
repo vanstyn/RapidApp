@@ -153,6 +153,18 @@ has 'required_fetch_columns' => (
 	default => sub {[]}, 
 );
 
+has 'read_raw_munger' => ( 
+	is => 'rw',
+	isa => 'Maybe[RapidApp::Handler]',
+	default => undef, 
+);
+
+has 'update_munger' => ( 
+	is => 'rw',
+	isa => 'Maybe[RapidApp::Handler]',
+	default => undef, 
+);
+
 has 'render_fn' => ( 
 	is => 'rw', lazy => 1, 
 	default => undef,
