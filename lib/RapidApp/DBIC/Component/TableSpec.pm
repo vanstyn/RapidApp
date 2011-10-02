@@ -46,6 +46,99 @@ sub TableSpec_add_columns_from_related {
 }
 
 
+sub TableSpec_add_relationship_dropdown_columns {
+	my $self = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	my $rels = \%opt;
+	
+	foreach my $rel (keys %$rels) {
+		my $conf = $rels->{$rel};
+		$conf = {} unless (ref($conf) eq 'HASH');
+		
+		die "displayField is required" unless (defined $conf->{displayField});
+		
+		$conf->{render_col} = $rel . '_' . $conf->{displayField} unless ($conf->{render_col});
+		
+		my $info = $self->relationship_info($rel) or die "Relationship '$rel' not found.";
+		
+		my $foreign_col = $self->get_foreign_column_from_cond($info->{cond});
+		$conf->{valueField} = $foreign_col unless (defined $conf->{valueField});
+		
+		my $key_col = $rel . '_' . $conf->{valueField};
+		
+		my $valueField = delete $conf->{valueField};
+		my $displayField = delete $conf->{displayField};
+		my $render_col = delete $conf->{render_col};
+		
+		# This coderef gets called later, after the RapidApp
+		# Root Module has been loaded.
+		rapidapp_add_global_init_coderef( sub { 
+			my $rootModule = shift;
+			$rootModule->apply_init_modules( tablespec => 'RapidApp::AppBase' ) 
+				unless ( $rootModule->has_module('tablespec') );
+			
+			my $TableSpecModule = $rootModule->Module('tablespec');
+
+			my $c = RapidApp::ScopedGlobals->get('catalystClass');
+			
+			my $Source = $c->model('DB')->source($info->{source});
+			
+			my $module_name = $self->table . '_' . $colname;
+			$TableSpecModule->apply_init_modules(
+				$module_name => {
+					class	=> 'RapidApp::DbicAppCombo2',
+					params	=> {
+						valueField		=> $valueField,
+						displayField	=> $displayField,
+						name				=> $rel,
+						ResultSet		=> $Source->resultset,
+					}
+				}
+			);
+			my $Module = $TableSpecModule->Module($module_name);
+			
+			# -- vv -- This is required in order to get all of the params applied
+			$Module->call_ONREQUEST_handlers;
+			$Module->DataStore->call_ONREQUEST_handlers;
+			# -- ^^ --
+			
+			my $editor = $Module->content;
+			
+			$self->TableSpec->add_columns({
+				name => $rel,
+				required_fetch_columns => [ $key_col,$render_col ],
+				editor => $editor,
+				renderer => RapidApp::JSONFunc->new( raw => 1, func => 
+					'function(value, metaData, record, rowIndex, colIndex, store) {' .
+						'return record.data["' . $render_col . '"];' .
+					'}' 
+				),
+				read_raw_munger => RapidApp::Handler->new( code => sub {
+					my $rows = (shift)->{rows};
+					$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
+					foreach my $row (@$rows) {
+						$row->{$rel} = $row->{$key_col};
+					}
+				}),
+				update_munger => RapidApp::Handler->new( code => sub {
+					my $rows = shift;
+					$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
+					foreach my $row (@$rows) {
+						if ($row->{$rel}) {
+							$row->{$key_col} = $row->{$rel};
+							delete $row->{$rel};
+						}
+					}
+				}),
+				%$conf
+			}); 
+		});	
+	}
+}
+
+
+
 sub TableSpec_setup_editor_dropdowns {
 	my $self = shift;
 	foreach my $colspec (@_) { 
