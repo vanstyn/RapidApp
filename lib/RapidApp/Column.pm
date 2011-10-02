@@ -33,7 +33,7 @@ our $VERSION = '0.1';
 
 
 has 'name' => ( 
-	is => 'rw', required => 1, isa => 'Str', 
+	is => 'ro', required => 1, isa => 'Str', 
 	traits => [ 'RapidApp::Role::GridColParam' ] 
 );
 
@@ -146,6 +146,13 @@ has 'rel_combo_field_cnf'	=> ( is => 'rw', default => undef, traits => [ 'RapidA
 
 has 'field_cmp_config'	=> ( is => 'rw', default => undef, traits => [ 'RapidApp::Role::GridColParam' ]  );
 
+# Optional list of other column names that should be fetched along with this column:
+has 'required_fetch_columns' => ( 
+	is => 'rw',
+	isa => 'ArrayRef',
+	default => sub {[]}, 
+);
+
 has 'render_fn' => ( 
 	is => 'rw', lazy => 1, 
 	default => undef,
@@ -184,7 +191,7 @@ sub _set_renderer {
 sub apply_attributes {
 	my $self = shift;
 	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-=pod	
+	
 	foreach my $attr ($self->meta->get_all_attributes) {
 		next unless (exists $new{$attr->name});
 		$attr->set_value($self,$new{$attr->name});
@@ -197,18 +204,12 @@ sub apply_attributes {
 		use Data::Dumper;
 		die  "invalid attributes (" . join(',',keys %new) . ") passed to apply_attributes :\n" . Dumper(\%new);
 	}
-=cut
-	while (my ($k, $v)= each %new) {
-		(my $code= $self->can($k))
-			or die "Invalid attribute passed to ".ref($self)."::apply_attributes : $k\n";
-		$code->($self, $v);
-	}
 }
 
 sub applyIf_attributes {
 	my $self = shift;
 	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-=pod
+	
 	foreach my $attr ($self->meta->get_all_attributes) {
 		next unless (exists $new{$attr->name});
 		$attr->set_value($self,$new{$attr->name}) unless ($attr->get_value($self)); # <-- only set attrs that aren't already set
@@ -221,18 +222,12 @@ sub applyIf_attributes {
 		use Data::Dumper;
 		die  "invalid attributes (" . join(',',keys %new) . ") passed to apply_attributes :\n" . Dumper(\%new);
 	}
-=cut
-	while (my ($k, $v)= each %new) {
-		(my $code= $self->can($k))
-			or die "Invalid attribute passed to ".ref($self)."::apply_attributes : $k\n";
-		$code->($self, $v) unless defined $self->{$k};
-	}
 }
 
 sub get_grid_config {
 	my $self = shift;
 	my $val;
-	return { map { defined($val= $self->$_())? ($_ => $val)  :  () } $self->meta->grid_config_attr_names };
+	return { map { defined($val= $self->$_)? ($_ => $val)  :  () } $self->meta->grid_config_attr_names };
 	
 	#for my $attrName (@{&meta_gridColParam_attr_names($self->meta)}) {
 	#	my $val= $self->$attrName();
@@ -276,7 +271,7 @@ has 'field_readonly' => (
 
 has 'field_readonly_config' => (
 	traits    => [ 'Hash' ],
-	is        => 'rw',
+	is        => 'ro',
 	isa       => 'HashRef',
 	default   => sub { {} },
 	handles   => {
@@ -290,7 +285,7 @@ has 'field_readonly_config' => (
 
 has 'field_config' => (
 	traits    => [ 'Hash' ],
-	is        => 'rw',
+	is        => 'ro',
 	isa       => 'HashRef',
 	default   => sub { {} },
 	handles   => {

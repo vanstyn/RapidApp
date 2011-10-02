@@ -37,6 +37,30 @@ has 'never_fetch_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
 });
 
 
+# Columns that need other columns to automatically be fetched when they are fetched
+has 'column_required_fetch_columns' => (
+	is => 'ro',
+	isa => 'HashRef[ArrayRef[Str]]',
+	lazy => 1,
+	default => sub {
+		my $self = shift;
+		my $hash = {};
+		
+		foreach my $col (keys %{ $self->columns }) {
+			my $list = $self->columns->{$col}->required_fetch_columns or next;
+			next unless (
+				ref($list) eq 'ARRAY' and
+				scalar @$list > 0
+			);
+			$hash->{$col} = $list;
+		}
+		return $hash;
+	}
+);
+
+
+
+
 has 'no_search_fields' => (
 	is => 'ro',
 	traits => [ 'Array' ],
@@ -557,6 +581,9 @@ sub DbicLink_around_BUILD {
 	
 	$addColRecurse->([], $self->dbiclink_columns_spec->colTree, $self->ResultSource);
 	
+	#init column_required_fetch_columns
+	$self->column_required_fetch_columns;
+	
 	$self->add_ONREQUEST_calls('check_can_delete_rows');
 }
 
@@ -635,24 +662,9 @@ sub read_records {
 			$params->{columns} = $decoded;
 		}
 		
-		# If custom columns have been provided, we have to make sure that the record_pk is among them.
-		# This is required to properly support the "item" page which is opened by double-clicking
-		# a grid row. The id field must be loaded in the Ext Record because this is used by the
-		# item page to query the database for the given id:
-		push @{$params->{columns}}, $self->record_pk if (defined $self->record_pk);
+		$self->prepare_req_columns($params->{columns});
 		
-		push @{$params->{columns}}, @{$self->always_fetch_columns} if (defined $self->always_fetch_columns);
-		
-		
-		my %seen = ();
-		my $newcols = [];
-		foreach my $col (@{$params->{columns}}) {
-			next if ($seen{$col}++);
-			next if ($self->never_fetch_columns_hash->{$col});
-			push @$newcols, $col;
-		}
-		
-		$params->{columns} = $newcols;
+
 	}
 	
 	my @arg = ( $params );
@@ -669,6 +681,35 @@ sub read_records {
 		results => $Rs->pager->total_entries,
 	};
 }
+
+sub prepare_req_columns {
+	my $self = shift;
+	my $columns = shift;
+	
+	# If custom columns have been provided, we have to make sure that the record_pk is among them.
+	# This is required to properly support the "item" page which is opened by double-clicking
+	# a grid row. The id field must be loaded in the Ext Record because this is used by the
+	# item page to query the database for the given id:
+	push @$columns, $self->record_pk if (defined $self->record_pk);
+	
+	push @$columns, @{$self->always_fetch_columns} if (defined $self->always_fetch_columns);
+	
+	foreach my $col (@$columns) {
+		my $add = $self->column_required_fetch_columns->{$col} or next;
+		push @$columns, @$add;
+	}
+	
+	my %seen = ();
+	my @newcols = ();
+	foreach my $col (@$columns) {
+		next if ($seen{$col}++);
+		next if ($self->never_fetch_columns_hash->{$col});
+		push @newcols, $col;
+	}
+	
+	@$columns = @newcols;
+}
+
 
 sub Row_tree_update_recursive {
 	my $self = shift;
