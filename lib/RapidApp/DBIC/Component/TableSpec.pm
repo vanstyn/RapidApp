@@ -46,7 +46,7 @@ sub TableSpec_add_columns_from_related {
 }
 
 
-sub TableSpec_add_relationship_dropdown_columns {
+sub TableSpec_add_relationship_columns {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
@@ -70,6 +70,7 @@ sub TableSpec_add_relationship_dropdown_columns {
 		my $valueField = delete $conf->{valueField};
 		my $displayField = delete $conf->{displayField};
 		my $render_col = delete $conf->{render_col};
+		my $auto_editor_type = delete $conf->{auto_editor_type};
 		
 		# This coderef gets called later, after the RapidApp
 		# Root Module has been loaded.
@@ -79,36 +80,12 @@ sub TableSpec_add_relationship_dropdown_columns {
 				unless ( $rootModule->has_module('tablespec') );
 			
 			my $TableSpecModule = $rootModule->Module('tablespec');
-
 			my $c = RapidApp::ScopedGlobals->get('catalystClass');
-			
 			my $Source = $c->model('DB')->source($info->{source});
 			
-			my $module_name = $self->table . '_' . $colname;
-			$TableSpecModule->apply_init_modules(
-				$module_name => {
-					class	=> 'RapidApp::DbicAppCombo2',
-					params	=> {
-						valueField		=> $valueField,
-						displayField	=> $displayField,
-						name				=> $rel,
-						ResultSet		=> $Source->resultset,
-					}
-				}
-			);
-			my $Module = $TableSpecModule->Module($module_name);
-			
-			# -- vv -- This is required in order to get all of the params applied
-			$Module->call_ONREQUEST_handlers;
-			$Module->DataStore->call_ONREQUEST_handlers;
-			# -- ^^ --
-			
-			my $editor = $Module->content;
-			
-			$self->TableSpec->add_columns({
+			my $column_params = {
 				name => $rel,
 				required_fetch_columns => [ $key_col,$render_col ],
-				editor => $editor,
 				renderer => RapidApp::JSONFunc->new( raw => 1, func => 
 					'function(value, metaData, record, rowIndex, colIndex, store) {' .
 						'return record.data["' . $render_col . '"];' .
@@ -131,8 +108,36 @@ sub TableSpec_add_relationship_dropdown_columns {
 						}
 					}
 				}),
-				%$conf
-			}); 
+				no_quick_search => \1,
+				no_multifilter => \1
+			};
+			
+			if ($auto_editor_type eq 'combo') {
+			
+				my $module_name = $self->table . '_' . $rel;
+				$TableSpecModule->apply_init_modules(
+					$module_name => {
+						class	=> 'RapidApp::DbicAppCombo2',
+						params	=> {
+							valueField		=> $valueField,
+							displayField	=> $displayField,
+							name				=> $rel,
+							ResultSet		=> $Source->resultset,
+						}
+					}
+				);
+				my $Module = $TableSpecModule->Module($module_name);
+				
+				# -- vv -- This is required in order to get all of the params applied
+				$Module->call_ONREQUEST_handlers;
+				$Module->DataStore->call_ONREQUEST_handlers;
+				# -- ^^ --
+				
+				$column_params->{editor} = $Module->content;
+			}
+			
+			$self->TableSpec->add_columns({ %$column_params, %$conf });
+			
 		});	
 	}
 }

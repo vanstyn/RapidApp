@@ -63,8 +63,9 @@ around 'get_column' => sub {
 	my %change_props = ();
 	
 	foreach my $prop (keys %$trans) {
-		next unless (defined $cur_props->{$prop});
-		$change_props{$prop} = $trans->{$prop}->($cur_props->{$prop});
+		#next unless (defined $cur_props->{$prop});
+		my $arg = $cur_props->{$prop} || '';
+		$change_props{$prop} = $trans->{$prop}->($arg);
 	}
 	
 	%change_props = ( %change_props, %{ $self->column_properties->{$Column->name} } ) if (
