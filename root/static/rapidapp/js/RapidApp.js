@@ -4287,7 +4287,15 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		
 		Ext.ux.RapidApp.AppPropertyGrid.superclass.initComponent.call(this);
 		
+		this.on('beforeedit',this.onBeforeEdit,this);
 		this.on('propertychange',this.onPropertyChange,this);
+	},
+	
+	onBeforeEdit: function(e) {
+    var field_name = e.record.data.field.name;
+    if (this.editable_fields && ! this.editable_fields[field_name]) {
+      e.cancel = true;
+    }
 	},
 	
 	onPropertyChange: function(source,recordId,value,oldValue) {
@@ -4305,6 +4313,7 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		this.bindRecord = this.getBindStore().getAt(0);
 		this.loadRecord(this.bindRecord.copy());
 	}
+
 });
 Ext.reg('apppropertygrid', Ext.ux.RapidApp.AppPropertyGrid);
 
