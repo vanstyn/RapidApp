@@ -136,8 +136,8 @@ sub apply_TableSpec_config {
 	$self->set_columns_order(0,$self->TableSpec->column_names_ordered);
 	
 	$self->DataStore->add_onrequest_columns_mungers(
-		$self->TableSpec->onrequest_columns_munger
-	) if ($self->TableSpec->onrequest_columns_munger);
+		$self->TableSpec->all_onrequest_columns_mungers
+	) unless ($self->TableSpec->has_no_onrequest_columns_mungers);
 	
 	$self->TableSpec_applied(1);
 }

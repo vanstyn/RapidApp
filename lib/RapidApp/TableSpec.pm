@@ -200,10 +200,17 @@ sub add_columns_from_TableSpec {
 # Designed to work with DataStore2: if defined, gets added as an
 # onrequest_columns_munger to DataStore2-based modules that are
 # configured to use this TableSpec:
-has 'onrequest_columns_munger' => (
-	is => 'rw',
-	isa => 'Maybe[RapidApp::Handler]',
-	default => undef
+has 'onrequest_columns_mungers' => (
+	traits    => [ 'Array' ],
+	is        => 'ro',
+	isa       => 'ArrayRef[RapidApp::Handler]',
+	default   => sub { [] },
+	handles => {
+		all_onrequest_columns_mungers		=> 'uniq',
+		add_onrequest_columns_mungers		=> 'push',
+		insert_onrequest_columns_mungers	=> 'unshift',
+		has_no_onrequest_columns_mungers => 'is_empty',
+	}
 );
 
 
