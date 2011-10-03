@@ -16,11 +16,6 @@ has 'DataStore_class'	=> ( is => 'ro', default => 'RapidApp::DataStore2' );
 
 has 'max_pagesize'		=> ( is => 'ro', isa => 'Maybe[Int]', default => undef );
 
-has 'onrequest_columns_munger' => (
-	is => 'ro',
-	isa => 'Maybe[RapidApp::Handler]',
-	default => undef
-);
 
 has 'DataStore' => (
 	is			=> 'rw',
@@ -55,7 +50,6 @@ has 'DataStore' => (
 		apply_columns_ordered	=> 'apply_columns_ordered',
 		batch_apply_opts_existing => 'batch_apply_opts_existing'
 		
-	
 	}
 );
 
@@ -82,8 +76,6 @@ sub DataStore2_BUILD {
 		record_pk 		=> $self->record_pk,
 		max_pagesize	=> $self->max_pagesize
 	};
-	
-	$store_params->{onrequest_columns_munger} = $self->onrequest_columns_munger;
 	
 	if ($self->can('create_records')) {
 		$self->apply_flags( can_create => 1 ) unless ($self->flag_defined('can_create'));

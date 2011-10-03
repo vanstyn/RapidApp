@@ -24,10 +24,17 @@ has 'reload_on_save' 	=> ( is => 'ro', default => 1 );
 has 'max_pagesize'		=> ( is => 'ro', isa => 'Maybe[Int]', default => undef );
 
 
-has 'onrequest_columns_munger' => (
-	is => 'ro',
-	isa => 'Maybe[RapidApp::Handler]',
-	default => undef
+has 'onrequest_columns_mungers' => (
+	traits    => [ 'Array' ],
+	is        => 'ro',
+	isa       => 'ArrayRef[RapidApp::Handler]',
+	default   => sub { [] },
+	handles => {
+		all_onrequest_columns_mungers		=> 'uniq',
+		add_onrequest_columns_mungers		=> 'push',
+		insert_onrequest_columns_mungers	=> 'unshift',
+		has_no_onrequest_columns_mungers => 'is_empty',
+	}
 );
 
 has 'read_raw_mungers' => (
@@ -115,8 +122,11 @@ sub BUILD {
 sub store_init_onrequest {
 	my $self = shift;
 	
-	$self->onrequest_columns_munger->call($self->columns) if ($self->onrequest_columns_munger);
-
+	unless ($self->has_no_onrequest_columns_mungers) {
+		foreach my $Handler ($self->all_onrequest_columns_mungers) {
+			$Handler->call($self->columns);
+		}
+	}
 	
 	$self->apply_extconfig( baseParams => $self->base_params ) if (
 		defined $self->base_params and
