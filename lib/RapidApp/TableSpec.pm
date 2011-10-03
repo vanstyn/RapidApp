@@ -197,6 +197,17 @@ sub add_columns_from_TableSpec {
 }
 
 
+# Designed to work with DataStore2: if defined, gets added as an
+# onrequest_columns_munger to DataStore2-based modules that are
+# configured to use this TableSpec:
+has 'onrequest_columns_munger' => (
+	is => 'rw',
+	isa => 'Maybe[RapidApp::Handler]',
+	default => undef
+);
+
+
+
 no Moose;
 __PACKAGE__->meta->make_immutable;
 1;

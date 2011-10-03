@@ -135,6 +135,10 @@ sub apply_TableSpec_config {
 	$self->apply_columns($columns);
 	$self->set_columns_order(0,$self->TableSpec->column_names_ordered);
 	
+	$self->DataStore->add_onrequest_columns_mungers(
+		$self->TableSpec->onrequest_columns_munger
+	) if ($self->TableSpec->onrequest_columns_munger);
+	
 	$self->TableSpec_applied(1);
 }
 
