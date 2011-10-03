@@ -4260,8 +4260,18 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 			delete this.columns;
 		}
 		
+		var propgrid = this;
+		
 		Ext.each(this.fields,function(field) {
 			field.id = field.dataIndex;
+			// Translate the renderer to work like in a normal grid:
+			if (field.renderer) {
+        var orig = field.renderer;
+        field.renderer = function(value,metaData) {
+          if(!propgrid.bindRecord) { return orig.apply(field,arguments); }
+          return orig.call(field,value,metaData,propgrid.bindRecord,0,0,propgrid.bindStore);
+        };
+			}
 		});
 		
 		Ext.ux.RapidApp.AppPropertyGrid.superclass.initComponent.call(this);
