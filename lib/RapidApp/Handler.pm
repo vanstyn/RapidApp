@@ -3,9 +3,9 @@ use Moose;
 
 use RapidApp::Include qw(sugar perlutil);
 
-has 'scope'		=> ( is => 'ro', default => undef, isa => 'Maybe[Object]' );
-has 'method'	=> ( is => 'ro', default => undef, isa => 'Maybe[Str]' );
-has 'code'		=> ( is => 'ro', default => undef, isa => 'Maybe[CodeRef]' );
+has 'scope'		=> ( is => 'rw', default => undef, isa => 'Maybe[Object]' );
+has 'method'	=> ( is => 'rw', default => undef, isa => 'Maybe[Str]' );
+has 'code'		=> ( is => 'rw', default => undef, isa => 'Maybe[CodeRef]' );
 
 sub BUILD {
 	my $self = shift;

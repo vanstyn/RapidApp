@@ -244,16 +244,14 @@ has 'autofield' => (
 			$display = $name unless ($display);
 			my $Column = $self->AppDV->columns->{$name} or return '';
 			
-			$self->AppDV->FieldCmp->{$Column->name} = $self->AppDV->json->encode($Column->get_field_config);
-			
 			if($Column->renderer) {
 				$display = '[this.renderField("' . $name . '",values,' . $Column->renderer->func . ')]';
 			}
 			
-			# TODO: add logic to detect and set read/write or read-only:
-			
 			# read-only:
-			return '{' . $display . '}';
+			return '{' . $display . '}' unless ($Column->editor);
+			
+			$self->AppDV->FieldCmp->{$Column->name} = $self->AppDV->json->encode($Column->get_field_config);
 			
 			# editable
 			return $self->div_edit_field($Column->name,$display);

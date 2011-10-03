@@ -22,6 +22,8 @@ has 'name' => ( is => 'ro', isa => 'Str', required => 1 );
 
 has 'order' => ( is => 'rw', isa => 'Maybe[Int]', default => undef, clearer => 'clear_order' );
 
+has 'permission_roles' => ( is => 'rw', isa => 'Maybe[HashRef[ArrayRef]]', default => undef );
+
 
 has '_other_properties' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 
@@ -54,6 +56,15 @@ sub update_valid_properties {
 =cut
 
 
+sub get_property {
+	my $self = shift;
+	my $name = shift;
+	
+	my $attr = $self->meta->get_attribute($name);
+	return $attr->get_value($self) if ($attr);
+	
+	return $self->_other_properties->{$name};
+}
 
 sub set_properties {
 	my $self = shift;
@@ -78,7 +89,7 @@ sub all_properties_hash {
 	foreach my $attr ($self->meta->get_all_attributes) {
 		next if ($attr->name eq '_other_properties');
 		next unless ($attr->has_value($self));
-		$hash->{$attr->name} = $attr->get_value($self);;
+		$hash->{$attr->name} = $attr->get_value($self);
 	}
 	return $hash;
 }

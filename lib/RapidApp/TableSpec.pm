@@ -10,6 +10,10 @@ use RapidApp::TableSpec::Column;
 
 our $VERSION = '0.1';
 
+sub BUILD {
+	my $self = shift;
+	$self->add_onrequest_columns_mungers( $self->column_permissions_roles_munger );
+}
 
 has 'name' => ( is => 'ro', isa => 'Str', required => 1 );
 has 'header_prefix' => ( is => 'ro', isa => 'Maybe[Str]', default => undef );
@@ -144,6 +148,8 @@ sub add_columns {
 		
 		$self->apply_columns( $Column->name => $Column );
 	}
+	
+	$self->update_column_permissions_roles_code;
 }
 
 
@@ -157,6 +163,8 @@ sub apply_column_properties {
 		my $Column = $self->get_column($col) or die "apply_column_properties failed - no such column '$col'";
 		$Column->set_properties($hash->{$col});
 	}
+	
+	$self->update_column_permissions_roles_code;
 }
 
 
@@ -212,6 +220,97 @@ has 'onrequest_columns_mungers' => (
 		has_no_onrequest_columns_mungers => 'is_empty',
 	}
 );
+
+
+has 'column_permissions_roles_munger' => (
+	is => 'ro',
+	isa => 'RapidApp::Handler',
+	default => sub { RapidApp::Handler->new( code => sub {} ) }
+);
+
+
+has 'roles_permissions_columns_map' => ( is => 'rw', isa => 'HashRef', default => sub {{}} );
+
+sub update_column_permissions_roles_code {
+	my $self = shift;
+	
+	my $roles = {};
+	
+	foreach my $Column ($self->column_list) {
+		$Column->permission_roles or next;
+		
+		foreach my $perm ( keys %{ $Column->permission_roles } ) {
+			foreach my $role ( @{ $Column->permission_roles->{$perm} } ) {
+				die "Role names cannot contain spaces ('$role')" if (not ref($role) and $role =~ /\s+/);
+				my $rolespec = $role;
+				$rolespec = join(' ',@$role) if (ref($role) eq 'ARRAY');
+				$roles->{$rolespec} = {} unless ($roles->{$rolespec});
+				$roles->{$rolespec}{$perm} = [] unless ($roles->{$rolespec}{$perm});
+				push @{ $roles->{$rolespec}{$perm} }, $Column->name;
+			}
+		}
+	}
+	
+	$self->roles_permissions_columns_map($roles);
+	
+	return $self->column_permissions_roles_munger->code(sub {}) unless (scalar(keys %$roles) > 0);
+	return $self->column_permissions_roles_munger->code(sub {
+		my $columns = shift;
+		return $self->apply_permission_roles_to_datastore_columns($columns);
+	});
+}
+
+sub apply_permission_roles_to_datastore_columns {
+	my $self = shift;
+	my $columns = shift;
+	
+	my $c = RapidApp::ScopedGlobals->get('catalystInstance');
+	#delete $columns->{creator}->{editor} unless ($c->check_user_roles('admin'));
+	
+	my $map = $self->roles_permissions_columns_map;
+	
+	foreach my $role (keys %$map) {
+		if ($c->check_user_roles(split(/\s+/,$role))) {
+			# Any code that would need to be called for the positive condition would go here
+		
+		}
+		else {
+		
+			#CREATE:
+			if ($map->{$role}->{create}) {
+			
+			
+			}
+			#READ:
+			elsif ($map->{$role}->{read}) {
+			
+			
+			}
+			#UPDATE:
+			elsif ($map->{$role}->{update}) {
+				my $list = $map->{$role}->{update};
+				$list = [ $list ] unless (ref($list));
+				foreach my $colname (@$list) {
+					delete $columns->{$colname}->{editor};
+				}
+			}
+			#DESTROY
+			elsif ($map->{$role}->{destroy}) {
+			
+			
+			}
+		
+		
+		}
+	
+	
+	}
+	
+	# TODO
+	
+	#scream($self->roles_permissions_columns_map);
+}
+
 
 
 
