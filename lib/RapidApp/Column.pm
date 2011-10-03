@@ -312,9 +312,12 @@ has 'field_config' => (
 sub get_field_config {
 	my $self = shift;
 	
+	my $config = $self->field_config;
+	$config = $self->editor if ($self->editor);
+	
 	my $cnf = { 
 		name		=> $self->name,
-		%{ $self->field_config } 
+		%$config
 	};
 	
 	$cnf = { %$cnf, %{$self->field_readonly_config} } if ($self->field_readonly);

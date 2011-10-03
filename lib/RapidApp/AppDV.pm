@@ -130,10 +130,32 @@ sub xtemplate {
 	my $self = shift;
 	
 	return RapidApp::JSONFunc->new(
-		func => 'new Ext.XTemplate',
-		parm => [ $self->xtemplate_cnf ]
+		#func => 'new Ext.XTemplate',
+		func => 'Ext.ux.RapidApp.newXTemplate',
+		parm => [ $self->xtemplate_cnf, $self->xtemplate_funcs ]
 	);
 }
+
+
+# The 'renderField' function defined here is called by 'autofield' in TTController
+# This is needed because complex logic can't be called directly within {[ ... ]} in
+# XTemplates; only function calls. This function accepts a function as an argument 
+# (which is allowed) and then calls it in the format and with the arguments expected
+# from a Column renderer:
+sub xtemplate_funcs {
+	my $self = shift;
+	return {
+		compiled => \1,
+		disableFormats => \1,
+		renderField => RapidApp::JSONFunc->new( raw => 1, func =>
+			'function(name,values,renderer) {' .
+				'var record = { data: values };' .
+				'return renderer(values[name],{},record);' .
+			'}'
+		)
+	};
+}
+
 
 
 

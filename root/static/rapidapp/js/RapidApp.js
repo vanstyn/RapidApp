@@ -4318,5 +4318,13 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 Ext.reg('apppropertygrid', Ext.ux.RapidApp.AppPropertyGrid);
 
 
-
+Ext.ux.RapidApp.newXTemplate = function(arg) {
+  var tpl = arg;
+  var parms = {};
+  if(Ext.isArray(arg)) {
+    tpl = arg[0];
+    parms = arg[1];
+  }
+  return new Ext.XTemplate(tpl,parms);
+}
 

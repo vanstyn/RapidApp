@@ -228,6 +228,40 @@ has 'edit_click_field' => (
 		});
 	}
 );
+
+
+
+
+has 'autofield' => (
+	is => 'ro',
+	lazy => 1,
+	isa => 'RapidApp::RecAutoload',
+	default => sub {
+		my $self = shift;
+		return RapidApp::RecAutoload->new( process_coderef => sub {
+			my $name = shift;
+			my $display = shift;
+			$display = $name unless ($display);
+			my $Column = $self->AppDV->columns->{$name} or return '';
+			
+			$self->AppDV->FieldCmp->{$Column->name} = $self->AppDV->json->encode($Column->get_field_config);
+			
+			if($Column->renderer) {
+				$display = '[this.renderField("' . $name . '",values,' . $Column->renderer->func . ')]';
+			}
+			
+			# TODO: add logic to detect and set read/write or read-only:
+			
+			# read-only:
+			return '{' . $display . '}';
+			
+			# editable
+			return $self->div_edit_field($Column->name,$display);
+		});
+	}
+);
+
+
 		
 		
 has 'submodule' => (

@@ -16,6 +16,10 @@ has 'ResultSet' => ( is => 'ro', isa => 'Object', required => 1 );
 sub BUILD {
 	my $self = shift;
 	
+	# Remove the width hard coded in AppCombo2 (still being left in AppCombo2 for legacy
+	# but will be removed in the future)
+	$self->delete_extconfig_param('width');
+	
 	$self->apply_extconfig(
 		itemId	=> $self->name . '_combo',
 		forceSelection => \1,
