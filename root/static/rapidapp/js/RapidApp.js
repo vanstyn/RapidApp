@@ -4272,6 +4272,17 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
           return orig.call(field,value,metaData,propgrid.bindRecord,0,0,propgrid.bindStore);
         };
 			}
+			// Extra logic to handle editors as simple xtypes and not already 
+			// GridEditor objects. This is handled by EditorGridPanel, but not
+			// by the PropertyGrid:
+			if (field.editor) {
+        if (!field.editor.getXType) { 
+          field.editor = Ext.ComponentMgr.create(field.editor,'textfield'); 
+        }
+        if (!field.editor.startEdit){
+          field.editor = new Ext.grid.GridEditor(field.editor);
+        }
+			}
 		});
 		
 		Ext.ux.RapidApp.AppPropertyGrid.superclass.initComponent.call(this);
