@@ -4247,6 +4247,8 @@ Ext.reg("propertygrid2", Ext.ux.grid.PropertyGrid);
 Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 	
+	editable_fields: {},
+	
 	initComponent: function() {
 		
 		this.bindStore = this.store;
@@ -4282,8 +4284,10 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
         if (!field.editor.startEdit){
           field.editor = new Ext.grid.GridEditor(field.editor);
         }
+        
+        this.editable_fields[field.name] = 1;
 			}
-		});
+		},this);
 		
 		Ext.ux.RapidApp.AppPropertyGrid.superclass.initComponent.call(this);
 		

@@ -23,6 +23,13 @@ has 'reload_on_save' 	=> ( is => 'ro', default => 1 );
 
 has 'max_pagesize'		=> ( is => 'ro', isa => 'Maybe[Int]', default => undef );
 
+
+has 'onrequest_columns_munger' => (
+	is => 'ro',
+	isa => 'Maybe[RapidApp::Handler]',
+	default => undef
+);
+
 has 'read_raw_mungers' => (
 	traits    => [ 'Array' ],
 	is        => 'ro',
@@ -108,15 +115,8 @@ sub BUILD {
 sub store_init_onrequest {
 	my $self = shift;
 	
-	
-	
+	$self->onrequest_columns_munger->call($self->columns) if ($self->onrequest_columns_munger);
 
-	
-#	$self->add_event_handlers([ 
-#		'write', 
-#		RapidApp::JSONFunc->new( raw => 1, func => 'function(store, action, result, res, rs) { store.load(); }' )
-#	]) if ($self->reload_on_save);
-	
 	
 	$self->apply_extconfig( baseParams => $self->base_params ) if (
 		defined $self->base_params and
