@@ -472,6 +472,16 @@ sub unflatten_prune_update_packet {
 ## -- vv -- TableSpec Support
 has 'ignore_Result_TableSpec' => ( is => 'ro', isa => 'Bool', default => 0 );
 
+# Need to do this with an around istead of normal sub to make sure
+# we take over the sub from DataStore2. Not sure why since this gets
+# loaded *after* DataStore2
+around '_build_TableSpec' => sub {
+	my $orig = shift;
+	my $self = shift;
+	return undef if ($self->ignore_Result_TableSpec);
+	return $self->get_Result_class_TableSpec;
+};
+
 sub get_Result_class_TableSpec {
 	my $self = shift;
 	my $name = $self->ResultSource->source_name;
@@ -482,17 +492,6 @@ sub get_Result_class_TableSpec {
 		exclude_columns => $self->exclude_dbiclink_columns,
 	);
 }
-
-has 'TableSpec' => (
-	is => 'ro',
-	isa => 'Maybe[RapidApp::TableSpec]',
-	lazy => 1, 
-	default => sub {
-		my $self = shift;
-		return undef if ($self->ignore_Result_TableSpec);
-		return $self->get_Result_class_TableSpec;
-	}
-);
 # -- ^^ --
 
 

@@ -6,7 +6,9 @@ use RapidApp::Include qw(sugar perlutil);
 
 use RapidApp::DataStore2;
 
-has 'TableSpec' => ( is => 'rw', isa => 'Maybe[RapidApp::TableSpec]', default => undef );
+has 'TableSpec' => ( is => 'ro', isa => 'Maybe[RapidApp::TableSpec]', lazy_build => 1 );
+sub _build_TableSpec { undef; }
+
 has 'TableSpec_applied' => ( is => 'rw', isa => 'Bool', default => 0 );
 
 has 'record_pk'			=> ( is => 'ro', default => 'id' );
@@ -118,7 +120,7 @@ after 'BUILD' => sub {
 	my $self = shift;
 
 	## Apply the TableSpec if its defined ##
-	$self->apply_TableSpec_config if ($self->TableSpec);
+	$self->apply_TableSpec_config;
 };
 
 
