@@ -185,7 +185,10 @@ sub copy {
 		}
 	}
 	
-	my $Copy = $self->meta->clone_object($self,%attr);
+	# Need to use Clone::clone to ensure a deep copy. Discovered that with
+	# clone_object alone, deeper data scructures, such as 'columns' attribute,
+	# were only copied by reference, and not be deep data
+	my $Copy = $self->meta->clone_object(Clone::clone($self),%attr);
 	
 	foreach my $key (keys %other) {
 		$Copy->$key($other{$key}) if ($Copy->can($key));
