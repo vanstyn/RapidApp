@@ -29,16 +29,18 @@ sub apply_TableSpec {
 
 sub TableSpec_add_columns_from_related {
 	my $self = shift;
-	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-	
-	my $rels = \%opt;
+	my $rels = get_mixed_hash_args(@_);
 	
 	foreach my $rel (keys %$rels) {
 		my $conf = $rels->{$rel};
 		$conf = {} unless (ref($conf) eq 'HASH');
 		$conf->{column_property_transforms}->{name} = sub { $rel . '_' . $_ };
-	
+		
 		my $info = $self->relationship_info($rel) or next;
+		
+		# Make sure the related class is already loaded:
+		eval 'use ' . $info->{class};
+		
 		my $TableSpec = $info->{class}->TableSpec->copy($conf) or next;
 		
 		$self->TableSpec->add_columns_from_TableSpec($TableSpec);

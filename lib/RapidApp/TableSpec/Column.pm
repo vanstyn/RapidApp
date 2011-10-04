@@ -55,6 +55,8 @@ sub update_valid_properties {
 }
 =cut
 
+#$SIG{__WARN__} = sub { croak @_; };
+
 
 sub get_property {
 	my $self = shift;
@@ -68,6 +70,7 @@ sub get_property {
 
 sub set_properties {
 	my $self = shift;
+	
 	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	foreach my $key (keys %new) {
