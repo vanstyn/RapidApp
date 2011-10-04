@@ -24,6 +24,10 @@ has 'column_property_transforms' => ( is => 'ro', isa => 'Maybe[HashRef[CodeRef]
 # Hash of static changes to apply to named properties of all Columns
 has 'column_properties' => ( is => 'ro', isa => 'Maybe[HashRef]', default => undef );
 
+# Hash of static properties initially applied to all Columns (if not already set)
+has 'default_column_properties' => ( is => 'ro', isa => 'Maybe[HashRef]', default => undef );
+
+
 has 'columns'  => (
 	traits	=> ['Hash'],
 	is        => 'ro',
@@ -38,7 +42,21 @@ has 'columns'  => (
 		 num_columns		=> 'count'
 	}
 );
-after 'apply_columns' => sub { (shift)->prune_invalid_columns };
+around 'apply_columns' => sub { 
+	my $orig = shift;
+	my $self = shift;
+	my %cols = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+
+	my $def = $self->default_column_properties;
+	if ($def) {
+		foreach my $Column (values %cols) {
+			$Column->set_properties_If($def);
+		}
+	}
+
+	$self->$orig(%cols);
+	$self->prune_invalid_columns;
+};
 around 'column_list' => sub {
 	my $orig = shift;
 	my $self = shift;

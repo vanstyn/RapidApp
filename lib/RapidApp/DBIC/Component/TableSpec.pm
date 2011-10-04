@@ -56,6 +56,8 @@ sub TableSpec_add_relationship_columns {
 		my $conf = $rels->{$rel};
 		$conf = {} unless (ref($conf) eq 'HASH');
 		
+		$conf = { %{ $self->TableSpec->default_column_properties }, %$conf } if ( $self->TableSpec->default_column_properties );
+		
 		die "displayField is required" unless (defined $conf->{displayField});
 		
 		$conf->{render_col} = $rel . '_' . $conf->{displayField} unless ($conf->{render_col});

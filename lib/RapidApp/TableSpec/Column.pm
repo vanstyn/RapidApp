@@ -81,6 +81,18 @@ sub set_properties {
 	}
 }
 
+# Only sets properties not already defined:
+sub set_properties_If {
+	my $self = shift;
+	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	foreach my $prop (keys %new) {
+		$self->get_property($prop) and delete $new{$prop};
+	}
+	
+	return $self->set_properties(%new);
+}
+
 sub all_properties_hash {
 	my $self = shift;
 	
