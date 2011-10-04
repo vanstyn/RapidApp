@@ -12,8 +12,9 @@ use RapidApp::Handler;
 use RapidApp::DefaultOverride qw(override_defaults merge_defaults);
 use RapidApp::Debug;
 use HTML::Entities;
+use Scalar::Util qw(blessed);
 
-our @EXPORT = qw(sessvar perreq asjson rawjs mixedjs ashtml rawhtml usererr userexception override_defaults merge_defaults DEBUG);
+our @EXPORT = qw(sessvar perreq asjson rawjs mixedjs ashtml rawhtml usererr userexception override_defaults merge_defaults DEBUG jsfunc);
 
 # Module shortcuts
 #
@@ -47,10 +48,28 @@ sub rawjs {
 	return RapidApp::JSON::RawJavascript->new(js=>$_[0]);
 }
 
+# Works like rawjs but accepts a list of arguments. Each argument should be a function defintion,
+# and will be stacked together, passing each function in the chain through the first argument
+sub jsfunc {
+	my $js = shift or die "At least one argument is required";
+	blessed $js and not $js->can('TO_JSON_RAW') and 
+		die "jsfunc: arguments must be JavaScript function definition strings or objects with TO_JSON_RAW methods";
+	
+	$js = $js->TO_JSON_RAW if (blessed $js);
+	
+	$js = 'function(){ ' .
+		'var args = arguments; ' .
+		'args[0] = (' . $js . ').apply(this,arguments); ' .
+		'return (' . jsfunc(@_) . ').apply(this,args); ' .
+	'}' if (scalar @_ > 0);
+	
+	return RapidApp::JSON::RawJavascript->new(js=>$js)
+}
+
 # Encode a mix of javascript and data into appropriate objects that will get converted
 #  to JSON properly during "asjson".
 #
-# Example:  mixedjs "function() { my data=", { a => $foo, b => $bar }, "; Ext.msg.alert(data); }";
+# Example:  mixedjs "function() { var data=", { a => $foo, b => $bar }, "; Ext.msg.alert(data); }";
 # See ScriptWithData for more details.
 #
 sub mixedjs {

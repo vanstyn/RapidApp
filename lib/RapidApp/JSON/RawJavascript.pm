@@ -4,6 +4,13 @@ use strict;
 use warnings;
 use Moose;
 
+use overload '""' => sub { (shift)->stringify(@_) };
+
+sub stringify {
+	my $self = shift;
+	return $self->TO_JSON_RAW;
+}
+
 has 'js' => ( is => 'rw', isa => 'Str' );
 
 around BUILDARGS => sub {
