@@ -86,11 +86,7 @@ sub TableSpec_add_relationship_columns {
 			my $column_params = {
 				name => $rel,
 				required_fetch_columns => [ $key_col,$render_col ],
-				renderer => RapidApp::JSONFunc->new( raw => 1, func => 
-					'function(value, metaData, record, rowIndex, colIndex, store) {' .
-						'return record.data["' . $render_col . '"];' .
-					'}' 
-				),
+				
 				read_raw_munger => RapidApp::Handler->new( code => sub {
 					my $rows = (shift)->{rows};
 					$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
@@ -111,6 +107,12 @@ sub TableSpec_add_relationship_columns {
 				no_quick_search => \1,
 				no_multifilter => \1
 			};
+			
+			$conf->{renderer} = jsfunc(
+				'function(value, metaData, record, rowIndex, colIndex, store) {' .
+					'return record.data["' . $render_col . '"];' .
+				'}', $conf->{renderer}
+			);
 			
 			if ($auto_editor_type eq 'combo') {
 			

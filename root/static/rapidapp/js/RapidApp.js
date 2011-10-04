@@ -4332,3 +4332,7 @@ Ext.ux.RapidApp.newXTemplate = function(arg) {
   return new Ext.XTemplate(tpl,parms);
 }
 
+
+Ext.ux.RapidApp.renderRed = function(val) {
+	return '<span style="color:red;">' + val + '</span>'; 
+}

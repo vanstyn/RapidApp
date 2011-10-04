@@ -732,7 +732,7 @@ sub Row_tree_update_recursive {
 		$Row->can($rel) 
 			or die '"' . $rel . '" is not an accessor method of Row object; Row_tree_update_recursive failed.';
 		
-		my $Related = $Row->$rel;
+		my $Related = $Row->$rel or next;
 		
 		$Related->isa('DBIx::Class::Row') 
 			or die '"' . $rel . '" (' . ref($Related) . ') is not a DBIx::Class::Row object; Row_tree_update_recursive failed.';

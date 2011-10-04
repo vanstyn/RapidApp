@@ -57,6 +57,9 @@ sub jsfunc {
 	
 	$js = $js->TO_JSON_RAW if (blessed $js);
 	
+	# Remove undef arguments:
+	@_ = grep { defined $_ } @_;
+	
 	$js = 'function(){ ' .
 		'var args = arguments; ' .
 		'args[0] = (' . $js . ').apply(this,arguments); ' .
