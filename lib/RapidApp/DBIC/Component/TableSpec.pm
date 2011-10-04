@@ -36,7 +36,7 @@ sub TableSpec_add_columns_from_related {
 	foreach my $rel (keys %$rels) {
 		my $conf = $rels->{$rel};
 		$conf = {} unless (ref($conf) eq 'HASH');
-		$conf->{column_property_transforms}->{name} = sub { $rel . '_' . (shift) };
+		$conf->{column_property_transforms}->{name} = sub { $rel . '_' . $_ };
 	
 		my $info = $self->relationship_info($rel) or next;
 		my $TableSpec = $info->{class}->TableSpec->copy($conf) or next;
