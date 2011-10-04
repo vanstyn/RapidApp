@@ -504,7 +504,7 @@ sub get_Result_class_TableSpec {
 	# context (because we probably haven't joined on all possible rels defined in the
 	# TableSpec). We do also add the bare rel names so they get added by TableSpec if
 	# it has relationship columns.
-	# (Note that this doesn't yet work except for 1st level joins -- or does it?)
+	# (This should work just as well for multi-level joins)
 	$self->init_apply_columns;
 	$self->add_limit_dbiclink_columns(keys %{ $self->columns });
 	# All of the defined "relationship columns" from TableSpec will have names matching
@@ -518,7 +518,7 @@ sub get_Result_class_TableSpec {
 	my $TableSpec = $Class->TableSpec;
 	# -- vvv -- Another possible way of addressing the problem (above) --
 	# -- Exclude columns from relationships we aren't joining on:
-	# TODO: make this work for multiple levels deep:
+	# TODO: make this work for join multiple levels deep:
 	#my $joins = { map {$_ => 1} @{ $self->joins } };
 	#foreach my $rel ( keys %{ $Class->TableSpec_rel_columns } ) {
 	#	$self->add_exclude_dbiclink_columns(@{ $Class->TableSpec_rel_columns->{$rel} }) unless ($joins->{$rel})
@@ -527,15 +527,35 @@ sub get_Result_class_TableSpec {
 	
 	# copy limit/exclude columns in both directions:
 	
-	# from TableSpec:
+	# From TableSpec:
 	$self->add_limit_dbiclink_columns(@{ $TableSpec->limit_columns }) if (defined $TableSpec->limit_columns);
 	$self->add_exclude_dbiclink_columns(@{ $TableSpec->exclude_columns }) if (defined $TableSpec->exclude_columns);
 	
-	# To TableSpec:
-	return $TableSpec->copy( 
-		limit_columns => $self->limit_dbiclink_columns,
-		exclude_columns => $self->exclude_dbiclink_columns,
+	# ---
+	# Need to manually re-apply include/excludes because we are already beyond the
+	# point of execution where they are considered and applied
+	my $exclude = { map {$_ => 1} @{$self->exclude_dbiclink_columns} };
+	my $limit = { map {$_ => 1} @{$self->limit_dbiclink_columns} };
+	$limit = undef unless (scalar(keys %$limit) > 1);
+	grep {
+		delete $self->columns->{$_} if(
+			($limit and not $limit->{$_}) or
+			$exclude->{$_}
+		);
+	} keys %{$self->columns};
+	@{$self->column_order} = grep { $self->columns->{$_} } @{$self->column_order};
+	# ---
+	
+	my %opt = (
+		limit_columns => [ @{ $self->limit_dbiclink_columns || [] } ],
+		exclude_columns => [ @{ $self->exclude_dbiclink_columns || [] } ]
 	);
+	
+	scalar(@{ $opt{limit_columns} } == 0) and delete $opt{limit_columns};
+	scalar(@{ $opt{exclude_columns} } == 0) and delete $opt{exclude_columns};
+	
+	# To TableSpec:
+	return $TableSpec->copy(%opt);
 }
 # -- ^^ --
 
