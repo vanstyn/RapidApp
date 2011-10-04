@@ -152,6 +152,8 @@ sub add_columns {
 	my $self = shift;
 	my @cols = (@_);
 	
+	my @added = ();
+	
 	foreach my $col (@cols) {
 		my $Column;
 		$Column = $col if (ref($col) eq 'RapidApp::TableSpec::Column');
@@ -165,9 +167,11 @@ sub add_columns {
 		#die "A column named " . $Column->name . ' already exists.' if (defined $self->has_column($Column->name));
 		
 		$self->apply_columns( $Column->name => $Column );
+		push @added, $Column;
 	}
 	
 	$self->update_column_permissions_roles_code;
+	return @added;
 }
 
 
@@ -235,9 +239,11 @@ sub add_columns_from_TableSpec {
 	my $self = shift;
 	my $TableSpec = shift;
 	
+	my @added = ();
+	
 	foreach my $Column ($TableSpec->column_list_ordered) {
 		$Column->clear_order;
-		$self->add_columns($Column);
+		push @added, $self->add_columns($Column);
 	}
 	
 	# Apply foreign TableSpec's limit/exclude columns:
@@ -254,6 +260,8 @@ sub add_columns_from_TableSpec {
 	push @exclude, @{ $TableSpec->exclude_columns } if ($TableSpec->exclude_columns);
 	@exclude = grep { not $seen{$_}++ } @exclude;
 	$self->exclude_columns(\@exclude) if (scalar @exclude > 0);
+	
+	return @added;
 }
 
 

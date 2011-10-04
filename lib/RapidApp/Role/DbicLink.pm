@@ -502,6 +502,13 @@ sub get_Result_class_TableSpec {
 	return undef unless ($Class->can('TableSpec'));
 	
 	my $TableSpec = $Class->TableSpec;
+	# vv -- Exclude columns from relationships we aren't joining on:
+	# TODO: make this work for multiple levels deep:
+	my $joins = { map {$_ => 1} @{ $self->joins } };
+	foreach my $rel ( keys %{ $Class->TableSpec_rel_columns } ) {
+		$self->add_exclude_dbiclink_columns(@{ $Class->TableSpec_rel_columns->{$rel} }) unless ($joins->{$rel})
+	}
+	# ^^ --
 	
 	# copy limit/exclude columns in both directions:
 	

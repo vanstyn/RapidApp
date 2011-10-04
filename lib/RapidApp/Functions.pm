@@ -47,6 +47,14 @@ sub get_mixed_hash_args {
 	return $hashref;
 }
 
+# returns \0 and \1 and 0 and 1, and returns 0 and 1 as 0 and 1
+sub jstrue {
+	my $v = shift;
+	ref($v) eq 'SCALAR' and return $$v;
+	return $v;
+}
+
+
 # The coderefs supplied here get called immediately after the
 # _load_root_module method in RapidApp/RapidApp.pm
 sub rapidapp_add_global_init_coderef {

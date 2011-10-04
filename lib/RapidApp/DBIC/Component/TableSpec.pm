@@ -11,6 +11,7 @@ use RapidApp::TableSpec;
 use RapidApp::DbicAppCombo2;
 
 __PACKAGE__->mk_classdata( 'TableSpec' );
+__PACKAGE__->mk_classdata( 'TableSpec_rel_columns' );
 
 sub apply_TableSpec {
 	my $self = shift;
@@ -24,6 +25,8 @@ sub apply_TableSpec {
 	foreach my $col ($self->columns) {
 		$self->TableSpec->add_columns( { name => $col } ); 
 	}
+	
+	$self->TableSpec_rel_columns({});
 }
 
 
@@ -43,7 +46,11 @@ sub TableSpec_add_columns_from_related {
 		
 		my $TableSpec = $info->{class}->TableSpec->copy($conf) or next;
 		
-		$self->TableSpec->add_columns_from_TableSpec($TableSpec);
+		my @added = $self->TableSpec->add_columns_from_TableSpec($TableSpec);
+		foreach my $Column (@added) {
+			$self->TableSpec_rel_columns->{$rel} = [] unless ($self->TableSpec_rel_columns->{$rel});
+			push @{$self->TableSpec_rel_columns->{$rel}}, $Column->name;
+		}
 	}
 }
 
@@ -142,7 +149,11 @@ sub TableSpec_add_relationship_columns {
 				$column_params->{editor} = $Module->content;
 			}
 			
-			$self->TableSpec->add_columns({ %$column_params, %$conf });
+			my @added = $self->TableSpec->add_columns({ %$column_params, %$conf });
+			foreach my $Column (@added) {
+				$self->TableSpec_rel_columns->{$rel} = [] unless ($self->TableSpec_rel_columns->{$rel});
+				push @{$self->TableSpec_rel_columns->{$rel}}, $Column->name;
+			}
 			
 		});	
 	}
