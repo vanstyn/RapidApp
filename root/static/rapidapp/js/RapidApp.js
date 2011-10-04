@@ -4336,3 +4336,10 @@ Ext.ux.RapidApp.newXTemplate = function(arg) {
 Ext.ux.RapidApp.renderRed = function(val) {
 	return '<span style="color:red;">' + val + '</span>'; 
 }
+
+Ext.ux.RapidApp.boolCheckMark = function(val) {
+	if (val == null || val === "" || val <= 0) { 
+		return '<img src="/static/ext/resources/images/default/s.gif" class="icon-12x12 icon-cross-light">';
+	}
+	return '<img src="/static/ext/resources/images/default/s.gif" class="icon-12x12 icon-checkmark">';
+}

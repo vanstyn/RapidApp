@@ -33,6 +33,13 @@ pre {
   background-repeat: no-repeat;
 }
 
+.icon-14x14 {
+  height: 14px;
+  width: 14px;
+  background-size:14px 14px;
+  background-repeat: no-repeat;
+}
+
 .icon-12x12 {
   height: 12px;
   width: 12px;
@@ -151,6 +158,8 @@ pre {
 .icon-loading { background-image: url(/static/ext/resources/images/default/grid/loading.gif) !important; }
 .icon-refresh { background-image: url(/static/ext/resources/images/gray/grid/refresh.gif) !important; }
 
+.icon-checkmark { background-image: url(/static/rapidapp/images/checkmark.png) !important; }
+.icon-cross-light { background-image: url(/static/rapidapp/images/cross_light.png) !important; }
 
 .tbar-title-medium {
 	font-size:175% !important;
