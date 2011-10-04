@@ -72,9 +72,6 @@ before 'BUILD' => sub { (shift)->DataStore2_BUILD };
 sub DataStore2_BUILD {
 	my $self = shift;
 	
-	# Init (but don't apply) TableSpec early
-	$self->TableSpec;
-
 	my $store_params = { 
 		record_pk 		=> $self->record_pk,
 		max_pagesize	=> $self->max_pagesize
@@ -116,6 +113,9 @@ sub DataStore2_BUILD {
 	
 	$self->add_ONREQUEST_calls('store_init_onrequest');
 	$self->add_ONREQUEST_calls_late('apply_store_to_extconfig');
+	
+	# Init (but don't apply) TableSpec early
+	$self->TableSpec;
 }
 
 

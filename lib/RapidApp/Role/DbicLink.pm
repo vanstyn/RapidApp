@@ -212,11 +212,7 @@ sub _build_join_map {
 	return $map;
 }
 
-has 'join_col_prefix_map' => (
-	is => 'ro',
-	isa => 'HashRef',
-	lazy_build => 1 );
-
+has 'join_col_prefix_map' => ( is => 'ro', isa => 'HashRef', lazy_build => 1 );
 sub _build_join_col_prefix_map {
 	my $self= shift;
 	my $map = {};
@@ -501,14 +497,33 @@ sub get_Result_class_TableSpec {
 	my $Class = $self->ResultSource->schema->class($name);
 	return undef unless ($Class->can('TableSpec'));
 	
+	# -- vvv -- One possible way of addressing this problem --
+	# Here we are initializing the DbicLink columns earlier than normal (because this
+	# gets called from within DataStore2) so we can have them and limit our columns
+	# to them to prevent the TableSpec from adding columns that do not exist for this
+	# context (because we probably haven't joined on all possible rels defined in the
+	# TableSpec). We do also add the bare rel names so they get added by TableSpec if
+	# it has relationship columns.
+	# (Note that this doesn't yet work except for 1st level joins -- or does it?)
+	$self->init_apply_columns;
+	$self->add_limit_dbiclink_columns(keys %{ $self->columns });
+	# All of the defined "relationship columns" from TableSpec will have names matching
+	# the keys in join_col_prefix_map because the same name algorithm/process is applied
+	# to naming the relationship columns (same name as the relationship) and then pulling
+	# related relationship columns from related TableSpecs, relname_colname, where colname
+	# is actually a relname itself
+	$self->add_limit_dbiclink_columns(keys %{ $self->join_col_prefix_map });
+	# -- ^^^ --
+	
 	my $TableSpec = $Class->TableSpec;
-	# vv -- Exclude columns from relationships we aren't joining on:
+	# -- vvv -- Another possible way of addressing the problem (above) --
+	# -- Exclude columns from relationships we aren't joining on:
 	# TODO: make this work for multiple levels deep:
-	my $joins = { map {$_ => 1} @{ $self->joins } };
-	foreach my $rel ( keys %{ $Class->TableSpec_rel_columns } ) {
-		$self->add_exclude_dbiclink_columns(@{ $Class->TableSpec_rel_columns->{$rel} }) unless ($joins->{$rel})
-	}
-	# ^^ --
+	#my $joins = { map {$_ => 1} @{ $self->joins } };
+	#foreach my $rel ( keys %{ $Class->TableSpec_rel_columns } ) {
+	#	$self->add_exclude_dbiclink_columns(@{ $Class->TableSpec_rel_columns->{$rel} }) unless ($joins->{$rel})
+	#}
+	# -- ^^^ --
 	
 	# copy limit/exclude columns in both directions:
 	
@@ -550,6 +565,18 @@ sub DbicLink_around_BUILD {
 	
 	$self->$orig(@_);
 	
+	$self->init_apply_columns;
+
+	
+	$self->add_ONREQUEST_calls('check_can_delete_rows');
+}
+
+
+has '_init_apply_columns_applied' => ( is => 'rw', isa => 'Bool', default => 0 );
+sub init_apply_columns {
+	my $self = shift;
+	return if ($self->_init_apply_columns_applied);
+
 	$self->apply_primary_columns($self->record_pk); # <-- should be redundant
 	
 	# currently this is needed for "delete_row" support -- different from "destroy" and will
@@ -612,8 +639,7 @@ sub DbicLink_around_BUILD {
 	
 	#init column_required_fetch_columns
 	$self->column_required_fetch_columns;
-	
-	$self->add_ONREQUEST_calls('check_can_delete_rows');
+	$self->_init_apply_columns_applied(1);
 }
 
 #after BUILD => sub {
