@@ -4343,3 +4343,13 @@ Ext.ux.RapidApp.boolCheckMark = function(val) {
 	}
 	return '<img src="/static/ext/resources/images/default/s.gif" class="icon-12x12 icon-checkmark">';
 }
+
+// Returns a date formatter function based on the supplied format:
+Ext.ux.RapidApp.getDateFormatter = function(format) {
+	if (!format) { format = "Y-m-d H:i:s"; }
+	return function(date) {
+		var dt = Date.parseDate(date,"Y-m-d H:i:s");
+		if (! dt) { return date; }
+		return dt.format(format);
+	}
+}
