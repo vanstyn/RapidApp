@@ -13,6 +13,9 @@ sub stringify {
 
 has 'js' => ( is => 'rw', isa => 'Str' );
 
+# compat with RapidApp::JSONFunc API:
+sub func { (shift)->js }
+
 around BUILDARGS => sub {
 	my $orig= shift;
 	my $class= shift;
