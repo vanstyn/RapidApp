@@ -14,7 +14,7 @@ use RapidApp::Debug;
 use HTML::Entities;
 use Scalar::Util qw(blessed);
 
-our @EXPORT = qw(sessvar perreq asjson rawjs mixedjs ashtml rawhtml usererr userexception override_defaults merge_defaults DEBUG jsfunc);
+our @EXPORT = qw(sessvar perreq asjson rawjs mixedjs ashtml rawhtml usererr userexception override_defaults merge_defaults DEBUG jsfunc blessed);
 
 # Module shortcuts
 #
@@ -51,7 +51,10 @@ sub rawjs {
 # Works like rawjs but accepts a list of arguments. Each argument should be a function defintion,
 # and will be stacked together, passing each function in the chain through the first argument
 sub jsfunc {
-	my $js = shift or die "At least one argument is required";
+	my $js = shift or die "jsfunc(): At least one argument is required";
+	
+	return jsfunc(@$js) if (ref($js) eq 'ARRAY');
+	
 	blessed $js and not $js->can('TO_JSON_RAW') and 
 		die "jsfunc: arguments must be JavaScript function definition strings or objects with TO_JSON_RAW methods";
 	

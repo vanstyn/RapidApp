@@ -27,7 +27,7 @@ BEGIN{ Moose->init_meta(for_class => __PACKAGE__, metaclass => 'RapidApp::Column
 
 use Moose;
 
-use Term::ANSIColor qw(:constants);
+use RapidApp::Include qw(sugar perlutil);
 
 our $VERSION = '0.1';
 
@@ -187,7 +187,12 @@ has 'renderer' => (
 	is => 'rw', lazy => 1, 
 	default => undef,
 	traits => [ 'RapidApp::Role::GridColParam' ],
-	trigger => \&_set_renderer
+	trigger => \&_set_renderer,
+	initializer => sub {
+		my ($self, $value, $setter, $attr) = @_;
+		$value = jsfunc($value) if (defined $value and not blessed $value);
+		$setter->($value);
+	},
 );
 
 sub _set_renderer {
@@ -196,6 +201,10 @@ sub _set_renderer {
 	
 	$self->xtype(undef);
 	$self->tpl(undef);
+	
+	return unless (defined $new and not blessed $new);
+	my $attr = $self->meta->find_attribute_by_name('renderer') or return;
+	$attr->set_value($self,jsfunc($new));
 }
 
 
