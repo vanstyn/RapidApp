@@ -71,6 +71,9 @@ sub BUILD {}
 before 'BUILD' => sub { (shift)->DataStore2_BUILD };
 sub DataStore2_BUILD {
 	my $self = shift;
+	
+	# Init (but don't apply) TableSpec early
+	$self->TableSpec;
 
 	my $store_params = { 
 		record_pk 		=> $self->record_pk,

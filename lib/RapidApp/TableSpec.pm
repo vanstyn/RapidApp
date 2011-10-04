@@ -194,6 +194,22 @@ sub copy {
 		$Copy->$key($other{$key}) if ($Copy->can($key));
 	}
 	
+	# If column property transforms (name) was supplied, use it to transform
+	# limit/exclude columns:
+	if($opts{column_property_transforms} and $opts{column_property_transforms}{name}) {
+		my $sub = $opts{column_property_transforms}{name};
+		
+		if($Copy->limit_columns) {
+			my @limit = map { $sub->() } @{ $Copy->limit_columns };
+			$Copy->limit_columns(\@limit) if (scalar @limit > 0);
+		}
+		
+		if ($Copy->exclude_columns) {
+			my @exclude = map { $sub->() } @{ $Copy->exclude_columns };
+			$Copy->exclude_columns(\@exclude) if (scalar @exclude > 0);
+		}
+	}
+	
 	return $Copy;
 }
 
@@ -205,6 +221,21 @@ sub add_columns_from_TableSpec {
 		$Column->clear_order;
 		$self->add_columns($Column);
 	}
+	
+	# Apply foreign TableSpec's limit/exclude columns:
+	my %seen = ();
+	my @limit = ();
+	push @limit, @{ $self->limit_columns } if ($self->limit_columns);
+	push @limit, @{ $TableSpec->limit_columns } if ($TableSpec->limit_columns);
+	@limit = grep { not $seen{$_}++ } @limit;
+	$self->limit_columns(\@limit) if (scalar @limit > 0);
+	
+	%seen = ();
+	my @exclude = ();
+	push @exclude, @{ $self->exclude_columns } if ($self->exclude_columns);
+	push @exclude, @{ $TableSpec->exclude_columns } if ($TableSpec->exclude_columns);
+	@exclude = grep { not $seen{$_}++ } @exclude;
+	$self->exclude_columns(\@exclude) if (scalar @exclude > 0);
 }
 
 

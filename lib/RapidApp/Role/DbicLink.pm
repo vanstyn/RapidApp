@@ -261,6 +261,7 @@ has 'limit_dbiclink_columns' => (
 	}
 );
 sub _build_limit_dbiclink_columns { return [] }
+after add_limit_dbiclink_columns => sub { (shift)->regen_limit_exclude_dbiclink_columns };
 
 
 has '_limit_dbiclink_columns_hash' => (
@@ -293,6 +294,7 @@ has 'exclude_dbiclink_columns' => (
 		has_no_exclude_dbiclink_columns 	=> 'is_empty',
 	}
 );
+after add_exclude_dbiclink_columns => sub { (shift)->regen_limit_exclude_dbiclink_columns };
 
 has '_exclude_dbiclink_columns_hash' => (
 	traits    => [ 'Hash' ],
@@ -311,6 +313,17 @@ has '_exclude_dbiclink_columns_hash' => (
 		return $h;
 	}
 );
+
+sub regen_limit_exclude_dbiclink_columns {
+	my $self = shift;
+	my $attr = $self->meta->find_attribute_by_name('_exclude_dbiclink_columns_hash') or die "no _exclude_dbiclink_columns_hash attr";
+	$attr->clear_value($self);
+	$self->_exclude_dbiclink_columns_hash;
+	
+	$attr = $self->meta->find_attribute_by_name('_limit_dbiclink_columns_hash') or die "no _limit_dbiclink_columns_hash";
+	$attr->clear_value($self); 
+	$self->_limit_dbiclink_columns_hash;
+}
 
 # dbiclink_colspec is a user-friendly configuration parameter of a list of
 # DBIC column names, in "relation.relation.col" notation.
@@ -487,7 +500,17 @@ sub get_Result_class_TableSpec {
 	my $name = $self->ResultSource->source_name;
 	my $Class = $self->ResultSource->schema->class($name);
 	return undef unless ($Class->can('TableSpec'));
-	return $Class->TableSpec->copy( 
+	
+	my $TableSpec = $Class->TableSpec;
+	
+	# copy limit/exclude columns in both directions:
+	
+	# from TableSpec:
+	$self->add_limit_dbiclink_columns(@{ $TableSpec->limit_columns }) if (defined $TableSpec->limit_columns);
+	$self->add_exclude_dbiclink_columns(@{ $TableSpec->exclude_columns }) if (defined $TableSpec->exclude_columns);
+	
+	# To TableSpec:
+	return $TableSpec->copy( 
 		limit_columns => $self->limit_dbiclink_columns,
 		exclude_columns => $self->exclude_dbiclink_columns,
 	);
