@@ -27,6 +27,7 @@ has 'column_properties' => ( is => 'ro', isa => 'Maybe[HashRef]', default => und
 # Hash of static properties initially applied to all Columns (if not already set)
 has 'default_column_properties' => ( is => 'ro', isa => 'Maybe[HashRef]', default => undef );
 
+has 'profile_definitions' => ( is => 'ro', isa => 'Maybe[HashRef]', default => undef );
 
 has 'columns'  => (
 	traits	=> ['Hash'],
@@ -158,6 +159,7 @@ sub add_columns {
 		my $Column;
 		$Column = $col if (ref($col) eq 'RapidApp::TableSpec::Column');
 		unless ($Column) {
+			$col->{profile_definitions} = $self->profile_definitions if ($self->profile_definitions);
 			$Column = RapidApp::TableSpec::Column->new($col);
 			$Column->set_properties($col);
 		}
