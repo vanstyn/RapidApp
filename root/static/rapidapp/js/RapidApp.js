@@ -3984,7 +3984,9 @@ Ext.ux.grid.PropertyStore = function(grid, source){
 Ext.extend(Ext.ux.grid.PropertyStore, Ext.util.Observable, {
     setSource : function(o,fields){
         this.source = o;
-        this.store.removeAll();
+        // -- removed by HV -- 
+        // this doesn't seem to be needed and causes the page to jump around:
+        //this.store.removeAll();
         var data = [];
 
         if (fields) {
@@ -4302,6 +4304,8 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 	},
 	
 	onPropertyChange: function(source,recordId,value,oldValue) {
+		//console.log('old: "' + oldValue + '"');
+		//console.log('new: "' + value + '"');
 		this.bindRecord.beginEdit();
 		this.bindRecord.set(recordId,value);
 		this.bindRecord.endEdit();
