@@ -13,17 +13,49 @@ use RapidApp::DbicAppCombo2;
 __PACKAGE__->mk_classdata( 'TableSpec' );
 __PACKAGE__->mk_classdata( 'TableSpec_rel_columns' );
 
+# See default profile definitions in RapidApp::TableSpec::Column
+__PACKAGE__->mk_classdata( 'TableSpec_data_type_profiles' );
+__PACKAGE__->TableSpec_data_type_profiles({
+	text 			=> [ 'bigtext' ],
+	blob 			=> [ 'bigtext' ],
+	varchar 		=> [ 'text' ],
+	char 			=> [ 'text' ],
+	float			=> [ 'number' ],
+	integer		=> [ 'number', 'int' ],
+	tinyint		=> [ 'number', 'int' ],
+	mediumint	=> [ 'number', 'int' ],
+	bigint		=> [ 'number', 'int' ],
+	datetime		=> [ 'datetime' ],
+	timestamp	=> [ 'datetime' ],
+});
+
 sub apply_TableSpec {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	$self->TableSpec_data_type_profiles(
+		%{ $self->TableSpec_data_type_profiles || {} },
+		%{ delete $opt{TableSpec_data_type_profiles} || {} }
+	);
 	
 	$self->TableSpec(RapidApp::TableSpec->new( 
 		name => $self->table,
 		%opt
 	));
 	
+	my $data_types = $self->TableSpec_data_type_profiles;
+	
 	foreach my $col ($self->columns) {
-		$self->TableSpec->add_columns( { name => $col } ); 
+		my $info = $self->column_info($col);
+		my @profiles = ();
+		
+		push @profiles, $info->{is_nullable} ? 'nullable' : 'notnull';
+		
+		my $type_profile = $data_types->{$info->{data_type}} || ['text'];
+		$type_profile = [ $type_profile ] unless (ref $type_profile);
+		push @profiles, @$type_profile; 
+		
+		$self->TableSpec->add_columns( { name => $col, profiles => \@profiles } ); 
 	}
 	
 	$self->TableSpec_rel_columns({});

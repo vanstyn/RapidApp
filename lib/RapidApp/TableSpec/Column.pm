@@ -34,6 +34,9 @@ sub DEFAULT_PROFILES {{
 		number => {
 			editor => { xtype => 'numberfield', style => 'text-align:left;' }
 		},
+		int => {
+		
+		},
 		bool => {
 			renderer => ['Ext.ux.RapidApp.boolCheckMark'],
 			editor => { xtype => 'checkbox', plugins => [ 'booltoint' ] }
@@ -58,6 +61,9 @@ sub DEFAULT_PROFILES {{
 		},
 		percent => {
 			 renderer => ['Ext.ux.GreenSheet.num2pct']
+		},
+		noedit => {
+			editor => { xtype => 'label' }
 		}
 
 }};
@@ -71,17 +77,21 @@ around BUILDARGS => sub {
 	my $profile_defs = $class->_build_profile_definitions;
 	$profile_defs = merge($profile_defs, delete $params{profile_definitions}) if ($params{profile_definitions});
 	
+	$params{properties_underlay} = {} unless ($params{properties_underlay});
+	$params{profiles} = [ $params{profiles} ] if ($params{profiles} and not ref($params{profiles}));
+	
 	my @base_profiles = ( $class->DEFAULT_BASE_PROFILES );
-	push @base_profiles, @{ delete $params{base_profiles} } if ($params{base_profiles});
+	push @base_profiles, @{ delete $params{base_profiles} } if($params{base_profiles});
+	my @profiles = @base_profiles;
+	push @profiles, @{ delete $params{profiles} } if ($params{profiles});
 	
 	# Apply/merge profiles if defined:
-	$class->collapse_apply_profiles($profile_defs,\%params,@base_profiles);
+	$class->collapse_apply_profiles($profile_defs,$params{properties_underlay},@profiles);
 	
 	$params{profile_definitions} = $profile_defs;
 	$params{base_profiles} = \@base_profiles;
 	return $class->$orig(%params);
 };
-
 
 
 sub collapse_apply_profiles {
@@ -90,19 +100,30 @@ sub collapse_apply_profiles {
 	my $target = shift or die "collapse_apply_profiles(): missing arguments";
 	my @base_profiles = @_;
 	
-	my $profiles = delete $target->{profiles} || [];
+	my $profiles = [];
+	$profiles = delete $target->{profiles} if($target->{profiles});
 	$profiles = [ $profiles ] unless (ref $profiles);
 	@$profiles = (@base_profiles,@$profiles);
 	
 	return unless (scalar @$profiles > 0);
 	
+	#my $h = { map {$_ => 1} @$profiles };
+	#scream($target) if ($h->{noedit});
+	
 	my $collapsed = {};
 	foreach my $profile (@$profiles) {
 		my $opt = $profile_defs->{$profile} or next;
+		
+		#scream_color(CYAN . BOLD,$opt) if ($h->{noedit});
+		
 		%$collapsed = %{ merge($collapsed,$opt) };
+		
+		#scream_color(MAGENTA . BOLD,$collapsed) if ($h->{noedit});
 	}
 
 	%$target = %{ merge($collapsed, $target) };
+	
+	#scream_color(GREEN . BOLD,$target) if ($h->{noedit});
 }
 
 
@@ -122,7 +143,32 @@ sub _build_profile_definitions {
 	return $defs;
 }
 
+# properties that get merged under actual properties - collapsed from profiles:
+has 'properties_underlay' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
+sub apply_profiles {
+	my $self = shift;
+	my @profiles = @_;
+	@profiles = @{$_[0]} if (ref $_[0]);
+	
+	return unless (scalar @profiles > 0);
+	
+	$self->collapse_apply_profiles(
+		$self->profile_definitions,
+		$self->properties_underlay,
+		@profiles
+	);
+}
 
+has 'exclude_attr_property_names' => ( 
+	is => 'ro', isa => 'HashRef',
+	default => sub {  
+		my @list = (
+			'exclude_property_names',
+			'properties_underlay',
+			'_other_properties'
+		);
+		return { map {$_ => 1} @list };
+});
 
 =pod
 has 'limit_properties' => ( is => 'rw', isa => 'Maybe[ArrayRef[Str]]', default => undef, trigger => \&update_valid_properties );
@@ -160,20 +206,22 @@ sub get_property {
 	my $attr = $self->meta->get_attribute($name);
 	return $attr->get_value($self) if ($attr);
 	
-	return $self->_other_properties->{$name};
+	return $self->_other_properties->{$name} || $self->properties_underlay->{$name};
 }
 
 sub set_properties {
 	my $self = shift;
 	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
+	$self->apply_profiles(delete $new{profiles}) if ($new{profiles});
+	
 	# Apply/merge profiles if defined:
-	if ($new{profiles}) {
-		my $properties = $self->all_properties_hash;
-		$properties->{profiles} = delete $new{profiles} || [];
-		$self->collapse_apply_profiles($self->profile_definitions,$properties,@{$self->base_profiles});
-		$self->set_properties($properties);
-	}
+	#if ($new{profiles}) {
+	#	my $properties = $self->all_properties_hash;
+	#	$properties->{profiles} = delete $new{profiles} || [];
+	#	$self->collapse_apply_profiles($self->profile_definitions,$properties,@{$self->base_profiles});
+	#	$self->set_properties($properties);
+	#}
 	
 	foreach my $key (keys %new) {
 		my $attr = $self->meta->get_attribute($key);
@@ -204,14 +252,11 @@ sub all_properties_hash {
 	my $hash = { %{ $self->_other_properties } };
 	
 	foreach my $attr ($self->meta->get_all_attributes) {
-		next if (
-			$attr->name eq '_other_properties' or
-			$attr->name eq 'profile_definitions'
-		);
+		next if ($self->exclude_attr_property_names->{$attr->name});
 		next unless ($attr->has_value($self));
 		$hash->{$attr->name} = $attr->get_value($self);
 	}
-	return $hash;
+	return merge($self->properties_underlay,$hash);
 }
 
 # Returns a hashref of properties that match the list/hash supplied:
@@ -252,12 +297,12 @@ sub copy {
 		}
 	}
 	
-	my $Copy = $self->meta->clone_object(
-		$self,
-		%attr, 
+	my $Copy = $self->meta->clone_object(Clone::clone($self),%attr);
+		#$self,
+		#%attr, 
 		# This shouldn't be required, but is. The clone doesn't clone _other_properties!
-		_other_properties => { %{ $self->_other_properties } }
-	);
+		#_other_properties => { %{ $self->_other_properties } }
+	#);
 	
 	$Copy->set_properties(%other);
 
