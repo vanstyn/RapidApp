@@ -1138,4 +1138,42 @@ Ext.ux.RapidApp.Plugin.GridHmenuColumnsToggle = Ext.extend(Ext.util.Observable,{
 Ext.preg('grid-hmenu-columns-toggle',Ext.ux.RapidApp.Plugin.GridHmenuColumnsToggle);
 
 
+// For use with Fields, returns empty strings as null
+Ext.ux.RapidApp.Plugin.EmptyToNull = Ext.extend(Ext.util.Observable,{
+	init: function(cmp) {
+		var nativeGetValue = cmp.getValue;
+		cmp.getValue = function() {
+			var value = nativeGetValue.call(cmp);
+			if (value == '') { return null; }
+			return value;
+		}
+	}
+});
+Ext.preg('emptytonull',Ext.ux.RapidApp.Plugin.EmptyToNull);
 
+// For use with Fields, returns nulls as empty string
+Ext.ux.RapidApp.Plugin.NullToEmpty = Ext.extend(Ext.util.Observable,{
+	init: function(cmp) {
+		var nativeGetValue = cmp.getValue;
+		cmp.getValue = function() {
+			var value = nativeGetValue.call(cmp);
+			if (value == null) { return ''; }
+			return value;
+		}
+	}
+});
+Ext.preg('nulltoempty',Ext.ux.RapidApp.Plugin.NullToEmpty);
+
+// For use with Fields, returns false/true as 0/1
+Ext.ux.RapidApp.Plugin.BoolToInt = Ext.extend(Ext.util.Observable,{
+	init: function(cmp) {
+		var nativeGetValue = cmp.getValue;
+		cmp.getValue = function() {
+			var value = nativeGetValue.call(cmp);
+			if (value == false) { return 0; }
+			if (value == true) { return 1; }
+			return value;
+		}
+	}
+});
+Ext.preg('booltoint',Ext.ux.RapidApp.Plugin.BoolToInt);
