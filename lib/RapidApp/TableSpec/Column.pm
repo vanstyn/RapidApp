@@ -160,6 +160,18 @@ sub copy {
 }
 
 
+has 'rapidapp_init_coderef' => ( is => 'rw', isa => 'Maybe[CodeRef]', default => undef );
+sub call_rapidapp_init_coderef {
+	my $self = shift;
+	return unless ($self->rapidapp_init_coderef);
+	
+	### Call ###
+	$self->rapidapp_init_coderef->($self,@_);
+	############
+
+	# Clear:
+	$self->rapidapp_init_coderef(undef);
+}
 
 
 no Moose;
