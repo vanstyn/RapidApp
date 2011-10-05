@@ -4356,3 +4356,13 @@ Ext.ux.RapidApp.getDateFormatter = function(format) {
 		return dt.format(format);
 	}
 }
+
+// Just like nomral checkbox but returns 1/0 instead of true/false
+Ext.ux.RapidApp.IntCheckbox = Ext.extend(Ext.form.Checkbox,{
+	getValue: function() {
+		var value = Ext.ux.RapidApp.IntCheckbox.superclass.getValue.apply(this,arguments);
+		return value ? 1 : 0;
+	}
+});
+Ext.reg('intcheckbox',Ext.ux.RapidApp.IntCheckbox);
+
