@@ -37,12 +37,13 @@ sub TableSpec_add_columns_from_related {
 	foreach my $rel (keys %$rels) {
 		my $conf = $rels->{$rel};
 		$conf = {} unless (ref($conf) eq 'HASH');
+		
+		$conf = { %{ $self->TableSpec->default_column_properties }, %$conf } if ( $self->TableSpec->default_column_properties );
+		
 		$conf->{column_property_transforms}->{name} = sub { $rel . '_' . $_ };
 		
 		# If its a relationship column that will setup a combo:
 		$conf->{column_property_transforms} = { %{$conf->{column_property_transforms}},
-			#valueField => sub { $rel . '_' . $_ },
-			#displayField => sub { $rel . '_' . $_ },
 			key_col => sub { $rel . '_' . $_ },
 			render_col => sub { $rel . '_' . $_ },
 		};
@@ -93,8 +94,8 @@ sub TableSpec_add_relationship_columns {
 		$self->TableSpec->add_columns({ name => $rel, %$conf });
 		my $Column = $self->TableSpec->get_column($rel);
 		
-		$self->TableSpec_rel_columns->{$rel} = [] unless ($self->TableSpec_rel_columns->{$rel});
-		push @{$self->TableSpec_rel_columns->{$rel}}, $Column->name;
+		#$self->TableSpec_rel_columns->{$rel} = [] unless ($self->TableSpec_rel_columns->{$rel});
+		#push @{$self->TableSpec_rel_columns->{$rel}}, $Column->name;
 		
 		my $ResultClass = $self;
 		

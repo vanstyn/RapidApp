@@ -4254,9 +4254,6 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		this.bindStore = this.store;
 		delete this.store;
 		
-		this.bindStore.on('load',this.loadFirstRecord,this);
-		this.bindStore.on('update',this.loadFirstRecord,this);
-		
 		if(this.columns && ! this.fields) {
 			this.fields = this.columns;
 			delete this.columns;
@@ -4291,6 +4288,8 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		
 		Ext.ux.RapidApp.AppPropertyGrid.superclass.initComponent.call(this);
 		
+		this.bindStore.on('load',this.loadFirstRecord,this);
+		this.bindStore.on('update',this.loadFirstRecord,this);
 		this.on('beforeedit',this.onBeforeEdit,this);
 		this.on('propertychange',this.onPropertyChange,this);
 	},
