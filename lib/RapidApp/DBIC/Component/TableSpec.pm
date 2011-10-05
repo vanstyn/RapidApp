@@ -35,8 +35,8 @@ sub apply_TableSpec {
 	
 	$self->TableSpec_data_type_profiles(
 		%{ $self->TableSpec_data_type_profiles || {} },
-		%{ delete $opt{TableSpec_data_type_profiles} || {} }
-	);
+		%{ delete $opt{TableSpec_data_type_profiles} }
+	) if ($opt{TableSpec_data_type_profiles});
 	
 	$self->TableSpec(RapidApp::TableSpec->new( 
 		name => $self->table,

@@ -38,7 +38,9 @@ sub DEFAULT_PROFILES {{
 		
 		},
 		bool => {
-			renderer => ['Ext.ux.RapidApp.boolCheckMark'],
+			# Renderer *not* in arrayref makes it replace instead of append previous
+			# profiles with th renderer property as an arrayref
+			renderer => 'Ext.ux.RapidApp.boolCheckMark',
 			editor => { xtype => 'checkbox', plugins => [ 'booltoint' ] }
 		},
 		text => {
@@ -63,7 +65,7 @@ sub DEFAULT_PROFILES {{
 			 renderer => ['Ext.ux.GreenSheet.num2pct']
 		},
 		noedit => {
-			editor => { xtype => 'label' }
+			editor => ''
 		}
 
 }};
@@ -107,24 +109,16 @@ sub collapse_apply_profiles {
 	
 	return unless (scalar @$profiles > 0);
 	
-	#my $h = { map {$_ => 1} @$profiles };
-	#scream($target) if ($h->{noedit});
-	
 	my $collapsed = {};
 	foreach my $profile (@$profiles) {
 		my $opt = $profile_defs->{$profile} or next;
-		
-		#scream_color(CYAN . BOLD,$opt) if ($h->{noedit});
-		
-		%$collapsed = %{ merge($collapsed,$opt) };
-		
-		#scream_color(MAGENTA . BOLD,$collapsed) if ($h->{noedit});
+		$collapsed = merge($collapsed,$opt);
 	}
 
-	%$target = %{ merge($collapsed, $target) };
-	
-	#scream_color(GREEN . BOLD,$target) if ($h->{noedit});
+	%$target = %{ merge($target,$collapsed) };
 }
+
+
 
 
 has 'name' => ( is => 'ro', isa => 'Str', required => 1 );
@@ -142,6 +136,7 @@ sub _build_profile_definitions {
 	# TODO collapse sub-profile defs
 	return $defs;
 }
+
 
 # properties that get merged under actual properties - collapsed from profiles:
 has 'properties_underlay' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
@@ -170,34 +165,6 @@ has 'exclude_attr_property_names' => (
 		return { map {$_ => 1} @list };
 });
 
-=pod
-has 'limit_properties' => ( is => 'rw', isa => 'Maybe[ArrayRef[Str]]', default => undef, trigger => \&update_valid_properties );
-has 'exclude_properties' => ( is => 'rw', isa => 'Maybe[ArrayRef[Str]]', default => undef, trigger => \&update_valid_properties );
-
-has '_valid_properties_hash' => ( is => 'rw', isa => 'HashRef', default => sub {{}} );
-sub update_valid_properties {
-	my $self = shift;
-	
-	my @remove_cols = ();
-	
-	if (defined $self->limit_columns and scalar @{ $self->limit_columns } > 0) {
-		my %map = map { $_ => 1 } @{ $self->limit_columns };
-		push @remove_cols, grep { not defined $map{$_} } keys %{ $self->columns };
-	}
-	
-	if (defined $self->exclude_columns and scalar @{ $self->exclude_columns } > 0) {
-		my %map = map { $_ => 1 } @{ $self->exclude_columns };
-		push @remove_cols, grep { defined $map{$_} } keys %{ $self->columns };
-	}
-	
-	foreach my $remove (@remove_cols) {
-		delete $self->columns->{$remove};
-	}
-}
-=cut
-
-#$SIG{__WARN__} = sub { croak @_; };
-
 
 sub get_property {
 	my $self = shift;
@@ -206,7 +173,7 @@ sub get_property {
 	my $attr = $self->meta->get_attribute($name);
 	return $attr->get_value($self) if ($attr);
 	
-	return $self->_other_properties->{$name} || $self->properties_underlay->{$name};
+	return $self->_other_properties->{$name};
 }
 
 sub set_properties {
@@ -214,14 +181,6 @@ sub set_properties {
 	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	$self->apply_profiles(delete $new{profiles}) if ($new{profiles});
-	
-	# Apply/merge profiles if defined:
-	#if ($new{profiles}) {
-	#	my $properties = $self->all_properties_hash;
-	#	$properties->{profiles} = delete $new{profiles} || [];
-	#	$self->collapse_apply_profiles($self->profile_definitions,$properties,@{$self->base_profiles});
-	#	$self->set_properties($properties);
-	#}
 	
 	foreach my $key (keys %new) {
 		my $attr = $self->meta->get_attribute($key);
@@ -249,14 +208,15 @@ sub set_properties_If {
 sub all_properties_hash {
 	my $self = shift;
 	
-	my $hash = { %{ $self->_other_properties } };
+	my %hash = %{ $self->_other_properties };
 	
 	foreach my $attr ($self->meta->get_all_attributes) {
 		next if ($self->exclude_attr_property_names->{$attr->name});
 		next unless ($attr->has_value($self));
-		$hash->{$attr->name} = $attr->get_value($self);
+		$hash{$attr->name} = $attr->get_value($self);
 	}
-	return merge($self->properties_underlay,$hash);
+	
+	return { %{$self->properties_underlay},%hash };
 }
 
 # Returns a hashref of properties that match the list/hash supplied:
