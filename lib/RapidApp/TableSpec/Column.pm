@@ -59,7 +59,7 @@ sub DEFAULT_PROFILES {{
 		},
 		money => {
 			editor => { xtype => 'textfield' },
-			renderer => ['Ext.ux.showNullusMoney']
+			renderer => 'Ext.ux.showNullusMoney'
 		},
 		percent => {
 			 renderer => ['Ext.ux.GreenSheet.num2pct']
