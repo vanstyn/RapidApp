@@ -46,6 +46,8 @@ sub TableSpec_add_columns_from_related {
 		
 		my $TableSpec = $info->{class}->TableSpec->copy($conf) or next;
 		
+		scream([ grep { $_ =~ /discount/ } keys %{$TableSpec->columns} ]) if ($TableSpec->name eq 'project');
+		
 		my @added = $self->TableSpec->add_columns_from_TableSpec($TableSpec);
 		foreach my $Column (@added) {
 			$self->TableSpec_rel_columns->{$rel} = [] unless ($self->TableSpec_rel_columns->{$rel});
@@ -83,6 +85,13 @@ sub TableSpec_add_relationship_columns {
 		my $render_col = delete $conf->{render_col};
 		my $auto_editor_type = delete $conf->{auto_editor_type};
 		
+		#Temporary/initial column setup:
+		my @added = $self->TableSpec->add_columns({ name => $rel, %$conf });
+		foreach my $Column (@added) {
+			$self->TableSpec_rel_columns->{$rel} = [] unless ($self->TableSpec_rel_columns->{$rel});
+			push @{$self->TableSpec_rel_columns->{$rel}}, $Column->name;
+		}
+		
 		# This coderef gets called later, after the RapidApp
 		# Root Module has been loaded.
 		rapidapp_add_global_init_coderef( sub { 
@@ -95,7 +104,6 @@ sub TableSpec_add_relationship_columns {
 			my $Source = $c->model('DB')->source($info->{source});
 			
 			my $column_params = {
-				name => $rel,
 				required_fetch_columns => [ $key_col,$render_col ],
 				
 				read_raw_munger => RapidApp::Handler->new( code => sub {
@@ -149,13 +157,9 @@ sub TableSpec_add_relationship_columns {
 				$column_params->{editor} = $Module->content;
 			}
 			
-			my @added = $self->TableSpec->add_columns({ %$column_params, %$conf });
-			foreach my $Column (@added) {
-				$self->TableSpec_rel_columns->{$rel} = [] unless ($self->TableSpec_rel_columns->{$rel});
-				push @{$self->TableSpec_rel_columns->{$rel}}, $Column->name;
-			}
-			
-		});	
+			my $Column = $self->TableSpec->get_column($rel);
+			$Column->set_properties({ %$column_params, %$conf });
+		});
 	}
 }
 
