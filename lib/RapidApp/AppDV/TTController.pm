@@ -251,9 +251,16 @@ has 'autofield' => (
 			# read-only:
 			return '{' . $display . '}' unless ($Column->editor);
 			
-			$self->AppDV->FieldCmp->{$Column->name} = $self->AppDV->json->encode($Column->get_field_config);
+			my $config = $Column->get_field_config;
+			$self->AppDV->FieldCmp->{$Column->name} = $self->AppDV->json->encode($config);
 			
 			# editable
+			
+			return $self->div_bigfield($Column->name,$display) if (
+				$config->{xtype} eq 'textarea' or
+				$config->{xtype} eq 'htmleditor'
+			);
+			
 			return $self->div_edit_field($Column->name,$display);
 		});
 	}
