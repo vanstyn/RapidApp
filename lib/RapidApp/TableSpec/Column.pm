@@ -22,7 +22,10 @@ sub DEFAULT_BASE_PROFILES {(
 # with the definitions below if supplied by name in the property 'profiles'
 sub DEFAULT_PROFILES {{
 		
-		BASE => { renderer 	=> ['Ext.ux.showNull'] },
+		BASE => { 
+			renderer => ['Ext.ux.showNull'] ,
+			editor => { xtype => 'textfield', minWidth => 80, minHeight => 22 }
+		},
 		
 		nullable => {
 			editor => { xtype => 'textfield', plugins => [ 'emptytonull' ] }
