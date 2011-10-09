@@ -17,6 +17,7 @@ sub DEFAULT_BASE_PROFILES {(
 	'BASE'
 )}
 
+
 # Default named column profiles. Column properties will be merged
 # with the definitions below if supplied by name in the property 'profiles'
 sub DEFAULT_PROFILES {{
