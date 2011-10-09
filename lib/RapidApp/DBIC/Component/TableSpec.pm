@@ -147,6 +147,8 @@ sub TableSpec_add_relationship_columns {
 			my $key_col = $self->get_property('key_col');
 			my $render_col = $self->get_property('render_col');
 			my $auto_editor_type = $self->get_property('auto_editor_type');
+			my $rs_condition = $self->get_property('ResultSet_condition') || {};
+			my $rs_attr = $self->get_property('ResultSet_attr') || {};
 			
 			my $column_params = {
 				required_fetch_columns => [ 
@@ -191,7 +193,7 @@ sub TableSpec_add_relationship_columns {
 							valueField		=> $valueField,
 							displayField	=> $displayField,
 							name				=> $self->name,
-							ResultSet		=> $Source->resultset,
+							ResultSet		=> $Source->resultset->search_rs($rs_condition,$rs_attr),
 						}
 					}
 				);
