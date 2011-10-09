@@ -150,6 +150,8 @@ sub TableSpec_add_relationship_columns {
 			my $rs_condition = $self->get_property('ResultSet_condition') || {};
 			my $rs_attr = $self->get_property('ResultSet_attr') || {};
 			
+			my $editor = $self->get_property('editor') || {};
+			
 			my $column_params = {
 				required_fetch_columns => [ 
 					$key_col,
@@ -193,7 +195,7 @@ sub TableSpec_add_relationship_columns {
 							valueField		=> $valueField,
 							displayField	=> $displayField,
 							name				=> $self->name,
-							ResultSet		=> $Source->resultset->search_rs($rs_condition,$rs_attr),
+							ResultSet		=> $Source->resultset->search_rs($rs_condition,$rs_attr)
 						}
 					}
 				);
@@ -204,7 +206,7 @@ sub TableSpec_add_relationship_columns {
 				$Module->DataStore->call_ONREQUEST_handlers;
 				# -- ^^ --
 				
-				$column_params->{editor} = $Module->content;
+				$column_params->{editor} = { %{ $Module->content }, %$editor };
 			}
 			
 			$self->set_properties({ %$column_params });
