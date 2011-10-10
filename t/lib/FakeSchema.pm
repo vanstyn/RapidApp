@@ -54,5 +54,8 @@ sub new {
 sub source {
 	$_[0]->{sources}{$_[1]} or croak "No such source: $_[1]";
 }
+sub class {
+	'DBIx::Class::FakeSource';
+}
 
 1;
