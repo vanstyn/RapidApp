@@ -6,12 +6,12 @@ extends 'RapidApp::AppCombo2';
 
 use RapidApp::Include qw(sugar perlutil);
 
+### TODO: Bring this into the fold with DbicLink. For now, it is simple enough this isn't really needed
+
 has 'ResultSet' => ( is => 'ro', isa => 'Object', required => 1 );
-
-#has '+DataStore_build_params' => ( default => sub {{
-#	store_use_xtype => 1
-#}});
-
+has 'RS_condition' => ( is => 'ro', isa => 'Ref', default => sub {{}} );
+has 'RS_attr' => ( is => 'ro', isa => 'Ref', default => sub {{}} );
+has 'record_pk' => ( is => 'ro', isa => 'Str', required => 1 );
 
 sub BUILD {
 	my $self = shift;
@@ -31,8 +31,10 @@ sub BUILD {
 sub read_records {
 	my $self = shift;
 	
+	my $Rs = $self->get_ResultSet;
+	
 	my @rows = ();
-	foreach my $row ($self->ResultSet->all) {
+	foreach my $row ($Rs->all) {
 		my $data = { $row->get_columns };
 		push @rows, $data;
 	}
@@ -41,6 +43,16 @@ sub read_records {
 		rows => \@rows,
 		results => scalar @rows
 	};
+}
+
+
+sub get_ResultSet {
+	my $self = shift;
+	my $params = $self->c->req->params;
+	
+	# todo: merge this in with the id_in stuff in dbiclink... Superbox??
+	return $self->ResultSet->search_rs({ $self->record_pk => $params->{valueqry} }) if (defined $params->{valueqry});
+	return $self->ResultSet->search_rs($self->RS_condition,$self->RS_attr);
 }
 
 

@@ -195,7 +195,10 @@ sub TableSpec_add_relationship_columns {
 							valueField		=> $valueField,
 							displayField	=> $displayField,
 							name				=> $self->name,
-							ResultSet		=> $Source->resultset->search_rs($rs_condition,$rs_attr)
+							ResultSet		=> $Source->resultset,
+							RS_condition	=> $rs_condition,
+							RS_attr			=> $rs_attr,
+							record_pk		=> $valueField
 						}
 					}
 				);
