@@ -4349,9 +4349,9 @@ Ext.ux.RapidApp.renderRed = function(val) {
 
 Ext.ux.RapidApp.boolCheckMark = function(val) {
 	if (val == null || val === "" || val <= 0) { 
-		return '<img src="/static/ext/resources/images/default/s.gif" class="icon-12x12 icon-cross-light">';
+		return '<img src="/static/ext/resources/images/default/s.gif" class="icon-12x12 icon-cross-light-12x12">';
 	}
-	return '<img src="/static/ext/resources/images/default/s.gif" class="icon-12x12 icon-checkmark">';
+	return '<img src="/static/ext/resources/images/default/s.gif" class="icon-12x12 icon-checkmark-12x12">';
 }
 
 // Returns a date formatter function based on the supplied format:
