@@ -210,16 +210,18 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		if(cnf.minWidth) { if(!cnf.width || cnf.width < cnf.minWidth) { cnf.width = cnf.minWidth; } }
 		if(cnf.minHeight) { if(!cnf.height || cnf.height < cnf.minHeight) { cnf.height = cnf.minHeight; } }
 		
-		if(Ext.isIE) {
+		// UPDATE: using visibility mode across the board now because the other method was
+		// causing images to overlap in some cases (2011-10-10 by HV)
+		//if(Ext.isIE) {
 			dataEl.setVisibilityMode(Ext.Element.DISPLAY);
 			dataEl.setVisible(false);
-		}
-		else {
+		//}
+		//else {
 			// Stupid IE can't do it with contentEl, but we want to do the contentEl
 			// way because if we use the hide method the element jumps in an
 			// ungly way in FF.
-			cnf.contentEl = dataEl;
-		}
+		//	cnf.contentEl = dataEl;
+		//}
 		
 		var Field = Ext.create(cnf,'field');
 

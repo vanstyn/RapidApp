@@ -125,6 +125,7 @@ pre {
 	width: 16px;
 	height: 16px;
 	cursor:pointer;
+	float: left;
 }
 .icon-checkbox-yes { background-image: url(/static/rapidapp/images/checkbox_yes.png) !important; }
 .icon-checkbox-no { background-image: url(/static/rapidapp/images/checkbox_no.png) !important; }

@@ -3156,6 +3156,13 @@ Ext.reg('ajaxcmp',Ext.ux.RapidApp.AjaxCmp);
 */
 Ext.ux.RapidApp.LogicalCheckbox = Ext.extend(Ext.form.Checkbox,{
 	defaultAutoCreate : { tag: 'div', cls: 'x-logical-checkbox icon-checkbox-clear' },
+	
+	onRender: function(ct, position) {
+		if(this.value == "0") { this.value = false; }
+		if(typeof this.value !== 'undefined') { this.checked = this.value ? true : false; }
+		Ext.ux.RapidApp.LogicalCheckbox.superclass.onRender.apply(this,arguments);
+	},
+	
 	setValue: function(v) {
 		Ext.ux.RapidApp.LogicalCheckbox.superclass.setValue.apply(this,arguments);
 		if (v) {
