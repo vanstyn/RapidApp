@@ -84,6 +84,7 @@ sub TableSpec_add_columns_from_related {
 		
 		# Make sure the related class is already loaded:
 		eval 'use ' . $info->{class};
+		if ($@) die $@;
 		
 		my $TableSpec = $info->{class}->TableSpec->copy($conf) or next;
 		
