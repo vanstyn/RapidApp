@@ -243,20 +243,21 @@ sub tbar_items {
 	
 	my $arrayref = [];
 	
-	push @{$arrayref}, '<img src="' . $self->title_icon_href . '" />' 		if (defined $self->title_icon_href);
-	push @{$arrayref}, '<b>' . $self->title . '</b>'								if (defined $self->title);
+	push @$arrayref, '<img src="' . $self->title_icon_href . '" />' 		if (defined $self->title_icon_href);
+	push @$arrayref, '<b>' . $self->title . '</b>'								if (defined $self->title);
 
 	my $menu = $self->options_menu;
-	push @{$arrayref}, ' ', '-',$menu if (defined $menu); 
+	push @$arrayref, ' ', '-' if (defined $menu and scalar(@$arrayref) > 0); 
+	push @$arrayref, $menu if (defined $menu);
 	
-	push @{$arrayref}, '->';
+	push @$arrayref, '->';
 	
-	push @{$arrayref}, $self->add_button if (
+	push @$arrayref, $self->add_button if (
 		defined $self->add_record_class and
 		$self->show_add_button
 	);
 
-	return (scalar @{$arrayref} > 1) ? $arrayref : undef;
+	return (scalar @$arrayref > 1) ? $arrayref : undef;
 }
 sub show_add_button { 1 }
 
