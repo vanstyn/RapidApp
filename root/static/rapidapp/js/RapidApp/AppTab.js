@@ -313,31 +313,12 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	
 	onRender: function() {
 		
-		this.store.on('beforeload',function(Store,opts) {
-			// Reset loadedColumnIndexes back to none
-			this.loadedColumnIndexes = {};
-				
-			var cm = this.getColumnModel();
-			
-			var columns = cm.getColumnsBy(function(c){
-				if(c.hidden || c.dataIndex == "") { return false; }
-				return true;
-			});
-			
-			var colDataIndexes = [];
-			Ext.each(columns,function(i) {
-				colDataIndexes.push(i.dataIndex);
-				this.loadedColumnIndexes[cm.findColumnIndex(i.dataIndex)] = true;
-			},this);
-						
-			this.store.baseParams["columns"] = Ext.encode(colDataIndexes);
-			// Set lastOptions as well so reload() gets the new columns:
-			this.store.lastOptions.params["columns"] = this.store.baseParams["columns"];
-		},this);
+		this.store.on('beforeload',this.reloadColumns,this);
 		
 		this.getColumnModel().on('hiddenchange',function(colmodel,colIndex,hidden) {
 			// Only reload the store when showing columns that aren't already loaded
 			if(hidden || this.loadedColumnIndexes[colIndex] ) { return; }
+			this.reloadColumns(); // <-- this has to be done effectively twice to make sure lastOptions are changed
 			this.store.reload();
 		},this);
 		
@@ -360,6 +341,28 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		this.store.load({ params: store_load_parms });
 		
 		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.onRender.apply(this, arguments);
+	},
+	
+	reloadColumns: function() {
+		// Reset loadedColumnIndexes back to none
+		this.loadedColumnIndexes = {};
+			
+		var cm = this.getColumnModel();
+		
+		var columns = cm.getColumnsBy(function(c){
+			if(c.hidden || c.dataIndex == "") { return false; }
+			return true;
+		});
+		
+		var colDataIndexes = [];
+		Ext.each(columns,function(i) {
+			colDataIndexes.push(i.dataIndex);
+			this.loadedColumnIndexes[cm.findColumnIndex(i.dataIndex)] = true;
+		},this);
+					
+		this.store.baseParams["columns"] = Ext.encode(colDataIndexes);
+		// Set lastOptions as well so reload() gets the new columns:
+		this.store.lastOptions.params["columns"] = this.store.baseParams["columns"];
 	}
 };
 
