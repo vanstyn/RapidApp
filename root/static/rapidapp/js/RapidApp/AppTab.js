@@ -187,10 +187,16 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		var filterdata = grid.getStore().filterdata;
 		if(filterdata) { view_config.filterdata = filterdata; }
 		
+		view_config.pageSize = grid.getBottomToolbar().pageSize;
+		
 		return view_config;
 	},
 
 	initComponent: function() {
+		
+		// If the store has pageSize set then it came from a saved search and
+		// we use it:
+		if (this.store.pageSize) { this.pageSize = this.store.pageSize; }
 		
 		// -- vv -- 
 		// Enable Ext.ux.RapidApp.Plugin.GridHmenuColumnsToggle plugin:
@@ -306,7 +312,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	},
 	
 	onRender: function() {
-
+		
 		var thisGrid = this;
 		this.store.on('beforeload',function(Store,opts) {
 			
