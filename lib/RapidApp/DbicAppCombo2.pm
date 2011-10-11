@@ -51,8 +51,14 @@ sub get_ResultSet {
 	my $params = $self->c->req->params;
 	
 	# todo: merge this in with the id_in stuff in dbiclink... Superbox??
-	return $self->ResultSet->search_rs({ $self->record_pk => $params->{valueqry} }) if (defined $params->{valueqry});
-	return $self->ResultSet->search_rs($self->RS_condition,$self->RS_attr);
+	# this module is really currently built just for TableSpec...
+	my $search = $self->RS_condition;
+	$search = { '-or' => [ $self->RS_condition, { 'me.' . $self->record_pk => $params->{valueqry} } ] } if (
+		defined $params->{valueqry} and
+		scalar (keys %{ $self->RS_condition }) > 0 #<-- if RS_Condition is empty don't restrict
+	);
+	
+	return $self->ResultSet->search_rs($search,$self->RS_attr);
 }
 
 
