@@ -384,6 +384,7 @@ sub batch_apply_opts {
 		elsif ($opt eq 'column_order') {		$self->set_columns_order(0,$opts{$opt});		}
 		elsif ($opt eq 'sort') {				$self->set_sort($opts{$opt});						}
 		elsif ($opt eq 'filterdata') {		$self->apply_config($opt => $opts{$opt});		}
+		elsif ($opt eq 'pageSize') {		$self->apply_config($opt => $opts{$opt});		}
 		else { die "invalid option '$opt' passed to batch_apply_opts";							}
 	}
 }
