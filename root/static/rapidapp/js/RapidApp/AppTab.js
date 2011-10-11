@@ -313,25 +313,14 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	
 	onRender: function() {
 		
-		var thisGrid = this;
 		this.store.on('beforeload',function(Store,opts) {
-			
-			var columns = thisGrid.getColumnModel().getColumnsBy(function(c){
-				if(c.hidden || c.dataIndex == "") { return false; }
-				return true;
-			});
-			
-			var colIndexes = [];
-			Ext.each(columns,function(i) {
-				colIndexes.push(i.dataIndex);
-			});
-			
-			//Store.setBaseParam("columns",Ext.encode(colIndexes));
-			Store.baseParams["columns"] = Ext.encode(colIndexes);
-		});
+			this.store.baseParams["columns"] = this.getStoreColumnsParam();
+			// Set lastOptions as well so reload() gets the new columns:
+			this.store.lastOptions.params["columns"] = this.store.baseParams["columns"];
+		},this);
 		
 		this.getColumnModel().on('hiddenchange',function(colmodel) {
-			this.getStore().reload();
+			this.store.reload();
 		},this);
 		
 		var store_load_parms = {};
@@ -353,6 +342,18 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		this.store.load({ params: store_load_parms });
 		
 		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.onRender.apply(this, arguments);
+	},
+	getStoreColumnsParam: function() {
+		var columns = this.getColumnModel().getColumnsBy(function(c){
+			if(c.hidden || c.dataIndex == "") { return false; }
+			return true;
+		});
+		
+		var colIndexes = [];
+		Ext.each(columns,function(i) {
+			colIndexes.push(i.dataIndex);
+		});
+		return Ext.encode(colIndexes);
 	}
 	
 };
