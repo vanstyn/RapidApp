@@ -213,6 +213,10 @@ around 'store_read_raw' => sub {
 };
 =cut
 
+sub options_menu_button_Id {
+	my $self = shift;
+	return $self->instance_id . '-options-menu-btn';
+}
 
 sub options_menu_items {
 	my $self = shift;
@@ -228,6 +232,7 @@ sub options_menu {
 	
 	return {
 		xtype		=> 'button',
+		id			=> $self->options_menu_button_Id,
 		text		=> 'Options',
 		iconCls	=> 'icon-gears',
 		menu => {

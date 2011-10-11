@@ -370,14 +370,15 @@ Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu = Ext.extend(Ext.menu.Menu,{
 	url: null,
 
 	initComponent: function() {
-	
+
 		this.items = [
 			{
 				text: 'This Page, Active Columns',
 				handler: function(item) {
 					var cmp = item.ownerCt;
-					Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler(cmp,cmp.url,false,false);
-				}
+					Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler.call(this,cmp,cmp.url,false,false);
+				},
+				scope: this
 			},
 			{
 				text: 'This Page, All Columns',
@@ -409,9 +410,10 @@ Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu = Ext.extend(Ext.menu.Menu,{
 
 
 Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler = function(cmp,url,all_pages,all_columns) {
-
-	var grid = cmp.findParentByType("appgrid2");
-			
+	
+	var btn = Ext.getCmp(cmp.buttonId);
+	var grid = btn.findParentByType("appgrid2") || btn.findParentByType("appgrid2ed");
+	
 	Ext.Msg.show({
 		title: "Excel Export",
 		msg: "Export current view to Excel File? <br><br>(This might take up to a few minutes depending on the number of rows)",

@@ -28,7 +28,9 @@ around 'options_menu_items' => sub {
 		iconCls	=> 'icon-excel',
 		menu => RapidApp::JSONFunc->new( func => 'new Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu',
 			parm => {
-				url	=> $self->suburl('/excel_read')
+				url	=> $self->suburl('/excel_read'),
+				# This shouldn't be required, but the sub menu's loose track of their parents!!
+				buttonId => $self->options_menu_button_Id
 			}
 		)
 	};
