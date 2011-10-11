@@ -8,6 +8,7 @@ use System::Command;
 use Storable qw(freeze thaw);
 use Socket qw(AF_UNIX SOCK_STREAM);
 use RapidApp::BgTask::Task;
+use RapidApp::BgTask::TaskPool;
 use RapidApp::BgTask::MsgPipeNB;
 use Data::Dumper;
 use Try::Tiny;
@@ -81,8 +82,6 @@ You can also enable DEBUG_SUPERVISOR for lots of diagnostic info.
 
 =cut
 
-sub SUCCESS_RESPONSE { "\nOK\n"; }
-
 sub trace {
 	DEBUG(supervisor => caller);
 	DEBUG([supervisor => 1], caller(1));
@@ -135,7 +134,7 @@ sub script_main {
 	
 	# At this point, it is safe to assume we succeeded.  So, we write "OK" to stderr
 	#   to let the caller know we're running.
-	print STDERR $class->SUCCESS_RESPONSE;
+	print STDERR RapidApp::BgTask::TaskPool->SUCCESS_RESPONSE;
 	open STDERR, ">&STDOUT";
 	
 	warn "Testing";

@@ -7,6 +7,7 @@ use Try::Tiny;
 use RapidApp::Debug 'DEBUG';
 use IO::File;
 use RapidApp::BgTask::Task;
+use RapidApp::BgTask::Supervisor;
 
 =head1 NAME
 
@@ -202,6 +203,8 @@ Supported parameters:
  * retainOutput => $bool - whether to hold onto output even after it has been read, so that other processes can read it
 
 =cut
+sub SUCCESS_RESPONSE { "\nOK\n"; }
+
 sub spawn {
 	my $self= shift;
 	my %p= validate(@_, {
@@ -249,7 +252,7 @@ sub spawn {
 	}
 	DEBUG(bgtask => "response=$response");
 	
-	my $ok= RapidApp::BgTask::Supervisor->SUCCESS_RESPONSE;
+	my $ok= SUCCESS_RESPONSE();
 	if (substr($response, -length($ok)) ne $ok) {
 		die "Task supervisor failed: $response";
 	}
