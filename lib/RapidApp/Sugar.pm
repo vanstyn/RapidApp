@@ -13,8 +13,10 @@ use RapidApp::DefaultOverride qw(override_defaults merge_defaults);
 use RapidApp::Debug;
 use HTML::Entities;
 use Scalar::Util qw(blessed);
+use Hash::Merge qw( merge );
+Hash::Merge::set_behavior( 'RIGHT_PRECEDENT' );
 
-our @EXPORT = qw(sessvar perreq asjson rawjs mixedjs ashtml rawhtml usererr userexception override_defaults merge_defaults DEBUG jsfunc blessed);
+our @EXPORT = qw(sessvar perreq asjson rawjs mixedjs ashtml rawhtml usererr userexception override_defaults merge_defaults DEBUG jsfunc blessed merge);
 
 # Module shortcuts
 #

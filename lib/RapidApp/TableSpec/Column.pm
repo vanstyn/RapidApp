@@ -3,8 +3,7 @@ use strict;
 use Moose;
 
 use RapidApp::Include qw(sugar perlutil);
-use Hash::Merge qw( merge );
-Hash::Merge::set_behavior( 'RIGHT_PRECEDENT' );
+
 
 our $VERSION = '0.1';
 
