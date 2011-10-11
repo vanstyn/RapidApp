@@ -836,7 +836,11 @@ sub _dbiclink_update_records {
 			foreach my $data (@$arr) {
 				my $pkVal= $data->{$self->record_pk};
 				defined $pkVal or die ref($self)."->update_records: Record is missing primary key '".$self->record_pk."'";
-				my $Row = $Rs->search({ $self->record_pk => $pkVal })->next or die usererr "Failed to find row.";
+				#my $Row = $Rs->search({ $self->record_pk => $pkVal })->next or die usererr "Failed to find row.";
+				# using find instead of search to avoid ambiguous column exceptions... 
+				# could also do $Rs->search({ 'me.' . $self->record_pk => $pkVal }) but that is even
+				# more hackish than just using find.
+				my $Row = $Rs->find($pkVal) or die usererr "Failed to find row.";
 				my $tree = $self->unflatten_prune_update_packet($data);
 				$self->Row_tree_update_recursive($Row,$tree);
 			}
