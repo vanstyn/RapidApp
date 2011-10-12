@@ -4297,6 +4297,7 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		
 		Ext.ux.RapidApp.AppPropertyGrid.superclass.initComponent.call(this);
 		
+		this.on('afterrender',this.loadFirstRecord,this);
 		this.bindStore.on('load',this.loadFirstRecord,this);
 		this.bindStore.on('update',this.loadFirstRecord,this);
 		this.on('beforeedit',this.onBeforeEdit,this);
@@ -4325,6 +4326,7 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 	
 	loadFirstRecord: function() {
 		this.bindRecord = this.getBindStore().getAt(0);
+		if(!this.bindRecord) { return; }
 		this.loadRecord(this.bindRecord.copy());
 	}
 
