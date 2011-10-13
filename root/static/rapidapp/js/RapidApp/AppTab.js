@@ -359,10 +359,16 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			colDataIndexes.push(i.dataIndex);
 			this.loadedColumnIndexes[cm.findColumnIndex(i.dataIndex)] = true;
 		},this);
-					
-		this.store.baseParams["columns"] = Ext.encode(colDataIndexes);
+		
+		var params = { columns: Ext.encode(colDataIndexes) };
+		
+		if(this.baseParams) {
+			Ext.apply(params,this.baseParams);
+		}
+		
+		Ext.apply(this.store.baseParams,params);
 		// Set lastOptions as well so reload() gets the new columns:
-		this.store.lastOptions.params["columns"] = this.store.baseParams["columns"];
+		Ext.apply(this.store.lastOptions.params,params);
 	}
 };
 
