@@ -1177,3 +1177,55 @@ Ext.ux.RapidApp.Plugin.BoolToInt = Ext.extend(Ext.util.Observable,{
 	}
 });
 Ext.preg('booltoint',Ext.ux.RapidApp.Plugin.BoolToInt);
+
+
+// Plugin adds '[+]' to panel title when collapsed if titleCollapse is on
+Ext.ux.RapidApp.Plugin.TitleCollapsePlus = Ext.extend(Ext.util.Observable,{
+	
+	addedString: '',
+	
+	init: function(cmp) {
+		this.cmp = cmp;
+		
+		if (this.cmp.titleCollapse && this.cmp.title) {
+			this.cmp.on('beforecollapse',function(){
+				this.updateCollapseTitle.call(this,'collapse');
+			},this);
+			this.cmp.on('beforeexpand',function(){
+				this.updateCollapseTitle.call(this,'expand');
+			},this);
+			this.cmp.on('afterrender',this.updateCollapseTitle,this);
+		}
+	},
+	
+	updateCollapseTitle: function(opt) {
+		if (!this.cmp.titleCollapse || !this.cmp.title) { return; }
+		
+		console.log('update: ' + opt);
+		
+		if(opt == 'collapse') { return this.setTitlePlus(true); }
+		if(opt == 'expand') { return this.setTitlePlus(false); }
+		
+		if(this.cmp.collapsed) {
+			this.setTitlePlus(true);
+		}
+		else {
+			this.setTitlePlus(false);
+		}
+	},
+	
+	getTitle: function() {
+		return this.cmp.title.replace(this.addedString,'');
+	},
+	
+	setTitlePlus: function(bool) {
+		var title = this.getTitle();
+		if(bool) {
+			this.addedString = '&nbsp;<span style="font-weight:lighter;font-family:monospace;">&#91;&#43;&#93;</span>';
+			return this.cmp.setTitle(title + this.addedString);
+		}
+		this.addedString = '';
+		return this.cmp.setTitle(title);
+	}
+});
+Ext.preg('titlecollapseplus',Ext.ux.RapidApp.Plugin.TitleCollapsePlus);
