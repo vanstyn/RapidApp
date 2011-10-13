@@ -1221,7 +1221,10 @@ Ext.ux.RapidApp.Plugin.TitleCollapsePlus = Ext.extend(Ext.util.Observable,{
 	setTitlePlus: function(bool) {
 		var title = this.getTitle();
 		if(bool) {
-			this.addedString = '&nbsp;<span style="font-weight:lighter;font-family:monospace;">&#91;&#43;&#93;</span>';
+			this.addedString = 
+				'&nbsp;<span style="font-weight:lighter;font-family:monospace;color:gray;">' + 
+					'&#91;&#43;&#93;' +
+				'</span>';
 			return this.cmp.setTitle(title + this.addedString);
 		}
 		this.addedString = '';
