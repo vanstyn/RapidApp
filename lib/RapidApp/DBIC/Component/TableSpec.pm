@@ -130,6 +130,9 @@ sub TableSpec_add_relationship_columns {
 		#$self->TableSpec_rel_columns->{$rel} = [] unless ($self->TableSpec_rel_columns->{$rel});
 		#push @{$self->TableSpec_rel_columns->{$rel}}, $Column->name;
 		
+		# Temp placeholder:
+		$Column->set_properties({ editor => 'relationship_column' });
+		
 		my $ResultClass = $self;
 		
 		$Column->rapidapp_init_coderef( sub {
@@ -186,31 +189,35 @@ sub TableSpec_add_relationship_columns {
 				'}', $self->get_property('renderer')
 			);
 			
-			if ($auto_editor_type eq 'combo') {
-			
-				my $module_name = $ResultClass->table . '_' . $self->name;
-				$TableSpecModule->apply_init_modules(
-					$module_name => {
-						class	=> 'RapidApp::DbicAppCombo2',
-						params	=> {
-							valueField		=> $valueField,
-							displayField	=> $displayField,
-							name				=> $self->name,
-							ResultSet		=> $Source->resultset,
-							RS_condition	=> $rs_condition,
-							RS_attr			=> $rs_attr,
-							record_pk		=> $valueField
+			# If editor is no longer set to the temp value 'relationship_column' previously set,
+			# it means something else has set the editor, so we don't overwrite it:
+			if ($editor eq 'relationship_column') {
+				if ($auto_editor_type eq 'combo') {
+				
+					my $module_name = $ResultClass->table . '_' . $self->name;
+					$TableSpecModule->apply_init_modules(
+						$module_name => {
+							class	=> 'RapidApp::DbicAppCombo2',
+							params	=> {
+								valueField		=> $valueField,
+								displayField	=> $displayField,
+								name				=> $self->name,
+								ResultSet		=> $Source->resultset,
+								RS_condition	=> $rs_condition,
+								RS_attr			=> $rs_attr,
+								record_pk		=> $valueField
+							}
 						}
-					}
-				);
-				my $Module = $TableSpecModule->Module($module_name);
-				
-				# -- vv -- This is required in order to get all of the params applied
-				$Module->call_ONREQUEST_handlers;
-				$Module->DataStore->call_ONREQUEST_handlers;
-				# -- ^^ --
-				
-				$column_params->{editor} = { %{ $Module->content }, %$editor };
+					);
+					my $Module = $TableSpecModule->Module($module_name);
+					
+					# -- vv -- This is required in order to get all of the params applied
+					$Module->call_ONREQUEST_handlers;
+					$Module->DataStore->call_ONREQUEST_handlers;
+					# -- ^^ --
+					
+					$column_params->{editor} = { %{ $Module->content }, %$editor };
+				}
 			}
 			
 			$self->set_properties({ %$column_params });
