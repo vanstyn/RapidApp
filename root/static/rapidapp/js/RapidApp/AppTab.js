@@ -193,8 +193,15 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	},
 	
 	storeReloadButton: false,
+	titleCount: false,
 
 	initComponent: function() {
+		
+		if(this.title && this.titleCount) {
+			this.store.on('load',function() {
+				this.setTitle(this.initialConfig.title + ' (' + this.store.getTotalCount() + ')');
+			},this);
+		}
 		
 		if(this.storeReloadButton) {
 			this.tools = [{
