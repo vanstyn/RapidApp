@@ -143,7 +143,9 @@ has '_forbidden_search_fields' => ( is => 'ro', lazy => 1, default => sub{
 sub search_permitted {
 	my ($self, $fieldName)= @_;
 	return 0 if $self->_forbidden_search_fields->{$fieldName};
-	return 0 if $self->_forbidden_search_fields->{$self->ExtNamedToDbFields->{$fieldName} || ''};
+	# FIXME!! -- discovered AppGrid2 Quick Search broken, throwing an exception on this line...
+	# What does it do? Is it needed? - 2011-10-13 by HV
+	#return 0 if $self->_forbidden_search_fields->{$self->ExtNamedToDbFields->{$fieldName} || ''};
 	return 1;
 }
 
