@@ -4257,11 +4257,23 @@ Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 	
 	editable_fields: {},
+		
+	storeReloadButton: true,
 	
 	initComponent: function() {
 		
 		this.bindStore = this.store;
 		delete this.store;
+		
+		if(this.storeReloadButton) {
+			this.tools = [{
+				id: 'refresh',
+				handler: function() {
+					this.bindStore.reload();
+				},
+				scope: this
+			}]
+		}
 		
 		if(this.columns && ! this.fields) {
 			this.fields = this.columns;
