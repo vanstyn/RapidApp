@@ -370,14 +370,15 @@ sub _build_dbiclink_colspec {
 #	return [];
 #}
 
-has 'dbiclink_colspec_updatable' => ( is => 'ro', isa => 'ArrayRef', lazy => 1, default => sub {
+has 'dbiclink_colspec_updatable' => ( is => 'ro', isa => 'ArrayRef', lazy_build => 1 );
+sub _build_dbiclink_colspec_updatable {
 	my $self = shift;
 	my @list = ( '*' );
 	foreach my $rel (@{ $self->dbiclink_updatable_relationships }) {
 		push @list, $rel . '.*';
 	}
 	return \@list;
-});
+}
 
 has 'dbiclink_updatable_relationships' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy_build => 1 );
 sub _build_dbiclink_updatable_relationships {[]}
