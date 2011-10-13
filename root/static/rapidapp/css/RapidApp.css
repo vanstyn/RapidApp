@@ -61,6 +61,11 @@ pre {
   background-repeat: no-repeat;
 }
 
+.with-background-right-image {
+	background-repeat: no-repeat;
+	background-position: right center;
+}
+
 .icon-server_database { background-image: url(/static/rapidapp/images/server_database.png) !important; }
 .icon-arrow_refresh_small { background-image: url(/static/rapidapp/images/arrow_refresh_small.png) !important; }
 .icon-database { background-image: url(/static/rapidapp/images/database.png) !important; }
@@ -163,6 +168,9 @@ pre {
 .icon-cross-light { background-image: url(/static/rapidapp/images/cross_light.png) !important; }
 .icon-checkmark-12x12 { background-image: url(/static/rapidapp/images/checkmark_12x12.png) !important; }
 .icon-cross-light-12x12 { background-image: url(/static/rapidapp/images/cross_light_12x12.png) !important; }
+.icon-gray-pencil { background-image: url(/static/rapidapp/images/gray_pencil.png) !important; }
+.icon-gray-down { background-image: url(/static/rapidapp/images/gray_down.png) !important; }
+.icon-gray-down-with-pencil { background-image: url(/static/rapidapp/images/gray_down_with_pencil.png) !important; }
 
 .tbar-title-medium {
 	font-size:175% !important;

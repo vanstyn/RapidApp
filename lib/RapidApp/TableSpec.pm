@@ -40,7 +40,8 @@ has 'columns'  => (
 		 has_column			=> 'exists',
 		 column_list		=> 'values',
 		 column_names		=> 'keys',
-		 num_columns		=> 'count'
+		 num_columns		=> 'count',
+		 delete_column		=> 'delete'
 	}
 );
 around 'apply_columns' => sub { 
@@ -65,7 +66,8 @@ around 'column_list' => sub {
 	my @list = ();
 	foreach my $name (@names) {
 		# Force column_list to go through get_column so its logic gets called:
-		push @list, $self->get_column($name);
+		my $Column = $self->get_column($name) or next;
+		push @list, $Column;
 	}
 	return @list;
 };

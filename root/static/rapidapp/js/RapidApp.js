@@ -4284,27 +4284,40 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		
 		Ext.each(this.fields,function(field) {
 			field.id = field.dataIndex;
-			// Translate the renderer to work like in a normal grid:
-			if (field.renderer) {
-        var orig = field.renderer;
-        field.renderer = function(value,metaData) {
-          if(!propgrid.bindRecord) { return orig.apply(field,arguments); }
-          return orig.call(field,value,metaData,propgrid.bindRecord,0,0,propgrid.bindStore);
-        };
-			}
+			var css;
 			// Extra logic to handle editors as simple xtypes and not already 
 			// GridEditor objects. This is handled by EditorGridPanel, but not
 			// by the PropertyGrid:
 			if (field.editor) {
-        if (!field.editor.getXType) { 
-          field.editor = Ext.ComponentMgr.create(field.editor,'textfield'); 
-        }
-        if (!field.editor.startEdit){
-          field.editor = new Ext.grid.GridEditor(field.editor);
-        }
-        
-        this.editable_fields[field.name] = 1;
+				if (!field.editor.getXType) { 
+					field.editor = Ext.ComponentMgr.create(field.editor,'textfield'); 
+				}
+				if (!field.editor.startEdit){
+					field.editor = new Ext.grid.GridEditor(field.editor);
+				}
+				
+				xtype = field.editor.field.xtype;
+				css = ' with-background-right-image icon-gray-pencil';
+				if (xtype == 'combo' || xtype == 'appcombo2') {
+					css = ' with-background-right-image icon-gray-down';
+				}
+
+				this.editable_fields[field.name] = 1;
 			}
+			
+			var orig_renderer = field.renderer;
+			field.renderer = function(value,metaData) {
+				
+				if(css) { metaData.css += css; }
+				
+				// Translate the renderer to work like in a normal grid:
+				if(orig_renderer) {
+					if(!propgrid.bindRecord) { return orig_renderer.apply(field,arguments); }
+					return orig_renderer.call(field,value,metaData,propgrid.bindRecord,0,0,propgrid.bindStore);
+				}
+				return value;
+			}
+			
 		},this);
 		
 		Ext.ux.RapidApp.AppPropertyGrid.superclass.initComponent.call(this);
@@ -4376,5 +4389,11 @@ Ext.ux.RapidApp.getDateFormatter = function(format) {
 		if (! dt) { return date; }
 		return dt.format(format);
 	}
+}
+
+
+Ext.ux.RapidApp.renderPencil = function(val) {
+	return '<span>' + val + '</span>' + 
+		'<img src="/static/ext/resources/images/default/s.gif" class="icon-14x14 icon-gray-pencil">';
 }
 
