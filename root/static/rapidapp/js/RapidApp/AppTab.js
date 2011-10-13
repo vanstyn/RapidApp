@@ -191,8 +191,20 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		
 		return view_config;
 	},
+	
+	storeReloadButton: false,
 
 	initComponent: function() {
+		
+		if(this.storeReloadButton) {
+			this.tools = [{
+				id: 'refresh',
+				handler: function() {
+					this.getStore().reload();
+				},
+				scope: this
+			}]
+		}
 		
 		// If the store has pageSize set then it came from a saved search and
 		// we use it:
