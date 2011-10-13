@@ -12,6 +12,7 @@ use RapidApp::DbicAppCombo2;
 
 __PACKAGE__->mk_classdata( 'TableSpec' );
 __PACKAGE__->mk_classdata( 'TableSpec_rel_columns' );
+__PACKAGE__->mk_classdata( 'TableSpec_rel_to_TableSpec' );
 
 # See default profile definitions in RapidApp::TableSpec::Column
 __PACKAGE__->mk_classdata( 'TableSpec_data_type_profiles' );
