@@ -17,40 +17,56 @@ around BUILDARGS => sub {
 	return $class->$orig(%opt);
 };
 
+has 'relation_sep' => ( is => 'ro', isa => 'Str', default => '__' );
+has 'ResultSource' => ( is => 'ro', isa => 'DBIx::Class::ResultSource', required => 1 );
 
 has 'spec' => (
 	is => 'ro',
 	isa => 'ArrayRef[Str]',
 	required => 1,
+	# Need to do this validation in a trigger so we have access to the value of 'relation_sep' :
+	trigger => sub {
+		my ($self,$spec) = @_;
+		my $sep = $self->relation_sep;
+		for (@$spec) {
+			/${sep}/ and die "Fatal: colspec '$_' is invalid because it contains the relation separater string '$sep'";
+			/\s+/ and die "Fatal: colspec '$_' is invalid because it contains whitespace";
+			/([^a-zA-Z0-9\-\_\.\*\?\[\]])/ and die "Fatal: colspec '$_' contains invalid characters ('$1').";
+			
+			my @parts = split(/\./,$_); pop @parts;
+			my $relspec = join('.',@parts);
+			$relspec =~ /([\*\?\[\]])/ and die "Fatal: colspec '$_' is invalid: glob wildcards are only allowed in the column section, not in the relation section.";
+		}
+	}
 );
 
-has 'relation_sep' => ( is => 'ro', isa => 'Str', default => '__' );
- 
-sub BUILD {
-	my $self = shift;
-	
-	my $sep = $self->relation_sep;
-	for (@{ $self->spec }) {
-		/${sep}/ and die "Fatal: colspec '$_' is invalid because it contains the relation separater string '$sep'";
-		/\s+/ and die "Fatal: colspec '$_' is invalid because it contains whitespace";
-		/([^a-zA-Z0-9\-\_\.\*\?\[\]])/ and die "Fatal: colspec '$_' contains invalid characters ('$1').";
-	}
 
+has 'columns' => ( is => 'ro', isa => 'ArrayRef', lazy_build => 1 );
+sub _build_columns {
+	my $self = shift;
+	my $columns = [];
+
+
+
+	return $columns;
 }
 
+
 # returns a DBIC join attr based on the colspec
-has 'join' => ( is => 'ro', lazy => 1, default => sub {
+has 'join' => ( is => 'ro', lazy_build => 1 );
+sub _build_join {
 	my $self = shift;
 	
 	my $join = {};
 	my @list = ();
 	
 	foreach my $item (@{ $self->spec }) {
+		# Ignore exclude specs:
+		next if ($item =~ /^\-/);
+	
 		my @parts = split(/\./,$item);
 		next unless (@parts > 1);
 		pop @parts; # <-- the last field describes columns, not rels
-		
-		/([\*\?\[\]])/ and die "Fatal: colspec '$item' is invalid: glob wildcards are only allowed in the column section, not in the relation section." for (@parts);
 		
 		push @list,$self->chain_to_hash(@parts);
 	}
@@ -59,9 +75,8 @@ has 'join' => ( is => 'ro', lazy => 1, default => sub {
 		$join = merge($join,$item);
 	}
 	
-	dmap { return $self->leaf_hash_to_string($_) } $join;
 	return $self->hash_with_undef_values_to_array_deep($join);
-});
+}
 
 
 
@@ -81,17 +96,6 @@ sub chain_to_hash {
 	return $hash;
 }
 
-sub leaf_hash_to_string {
-	my ($self,$hash) = @_;
-	return @_ unless (ref($hash) eq 'HASH');
-	
-	my @keys = keys %$hash;
-	my $key = shift @keys or return undef; # <-- empty hash
-	return $hash if (@keys > 0); # <-- not a leaf, more than 1 key
-	return $hash if (defined $self->leaf_hash_to_string($hash->{$key})); # <-- not a leaf, single value is not an empty hash
-	return $key;
-}
-
 sub hash_with_undef_values_to_array_deep {
 	my ($self,$hash) = @_;
 	return @_ unless (ref($hash) eq 'HASH');
@@ -106,7 +110,7 @@ sub hash_with_undef_values_to_array_deep {
 				$hash->{$key} = $self->hash_with_undef_values_to_array_deep($hash->{$key});
 			}
 			
-			push @list, { $key => $hash->{$key} };
+			push @list, $self->leaf_hash_to_string({ $key => $hash->{$key} });
 			next;
 		}
 		push @list, $key;
@@ -117,7 +121,16 @@ sub hash_with_undef_values_to_array_deep {
 	return \@list;
 }
 
-
+sub leaf_hash_to_string {
+	my ($self,$hash) = @_;
+	return @_ unless (ref($hash) eq 'HASH');
+	
+	my @keys = keys %$hash;
+	my $key = shift @keys or return undef; # <-- empty hash
+	return $hash if (@keys > 0); # <-- not a leaf, more than 1 key
+	return $hash if (defined $self->leaf_hash_to_string($hash->{$key})); # <-- not a leaf, single value is not an empty hash
+	return $key;
+}
 
 
 
