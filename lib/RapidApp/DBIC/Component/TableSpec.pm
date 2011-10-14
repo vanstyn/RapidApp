@@ -60,6 +60,7 @@ sub apply_TableSpec {
 	}
 	
 	$self->TableSpec_rel_columns({});
+	$self->TableSpec_rel_to_TableSpec({});
 }
 
 
@@ -88,6 +89,8 @@ sub TableSpec_add_columns_from_related {
 		die $@ if ($@);
 		
 		my $TableSpec = $info->{class}->TableSpec->copy($conf) or next;
+		
+		$self->TableSpec_rel_to_TableSpec->{$rel} = $TableSpec;
 		
 		my @added = $self->TableSpec->add_columns_from_TableSpec($TableSpec);
 		foreach my $Column (@added) {
