@@ -37,12 +37,16 @@ has 'spec' => (
 			my @parts = split(/\./,$_); pop @parts;
 			my $relspec = join('.',@parts);
 			$relspec =~ /([\*\?\[\]])/ and die "Fatal: colspec '$_' is invalid: glob wildcards are only allowed in the column section, not in the relation section.";
+			
+			#init join and columns:
+			$self->join;
+			$self->columns;
 
 		}
 	}
 );
 
-
+has 'column_props' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 has 'columns' => ( is => 'ro', isa => 'ArrayRef', lazy_build => 1 );
 sub _build_columns {
 	my $self = shift;
@@ -51,30 +55,31 @@ sub _build_columns {
 	$self->join;
 	
 	my $columns = [];
-	
-	foreach my $relspec (@{$self->relspec_order}) {
-		my $Source = $self->relspec_to_ResultSource($relspec);
-		my @cols = $self->colspec_matching_columns($relspec,$Source->columns);
-		my @parts = split(/\./,$relspec);
-		my $prefix = join($self->relation_sep,@parts);
-		$prefix .= $self->relation_sep unless ($prefix eq '');
-		push @$columns, map { $prefix . $_ } @cols;
-	}
-
+	push @$columns, $self->relspec_to_column_list($_) for (@{$self->relspec_order});
 	return $columns;
 }
 
-sub relspec_to_ResultSource {
+sub relspec_to_column_list {
 	my $self = shift;
 	my $relspec = shift;
 	my $Source = shift || $self->ResultSource;
+	my $prefix = shift || '';
+	my @columns = @_;
 	
-	return $Source if ($relspec eq '');
+	if ($relspec eq '') { 
+		foreach my $col ($Source->columns) {
+			my $colname = $prefix . $col;
+			$self->column_props->{$colname} = $Source->source_name;
+			push @columns, $colname;
+		}
+		return @columns;
+	}
 	
 	my @parts = split(/\./,$relspec);
+	$prefix .= join($self->relation_sep,@parts) . $self->relation_sep;
 	my $relation = shift @parts;
-	my $RelSource = $Source->related_source($relation) or die "Failed to find ResultSource for '$relation'";
-	return $self->relspec_to_ResultSource(join('.',@parts) || '',$RelSource);
+	my $RelSource = $Source->related_source($relation) or croak "Failed to find ResultSource for '$relation'";
+	return $self->relspec_to_column_list(join('.',@parts) || '',$RelSource,$prefix,@columns);
 }
 
 
@@ -83,7 +88,7 @@ sub colspec_matching_columns {
 	my $relspec = shift;
 	my @columns = @_;
 	
-	my $colspecs = clone($self->relspec_colspec_map->{$relspec}) or die "relspec '$relspec' not found!";
+	my $colspecs = clone($self->relspec_colspec_map->{$relspec}) or croak "relspec '$relspec' not found!";
 	my $limits = [];
 	my $excludes = [];
 	
