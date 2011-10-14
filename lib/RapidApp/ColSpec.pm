@@ -4,7 +4,8 @@ use Moose;
 
 use RapidApp::Include qw(sugar perlutil);
 
-use RapidApp::Data::Dmap;
+use Text::Glob qw( match_glob );
+use Clone qw(clone);
 
 around BUILDARGS => sub {
 	my $orig = shift;
@@ -36,6 +37,7 @@ has 'spec' => (
 			my @parts = split(/\./,$_); pop @parts;
 			my $relspec = join('.',@parts);
 			$relspec =~ /([\*\?\[\]])/ and die "Fatal: colspec '$_' is invalid: glob wildcards are only allowed in the column section, not in the relation section.";
+
 		}
 	}
 );
@@ -44,11 +46,47 @@ has 'spec' => (
 has 'columns' => ( is => 'ro', isa => 'ArrayRef', lazy_build => 1 );
 sub _build_columns {
 	my $self = shift;
+	
+	# Make sure join is initialized:
+	$self->join;
+	
 	my $columns = [];
+	
+	my $relspec = '';
+	
+	push @$columns, $self->colspec_matching_columns($relspec,$self->ResultSource->columns);
 
 
 
 	return $columns;
+}
+
+
+sub colspec_matching_columns {
+	my $self = shift;
+	my $relspec = shift;
+	my @columns = @_;
+	
+	my $colspecs = clone($self->relspec_colspec_map->{$relspec}) or die "relspec '$relspec' not found!";
+	my $limits = [];
+	my $excludes = [];
+	
+	foreach my $spec (@$colspecs) {
+		if($spec =~ /^\-/) {
+			$spec =~ s/^\-//;
+			push @$excludes, $spec;
+			next;
+		}
+		push @$limits, $spec;
+	}
+	
+	my %match = ();
+	COL: foreach my $col (@columns) {
+		my $skip = 0;
+		match_glob($_,$col) and next COL for (@$excludes);
+		match_glob($_,$col) and $match{$col}++ for (@$limits);
+	}
+	return keys %match;
 }
 
 
@@ -61,23 +99,25 @@ sub _build_join {
 	my @list = ();
 	
 	foreach my $item (@{ $self->spec }) {
+		my @parts = split(/\./,$item);
+		my $colspec = pop @parts; # <-- the last field describes columns, not rels
+		my $relspec = join('.',@parts) || '';
+
+		push @{$self->relspec_colspec_map->{$relspec}}, $colspec;
+		
+		next unless (@parts > 0);
 		# Ignore exclude specs:
 		next if ($item =~ /^\-/);
-	
-		my @parts = split(/\./,$item);
-		next unless (@parts > 1);
-		pop @parts; # <-- the last field describes columns, not rels
 		
-		push @list,$self->chain_to_hash(@parts);
+		$join = merge($join,$self->chain_to_hash(@parts));
 	}
 	
-	foreach my $item (@list) {
-		$join = merge($join,$item);
-	}
+	# Add '*' to the base relspec if it is empty:
+	push @{$self->relspec_colspec_map->{''}}, '*' unless (defined $self->relspec_colspec_map->{''});
 	
 	return $self->hash_with_undef_values_to_array_deep($join);
 }
-
+has 'relspec_colspec_map' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 
 
 sub chain_to_hash {

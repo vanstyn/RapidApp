@@ -24,8 +24,10 @@ sub scream_color {
 	my $data = $_[0];
 	$data = \@_ if (scalar(@_) > 1);
 
+	my $sub = $_->[2]->{subroutine} ? $_->[2]->{subroutine} . '  ' : '';
+	
 	print STDERR 
-		BOLD . $_->[2]->{subroutine} . '  [line ' . $_->[1]->{line} . ']: ' . CLEAR . "\n" .
+		BOLD . $sub . '[line ' . $_->[1]->{line} . ']: ' . CLEAR . "\n" .
 		$color . Dumper($data) . CLEAR . "\n";
 }
 
