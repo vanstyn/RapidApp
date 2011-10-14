@@ -52,13 +52,29 @@ sub _build_columns {
 	
 	my $columns = [];
 	
-	my $relspec = '';
-	
-	push @$columns, $self->colspec_matching_columns($relspec,$self->ResultSource->columns);
-
-
+	foreach my $relspec (@{$self->relspec_order}) {
+		my $Source = $self->relspec_to_ResultSource($relspec);
+		my @cols = $self->colspec_matching_columns($relspec,$Source->columns);
+		my @parts = split(/\./,$relspec);
+		my $prefix = join($self->relation_sep,@parts);
+		$prefix .= $self->relation_sep unless ($prefix eq '');
+		push @$columns, map { $prefix . $_ } @cols;
+	}
 
 	return $columns;
+}
+
+sub relspec_to_ResultSource {
+	my $self = shift;
+	my $relspec = shift;
+	my $Source = shift || $self->ResultSource;
+	
+	return $Source if ($relspec eq '');
+	
+	my @parts = split(/\./,$relspec);
+	my $relation = shift @parts;
+	my $RelSource = $Source->related_source($relation) or die "Failed to find ResultSource for '$relation'";
+	return $self->relspec_to_ResultSource(join('.',@parts) || '',$RelSource);
 }
 
 
@@ -102,7 +118,8 @@ sub _build_join {
 		my @parts = split(/\./,$item);
 		my $colspec = pop @parts; # <-- the last field describes columns, not rels
 		my $relspec = join('.',@parts) || '';
-
+		
+		push @{$self->relspec_order}, $relspec unless ($self->relspec_colspec_map->{$relspec} or $relspec eq '');
 		push @{$self->relspec_colspec_map->{$relspec}}, $colspec;
 		
 		next unless (@parts > 0);
@@ -114,10 +131,12 @@ sub _build_join {
 	
 	# Add '*' to the base relspec if it is empty:
 	push @{$self->relspec_colspec_map->{''}}, '*' unless (defined $self->relspec_colspec_map->{''});
+	unshift @{$self->relspec_order}, ''; # <-- base relspec first
 	
 	return $self->hash_with_undef_values_to_array_deep($join);
 }
 has 'relspec_colspec_map' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
+has 'relspec_order' => ( is => 'ro', isa => 'ArrayRef', default => sub {[]} );
 
 
 sub chain_to_hash {
