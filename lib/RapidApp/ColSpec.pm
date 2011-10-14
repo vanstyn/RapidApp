@@ -3,6 +3,7 @@ use strict;
 use Moose;
 
 use RapidApp::Include qw(sugar perlutil);
+use RapidApp::TableSpec::Role::DBIC;
 
 use Text::Glob qw( match_glob );
 use Clone qw(clone);
@@ -21,10 +22,23 @@ around BUILDARGS => sub {
 has 'relation_sep' => ( is => 'ro', isa => 'Str', default => '__' );
 has 'ResultSource' => ( is => 'ro', isa => 'DBIx::Class::ResultSource', required => 1 );
 
-sub ResultClass {
+has 'ResultClass' => ( is => 'ro', lazy_build => 1 );
+sub _build_ResultClass {
 	my $self = shift;
 	my $source_name = $self->ResultSource->source_name;
 	return $self->ResultSource->schema->class($source_name);
+}
+
+has 'TableSpec' => ( is => 'ro', isa => 'RapidApp::TableSpec', lazy_build => 1 );
+sub _build_TableSpec {
+	my $self = shift;
+	my $TableSpec = RapidApp::TableSpec->with_traits('RapidApp::TableSpec::Role::DBIC')->new(
+		name => $self->ResultClass->table,
+		relation_sep => $self->relation_sep,
+		ResultClass => $self->ResultClass
+	);
+	
+	return $TableSpec;
 }
 
 has 'spec' => (
@@ -68,7 +82,7 @@ sub _build_columns {
 sub relspec_to_column_list {
 	my $self = shift;
 	my $relspec = shift;
-	my $TableSpec = shift || $self->ResultClass->TableSpec;
+	my $TableSpec = shift || $self->TableSpec;
 	my $prefix = shift || '';
 	my @columns = @_;
 	
@@ -86,7 +100,7 @@ sub relspec_to_column_list {
 	$prefix .= join($self->relation_sep,@parts) . $self->relation_sep;
 	my $relation = shift @parts;
 	
-	my $RelTableSpec = $TableSpec->ResultClass->related_TableSpec($relation) or croak "Failed to find TableSpec for '$relation'";
+	my $RelTableSpec = $TableSpec->related_TableSpec($relation) or croak "Failed to find TableSpec for '$relation'";
 	return $self->relspec_to_column_list(join('.',@parts) || '',$RelTableSpec,$prefix,@columns);
 }
 

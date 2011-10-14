@@ -1,6 +1,7 @@
 package RapidApp::TableSpec;
 use strict;
 use Moose;
+with 'MooseX::Traits';
 
 # This configuration class defines behaviors of tables and
 # columns in a general way that can be used in different places
@@ -15,7 +16,7 @@ sub BUILD {
 	$self->add_onrequest_columns_mungers( $self->column_permissions_roles_munger );
 }
 
-has 'ResultClass' => ( is => 'ro', isa => 'Maybe[Str]', default => undef );
+has 'ResultClass' => ( is => 'ro', isa => 'Str' );
 
 has 'name' => ( is => 'ro', isa => 'Str', required => 1 );
 has 'title' => ( is => 'ro', isa => 'Maybe[Str]', default => undef );

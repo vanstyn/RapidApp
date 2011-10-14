@@ -50,7 +50,6 @@ sub create_result_TableSpec {
 	
 	my $TableSpec = RapidApp::TableSpec->new( 
 		name => $ResultClass->table,
-		ResultClass => $ResultClass,
 		%opt
 	);
 	
