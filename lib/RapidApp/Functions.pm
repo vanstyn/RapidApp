@@ -8,12 +8,25 @@ use Data::Dumper;
 use RapidApp::RootModule;
 
 sub scream {
+	local $_ = caller_data(3);
 	scream_color(YELLOW . BOLD,@_);
 }
 
 sub scream_color {
 	my $color = shift;
-	print STDERR $color . "\n" . Dumper(\@_) . CLEAR . "\n";
+	local $_ = caller_data(3) unless (
+		ref($_) eq 'ARRAY' and
+		scalar(@$_) == 3 and
+		ref($_->[0]) eq 'HASH' and 
+		defined $_->[0]->{package}
+	);
+	
+	my $data = $_[0];
+	$data = \@_ if (scalar(@_) > 1);
+
+	print STDERR 
+		BOLD . $_->[2]->{subroutine} . '  [line ' . $_->[1]->{line} . ']: ' . CLEAR . "\n" .
+		$color . Dumper($data) . CLEAR . "\n";
 }
 
 
@@ -63,6 +76,23 @@ sub rapidapp_add_global_init_coderef {
 		push @RapidApp::RootModule::GLOBAL_INIT_CODEREFS, $ref;
 	}
 }
+
+# Returns an arrayref of hashes containing standard 'caller' function data
+# with named properties:
+sub caller_data {
+	my $depth = shift || 1;
+	
+	my @list = ();
+	for(my $i = 0; $i < $depth; $i++) {
+		my $h = {};
+		($h->{package}, $h->{filename}, $h->{line}, $h->{subroutine}, $h->{hasargs},
+			$h->{wantarray}, $h->{evaltext}, $h->{is_require}, $h->{hints}, $h->{bitmask}) = caller($i);
+		push @list,$h;
+	}
+	
+	return \@list;
+}
+
 
 # Automatically export all functions defined above:
 BEGIN {
