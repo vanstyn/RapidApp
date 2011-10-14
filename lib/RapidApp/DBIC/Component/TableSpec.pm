@@ -38,15 +38,26 @@ sub apply_TableSpec {
 		%{ delete $opt{TableSpec_data_type_profiles} }
 	) if ($opt{TableSpec_data_type_profiles});
 	
-	$self->TableSpec(RapidApp::TableSpec->new( 
-		name => $self->table,
+	$self->TableSpec($self->create_result_TableSpec($self,%opt));
+	
+	$self->TableSpec_rel_columns({});
+}
+
+sub create_result_TableSpec {
+	my $self = shift;
+	my $ResultClass = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	my $TableSpec = RapidApp::TableSpec->new( 
+		name => $ResultClass->table,
+		ResultClass => $ResultClass,
 		%opt
-	));
+	);
 	
 	my $data_types = $self->TableSpec_data_type_profiles;
 	
-	foreach my $col ($self->columns) {
-		my $info = $self->column_info($col);
+	foreach my $col ($ResultClass->columns) {
+		my $info = $ResultClass->column_info($col);
 		my @profiles = ();
 		
 		push @profiles, $info->{is_nullable} ? 'nullable' : 'notnull';
@@ -55,10 +66,10 @@ sub apply_TableSpec {
 		$type_profile = [ $type_profile ] unless (ref $type_profile);
 		push @profiles, @$type_profile; 
 		
-		$self->TableSpec->add_columns( { name => $col, profiles => \@profiles } ); 
+		$TableSpec->add_columns( { name => $col, profiles => \@profiles } ); 
 	}
 	
-	$self->TableSpec_rel_columns({});
+	return $TableSpec;
 }
 
 
@@ -229,6 +240,24 @@ sub TableSpec_add_relationship_columns {
 	}
 }
 
+
+sub related_TableSpec {
+	my $self = shift;
+	my $rel = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	my $info = $self->relationship_info($rel) or die "Relationship '$rel' not found.";
+	my $class = $info->{class};
+	
+	# Manually load and initialize the TableSpec component if it's missing from the
+	# related result class:
+	unless($class->can('TableSpec')) {
+		$class->load_components('+RapidApp::DBIC::Component::TableSpec');
+		$class->apply_TableSpec(%opt);
+	}
+	
+	return $class->TableSpec;
+}
 
 
 

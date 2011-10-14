@@ -21,6 +21,12 @@ around BUILDARGS => sub {
 has 'relation_sep' => ( is => 'ro', isa => 'Str', default => '__' );
 has 'ResultSource' => ( is => 'ro', isa => 'DBIx::Class::ResultSource', required => 1 );
 
+sub ResultClass {
+	my $self = shift;
+	my $source_name = $self->ResultSource->source_name;
+	return $self->ResultSource->schema->class($source_name);
+}
+
 has 'spec' => (
 	is => 'ro',
 	isa => 'ArrayRef[Str]',
@@ -62,6 +68,32 @@ sub _build_columns {
 sub relspec_to_column_list {
 	my $self = shift;
 	my $relspec = shift;
+	my $TableSpec = shift || $self->ResultClass->TableSpec;
+	my $prefix = shift || '';
+	my @columns = @_;
+	
+	if ($relspec eq '') { 
+		foreach my $col ($TableSpec->ResultClass->columns) {
+			my $colname = $prefix . $col;
+			#$self->column_props->{$colname} = $Source->source_name;
+			$self->column_props->{$colname} = $TableSpec->name;
+			push @columns, $colname;
+		}
+		return @columns;
+	}
+	
+	my @parts = split(/\./,$relspec);
+	$prefix .= join($self->relation_sep,@parts) . $self->relation_sep;
+	my $relation = shift @parts;
+	
+	my $RelTableSpec = $TableSpec->ResultClass->related_TableSpec($relation) or croak "Failed to find TableSpec for '$relation'";
+	return $self->relspec_to_column_list(join('.',@parts) || '',$RelTableSpec,$prefix,@columns);
+}
+
+
+sub relspec_to_column_list_old {
+	my $self = shift;
+	my $relspec = shift;
 	my $Source = shift || $self->ResultSource;
 	my $prefix = shift || '';
 	my @columns = @_;
@@ -69,6 +101,7 @@ sub relspec_to_column_list {
 	if ($relspec eq '') { 
 		foreach my $col ($Source->columns) {
 			my $colname = $prefix . $col;
+			#$self->column_props->{$colname} = $Source->source_name;
 			$self->column_props->{$colname} = $Source->source_name;
 			push @columns, $colname;
 		}
@@ -78,6 +111,9 @@ sub relspec_to_column_list {
 	my @parts = split(/\./,$relspec);
 	$prefix .= join($self->relation_sep,@parts) . $self->relation_sep;
 	my $relation = shift @parts;
+	
+	$Source->related_TableSpec($relation);
+	
 	my $RelSource = $Source->related_source($relation) or croak "Failed to find ResultSource for '$relation'";
 	return $self->relspec_to_column_list(join('.',@parts) || '',$RelSource,$prefix,@columns);
 }
