@@ -35,10 +35,81 @@ has 'column_prefix' => ( is => 'ro', isa => 'Str', lazy => 1, default => sub {
 	return $col_pre . $self->relation_sep;
 });
 
+=head1 ColSpec format 'include_colspec'
+
+The include_colspec attribute defines joins and columns to include. It consists 
+of a list of "ColSpecs"
+
+The ColSpec format is a string format consisting of consists of 2 parts: an 
+optional 'relspec' followed by a 'colspec'. The last dot "." in the string separates
+the relspec on the left from the colspec on the right. A string without periods
+has no (or an empty '') relspec.
+
+The relspec is a chain of relationship names delimited by dots. These must be exact
+relnames in the correct order. These are used to create the base DBIC join attr. For
+example, this relspec (to the left of .*):
+
+ object.owner.contact.*
+ 
+Would become this join:
+
+ { object => { owner => 'contact' } }
+ 
+Multple overlapping rels are collapsed in an inteligent manner. For example, this:
+
+ object.owner.contact.*
+ object.owner.notes.*
+ 
+Gets collapsed into this join:
+
+ { object => { owner => [ 'contact', 'notes' ] } }
+ 
+The colspec to the right of the last dot "." is a glob pattern match string to identify
+which columns of that last relationship to include. Standard simple glob wildcards * ? [ ]
+are supported (this is powered by the Text::Glob module. ColSpecs with no relspec apply to
+the base table/class. If no base colspecs are defined, '*' is assumed, which will include
+all columns of the base table (but not of any related tables). 
+
+Note that this ColSpec:
+
+ object.owner.contact
+ 
+Would join { object => 'owner' } and include one column named 'contact' within the owner table.
+
+This ColSpec, on the other hand:
+
+ object.owner.contact.*
+ 
+Would join { object => { owner => 'contact' } } and include all columns within the contact table.
+
+The ! chacter can exclude instead of include. It can only be at the start of the line, and it will
+cause the colspec to exclude columns that match the pattern. For the purposes of joining, ! ColSpecs
+are ignored.
+
+=head1 EXAMPLE ColSpecs:
+
+	'name',
+	'!id',
+	'*',
+	'!*',
+	'project.*', 
+	'user.*',
+	'contact.notes.owner.foo*',
+	'contact.notes.owner.foo.sd',
+	'project.dist1.rsm.object.*_ts',
+	'relation.column',
+	'owner.*',
+	'!owner.*_*',
+
+=cut
+
+
 subtype 'ColSpec', as 'Str', where {
 	/\s+/ and warn "ColSpec '$_' is invalid because it contains whitespace" and return 0;
 	/[A-Z]+/ and warn "ColSpec '$_' is invalid because it contains upper case characters" and return 0;
 	/([^a-z0-9\-\_\.\!\*\?\[\]])/ and warn "ColSpec '$_' contains invalid characters ('$1')." and return 0;
+	/^\./ and warn "ColSpec '$_' is invalid: \".\" cannot be the first character" and return 0;
+	/\.$/ and warn "ColSpec '$_' is invalid: \".\" cannot be the last character (did you mean '$_*' ?)" and return 0;
 	
 	$_ =~ s/^\!//;
 	/\!/ and warn "ColSpec '$_' is invalid: ! (not) character may only be supplied at the begining of the string." and return 0;
@@ -72,42 +143,43 @@ has 'base_colspec' => ( is => 'ro', isa => 'ArrayRef', lazy => 1,default => sub 
 });
 
 # accepts a list of column names and returns the names that match the base colspec
+# colspecs are tested in order, with later matches overriding earlier ones
 sub filter_columns {
 	my $self = shift;
 	my @columns = @_;
-	
-	my $limits = [];
-	my $excludes = [];
-	
-	foreach my $spec (@{$self->base_colspec}) {
-		if($spec =~ /^\!/) {
-			$spec =~ s/^\!//;
-			push @$excludes, $spec;
-			next;
+
+	my %match = map { $_ => 0 } @columns;
+	for my $spec (@{$self->base_colspec}) {
+		for my $col (@columns) {
+			my $result = $self->colspec_test($spec,$col);
+			$match{$col} = $result if (defined $result);
 		}
-		push @$limits, $spec;
 	}
+
+	return grep { $match{$_} } keys %match;
+}
+
+sub colspec_test {
+	my $self = shift;
+	my $colspec = shift;
+	my $col = shift;
 	
-	my %match = ();
-	COL: foreach my $col (@columns) {
-		my $skip = 0;
-		match_glob($_,$col) and next COL for (@$excludes);
-		match_glob($_,$col) and $match{$col}++ for (@$limits);
+	$colspec =~ /\./ and 
+		die "colspec_test(): invalid colspec '$colspec' - relspecs not allowed, only base_colspecs can be testeded.";
+	
+	my $match_ret = 1;
+	if ($colspec =~ /^\!/) {
+		$colspec =~ s/^\!//;
+		$match_ret = 0;
 	}
-	return keys %match;
+	return $match_ret if (match_glob($colspec,$col));
+	return undef;
 }
 
 sub BUILD {}
 after BUILD => sub {
 	my $self = shift;
-	
-	if($self->column_prefix) {
-		$self->meta->find_attribute_by_name('column_property_transforms')->set_value($self,{})
-			unless (defined $self->column_property_transforms);
-			
-		$self->column_property_transforms->{name} = sub { $self->column_prefix . $_ };
-	}
-	
+
 	foreach my $col ($self->filter_columns($self->ResultClass->columns)) {
 		my $info = $self->ResultClass->column_info($col);
 		my @profiles = ();
@@ -118,9 +190,8 @@ after BUILD => sub {
 		$type_profile = [ $type_profile ] unless (ref $type_profile);
 		push @profiles, @$type_profile; 
 		
-		$self->add_columns( { name => $col, profiles => \@profiles } ); 
+		$self->add_columns( { name => $self->column_prefix . $col, profiles => \@profiles } ); 
 	}
-
 };
 
 
@@ -129,6 +200,7 @@ has 'relation_order' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default
 	my $self = shift;
 	
 	my @order = ('');
+	my %end_rels = ( '' => 1 );
 	foreach my $spec (@{ clone($self->include_colspec) }) {
 		my $not = 0;
 		$not = 1 if ($spec =~ /\!/);
@@ -141,12 +213,14 @@ has 'relation_order' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default
 			$rel = '';
 		}
 		
-		
-		
+		# end rels that link to colspecs and not just to relspecs 
+		# (intermediate rels with no direct columns)
+		$end_rels{$rel}++ if (
+			not $subspec =~ /\./ and 
+			not $not
+		 );
 		
 		$subspec = '!' . $subspec if ($not);
-		
-		scream([$spec,$rel,$subspec]) if ($not);
 		
 		unless(defined $self->relation_colspecs->{$rel}) {
 			$self->relation_colspecs->{$rel} = [];
@@ -158,6 +232,9 @@ has 'relation_order' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default
 	
 	# Set the base colspec to '*' if its empty:
 	push @{$self->relation_colspecs->{''}}, '*' unless (@{$self->relation_colspecs->{''}} > 0);
+	foreach my $rel (@order) {
+		push @{$self->relation_colspecs->{$rel}}, '!*' unless ($end_rels{$rel});
+	}
 	return \@order;
 });
 
@@ -182,11 +259,15 @@ sub related_TableSpec {
 	#	$class->apply_TableSpec(%opt);
 	#}
 	
+	my $relspec_prefix = $self->relspec_prefix;
+	$relspec_prefix .= '.' if ($relspec_prefix and $relspec_prefix ne '');
+	$relspec_prefix .= $rel;
+	
 	my $TableSpec = $self->new_TableSpec(
 		name => $class->table,
 		ResultClass => $class,
 		relation_sep => $self->relation_sep,
-		column_prefix => $self->column_prefix || '' . $rel . $self->relation_sep,
+		relspec_prefix => $relspec_prefix,
 		%opt
 	);
 	
@@ -204,7 +285,7 @@ sub flattened_TableSpec {
 		ResultClass => $self->ResultClass,
 		relation_sep => $self->relation_sep,
 		include_colspec => $self->base_colspec,
-		column_prefix => $self->column_prefix
+		relspec_prefix => $self->relspec_prefix
 	);
 	
 	foreach my $rel (@{$self->relation_order}) {
