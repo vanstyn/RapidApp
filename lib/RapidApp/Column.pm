@@ -1,3 +1,197 @@
+package RapidApp::Column;
+use strict;
+use warnings;
+use RapidApp::Include qw(sugar perlutil);
+
+our @gridColParams= qw(
+	name sortable hidden header dataIndex width editor menuDisabled tpl xtype
+	id no_column no_multifilter no_quick_search extra_meta_data css listeners
+	filter field_cnf rel_combo_field_cnf field_cmp_config render_fn renderer
+);
+our @attrs= ( @gridColParams, qw(
+	data_type required_fetch_columns read_raw_munger update_munger 
+	field_readonly field_readonly_config field_config
+) );
+our %triggers= (
+	render_fn => '_set_render_fn',
+	renderer  => '_set_renderer',
+);
+
+
+eval('sub '.$_.' {'
+	.(exists($triggers{$_})
+		? 'if (scalar @_ > 1) { my $old= $_[0]->{'.$_.'}; $_[0]->{'.$_.'} = $_[1]; $_[0]->'.$triggers{$_}.'($_[0]->{'.$_.'}, $old); }'
+		: '$_[0]->{'.$_.'} = $_[1] if scalar @_ > 1;'
+	).'$_[0]->{'.$_.'}
+}') for @attrs;
+
+our %defaults= (
+	sortable               => '\1',
+	hidden                 => '\0',
+	header                 => '$self->{name}',
+	dataIndex              => '$self->{name}',
+	width                  => '70',
+	no_column              => '\0',
+	no_multifilter         => '\0',
+	no_quick_search        => '\0',
+	field_readonly         => '0',
+	required_fetch_columns => '[]',
+	field_readonly_config  => '{}',
+	field_config           => '{}',
+);
+
+eval 'sub apply_defaults {
+	my $self= shift;
+	'.join(';', map { 'exists $self->{'.$_.'} or $self->{'.$_.'}= '.$defaults{$_} } keys %defaults).'
+}';
+
+sub _set_render_fn {
+	my ($self,$new,$old) = @_;
+	return unless ($new);
+	
+	# renderer takes priority over render_fn
+	return if (defined $self->renderer);
+	
+	$self->xtype('templatecolumn');
+	$self->tpl('{[' . $new . '(values.' . $self->name . ',values)]}');
+}
+
+sub _set_renderer {
+	my ($self,$new,$old) = @_;
+	return unless ($new);
+	
+	$self->xtype(undef);
+	$self->tpl(undef);
+	
+	return unless (defined $new and not blessed $new);
+	$self->{renderer}= jsfunc($new);
+}
+
+our %attrKeySet= map { $_ => 1 } @attrs;
+our %gridColParamKeySet= map { $_ => 1 } @gridColParams;
+
+sub new {
+	my $class= shift;
+	my $self= bless { (ref($_[0]) eq 'HASH')? %{$_[0]} : @_ }, $class;
+	$self->{renderer} = jsfunc($self->{renderer}) if (defined $self->{renderer} and not blessed $self->{renderer});
+	for (keys %$self) {
+		$attrKeySet{$_} || die("No such attribute: $class\::$_");
+		my $t= $triggers{$_};
+		$t and $self->$t($self->{$_});
+	}
+	$self->apply_defaults;
+	return $self;
+}
+
+sub apply_attributes {
+	my $self = shift;
+	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	foreach my $attr (@attrs) {
+		next unless (exists $new{$attr});
+		$self->$attr($new{$attr});
+		delete $new{$attr};
+	}
+	
+	#There should be nothing left over in %new:
+	if (scalar(keys %new) > 0) {
+		#die "invalid attributes (" . join(',',keys %new) . ") passed to apply_attributes";
+		use Data::Dumper;
+		die  "invalid attributes (" . join(',',keys %new) . ") passed to apply_attributes :\n" . Dumper(\%new);
+	}
+}
+
+sub applyIf_attributes {
+	my $self = shift;
+	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	foreach my $attr (@attrs) {
+		next unless (exists $new{$attr});
+		$self->$attr($new{$attr}) unless defined $self->{$attr}; # <-- only set attrs that aren't already set
+		delete $new{$attr};
+	}
+	
+	#There should be nothing left over in %new:
+	if (scalar(keys %new) > 0) {
+		#die "invalid attributes (" . join(',',keys %new) . ") passed to apply_attributes";
+		use Data::Dumper;
+		die  "invalid attributes (" . join(',',keys %new) . ") passed to apply_attributes :\n" . Dumper(\%new);
+	}
+}
+
+sub get_grid_config {
+	my $self = shift;
+	return { map { defined($self->{$_})? ($_ => $self->{$_}) : () } @gridColParams };
+}
+
+sub apply_field_readonly_config	{
+	my $self= shift;
+	%{ $self->{field_readonly_config} }= %{ $self->{field_readonly_config} }, (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+}
+
+sub get_field_config_readonly_param {
+	my $self= shift;
+	return $self->{field_readonly_config}{$_[0]};
+}
+
+sub has_field_config_readonly_param	{
+	my $self= shift;
+	return exists $self->{field_readonly_config}{$_[0]};
+}
+
+sub has_no_field_readonly_config {
+	my $self= shift;
+	return 0 == (keys %{ $self->{field_readonly_config} });
+}
+
+sub delete_field_readonly_config_param {
+	my $self= shift;
+	delete $self->{field_readonly_config}{$_[0]};
+}
+
+sub apply_field_config {
+	my $self= shift;
+	%{ $self->{field_config} }= %{ $self->{field_config} }, (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+}
+sub get_field_config_param {
+	my $self= shift;
+	return $self->{field_config}{$_[0]};
+}
+
+sub has_field_config_param	{
+	my $self= shift;
+	return exists $self->{field_config}{$_[0]};
+}
+sub has_no_field_config {
+	my $self= shift;
+	return 0 == (keys %{ $self->{field_config} });
+}
+
+sub delete_field_config_param {
+	my $self= shift;
+	delete $self->{field_config}{$_[0]};
+}
+
+sub get_field_config {
+	my $self = shift;
+	
+	my $config = $self->field_config;
+	$config = $self->editor if ($self->editor);
+	
+	my $cnf = { 
+		name		=> $self->name,
+		%$config
+	};
+	
+	$cnf = { %$cnf, %{$self->field_readonly_config} } if ($self->field_readonly);
+	
+	$self->field_cmp_config($cnf);
+	
+	return $cnf;
+}
+
+=pod
+
 # We extend the metaclass here to hold a list of attributes which are "grid config" parameters.
 # Note that to properly handle dynamic package modifications we would need to  invalidate this cache in many
 #    circumstances, which would add a lot of complexity to this class.
@@ -339,4 +533,5 @@ sub get_field_config {
 
 no Moose;
 __PACKAGE__->meta->make_immutable;
+=cut
 1;
