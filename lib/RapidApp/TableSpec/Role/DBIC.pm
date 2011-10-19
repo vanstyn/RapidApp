@@ -420,24 +420,17 @@ around 'column_names' => sub {
 };
 
 
-
-
-
-
 sub resolve_dbic_colname {
 	my $self = shift;
 	my $name = shift;
+	my $merge_join = shift;
 	
 	my ($rel,$col,$join) = $self->resolve_dbic_rel_alias_by_column_name($name);
 	$join = {} unless (defined $join);
+	%$merge_join = %{ merge($merge_join,$join) } if ($merge_join);
 	
-	my $dbic_name = $rel . '.' . $col;
-	
-	scream_color(RED,$dbic_name,$join);
-	
-	return $dbic_name;
+	return $rel . '.' . $col;
 }
-
 
 
 sub resolve_dbic_rel_alias_by_column_name {
@@ -457,6 +450,25 @@ sub resolve_dbic_rel_alias_by_column_name {
 	return ($alias,$dbname,$join);
 }
 
+sub chain_to_hash {
+	my $self = shift;
+	my @chain = @_;
+	
+	my $hash = {};
+
+	my @evals = ();
+	foreach my $item (@chain) {
+		unshift @evals, '$hash->{\'' . join('\'}->{\'',@chain) . '\'} = {}';
+		pop @chain;
+	}
+	eval $_ for (@evals);
+	
+	return $hash;
+}
+
+
+
+=pod
 
 
 # returns a DBIC join attr based on the colspec
@@ -492,21 +504,7 @@ has 'relspec_colspec_map' => ( is => 'ro', isa => 'HashRef', default => sub {{}}
 has 'relspec_order' => ( is => 'ro', isa => 'ArrayRef', default => sub {[]} );
 
 
-sub chain_to_hash {
-	my $self = shift;
-	my @chain = @_;
-	
-	my $hash = {};
 
-	my @evals = ();
-	foreach my $item (@chain) {
-		unshift @evals, '$hash->{\'' . join('\'}->{\'',@chain) . '\'} = {}';
-		pop @chain;
-	}
-	eval $_ for (@evals);
-	
-	return $hash;
-}
 
 sub hash_with_undef_values_to_array_deep {
 	my ($self,$hash) = @_;
@@ -546,7 +544,7 @@ sub leaf_hash_to_string {
 
 
 
-
+=cut
 
 
 1;

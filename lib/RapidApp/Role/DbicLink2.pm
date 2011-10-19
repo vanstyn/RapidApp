@@ -33,6 +33,7 @@ sub _build_TableSpec {
 		include_colspec => $self->include_colspec
 	);
 	
+	$TableSpec->add_all_related_TableSpecs_recursive;
 	return $TableSpec;
 }
 
@@ -88,6 +89,51 @@ sub read_records1 {
 		results => $Rs->pager->total_entries,
 	};
 }
+
+
+
+sub get_request_Rs_attr {
+	my $self = shift;
+	my $params = shift;
+	
+	$params = {
+		start => 0,
+		limit => 100000,
+		dir => 'asc',
+		%$params
+	};
+	
+	my $attr = {
+		select => [],
+		as => [],
+		join => {},
+		page => int($params->{start}/$params->{limit}) + 1,
+		rows => $params->{limit}
+	};
+	
+	$attr->{order_by} = {
+		'-' . $params->{dir} => lc($self->TableSpec->resolve_dbic_colname($params->{sort},$attr->{join}))
+	} if (defined $params->{sort} and defined $params->{dir});
+	
+	$params->{columns} = [] unless (defined $params->{columns});
+	$params->{columns} = $self->json->decode($params->{columns}) unless (ref $params->{columns});
+	
+	# Remove duplicates:
+	my %Seen = ();
+	$params->{columns} = [ grep { ! $Seen{$_}++ } @{$params->{columns}} ];
+	
+	for my $col (@{$params->{columns}}) {
+		my $dbic_name = $self->TableSpec->resolve_dbic_colname($col,$attr->{join});
+		push @{$attr->{select}}, $dbic_name;
+		push @{$attr->{as}}, $col;
+	}
+	
+	# This makes it look prettier, but is probably not needed:
+	#$attr->{join} = $self->TableSpec->hash_with_undef_values_to_array_deep($attr->{join});
+	
+	return $attr;
+}
+
 
 
 
