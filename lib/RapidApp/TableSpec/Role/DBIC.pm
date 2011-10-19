@@ -190,10 +190,12 @@ after BUILD => sub {
 		$type_profile = [ $type_profile ] unless (ref $type_profile);
 		push @profiles, @$type_profile; 
 		
-		$self->add_columns( { name => $self->column_prefix . $col, profiles => \@profiles } ); 
+		$self->add_columns( { name => $self->column_prefix . $col, profiles => \@profiles } );
+		$self->dbic_col_names->{$self->column_prefix . $col} = $col;
 	}
 };
-
+# Tracks original dbic column names:
+has 'dbic_col_names' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 
 has 'relation_colspecs' => ( is => 'ro', isa => 'HashRef', default => sub {{ '' => [] }} );
 has 'relation_order' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default => sub {
@@ -407,6 +409,41 @@ around 'column_names' => sub {
 	push @names, $self->related_TableSpec->{$_}->column_names for (@{$self->related_TableSpec_order});
 	return @names;
 };
+
+
+
+
+
+
+sub resolve_dbic_colname {
+	my $self = shift;
+	my $name = shift;
+	return join('.',$self->resolve_dbic_rel_alias_by_column_name($name));
+}
+
+sub resolve_dbic_rel_alias_by_column_name {
+	my $self = shift;
+	my $name = shift;
+	
+	my $rel = $self->column_name_relationship_map->{$name} or return ('me',$name);
+	my $TableSpec = $self->related_TableSpec->{$rel};
+	my ($alias,$dbname) = $TableSpec->resolve_dbic_rel_alias_by_column_name($name);
+	
+	if ($alias eq 'me') {
+		my $pre = $TableSpec->column_prefix;
+		$name =~ s/^${pre}//;
+		return ($rel,$name)
+	}
+	
+	return ($alias,$dbname);
+}
+
+
+
+
+
+
+
 
 # returns a DBIC join attr based on the colspec
 has 'join' => ( is => 'ro', lazy_build => 1 );
