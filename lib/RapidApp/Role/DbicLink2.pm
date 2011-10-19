@@ -5,6 +5,7 @@ use Moose::Role;
 use RapidApp::Include qw(sugar perlutil);
 use RapidApp::TableSpec::Role::DBIC;
 
+
 # Colspec attrs can be specified as simple arrayrefs
 has 'include_colspec' => ( is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]} );
 
@@ -38,63 +39,59 @@ sub _build_TableSpec {
 }
 
 
-
-sub read_records {
+sub _ResultSet {
 	my $self = shift;
-	my $params = shift;
-	
-	scream($params);
-
+	my $Rs = $self->ResultSource->resultset;
+	$Rs = $self->ResultSet($Rs) if ($self->can('ResultSet'));
+	return $Rs;
 }
 
 
-
-
-
-# This is the meat of serving data requests.
-#   * calculate a list of columns which should be selected,
-#   * call DbicExtQuery to get the ResultSet,
-#   * build hashes form the result
-sub read_records1 {
-	my ($self, $params)= @_;
+sub read_records {
+	my $self = shift;
+	my $params = shift || $self->c->req->params;
 	
-	# only touch request if params were not supplied
-	$params ||= $self->c->req->params;
+	scream_color(BOLD.MAGENTA,$params);
 	
-	delete $params->{query} if (defined $params->{query} and $params->{query} eq '');
+	my $Rs = $self->_ResultSet;
+	
+	# Apply base Attrs:
+	$Rs = $self->chain_Rs_req_base_Attr($Rs,$params);
+	
+	# Apply
 	
 	
-	if (defined $params->{columns}) {
-		if (!ref $params->{columns}) {
-			my $decoded = $self->json->decode($params->{columns});
-			$params->{columns} = $decoded;
-		}
-		
-		$self->prepare_req_columns($params->{columns});
-		
+	#$Rs->search_rs({},$self->req_Rs_Attr_spec($params));
 
-	}
+	# Apply multifilter:
+	#$Rs = $Rs->search_rs
 	
-	my @arg = ( $params );
-	push @arg, $self->read_extra_search_set if ($self->can('read_extra_search_set'));
-
-	# Build the query
-	my $Rs = $self->DbicExtQuery->build_data_fetch_resultset(@arg);
+	
 	
 	# don't use Row objects
-	$Rs= $Rs->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
-	
+	$Rs = $Rs->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
+
 	return {
 		rows    => [ $Rs->all ],
 		results => $Rs->pager->total_entries,
 	};
 }
 
-
-
-sub get_request_Rs_attr {
+sub req_Rs_Search_spec {
 	my $self = shift;
-	my $params = shift;
+	my $params = shift || $self->c->req->params;
+	
+	return {};
+	
+	# TEMP:
+	#return RapidApp::DbicExtQuery->Search_spec($params)
+}
+
+# Applies base request attrs to ResultSet:
+sub chain_Rs_req_base_Attr {
+	my $self = shift;
+	my $Rs = shift || $self->_ResultSet;
+	my $params = shift || $self->c->req->params;
 	
 	$params = {
 		start => 0,
@@ -104,8 +101,8 @@ sub get_request_Rs_attr {
 	};
 	
 	my $attr = {
-		select => [],
-		as => [],
+		'+select' => [],
+		'+as' => [],
 		join => {},
 		page => int($params->{start}/$params->{limit}) + 1,
 		rows => $params->{limit}
@@ -115,27 +112,129 @@ sub get_request_Rs_attr {
 		'-' . $params->{dir} => lc($self->TableSpec->resolve_dbic_colname($params->{sort},$attr->{join}))
 	} if (defined $params->{sort} and defined $params->{dir});
 	
-	$params->{columns} = [] unless (defined $params->{columns});
-	$params->{columns} = $self->json->decode($params->{columns}) unless (ref $params->{columns});
+	my $columns = $self->param_decodeIf($params->{columns},[]);
 	
 	# Remove duplicates:
 	my %Seen = ();
-	$params->{columns} = [ grep { ! $Seen{$_}++ } @{$params->{columns}} ];
+	@$columns = grep { ! $Seen{$_}++ } @$columns;
 	
-	for my $col (@{$params->{columns}}) {
+	for my $col (@$columns) {
 		my $dbic_name = $self->TableSpec->resolve_dbic_colname($col,$attr->{join});
-		push @{$attr->{select}}, $dbic_name;
-		push @{$attr->{as}}, $col;
+		push @{$attr->{'+select'}}, $dbic_name;
+		push @{$attr->{'+as'}}, $col;
 	}
 	
 	# This makes it look prettier, but is probably not needed:
 	#$attr->{join} = $self->TableSpec->hash_with_undef_values_to_array_deep($attr->{join});
 	
-	return $attr;
+	return $Rs->search_rs({},$attr);
 }
 
+=pod
+# Applies multifilter search to ResultSet:
+sub chain_Rs_req_multifilter {
+	my $self = shift;
+	my $Rs = shift || $self->_ResultSet;
+	my $params = shift || $self->c->req->params;
+	
+	my $multifilter = $self->param_decodeIf($params->{multifilter}) or return $Rs;
+	
+	return $Rs;
+	
+	return $Rs unless (defined $params->{multifilter});
+	
+		my $multifilter = JSON::PP::decode_json($params->{multifilter});
+	
+		my $map_dbfnames;
+		$map_dbfnames = sub {
+			my $multi = shift;
+			if(ref($multi) eq 'HASH') {
+				return $map_dbfnames->($multi->{'-and'}) if (defined $multi->{'-and'});
+				return $map_dbfnames->($multi->{'-or'}) if (defined $multi->{'-or'});
+				
+				foreach my $f (keys %$multi) {
+					# Not sure why this is commented out.
+					# next unless $self->search_permitted($f);
+					
+					# convert table column name to db field name
+					my $dbfName = $self->ExtNamesToDbFields->{$f};
+					if (!defined $dbfName) {
+						$self->c->log->error("Client supplied Unknown multifilter-field '$f' in Ext Query!");
+						next;
+					}
+					
+					$multi->{$dbfName} = $multi->{$f};
+					delete $multi->{$f};
+					
+					# --- translate special content conditions to "LIKE" conditions
+					if (defined $multi->{$dbfName}->{contains}) {
+						$multi->{$dbfName}->{like} = '%' . $multi->{$dbfName}->{contains} . '%';
+						delete $multi->{$dbfName}->{contains};
+					}
+					
+					if (defined $multi->{$dbfName}->{starts_with}) {
+						$multi->{$dbfName}->{like} = $multi->{$dbfName}->{starts_with} . '%';
+						delete $multi->{$dbfName}->{starts_with};
+					}
+					
+					if (defined $multi->{$dbfName}->{ends_with}) {
+						$multi->{$dbfName}->{like} = '%' . $multi->{$dbfName}->{ends_with};
+						delete $multi->{$dbfName}->{ends_with};
+					}
+					
+					if (defined $multi->{$dbfName}->{not_contain}) {
+						$multi->{$dbfName}->{'not like'} = '%' . $multi->{$dbfName}->{not_contain} . '%';
+						delete $multi->{$dbfName}->{not_contain};
+					}
+					# ---
+					
+					# -- Add '%' characters to "like" searches: (disabled in favor of special content conditions above)
+					#if (defined $multi->{$dbfName}->{like} and not $multi->{$dbfName}->{like} =~ /\%/) {
+					#	$multi->{$dbfName}->{like} = '%' . $multi->{$dbfName}->{like} . '%';
+					#}
+					# --
 
+				}
+			}
+			elsif(ref($multi) eq 'ARRAY') {
+				foreach my $item (@$multi) {
+					$map_dbfnames->($item);
+				}
+			}
+		};
+		
+		$map_dbfnames->($multifilter);
+	
+	
+		# Recursive sub to make all lists explicitly '-and' lists:
+		my $add_ands;
+		$add_ands = sub {
+			my $multi = shift;
+			return $multi unless (ref($multi) eq 'ARRAY');
+			
+			foreach my $item (@$multi) {
+				$item = $add_ands->($item);
+			}
+			return { '-and' => $multi };
+		};
+		
+		push @$filter_search, $add_ands->($multifilter);
+	}
+	
+	
+}
+=cut
 
+sub param_decodeIf {
+	my $self = shift;
+	my $param = shift;
+	my $default = shift || undef;
+	
+	return $default unless (defined $param);
+	
+	return $param if (ref $param);
+	return $self->json->decode($param);
+}
 
 
 1;

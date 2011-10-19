@@ -107,7 +107,7 @@ subtype 'ColSpec', as 'Str', where {
 	
 	my @parts = split(/\./,$_); pop @parts;
 	my $relspec = join('.',@parts);
-	$relspec =~ /([\*\?\[\]])/ 
+	$relspec =~ /([\*\?\[\]])/ and $relspec ne '*'
 		and warn "ColSpec '$_' is invalid: glob wildcards are only allowed in the column section, not in the relation section." and return 0;
 	
 	return 1;
@@ -223,6 +223,8 @@ has 'relation_order' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default
 			$subspec = $rel;
 			$rel = '';
 		}
+		
+		$rel = '' if ($rel eq '*');
 		
 		# end rels that link to colspecs and not just to relspecs 
 		# (intermediate rels with no direct columns)
