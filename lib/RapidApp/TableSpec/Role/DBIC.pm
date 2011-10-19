@@ -24,16 +24,7 @@ has 'data_type_profiles' => ( is => 'ro', isa => 'HashRef', default => sub {{
 	timestamp	=> [ 'datetime' ],
 }});
 
-has 'relation_sep' => ( is => 'ro', isa => 'Str', required => 1 );
-has 'relspec_prefix' => ( is => 'ro', isa => 'Str', default => '' );
-has 'column_prefix' => ( is => 'ro', isa => 'Str', lazy => 1, default => sub {
-	my $self = shift;
-	return '' if ($self->relspec_prefix eq '');
-	my $col_pre = $self->relspec_prefix;
-	my $sep = $self->relation_sep;
-	$col_pre =~ s/\./${sep}/g;
-	return $col_pre . $self->relation_sep;
-});
+
 
 =head1 ColSpec format 'include_colspec'
 
@@ -134,6 +125,24 @@ has 'include_colspec' => (
 		$self->base_colspec;
 	}
 );
+
+
+has 'relation_sep' => ( is => 'ro', isa => 'Str', required => 1 );
+has 'relspec_prefix' => ( is => 'ro', isa => 'Str', default => '' );
+# needed_join is the relspec_prefix in DBIC 'join' attr format
+has 'needed_join' => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
+	my $self = shift;
+	return {} if ($self->relspec_prefix eq '');
+	return $self->chain_to_hash(split(/\./,$self->relspec_prefix));
+});
+has 'column_prefix' => ( is => 'ro', isa => 'Str', lazy => 1, default => sub {
+	my $self = shift;
+	return '' if ($self->relspec_prefix eq '');
+	my $col_pre = $self->relspec_prefix;
+	my $sep = $self->relation_sep;
+	$col_pre =~ s/\./${sep}/g;
+	return $col_pre . $self->relation_sep;
+});
 
 has 'base_colspec' => ( is => 'ro', isa => 'ArrayRef', lazy => 1,default => sub {
 	my $self = shift;
@@ -418,30 +427,35 @@ around 'column_names' => sub {
 sub resolve_dbic_colname {
 	my $self = shift;
 	my $name = shift;
-	return join('.',$self->resolve_dbic_rel_alias_by_column_name($name));
+	
+	my ($rel,$col,$join) = $self->resolve_dbic_rel_alias_by_column_name($name);
+	$join = {} unless (defined $join);
+	
+	my $dbic_name = $rel . '.' . $col;
+	
+	scream_color(RED,$dbic_name,$join);
+	
+	return $dbic_name;
 }
+
+
 
 sub resolve_dbic_rel_alias_by_column_name {
 	my $self = shift;
 	my $name = shift;
 	
-	my $rel = $self->column_name_relationship_map->{$name} or return ('me',$name);
-	my $TableSpec = $self->related_TableSpec->{$rel};
-	my ($alias,$dbname) = $TableSpec->resolve_dbic_rel_alias_by_column_name($name);
-	
-	if ($alias eq 'me') {
-		my $pre = $TableSpec->column_prefix;
+	my $rel = $self->column_name_relationship_map->{$name};
+	unless ($rel) {
+		my $pre = $self->column_prefix;
 		$name =~ s/^${pre}//;
-		return ($rel,$name)
+		return ('me',$name,$self->needed_join);
 	}
-	
-	return ($alias,$dbname);
+
+	my $TableSpec = $self->related_TableSpec->{$rel};
+	my ($alias,$dbname,$join) = $TableSpec->resolve_dbic_rel_alias_by_column_name($name);
+	$alias = $rel if ($alias eq 'me');
+	return ($alias,$dbname,$join);
 }
-
-
-
-
-
 
 
 
