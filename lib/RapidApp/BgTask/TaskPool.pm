@@ -199,18 +199,21 @@ Supported parameters:
  * cmd  => $scalar          - the string which should be passed to the shell
  * exec => [ $prog, @args ] - an array of parameters which will be passed to the exec() syscall
  * env  => %environment     - a hash of environment variables to set for the child
+ * behavior =>  foreground: run as a plain console program.
+				background: redirect stdout and stderr to a file, and double-fork to kill parent and be owned by init, but still exit with current process group.
+				daemon:     same as background, but also start a new session to disassociate with the caller's process group.
  * meta => %freeForm        - a hash of free-form metadata to be associated with the process
- * retainOutput => $bool - whether to hold onto output even after it has been read, so that other processes can read it
+ * maxReadBufSize => $int   - the maximum bytes of the job's output which will be held for client requests
+ * lockfile => $filename    - path of a file which must be able to be locked, or the job exits
 
 =cut
-sub SUCCESS_RESPONSE { "\nOK\n"; }
-
 sub spawn {
 	my $self= shift;
 	my %p= validate(@_, {
 		cmd            => { type => SCALAR,   optional => 1 },
 		exec           => { type => ARRAYREF, optional => 1 },
 		env            => { type => HASHREF,  optional => 1 },
+		behavior       => { type => SCALAR,   optional => 1 },
 		meta           => { type => HASHREF,  optional => 1 },
 		maxReadBufSize => { type => SCALAR,   optional => 1 },
 		lockfile       => { type => SCALAR,   optional => 1 },
@@ -221,16 +224,23 @@ sub spawn {
 	$p{exec} ||= [ 'sh', '-c', $p{cmd} ];
 	delete $p{cmd};
 	
-	# start the supervisor
+	# default behavior is "background"
+	$p{behavior} ||= 'background';
+	
+	# Serialize the parameters
 	my $serializedParams= freeze \%p;
+	if ($ENV{DEBUG_BGTASK}) { IO::File->new("> /tmp/bgtask_serialized_params.sto")->print($serializedParams); }
+	
+	# start the supervisor
 	my ($pid, $childIn, $childOut, $childErr)= System::Command->spawn(
 		@{ $self->supervisorCmd },
 		{ env => $self->supervisorEnv }
 		#	input => $serializedParams,
 	);
-	if ($ENV{DEBUG_BGTASK}) { IO::File->new("> /tmp/bgtask_serialized_params.sto")->print($serializedParams); }
-	defined $pid or die "Failed to start ".join(' ',@{ $self->supervisorCmd });
-	DEBUG(bgtask => "pid=$pid");
+	defined $pid
+		or die "Failed to start ".join(' ',@{ $self->supervisorCmd });
+	
+	# The child is now running.  It redirects STDOUT, so we don't bother watching it.
 	close $childOut;
 	
 	# give the supervisor its parameters
@@ -239,25 +249,33 @@ sub spawn {
 	close $childIn;
 	
 	if ($wrote ne length($serializedParams)) {
-		kill $pid;
 		close $childErr;
+		kill KILL => $pid;
+		waitpid($pid, 0);
 		die "Failed to write params: wrote = $wrote, errno = $!";
 	}
 	
+	if ($p{behavior} ne 'foreground') {
+		# The child daemonizes after receiving its parameters.
+		# We reap the temporary process.
+		DEBUG(bgtask => "# collecting intermediate child $pid");
+		waitpid($pid, 0)
+	}
+	
 	# This will wait until the supervisor either dies, or starts successfully
-	my $response;
-	{ local $/= undef;
-	  $response= <$childErr>;
-	  close $childErr;
-	}
-	DEBUG(bgtask => "response=$response");
+	my @response= <$childErr>;
+	close $childErr;
 	
-	my $ok= SUCCESS_RESPONSE();
-	if (substr($response, -length($ok)) ne $ok) {
-		die "Task supervisor failed: $response";
+	if ($ENV{DEBUG_BGTASK}) {
+		DEBUG(bgtask => "response=\n\t".join("\t",@response));
 	}
 	
-	return $self->taskClass->new($self, $pid);
+	if (scalar @response and $response[-1] =~ /DAEMON_PID=([0-9]+)\n/) {
+		return $self->taskClass->new($self, $1);
+	} else {
+		chomp(@response);
+		die "Task supervisor failed: \n\t".join("\t",@response);
+	}
 }
 
 =head2 @tasks= $pool->search( %infoPattern | sub {$bool} );
@@ -293,10 +311,13 @@ sub search {
 		unless (kill 0, $pid) { unlink($sock); next; }
 		my $task= $self->taskClass->new($self, $pid);
 		if ($pattern) {
+			my $info;
+			try { $info= $task->info } catch { warn "Can't connect to bgtask $pid: $_" };
+			next unless $info;
 			if (ref($pattern) eq 'CODE') {
-				next unless try { $pattern->($task->info) };
+				next unless try { $pattern->($info) };
 			} else {
-				next unless _hashCheck($task->info, $pattern);
+				next unless _hashCheck($info, $pattern);
 			}
 		}
 		push @result, $task;

@@ -12,6 +12,8 @@ use RapidApp::BgTask::TaskPool;
 use RapidApp::BgTask::MsgPipeNB;
 use Data::Dumper;
 use Try::Tiny;
+use POSIX 'setsid';
+use Cwd 'chdir';
 use Hash::Merge 'merge';
 use Scalar::Util 'weaken';
 use Params::Validate ':all';
@@ -91,38 +93,56 @@ sub trace {
 sub script_main {
 	my $class= shift;
 	
-	# optional support for capturing errors with RapidApp::TraceCapture
-	my $tcap_coderef= RapidApp::TraceCapture->can("captureTrace");
-	local $SIG{__DIE__}= $tcap_coderef if $tcap_coderef;
-	
 	# Params come in serialized on STDIN.
 	# We don't use STDOUT, and STDERR is used to report back to the caller.
 	# Once we report our success, we redirect STDOUT and STDERR to a file.
 	
+	DEBUG(bgtask => '# reading params');
 	my $serializedParams;
 	{ local $/= undef;
 	  $serializedParams= <STDIN>;
-	  close STDIN;
 	}
-	
-	my $taskPool= $ENV{BGTASK_TASKPOOL_PATH}? RapidApp::BgTask::TaskPool->new(path => $ENV{BGTASK_TASKPOOL_PATH}) : RapidApp::BgTask->defaultTaskPool();
 	
 	defined $serializedParams && length $serializedParams or die "No child process arguments defined";
 	my $p= thaw $serializedParams;
 	
+	my $taskPool= $ENV{BGTASK_TASKPOOL_PATH}? RapidApp::BgTask::TaskPool->new(path => $ENV{BGTASK_TASKPOOL_PATH}) : RapidApp::BgTask->defaultTaskPool();
+	
+	$p->{behavior} ||= 'background';
+	DEBUG(bgtask => behavior => $p->{behavior});
+	if ($p->{behavior} ne 'foreground') {
+		umask 0;
+		my $outfname= $taskPool->outputPath($$);
+		DEBUG(bgtask => outFname => $outfname);
+		open(STDOUT, '>', $outfname) or die "Failed to redirect stdout to $outfname";
+		
+		DEBUG(bgtask => '# detaching from parent');
+		defined(my $pid= fork) or die "fork failed: $!";
+		exit 0 if $pid; # parent exits, to allow us to daemonize
+		
+		if ($p->{behavior} eq 'daemon') {
+			chdir '/' or die "chdir: $!";
+			setsid();
+			defined($pid= fork) or die "fork failed: $!";
+			exit 0 if $pid; # parent exits, ensuring we have no controlling TTY.
+		}
+	}
+	
+	close STDIN;
+	
+	DEBUG(bgtask => '# taking lockfile');
 	if ($p->{lockfile}) {
 		take_lockfile($p->{lockfile}) or die "Failed to acquire lockfile \"$p->{lockfile}\"";
 	}
+	DEBUG(bgtask => '# got lockfile');
 	
-	if (!(@ARGV and $ARGV[0] eq '-f')) {
-		my $outfname= $taskPool->outputPath($$);
-		open(STDOUT, '> '.$outfname) or die "Failed to redirect stdout to $outfname";
-		
-		setpgrp(0,0); # become our own process group
-	}
-	
-	# this must be called before fork, for reliable child watching
+	# this must be called before we fork the job, for reliable child watching
 	AnyEvent::detect();
+	
+	DEBUG(bgtask => '# detected AnyEvent');
+	# optional support for capturing errors with RapidApp::TraceCapture
+	my $tcap_coderef= RapidApp::TraceCapture->can("captureTrace");
+	local $SIG{__DIE__}= $tcap_coderef if $tcap_coderef;
 	
 	my $supervisor= $class->new(
 		taskPool => $taskPool,
@@ -132,16 +152,21 @@ sub script_main {
 		maxReadBufSize => $p->{maxReadBufSize},
 	);
 	
-	# At this point, it is safe to assume we succeeded.  So, we write "OK" to stderr
+	# At this point, it is safe to assume we succeeded.  So, we write the pid to stderr
 	#   to let the caller know we're running.
-	print STDERR RapidApp::BgTask::TaskPool->SUCCESS_RESPONSE;
+	print STDERR "\nDAEMON_PID=$$\n";
 	open STDERR, ">&STDOUT";
+	# we have now closed all file handles to the parent (unless we're in foreground mode)
 	
 	warn "Testing";
 	
 	my $sigint=  AE::signal INT  => sub { $supervisor->terminate };
 	my $sigterm= AE::signal TERM => sub { $supervisor->terminate };
 	my $sighup=  AE::signal HUP  => sub { $supervisor->terminate };
+	
+	# if we're not a daemon, we periodically check if our process group leader is still running.
+	my $pgrpCheck= ($p->{behavior} eq 'daemon')? undef : AE::timer 6, 6, sub { $supervisor->_checkGroupLeader };
+	
 	$supervisor->runTilDone;
 	$supervisor->_cleanupFinal;
 }
@@ -227,6 +252,14 @@ sub runTilDone {
 	my $self= shift;
 	trace();
 	$self->endEvent->recv;
+}
+
+sub _checkGroupLeader {
+	my $self= shift;
+	if (!kill(0, getpgrp)) {
+		print "Process group leader has died: exiting.\n";
+		$self->terminate;
+	}
 }
 
 sub _cleanupNice {
