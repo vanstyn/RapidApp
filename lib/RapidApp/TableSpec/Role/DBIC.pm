@@ -275,9 +275,10 @@ sub related_TableSpec {
 }
 
 
+
 # Recursively flattens/merges in columns from related TableSpecs (matching include_colspec)
 # into a new TableSpec object and returns it:
-sub flattened_TableSpec {
+sub flattened_TableSpec_old {
 	my $self = shift;
 	
 	my $Flattened = $self->new_TableSpec(
@@ -298,6 +299,114 @@ sub flattened_TableSpec {
 	return $Flattened;
 }
 
+
+
+
+
+
+# Recursively flattens/merges in columns from related TableSpecs (matching include_colspec)
+# into a new TableSpec object and returns it:
+sub flattened_TableSpec {
+	my $self = shift;
+	
+	#return $self;
+	
+	my $Flattened = $self->new_TableSpec(
+		name => $self->name,
+		ResultClass => $self->ResultClass,
+		relation_sep => $self->relation_sep,
+		include_colspec => $self->include_colspec,
+		relspec_prefix => $self->relspec_prefix
+	);
+	
+	$Flattened->add_all_related_TableSpecs_recursive;
+	
+	#scream_color(CYAN,$Flattened->column_name_relationship_map);
+	
+	return $Flattened;
+}
+
+
+sub add_all_related_TableSpecs_recursive {
+	my $self = shift;
+	
+	foreach my $rel (@{$self->relation_order}) {
+		next if ($rel eq '');
+		my $TableSpec = $self->add_related_TableSpec( $rel, {
+			include_colspec => $self->relation_colspecs->{$rel}
+		});
+		
+		$TableSpec->add_all_related_TableSpecs_recursive;
+		
+		for my $name ($TableSpec->column_names) {
+			die "Column name conflict: " . $name . " is already defined" if ($self->has_column($name));
+			$self->column_name_relationship_map->{$name} = $rel;
+		}
+	}
+	return $self;
+}
+
+
+has 'column_name_relationship_map' => ( is => 'ro', isa => 'HashRef[Str]', default => sub {{}} );
+has 'related_TableSpec' => ( is => 'ro', isa => 'HashRef[RapidApp::TableSpec]', default => sub {{}} );
+has 'related_TableSpec_order' => ( is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]} );
+sub add_related_TableSpec {
+	my $self = shift;
+	my $rel = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	die "There is already a related TableSpec associated with the '$rel' relationship" if (
+		defined $self->related_TableSpec->{$rel}
+	);
+	
+	my $info = $self->ResultClass->relationship_info($rel) or die "Relationship '$rel' not found.";
+	my $class = $info->{class};
+
+	my $relspec_prefix = $self->relspec_prefix;
+	$relspec_prefix .= '.' if ($relspec_prefix and $relspec_prefix ne '');
+	$relspec_prefix .= $rel;
+	
+	my $TableSpec = $self->new_TableSpec(
+		name => $class->table,
+		ResultClass => $class,
+		relation_sep => $self->relation_sep,
+		relspec_prefix => $relspec_prefix,
+		%opt
+	) or die "Failed to create related TableSpec";
+	
+	#for my $name ($TableSpec->column_names) {
+	#	die "Column name conflict: " . $name . " is already defined" if ($self->has_column($name));
+	#	$self->column_name_relationship_map->{$name} = $rel;
+	#}
+	
+	$self->related_TableSpec->{$rel} = $TableSpec;
+	push @{$self->related_TableSpec_order}, $rel;
+	
+	return $TableSpec;
+}
+
+around 'get_column' => \&_has_get_column_modifier;
+around 'has_column' => \&_has_get_column_modifier;
+sub _has_get_column_modifier {
+	my $orig = shift;
+	my $self = shift;
+	my $name = $_[0];
+	
+	my $rel = $self->column_name_relationship_map->{$name};
+	my $obj = $self;
+	$obj = $self->related_TableSpec->{$rel} if (defined $rel);
+	
+	return $obj->$orig(@_);
+}
+
+around 'column_names' => sub {
+	my $orig = shift;
+	my $self = shift;
+
+	my @names = $self->$orig(@_);
+	push @names, $self->related_TableSpec->{$_}->column_names for (@{$self->related_TableSpec_order});
+	return @names;
+};
 
 # returns a DBIC join attr based on the colspec
 has 'join' => ( is => 'ro', lazy_build => 1 );
