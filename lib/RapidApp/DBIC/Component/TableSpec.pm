@@ -321,4 +321,45 @@ sub TableSpec_has_conf {
 	return 0;
 }
 
+
+
+
+sub TableSpec_set_conf_column_order {
+	my $self = shift;
+	my $offset = $_[0];
+	die "TableSpec_set_column_order(): expected offset/index number in first arg (got '$offset')" unless (
+		defined $offset and
+		$offset =~ /^\d+$/
+	);
+	return $self->TableSpec_set_conf_column_order_base(@_);
+}
+
+# Like TableSpec_set_conf_column_order but the offset is the name of another column
+sub TableSpec_set_conf_column_order_after {
+	my $self = shift;
+	my $colname = shift;
+	return $self->TableSpec_set_conf_column_order_base('+' . $colname,@_);
+}
+
+# Like TableSpec_set_conf_column_order but the offset is the name of another column
+sub TableSpec_set_conf_column_order_before {
+	my $self = shift;
+	my $colname = shift;
+	return $self->TableSpec_set_conf_column_order_base('-' . $colname,@_);
+}
+
+# Can be called over and over again to apply and re-apply
+sub TableSpec_set_conf_column_order_base {
+	my $self = shift;
+	my $offset = shift;
+	my @cols = @_;
+	@cols = $_[0] if (ref($_[0]));
+	die "TableSpec_set_column_order(): no column names supplied" unless (@cols > 0);
+	
+	$self->TableSpec_cnf->{column_order_overrides} = [] 
+		unless ($self->TableSpec_cnf->{column_order_overrides});
+		
+	push @{$self->TableSpec_cnf->{column_order_overrides}}, [$offset,\@cols];
+}
+
 1;

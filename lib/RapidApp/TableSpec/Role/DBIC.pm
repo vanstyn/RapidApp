@@ -66,16 +66,11 @@ has 'init_config_column_properties' => (
 		
 		my $cols = {};
 		
-		# least precidence 
-		# (people shouldn't be setting properties in this conf, expected as a list for order data only):
-		$cols = merge($cols,$class->TableSpec_cnf->{'column_order'}->{data})
-			if ($class->TableSpec_has_conf('column_order'));
-		
-		# middle precidence:
+		# lower precidence:
 		$cols = merge($cols,$class->TableSpec_cnf->{'column_properties_ordered'}->{data})
 			if ($class->TableSpec_has_conf('column_properties_ordered'));
 		
-		# top precidence:
+		# higher precidence:
 		$cols = merge($cols,$class->TableSpec_cnf->{'column_properties'}->{data})
 			if ($class->TableSpec_has_conf('column_properties'));
 		
@@ -93,9 +88,6 @@ has 'init_config_column_order' => (
 		
 		my $class = $self->ResultClass;
 		return $class->columns unless ($class->can('TableSpec_cnf')); 
-		
-		push @order, @{$class->TableSpec_cnf->{'column_order'}->{order}}
-			if ($class->TableSpec_has_conf('column_order'));
 			
 		push @order, @{$class->TableSpec_cnf->{'column_properties_ordered'}->{order}}
 			if ($class->TableSpec_has_conf('column_properties_ordered'));
@@ -107,6 +99,34 @@ has 'init_config_column_order' => (
 		
 		# fold together removing duplicates:
 		my %seen = ();
+		@order = grep { !$seen{$_}++ } @order;
+		
+		my $ovrs = $class->TableSpec_cnf->{column_order_overrides} or return \@order;
+		foreach my $ord (@$ovrs) {
+			my ($offset,$cols) = @$ord;
+			my %colmap = map { $_ => 1 } @$cols;
+			# remove colnames to be ordered differently:
+			@order = grep { !$colmap{$_} } @order;
+			
+			# If the offset is a column name prefixed with + (after) or - (before)
+			$offset =~ s/^([\+\-])//;
+			if($1) {
+				my $i = 0;
+				my $ndx = 0; # <-- default before (will become 0 below)
+				$ndx = scalar @order if ($1 eq '+'); # <-- default after
+				for my $col (@order) {
+					$ndx = $i and last if ($col eq $offset);
+					$i++;
+				}
+				$ndx++ if ($1 eq '+' and $ndx > 0);
+				$offset = $ndx;
+			}
+
+			$offset = scalar @order if ($offset > scalar @order);
+			splice(@order,$offset,0,@$cols);
+		}
+
+		%seen = ();
 		return [ grep { !$seen{$_}++ } @order ];
 	}
 );

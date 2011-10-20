@@ -167,8 +167,8 @@ sub set_column_order_after {
 	my $self = shift;
 	my $colname = shift;
 	my @cols = @_;
-	my $offset = $self->get_column_order_index($colname) + 1;
-	return $self->set_column_order($offset,@cols);
+	my $offset = $self->get_column_order_index($colname);
+	return $self->set_column_order(++$offset,@cols);
 }
 
 sub set_column_orderIf {
