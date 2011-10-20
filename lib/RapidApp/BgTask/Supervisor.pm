@@ -69,12 +69,12 @@ possible.
 =head1 HOW TO DEBUG
 
 Debugging can be difficult, since this runs as a background job disconnected from
-the terminal.  Use the -f option, and encode your parameters into Storable format
-on stdin, and then you can run it in the foreground:
+the terminal.  If you pass the parameter "behavior => 'foreground'", and encode your
+parameters into Storable format on stdin, you can run it in the foreground:
 
-  perl -e 'use Storable "freeze"; print freeze { exec => [ "/usr/bin/cat" ], meta => { name => "Hello World" } };' > foo
+  perl -e 'use Storable "freeze"; print freeze { exec => [ "/usr/bin/cat" ], meta => { name => "Hello World" }, behavior => "foreground" };' > foo
   
-  perl -e 'use RapidApp::BgTask::Supervisor; RapidApp::BgTask::Supervisor->script_main' -- -f < foo
+  perl -e 'use RapidApp::BgTask::Supervisor; RapidApp::BgTask::Supervisor->script_main' < foo
 
 If you aren't sure what your parameters need to be, set the DEBUG_BGTASK environment
 variable and then call BgTask::TaskPool->spawn() with appropriate official parameters,
@@ -105,6 +105,8 @@ sub script_main {
 	
 	defined $serializedParams && length $serializedParams or die "No child process arguments defined";
 	my $p= thaw $serializedParams;
+
+	open(STDIN, '<', '/dev/null');
 	
 	my $taskPool= $ENV{BGTASK_TASKPOOL_PATH}? RapidApp::BgTask::TaskPool->new(path => $ENV{BGTASK_TASKPOOL_PATH}) : RapidApp::BgTask->defaultTaskPool();
 	
@@ -112,9 +114,7 @@ sub script_main {
 	DEBUG(bgtask => behavior => $p->{behavior});
 	if ($p->{behavior} ne 'foreground') {
 		umask 0;
-		my $outfname= $taskPool->outputPath($$);
-		DEBUG(bgtask => outFname => $outfname);
-		open(STDOUT, '>', $outfname) or die "Failed to redirect stdout to $outfname";
+		close(STDOUT);
 		
 		DEBUG(bgtask => '# detaching from parent');
 		defined(my $pid= fork) or die "fork failed: $!";
@@ -126,9 +126,11 @@ sub script_main {
 			defined($pid= fork) or die "fork failed: $!";
 			exit 0 if $pid; # parent exits, ensuring we have no controlling TTY.
 		}
+		
+		my $outfname= $taskPool->outputPath($$);
+		DEBUG(bgtask => outFname => $outfname);
+		open(STDOUT, '>', $outfname) or die "Failed to redirect stdout to $outfname";
 	}
-	
-	close STDIN;
 	
 	DEBUG(bgtask => '# taking lockfile');
 	if ($p->{lockfile}) {
@@ -256,8 +258,9 @@ sub runTilDone {
 
 sub _checkGroupLeader {
 	my $self= shift;
-	if (!kill(0, getpgrp)) {
-		print "Process group leader has died: exiting.\n";
+	
+	if (! -e '/proc/'.getpgrp()) {
+		print STDERR "Process group leader has died: exiting.\n";
 		$self->terminate;
 	}
 }
