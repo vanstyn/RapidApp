@@ -48,7 +48,6 @@ has 'columns'  => (
 		 get_column			=> 'get',
 		 has_column			=> 'exists',
 		 column_list		=> 'values',
-		 column_names		=> 'keys',
 		 num_columns		=> 'count',
 		 delete_column		=> 'delete'
 	}
@@ -79,7 +78,8 @@ around 'column_list' => sub {
 around 'get_column' => sub {
 	my $orig = shift;
 	my $self = shift;
-	my $Column = $self->$orig(@_);
+	my $name = shift;
+	my $Column = $self->$orig($name);
 	
 	return $Column unless (
 		defined $self->column_property_transforms or (
@@ -139,7 +139,7 @@ sub updated_column_order {
 	# Prune out duplciates and columns not in $self->columns
 	@{$self->column_order} = grep { !$seen{$_}++ and $self->columns->{$_} } @{$self->column_order};
 	# Append any missing columns to the end (shouldn't be any)
-	push @{$self->column_order}, grep { !$seen{$_} } $self->column_names;
+	push @{$self->column_order}, grep { !$seen{$_} } keys %{$self->columns};
 	return @{$self->column_order};
 }
 
@@ -208,23 +208,18 @@ sub set_column_order {
 	$self->updated_column_order;
 }
 
-sub column_list_ordered {
-	my $self = shift;
-	return sort { $a->order <=> $b->order } $self->column_list; 
-}
-
+sub column_names { (shift)->column_names_ordered }
 sub column_names_ordered {
 	my $self = shift;
 	return map { $_->name } $self->column_list;
 }
 
+
 sub columns_properties_limited {
 	my $self = shift;
-	my $hash = {};
-	foreach my $Column ($self->column_list) {
-		$hash->{$Column->name} = $Column->properties_limited(@_);
-	}
-	return $hash;
+	my @props = @_;
+	$self->updated_column_order;
+	return { map { $_->name => $_->properties_limited(@props) } $self->column_list };
 }
 
 

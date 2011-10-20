@@ -118,6 +118,12 @@ sub TableSpec_add_relationship_columns {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
+	
+	# Moved to TableSpec::Role::DBIC
+	#return;
+	
+	
+	
 	my $rels = \%opt;
 	
 	foreach my $rel (keys %$rels) {
@@ -286,7 +292,7 @@ sub get_foreign_column_from_cond {
 sub TableSpec_set_conf {
 	my $self = shift;
 	my $param = shift;
-	my %opt = @_;
+	my %opt = get_mixed_hash_args_ordered(@_);
 	
 	my $i = 0;
 	my $order = [ grep { ++$i & 1 } @_ ]; #<--get odd elements (keys)

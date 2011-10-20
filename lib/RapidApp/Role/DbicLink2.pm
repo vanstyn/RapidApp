@@ -99,8 +99,6 @@ sub DbicLink_around_BUILD {
 		remote_columns		=> \1,
 		loadMask				=> \1
 	);
-	
-	#$self->init_apply_columns;
 }
 
 

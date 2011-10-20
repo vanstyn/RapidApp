@@ -62,6 +62,32 @@ sub get_mixed_hash_args {
 	return $hashref;
 }
 
+
+# Takes a list and returns a Hash. Like get_mixed_hash_args, but
+# list order is preserved
+sub get_mixed_hash_args_ordered {
+	my @args = @_;
+	return $args[0] if (ref($args[0]) eq 'HASH');
+	@args = @{ $args[0] } if (ref($args[0]) eq 'ARRAY');
+	
+	my $hashref = {};
+	my @list = ();
+	my $last;
+	foreach my $item (@args) {
+		if (ref($item)) {
+			die "Error in arguments" unless (ref($item) eq 'HASH' and defined $last and not ref($last));
+			$hashref->{$last} = { %{$hashref->{$last}}, %$item };
+			push @list, $last, $hashref->{$last};
+			next;
+		}
+		$hashref->{$item} = {} unless (defined $hashref->{$item});
+		push @list,$item,$hashref->{$item} unless (ref $last);
+		$last = $item;
+	}
+	return @list; # <-- preserve order
+}
+
+
 # returns \0 and \1 and 0 and 1, and returns 0 and 1 as 0 and 1
 sub jstrue {
 	my $v = shift;

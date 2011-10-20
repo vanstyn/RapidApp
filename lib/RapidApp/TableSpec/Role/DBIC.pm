@@ -27,9 +27,14 @@ has 'data_type_profiles' => ( is => 'ro', isa => 'HashRef', default => sub {{
 sub BUILD {}
 after BUILD => sub {
 	my $self = shift;
+	
+	my $class = $self->ResultClass;
 
-	foreach my $col ($self->filter_columns($self->ResultClass->columns)) {
-		my $info = $self->ResultClass->column_info($col);
+	my $cols = $self->init_config_column_properties;
+	my %inc_cols = map { $_ => $cols->{$_} || {} } $self->filter_columns($class->columns);
+
+	foreach my $col (keys %inc_cols) {
+		my $info = $class->column_info($col);
 		my @profiles = ();
 		
 		push @profiles, $info->{is_nullable} ? 'nullable' : 'notnull';
@@ -38,27 +43,74 @@ after BUILD => sub {
 		$type_profile = [ $type_profile ] unless (ref $type_profile);
 		push @profiles, @$type_profile; 
 		
-		$self->add_columns( { name => $self->column_prefix . $col, profiles => \@profiles } );
-		#$self->dbic_col_names->{$self->column_prefix . $col} = $col;
+		$inc_cols{$col} = merge($inc_cols{$col},{ 
+			name => $self->column_prefix . $col,
+			profiles => \@profiles 
+		});
 	}
 	
-	#my $Column = $self->get_column('name');
-	#$Column->set_properties( header => 'NaMe' );
-	
-	
-	$self->applyIf_TableSpec_cnf;
+	my %seen = ();
+	my @order = grep { !$seen{$_}++ && exists $inc_cols{$_} } @{$self->init_config_column_order},keys %inc_cols;
+	$self->add_columns($inc_cols{$_}) for (@order);
 };
 
-sub applyIf_TableSpec_cnf {
-	my $self = shift;
-	return unless $self->ResultClass->can('TableSpec_cnf');
-	
-	if ($self->ResultClass->TableSpec_has_conf('column_properties_ordered')) {
-		my $cnf = $self->ResultClass->TableSpec_cnf->{'column_properties_ordered'};
-		$self->applyIf_column_properties($cnf->{data});
-		$self->set_column_orderIf(0,$cnf->{order});
+has 'init_config_column_properties' => ( 
+	is => 'ro', 
+	isa => 'HashRef',
+	lazy => 1,
+	default => sub {
+		my $self = shift;
+		
+		my $class = $self->ResultClass;
+		return {} unless ($class->can('TableSpec_cnf'));
+		
+		my $cols = {};
+		
+		# least precidence 
+		# (people shouldn't be setting properties in this conf, expected as a list for order data only):
+		$cols = merge($cols,$class->TableSpec_cnf->{'column_order'}->{data})
+			if ($class->TableSpec_has_conf('column_order'));
+		
+		# middle precidence:
+		$cols = merge($cols,$class->TableSpec_cnf->{'column_properties_ordered'}->{data})
+			if ($class->TableSpec_has_conf('column_properties_ordered'));
+		
+		# top precidence:
+		$cols = merge($cols,$class->TableSpec_cnf->{'column_properties'}->{data})
+			if ($class->TableSpec_has_conf('column_properties'));
+		
+		return $cols;
 	}
-}
+);
+has 'init_config_column_order' => ( 
+	is => 'ro', 
+	isa => 'ArrayRef',
+	lazy => 1,
+	default => sub {
+		my $self = shift;
+		
+		my @order = ();
+		
+		my $class = $self->ResultClass;
+		return $class->columns unless ($class->can('TableSpec_cnf')); 
+		
+		push @order, @{$class->TableSpec_cnf->{'column_order'}->{order}}
+			if ($class->TableSpec_has_conf('column_order'));
+			
+		push @order, @{$class->TableSpec_cnf->{'column_properties_ordered'}->{order}}
+			if ($class->TableSpec_has_conf('column_properties_ordered'));
+			
+		push @order, $class->columns; # <-- native dbic column order has precidence over the column_properties order
+			
+		push @order, @{$class->TableSpec_cnf->{'column_properties'}->{order}}
+			if ($class->TableSpec_has_conf('column_properties'));
+		
+		# fold together removing duplicates:
+		my %seen = ();
+		return [ grep { !$seen{$_}++ } @order ];
+	}
+);
+
 
 
 
@@ -187,6 +239,21 @@ has 'base_colspec' => ( is => 'ro', isa => 'ArrayRef', lazy => 1,default => sub 
 	return $self->relation_colspecs->{''};
 });
 
+around 'get_column' => sub {
+	my $orig = shift;
+	my $self = shift;
+	my $name = shift;
+	
+	my $rel = $self->column_name_relationship_map->{$name};
+	if ($rel) {
+		my $TableSpec = $self->related_TableSpec->{$rel};
+		return $TableSpec->get_column($name) if ($TableSpec);
+	}
+	
+	return $self->$orig($name);
+};
+
+
 # accepts a list of column names and returns the names that match the base colspec
 # colspecs are tested in order, with later matches overriding earlier ones
 sub filter_columns {
@@ -243,8 +310,6 @@ has 'relation_order' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default
 			$rel = '';
 		}
 		
-		$rel = '' if ($rel eq '*');
-		
 		# end rels that link to colspecs and not just to relspecs 
 		# (intermediate rels with no direct columns)
 		$end_rels{$rel}++ if (
@@ -276,6 +341,8 @@ sub new_TableSpec {
 	return RapidApp::TableSpec->with_traits('RapidApp::TableSpec::Role::DBIC')->new(@_);
 }
 
+
+=pod
 sub related_TableSpec {
 	my $self = shift;
 	my $rel = shift;
@@ -305,37 +372,9 @@ sub related_TableSpec {
 	
 	return $TableSpec;
 }
+=cut
 
-
-
-# Recursively flattens/merges in columns from related TableSpecs (matching include_colspec)
-# into a new TableSpec object and returns it:
-sub flattened_TableSpec_old {
-	my $self = shift;
-	
-	my $Flattened = $self->new_TableSpec(
-		name => $self->name,
-		ResultClass => $self->ResultClass,
-		relation_sep => $self->relation_sep,
-		include_colspec => $self->base_colspec,
-		relspec_prefix => $self->relspec_prefix
-	);
-	
-	foreach my $rel (@{$self->relation_order}) {
-		next if ($rel eq '');
-		$Flattened->add_columns_from_TableSpec( $self->related_TableSpec( $rel, {
-			include_colspec => $self->relation_colspecs->{$rel}
-		})->flattened_TableSpec);
-	}
-
-	return $Flattened;
-}
-
-
-
-
-
-
+=pod
 # Recursively flattens/merges in columns from related TableSpecs (matching include_colspec)
 # into a new TableSpec object and returns it:
 sub flattened_TableSpec {
@@ -357,7 +396,7 @@ sub flattened_TableSpec {
 	
 	return $Flattened;
 }
-
+=cut
 
 sub add_all_related_TableSpecs_recursive {
 	my $self = shift;
@@ -369,13 +408,25 @@ sub add_all_related_TableSpecs_recursive {
 		});
 		
 		$TableSpec->add_all_related_TableSpecs_recursive;
-		
-		for my $name ($TableSpec->column_names) {
-			die "Column name conflict: " . $name . " is already defined" if ($self->has_column($name));
+	}
+	
+	foreach my $rel (@{$self->related_TableSpec_order}) {
+		my $TableSpec = $self->related_TableSpec->{$rel};
+		for my $name ($TableSpec->column_names_ordered) {
+			die "Column name conflict: $name is already defined (rel: $rel)" if ($self->has_column($name));
 			$self->column_name_relationship_map->{$name} = $rel;
 		}
 	}
+	
 	return $self;
+}
+
+# Like column_order but only considers columns in the local TableSpec object
+# (i.e. not in related TableSpecs)
+sub local_column_names {
+	my $self = shift;
+	my %seen = ();
+	return grep { !$seen{$_}++ && exists $self->columns->{$_} } @{$self->column_order}, keys %{$self->columns};
 }
 
 
@@ -414,6 +465,13 @@ sub add_related_TableSpec {
 	$self->related_TableSpec->{$rel} = $TableSpec;
 	push @{$self->related_TableSpec_order}, $rel;
 	
+	#for my $name ($TableSpec->local_column_names) {
+	#	die "Column name conflict: $name is already defined (rel: $rel)" if ($self->has_column($name));
+	#	$self->column_name_relationship_map->{$name} = $rel;
+	#}
+	
+	#scream($self->column_name_relationship_map);
+	
 	return $TableSpec;
 }
 
@@ -431,15 +489,35 @@ sub _has_get_column_modifier {
 	return $obj->$orig(@_);
 }
 
-around 'column_names' => sub {
+#around 'column_names' => sub {
+#	my $orig = shift;
+#	my $self = shift;
+#
+#	my @names = $self->$orig(@_);
+#	push @names, $self->related_TableSpec->{$_}->column_names for (@{$self->related_TableSpec_order});
+#	return @names;
+#};
+
+around 'updated_column_order' => sub {
 	my $orig = shift;
 	my $self = shift;
-
-	my @names = $self->$orig(@_);
-	push @names, $self->related_TableSpec->{$_}->column_names for (@{$self->related_TableSpec_order});
-	return @names;
+	
+	my %seen = ();
+	# Start with and preserve the column order in this object:
+	my @order = grep { !$seen{$_}++ } @{$self->column_order};
+	
+	# Pull in any unseen columns from the superclass (should normally be none, except when initializing)
+	push @order, grep { !$seen{$_}++ } $self->$orig(@_);
+	
+	my @rels = ();
+	push @rels, $self->related_TableSpec->{$_}->updated_column_order for (@{$self->related_TableSpec_order});
+	
+	# Preserve the existing order, adding only new/unseen related columns:
+	push @order, grep { !$seen{$_}++ } @rels;
+	
+	@{$self->column_order} = @order;
+	return @{$self->column_order};
 };
-
 
 sub resolve_dbic_colname {
 	my $self = shift;
@@ -487,6 +565,156 @@ sub chain_to_hash {
 	return $hash;
 }
 
+
+
+
+sub add_relationship_columns {
+	my $self = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	my $rels = \%opt;
+	
+	foreach my $rel (keys %$rels) {
+		my $conf = $rels->{$rel};
+		$conf = {} unless (ref($conf) eq 'HASH');
+		
+		$conf = { %{ $self->default_column_properties }, %$conf } if ( $self->default_column_properties );
+		
+		die "displayField is required" unless (defined $conf->{displayField});
+		
+		$conf->{render_col} = $rel . '_' . $conf->{displayField} unless ($conf->{render_col});
+		
+		my $info = $self->ResultClass->relationship_info($rel) or die "Relationship '$rel' not found.";
+		
+		$conf->{foreign_col} = $self->get_foreign_column_from_cond($info->{cond});
+		$conf->{valueField} = $conf->{foreign_col} unless (defined $conf->{valueField});
+		$conf->{key_col} = $rel . '_' . $conf->{valueField};
+		
+		#Temporary/initial column setup:
+		my $colname = $self->column_prefix . $rel;
+		$self->add_columns({ name => $colname, %$conf });
+		my $Column = $self->get_column($colname);
+		
+		#$self->TableSpec_rel_columns->{$rel} = [] unless ($self->TableSpec_rel_columns->{$rel});
+		#push @{$self->TableSpec_rel_columns->{$rel}}, $Column->name;
+		
+		# Temp placeholder:
+		$Column->set_properties({ editor => 'relationship_column' });
+		
+		my $ResultClass = $self;
+		
+		$Column->rapidapp_init_coderef( sub {
+			my $self = shift;
+			
+			my $rootModule = shift;
+			$rootModule->apply_init_modules( tablespec => 'RapidApp::AppBase' ) 
+				unless ( $rootModule->has_module('tablespec') );
+			
+			my $TableSpecModule = $rootModule->Module('tablespec');
+			my $c = RapidApp::ScopedGlobals->get('catalystClass');
+			my $Source = $c->model('DB')->source($info->{source});
+			
+			my $valueField = $self->get_property('valueField');
+			my $displayField = $self->get_property('displayField');
+			my $key_col = $self->get_property('key_col');
+			my $render_col = $self->get_property('render_col');
+			my $auto_editor_type = $self->get_property('auto_editor_type');
+			my $rs_condition = $self->get_property('ResultSet_condition') || {};
+			my $rs_attr = $self->get_property('ResultSet_attr') || {};
+			
+			my $editor = $self->get_property('editor') || {};
+			
+			my $column_params = {
+				required_fetch_columns => [ 
+					$key_col,
+					$render_col
+				],
+				
+				read_raw_munger => RapidApp::Handler->new( code => sub {
+					my $rows = (shift)->{rows};
+					$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
+					foreach my $row (@$rows) {
+						$row->{$self->name} = $row->{$key_col};
+					}
+				}),
+				update_munger => RapidApp::Handler->new( code => sub {
+					my $rows = shift;
+					$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
+					foreach my $row (@$rows) {
+						if ($row->{$self->name}) {
+							$row->{$key_col} = $row->{$self->name};
+							delete $row->{$self->name};
+						}
+					}
+				}),
+				no_quick_search => \1,
+				no_multifilter => \1
+			};
+			
+			$column_params->{renderer} = jsfunc(
+				'function(value, metaData, record, rowIndex, colIndex, store) {' .
+					'return record.data["' . $render_col . '"];' .
+				'}', $self->get_property('renderer')
+			);
+			
+			# If editor is no longer set to the temp value 'relationship_column' previously set,
+			# it means something else has set the editor, so we don't overwrite it:
+			if ($editor eq 'relationship_column') {
+				if ($auto_editor_type eq 'combo') {
+				
+					my $module_name = $ResultClass->table . '_' . $self->name;
+					$TableSpecModule->apply_init_modules(
+						$module_name => {
+							class	=> 'RapidApp::DbicAppCombo2',
+							params	=> {
+								valueField		=> $valueField,
+								displayField	=> $displayField,
+								name				=> $self->name,
+								ResultSet		=> $Source->resultset,
+								RS_condition	=> $rs_condition,
+								RS_attr			=> $rs_attr,
+								record_pk		=> $valueField
+							}
+						}
+					);
+					my $Module = $TableSpecModule->Module($module_name);
+					
+					# -- vv -- This is required in order to get all of the params applied
+					$Module->call_ONREQUEST_handlers;
+					$Module->DataStore->call_ONREQUEST_handlers;
+					# -- ^^ --
+					
+					$column_params->{editor} = { %{ $Module->content }, %$editor };
+				}
+			}
+			
+			$self->set_properties({ %$column_params });
+		});
+		
+		# This coderef gets called later, after the RapidApp
+		# Root Module has been loaded.
+		rapidapp_add_global_init_coderef( sub { $Column->call_rapidapp_init_coderef(@_) } );
+	}
+}
+
+# TODO: Find a better way to handle this. Is there a real API
+# in DBIC to find this information?
+sub get_foreign_column_from_cond {
+	my $self = shift;
+	my $cond = shift;
+	
+	die "currently only single-key hashref conditions are supported" unless (
+		ref($cond) eq 'HASH' and
+		scalar keys %$cond == 1
+	);
+	
+	foreach my $i (%$cond) {
+		my ($side,$col) = split(/\./,$i);
+		return $col if (defined $col and $side eq 'foreign');
+	}
+	
+	die "Failed to find forein column from condition: " . Dumper($cond);
+}
 
 
 =pod
