@@ -40,6 +40,7 @@ sub _build_TableSpec {
 }
 
 
+
 sub _ResultSet {
 	my $self = shift;
 	my $Rs = $self->ResultSource->resultset;
@@ -59,15 +60,11 @@ sub read_records {
 	# Apply base Attrs:
 	$Rs = $self->chain_Rs_req_base_Attr($Rs,$params);
 	
-	# Apply
+	# Apply quicksearch:
+	$Rs = $self->chain_Rs_req_quicksearch($Rs,$params);
 	
-	
-	#$Rs->search_rs({},$self->req_Rs_Attr_spec($params));
-
 	# Apply multifilter:
 	$Rs = $self->chain_Rs_req_multifilter($Rs,$params);
-	
-	
 	
 	# don't use Row objects
 	$Rs = $Rs->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
@@ -132,6 +129,28 @@ sub chain_Rs_req_base_Attr {
 }
 
 
+# Applies multifilter search to ResultSet:
+sub chain_Rs_req_quicksearch {
+	my $self = shift;
+	my $Rs = shift || $self->_ResultSet;
+	my $params = shift || $self->c->req->params;
+	
+	delete $params->{query} if ($params->{query} eq '');
+	my $query = $params->{query} or return $Rs;
+	
+	my $fields = $self->param_decodeIf($params->{fields},[]);
+	return $Rs unless (@$fields > 0);
+	
+	my $attr = { join => {} };
+	
+	my @search = ();
+	push @search, { 
+		$self->TableSpec->resolve_dbic_colname($_,$attr->{join}) => 
+		{ like =>  '%' . $query . '%' } 
+	} for (@$fields);
+	
+	return $Rs->search_rs({ '-or' => \@search },$attr);
+}
 
 
 # Applies multifilter search to ResultSet:
