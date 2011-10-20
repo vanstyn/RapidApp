@@ -7,6 +7,46 @@ use RapidApp::TableSpec::Role::DBIC;
 use Clone qw(clone);
 
 
+has 'primary_columns' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default => sub {[ (shift)->record_pk ]} );
+sub apply_primary_columns {
+	my $self = shift;
+	my @cols = (ref($_[0]) eq 'ARRAY') ? @{ $_[0] } : @_; # <-- arg as array or arrayref
+	my %seen = ();
+	@{$self->primary_columns} = grep { !$seen{$_}++ } @{$self->primary_columns},@cols;
+}
+
+
+# Columns that need other columns to automatically be fetched when they are fetched
+has 'column_required_fetch_columns' => (
+	is => 'ro',
+	isa => 'HashRef[ArrayRef[Str]]',
+	lazy => 1,
+	default => sub {
+		my $self = shift;
+		my $hash = {};
+		
+		foreach my $col (keys %{ $self->columns }) {
+			my $list = $self->columns->{$col}->required_fetch_columns or next;
+			next unless (
+				ref($list) eq 'ARRAY' and
+				scalar @$list > 0
+			);
+			$hash->{$col} = $list;
+		}
+		return $hash;
+	}
+);
+
+
+
+
+
+
+
+
+
+
+
 # Colspec attrs can be specified as simple arrayrefs
 has 'include_colspec' => ( is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]} );
 
@@ -38,6 +78,49 @@ sub _build_TableSpec {
 	$TableSpec->add_all_related_TableSpecs_recursive;
 	return $TableSpec;
 }
+
+
+
+sub BUILD {}
+around 'BUILD' => sub { &DbicLink_around_BUILD(@_) };
+sub DbicLink_around_BUILD {
+	my $orig = shift;
+	my $self = shift;
+	
+	die "FATAL: DbicLink and DbicLink2 cannot both be loaded" if ($self->does('RapidApp::Role::DbicLink'));
+	
+	$self->$orig(@_);
+	
+	$self->apply_store_config(
+		remoteSort => \1
+	);
+	
+	$self->apply_extconfig(
+		remote_columns		=> \1,
+		loadMask				=> \1
+	);
+	
+	#$self->init_apply_columns;
+}
+
+
+has '_init_apply_columns_applied' => ( is => 'rw', isa => 'Bool', default => 0 );
+sub init_apply_columns {
+	my $self = shift;
+	return if ($self->_init_apply_columns_applied);
+	
+	# currently this is needed for "delete_row" support -- different from "destroy" and will
+	# probably be removed at which point this should also be removed (maybe)
+	$self->apply_primary_columns($self->ResultSource->primary_columns);
+	
+	$self->apply_extconfig(primary_columns => $self->primary_columns);
+	
+	#init column_required_fetch_columns
+	$self->column_required_fetch_columns;
+	$self->_init_apply_columns_applied(1);
+}
+
+
 
 
 
@@ -135,7 +218,7 @@ sub chain_Rs_req_quicksearch {
 	my $Rs = shift || $self->_ResultSet;
 	my $params = shift || $self->c->req->params;
 	
-	delete $params->{query} if ($params->{query} eq '');
+	delete $params->{query} if (defined $params->{query} and $params->{query} eq '');
 	my $query = $params->{query} or return $Rs;
 	
 	my $fields = $self->param_decodeIf($params->{fields},[]);
