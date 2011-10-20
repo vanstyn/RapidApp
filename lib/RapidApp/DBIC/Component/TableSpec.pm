@@ -13,6 +13,8 @@ use RapidApp::DbicAppCombo2;
 __PACKAGE__->mk_classdata( 'TableSpec' );
 __PACKAGE__->mk_classdata( 'TableSpec_rel_columns' );
 
+__PACKAGE__->mk_classdata( 'TableSpec_cnf' );
+
 # See default profile definitions in RapidApp::TableSpec::Column
 __PACKAGE__->mk_classdata( 'TableSpec_data_type_profiles' );
 __PACKAGE__->TableSpec_data_type_profiles({
@@ -41,6 +43,7 @@ sub apply_TableSpec {
 	$self->TableSpec($self->create_result_TableSpec($self,%opt));
 	
 	$self->TableSpec_rel_columns({});
+	$self->TableSpec_cnf({});
 }
 
 sub create_result_TableSpec {
@@ -279,6 +282,37 @@ sub get_foreign_column_from_cond {
 	die "Failed to find forein column from condition: " . Dumper($cond);
 }
 
+# Stores arbitrary hashes, preserving their order
+sub TableSpec_set_conf {
+	my $self = shift;
+	my $param = shift;
+	my %opt = @_;
+	
+	my $i = 0;
+	my $order = [ grep { ++$i & 1 } @_ ]; #<--get odd elements (keys)
+	
+	my $data = \%opt;
+	
+	$self->TableSpec_cnf->{$param} = {
+		order => $order,
+		data => $data
+	};
+}
 
+sub TableSpec_get_conf {
+	my $self = shift;
+	my $param = shift;
+	
+	my $cnf = $self->TableSpec_cnf->{$param} or return undef;
+	
+	return map { $_ => $cnf->{data}->{$_} } @{$cnf->{order}};
+}
+
+sub TableSpec_has_conf {
+	my $self = shift;
+	my $param = shift;
+	return 1 if (exists $self->TableSpec_cnf->{$param});
+	return 0;
+}
 
 1;

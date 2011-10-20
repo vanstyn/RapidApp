@@ -36,6 +36,8 @@ has 'default_column_properties' => ( is => 'ro', isa => 'Maybe[HashRef]', defaul
 
 has 'profile_definitions' => ( is => 'ro', isa => 'Maybe[HashRef]', default => undef );
 
+has 'column_order' => ( is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]} );
+
 has 'columns'  => (
 	traits	=> ['Hash'],
 	is        => 'ro',
@@ -62,6 +64,8 @@ around 'apply_columns' => sub {
 			$Column->set_properties_If($def);
 		}
 	}
+	
+	push @{$self->column_order}, grep { ! $self->columns->{$_} } keys %cols;
 
 	$self->$orig(%cols);
 	$self->prune_invalid_columns;
@@ -69,14 +73,8 @@ around 'apply_columns' => sub {
 around 'column_list' => sub {
 	my $orig = shift;
 	my $self = shift;
-	my @names = $self->column_names;
-	my @list = ();
-	foreach my $name (@names) {
-		# Force column_list to go through get_column so its logic gets called:
-		my $Column = $self->get_column($name) or next;
-		push @list, $Column;
-	}
-	return @list;
+	# Force column_list to go through get_column so its logic gets called:
+	return grep { $_ = $self->get_column($_) } $self->updated_column_order;
 };
 around 'get_column' => sub {
 	my $orig = shift;
@@ -131,6 +129,83 @@ sub prune_invalid_columns {
 	foreach my $remove (@remove_cols) {
 		delete $self->columns->{$remove};
 	}
+	
+	$self->updated_column_order;
+}
+
+sub updated_column_order {
+	my $self = shift;
+	my %seen = ();
+	# Prune out duplciates and columns not in $self->columns
+	@{$self->column_order} = grep { !$seen{$_}++ and $self->columns->{$_} } @{$self->column_order};
+	# Append any missing columns to the end (shouldn't be any)
+	push @{$self->column_order}, grep { !$seen{$_} } $self->column_names;
+	return @{$self->column_order};
+}
+
+
+sub get_column_order_index {
+	my $self = shift;
+	my $column = shift;
+	my $i = 0;
+	for my $col ($self->updated_column_order) {
+		return $i if ($col eq $column);
+		$i++;
+	}
+	die "get_column_order_index(): column name '$column' not found";
+}
+
+sub set_column_order_before {
+	my $self = shift;
+	my $colname = shift;
+	my @cols = @_;
+	my $offset = $self->get_column_order_index($colname);
+	return $self->set_column_order($offset,@cols);
+}
+
+sub set_column_order_after {
+	my $self = shift;
+	my $colname = shift;
+	my @cols = @_;
+	my $offset = $self->get_column_order_index($colname) + 1;
+	return $self->set_column_order($offset,@cols);
+}
+
+sub set_column_orderIf {
+	my $self = shift;
+	my $offset = shift;
+	my @cols = @_;
+	@cols = @{$_[0]} if (scalar @_ == 1 and ref($_[0]) eq 'ARRAY');
+	return $self->set_column_order($offset, grep { exists $self->columns->{$_} } @cols);
+}
+
+sub set_column_order {
+	my $self = shift;
+	my $offset = shift;
+	die "First argument to set_column_order must be an index/offset" unless ($offset =~ /^\d+$/);
+	my @cols = @_;
+	@cols = @{$_[0]} if (scalar @_ == 1 and ref($_[0]) eq 'ARRAY');
+	
+	my %seen = ();
+	!$seen{$_}++ or die "set_column_order(): column name specified more than once ($_)" for (@cols);
+	$self->has_column($_) or die "set_column_order(): cannot set the order of non-existant columns ($_)" for (@cols);
+	
+	my %cols_map = map { $_ => 1 } @cols;
+	
+	#prune out the new columns from the current order:
+	@{$self->column_order} = grep { !$cols_map{$_} } @{$self->column_order};
+	
+	if ($offset < scalar @{$self->column_order}) {
+		# Add them back in at the new offset/index:
+		splice(@{$self->column_order},$offset,0,@cols);
+	}
+	else {
+		# offset is at or past the end of the array, ignore it and just append:
+		push @{$self->column_order}, @cols;
+	}
+	
+	# Just to be safe:
+	$self->updated_column_order;
 }
 
 sub column_list_ordered {
@@ -140,12 +215,7 @@ sub column_list_ordered {
 
 sub column_names_ordered {
 	my $self = shift;
-	my @list = ();
-	
-	foreach my $Column ($self->column_list_ordered) {
-		push @list, $Column->name;
-	}
-	return @list;
+	return map { $_->name } $self->column_list;
 }
 
 sub columns_properties_limited {
@@ -173,8 +243,6 @@ sub add_columns {
 			$Column->set_properties($col);
 		}
 		
-		$Column->order($self->num_columns + 1) unless (defined $Column->order);
-		
 		#die "A column named " . $Column->name . ' already exists.' if (defined $self->has_column($Column->name));
 		
 		$self->apply_columns( $Column->name => $Column );
@@ -185,6 +253,16 @@ sub add_columns {
 	return @added;
 }
 
+
+sub applyIf_column_properties {
+	my $self = shift;
+	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	my $hash = \%new;
+
+	my $pruned = { map { $_ => $hash->{$_} } grep { $self->get_column($_) } keys %$hash };
+	
+	return $self->apply_column_properties($pruned);
+}
 
 sub apply_column_properties { 
 	my $self = shift;
@@ -251,11 +329,7 @@ sub add_columns_from_TableSpec {
 	my $TableSpec = shift;
 	
 	my @added = ();
-	
-	foreach my $Column ($TableSpec->column_list_ordered) {
-		$Column->clear_order;
-		push @added, $self->add_columns($Column);
-	}
+	push @added, $self->add_columns($_) for ($TableSpec->column_list);
 	
 	# Apply foreign TableSpec's limit/exclude columns:
 	my %seen = ();
@@ -272,6 +346,7 @@ sub add_columns_from_TableSpec {
 	@exclude = grep { not $seen{$_}++ } @exclude;
 	$self->exclude_columns(\@exclude) if (scalar @exclude > 0);
 	
+	$self->updated_column_order;
 	return @added;
 }
 

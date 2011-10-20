@@ -24,6 +24,42 @@ has 'data_type_profiles' => ( is => 'ro', isa => 'HashRef', default => sub {{
 	timestamp	=> [ 'datetime' ],
 }});
 
+sub BUILD {}
+after BUILD => sub {
+	my $self = shift;
+
+	foreach my $col ($self->filter_columns($self->ResultClass->columns)) {
+		my $info = $self->ResultClass->column_info($col);
+		my @profiles = ();
+		
+		push @profiles, $info->{is_nullable} ? 'nullable' : 'notnull';
+		
+		my $type_profile = $self->data_type_profiles->{$info->{data_type}} || ['text'];
+		$type_profile = [ $type_profile ] unless (ref $type_profile);
+		push @profiles, @$type_profile; 
+		
+		$self->add_columns( { name => $self->column_prefix . $col, profiles => \@profiles } );
+		#$self->dbic_col_names->{$self->column_prefix . $col} = $col;
+	}
+	
+	#my $Column = $self->get_column('name');
+	#$Column->set_properties( header => 'NaMe' );
+	
+	
+	$self->applyIf_TableSpec_cnf;
+};
+
+sub applyIf_TableSpec_cnf {
+	my $self = shift;
+	return unless $self->ResultClass->can('TableSpec_cnf');
+	
+	if ($self->ResultClass->TableSpec_has_conf('column_properties_ordered')) {
+		my $cnf = $self->ResultClass->TableSpec_cnf->{'column_properties_ordered'};
+		$self->applyIf_column_properties($cnf->{data});
+		$self->set_column_orderIf(0,$cnf->{order});
+	}
+}
+
 
 
 =head1 ColSpec format 'include_colspec'
@@ -185,26 +221,9 @@ sub colspec_test {
 	return undef;
 }
 
-sub BUILD {}
-after BUILD => sub {
-	my $self = shift;
 
-	foreach my $col ($self->filter_columns($self->ResultClass->columns)) {
-		my $info = $self->ResultClass->column_info($col);
-		my @profiles = ();
-		
-		push @profiles, $info->{is_nullable} ? 'nullable' : 'notnull';
-		
-		my $type_profile = $self->data_type_profiles->{$info->{data_type}} || ['text'];
-		$type_profile = [ $type_profile ] unless (ref $type_profile);
-		push @profiles, @$type_profile; 
-		
-		$self->add_columns( { name => $self->column_prefix . $col, profiles => \@profiles } );
-		$self->dbic_col_names->{$self->column_prefix . $col} = $col;
-	}
-};
 # Tracks original dbic column names:
-has 'dbic_col_names' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
+#has 'dbic_col_names' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 
 has 'relation_colspecs' => ( is => 'ro', isa => 'HashRef', default => sub {{ '' => [] }} );
 has 'relation_order' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default => sub {
