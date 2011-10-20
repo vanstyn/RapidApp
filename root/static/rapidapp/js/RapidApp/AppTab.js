@@ -335,9 +335,12 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		this.store.on('beforeload',this.reloadColumns,this);
 		
 		this.getColumnModel().on('hiddenchange',function(colmodel,colIndex,hidden) {
+			// Need to set reloadColumns even if no store reload is needed so
+			// that clicking to sort on a column will use the new column data
+			// on its request to the store:
+			this.reloadColumns(); // <-- this has to be done effectively twice to make sure lastOptions are changed
 			// Only reload the store when showing columns that aren't already loaded
 			if(hidden || this.loadedColumnIndexes[colIndex] ) { return; }
-			this.reloadColumns(); // <-- this has to be done effectively twice to make sure lastOptions are changed
 			this.store.reload();
 		},this);
 		
