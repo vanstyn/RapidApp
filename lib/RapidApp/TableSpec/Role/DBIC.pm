@@ -24,16 +24,7 @@ has 'data_type_profiles' => ( is => 'ro', isa => 'HashRef', default => sub {{
 	timestamp	=> [ 'datetime' ],
 }});
 
-has 'relation_sep' => ( is => 'ro', isa => 'Str', required => 1 );
-has 'relspec_prefix' => ( is => 'ro', isa => 'Str', default => '' );
-has 'column_prefix' => ( is => 'ro', isa => 'Str', lazy => 1, default => sub {
-	my $self = shift;
-	return '' if ($self->relspec_prefix eq '');
-	my $col_pre = $self->relspec_prefix;
-	my $sep = $self->relation_sep;
-	$col_pre =~ s/\./${sep}/g;
-	return $col_pre . $self->relation_sep;
-});
+
 
 =head1 ColSpec format 'include_colspec'
 
@@ -116,7 +107,7 @@ subtype 'ColSpec', as 'Str', where {
 	
 	my @parts = split(/\./,$_); pop @parts;
 	my $relspec = join('.',@parts);
-	$relspec =~ /([\*\?\[\]])/ 
+	$relspec =~ /([\*\?\[\]])/ and $relspec ne '*'
 		and warn "ColSpec '$_' is invalid: glob wildcards are only allowed in the column section, not in the relation section." and return 0;
 	
 	return 1;
@@ -134,6 +125,24 @@ has 'include_colspec' => (
 		$self->base_colspec;
 	}
 );
+
+
+has 'relation_sep' => ( is => 'ro', isa => 'Str', required => 1 );
+has 'relspec_prefix' => ( is => 'ro', isa => 'Str', default => '' );
+# needed_join is the relspec_prefix in DBIC 'join' attr format
+has 'needed_join' => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
+	my $self = shift;
+	return {} if ($self->relspec_prefix eq '');
+	return $self->chain_to_hash(split(/\./,$self->relspec_prefix));
+});
+has 'column_prefix' => ( is => 'ro', isa => 'Str', lazy => 1, default => sub {
+	my $self = shift;
+	return '' if ($self->relspec_prefix eq '');
+	my $col_pre = $self->relspec_prefix;
+	my $sep = $self->relation_sep;
+	$col_pre =~ s/\./${sep}/g;
+	return $col_pre . $self->relation_sep;
+});
 
 has 'base_colspec' => ( is => 'ro', isa => 'ArrayRef', lazy => 1,default => sub {
 	my $self = shift;
@@ -190,10 +199,12 @@ after BUILD => sub {
 		$type_profile = [ $type_profile ] unless (ref $type_profile);
 		push @profiles, @$type_profile; 
 		
-		$self->add_columns( { name => $self->column_prefix . $col, profiles => \@profiles } ); 
+		$self->add_columns( { name => $self->column_prefix . $col, profiles => \@profiles } );
+		$self->dbic_col_names->{$self->column_prefix . $col} = $col;
 	}
 };
-
+# Tracks original dbic column names:
+has 'dbic_col_names' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 
 has 'relation_colspecs' => ( is => 'ro', isa => 'HashRef', default => sub {{ '' => [] }} );
 has 'relation_order' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default => sub {
@@ -212,6 +223,8 @@ has 'relation_order' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default
 			$subspec = $rel;
 			$rel = '';
 		}
+		
+		$rel = '' if ($rel eq '*');
 		
 		# end rels that link to colspecs and not just to relspecs 
 		# (intermediate rels with no direct columns)
@@ -275,9 +288,10 @@ sub related_TableSpec {
 }
 
 
+
 # Recursively flattens/merges in columns from related TableSpecs (matching include_colspec)
 # into a new TableSpec object and returns it:
-sub flattened_TableSpec {
+sub flattened_TableSpec_old {
 	my $self = shift;
 	
 	my $Flattened = $self->new_TableSpec(
@@ -297,6 +311,166 @@ sub flattened_TableSpec {
 
 	return $Flattened;
 }
+
+
+
+
+
+
+# Recursively flattens/merges in columns from related TableSpecs (matching include_colspec)
+# into a new TableSpec object and returns it:
+sub flattened_TableSpec {
+	my $self = shift;
+	
+	#return $self;
+	
+	my $Flattened = $self->new_TableSpec(
+		name => $self->name,
+		ResultClass => $self->ResultClass,
+		relation_sep => $self->relation_sep,
+		include_colspec => $self->include_colspec,
+		relspec_prefix => $self->relspec_prefix
+	);
+	
+	$Flattened->add_all_related_TableSpecs_recursive;
+	
+	#scream_color(CYAN,$Flattened->column_name_relationship_map);
+	
+	return $Flattened;
+}
+
+
+sub add_all_related_TableSpecs_recursive {
+	my $self = shift;
+	
+	foreach my $rel (@{$self->relation_order}) {
+		next if ($rel eq '');
+		my $TableSpec = $self->add_related_TableSpec( $rel, {
+			include_colspec => $self->relation_colspecs->{$rel}
+		});
+		
+		$TableSpec->add_all_related_TableSpecs_recursive;
+		
+		for my $name ($TableSpec->column_names) {
+			die "Column name conflict: " . $name . " is already defined" if ($self->has_column($name));
+			$self->column_name_relationship_map->{$name} = $rel;
+		}
+	}
+	return $self;
+}
+
+
+has 'column_name_relationship_map' => ( is => 'ro', isa => 'HashRef[Str]', default => sub {{}} );
+has 'related_TableSpec' => ( is => 'ro', isa => 'HashRef[RapidApp::TableSpec]', default => sub {{}} );
+has 'related_TableSpec_order' => ( is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]} );
+sub add_related_TableSpec {
+	my $self = shift;
+	my $rel = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	die "There is already a related TableSpec associated with the '$rel' relationship" if (
+		defined $self->related_TableSpec->{$rel}
+	);
+	
+	my $info = $self->ResultClass->relationship_info($rel) or die "Relationship '$rel' not found.";
+	my $class = $info->{class};
+
+	my $relspec_prefix = $self->relspec_prefix;
+	$relspec_prefix .= '.' if ($relspec_prefix and $relspec_prefix ne '');
+	$relspec_prefix .= $rel;
+	
+	my $TableSpec = $self->new_TableSpec(
+		name => $class->table,
+		ResultClass => $class,
+		relation_sep => $self->relation_sep,
+		relspec_prefix => $relspec_prefix,
+		%opt
+	) or die "Failed to create related TableSpec";
+	
+	#for my $name ($TableSpec->column_names) {
+	#	die "Column name conflict: " . $name . " is already defined" if ($self->has_column($name));
+	#	$self->column_name_relationship_map->{$name} = $rel;
+	#}
+	
+	$self->related_TableSpec->{$rel} = $TableSpec;
+	push @{$self->related_TableSpec_order}, $rel;
+	
+	return $TableSpec;
+}
+
+around 'get_column' => \&_has_get_column_modifier;
+around 'has_column' => \&_has_get_column_modifier;
+sub _has_get_column_modifier {
+	my $orig = shift;
+	my $self = shift;
+	my $name = $_[0];
+	
+	my $rel = $self->column_name_relationship_map->{$name};
+	my $obj = $self;
+	$obj = $self->related_TableSpec->{$rel} if (defined $rel);
+	
+	return $obj->$orig(@_);
+}
+
+around 'column_names' => sub {
+	my $orig = shift;
+	my $self = shift;
+
+	my @names = $self->$orig(@_);
+	push @names, $self->related_TableSpec->{$_}->column_names for (@{$self->related_TableSpec_order});
+	return @names;
+};
+
+
+sub resolve_dbic_colname {
+	my $self = shift;
+	my $name = shift;
+	my $merge_join = shift;
+	
+	my ($rel,$col,$join) = $self->resolve_dbic_rel_alias_by_column_name($name);
+	$join = {} unless (defined $join);
+	%$merge_join = %{ merge($merge_join,$join) } if ($merge_join);
+	
+	return $rel . '.' . $col;
+}
+
+
+sub resolve_dbic_rel_alias_by_column_name {
+	my $self = shift;
+	my $name = shift;
+	
+	my $rel = $self->column_name_relationship_map->{$name};
+	unless ($rel) {
+		my $pre = $self->column_prefix;
+		$name =~ s/^${pre}//;
+		return ('me',$name,$self->needed_join);
+	}
+
+	my $TableSpec = $self->related_TableSpec->{$rel};
+	my ($alias,$dbname,$join) = $TableSpec->resolve_dbic_rel_alias_by_column_name($name);
+	$alias = $rel if ($alias eq 'me');
+	return ($alias,$dbname,$join);
+}
+
+sub chain_to_hash {
+	my $self = shift;
+	my @chain = @_;
+	
+	my $hash = {};
+
+	my @evals = ();
+	foreach my $item (@chain) {
+		unshift @evals, '$hash->{\'' . join('\'}->{\'',@chain) . '\'} = {}';
+		pop @chain;
+	}
+	eval $_ for (@evals);
+	
+	return $hash;
+}
+
+
+
+=pod
 
 
 # returns a DBIC join attr based on the colspec
@@ -332,21 +506,7 @@ has 'relspec_colspec_map' => ( is => 'ro', isa => 'HashRef', default => sub {{}}
 has 'relspec_order' => ( is => 'ro', isa => 'ArrayRef', default => sub {[]} );
 
 
-sub chain_to_hash {
-	my $self = shift;
-	my @chain = @_;
-	
-	my $hash = {};
 
-	my @evals = ();
-	foreach my $item (@chain) {
-		unshift @evals, '$hash->{\'' . join('\'}->{\'',@chain) . '\'} = {}';
-		pop @chain;
-	}
-	eval $_ for (@evals);
-	
-	return $hash;
-}
 
 sub hash_with_undef_values_to_array_deep {
 	my ($self,$hash) = @_;
@@ -386,7 +546,7 @@ sub leaf_hash_to_string {
 
 
 
-
+=cut
 
 
 1;
