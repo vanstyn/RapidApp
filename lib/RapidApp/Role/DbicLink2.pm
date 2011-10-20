@@ -76,6 +76,10 @@ sub _build_TableSpec {
 	);
 	
 	$TableSpec->add_all_related_TableSpecs_recursive;
+	
+	# Set the column order based on the include_colspec list order:
+	$TableSpec->reorder_by_colspec_list($self->include_colspec);
+	
 	return $TableSpec;
 }
 
@@ -120,8 +124,6 @@ sub init_apply_columns {
 
 
 
-
-
 sub _ResultSet {
 	my $self = shift;
 	my $Rs = $self->ResultSource->resultset;
@@ -133,9 +135,7 @@ sub _ResultSet {
 sub read_records {
 	my $self = shift;
 	my $params = shift || $self->c->req->params;
-	
-	scream_color(BOLD.MAGENTA,$params);
-	
+
 	my $Rs = $self->_ResultSet;
 	
 	# Apply base Attrs:
@@ -156,15 +156,6 @@ sub read_records {
 	};
 }
 
-sub req_Rs_Search_spec {
-	my $self = shift;
-	my $params = shift || $self->c->req->params;
-	
-	return {};
-	
-	# TEMP:
-	#return RapidApp::DbicExtQuery->Search_spec($params)
-}
 
 # Applies base request attrs to ResultSet:
 sub chain_Rs_req_base_Attr {

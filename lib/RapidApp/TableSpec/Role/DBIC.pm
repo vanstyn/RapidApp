@@ -308,9 +308,63 @@ sub colspec_test {
 	return undef;
 }
 
+# TODO:
+# abstract this logic (much of which is redundant) into its own proper class 
+# (merge with Mike's class)
+sub colspec_test_full {
+	my $self = shift;
+	my $full_colspec = shift;
+	my $col = shift;
+	
+	$full_colspec =~ s/^(\!)//;
+	my $pre = $1 || '';
+	
+	my @parts = split(/\./,$full_colspec); 
+	my $colspec = pop @parts;
+	my $relspec = join('.',@parts);
+	
+	my $sep = $self->relation_sep;
+	my $prefix = $relspec;
+	$prefix =~ s/\./${sep}/g;
+	
+	@parts = split(/${sep}/,$col); 
+	my $test_col = pop @parts;
+	my $test_prefix = join($sep,@parts);
+	
+	# no match:
+	return undef unless ($prefix eq $test_prefix);
+	
+	return $self->colspec_test($pre . $colspec,$test_col);
+}
 
-# Tracks original dbic column names:
-#has 'dbic_col_names' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
+
+# reorders the entire column list according to a list of colspecs. This is called
+# by DbicLink2 to use the same include_colspec to also define the column order
+sub reorder_by_colspec_list {
+	my $self = shift;
+	my @colspecs = @_;
+	@colspecs = @{$_[0]} if (ref($_[0]) eq 'ARRAY');
+	
+	# Check the supplied colspecs for any that don't contain '.'
+	# if there are none, and all of them contain a '.', then we
+	# need to add the base colspec '*'
+	my $need_base = 1;
+	! /\./ and $need_base = 0 for (@colspecs);
+	unshift @colspecs, '*' if ($need_base);
+	
+	my @cur_order = $self->updated_column_order;
+	my @new_order = ();
+	
+	foreach my $colspec (@colspecs) {
+		$self->colspec_test_full($colspec,$_) and push(@new_order,$_) for (@cur_order);
+	}
+	
+	my %seen = ();
+	@{$self->column_order} = grep { !$seen{$_}++ } (@new_order,@cur_order);
+	return $self->updated_column_order;
+}
+
+
 
 has 'relation_colspecs' => ( is => 'ro', isa => 'HashRef', default => sub {{ '' => [] }} );
 has 'relation_order' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default => sub {
