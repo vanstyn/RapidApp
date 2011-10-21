@@ -16,7 +16,11 @@ use Scalar::Util qw(blessed);
 use Hash::Merge qw( merge );
 Hash::Merge::set_behavior( 'RIGHT_PRECEDENT' );
 
-our @EXPORT = qw(sessvar perreq asjson rawjs mixedjs ashtml rawhtml usererr userexception override_defaults merge_defaults DEBUG jsfunc blessed merge);
+
+our @EXPORT = qw(
+	sessvar perreq asjson rawjs mixedjs ashtml rawhtml usererr userexception override_defaults 
+	merge_defaults DEBUG jsfunc blessed merge hasarray
+);
 
 # Module shortcuts
 #
@@ -199,5 +203,54 @@ sub DEBUG {
 	unshift @_, 'RapidApp::Debug';
 	goto &RapidApp::Debug::global_write; # we don't want to mess up 'caller'
 }
+
+# Suger function sets up a Native Trait ArrayRef attribute with useful
+# default accessor methods
+sub hasarray {
+	my $name = shift;
+	my %opt = @_;
+	
+	my %defaults = (
+		is => 'ro',
+		isa => 'ArrayRef',
+		traits => [ 'Array' ],
+		default => sub {[]},
+		handles => {
+			'all_' . $name => 'uniq',
+			'add_' . $name => 'push',
+			'insert_' . $name => 'unshift',
+			'has_no_' . $name => 'is_empty',
+		}
+	);
+	
+	my $conf = merge(\%defaults,\%opt);
+	return caller->can('has')->($name,%$conf);
+}
+
+# Suger function sets up a Native Trait HashRef attribute with useful
+# default accessor methods
+sub hashash {
+	my $name = shift;
+	my %opt = @_;
+	
+	my %defaults = (
+		is => 'ro',
+		isa => 'HashRef',
+		traits => [ 'Hash' ],
+		default => sub {{}},
+		handles => {
+			'apply_' . $name		=> 'set',
+			'get_' . $name			=> 'get',
+			'has_' . $name			=> 'exists',
+			'all_' . $name			=> 'values',
+			$name . '_names'		=> 'keys',
+		}
+	);
+	
+	my $conf = merge(\%defaults,\%opt);
+	return caller->can('has')->($name,%$conf);
+}
+
+
 
 1;

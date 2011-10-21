@@ -121,6 +121,11 @@ sub caller_data {
 	return \@list;
 }
 
+# Returns a list with duplicates removed:
+sub uniq {
+	my %seen = ();
+	return grep { !$seen{$_}++ } @_;
+}
 
 # Automatically export all functions defined above:
 BEGIN {
