@@ -25,6 +25,19 @@ has 'data_type_profiles' => ( is => 'ro', isa => 'HashRef', default => sub {{
 	timestamp	=> [ 'datetime' ],
 }});
 
+
+around BUILDARGS => sub {
+	my $orig = shift;
+	my $self = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	# Exclude colspecs that start with #
+	@{$opt{include_colspec}} = grep { !/^#/ } @{$opt{include_colspec}} 
+		if (ref($opt{include_colspec}) eq 'ARRAY');
+	
+	return $self->$orig(%opt);
+};
+
 sub BUILD {}
 after BUILD => sub {
 	my $self = shift;
