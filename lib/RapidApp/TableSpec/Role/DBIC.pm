@@ -6,6 +6,7 @@ use Moose::Util::TypeConstraints;
 use RapidApp::Include qw(sugar perlutil);
 
 use Text::Glob qw( match_glob );
+use Text::WagnerFischer qw(distance);
 use Clone qw( clone );
 
 has 'ResultClass' => ( is => 'ro', isa => 'Str' );
@@ -31,7 +32,7 @@ after BUILD => sub {
 	my $class = $self->ResultClass;
 
 	my $cols = $self->init_config_column_properties;
-	my %inc_cols = map { $_ => $cols->{$_} || {} } $self->filter_columns($class->columns);
+	my %inc_cols = map { $_ => $cols->{$_} || {} } $self->filter_base_columns($class->columns);
 
 	foreach my $col (keys %inc_cols) {
 		my $info = $class->column_info($col);
@@ -275,49 +276,41 @@ around 'get_column' => sub {
 
 
 # accepts a list of column names and returns the names that match the base colspec
-# colspecs are tested in order, with later matches overriding earlier ones
-sub filter_columns {
+sub filter_base_columns {
 	my $self = shift;
 	my @columns = @_;
-
-	my %match = map { $_ => 0 } @columns;
-	for my $spec (@{$self->base_colspec}) {
-		for my $col (@columns) {
-			my $result = $self->colspec_test($spec,$col);
-			$match{$col} = $result if (defined $result);
-		}
-	}
-
-	return grep { $match{$_} } keys %match;
+	
+	return $self->colspec_select_columns({
+		colspecs => $self->base_colspec,
+		columns => \@columns,
+	});
 }
 
-sub colspec_test {
-	my $self = shift;
-	my $colspec = shift;
-	my $col = shift;
-	
-	$colspec =~ /\./ and 
-		die "colspec_test(): invalid colspec '$colspec' - relspecs not allowed, only base_colspecs can be testeded.";
-	
-	my $match_ret = 1;
-	if ($colspec =~ /^\!/) {
-		$colspec =~ s/^\!//;
-		$match_ret = 0;
-	}
-	return $match_ret if (match_glob($colspec,$col));
-	return undef;
-}
 
 # TODO:
 # abstract this logic (much of which is redundant) into its own proper class 
 # (merge with Mike's class)
-sub colspec_test_full {
+# Tests whether or not the supplied column name matches the supplied colspec.
+# Returns 1 for positive match, 0 for negative match (! prefix) and undef for no match
+sub colspec_test {
 	my $self = shift;
 	my $full_colspec = shift;
 	my $col = shift;
 	
+	# @other_colspecs - optional.
+	# If supplied, the column will also be tested against the colspecs in @other_colspecs,
+	# and no match will be returned unless this colspec matches *and* has the lowest
+	# edit distance of any other matches. This logic is designed so that remaining
+	# colspecs to be tested can be considered, and only the best match will win. This
+	# is meaningful when determining things like order based on a list of colspecs. This 
+	# doesn't serve any purpose when doing a straight bool up/down test
+	# tested with 
+	my @other_colspecs = @_;
+	
+	my $full_colspec_orig = $full_colspec;
 	$full_colspec =~ s/^(\!)//;
-	my $pre = $1 || '';
+	my $x = $1 ? -1 : 1;
+	my $match_return = $1 ? 0 : 1;
 	
 	my @parts = split(/\./,$full_colspec); 
 	my $colspec = pop @parts;
@@ -334,7 +327,76 @@ sub colspec_test_full {
 	# no match:
 	return undef unless ($prefix eq $test_prefix);
 	
-	return $self->colspec_test($pre . $colspec,$test_col);
+	# match (return 1 or 0):
+	if (match_glob($colspec,$test_col)) {
+		# Calculate WagnerFischer edit distance
+		my $distance = distance($colspec,$test_col);
+		
+		# multiply my $x to set the sign, then flip so bigger numbers 
+		# mean better match instead of the reverse
+		my $value = $x * (1000 - $distance); # <-- flip 
+		
+		foreach my $spec (@other_colspecs) {
+			my $other_val = $self->colspec_test($spec,$col) or next;
+
+			# A colspec in @other_colspecs is a better match than us, so we defer:
+			return undef if (abs $other_val > abs $value);
+		}
+		return $value;
+	};
+	
+	# no match:
+	return undef;
+}
+
+# returns a list of loaded column names that match the supplied colspec set
+sub get_colspec_column_names {
+	my $self = shift;
+	my @colspecs = @_;
+	@colspecs = @{$_[0]} if (ref($_[0]) eq 'ARRAY');
+	
+	return $self->colspec_select_columns({
+		colspecs => \@colspecs,
+		columns => [ $self->updated_column_order ]
+	});
+}
+
+# Returns a sublist of the supplied columns that match the supplied colspec set.
+# The colspec set is considered as a whole, with each column name tested against
+# the entire compiled set, which can contain both positive and negative (!) colspecs,
+# with the most recent match taking precidence.
+sub colspec_select_columns {
+	my $self = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	my $colspecs = $opt{colspecs} or die "colspec_select_columns(): expected 'colspecs'";
+	my $columns = $opt{columns} or die "colspec_select_columns(): expected 'columns'";
+	
+	# if best_match_look_ahead is true, the current remaining colspecs will be passed
+	# to each invocation of colspec_test which will cause it to only return a match
+	# when testing the *closest* (according to WagnerFischer edit distance) colspec
+	# of the set to the column. This prevents 
+	my $best_match = $opt{best_match_look_ahead};
+	
+	$colspecs = [ $colspecs ] unless (ref $colspecs);
+	$columns = [ $columns ] unless (ref $columns);
+	
+	my %match = map { $_ => 0 } @$columns;
+	my @order = ();
+	my $i = 0;
+	for my $spec (@$colspecs) {
+		my @remaining = @$colspecs[++$i .. $#$colspecs];
+		for my $col (@$columns) {
+			my @arg = ($spec,$col);
+			push @arg, @remaining if ($best_match); # <-- push the rest of the colspecs after the current for index
+			
+			my $result = $self->colspec_test(@arg) or next;;
+			push @order, $col if ($result > 0);
+			$match{$col} = $result;
+		}
+	}
+	
+	return grep { $match{$_} > 0 } @order;
 }
 
 
@@ -352,16 +414,20 @@ sub reorder_by_colspec_list {
 	! /\./ and $need_base = 0 for (@colspecs);
 	unshift @colspecs, '*' if ($need_base);
 	
-	my @cur_order = $self->updated_column_order;
-	my @new_order = ();
+	my @new_order = $self->colspec_select_columns({
+		colspecs => \@colspecs,
+		columns => [ $self->updated_column_order ],
+		best_match_look_ahead => 1
+	});
 	
-	foreach my $colspec (@colspecs) {
-		$self->colspec_test_full($colspec,$_) and push(@new_order,$_) for (@cur_order);
-	}
+	# Add all the current columns to the end of the new list in case any
+	# got missed. (this prevents the chance of this operation dropping any 
+	# of the existing columns, dupes are filtered out below):
+	push @new_order, $self->updated_column_order;
 	
 	my %seen = ();
-	@{$self->column_order} = grep { !$seen{$_}++ } (@new_order,@cur_order);
-	return $self->updated_column_order;
+	@{$self->column_order} = grep { !$seen{$_}++ } @new_order;
+	return $self->updated_column_order; #<-- for good measure
 }
 
 
