@@ -88,7 +88,7 @@ has 'init_config_column_order' => (
 		my @order = ();
 		
 		my $class = $self->ResultClass;
-		return $class->columns unless ($class->can('TableSpec_cnf')); 
+		return [$class->columns] unless ($class->can('TableSpec_cnf')); 
 			
 		push @order, @{$class->TableSpec_cnf->{'column_properties_ordered'}->{order}}
 			if ($class->TableSpec_has_conf('column_properties_ordered'));

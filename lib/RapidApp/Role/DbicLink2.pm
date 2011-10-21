@@ -58,6 +58,14 @@ has 'ResultSource' => (
 	required => 1
 );
 
+has 'record_pk' => ( is => 'ro', isa => 'Str', lazy => 1, default => sub {
+	my $self = shift;
+	my @cols = $self->ResultSource->primary_columns;
+	# First primary column
+	# TODO: create a virtual record_pk and virtual column out of the combined set of primary columns
+	return shift @cols;
+});
+
 has 'ResultClass' => ( is => 'ro', lazy_build => 1 );
 sub _build_ResultClass {
 	my $self = shift;
@@ -82,7 +90,6 @@ sub _build_TableSpec {
 	
 	return $TableSpec;
 }
-
 
 
 sub BUILD {}
