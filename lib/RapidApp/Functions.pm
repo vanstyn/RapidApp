@@ -121,10 +121,16 @@ sub caller_data {
 	return \@list;
 }
 
-# Returns a list with duplicates removed:
+# Returns a list with duplicates removed. If passed a single arrayref, duplicates are
+# removed from the arrayref in place, and the new list (contents) are returned.
 sub uniq {
 	my %seen = ();
-	return grep { !$seen{$_}++ } @_;
+	return grep { !$seen{$_}++ } @_ unless (@_ == 1 and ref($_[0]) eq 'ARRAY');
+	return () unless (@{$_[0]} > 0);
+	# we add the first element to the end of the arg list to prevetn deep recursion in the
+	# case of nested single element arrayrefs
+	@{$_[0]} = uniq(@{$_[0]},$_[0]->[0]);
+	return @{$_[0]};
 }
 
 # Automatically export all functions defined above:
