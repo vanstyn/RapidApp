@@ -25,7 +25,7 @@ has 'data_type_profiles' => ( is => 'ro', isa => 'HashRef', default => sub {{
 	timestamp	=> [ 'datetime' ],
 }});
 
-
+=pod
 around BUILDARGS => sub {
 	my $orig = shift;
 	my $self = shift;
@@ -37,6 +37,7 @@ around BUILDARGS => sub {
 	
 	return $self->$orig(%opt);
 };
+=cut
 
 sub BUILD {}
 after BUILD => sub {
@@ -282,6 +283,7 @@ has 'include_colspec' => (
 		$self->base_colspec;
 	}
 );
+
 
 
 has 'relation_sep' => ( is => 'ro', isa => 'Str', required => 1 );

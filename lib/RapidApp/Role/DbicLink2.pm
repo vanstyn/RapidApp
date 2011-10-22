@@ -5,6 +5,7 @@ use Moose::Role;
 use RapidApp::Include qw(sugar perlutil);
 use RapidApp::TableSpec::Role::DBIC;
 use Clone qw(clone);
+use Text::Glob qw( match_glob );
 
 
 
@@ -65,6 +66,9 @@ sub _build_ResultClass {
 has 'TableSpec' => ( is => 'ro', isa => 'RapidApp::TableSpec', lazy_build => 1 );
 sub _build_TableSpec {
 	my $self = shift;
+	
+	@{$self->include_colspec} = map { $self->expand_relspec_wildcards($_) } @{$self->include_colspec};
+	
 	my $TableSpec = RapidApp::TableSpec->with_traits('RapidApp::TableSpec::Role::DBIC')->new(
 		name => $self->ResultClass->table,
 		relation_sep => $self->relation_sep,
@@ -75,7 +79,7 @@ sub _build_TableSpec {
 	$TableSpec->add_all_related_TableSpecs_recursive;
 	
 	# Set the column order based on the include_colspec list order:
-	$TableSpec->reorder_by_colspec_list($self->include_colspec);
+	$TableSpec->reorder_by_colspec_list($TableSpec->include_colspec);
 	
 	# Prevent the dummy record_pk from showing up
 	$self->apply_columns( $self->record_pk => { 
@@ -86,6 +90,44 @@ sub _build_TableSpec {
 	
 	return $TableSpec;
 }
+
+
+sub expand_relspec_wildcards {
+	my $self = shift;
+	my $colspec = shift;
+	my $Source = shift || $self->ResultSource;
+	
+	# Exclude colspecs that start with #
+	return () if ($colspec =~ /^\#/);
+	
+	my @parts = split(/\./,$colspec); 
+	return ($colspec) unless (@parts > 1);
+	
+	my $clspec = pop @parts;
+	my $relspec = join('.',@parts);
+	
+	# There is nothing to expand if the relspec doesn't contain wildcards:
+	return ($colspec) unless ($relspec =~ /[\*\?\[\]]/);
+	
+	push @parts,$clspec;
+	
+	my $rel = shift @parts;
+	$rel =~ s/^(\!)//;
+	my $pre = $1 ? $1 : '';
+
+	my @matching_rels = grep { match_glob($rel,$_) } $Source->relationships;
+	die 'Invalid ColSpec: "' . $rel . '" doesn\'t match any relationships of ' . 
+		$Source->schema->class($Source->source_name) unless (@matching_rels > 0);
+	
+	my @expanded = ();
+	foreach my $rel_name (@matching_rels) {
+		my @suffix = $self->expand_relspec_wildcards(join('.',@parts),$Source->related_source($rel_name));
+		push @expanded, $pre . $rel_name . '.' . $_ for (@suffix);
+	}
+
+	return (@expanded);
+}
+
 
 has 'record_pk' => ( is => 'ro', isa => 'Str', default => '___record_pk' );
 has 'primary_columns_sep' => ( is => 'ro', isa => 'Str', default => '~$~' );
