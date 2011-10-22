@@ -2,6 +2,7 @@ package RapidApp::DbicAppPropertyPage;
 use strict;
 use warnings;
 use Moose;
+
 extends 'RapidApp::AppDataStore2';
 with 'RapidApp::Role::DbicLink2';
 
@@ -67,8 +68,31 @@ sub apply_items_config {
 
 #has '+dbiclink_updatable' => ( default => 1 );
 
+
+sub TableSpec_property_grids {
+	my $self = shift;
+	my $TableSpec = shift;
+	
+	my %cols = map { $_->{name} => $_ } @{ $self->column_list };
+	my @columns = map { $cols{$_} } $TableSpec->local_column_names;
+	my $fields = [ grep { not jstrue $_->{no_column} } @columns  ];
+	
+	my $title = $TableSpec->relspec_prefix;
+
+	my @items = ();
+	push @items, $self->property_grid($title,$fields), { xtype => 'spacer', height => 5 } if (@$fields > 0);
+	my @TableSpecs = map { $TableSpec->related_TableSpec->{$_} } @{$TableSpec->related_TableSpec_order};
+	push @items, $self->TableSpec_property_grids($_) for (@TableSpecs);
+	
+	return @items;
+}
+
+
+
 sub full_property_grid {
 	my $self = shift;
+	
+	return $self->TableSpec_property_grids($self->TableSpec);
 	
 	my $fields = [ grep { not jstrue $_->{no_column} } @{ $self->column_list } ];
 	return $self->property_grid('Properties',$fields);
@@ -80,6 +104,9 @@ sub property_grid {
 	my $title = shift;
 	my $fields = shift;
 	my $opt = shift || {};
+	
+	$title = $self->TableSpec->name . '.' . $title unless ($title eq '');
+	$title = $self->TableSpec->name if ($title eq '');
 	
 	my $conf = {
 

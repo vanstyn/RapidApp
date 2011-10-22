@@ -4282,7 +4282,13 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		
 		var propgrid = this;
 		
+		console.dir(this.fields);
+		
 		var columns = [];
+		if(this.bindStore.baseParams.columns) {
+			// append to existing column list if set:
+			columns = Ext.decode(this.bindStore.baseParams.columns);
+		}
 		Ext.each(this.fields,function(field) {
 			field.id = field.dataIndex;
 			columns.push(field.dataIndex);
