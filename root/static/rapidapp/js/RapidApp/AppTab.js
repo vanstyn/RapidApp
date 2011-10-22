@@ -368,7 +368,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.onRender.apply(this, arguments);
 	},
 	
-	reloadColumns: function() {
+	reloadColumns: function(store,opts) {
 		// Reset loadedColumnIndexes back to none
 		this.loadedColumnIndexes = {};
 			
@@ -386,14 +386,17 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		},this);
 		
 		var params = { columns: Ext.encode(colDataIndexes) };
+		if(opts && opts.params) {
+			Ext.apply(params,opts.params);
+		}
 		
 		if(this.baseParams) {
 			Ext.apply(params,this.baseParams);
 		}
 		
-		Ext.apply(this.store.baseParams,params);
+		Ext.apply(store.baseParams,params);
 		// Set lastOptions as well so reload() gets the new columns:
-		Ext.apply(this.store.lastOptions.params,params);
+		Ext.apply(store.lastOptions.params,params);
 	}
 };
 
