@@ -4282,8 +4282,10 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		
 		var propgrid = this;
 		
+		var columns = [];
 		Ext.each(this.fields,function(field) {
 			field.id = field.dataIndex;
+			columns.push(field.dataIndex);
 			var css;
 			// Extra logic to handle editors as simple xtypes and not already 
 			// GridEditor objects. This is handled by EditorGridPanel, but not
@@ -4319,6 +4321,15 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 			}
 			
 		},this);
+		
+		var params = { columns: Ext.encode(columns) };
+		
+		if(this.baseParams) {
+			Ext.apply(params,this.baseParams);
+		}
+		
+		Ext.apply(this.bindStore.baseParams,params);
+		
 		
 		Ext.ux.RapidApp.AppPropertyGrid.superclass.initComponent.call(this);
 		
