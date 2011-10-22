@@ -85,7 +85,7 @@ sub _build_TableSpec {
 }
 
 has 'record_pk' => ( is => 'ro', isa => 'Str', default => '___record_pk' );
-has 'primary_columns_sep' => ( is => 'ro', isa => 'Str', default => '$$$' );
+has 'primary_columns_sep' => ( is => 'ro', isa => 'Str', default => '~$~' );
 has 'primary_columns' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default => sub {
 	my $self = shift;
 	my @cols = $self->ResultSource->primary_columns;
@@ -98,16 +98,43 @@ has 'primary_columns' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, defaul
 	return \@cols;
 });
 
+
+sub generate_record_pk_value {
+	my $self = shift;
+	my $data = shift;
+	die "generate_record_pk_value(): expected hashref arg" unless (ref($data) eq 'HASH');
+	return join(
+		$self->primary_columns_sep, 
+		map { defined $data->{$_} ? "'" . $data->{$_} . "'" : 'undef' } @{$self->primary_columns}
+	);
+}
+
+# reverse generate_record_pk_value:
 sub record_pk_cond {
 	my $self = shift;
 	my $value = shift;
 	
-	my $sep = $self->primary_columns_sep;
+	my $sep = quotemeta $self->primary_columns_sep;
 	my @parts = split(/${sep}/,$value);
-	my %cond = map { 'me.' . $_ => shift @parts } @{$self->primary_columns};
+	
+	my %cond = ();
+	foreach my $col (@{$self->primary_columns}) {
+		my $val = shift @parts;
+		if ($val eq 'undef') {
+			$val = undef;
+		}
+		else {
+			$val =~ s/^\'//;
+			$val =~ s/\'$//;
+		}
+		$cond{$col} = $val;
+	}
 
 	return \%cond;
 }
+
+
+
 
 sub BUILD {}
 around 'BUILD' => sub { &DbicLink_around_BUILD(@_) };
@@ -180,12 +207,7 @@ sub read_records {
 	};
 }
 
-sub generate_record_pk_value {
-	my $self = shift;
-	my $data = shift;
-	die "generate_record_pk_value(): expected hashref arg" unless (ref($data) eq 'HASH');
-	return join($self->primary_columns_sep, map { $data->{$_} } @{$self->primary_columns});
-}
+
 
 
 # Applies base request attrs to ResultSet:
