@@ -6,9 +6,9 @@ extends 'RapidApp::AppCmp';
 with 'RapidApp::Role::DataStore2';
 with 'RapidApp::Role::DbicLink2';
 
-
 use RapidApp::DbicAppPropertyPage1;
-# All-purpose record display module. Works great with DbicAppGrid2 like this:
+
+# All-purpose record display module. Works great with AppGrid2/DbicLink2 like this:
 #
 #has 'open_record_class'	=> ( is => 'ro', lazy => 1, default => sub {
 #	my $self = shift;
@@ -43,8 +43,6 @@ sub BUILD {
 		params	=> { 
 			ResultSource => $self->ResultSource, 
 			record_pk => $self->record_pk,
-			literal_dbf_colnames => [ $self->record_pk_alias ],
-			never_fetch_columns => [ $self->record_pk_alias ]
 		}
 	});
 	
@@ -58,10 +56,8 @@ sub ResultSet {
 	my $self = shift;
 	my $Rs = shift;
 	
-	my @rec_pk = split(/\$\$\$/,$self->c->req->params->{$self->record_pk});
-	my %cond = map { 'me.' . $_ => shift @rec_pk } $self->ResultSource->primary_columns;
-	
-	return $Rs->search_rs(\%cond);
+	my $value = $self->c->req->params->{$self->record_pk};
+	return $Rs->search_rs($self->record_pk_cond($value));
 }
 
 
@@ -73,35 +69,11 @@ sub apply_items_config {
 
 #has '+dbiclink_updatable' => ( default => 1 );
 
-#sub read_extra_search_set {
-#	my $self = shift;
-#	return [ 'me.' . $self->record_pk => $self->c->req->params->{$self->record_pk} ];
-#}
-
 sub full_property_grid {
 	my $self = shift;
 	
-	
-	
 	my $fields = [ grep { not jstrue $_->{no_column} } @{ $self->column_list } ];
-	
 	return $self->property_grid('Properties',$fields);
-	
-	my @items = ();
-	
-	my $name = $self->ResultSource->source_name;
-	my $hash = $self->ResultSource->schema->class($name)->TableSpec_rel_columns;
-	
-	my $relcols = {};
-	foreach my $rel (keys %$hash) {
-		my %map = map {$_ => 1} @{ $hash->{$rel} };
-		my @f = grep { $map{$_->{name}} } @$fields;
-		$relcols = { %$relcols, map {$_ => 1} @f };
-		push @items, { xtype => 'spacer', height => 5 }, $self->property_grid($rel,\@f) if (scalar @f > 0);
-	}
-	
-	my @base = grep { not $relcols->{$_} } @$fields;
-	return $self->property_grid('object',\@base), @items;
 }
 
 
@@ -109,36 +81,35 @@ sub property_grid {
 	my $self = shift;
 	my $title = shift;
 	my $fields = shift;
+	my $opt = shift || {};
 	
-	return {
-		xtype => 'panel',
+	my $conf = {
+
 		autoWidth		=> \1,
 		collapsible => \1,
-		collapseFirst => \1,
+		collapseFirst => \0,
 		titleCollapse => \1,
 		autoHeight => \1,
 		title => $title,
-		items => {
-			xtype => 'apppropertygrid',
-			hideHeaders => \1,
-			autoHeight => \1,
-			editable => \1,
-			fields => $fields,
-			store => $self->getStore_func,
-			nameWidth => 250,
-			
-			sm => RapidApp::JSONFunc->new( func => 'new Ext.grid.RowSelectionModel', parm => {
-				listeners => {
-					# Disable row selection (note that disableSelection doesn't work in propertygrid with 'source')
-					beforerowselect => RapidApp::JSONFunc->new( raw => 1, func => 'function() { return false; }' )
-				}
-			})
-			
-			
-			# preliminary feature: only these columns will be editable
-			#editable_fields => { map {$_ => 1} ( 'name','creator','updater' ) }
-		},
+
+		xtype => 'apppropertygrid',
+		hideHeaders => \1,
+		autoHeight => \1,
+		editable => \1,
+		fields => $fields,
+		store => $self->getStore_func,
+		nameWidth => 250,
+		
+		sm => RapidApp::JSONFunc->new( func => 'new Ext.grid.RowSelectionModel', parm => {
+			listeners => {
+				# Disable row selection (note that disableSelection doesn't work in propertygrid with 'source')
+				beforerowselect => RapidApp::JSONFunc->new( raw => 1, func => 'function() { return false; }' )
+			}
+		}),
+		plugins => [ 'titlecollapseplus' ]
 	};
+	
+	return merge($conf,$opt);
 }
 
 

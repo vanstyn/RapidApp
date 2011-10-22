@@ -7,14 +7,6 @@ use RapidApp::TableSpec::Role::DBIC;
 use Clone qw(clone);
 
 
-has 'primary_columns' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default => sub {[ (shift)->record_pk ]} );
-sub apply_primary_columns {
-	my $self = shift;
-	my @cols = (ref($_[0]) eq 'ARRAY') ? @{ $_[0] } : @_; # <-- arg as array or arrayref
-	my %seen = ();
-	@{$self->primary_columns} = grep { !$seen{$_}++ } @{$self->primary_columns},@cols;
-}
-
 
 # Columns that need other columns to automatically be fetched when they are fetched
 has 'column_required_fetch_columns' => (
@@ -58,12 +50,6 @@ has 'ResultSource' => (
 	required => 1
 );
 
-has 'primary_columns_sep' => ( is => 'ro', isa => 'Str', default => '$$$' );
-has 'record_pk_alias' => ( is => 'ro', isa => 'Str', default => '___record_pk' );
-has 'record_pk' => ( is => 'ro', isa => 'Str', lazy => 1, default => sub {
-	my $self = shift;
-	return $self->record_pk_alias;
-});
 
 has 'ResultClass' => ( is => 'ro', lazy_build => 1 );
 sub _build_ResultClass {
@@ -87,7 +73,8 @@ sub _build_TableSpec {
 	# Set the column order based on the include_colspec list order:
 	$TableSpec->reorder_by_colspec_list($self->include_colspec);
 	
-	$self->apply_columns( $self->record_pk_alias => { 
+	# Prevent the dummy record_pk from showing up
+	$self->apply_columns( $self->record_pk => { 
 		no_column => \1, 
 		no_multifilter => \1, 
 		no_quick_search => \1 
@@ -96,6 +83,30 @@ sub _build_TableSpec {
 	return $TableSpec;
 }
 
+has 'record_pk' => ( is => 'ro', isa => 'Str', default => '___record_pk' );
+has 'primary_columns_sep' => ( is => 'ro', isa => 'Str', default => '$$$' );
+has 'primary_columns' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default => sub {
+	my $self = shift;
+	my @cols = $self->ResultSource->primary_columns;
+	
+	# If the db has no primary columns, then we have to use ALL the columns:
+	@cols = $self->ResultSource->columns unless (@cols > 0);
+	
+	$self->apply_extconfig( primary_columns => [ $self->record_pk, @cols ] );
+
+	return \@cols;
+});
+
+sub record_pk_cond {
+	my $self = shift;
+	my $value = shift;
+	
+	my $sep = $self->primary_columns_sep;
+	my @parts = split(/${sep}/,$value);
+	my %cond = map { 'me.' . $_ => shift @parts } @{$self->primary_columns};
+
+	return \%cond;
+}
 
 sub BUILD {}
 around 'BUILD' => sub { &DbicLink_around_BUILD(@_) };
@@ -107,6 +118,9 @@ sub DbicLink_around_BUILD {
 	
 	$self->$orig(@_);
 	
+	# init primary columns:
+	$self->primary_columns;
+	
 	$self->apply_store_config(
 		remoteSort => \1
 	);
@@ -115,23 +129,6 @@ sub DbicLink_around_BUILD {
 		remote_columns		=> \1,
 		loadMask				=> \1
 	);
-}
-
-
-has '_init_apply_columns_applied' => ( is => 'rw', isa => 'Bool', default => 0 );
-sub init_apply_columns {
-	my $self = shift;
-	return if ($self->_init_apply_columns_applied);
-	
-	# currently this is needed for "delete_row" support -- different from "destroy" and will
-	# probably be removed at which point this should also be removed (maybe)
-	$self->apply_primary_columns($self->ResultSource->primary_columns);
-	
-	$self->apply_extconfig(primary_columns => $self->primary_columns);
-	
-	#init column_required_fetch_columns
-	$self->column_required_fetch_columns;
-	$self->_init_apply_columns_applied(1);
 }
 
 
@@ -166,7 +163,7 @@ sub read_records {
 	
 	#Hard coded munger for record_pk:
 	foreach my $row (@$rows) {
-		$row->{$self->record_pk_alias} = join($self->primary_columns_sep, map { $row->{$_} } $self->ResultSource->primary_columns);
+		$row->{$self->record_pk} = join($self->primary_columns_sep, map { $row->{$_} } @{$self->primary_columns});
 	}
 
 	return {
@@ -203,8 +200,8 @@ sub chain_Rs_req_base_Attr {
 	
 	my $columns = $self->param_decodeIf($params->{columns},[]);
 	
-	# Exclude primary column alias:
-	@$columns = grep { ! $self->record_pk_alias } @$columns;
+	# Exclude the dummy record_pk:
+	@$columns = grep { ! $self->record_pk } @$columns;
 	
 	#Must include primary columns:
 	#@$columns = ($self->ResultSource->primary_columns,@$columns);
