@@ -52,10 +52,18 @@ has 'open_record_url' => ( is => 'ro', isa => 'Maybe[Str]', lazy => 1, default =
 sub get_record_loadContentCnf {
 	my ($self, $record) = @_;
 	
-	return {
-		title	=> $self->record_pk . ': ' . $record->{$self->record_pk}
-	};
+	local $_ = $record;
+	my $display = $self->get_record_display->($self);
+	%$record = %$_;
+	
+	$display = { title => $display } unless (ref $display);
+	
+	return $display;
 }
+has 'get_record_display' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default => sub { sub { 
+	my $self = shift;
+	$self->record_pk . ': ' . $_->{$self->record_pk}
+}});
 
 has 'init_pagesize' => ( is => 'ro', isa => 'Int', default => 25 );
 has '+max_pagesize' => ( default => 500 );

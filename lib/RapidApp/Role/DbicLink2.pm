@@ -35,7 +35,10 @@ has 'column_required_fetch_columns' => (
 
 
 
-
+has 'get_record_display' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default => sub { 
+	my $self = shift;
+	return $self->TableSpec->get_Cnf('row_display');
+});
 
 
 
@@ -132,7 +135,7 @@ sub record_pk_cond {
 			$val =~ s/^\'//;
 			$val =~ s/\'$//;
 		}
-		$cond{$col} = $val;
+		$cond{'me.' . $col} = $val;
 	}
 
 	return \%cond;

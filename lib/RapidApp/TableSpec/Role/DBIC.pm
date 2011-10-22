@@ -43,6 +43,7 @@ after BUILD => sub {
 	my $self = shift;
 	
 	my $class = $self->ResultClass;
+	$class->set_primary_key( $class->columns ) unless ( $class->primary_columns > 0 );
 
 	my $cols = $self->init_config_column_properties;
 	my %inc_cols = map { $_ => $cols->{$_} || {} } $self->filter_base_columns($class->columns);
@@ -80,6 +81,28 @@ hashash 'Cnf' => ( lazy => 1, default => sub {
 	}
 	
 	my %defaults = ();
+	$defaults{iconCls} = $Cnf->{singleIconCls} if ($Cnf->{singleIconCls} and ! $Cnf->{iconCls});
+	$defaults{iconCls} = $defaults{iconCls} || $Cnf->{iconCls} || 'icon-application-view-detail';
+	$defaults{multiIconCls} = $Cnf->{multiIconCls} || 'icon-database_table';
+	$defaults{singleIconCls} = $Cnf->{singleIconCls} || $defaults{iconCls};
+	$defaults{title} = $Cnf->{title} || $self->name;
+	$defaults{title_multi} = $Cnf->{title_multi} || $defaults{title};
+
+	my $orig_row_display = $Cnf->{row_display} || sub {
+		my $record = $_;
+		my $title = join('/',map { $record->{$_} || '' } $class->primary_columns);
+		$title = sprintf('%.13s',$title) . '...' if (length $title > 13);
+		return $title;
+	};
+	
+	$Cnf->{row_display} = sub {
+		my $display = $orig_row_display->(@_);
+		return $display if (ref $display);
+		return {
+			title => $display,
+			iconCls => $defaults{singleIconCls}
+		};
+	};
 	
 	my $rel_trans = {};
 	

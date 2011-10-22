@@ -292,7 +292,15 @@ sub get_foreign_column_from_cond {
 sub TableSpec_set_conf {
 	my $self = shift;
 	my $param = shift;
+	if(@_ == 1) {
+		$self->TableSpec_cnf->{$param} = {
+			order => [],
+			data => $_[0]
+		};
+		return;
+	}
 	my %opt = get_mixed_hash_args_ordered(@_);
+	
 	
 	my $i = 0;
 	my $order = [ grep { ++$i & 1 } @_ ]; #<--get odd elements (keys)
