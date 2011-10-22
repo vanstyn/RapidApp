@@ -155,6 +155,9 @@ sub read_records {
 	# Apply id_in search:
 	$Rs = $self->chain_Rs_req_id_in($Rs,$params);
 	
+	# Apply explicit resultset:
+	$Rs = $self->chain_Rs_req_explicit_resultset($Rs,$params);
+	
 	# Apply quicksearch:
 	$Rs = $self->chain_Rs_req_quicksearch($Rs,$params);
 	
@@ -256,6 +259,20 @@ sub chain_Rs_req_id_in {
 	my $col = $self->TableSpec->resolve_dbic_colname($self->primary_columns->[0]);
 	return $Rs->search_rs({ $col => { '-in' => $id_in } });
 }
+
+
+# Applies additional explicit resultset cond/attr to ResultSet:
+sub chain_Rs_req_explicit_resultset {
+	my $self = shift;
+	my $Rs = shift || $self->_ResultSet;
+	my $params = shift || $self->c->req->params;
+	
+	my $cond = $self->param_decodeIf($params->{resultset_condition},{});
+	my $attr = $self->param_decodeIf($params->{resultset_attr},{});
+	
+	return $Rs->search_rs($cond,$attr);
+}
+
 
 # Applies multifilter search to ResultSet:
 sub chain_Rs_req_quicksearch {
