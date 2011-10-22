@@ -2,8 +2,7 @@ package RapidApp::DbicAppPropertyPage;
 use strict;
 use warnings;
 use Moose;
-extends 'RapidApp::AppCmp';
-with 'RapidApp::Role::DataStore2';
+extends 'RapidApp::AppDataStore2';
 with 'RapidApp::Role::DbicLink2';
 
 use RapidApp::DbicAppPropertyPage1;
@@ -36,6 +35,7 @@ has '+DataStore_build_params' => ( default => sub {{
 sub BUILD {
 	my $self = shift;
 	
+	
 	# WTF!!!!!!!!!! Without this the whole world breaks and I have no idea why
 	# FIXME!!!!!
 	$self->apply_init_modules( item => { 
@@ -45,8 +45,6 @@ sub BUILD {
 			record_pk => $self->record_pk,
 		}
 	});
-	
-	$self->apply_init_modules( foo => 'RapidApp::AppCmp' );
 
 	$self->add_ONCONTENT_calls('apply_items_config');
 }
