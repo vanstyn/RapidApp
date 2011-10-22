@@ -117,16 +117,28 @@ sub expand_relspec_wildcards {
 	my $pre; { $rel =~ s/^(\!)//; $pre = $1 ? $1 : ''; }
 	
 	my @rel_list = $Source->relationships;
+	scream($_) for (map { $Source->relationship_info($_) } @rel_list);
 	
-	my $macro; { $rel =~ s/^\{([a-zA-Z0-9]+)\}//; $macro = $1; }
+	my $macro; { $rel =~ s/^\{([\?\:a-zA-Z0-9]+)\}//; $macro = $1; }
+	my $maybe = 0;
+	if($macro) {
+		my @words = split(/\:/,$macro,2);
+		if ($words[0] eq '?') {
+			$maybe = 1;
+			shift @words;
+			$macro = shift @words;
+		}
+	}
 	if($macro) {
 		die "Unknown relname macro keyword $macro" unless ($macro eq 'single' or $macro eq 'multi');
 		@rel_list = grep { $Source->relationship_info($_)->{attrs}->{accessor} eq $macro } @rel_list;
 	}
+	
+	scream_color(GREEN,$_) for (map { $Source->relationship_info($_) } @rel_list);
 
 	my @matching_rels = grep { match_glob($rel,$_) } @rel_list;
 	die 'Invalid ColSpec: "' . $rel . '" doesn\'t match any relationships of ' . 
-		$Source->schema->class($Source->source_name) unless (@matching_rels > 0);
+		$Source->schema->class($Source->source_name) unless ($maybe or @matching_rels > 0);
 	
 	my @expanded = ();
 	foreach my $rel_name (@matching_rels) {
