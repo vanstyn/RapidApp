@@ -23,12 +23,13 @@ sub scream_color {
 	
 	my $data = $_[0];
 	$data = \@_ if (scalar(@_) > 1);
+	$data = Dumper($data) if (ref $data);
 
 	my $sub = $_->[2]->{subroutine} ? $_->[2]->{subroutine} . '  ' : '';
 	
 	print STDERR 
 		BOLD . $sub . '[line ' . $_->[1]->{line} . ']: ' . CLEAR . "\n" .
-		$color . Dumper($data) . CLEAR . "\n";
+		$color . $data . CLEAR . "\n";
 }
 
 
