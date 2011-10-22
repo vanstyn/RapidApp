@@ -654,34 +654,30 @@ sub add_related_TableSpec {
 	);
 	
 	my $info = $self->ResultClass->relationship_info($rel) or die "Relationship '$rel' not found.";
-	my $class = $info->{class};
+	my $relclass = $info->{class};
 
 	my $relspec_prefix = $self->relspec_prefix;
 	$relspec_prefix .= '.' if ($relspec_prefix and $relspec_prefix ne '');
 	$relspec_prefix .= $rel;
-	
-	my $TableSpec = $self->new_TableSpec(
-		name => $class->table,
-		ResultClass => $class,
+			
+	my %params = (
+		name => $relclass->table,
+		ResultClass => $relclass,
 		relation_sep => $self->relation_sep,
 		relspec_prefix => $relspec_prefix,
 		%opt
-	) or die "Failed to create related TableSpec";
+	);
 	
-	#for my $name ($TableSpec->column_names) {
-	#	die "Column name conflict: " . $name . " is already defined" if ($self->has_column($name));
-	#	$self->column_name_relationship_map->{$name} = $rel;
-	#}
+	my $class = $self->ResultClass;
+	if($class->can('TableSpec_get_conf') and $class->TableSpec_has_conf('related_column_property_transforms')) {
+		my $rel_transforms = $class->TableSpec_cnf->{'related_column_property_transforms'}->{data};
+		$params{column_property_transforms} = $rel_transforms->{$rel} if ($rel_transforms->{$rel});
+	}
+	
+	my $TableSpec = $self->new_TableSpec(%params) or die "Failed to create related TableSpec";
 	
 	$self->related_TableSpec->{$rel} = $TableSpec;
 	push @{$self->related_TableSpec_order}, $rel;
-	
-	#for my $name ($TableSpec->local_column_names) {
-	#	die "Column name conflict: $name is already defined (rel: $rel)" if ($self->has_column($name));
-	#	$self->column_name_relationship_map->{$name} = $rel;
-	#}
-	
-	#scream($self->column_name_relationship_map);
 	
 	return $TableSpec;
 }

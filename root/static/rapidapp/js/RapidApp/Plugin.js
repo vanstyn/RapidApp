@@ -1201,8 +1201,6 @@ Ext.ux.RapidApp.Plugin.TitleCollapsePlus = Ext.extend(Ext.util.Observable,{
 	updateCollapseTitle: function(opt) {
 		if (!this.cmp.titleCollapse || !this.cmp.title) { return; }
 		
-		console.log('update: ' + opt);
-		
 		if(opt == 'collapse') { return this.setTitlePlus(true); }
 		if(opt == 'expand') { return this.setTitlePlus(false); }
 		
