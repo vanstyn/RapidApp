@@ -41,8 +41,9 @@ has 'column_required_fetch_columns' => (
 
 # Colspec attrs can be specified as simple arrayrefs
 has 'include_colspec' => ( is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]} );
-
 has 'relation_sep' => ( is => 'ro', isa => 'Str', default => '__' );
+
+has 'dbiclink_updatable' => ( is => 'ro', isa => 'Bool', default => 0 );
 
 has 'ResultSource' => (
 	is => 'ro',
@@ -121,6 +122,7 @@ sub DbicLink_around_BUILD {
 	# init primary columns:
 	$self->primary_columns;
 	
+	# TODO: find out why this option doesn't work when applied via other, newer config mechanisms:
 	$self->apply_store_config(
 		remoteSort => \1
 	);
@@ -144,11 +146,14 @@ sub _ResultSet {
 sub read_records {
 	my $self = shift;
 	my $params = shift || $self->c->req->params;
-
+	
 	my $Rs = $self->_ResultSet;
 	
 	# Apply base Attrs:
 	$Rs = $self->chain_Rs_req_base_Attr($Rs,$params);
+	
+	# Apply id_in search:
+	$Rs = $self->chain_Rs_req_id_in($Rs,$params);
 	
 	# Apply quicksearch:
 	$Rs = $self->chain_Rs_req_quicksearch($Rs,$params);
@@ -163,13 +168,20 @@ sub read_records {
 	
 	#Hard coded munger for record_pk:
 	foreach my $row (@$rows) {
-		$row->{$self->record_pk} = join($self->primary_columns_sep, map { $row->{$_} } @{$self->primary_columns});
+		$row->{$self->record_pk} = $self->generate_record_pk_value($row);
 	}
 
 	return {
 		rows    => $rows,
 		results => $Rs->pager->total_entries,
 	};
+}
+
+sub generate_record_pk_value {
+	my $self = shift;
+	my $data = shift;
+	die "generate_record_pk_value(): expected hashref arg" unless (ref($data) eq 'HASH');
+	return join($self->primary_columns_sep, map { $data->{$_} } @{$self->primary_columns});
 }
 
 
@@ -200,8 +212,10 @@ sub chain_Rs_req_base_Attr {
 	
 	my $columns = $self->param_decodeIf($params->{columns},[]);
 	
+	
+	
 	# Exclude the dummy record_pk:
-	@$columns = grep { ! $self->record_pk } @$columns;
+	@$columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } @$columns;
 	
 	#Must include primary columns:
 	#@$columns = ($self->ResultSource->primary_columns,@$columns);
@@ -223,6 +237,25 @@ sub chain_Rs_req_base_Attr {
 	return $Rs->search_rs({},$attr);
 }
 
+# Applies id_in filter to ResultSet:
+sub chain_Rs_req_id_in {
+	my $self = shift;
+	my $Rs = shift || $self->_ResultSet;
+	my $params = shift || $self->c->req->params;
+	
+	my $id_in = $self->param_decodeIf($params->{id_in}) or return $Rs;
+	return $Rs if (ref $id_in and ! ref($id_in) eq 'ARRAY');
+	$id_in = [ $id_in ] unless (ref $id_in);
+	
+	# If there is more than one primary column, we have to construct the condition completely 
+	# different:
+	return $Rs->search_rs({ '-or' => [ map { $self->record_pk_cond($_) } @$id_in ] })
+		if (@{$self->primary_columns} > 1);
+		
+	# If there is really only one primary column we can use '-in' :
+	my $col = $self->TableSpec->resolve_dbic_colname($self->primary_columns->[0]);
+	return $Rs->search_rs({ $col => { '-in' => $id_in } });
+}
 
 # Applies multifilter search to ResultSet:
 sub chain_Rs_req_quicksearch {
@@ -326,6 +359,100 @@ sub param_decodeIf {
 	
 	return $param if (ref $param);
 	return $self->json->decode($param);
+}
+
+has 'DataStore_build_params' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
+before DataStore2_BUILD => sub {
+	my $self= shift;
+	
+	# merge this way to make sure the opts get set, but yet still allow
+	# the opts to be specifically overridden DataStore_build_params attr
+	# is defined but with different params
+	%{ $self->DataStore_build_params } = (
+		#store_autoLoad => 1,
+		reload_on_save => 0,
+		remoteSort => \1,
+		%{ $self->DataStore_build_params }
+	);
+	
+	# Dynamically toggle the addition of an 'update_records' method
+	# The existence of this method is part of the DataStore2 API
+	$self->meta->add_method('update_records', $self->meta->find_method_by_name('_dbiclink_update_records')) if (
+		$self->dbiclink_updatable and 
+		not $self->can('update_records')
+	);
+};
+
+# Gets programatically added as a method named 'update_records' (see BUILD modifier method above)
+# 
+# This first runs updates on each supplied (and allowed) relation.
+# It then re-runs a read_records to tell the client what the new values are.
+#
+sub _dbiclink_update_records {
+	my $self = shift;
+	my $params = shift;
+	
+	my $arr = $params;
+	$arr = [ $params ] if (ref($params) eq 'HASH');
+	
+	my $Rs = $self->ResultSource->resultset;
+	
+	my @updated_keyvals = ();
+	
+	try {
+		$self->ResultSource->schema->txn_do(sub {
+			foreach my $data (@$arr) {
+				my $pkVal= $data->{$self->record_pk};
+				defined $pkVal or die ref($self)."->update_records: Record is missing primary key '".$self->record_pk."'";
+				my $BaseRow = $Rs->search($self->record_pk_cond($pkVal))->next or die usererr "Failed to find row.";
+				
+				my @columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } keys %$data;
+				
+				my $relspecs = $self->TableSpec->columns_to_relspec_map(@columns);
+				my %rows_relspecs = map { $_ => $self->TableSpec->related_Row_from_relspec($BaseRow,$_) } keys %$relspecs;
+				
+				# Update all the individual Row objects, including the base row (last)
+				foreach my $relspec (reverse sort keys %rows_relspecs) {
+					my $Row = $rows_relspecs{$relspec};
+					my %update = map { $_->{local_colname} => $data->{$_->{orig_colname}} } @{$relspecs->{$relspec}};
+					$Row->update(\%update);
+				}
+				
+				# Get the new record_pk for the row (it probably hasn't changed, but it could have):
+				push @updated_keyvals, $self->generate_record_pk_value({ $BaseRow->get_columns });
+			}
+		});
+	}
+	catch {
+		my $err = shift;
+		die usererr rawhtml $self->make_dbic_exception_friendly($err), title => 'Database Error';
+	};
+	
+	# Perform a fresh lookup of all the records we just updated and send them back to the client:
+	my $newdata = $self->DataStore->read({ columns => [ keys %{ $arr->[0] } ], id_in => \@updated_keyvals });
+	
+	return {
+		%$newdata,
+		success => \1,
+		msg => 'Update Succeeded'
+	};
+}
+
+
+sub make_dbic_exception_friendly {
+	my $self = shift;
+	my $exception = shift;
+	my $msg = "" . $exception . "";
+	
+	my @parts = split(/DBD\:\:mysql\:\:st execute failed\:\s*/,$msg);
+	return $exception unless (scalar @parts > 1);
+	
+	$msg = $parts[1];
+	
+	@parts = split(/\s*\[/,$msg);
+
+	return '<center><pre>' . $parts[0] . "</pre></center>";
+	return $parts[0];
 }
 
 

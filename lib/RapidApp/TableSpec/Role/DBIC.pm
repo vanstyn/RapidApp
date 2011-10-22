@@ -551,6 +551,64 @@ sub flattened_TableSpec {
 }
 =cut
 
+# Returns the TableSpec associated with the supplied column name
+sub column_TableSpec {
+	my $self = shift;
+	my $column = shift;
+
+	my $rel = $self->column_name_relationship_map->{$column};
+	unless ($rel) {
+		return $self if (exists $self->columns->{$column});
+		return undef;
+	}
+	
+	return $self->related_TableSpec->{$rel}->column_TableSpec($column);
+}
+
+# Accepts a list of columns and divides them into a hash of arrays
+# with keys of the relspec to which each set of columns belongs, with
+# both the localized and original column names in a hashref.
+# This logic is used in update in DbicLink2
+sub columns_to_relspec_map {
+	my $self = shift;
+	my @columns = @_;
+	my $map = {};
+	
+	foreach my $col (@columns) {
+		my $TableSpec = $self->column_TableSpec($col) or die "Invalid column name: '$col'";
+		my $pre = $TableSpec->column_prefix;
+		my $local_name = $col;
+		$local_name =~ s/^${pre}//;
+		push @{$map->{$TableSpec->relspec_prefix}}, {
+			local_colname => $local_name,
+			orig_colname => $col
+		};
+	}
+	
+	return $map;
+}
+
+# Accepts a DBIC Row object and a relspec, and returns the related DBIC
+# Row object associated with that relspec
+sub related_Row_from_relspec {
+	my $self = shift;
+	my $Row = shift;
+	my $relspec = shift || '';
+	
+	my @parts = split(/\./,$relspec);
+	my $rel = shift @parts || return $Row;
+	return $Row if ($rel eq '');
+	
+	my $info = $Row->result_source->relationship_info($rel) or die "Relationship $rel not found";
+	
+	# Skip unless its a single (not multi) relationship:
+	return undef unless ($info->{attrs}->{accessor} eq 'single');
+	
+	my $Related = $Row->$rel;
+	return $self->related_Row_from_relspec($Related,join('.',@parts));
+}
+
+
 sub add_all_related_TableSpecs_recursive {
 	my $self = shift;
 	
