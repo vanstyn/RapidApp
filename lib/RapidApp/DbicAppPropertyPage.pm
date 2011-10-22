@@ -78,9 +78,16 @@ sub TableSpec_property_grids {
 	my $fields = [ grep { not jstrue $_->{no_column} } @columns  ];
 	
 	my $title = $TableSpec->relspec_prefix;
+	$title = $self->TableSpec->name . '.' . $title unless ($title eq '');
+	$title = $self->TableSpec->name if ($title eq '');
+	
+	my $icon = $TableSpec->get_Cnf('singleIconCls');
+	
+	my $cnftitle = $TableSpec->get_Cnf('title');
+	$title = $cnftitle . ' (' . $title . ')' unless ($TableSpec->name eq $cnftitle);
 
 	my @items = ();
-	push @items, $self->property_grid($title,$fields), { xtype => 'spacer', height => 5 } if (@$fields > 0);
+	push @items, $self->property_grid($title,$icon,$fields), { xtype => 'spacer', height => 5 } if (@$fields > 0);
 	my @TableSpecs = map { $TableSpec->related_TableSpec->{$_} } @{$TableSpec->related_TableSpec_order};
 	push @items, $self->TableSpec_property_grids($_) for (@TableSpecs);
 	
@@ -102,11 +109,9 @@ sub full_property_grid {
 sub property_grid {
 	my $self = shift;
 	my $title = shift;
+	my $icon = shift;
 	my $fields = shift;
 	my $opt = shift || {};
-	
-	$title = $self->TableSpec->name . '.' . $title unless ($title eq '');
-	$title = $self->TableSpec->name if ($title eq '');
 	
 	my $conf = {
 
@@ -116,7 +121,7 @@ sub property_grid {
 		titleCollapse => \1,
 		autoHeight => \1,
 		title => $title,
-
+		iconCls => $icon,
 		xtype => 'apppropertygrid',
 		hideHeaders => \1,
 		autoHeight => \1,
