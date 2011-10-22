@@ -91,7 +91,9 @@ sub _build_TableSpec {
 	return $TableSpec;
 }
 
-
+# TODO: Move this into TableSpec::DBIC. The reason it is here is that DbicLink2
+# has access to the ResultSource. For some reason 'relationships' isn't a valid
+# method on the ResultClass. Figure this out...
 sub expand_relspec_wildcards {
 	my $self = shift;
 	my $colspec = shift;
@@ -107,15 +109,22 @@ sub expand_relspec_wildcards {
 	my $relspec = join('.',@parts);
 	
 	# There is nothing to expand if the relspec doesn't contain wildcards:
-	return ($colspec) unless ($relspec =~ /[\*\?\[\]]/);
+	return ($colspec) unless ($relspec =~ /[\*\?\[\]\{]/);
 	
 	push @parts,$clspec;
 	
 	my $rel = shift @parts;
-	$rel =~ s/^(\!)//;
-	my $pre = $1 ? $1 : '';
+	my $pre; { $rel =~ s/^(\!)//; $pre = $1 ? $1 : ''; }
+	
+	my @rel_list = $Source->relationships;
+	
+	my $macro; { $rel =~ s/^\{([a-zA-Z0-9]+)\}//; $macro = $1; }
+	if($macro) {
+		die "Unknown relname macro keyword $macro" unless ($macro eq 'single' or $macro eq 'multi');
+		@rel_list = grep { $Source->relationship_info($_)->{attrs}->{accessor} eq $macro } @rel_list;
+	}
 
-	my @matching_rels = grep { match_glob($rel,$_) } $Source->relationships;
+	my @matching_rels = grep { match_glob($rel,$_) } @rel_list;
 	die 'Invalid ColSpec: "' . $rel . '" doesn\'t match any relationships of ' . 
 		$Source->schema->class($Source->source_name) unless (@matching_rels > 0);
 	
