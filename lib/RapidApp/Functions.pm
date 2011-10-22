@@ -24,6 +24,7 @@ sub scream_color {
 	my $data = $_[0];
 	$data = \@_ if (scalar(@_) > 1);
 	$data = Dumper($data) if (ref $data);
+	$data = '  ' . UNDERLINE . 'undef' unless (defined $data);
 
 	my $sub = $_->[2]->{subroutine} ? $_->[2]->{subroutine} . '  ' : '';
 	
