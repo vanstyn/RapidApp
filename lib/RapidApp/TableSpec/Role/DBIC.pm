@@ -68,25 +68,47 @@ after BUILD => sub {
 	$self->add_columns($inc_cols{$_}) for (@order);
 };
 
+# Load and process config params from TableSpec_cnf in the ResultClass plus
+# additional defaults:
+hashash 'Cnf' => ( lazy => 1, default => sub {
+	my $self = shift;
+	my $Cnf = {};
+	my $class = $self->ResultClass;
+	if($self->ResultClass->can('TableSpec_cnf')) {
+		%$Cnf = map { $_ => $class->TableSpec_cnf->{$_}->{data} } keys %{ $class->TableSpec_cnf };
+		$self->apply_Cnf_order( $_ => $class->TableSpec_cnf->{$_}->{order} || undef ) for (keys %$Cnf);
+	}
+	
+	my %defaults = ();
+	
+	my $rel_trans = {};
+	
+	#foreach my $rel ( $class->storage->schema->source($class)->relationships ) {
+	#	my $info = $class->relationship_info($rel);
+	#	$rel_trans->{$rel}->{editor} = sub {''} unless ($info->{attr}->{accessor} eq 'single');
+	#}
+	$defaults{related_column_property_transforms} = $rel_trans;
+
+	
+	
+	return merge(\%defaults,$Cnf);
+});
+hashash 'Cnf_order';
+
+
 has 'init_config_column_properties' => ( 
 	is => 'ro', 
 	isa => 'HashRef',
 	lazy => 1,
 	default => sub {
 		my $self = shift;
-		
-		my $class = $self->ResultClass;
-		return {} unless ($class->can('TableSpec_cnf'));
-		
 		my $cols = {};
 		
 		# lower precidence:
-		$cols = merge($cols,$class->TableSpec_cnf->{'column_properties_ordered'}->{data})
-			if ($class->TableSpec_has_conf('column_properties_ordered'));
+		$cols = merge($cols,$self->get_Cnf('column_properties_ordered') || {});
 		
 		# higher precidence:
-		$cols = merge($cols,$class->TableSpec_cnf->{'column_properties'}->{data})
-			if ($class->TableSpec_has_conf('column_properties'));
+		$cols = merge($cols,$self->get_Cnf('column_properties') || {});
 		
 		return $cols;
 	}
@@ -99,23 +121,14 @@ has 'init_config_column_order' => (
 		my $self = shift;
 		
 		my @order = ();
-		
-		my $class = $self->ResultClass;
-		return [$class->columns] unless ($class->can('TableSpec_cnf')); 
+		push @order, @{ $self->get_Cnf_order('column_properties_ordered') || [] };
+		push @order, $self->ResultClass->columns; # <-- native dbic column order has precidence over the column_properties order
+		push @order, @{ $self->get_Cnf_order('column_properties') || [] };
 			
-		push @order, @{$class->TableSpec_cnf->{'column_properties_ordered'}->{order}}
-			if ($class->TableSpec_has_conf('column_properties_ordered'));
-			
-		push @order, $class->columns; # <-- native dbic column order has precidence over the column_properties order
-			
-		push @order, @{$class->TableSpec_cnf->{'column_properties'}->{order}}
-			if ($class->TableSpec_has_conf('column_properties'));
-		
 		# fold together removing duplicates:
-		my %seen = ();
-		@order = grep { !$seen{$_}++ } @order;
+		@order = uniq @order;
 		
-		my $ovrs = $class->TableSpec_cnf->{column_order_overrides} or return \@order;
+		my $ovrs = $self->get_Cnf('column_order_overrides') or return \@order;
 		foreach my $ord (@$ovrs) {
 			my ($offset,$cols) = @$ord;
 			my %colmap = map { $_ => 1 } @$cols;
@@ -139,9 +152,8 @@ has 'init_config_column_order' => (
 			$offset = scalar @order if ($offset > scalar @order);
 			splice(@order,$offset,0,@$cols);
 		}
-
-		%seen = ();
-		return [ grep { !$seen{$_}++ } @order ];
+		
+		return [uniq @order];
 	}
 );
 

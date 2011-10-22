@@ -19,7 +19,7 @@ Hash::Merge::set_behavior( 'RIGHT_PRECEDENT' );
 
 our @EXPORT = qw(
 	sessvar perreq asjson rawjs mixedjs ashtml rawhtml usererr userexception override_defaults 
-	merge_defaults DEBUG jsfunc blessed merge hasarray
+	merge_defaults DEBUG jsfunc blessed merge hasarray hashash
 );
 
 # Module shortcuts

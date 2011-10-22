@@ -356,10 +356,10 @@ sub TableSpec_set_conf_column_order_base {
 	@cols = $_[0] if (ref($_[0]));
 	die "TableSpec_set_column_order(): no column names supplied" unless (@cols > 0);
 	
-	$self->TableSpec_cnf->{column_order_overrides} = [] 
-		unless ($self->TableSpec_cnf->{column_order_overrides});
+	$self->TableSpec_cnf->{column_order_overrides}->{data} = [] 
+		unless ($self->TableSpec_cnf->{column_order_overrides}->{data});
 		
-	push @{$self->TableSpec_cnf->{column_order_overrides}}, [$offset,\@cols];
+	push @{$self->TableSpec_cnf->{column_order_overrides}->{data}}, [$offset,\@cols];
 }
 
 1;
