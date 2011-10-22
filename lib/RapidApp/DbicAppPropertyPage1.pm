@@ -1,13 +1,11 @@
-package RapidApp::DbicAppPropertyPage;
+package RapidApp::DbicAppPropertyPage1;
 use strict;
 use warnings;
 use Moose;
 extends 'RapidApp::AppCmp';
 with 'RapidApp::Role::DataStore2';
-with 'RapidApp::Role::DbicLink2';
+with 'RapidApp::Role::DbicLink';
 
-
-use RapidApp::DbicAppPropertyPage1;
 # All-purpose record display module. Works great with DbicAppGrid2 like this:
 #
 #has 'open_record_class'	=> ( is => 'ro', lazy => 1, default => sub {
@@ -35,34 +33,11 @@ has '+DataStore_build_params' => ( default => sub {{
 
 sub BUILD {
 	my $self = shift;
-	
-	# WTF!!!!!!!!!! Without this the whole world breaks and I have no idea why
-	# FIXME!!!!!
-	$self->apply_init_modules( item => { 
-		class 	=> 'RapidApp::DbicAppPropertyPage1',
-		params	=> { 
-			ResultSource => $self->ResultSource, 
-			record_pk => $self->record_pk,
-			literal_dbf_colnames => [ $self->record_pk_alias ],
-			never_fetch_columns => [ $self->record_pk_alias ]
-		}
-	});
-	
-	$self->apply_init_modules( foo => 'RapidApp::AppCmp' );
 
 	$self->add_ONCONTENT_calls('apply_items_config');
 }
 
 
-sub ResultSet {
-	my $self = shift;
-	my $Rs = shift;
-	
-	my @rec_pk = split(/\$\$\$/,$self->c->req->params->{$self->record_pk});
-	my %cond = map { 'me.' . $_ => shift @rec_pk } $self->ResultSource->primary_columns;
-	
-	return $Rs->search_rs(\%cond);
-}
 
 
 sub apply_items_config {
@@ -71,12 +46,12 @@ sub apply_items_config {
 	$self->apply_extconfig( items => [ $self->full_property_grid ] );
 }
 
-#has '+dbiclink_updatable' => ( default => 1 );
+has '+dbiclink_updatable' => ( default => 1 );
 
-#sub read_extra_search_set {
-#	my $self = shift;
-#	return [ 'me.' . $self->record_pk => $self->c->req->params->{$self->record_pk} ];
-#}
+sub read_extra_search_set {
+	my $self = shift;
+	return [ 'me.' . $self->record_pk => $self->c->req->params->{$self->record_pk} ];
+}
 
 sub full_property_grid {
 	my $self = shift;

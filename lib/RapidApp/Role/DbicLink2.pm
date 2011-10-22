@@ -58,12 +58,11 @@ has 'ResultSource' => (
 	required => 1
 );
 
+has 'primary_columns_sep' => ( is => 'ro', isa => 'Str', default => '$$$' );
+has 'record_pk_alias' => ( is => 'ro', isa => 'Str', default => '___record_pk' );
 has 'record_pk' => ( is => 'ro', isa => 'Str', lazy => 1, default => sub {
 	my $self = shift;
-	my @cols = $self->ResultSource->primary_columns;
-	# First primary column
-	# TODO: create a virtual record_pk and virtual column out of the combined set of primary columns
-	return shift @cols;
+	return $self->record_pk_alias;
 });
 
 has 'ResultClass' => ( is => 'ro', lazy_build => 1 );
@@ -87,6 +86,12 @@ sub _build_TableSpec {
 	
 	# Set the column order based on the include_colspec list order:
 	$TableSpec->reorder_by_colspec_list($self->include_colspec);
+	
+	$self->apply_columns( $self->record_pk_alias => { 
+		no_column => \1, 
+		no_multifilter => \1, 
+		no_quick_search => \1 
+	});
 	
 	return $TableSpec;
 }
@@ -156,9 +161,16 @@ sub read_records {
 	
 	# don't use Row objects
 	$Rs = $Rs->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
+	
+	my $rows = [ $Rs->all ];
+	
+	#Hard coded munger for record_pk:
+	foreach my $row (@$rows) {
+		$row->{$self->record_pk_alias} = join($self->primary_columns_sep, map { $row->{$_} } $self->ResultSource->primary_columns);
+	}
 
 	return {
-		rows    => [ $Rs->all ],
+		rows    => $rows,
 		results => $Rs->pager->total_entries,
 	};
 }
@@ -191,9 +203,16 @@ sub chain_Rs_req_base_Attr {
 	
 	my $columns = $self->param_decodeIf($params->{columns},[]);
 	
+	# Exclude primary column alias:
+	@$columns = grep { ! $self->record_pk_alias } @$columns;
+	
+	#Must include primary columns:
+	#@$columns = ($self->ResultSource->primary_columns,@$columns);
+	
 	# Remove duplicates:
-	my %Seen = ();
-	@$columns = grep { ! $Seen{$_}++ } @$columns;
+	uniq($columns);
+	#my %Seen = ();
+	#@$columns = grep { ! $Seen{$_}++ } @$columns;
 	
 	for my $col (@$columns) {
 		my $dbic_name = $self->TableSpec->resolve_dbic_colname($col,$attr->{join});
