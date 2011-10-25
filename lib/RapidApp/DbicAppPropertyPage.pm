@@ -47,9 +47,21 @@ sub BUILD {
 		}
 	});
 
-	$self->add_ONCONTENT_calls('apply_items_config');
+	#$self->add_ONCONTENT_calls('apply_items_config');
 }
 
+
+sub content {
+	my $self = shift;
+	
+	$self->apply_items_config;
+	
+	return {
+		xtype => 'panel',
+		autoScroll => \1,
+		items => $self->SUPER::content(@_),
+	};
+}
 
 sub ResultSet {
 	my $self = shift;
