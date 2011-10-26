@@ -19,6 +19,9 @@ sub BUILD {
 has 'ResultClass' => ( is => 'ro', isa => 'Str' );
 
 has 'name' => ( is => 'ro', isa => 'Str', required => 1 );
+has 'title' => ( is => 'ro', isa => 'Maybe[Str]', default => undef );
+has 'iconCls' => ( is => 'ro', isa => 'Maybe[Str]', default => undef );
+
 
 has 'header_prefix' => ( is => 'ro', isa => 'Maybe[Str]', default => undef );
 

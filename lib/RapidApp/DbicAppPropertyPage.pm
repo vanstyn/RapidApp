@@ -47,21 +47,16 @@ sub BUILD {
 		}
 	});
 
-	#$self->add_ONCONTENT_calls('apply_items_config');
-}
-
-
-sub content {
-	my $self = shift;
-	
-	$self->apply_items_config;
-	
-	return {
+	$self->apply_extconfig(
 		xtype => 'panel',
+		layout => 'anchor',
 		autoScroll => \1,
-		items => $self->SUPER::content(@_),
-	};
+		frame => \1,
+	);
+	
+	$self->add_ONCONTENT_calls('apply_items_config');
 }
+
 
 sub ResultSet {
 	my $self = shift;
@@ -131,8 +126,9 @@ sub property_grid {
 	my $opt = shift || {};
 	
 	my $conf = {
-
+		
 		autoWidth		=> \1,
+		bodyCssClass => 'sbl-panel-body-noborder',
 		collapsible => \1,
 		collapseFirst => \0,
 		titleCollapse => \1,
