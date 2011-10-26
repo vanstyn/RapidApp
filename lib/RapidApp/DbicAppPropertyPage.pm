@@ -111,7 +111,12 @@ sub TableSpec_property_grids {
 sub full_property_grid {
 	my $self = shift;
 	
-	return $self->TableSpec_property_grids($self->TableSpec);
+	my @items = $self->TableSpec_property_grids($self->TableSpec);
+	
+	my $last = pop @items;
+	push @items, $last unless (ref($last) eq 'HASH' and $last->{xtype} eq 'spacer');
+	
+	return @items;
 	
 	my $fields = [ grep { not jstrue $_->{no_column} } @{ $self->column_list } ];
 	return $self->property_grid('Properties',$fields);
