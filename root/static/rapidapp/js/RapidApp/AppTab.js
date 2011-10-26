@@ -369,6 +369,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	},
 	
 	reloadColumns: function(store,opts) {
+		if(!store){ store = this.store; }
+		
 		// Reset loadedColumnIndexes back to none
 		this.loadedColumnIndexes = {};
 			
