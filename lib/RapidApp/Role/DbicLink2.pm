@@ -98,6 +98,7 @@ sub expand_relspec_wildcards {
 	my $self = shift;
 	my $colspec = shift;
 	my $Source = shift || $self->ResultSource;
+	my @ovr_macro_keywords = @_;
 	
 	# Exclude colspecs that start with #
 	return () if ($colspec =~ /^\#/);
@@ -119,28 +120,24 @@ sub expand_relspec_wildcards {
 	my @rel_list = $Source->relationships;
 	#scream($_) for (map { $Source->relationship_info($_) } @rel_list);
 	
+	my @macro_keywords = @ovr_macro_keywords;
 	my $macro; { $rel =~ s/^\{([\?\:a-zA-Z0-9]+)\}//; $macro = $1; }
-	my $maybe = 0;
-	if($macro) {
-		my @words = split(/\:/,$macro,2);
-		if ($words[0] eq '?') {
-			$maybe = 1;
-			shift @words;
-			$macro = shift @words;
-		}
-	}
-	if($macro) {
-		die "Unknown relname macro keyword $macro" unless ($macro eq 'single' or $macro eq 'multi');
-		@rel_list = grep { $Source->relationship_info($_)->{attrs}->{accessor} eq $macro } @rel_list;
+	push @macro_keywords, split(/\:/,$macro) if ($macro);
+	my %macros = map { $_ => 1 } @macro_keywords;
+	
+	my @accessors = grep { $_ eq 'single' or $_ eq 'multi' or $_ eq 'filter'} @macro_keywords;
+	if (@accessors > 0) {
+		my %ac = map { $_ => 1 } @accessors;
+		@rel_list = grep { $ac{ $Source->relationship_info($_)->{attrs}->{accessor} } } @rel_list;
 	}
 
 	my @matching_rels = grep { match_glob($rel,$_) } @rel_list;
 	die 'Invalid ColSpec: "' . $rel . '" doesn\'t match any relationships of ' . 
-		$Source->schema->class($Source->source_name) unless ($maybe or @matching_rels > 0);
+		$Source->schema->class($Source->source_name) unless ($macros{'?'} or @matching_rels > 0);
 	
 	my @expanded = ();
 	foreach my $rel_name (@matching_rels) {
-		my @suffix = $self->expand_relspec_wildcards(join('.',@parts),$Source->related_source($rel_name));
+		my @suffix = $self->expand_relspec_wildcards(join('.',@parts),$Source->related_source($rel_name),@ovr_macro_keywords);
 		push @expanded, $pre . $rel_name . '.' . $_ for (@suffix);
 	}
 
@@ -228,6 +225,29 @@ sub DbicLink_around_BUILD {
 		loadMask				=> \1
 	);
 }
+
+
+sub apply_colspec_columns {
+	my $self = shift;
+	my $colspec = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	my @colspecs = $self->expand_relspec_wildcards($colspec,undef,'?');
+	my @columns = $self->TableSpec->get_colspec_column_names(@colspecs);
+	$self->apply_columns( $_ => { %opt } ) for (@columns);
+}
+
+# Apply to all columns except those matching colspec:
+sub apply_except_colspec_columns {
+	my $self = shift;
+	my $colspec = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	my @colspecs = $self->expand_relspec_wildcards($colspec,undef,'?');
+	my @columns = $self->TableSpec->get_except_colspec_column_names(@colspecs);
+	$self->apply_columns( $_ => { %opt } ) for (@columns);
+}
+
 
 
 

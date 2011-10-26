@@ -411,6 +411,14 @@ sub get_colspec_column_names {
 	});
 }
 
+# returns a list of all loaded column names except those that match the supplied colspec set
+sub get_except_colspec_column_names {
+	my $self = shift;
+	
+	my %colmap = map { $_ => 1} $self->get_colspec_column_names(@_);
+	return grep { ! $colmap{$_} } $self->updated_column_order;
+}
+
 # Returns a sublist of the supplied columns that match the supplied colspec set.
 # The colspec set is considered as a whole, with each column name tested against
 # the entire compiled set, which can contain both positive and negative (!) colspecs,
