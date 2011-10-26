@@ -58,14 +58,29 @@ sub BUILD {
 }
 
 
+sub supplied_id {
+	my $self = shift;
+	my $id = $self->c->req->params->{$self->record_pk};
+	if (not defined $id and $self->c->req->params->{orig_params}) {
+		my $orig_params = $self->json->decode($self->c->req->params->{orig_params});
+		$id = $orig_params->{$self->record_pk};
+	}
+	return $id;
+}
+
 sub ResultSet {
 	my $self = shift;
 	my $Rs = shift;
-	
-	my $value = $self->c->req->params->{$self->record_pk};
+
+	my $value = $self->supplied_id;
 	return $Rs->search_rs($self->record_pk_cond($value));
 }
 
+
+sub req_Row {
+	my $self = shift;
+	return $self->_ResultSet->first;
+}
 
 sub apply_items_config {
 	my $self = shift;
@@ -79,6 +94,7 @@ sub apply_items_config {
 sub TableSpec_property_grids {
 	my $self = shift;
 	my $TableSpec = shift;
+	my $Row = shift || $self->req_Row;
 	
 	my %cols = map { $_->{name} => $_ } @{ $self->column_list };
 	my @columns = map { $cols{$_} } $TableSpec->local_column_names;
@@ -95,8 +111,26 @@ sub TableSpec_property_grids {
 
 	my @items = ();
 	push @items, $self->property_grid($title,$icon,$fields), { xtype => 'spacer', height => 5 } if (@$fields > 0);
-	my @TableSpecs = map { $TableSpec->related_TableSpec->{$_} } @{$TableSpec->related_TableSpec_order};
-	push @items, $self->TableSpec_property_grids($_) for (@TableSpecs);
+	#my @TableSpecs = map { $TableSpec->related_TableSpec->{$_} } @{$TableSpec->related_TableSpec_order};
+	
+	my @TableSpecs = ();
+	
+	foreach my $rel (@{$TableSpec->related_TableSpec_order}) {
+		my $relRow = $Row->$rel or next;
+		if($relRow->isa('DBIx::Class::Row')) {
+			push @items, $self->TableSpec_property_grids($TableSpec->related_TableSpec->{$rel},$relRow);
+		
+			
+		}
+		elsif($relRow->isa('DBIx::Class::ResultSet')) {
+		
+			#TODO
+			scream_color(GREEN.BOLD,ref($relRow) . ' isa DBIx::Class::ResultSet');
+		}
+	}
+	
+	
+	#push @items, $self->TableSpec_property_grids($_) for (@TableSpecs);
 	
 	return @items;
 }
