@@ -348,6 +348,7 @@ sub init_relspecs {
 	my $self = shift;
 	
 	my @colspecs = map { $self->expand_relspec_wildcards($_) } @{$self->include_colspec};
+	@colspecs = map { $self->expand_relspec_relationship_columns($_) } @colspecs;
 	
 	my $rel_colspecs = $self->get_relation_colspecs(@colspecs);
 	
@@ -370,6 +371,52 @@ sub init_relspecs {
 	}
 	
 	$self->reorder_by_colspec_list(\@colspecs);
+}
+
+
+has 'relationship_column_configs' => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {{
+	my $self = shift;
+	my $rel_cols = $self->get_Cnf('relationship_columns');
+	
+	my $c = RapidApp::ScopedGlobals->get('catalystClass');
+	foreach my $rel (keys %$rel_cols) {
+		my $conf = $rel_cols->{$rel};
+		die "displayField is required" unless (defined $conf->{displayField});
+		
+		my $info = $self->ResultClass->relationship_info($rel) or die "Relationship '$rel' not found.";
+		my $Source = $c->model('DB')->source($info->{source});
+		my $cond_data = $self->parse_relationship_cond($info->{cond});
+		$conf->{valueField} = $cond_data->{foreign};
+		$conf->{keyField} = $cond_data->{self};
+	}
+	return $rel_cols;
+}});
+
+
+
+
+
+sub expand_relspec_relationship_columns {
+	my $self = shift;
+	my $colspec = shift;
+	
+	# the colspec can only be a relationship column if it is a colspec with no relspec part:
+	$colspec =~ /\./ and return $colspec;
+	
+	my $rel_configs = $self->relationship_column_configs;
+	
+	my @expanded = ();
+	foreach my $rel (keys %$rel_configs) {
+		next unless (match_glob($colspec,$rel));
+		
+		push @expanded, $rel;
+		push @expanded, $rel . '.' . $rel_configs->{$rel}->{displayField};
+		push @expanded, $rel . '.' . $rel_configs->{$rel}->{valueField};
+		push @expanded, $rel_configs->{$rel}->{keyField};
+	}
+	
+	return $colspec unless (@expanded > 0);
+	return @expanded;
 }
 
 sub expand_relspec_wildcards {
@@ -981,7 +1028,7 @@ sub resolve_dbic_colname {
 	my $self = shift;
 	my $name = shift;
 	my $merge_join = shift;
-	
+
 	my ($rel,$col,$join) = $self->resolve_dbic_rel_alias_by_column_name($name);
 	$join = {} unless (defined $join);
 	%$merge_join = %{ merge($merge_join,$join) } if ($merge_join);
@@ -1070,7 +1117,11 @@ sub add_relationship_columns {
 		my $key_col = $self->column_prefix . $rel . '__' . $conf->{valueField};
 		my $upd_key_col = $self->column_prefix . $rel . '_' . $conf->{valueField};
 		
+		
+	
 		my $colname = $self->column_prefix . $rel;
+		
+		#scream_color(GREEN,$colname,$key_col,$upd_key_col,$conf->{render_col});
 		
 		$conf = { %$conf, 
 		
@@ -1085,8 +1136,8 @@ sub add_relationship_columns {
 			
 			required_fetch_columns => [ 
 				$self->column_prefix . $rel . '__' . $conf->{displayField},
-				$upd_key_col,
-				$key_col
+				#$upd_key_col,
+				#$key_col
 				#$key_col,
 				#$self->column_prefix . $rel . '__' . $conf->{displayField}
 				#$self->column_prefix . $conf->{key_col},
@@ -1120,7 +1171,7 @@ sub add_relationship_columns {
 						$row->{$upd_key_col} = $row->{$colname};
 						delete $row->{$colname};
 						
-						#scream_color(MAGENTA.BOLD,$row);
+						scream_color(MAGENTA.BOLD,$row);
 						
 						
 						
@@ -1356,6 +1407,27 @@ sub get_foreign_column_from_cond {
 	}
 	
 	die "Failed to find forein column from condition: " . Dumper($cond);
+}
+
+# TODO: Find a better way to handle this. Is there a real API
+# in DBIC to find this information?
+sub parse_relationship_cond {
+	my $self = shift;
+	my $cond = shift;
+	
+	my $data = {};
+	
+	die "currently only single-key hashref conditions are supported" unless (
+		ref($cond) eq 'HASH' and
+		scalar keys %$cond == 1
+	);
+	
+	foreach my $i (%$cond) {
+		my ($side,$col) = split(/\./,$i);
+		$data->{$side} = $col;
+	}
+	
+	return $data;
 }
 
 
