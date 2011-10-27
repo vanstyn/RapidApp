@@ -123,6 +123,33 @@ sub caller_data {
 	return \@list;
 }
 
+sub caller_data_brief {
+	my $depth = shift || 1;
+	my $list = caller_data($depth + 1);
+	my $regex = shift;
+	
+	shift @$list;
+	shift @$list;
+	
+	my @inc_parms = qw(subroutine line filename);
+	
+	my %inc = map { $_ => 1 } @inc_parms;
+	
+	my @new = ();
+	my $seq = 0;
+	foreach my $item (@$list) {
+		if($regex and ! eval('$item->{subroutine} =~ /' . $regex . '/')) {
+			$seq++;
+			next;
+		}
+		push @new, ' . ' x $seq if ($seq);
+		$seq = 0;
+		push @new, { map { $_ => $item->{$_} } grep { $inc{$_} } keys %$item };
+	}
+	
+	return \@new;
+}
+
 # Returns a list with duplicates removed. If passed a single arrayref, duplicates are
 # removed from the arrayref in place, and the new list (contents) are returned.
 sub uniq {
