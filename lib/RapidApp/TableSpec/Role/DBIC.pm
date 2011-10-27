@@ -45,7 +45,7 @@ after BUILD => sub {
 	
 	my $class = $self->ResultClass;
 	$class->set_primary_key( $class->columns ) unless ( $class->primary_columns > 0 );
-
+	
 	my $cols = $self->init_config_column_properties;
 	my %inc_cols = map { $_ => $cols->{$_} || {} } $self->filter_base_columns($class->columns);
 
@@ -79,11 +79,9 @@ sub init_relationship_columns {
 	
 	my $rel_cols = $self->get_Cnf('relationship_columns') or return;
 	
-	scream($rel_cols);
-	
-	
-	
-	$self->add_relationship_columns($rel_cols);
+	my %inc_rel_cols = map { $_ => $rel_cols->{$_} } $self->filter_base_columns(keys %$rel_cols);
+
+	return $self->add_relationship_columns(\%inc_rel_cols);
 
 }
 
@@ -296,7 +294,7 @@ has 'include_colspec' => (
 		my ($self,$spec) = @_;
 		my $sep = $self->relation_sep;
 		/${sep}/ and die "Fatal: ColSpec '$_' is invalid because it contains the relation separater string '$sep'" for (@$spec);
-
+		
 		#init base/relation colspecs:
 		$self->base_colspec;
 	}
@@ -638,7 +636,12 @@ sub columns_to_relspec_map {
 	my $map = {};
 	
 	foreach my $col (@columns) {
-		my $TableSpec = $self->column_TableSpec($col) or die "Invalid column name: '$col'";
+		my $TableSpec = $self->column_TableSpec($col);
+		unless ($TableSpec) {
+			# relationship column:
+			next if ($self->custom_dbic_rel_aliases->{$col});
+			die "Invalid column name: '$col'";
+		}
 		my $pre = $TableSpec->column_prefix;
 		my $local_name = $col;
 		$local_name =~ s/^${pre}//;
@@ -808,6 +811,12 @@ sub resolve_dbic_rel_alias_by_column_name {
 	
 	my $rel = $self->column_name_relationship_map->{$name};
 	unless ($rel) {
+	
+		# -- If this is a relationship column and the display field isn't already included:
+		my $cust = $self->custom_dbic_rel_aliases->{$name};
+		return @$cust if (defined $cust);
+		# --
+	
 		my $pre = $self->column_prefix;
 		$name =~ s/^${pre}//;
 		return ('me',$name,$self->needed_join);
@@ -818,6 +827,9 @@ sub resolve_dbic_rel_alias_by_column_name {
 	$alias = $rel if ($alias eq 'me');
 	return ($alias,$dbname,$join);
 }
+
+# This exists specifically to handle relationship columns:
+has 'custom_dbic_rel_aliases' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 
 sub chain_to_hash {
 	my $self = shift;
@@ -837,17 +849,13 @@ sub chain_to_hash {
 
 
 
-
-
-
-
-
-
 sub add_relationship_columns {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	my $rels = \%opt;
+	
+	my @added = ();
 	
 	foreach my $rel (keys %$rels) {
 		my $conf = $rels->{$rel};
@@ -916,8 +924,7 @@ sub add_relationship_columns {
 					foreach my $row (@$rows) {
 						if ($row->{$Column->name}) {
 							my $key = $self->column_prefix . $key_col;
-							next unless ($row->{$key});
-							$row->{$key} = $row->{$Column->name};
+							$row->{$key} = $row->{$Column->name} if ($row->{$key});
 							delete $row->{$Column->name};
 						}
 					}
@@ -967,6 +974,14 @@ sub add_relationship_columns {
 		# This coderef gets called later, after the RapidApp
 		# Root Module has been loaded.
 		#rapidapp_add_global_init_coderef( sub { $Column->call_rapidapp_init_coderef(@_) } );
+		
+		my $render_name = $conf->{displayField};
+
+		$self->custom_dbic_rel_aliases->{$rel . $self->relation_sep . $render_name} = [ 
+			$rel, 
+			$render_name, 
+			{ $rel => {} }
+		];
 	}
 }
 

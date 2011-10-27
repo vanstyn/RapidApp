@@ -6,6 +6,7 @@ use RapidApp::Include qw(sugar perlutil);
 use RapidApp::TableSpec::Role::DBIC;
 use Clone qw(clone);
 use Text::Glob qw( match_glob );
+use Hash::Diff qw( diff );
 
 
 has 'get_record_display' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default => sub { 
@@ -296,21 +297,6 @@ sub chain_Rs_req_base_Attr {
 	
 	my $columns = $self->get_req_columns;
 	
-	#my $columns = $self->param_decodeIf($params->{columns},[]);
-	
-	
-	
-	# Exclude the dummy record_pk:
-	#@$columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } @$columns;
-	
-	#Must include primary columns:
-	#@$columns = ($self->ResultSource->primary_columns,@$columns);
-	
-	# Remove duplicates:
-	#uniq($columns);
-	#my %Seen = ();
-	#@$columns = grep { ! $Seen{$_}++ } @$columns;
-	
 	for my $col (@$columns) {
 		my $dbic_name = $self->TableSpec->resolve_dbic_colname($col,$attr->{join});
 		push @{$attr->{'+select'}}, $dbic_name;
@@ -550,7 +536,8 @@ sub _dbiclink_update_records {
 					my $Row = $rows_relspecs{$relspec};
 					my %update = map { $_->{local_colname} => $data->{$_->{orig_colname}} } @{$relspecs->{$relspec}};
 					
-					$Row->update(\%update);
+					my $change = diff({ $Row->get_columns }, \%update);
+					$Row->update($change);
 				}
 				
 				# Get the new record_pk for the row (it probably hasn't changed, but it could have):
