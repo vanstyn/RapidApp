@@ -8,34 +8,6 @@ use Clone qw(clone);
 use Text::Glob qw( match_glob );
 
 
-
-# Columns that need other columns to automatically be fetched when they are fetched
-has 'column_required_fetch_columns' => (
-	is => 'ro',
-	isa => 'HashRef[ArrayRef[Str]]',
-	lazy => 1,
-	default => sub {
-		my $self = shift;
-		my $hash = {};
-		
-		foreach my $col (keys %{ $self->columns }) {
-			my $list = $self->columns->{$col}->required_fetch_columns or next;
-			next unless (
-				ref($list) eq 'ARRAY' and
-				scalar @$list > 0
-			);
-			$hash->{$col} = $list;
-		}
-		return $hash;
-	}
-);
-
-
-
-
-
-
-
 has 'get_record_display' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default => sub { 
 	my $self = shift;
 	return $self->TableSpec->get_Cnf('row_display');
@@ -324,8 +296,6 @@ sub chain_Rs_req_base_Attr {
 	
 	my $columns = $self->get_req_columns;
 	
-	scream($columns);
-	
 	#my $columns = $self->param_decodeIf($params->{columns},[]);
 	
 	
@@ -364,17 +334,11 @@ sub get_req_columns {
 	
 	my @exclude = ( $self->record_pk, 'loadContentCnf' );
 	
-	
-	
 	defined $self->columns->{$_} && push @$columns, 
 		@{ $self->columns->{$_}->required_fetch_columns || [] } for (@$columns);
 	
-	
 	foreach my $col (@$columns) {
 		my $column = $self->columns->{$col};
-		
-		scream_color(GREEN,$column) if ($col =~ /owner/);
-		
 		
 		push @exclude, $col if ($column->{no_fetch});
 	}
@@ -394,17 +358,21 @@ sub chain_Rs_req_id_in {
 	my $params = shift || $self->c->req->params;
 	
 	my $id_in = $self->param_decodeIf($params->{id_in}) or return $Rs;
+	
 	return $Rs if (ref $id_in and ! ref($id_in) eq 'ARRAY');
 	$id_in = [ $id_in ] unless (ref $id_in);
 	
-	# If there is more than one primary column, we have to construct the condition completely 
-	# different:
-	return $Rs->search_rs({ '-or' => [ map { $self->record_pk_cond($_) } @$id_in ] })
-		if (@{$self->primary_columns} > 1);
-		
-	# If there is really only one primary column we can use '-in' :
-	my $col = $self->TableSpec->resolve_dbic_colname($self->primary_columns->[0]);
-	return $Rs->search_rs({ $col => { '-in' => $id_in } });
+	# TODO: second form below doesn't work, find out why...
+	return $Rs->search_rs({ '-or' => [ map { $self->record_pk_cond($_) } @$id_in ] });
+	
+	## If there is more than one primary column, we have to construct the condition completely 
+	## different:
+	#return $Rs->search_rs({ '-or' => [ map { $self->record_pk_cond($_) } @$id_in ] })
+	#	if (@{$self->primary_columns} > 1);
+	#	
+	## If there is really only one primary column we can use '-in' :
+	#my $col = $self->TableSpec->resolve_dbic_colname($self->primary_columns->[0]);
+	#return $Rs->search_rs({ $col => { '-in' => $id_in } });
 }
 
 
