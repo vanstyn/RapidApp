@@ -7,7 +7,7 @@ use RapidApp::TableSpec::Role::DBIC;
 use Clone qw(clone);
 use Text::Glob qw( match_glob );
 use Hash::Diff qw( diff );
-
+use Text::TabularDisplay;
 
 has 'get_record_display' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default => sub { 
 	my $self = shift;
@@ -21,6 +21,9 @@ has 'include_colspec' => ( is => 'ro', isa => 'ArrayRef[Str]', default => sub {[
 has 'relation_sep' => ( is => 'ro', isa => 'Str', default => '__' );
 
 has 'dbiclink_updatable' => ( is => 'ro', isa => 'Bool', default => 0 );
+
+#TODO replace this with a 'updatable_colspec'
+has 'updatable_relationships' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default => sub {[]} );
 
 has 'ResultSource' => (
 	is => 'ro',
@@ -193,9 +196,7 @@ sub read_records {
 	# Apply multifilter:
 	$Rs = $self->chain_Rs_req_multifilter($Rs,$params);
 	
-	
-	
-	scream_color(BOLD.RED,$Rs->{attrs});
+	#scream_color(BOLD.RED,$Rs->{attrs});
 	
 	# don't use Row objects
 	$Rs = $Rs->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
@@ -282,8 +283,6 @@ sub get_req_columns {
 	
 	push @$columns, @{$self->primary_columns};
 	
-	scream_color(GREEN, $columns);
-	
 	defined $self->columns->{$_} && push @$columns, 
 		@{ $self->columns->{$_}->required_fetch_columns || [] } for (@$columns);
 	
@@ -297,7 +296,6 @@ sub get_req_columns {
 	my %excl = map { $_ => 1 } @exclude;
 	@$columns = grep { !$excl{$_} } @$columns;
 	
-	scream_color(GREEN.BOLD, $columns);
 	return $columns;
 }
 
@@ -484,6 +482,8 @@ sub _dbiclink_update_records {
 	
 	my @updated_keyvals = ();
 	
+	my %can_update = map {$_=>1} @{$self->updatable_relationships};
+	
 	try {
 		$self->ResultSource->schema->txn_do(sub {
 			foreach my $data (@$arr) {
@@ -494,18 +494,30 @@ sub _dbiclink_update_records {
 				my @columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } keys %$data;
 				
 				my $relspecs = $self->TableSpec->columns_to_relspec_map(@columns);
-				my %rows_relspecs = map { $_ => $self->TableSpec->related_Row_from_relspec($BaseRow,$_) } keys %$relspecs;
+				
+				# This is temp logic until updatable_relationships is replaced with updatable_colspecs:
+				my @valid_relspecs = grep { $_ eq '' || $can_update{(split(/\./,$_))[0]} } keys %$relspecs;
+				
+				my %rows_relspecs = map { $_ => $self->TableSpec->related_Row_from_relspec($BaseRow,$_) } @valid_relspecs;
 				
 				# Update all the individual Row objects, including the base row (last)
 				foreach my $relspec (reverse sort keys %rows_relspecs) {
 					my $Row = $rows_relspecs{$relspec};
 					my %update = map { $_->{local_colname} => $data->{$_->{orig_colname}} } @{$relspecs->{$relspec}};
+					my %current = $Row->get_columns;
 					
-					my $change = diff({ $Row->get_columns }, \%update);
-					$relspec = '*' unless ($relspec and $relspec ne 0);
-					scream_color(WHITE.ON_BLUE.BOLD,$relspec . '/' . ref($Row) . '  (update diff)',$change);
+					my $change = diff(\%current, \%update);
+					# why do I need to do this?:
+					$current{$_} eq $change->{$_} && delete $change->{$_} for (keys %$change);
 					
-					$Row->update($change);
+					my $t = Text::TabularDisplay->new(qw(column old new));
+					$t->add($_,$current{$_},$change->{$_}) for (keys %$change);
+					
+					$relspec = '*' unless ($relspec and $relspec ne '');
+					scream_color(WHITE.ON_BLUE.BOLD,$relspec . '/' . ref($Row) . '  (update diff)' . "\n" . $t->render);
+					#scream_color(WHITE.ON_BLUE.BOLD,$relspec . '/' . ref($Row) . '  (update diff)',$change);
+					
+					$Row->update($change) if (keys %$change > 0);
 				}
 				
 				# Get the new record_pk for the row (it probably hasn't changed, but it could have):

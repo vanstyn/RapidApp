@@ -120,7 +120,7 @@ sub init_relationship_columns {
 	
 	my %inc_rel_cols = map { $_ => $rel_cols->{$_} } $self->filter_base_columns(keys %$rel_cols);
 
-	scream_color(MAGENTA.BOLD,$self->relspec_prefix,[keys %inc_rel_cols]);
+	#scream_color(MAGENTA.BOLD,$self->relspec_prefix,[keys %inc_rel_cols]);
 	
 	return $self->add_relationship_columns(\%inc_rel_cols);
 
@@ -317,11 +317,13 @@ subtype 'ColSpec', as 'Str', where {
 	/^\./ and warn "ColSpec '$_' is invalid: \".\" cannot be the first character" and return 0;
 	/\.$/ and warn "ColSpec '$_' is invalid: \".\" cannot be the last character (did you mean '$_*' ?)" and return 0;
 	
+	$_ =~ s/^\#//;
+		/\#/ and warn "ColSpec '$_' is invalid: # (comment) character may only be supplied at the begining of the string." and return 0;
+	
 	$_ =~ s/^\!//;
 	/\!/ and warn "ColSpec '$_' is invalid: ! (not) character may only be supplied at the begining of the string." and return 0;
 	
-	$_ =~ s/^\#//;
-		/\#/ and warn "ColSpec '$_' is invalid: # (comment) character may only be supplied at the begining of the string." and return 0;
+	
 	
 	#my @parts = split(/\./,$_); pop @parts;
 	#my $relspec = join('.',@parts);
@@ -338,13 +340,6 @@ has 'include_colspec' => (
 		my ($self,$spec) = @_;
 		my $sep = $self->relation_sep;
 		/${sep}/ and die "Fatal: ColSpec '$_' is invalid because it contains the relation separater string '$sep'" for (@$spec);
-		
-		#scream_color(GREEN.BOLD,$self->relspec_prefix);
-		
-		#@{$self->include_colspec} = map { $self->expand_relspec_wildcards($_) } @{$self->include_colspec};
-		
-		#init base/relation colspecs:
-		#$self->base_colspec;
 	}
 );
 
@@ -1009,7 +1004,7 @@ sub resolve_dbic_rel_alias_by_column_name {
 		return @$cust if (defined $cust);
 		# --
 		
-		scream_color(CYAN.BOLD,$name,$self->custom_dbic_rel_aliases);
+		#scream_color(CYAN.BOLD,$name,$self->custom_dbic_rel_aliases);
 	
 		my $pre = $self->column_prefix;
 		$name =~ s/^${pre}//;
@@ -1084,8 +1079,14 @@ sub add_relationship_columns {
 			no_quick_search => \1,
 			no_multifilter => \1,
 			
+			required_fetch_colspecs => [
+			
+			],
+			
 			required_fetch_columns => [ 
 				$self->column_prefix . $rel . '__' . $conf->{displayField},
+				$upd_key_col,
+				$key_col
 				#$key_col,
 				#$self->column_prefix . $rel . '__' . $conf->{displayField}
 				#$self->column_prefix . $conf->{key_col},
@@ -1113,13 +1114,13 @@ sub add_relationship_columns {
 				foreach my $row (@$rows) {
 					if ($row->{$colname}) {
 						
-						scream_color(MAGENTA,$row);
+						#scream_color(MAGENTA,$row);
 						
 						#my $key = $self->column_prefix . $conf->{key_col};
 						$row->{$upd_key_col} = $row->{$colname};
 						delete $row->{$colname};
 						
-						scream_color(MAGENTA.BOLD,$row);
+						#scream_color(MAGENTA.BOLD,$row);
 						
 						
 						
@@ -1168,7 +1169,7 @@ sub add_relationship_columns {
 		#$self->column_name_relationship_map->{$rel . '__' . $conf->{valueField}} = $rel;
 		#$self->column_name_relationship_map->{$rel . '__' . $conf->{displayField}} = $rel;
 		
-		scream('add_relationship_columns:',$colname,$conf);
+		#scream('add_relationship_columns:',$colname,$conf);
 	}
 }
 
