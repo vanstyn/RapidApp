@@ -40,7 +40,7 @@ has 'TableSpec' => ( is => 'ro', isa => 'RapidApp::TableSpec', lazy_build => 1 )
 sub _build_TableSpec {
 	my $self = shift;
 	
-	@{$self->include_colspec} = map { $self->expand_relspec_wildcards($_) } @{$self->include_colspec};
+	#@{$self->include_colspec} = map { $self->expand_relspec_wildcards($_) } @{$self->include_colspec};
 	
 	my $TableSpec = RapidApp::TableSpec->with_traits('RapidApp::TableSpec::Role::DBIC')->new(
 		name => $self->ResultClass->table,
@@ -64,58 +64,6 @@ sub _build_TableSpec {
 	return $TableSpec;
 }
 
-# TODO: Move this into TableSpec::DBIC. The reason it is here is that DbicLink2
-# has access to the ResultSource. For some reason 'relationships' isn't a valid
-# method on the ResultClass. Figure this out...
-sub expand_relspec_wildcards {
-	my $self = shift;
-	my $colspec = shift;
-	my $Source = shift || $self->ResultSource;
-	my @ovr_macro_keywords = @_;
-	
-	# Exclude colspecs that start with #
-	return () if ($colspec =~ /^\#/);
-	
-	my @parts = split(/\./,$colspec); 
-	return ($colspec) unless (@parts > 1);
-	
-	my $clspec = pop @parts;
-	my $relspec = join('.',@parts);
-	
-	# There is nothing to expand if the relspec doesn't contain wildcards:
-	return ($colspec) unless ($relspec =~ /[\*\?\[\]\{]/);
-	
-	push @parts,$clspec;
-	
-	my $rel = shift @parts;
-	my $pre; { $rel =~ s/^(\!)//; $pre = $1 ? $1 : ''; }
-	
-	my @rel_list = $Source->relationships;
-	#scream($_) for (map { $Source->relationship_info($_) } @rel_list);
-	
-	my @macro_keywords = @ovr_macro_keywords;
-	my $macro; { $rel =~ s/^\{([\?\:a-zA-Z0-9]+)\}//; $macro = $1; }
-	push @macro_keywords, split(/\:/,$macro) if ($macro);
-	my %macros = map { $_ => 1 } @macro_keywords;
-	
-	my @accessors = grep { $_ eq 'single' or $_ eq 'multi' or $_ eq 'filter'} @macro_keywords;
-	if (@accessors > 0) {
-		my %ac = map { $_ => 1 } @accessors;
-		@rel_list = grep { $ac{ $Source->relationship_info($_)->{attrs}->{accessor} } } @rel_list;
-	}
-
-	my @matching_rels = grep { match_glob($rel,$_) } @rel_list;
-	die 'Invalid ColSpec: "' . $rel . '" doesn\'t match any relationships of ' . 
-		$Source->schema->class($Source->source_name) unless ($macros{'?'} or @matching_rels > 0);
-	
-	my @expanded = ();
-	foreach my $rel_name (@matching_rels) {
-		my @suffix = $self->expand_relspec_wildcards(join('.',@parts),$Source->related_source($rel_name),@ovr_macro_keywords);
-		push @expanded, $pre . $rel_name . '.' . $_ for (@suffix);
-	}
-
-	return (@expanded);
-}
 
 
 has 'record_pk' => ( is => 'ro', isa => 'Str', default => '___record_pk' );
@@ -322,19 +270,10 @@ sub chain_Rs_req_base_Attr {
 	
 	if (defined $params->{sort} and defined $params->{dir}) {
 		my $sort = lc($params->{sort});
-		
-		scream($sort,$dbic_name_map);
-		
 		my $sort_name = $dbic_name_map->{$sort} || $self->TableSpec->resolve_dbic_colname($sort,$attr->{join});
-	
 		$attr->{order_by} = { '-' . $params->{dir} => $sort_name } ;
 	}
-	
-	scream($used_aliases);
-	
-	# This makes it look prettier, but is probably not needed:
-	#$attr->{join} = $self->TableSpec->hash_with_undef_values_to_array_deep($attr->{join});
-	
+
 	return $Rs->search_rs({},$attr);
 }
 

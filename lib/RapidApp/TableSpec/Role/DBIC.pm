@@ -11,6 +11,12 @@ use Clone qw( clone );
 
 has 'ResultClass' => ( is => 'ro', isa => 'Str' );
 
+has 'ResultSource' => ( is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	my $c = RapidApp::ScopedGlobals->get('catalystClass');
+	return $c->model('DB')->source($self->ResultClass);
+});
+
 has 'data_type_profiles' => ( is => 'ro', isa => 'HashRef', default => sub {{
 	text 			=> [ 'bigtext' ],
 	blob 			=> [ 'bigtext' ],
@@ -43,6 +49,8 @@ sub BUILD {}
 after BUILD => sub {
 	my $self = shift;
 	
+	
+	
 	my $class = $self->ResultClass;
 	$class->set_primary_key( $class->columns ) unless ( $class->primary_columns > 0 );
 	
@@ -70,7 +78,34 @@ after BUILD => sub {
 	$self->add_columns($inc_cols{$_}) for (@order);
 	
 	$self->init_relationship_columns;
+	
+	#$self->add_all_related_TableSpecs_recursive;
 };
+
+
+
+sub init_relationship_columns_new {
+	my $self = shift;
+	
+	my $c = RapidApp::ScopedGlobals->get('catalystClass');
+	my $Source = $c->model('DB')->source($self->ResultClass);
+	
+	my @single_rels = grep { $Source->relationship_info($_)->{attrs}->{accessor} eq 'single' } $Source->relationships;
+	
+	my @rel_cols = $self->filter_base_columns(@single_rels);
+	
+	foreach my $rel (@rel_cols) {
+	
+		$self->add_relationship_columns( $rel,
+		
+		
+		);
+	
+	}
+	
+	scream(@rel_cols);
+	
+}
 
 
 sub init_relationship_columns {
@@ -81,6 +116,8 @@ sub init_relationship_columns {
 	
 	my %inc_rel_cols = map { $_ => $rel_cols->{$_} } $self->filter_base_columns(keys %$rel_cols);
 
+	scream_color(MAGENTA.BOLD,$self->relspec_prefix,[keys %inc_rel_cols]);
+	
 	return $self->add_relationship_columns(\%inc_rel_cols);
 
 }
@@ -272,17 +309,20 @@ are ignored.
 subtype 'ColSpec', as 'Str', where {
 	/\s+/ and warn "ColSpec '$_' is invalid because it contains whitespace" and return 0;
 	/[A-Z]+/ and warn "ColSpec '$_' is invalid because it contains upper case characters" and return 0;
-	/([^a-z0-9\-\_\.\!\*\?\[\]])/ and warn "ColSpec '$_' contains invalid characters ('$1')." and return 0;
+	/([^\#a-z0-9\-\_\.\!\*\?\[\]])/ and warn "ColSpec '$_' contains invalid characters ('$1')." and return 0;
 	/^\./ and warn "ColSpec '$_' is invalid: \".\" cannot be the first character" and return 0;
 	/\.$/ and warn "ColSpec '$_' is invalid: \".\" cannot be the last character (did you mean '$_*' ?)" and return 0;
 	
 	$_ =~ s/^\!//;
 	/\!/ and warn "ColSpec '$_' is invalid: ! (not) character may only be supplied at the begining of the string." and return 0;
 	
-	my @parts = split(/\./,$_); pop @parts;
-	my $relspec = join('.',@parts);
-	$relspec =~ /([\*\?\[\]])/ and $relspec ne '*'
-		and warn "ColSpec '$_' is invalid: glob wildcards are only allowed in the column section, not in the relation section." and return 0;
+	$_ =~ s/^\#//;
+		/\#/ and warn "ColSpec '$_' is invalid: # (comment) character may only be supplied at the begining of the string." and return 0;
+	
+	#my @parts = split(/\./,$_); pop @parts;
+	#my $relspec = join('.',@parts);
+	#$relspec =~ /([\*\?\[\]])/ and $relspec ne '*'
+	#	and warn "ColSpec '$_' is invalid: glob wildcards are only allowed in the column section, not in the relation section." and return 0;
 	
 	return 1;
 };
@@ -295,11 +335,64 @@ has 'include_colspec' => (
 		my $sep = $self->relation_sep;
 		/${sep}/ and die "Fatal: ColSpec '$_' is invalid because it contains the relation separater string '$sep'" for (@$spec);
 		
+		#scream_color(GREEN.BOLD,$self->relspec_prefix);
+		
+		@{$self->include_colspec} = map { $self->expand_relspec_wildcards($_) } @{$self->include_colspec};
+		
 		#init base/relation colspecs:
 		$self->base_colspec;
 	}
 );
 
+sub expand_relspec_wildcards {
+	my $self = shift;
+	my $colspec = shift;
+	my $Source = shift || $self->ResultSource;
+	my @ovr_macro_keywords = @_;
+	
+	# Exclude colspecs that start with #
+	return () if ($colspec =~ /^\#/);
+	
+	my @parts = split(/\./,$colspec); 
+	return ($colspec) unless (@parts > 1);
+	
+	my $clspec = pop @parts;
+	my $relspec = join('.',@parts);
+	
+	# There is nothing to expand if the relspec doesn't contain wildcards:
+	return ($colspec) unless ($relspec =~ /[\*\?\[\]\{]/);
+	
+	push @parts,$clspec;
+	
+	my $rel = shift @parts;
+	my $pre; { $rel =~ s/^(\!)//; $pre = $1 ? $1 : ''; }
+	
+	my @rel_list = $Source->relationships;
+	#scream($_) for (map { $Source->relationship_info($_) } @rel_list);
+	
+	my @macro_keywords = @ovr_macro_keywords;
+	my $macro; { $rel =~ s/^\{([\?\:a-zA-Z0-9]+)\}//; $macro = $1; }
+	push @macro_keywords, split(/\:/,$macro) if ($macro);
+	my %macros = map { $_ => 1 } @macro_keywords;
+	
+	my @accessors = grep { $_ eq 'single' or $_ eq 'multi' or $_ eq 'filter'} @macro_keywords;
+	if (@accessors > 0) {
+		my %ac = map { $_ => 1 } @accessors;
+		@rel_list = grep { $ac{ $Source->relationship_info($_)->{attrs}->{accessor} } } @rel_list;
+	}
+
+	my @matching_rels = grep { match_glob($rel,$_) } @rel_list;
+	die 'Invalid ColSpec: "' . $rel . '" doesn\'t match any relationships of ' . 
+		$Source->schema->class($Source->source_name) unless ($macros{'?'} or @matching_rels > 0);
+	
+	my @expanded = ();
+	foreach my $rel_name (@matching_rels) {
+		my @suffix = $self->expand_relspec_wildcards(join('.',@parts),$Source->related_source($rel_name),@ovr_macro_keywords);
+		push @expanded, $pre . $rel_name . '.' . $_ for (@suffix);
+	}
+
+	return (@expanded);
+}
 
 
 has 'relation_sep' => ( is => 'ro', isa => 'Str', required => 1 );
@@ -351,6 +444,28 @@ sub filter_base_columns {
 		columns => \@columns,
 	});
 }
+
+=pod
+around colspec_test => sub {
+	my $orig = shift;
+	my $self = shift;
+	
+	my $full_colspec = $_[0];
+	my $col = $_[1];
+	
+	
+	
+	my $result = $self->$orig(@_);
+	
+	my $out = $result;
+	$out = UNDERLINE . 'undef' unless (defined $out);
+	
+	scream_color(GREEN,$self->relspec_prefix . ': colspec_test: ' . $full_colspec . ' ' . $col . CLEAR . RED . '   ' . $out);
+	#scream_color(RED,$result);
+	
+	return $result;
+};
+=cut
 
 
 # TODO:
@@ -715,7 +830,9 @@ sub add_related_TableSpec {
 	my $rel = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
-	die "There is already a related TableSpec associated with the '$rel' relationship" if (
+	#scream($self->relspec_prefix,$rel,caller_data_brief(20,'^RapidApp'));
+	
+	die "There is already a related TableSpec associated with the '$rel' relationship - " . Dumper(caller_data_brief(20,'^RapidApp')) if (
 		defined $self->related_TableSpec->{$rel}
 	);
 	
@@ -812,6 +929,8 @@ sub resolve_dbic_rel_alias_by_column_name {
 	my $rel = $self->column_name_relationship_map->{$name};
 	unless ($rel) {
 	
+		scream_color(CYAN.BOLD,$name,$self->custom_dbic_rel_aliases);
+	
 		# -- If this is a relationship column and the display field isn't already included:
 		my $cust = $self->custom_dbic_rel_aliases->{$name};
 		return @$cust if (defined $cust);
@@ -850,6 +969,109 @@ sub chain_to_hash {
 
 
 sub add_relationship_columns {
+	my $self = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	my $rels = \%opt;
+	
+	my @added = ();
+	
+	foreach my $rel (keys %$rels) {
+		my $conf = $rels->{$rel};
+		$conf = {} unless (ref($conf) eq 'HASH');
+		
+		$conf = { %{ $self->default_column_properties }, %$conf } if ( $self->default_column_properties );
+		
+		die "displayField is required" unless (defined $conf->{displayField});
+		
+		my $info = $self->ResultClass->relationship_info($rel) or die "Relationship '$rel' not found.";
+		my $c = RapidApp::ScopedGlobals->get('catalystClass');
+		my $Source = $c->model('DB')->source($info->{source});
+		
+		my $foreign_col = $self->get_foreign_column_from_cond($info->{cond});
+		
+		$conf = { %$conf,
+			render_col => $rel . '__' . $conf->{displayField},
+			foreign_col => $foreign_col,
+			valueField => $foreign_col,
+			key_col => $rel . '_' . $foreign_col
+		};
+		
+		my $colname = $self->column_prefix . $rel;
+		
+		$conf = { %$conf, 
+		
+			no_fetch => 1,
+			
+			no_quick_search => \1,
+			no_multifilter => \1,
+			
+			required_fetch_columns => [ 
+				$conf->{key_col},
+				$conf->{render_col}
+			],
+			
+			read_raw_munger => RapidApp::Handler->new( code => sub {
+				my $rows = (shift)->{rows};
+				$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
+				foreach my $row (@$rows) {
+					my $key = $self->column_prefix . $conf->{key_col};
+					$row->{$colname} = $row->{$key} if ($row->{$key});
+				}
+			}),
+			
+			update_munger => RapidApp::Handler->new( code => sub {
+				my $rows = shift;
+				$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
+				foreach my $row (@$rows) {
+					if ($row->{$colname}) {
+						my $key = $self->column_prefix . $conf->{key_col};
+						$row->{$key} = $row->{$colname} if ($row->{$key});
+						delete $row->{$colname};
+					}
+				}
+			}),
+			
+			renderer => jsfunc(
+				'function(value, metaData, record, rowIndex, colIndex, store) {' .
+					'return record.data["' . $conf->{render_col} . '"];' .
+				'}', $conf->{renderer}
+			),
+		};
+		
+		if ($conf->{auto_editor_type} eq 'combo') {
+		
+			my $module_name = $self->ResultClass->table . '_' . $colname;
+			my $Module = $self->get_or_create_rapidapp_module( $module_name,
+				class	=> 'RapidApp::DbicAppCombo2',
+				params	=> {
+					valueField		=> $conf->{valueField},
+					displayField	=> $conf->{displayField},
+					name				=> $colname,
+					ResultSet		=> $Source->resultset,
+					record_pk		=> $conf->{valueField}
+				}
+			);
+			
+			$conf->{editor} =  $Module->content;
+		}
+		
+		$self->add_columns({ name => $colname, %$conf });
+		
+		# ---
+		my $render_name = $conf->{displayField};
+
+		$self->custom_dbic_rel_aliases->{$rel . $self->relation_sep . $render_name} = [ 
+			$rel, 
+			$render_name, 
+			{ $rel => {} }
+		];
+	}
+}
+
+
+
+sub add_relationship_columns_old {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
@@ -984,6 +1206,7 @@ sub add_relationship_columns {
 		];
 	}
 }
+
 
 
 sub get_or_create_rapidapp_module {
