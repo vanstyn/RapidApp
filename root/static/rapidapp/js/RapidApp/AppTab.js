@@ -197,6 +197,23 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 
 	initComponent: function() {
 		
+		// -- Force default sort to be DESC instead of ASC:
+		var orig_store_singleSort = this.store.singleSort;
+		this.store.singleSort = function(field,dir) {
+			if(!dir && (!this.sortInfo || this.sortInfo.field != field)) {
+				if(!this.sortToggle || !this.sortToggle[field]) { 
+					this.sortToggle[field] = 'ASC';
+					this.sortInfo = {
+						field: field,
+						direction: 'ASC'
+					};
+				}
+				arguments[1] = this.sortToggle[field].toggle('ASC','DESC');
+			}
+			orig_store_singleSort.apply(this,arguments);
+		}
+		// --
+		
 		if(this.title && this.titleCount) {
 			this.store.on('load',function() {
 				this.setTitle(this.initialConfig.title + ' (' + this.store.getTotalCount() + ')');
