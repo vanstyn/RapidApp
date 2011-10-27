@@ -68,7 +68,25 @@ after BUILD => sub {
 	my %seen = ();
 	my @order = grep { !$seen{$_}++ && exists $inc_cols{$_} } @{$self->init_config_column_order},keys %inc_cols;
 	$self->add_columns($inc_cols{$_}) for (@order);
+	
+	$self->init_relationship_columns;
 };
+
+
+sub init_relationship_columns {
+	my $self = shift;
+	
+	
+	my $rel_cols = $self->get_Cnf('relationship_columns') or return;
+	
+	scream($rel_cols);
+	
+	
+	
+	$self->add_relationship_columns($rel_cols);
+
+}
+
 
 # Load and process config params from TableSpec_cnf in the ResultClass plus
 # additional defaults:
@@ -637,7 +655,7 @@ sub columns_to_relspec_map {
 # Row object associated with that relspec
 sub related_Row_from_relspec {
 	my $self = shift;
-	my $Row = shift;
+	my $Row = shift || return undef;
 	my $relspec = shift || '';
 	
 	my @parts = split(/\./,$relspec);
@@ -820,6 +838,11 @@ sub chain_to_hash {
 
 
 
+
+
+
+
+
 sub add_relationship_columns {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
@@ -834,13 +857,15 @@ sub add_relationship_columns {
 		
 		die "displayField is required" unless (defined $conf->{displayField});
 		
-		$conf->{render_col} = $rel . '_' . $conf->{displayField} unless ($conf->{render_col});
+		$conf->{render_col} = $rel . '__' . $conf->{displayField} unless ($conf->{render_col});
 		
 		my $info = $self->ResultClass->relationship_info($rel) or die "Relationship '$rel' not found.";
 		
 		$conf->{foreign_col} = $self->get_foreign_column_from_cond($info->{cond});
 		$conf->{valueField} = $conf->{foreign_col} unless (defined $conf->{valueField});
 		$conf->{key_col} = $rel . '_' . $conf->{valueField};
+		
+		$conf->{no_fetch} = 1;
 		
 		#Temporary/initial column setup:
 		my $colname = $self->column_prefix . $rel;
@@ -853,30 +878,24 @@ sub add_relationship_columns {
 		# Temp placeholder:
 		$Column->set_properties({ editor => 'relationship_column' });
 		
-		my $ResultClass = $self;
-		
-		$Column->rapidapp_init_coderef( sub {
-			my $self = shift;
-			
-			my $rootModule = shift;
-			$rootModule->apply_init_modules( tablespec => 'RapidApp::AppBase' ) 
-				unless ( $rootModule->has_module('tablespec') );
-			
-			my $TableSpecModule = $rootModule->Module('tablespec');
+		#my $ResultClass = $self;
+
 			my $c = RapidApp::ScopedGlobals->get('catalystClass');
 			my $Source = $c->model('DB')->source($info->{source});
 			
-			my $valueField = $self->get_property('valueField');
-			my $displayField = $self->get_property('displayField');
-			my $key_col = $self->get_property('key_col');
-			my $render_col = $self->get_property('render_col');
-			my $auto_editor_type = $self->get_property('auto_editor_type');
-			my $rs_condition = $self->get_property('ResultSet_condition') || {};
-			my $rs_attr = $self->get_property('ResultSet_attr') || {};
+			my $valueField = $Column->get_property('valueField');
+			my $displayField = $Column->get_property('displayField');
+			my $key_col = $Column->get_property('key_col');
+			my $render_col = $Column->get_property('render_col');
+			my $auto_editor_type = $Column->get_property('auto_editor_type');
+			my $rs_condition = $Column->get_property('ResultSet_condition') || {};
+			my $rs_attr = $Column->get_property('ResultSet_attr') || {};
 			
-			my $editor = $self->get_property('editor') || {};
+			my $editor = $Column->get_property('editor') || {};
 			
 			my $column_params = {
+				
+				
 				required_fetch_columns => [ 
 					$key_col,
 					$render_col
@@ -886,16 +905,20 @@ sub add_relationship_columns {
 					my $rows = (shift)->{rows};
 					$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
 					foreach my $row (@$rows) {
-						$row->{$self->name} = $row->{$key_col};
+						my $key = $self->column_prefix . $key_col;
+						$row->{$Column->name} = $row->{$key} if ($row->{$key});
 					}
 				}),
+				
 				update_munger => RapidApp::Handler->new( code => sub {
 					my $rows = shift;
 					$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
 					foreach my $row (@$rows) {
-						if ($row->{$self->name}) {
-							$row->{$key_col} = $row->{$self->name};
-							delete $row->{$self->name};
+						if ($row->{$Column->name}) {
+							my $key = $self->column_prefix . $key_col;
+							next unless ($row->{$key});
+							$row->{$key} = $row->{$Column->name};
+							delete $row->{$Column->name};
 						}
 					}
 				}),
@@ -906,7 +929,7 @@ sub add_relationship_columns {
 			$column_params->{renderer} = jsfunc(
 				'function(value, metaData, record, rowIndex, colIndex, store) {' .
 					'return record.data["' . $render_col . '"];' .
-				'}', $self->get_property('renderer')
+				'}', $Column->get_property('renderer')
 			);
 			
 			# If editor is no longer set to the temp value 'relationship_column' previously set,
@@ -914,40 +937,62 @@ sub add_relationship_columns {
 			if ($editor eq 'relationship_column') {
 				if ($auto_editor_type eq 'combo') {
 				
-					my $module_name = $ResultClass->table . '_' . $self->name;
-					$TableSpecModule->apply_init_modules(
-						$module_name => {
-							class	=> 'RapidApp::DbicAppCombo2',
-							params	=> {
-								valueField		=> $valueField,
-								displayField	=> $displayField,
-								name				=> $self->name,
-								ResultSet		=> $Source->resultset,
-								RS_condition	=> $rs_condition,
-								RS_attr			=> $rs_attr,
-								record_pk		=> $valueField
-							}
+					my $module_name = $self->ResultClass->table . '_' . $Column->name;
+					my $Module = $self->get_or_create_rapidapp_module( $module_name,
+						class	=> 'RapidApp::DbicAppCombo2',
+						params	=> {
+							valueField		=> $valueField,
+							displayField	=> $displayField,
+							name				=> $Column->name,
+							ResultSet		=> $Source->resultset,
+							RS_condition	=> $rs_condition,
+							RS_attr			=> $rs_attr,
+							record_pk		=> $valueField
 						}
 					);
-					my $Module = $TableSpecModule->Module($module_name);
+					#my $Module = $TableSpecModule->Module($module_name);
 					
 					# -- vv -- This is required in order to get all of the params applied
-					$Module->call_ONREQUEST_handlers;
-					$Module->DataStore->call_ONREQUEST_handlers;
+					#$Module->call_ONREQUEST_handlers;
+					#$Module->DataStore->call_ONREQUEST_handlers;
 					# -- ^^ --
 					
-					$column_params->{editor} = { %{ $Module->content }, %$editor };
+					$column_params->{editor} =  $Module->content;
 				}
 			}
 			
-			$self->set_properties({ %$column_params });
-		});
+			$Column->set_properties({ %$column_params });
+	
 		
 		# This coderef gets called later, after the RapidApp
 		# Root Module has been loaded.
-		rapidapp_add_global_init_coderef( sub { $Column->call_rapidapp_init_coderef(@_) } );
+		#rapidapp_add_global_init_coderef( sub { $Column->call_rapidapp_init_coderef(@_) } );
 	}
 }
+
+
+sub get_or_create_rapidapp_module {
+	my $self = shift;
+	my $name = shift or die "get_or_create_rapidapp_module(): Missing module name";
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+
+	my $rootModule = RapidApp::ScopedGlobals->get("rootModule") or die "Failed to find RapidApp Root Module!!";
+	
+	$rootModule->apply_init_modules( tablespec => 'RapidApp::AppBase' ) 
+		unless ( $rootModule->has_module('tablespec') );
+	
+	my $TMod = $rootModule->Module('tablespec');
+	
+	$TMod->apply_init_modules( $name => \%opt ) unless ( $TMod->has_module($name) );
+	
+	my $Module = $TMod->Module($name);
+	$Module->call_ONREQUEST_handlers;
+	$Module->DataStore->call_ONREQUEST_handlers;
+	
+	return $Module;
+}
+
+
 
 # TODO: Find a better way to handle this. Is there a real API
 # in DBIC to find this information?

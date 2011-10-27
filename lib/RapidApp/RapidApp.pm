@@ -100,6 +100,11 @@ sub _load_root_module {
 	$mParams->{module_name}= '';
 	$mParams->{module_path}= '/';
 	$mParams->{parent_module_ref}= undef;
+	
+	# This localized global gets set in RapidApp::RootModule so its available to
+	# submodules during their load:
+	local $RapidApp::ScopedGlobals::_vals->{'rootModule'} = undef;
+	
 	return $self->rootModule($self->rootModuleClass->timed_new($mParams));
 }
 

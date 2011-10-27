@@ -125,7 +125,7 @@ sub collapse_apply_profiles {
 
 
 has 'name' => ( is => 'ro', isa => 'Str', required => 1 );
-has 'order' => ( is => 'rw', isa => 'Maybe[Int]', default => undef, clearer => 'clear_order' );
+#has 'order' => ( is => 'rw', isa => 'Maybe[Int]', default => undef, clearer => 'clear_order' );
 has 'permission_roles' => ( is => 'rw', isa => 'Maybe[HashRef[ArrayRef]]', default => undef );
 has '_other_properties' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 

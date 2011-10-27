@@ -31,6 +31,12 @@ our @GLOBAL_INIT_CODEREFS = ();
 sub BUILD {
 	my $self= shift;
 	
+	# Make the root module instance available as a ScopedGlobal
+	# see _load_root_module
+	$RapidApp::ScopedGlobals::_vals->{'rootModule'} = $self
+		# this line is just for safety:
+		if (exists $RapidApp::ScopedGlobals::_vals->{'rootModule'});
+	
 	# Execute arbitrary code setup earlier in the init process that needs
 	# to be called after the RapidApp Module tree has been loaded
 	# See RapidApp::Functions::rapidapp_add_global_init_coderef() for more info

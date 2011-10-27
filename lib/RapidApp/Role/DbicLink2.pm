@@ -297,8 +297,6 @@ sub read_records {
 }
 
 
-
-
 # Applies base request attrs to ResultSet:
 sub chain_Rs_req_base_Attr {
 	my $self = shift;
@@ -324,18 +322,22 @@ sub chain_Rs_req_base_Attr {
 		'-' . $params->{dir} => lc($self->TableSpec->resolve_dbic_colname($params->{sort},$attr->{join}))
 	} if (defined $params->{sort} and defined $params->{dir});
 	
-	my $columns = $self->param_decodeIf($params->{columns},[]);
+	my $columns = $self->get_req_columns;
+	
+	scream($columns);
+	
+	#my $columns = $self->param_decodeIf($params->{columns},[]);
 	
 	
 	
 	# Exclude the dummy record_pk:
-	@$columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } @$columns;
+	#@$columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } @$columns;
 	
 	#Must include primary columns:
 	#@$columns = ($self->ResultSource->primary_columns,@$columns);
 	
 	# Remove duplicates:
-	uniq($columns);
+	#uniq($columns);
 	#my %Seen = ();
 	#@$columns = grep { ! $Seen{$_}++ } @$columns;
 	
@@ -350,6 +352,40 @@ sub chain_Rs_req_base_Attr {
 	
 	return $Rs->search_rs({},$attr);
 }
+
+
+sub get_req_columns {
+	my $self = shift;
+	my $params = shift || $self->c->req->params;
+	my $columns = $params;
+	$columns = $self->param_decodeIf($params->{columns},[]) if (ref($params) eq 'HASH');
+	
+	die "get_req_columns(): bad options" unless(ref($columns) eq 'ARRAY');
+	
+	my @exclude = ( $self->record_pk, 'loadContentCnf' );
+	
+	
+	
+	defined $self->columns->{$_} && push @$columns, 
+		@{ $self->columns->{$_}->required_fetch_columns || [] } for (@$columns);
+	
+	
+	foreach my $col (@$columns) {
+		my $column = $self->columns->{$col};
+		
+		scream_color(GREEN,$column) if ($col =~ /owner/);
+		
+		
+		push @exclude, $col if ($column->{no_fetch});
+	}
+	
+	uniq($columns);
+	my %excl = map { $_ => 1 } @exclude;
+	@$columns = grep { !$excl{$_} } @$columns;
+	
+	return $columns;
+}
+
 
 # Applies id_in filter to ResultSet:
 sub chain_Rs_req_id_in {
@@ -520,6 +556,8 @@ sub _dbiclink_update_records {
 	my $self = shift;
 	my $params = shift;
 	
+	
+	
 	my $arr = $params;
 	$arr = [ $params ] if (ref($params) eq 'HASH');
 	
@@ -543,6 +581,7 @@ sub _dbiclink_update_records {
 				foreach my $relspec (reverse sort keys %rows_relspecs) {
 					my $Row = $rows_relspecs{$relspec};
 					my %update = map { $_->{local_colname} => $data->{$_->{orig_colname}} } @{$relspecs->{$relspec}};
+					
 					$Row->update(\%update);
 				}
 				
