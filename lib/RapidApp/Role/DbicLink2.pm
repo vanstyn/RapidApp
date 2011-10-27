@@ -502,6 +502,9 @@ sub _dbiclink_update_records {
 					my %update = map { $_->{local_colname} => $data->{$_->{orig_colname}} } @{$relspecs->{$relspec}};
 					
 					my $change = diff({ $Row->get_columns }, \%update);
+					$relspec = '*' unless ($relspec and $relspec ne 0);
+					scream_color(WHITE.ON_BLUE.BOLD,$relspec . '/' . ref($Row) . '  (update diff)',$change);
+					
 					$Row->update($change);
 				}
 				

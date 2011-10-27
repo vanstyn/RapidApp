@@ -805,6 +805,13 @@ sub columns_to_relspec_map {
 		unless ($TableSpec) {
 			# relationship column:
 			next if ($self->custom_dbic_rel_aliases->{$col});
+			
+			
+			next;
+			
+			scream_color(GREEN.BOLD,$col,$self->custom_dbic_rel_aliases);
+			
+			scream_color(RED.BOLD,caller_data_brief(12));
 			die "Invalid column name: '$col'";
 		}
 		my $pre = $TableSpec->column_prefix;
@@ -995,12 +1002,14 @@ sub resolve_dbic_rel_alias_by_column_name {
 	my $rel = $self->column_name_relationship_map->{$name};
 	unless ($rel) {
 	
-		scream_color(CYAN.BOLD,$name,$self->custom_dbic_rel_aliases);
+		
 	
 		# -- If this is a relationship column and the display field isn't already included:
 		my $cust = $self->custom_dbic_rel_aliases->{$name};
 		return @$cust if (defined $cust);
 		# --
+		
+		scream_color(CYAN.BOLD,$name,$self->custom_dbic_rel_aliases);
 	
 		my $pre = $self->column_prefix;
 		$name =~ s/^${pre}//;
@@ -1058,10 +1067,13 @@ sub add_relationship_columns {
 		
 		$conf = { %$conf,
 			render_col => $self->column_prefix . $rel . '__' . $conf->{displayField},
-			foreign_col => $foreign_col,
+			#foreign_col => $foreign_col,
 			valueField => $foreign_col,
-			key_col => $rel . '_' . $foreign_col
+			#key_col => $rel . '_' . $foreign_col
 		};
+		
+		my $key_col = $self->column_prefix . $rel . '__' . $conf->{valueField};
+		my $upd_key_col = $self->column_prefix . $rel . '_' . $conf->{valueField};
 		
 		my $colname = $self->column_prefix . $rel;
 		
@@ -1074,7 +1086,7 @@ sub add_relationship_columns {
 			
 			required_fetch_columns => [ 
 				$self->column_prefix . $rel . '__' . $conf->{displayField},
-				$self->column_prefix . $rel . '__' . $conf->{valueField},
+				#$key_col,
 				#$self->column_prefix . $rel . '__' . $conf->{displayField}
 				#$self->column_prefix . $conf->{key_col},
 				#$self->column_prefix . $conf->{render_col}
@@ -1084,8 +1096,10 @@ sub add_relationship_columns {
 				my $rows = (shift)->{rows};
 				$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
 				foreach my $row (@$rows) {
-					my $key = $self->column_prefix . $conf->{key_col};
-					$row->{$colname} = $row->{$key} if ($row->{$key});
+					
+					
+					#my $key = $self->column_prefix . $conf->{key_col};
+					$row->{$colname} = $row->{$key_col} if ($row->{$key_col});
 					
 					
 					#scream($row);
@@ -1098,9 +1112,17 @@ sub add_relationship_columns {
 				$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
 				foreach my $row (@$rows) {
 					if ($row->{$colname}) {
-						my $key = $self->column_prefix . $conf->{key_col};
-						$row->{$key} = $row->{$colname} if ($row->{$key});
+						
+						scream_color(MAGENTA,$row);
+						
+						#my $key = $self->column_prefix . $conf->{key_col};
+						$row->{$upd_key_col} = $row->{$colname};
 						delete $row->{$colname};
+						
+						scream_color(MAGENTA.BOLD,$row);
+						
+						
+						
 					}
 				}
 			}),
@@ -1140,9 +1162,13 @@ sub add_relationship_columns {
 			{ $rel => {} }
 		];
 		
-		#$self->addIf_related_TableSpec($rel); 
+		my $TableSpec = $self->addIf_related_TableSpec($rel, include_colspec => [ $conf->{valueField}, $conf->{displayField} ] ); 
 		
-		scream('add_relationship_columns:',$self->custom_dbic_rel_aliases);
+		#$self->addIf_related_TableSpec($rel, include_colspec => [ '!*' ] );
+		#$self->column_name_relationship_map->{$rel . '__' . $conf->{valueField}} = $rel;
+		#$self->column_name_relationship_map->{$rel . '__' . $conf->{displayField}} = $rel;
+		
+		scream('add_relationship_columns:',$colname,$conf);
 	}
 }
 
