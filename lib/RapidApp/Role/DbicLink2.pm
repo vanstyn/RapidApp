@@ -39,22 +39,14 @@ sub _build_ResultClass {
 has 'TableSpec' => ( is => 'ro', isa => 'RapidApp::TableSpec', lazy_build => 1 );
 sub _build_TableSpec {
 	my $self = shift;
-	
-	#@{$self->include_colspec} = map { $self->expand_relspec_wildcards($_) } @{$self->include_colspec};
-	
+
 	my $TableSpec = RapidApp::TableSpec->with_traits('RapidApp::TableSpec::Role::DBIC')->new(
 		name => $self->ResultClass->table,
 		relation_sep => $self->relation_sep,
 		ResultClass => $self->ResultClass,
 		include_colspec => $self->include_colspec
 	);
-	
-	$TableSpec->add_all_related_TableSpecs_recursive;
-	
-	# Set the column order based on the include_colspec list order:
-	$TableSpec->reorder_by_colspec_list($TableSpec->include_colspec);
-	
-	# Prevent the dummy record_pk from showing up
+
 	$self->apply_columns( $self->record_pk => { 
 		no_column => \1, 
 		no_multifilter => \1, 
@@ -290,6 +282,8 @@ sub get_req_columns {
 	
 	push @$columns, @{$self->primary_columns};
 	
+	scream_color(GREEN, $columns);
+	
 	defined $self->columns->{$_} && push @$columns, 
 		@{ $self->columns->{$_}->required_fetch_columns || [] } for (@$columns);
 	
@@ -303,6 +297,7 @@ sub get_req_columns {
 	my %excl = map { $_ => 1 } @exclude;
 	@$columns = grep { !$excl{$_} } @$columns;
 	
+	scream_color(GREEN.BOLD, $columns);
 	return $columns;
 }
 

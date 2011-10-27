@@ -49,7 +49,14 @@ sub BUILD {}
 after BUILD => sub {
 	my $self = shift;
 	
+	$self->init_relspecs;
 	
+	#$self->init_local_columns;
+	#$self->add_all_related_TableSpecs_recursive;
+};
+
+sub init_local_columns {
+	my $self = shift;
 	
 	my $class = $self->ResultClass;
 	$class->set_primary_key( $class->columns ) unless ( $class->primary_columns > 0 );
@@ -78,10 +85,7 @@ after BUILD => sub {
 	$self->add_columns($inc_cols{$_}) for (@order);
 	
 	$self->init_relationship_columns;
-	
-	#$self->add_all_related_TableSpecs_recursive;
-};
-
+}
 
 
 sub init_relationship_columns_new {
@@ -337,12 +341,41 @@ has 'include_colspec' => (
 		
 		#scream_color(GREEN.BOLD,$self->relspec_prefix);
 		
-		@{$self->include_colspec} = map { $self->expand_relspec_wildcards($_) } @{$self->include_colspec};
+		#@{$self->include_colspec} = map { $self->expand_relspec_wildcards($_) } @{$self->include_colspec};
 		
 		#init base/relation colspecs:
-		$self->base_colspec;
+		#$self->base_colspec;
 	}
 );
+
+
+sub init_relspecs {
+	my $self = shift;
+	
+	my @colspecs = map { $self->expand_relspec_wildcards($_) } @{$self->include_colspec};
+	
+	my $rel_colspecs = $self->get_relation_colspecs(@colspecs);
+	
+	foreach my $rel (@{$rel_colspecs->{order}}) {
+		next if ($rel eq '');
+		my $subspec = $rel_colspecs->{data}->{$rel};
+		
+		$self->add_related_TableSpec($rel, include_colspec => $subspec );
+	}
+	
+	$self->base_colspec($rel_colspecs->{data}->{''});
+	$self->init_local_columns;
+	
+	foreach my $rel (@{$self->related_TableSpec_order}) {
+		my $TableSpec = $self->related_TableSpec->{$rel};
+		for my $name ($TableSpec->updated_column_order) {
+			die "Column name conflict: $name is already defined (rel: $rel)" if ($self->has_column($name));
+			$self->column_name_relationship_map->{$name} = $rel;
+		}
+	}
+	
+	$self->reorder_by_colspec_list(\@colspecs);
+}
 
 sub expand_relspec_wildcards {
 	my $self = shift;
@@ -412,7 +445,7 @@ has 'column_prefix' => ( is => 'ro', isa => 'Str', lazy => 1, default => sub {
 	return $col_pre . $self->relation_sep;
 });
 
-has 'base_colspec' => ( is => 'ro', isa => 'ArrayRef', lazy => 1,default => sub {
+has 'base_colspec' => ( is => 'rw', isa => 'ArrayRef', lazy => 1,default => sub {
 	my $self = shift;
 	#init relation_colspecs:
 	$self->relation_order;
@@ -625,9 +658,21 @@ has 'relation_colspecs' => ( is => 'ro', isa => 'HashRef', default => sub {{ '' 
 has 'relation_order' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default => sub {
 	my $self = shift;
 	
+	my $rel_colspecs = $self->get_relation_colspecs(@{ clone($self->include_colspec) });
+	
+	%{$self->relation_colspecs} = ( %{$self->relation_colspecs}, %{$rel_colspecs->{data}} );
+	return $rel_colspecs->{order};
+});
+
+sub get_relation_colspecs {
+	my $self = shift;
+	my @colspecs = @_;
+	
 	my @order = ('');
+	my %data = ();
+	
 	my %end_rels = ( '' => 1 );
-	foreach my $spec (@{ clone($self->include_colspec) }) {
+	foreach my $spec (@colspecs) {
 		my $not = 0;
 		$not = 1 if ($spec =~ /\!/);
 		$spec =~ s/\!//;
@@ -648,21 +693,26 @@ has 'relation_order' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default
 		
 		$subspec = '!' . $subspec if ($not);
 		
-		unless(defined $self->relation_colspecs->{$rel}) {
-			$self->relation_colspecs->{$rel} = [];
+		unless(defined $data{$rel}) {
+			$data{$rel} = [];
 			push @order, $rel;
 		}
 		
-		push @{$self->relation_colspecs->{$rel}}, $subspec;
+		push @{$data{$rel}}, $subspec;
 	}
 	
 	# Set the base colspec to '*' if its empty:
-	push @{$self->relation_colspecs->{''}}, '*' unless (@{$self->relation_colspecs->{''}} > 0);
+	push @{$data{''}}, '*' unless (@{$data{''}} > 0);
 	foreach my $rel (@order) {
-		push @{$self->relation_colspecs->{$rel}}, '!*' unless ($end_rels{$rel});
+		push @{$data{$rel}}, '!*' unless ($end_rels{$rel});
 	}
-	return \@order;
-});
+	
+	return {
+		order => \@order,
+		data => \%data
+	};
+}
+
 
 
 sub new_TableSpec {
@@ -789,15 +839,16 @@ sub related_Row_from_relspec {
 	return $self->related_Row_from_relspec($Related,join('.',@parts));
 }
 
-
+=pod
 sub add_all_related_TableSpecs_recursive {
 	my $self = shift;
 	
 	foreach my $rel (@{$self->relation_order}) {
 		next if ($rel eq '');
-		my $TableSpec = $self->add_related_TableSpec( $rel, {
-			include_colspec => $self->relation_colspecs->{$rel}
-		});
+		my $TableSpec = $self->addIf_related_TableSpec($rel);
+		#my $TableSpec = $self->add_related_TableSpec( $rel, {
+			#include_colspec => $self->relation_colspecs->{$rel}
+		#});
 		
 		$TableSpec->add_all_related_TableSpecs_recursive;
 	}
@@ -805,13 +856,14 @@ sub add_all_related_TableSpecs_recursive {
 	foreach my $rel (@{$self->related_TableSpec_order}) {
 		my $TableSpec = $self->related_TableSpec->{$rel};
 		for my $name ($TableSpec->column_names_ordered) {
-			die "Column name conflict: $name is already defined (rel: $rel)" if ($self->has_column($name));
+			#die "Column name conflict: $name is already defined (rel: $rel)" if ($self->has_column($name));
 			$self->column_name_relationship_map->{$name} = $rel;
 		}
 	}
 	
 	return $self;
 }
+=cut
 
 # Like column_order but only considers columns in the local TableSpec object
 # (i.e. not in related TableSpecs)
@@ -842,14 +894,20 @@ sub add_related_TableSpec {
 	my $relspec_prefix = $self->relspec_prefix;
 	$relspec_prefix .= '.' if ($relspec_prefix and $relspec_prefix ne '');
 	$relspec_prefix .= $rel;
-			
+	
+	
+	$self->relation_order unless $self->relation_colspecs->{$rel};
+	
 	my %params = (
 		name => $relclass->table,
 		ResultClass => $relclass,
 		relation_sep => $self->relation_sep,
 		relspec_prefix => $relspec_prefix,
-		%opt
 	);
+	
+	$params{include_colspec} = $self->relation_colspecs->{$rel} if ($self->relation_colspecs->{$rel});
+		
+	%params = ( %params, %opt );
 	
 	my $class = $self->ResultClass;
 	if($class->can('TableSpec_get_conf') and $class->TableSpec_has_conf('related_column_property_transforms')) {
@@ -862,6 +920,14 @@ sub add_related_TableSpec {
 	$self->related_TableSpec->{$rel} = $TableSpec;
 	push @{$self->related_TableSpec_order}, $rel;
 	
+	return $TableSpec;
+}
+
+sub addIf_related_TableSpec {
+	my $self = shift;
+	my ($rel) = @_;
+	
+	my $TableSpec = $self->related_TableSpec->{$rel} || $self->add_related_TableSpec(@_);
 	return $TableSpec;
 }
 
@@ -991,7 +1057,7 @@ sub add_relationship_columns {
 		my $foreign_col = $self->get_foreign_column_from_cond($info->{cond});
 		
 		$conf = { %$conf,
-			render_col => $rel . '__' . $conf->{displayField},
+			render_col => $self->column_prefix . $rel . '__' . $conf->{displayField},
 			foreign_col => $foreign_col,
 			valueField => $foreign_col,
 			key_col => $rel . '_' . $foreign_col
@@ -1007,8 +1073,11 @@ sub add_relationship_columns {
 			no_multifilter => \1,
 			
 			required_fetch_columns => [ 
-				$conf->{key_col},
-				$conf->{render_col}
+				$self->column_prefix . $rel . '__' . $conf->{displayField},
+				$self->column_prefix . $rel . '__' . $conf->{valueField},
+				#$self->column_prefix . $rel . '__' . $conf->{displayField}
+				#$self->column_prefix . $conf->{key_col},
+				#$self->column_prefix . $conf->{render_col}
 			],
 			
 			read_raw_munger => RapidApp::Handler->new( code => sub {
@@ -1017,6 +1086,10 @@ sub add_relationship_columns {
 				foreach my $row (@$rows) {
 					my $key = $self->column_prefix . $conf->{key_col};
 					$row->{$colname} = $row->{$key} if ($row->{$key});
+					
+					
+					#scream($row);
+					
 				}
 			}),
 			
@@ -1066,11 +1139,15 @@ sub add_relationship_columns {
 			$render_name, 
 			{ $rel => {} }
 		];
+		
+		#$self->addIf_related_TableSpec($rel); 
+		
+		scream('add_relationship_columns:',$self->custom_dbic_rel_aliases);
 	}
 }
 
 
-
+=pod
 sub add_relationship_columns_old {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
@@ -1204,10 +1281,13 @@ sub add_relationship_columns_old {
 			$render_name, 
 			{ $rel => {} }
 		];
+		
+		
+		
 	}
 }
 
-
+=cut
 
 sub get_or_create_rapidapp_module {
 	my $self = shift;
