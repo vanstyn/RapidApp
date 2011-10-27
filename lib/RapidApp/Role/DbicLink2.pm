@@ -253,11 +253,15 @@ sub read_records {
 	# Apply multifilter:
 	$Rs = $self->chain_Rs_req_multifilter($Rs,$params);
 	
+	
+	
+	scream_color(BOLD.RED,$Rs->{attrs});
+	
 	# don't use Row objects
 	$Rs = $Rs->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
 	
 	my $rows = [ $Rs->all ];
-	
+		
 	#Hard coded munger for record_pk:
 	foreach my $row (@$rows) {
 		$row->{$self->record_pk} = $self->generate_record_pk_value($row);
@@ -284,24 +288,49 @@ sub chain_Rs_req_base_Attr {
 	};
 	
 	my $attr = {
-		'+select' => [],
-		'+as' => [],
+		'select' => [],
+		'as' => [],
 		join => {},
 		page => int($params->{start}/$params->{limit}) + 1,
 		rows => $params->{limit}
 	};
 	
-	$attr->{order_by} = {
-		'-' . $params->{dir} => lc($self->TableSpec->resolve_dbic_colname($params->{sort},$attr->{join}))
-	} if (defined $params->{sort} and defined $params->{dir});
+	
 	
 	my $columns = $self->get_req_columns;
 	
+	my $used_aliases = {};
+	my $dbic_name_map = {};
+	
 	for my $col (@$columns) {
 		my $dbic_name = $self->TableSpec->resolve_dbic_colname($col,$attr->{join});
-		push @{$attr->{'+select'}}, $dbic_name;
-		push @{$attr->{'+as'}}, $col;
+		
+		my ($alias,$field) = split(/\./,$dbic_name);
+		my $prefix = $col;
+		$prefix =~ s/${field}$//;
+		$used_aliases->{$alias} = {} unless ($used_aliases->{$alias});
+		$used_aliases->{$alias}->{$prefix}++ unless($alias eq 'me');
+		my $count = scalar(keys %{$used_aliases->{$alias}});
+		# automatically set alias for duplicate joins:
+		$dbic_name = $alias . '_' . $count . '.' . $field if($count > 1);
+		
+		$dbic_name_map->{$col} = $dbic_name;
+		
+		push @{$attr->{'select'}}, $dbic_name;
+		push @{$attr->{'as'}}, $col;
 	}
+	
+	if (defined $params->{sort} and defined $params->{dir}) {
+		my $sort = lc($params->{sort});
+		
+		scream($sort,$dbic_name_map);
+		
+		my $sort_name = $dbic_name_map->{$sort} || $self->TableSpec->resolve_dbic_colname($sort,$attr->{join});
+	
+		$attr->{order_by} = { '-' . $params->{dir} => $sort_name } ;
+	}
+	
+	scream($used_aliases);
 	
 	# This makes it look prettier, but is probably not needed:
 	#$attr->{join} = $self->TableSpec->hash_with_undef_values_to_array_deep($attr->{join});
@@ -319,6 +348,8 @@ sub get_req_columns {
 	die "get_req_columns(): bad options" unless(ref($columns) eq 'ARRAY');
 	
 	my @exclude = ( $self->record_pk, 'loadContentCnf' );
+	
+	push @$columns, @{$self->primary_columns};
 	
 	defined $self->columns->{$_} && push @$columns, 
 		@{ $self->columns->{$_}->required_fetch_columns || [] } for (@$columns);
