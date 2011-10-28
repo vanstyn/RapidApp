@@ -313,7 +313,7 @@ are ignored.
 subtype 'ColSpec', as 'Str', where {
 	/\s+/ and warn "ColSpec '$_' is invalid because it contains whitespace" and return 0;
 	/[A-Z]+/ and warn "ColSpec '$_' is invalid because it contains upper case characters" and return 0;
-	/([^\#a-z0-9\-\_\.\!\*\?\[\]])/ and warn "ColSpec '$_' contains invalid characters ('$1')." and return 0;
+	/([^\#a-z0-9\-\_\.\!\*\?\[\]\{\}\:])/ and warn "ColSpec '$_' contains invalid characters ('$1')." and return 0;
 	/^\./ and warn "ColSpec '$_' is invalid: \".\" cannot be the first character" and return 0;
 	/\.$/ and warn "ColSpec '$_' is invalid: \".\" cannot be the last character (did you mean '$_*' ?)" and return 0;
 	
@@ -775,7 +775,7 @@ sub get_relation_colspecs {
 	my @colspecs = @_;
 	
 	my @order = ('');
-	my %data = ();
+	my %data = ('' => []);
 	
 	my %end_rels = ( '' => 1 );
 	foreach my $spec (@colspecs) {

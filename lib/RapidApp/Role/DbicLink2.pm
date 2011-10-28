@@ -165,9 +165,13 @@ sub apply_except_colspec_columns {
 	my $self = shift;
 	my $colspec = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+
+	if (ref($colspec) eq 'ARRAY') {
+		$self->apply_except_colspec_columns($_,@_) for (@$colspec);
+		return;
+	}
 	
-	my @colspecs = $self->expand_relspec_wildcards($colspec,undef,'?');
-	my @columns = $self->TableSpec->get_except_colspec_column_names(@colspecs);
+	my @columns = $self->TableSpec->get_except_colspec_column_names($colspec);
 	$self->apply_columns( $_ => { %opt } ) for (@columns);
 }
 
