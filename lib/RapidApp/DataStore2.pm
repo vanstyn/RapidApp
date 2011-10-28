@@ -614,6 +614,10 @@ sub create {
 		
 	my $result = $self->create_handler->call($rows);
 	
+	scream_color(RED,$result);
+	# TODO: get rid of this crap into DbicLink2
+	return $result if (delete $result->{use_this}); #<-- temp hack
+	
 	# we don't actually care about the new record, so we simply give the store back
 	# the row it gave to us. We have to make sure that pk (primary key) is set to 
 	# something or else it will throw an error (update: bypass this failsafe if more

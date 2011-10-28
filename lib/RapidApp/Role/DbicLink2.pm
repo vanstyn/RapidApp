@@ -290,6 +290,16 @@ sub get_req_columns {
 	
 	die "get_req_columns(): bad options" unless(ref($columns) eq 'ARRAY');
 	
+	# ---
+	# If no columns were supplied by the client, add all the columns from
+	# include_relspec
+	# TODO: move column request logic that's currently only in AppGrid2 to a 
+	# plugin/store where it can be used by other js modules like dataview
+	push @$columns, $self->TableSpec->get_colspec_column_names(
+		$self->TableSpec->include_colspec
+	) unless(@$columns > 0); 
+	# ---
+	
 	my @exclude = ( $self->record_pk, 'loadContentCnf' );
 	
 	push @$columns, @{$self->primary_columns};

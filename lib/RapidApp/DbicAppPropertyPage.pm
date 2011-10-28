@@ -88,9 +88,16 @@ sub apply_items_config {
 	$self->apply_extconfig( items => [ $self->full_property_grid ] );
 }
 
-#has '+dbiclink_updatable' => ( default => 1 );
-
-
+sub full_property_grid {
+	my $self = shift;
+	
+	my @items = $self->TableSpec_property_grids($self->TableSpec);
+	
+	my $last = pop @items;
+	push @items, $last unless (ref($last) eq 'HASH' and $last->{xtype} eq 'spacer');
+	
+	return @items;
+}
 sub TableSpec_property_grids {
 	my $self = shift;
 	my $TableSpec = shift;
@@ -135,18 +142,6 @@ sub TableSpec_property_grids {
 	return @items;
 }
 
-
-
-sub full_property_grid {
-	my $self = shift;
-	
-	my @items = $self->TableSpec_property_grids($self->TableSpec);
-	
-	my $last = pop @items;
-	push @items, $last unless (ref($last) eq 'HASH' and $last->{xtype} eq 'spacer');
-	
-	return @items;
-}
 
 
 sub property_grid {
