@@ -197,6 +197,11 @@ sub func_debug_around {
 		ret_color		=> RED.BOLD,
 		arg_ignore		=> sub { 0 }, # <-- no debug output prited when this returns true
 		return_ignore	=> sub { 0 },# <-- no debug output prited when this returns true
+		around			=> sub { # around wrapper to allow the user to pass a different one to use:
+									my $orig = shift;
+									my $self = shift;
+									return $self->$orig(@_);
+								},
 		%opt
 	);
 
@@ -205,7 +210,8 @@ sub func_debug_around {
 		my $self = shift;
 		my @args = @_;
 		
-		my @res = $self->$orig(@args);
+		my @res = $opt{around}->($orig,$self,@args);
+		
 		if(!$opt{arg_ignore}->(@args) && !$opt{return_ignore}->(@res)) {
 		
 			my $result = $res[0];
