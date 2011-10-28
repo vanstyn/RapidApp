@@ -347,10 +347,6 @@ has 'updatable_colspec' => (
 	trigger => sub {
 		my ($self,$spec) = @_;
 		$self->_colspec_attr_init_trigger($spec);
-		
-		# Limited to include_colspec, with limited wildcard support:
-		#@$spec = grep { $self->colspecs_to_colspec_test($self->include_colspec,$_) } @$spec;
-		
 		@$spec = $self->expand_relspec_relationship_columns([@$spec],1);
 	}
 );
@@ -458,8 +454,7 @@ sub expand_relspec_relationship_column {
 		unshift @expanded, $rel;
 	}
 	
-	return $colspec unless (@expanded > 0);
-	return @expanded;
+	return uniq($colspec,@expanded);
 }
 
 sub expand_relspec_wildcards {
@@ -538,12 +533,7 @@ has 'column_prefix' => ( is => 'ro', isa => 'Str', lazy => 1, default => sub {
 });
 
 has 'base_colspec' => ( is => 'rw', isa => 'ArrayRef', default => sub {[]} );
-#has 'base_colspec' => ( is => 'rw', isa => 'ArrayRef', lazy => 1,default => sub {
-#	my $self = shift;
-#	#init relation_colspecs:
-#	$self->relation_order;
-#	return $self->relation_colspecs->{''};
-#});
+
 
 around 'get_column' => sub {
 	my $orig = shift;
