@@ -155,6 +155,10 @@ Ext.ux.RapidApp.AppTab.gridrow_nav = function(grid,index,e) {
 
 	
 Ext.ux.RapidApp.AppTab.AppGrid2Def = {
+	
+	viewConfig: { 
+			emptyText: '<div style="font-size:16px;color:#d0d0d0;padding-top:10px;padding-left:25px">(No Data)</div>' 
+	},
 
 	filteredRecordData: function(data) {
 		// Return data as-is if primary_columns is not set:
