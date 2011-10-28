@@ -348,7 +348,8 @@ sub init_relspecs {
 	my $self = shift;
 	
 	my @colspecs = map { $self->expand_relspec_wildcards($_) } @{$self->include_colspec};
-	@colspecs = map { $self->expand_relspec_relationship_columns($_) } @colspecs;
+	@colspecs = $self->expand_relspec_relationship_columns(@colspecs);
+	
 	
 	my $rel_colspecs = $self->get_relation_colspecs(@colspecs);
 	
@@ -393,12 +394,25 @@ has 'relationship_column_configs' => ( is => 'ro', isa => 'HashRef', lazy => 1, 
 }});
 
 
-
-
-
 sub expand_relspec_relationship_columns {
 	my $self = shift;
+	my @colspecs = @_;
+	
+	my $added = [];
+	my @expanded = map { $self->expand_relspec_relationship_column($_,$added) } @colspecs;
+
+	my @new_adds = grep { ! $self->colspecs_to_colspec_test(\@colspecs,$_) } @$added;
+	
+	scream_color(MAGENTA.BOLD,\@new_adds);
+	
+	return @expanded;
+}
+
+
+sub expand_relspec_relationship_column {
+	my $self = shift;
 	my $colspec = shift;
+	my $added = shift || [];
 	
 	# the colspec can only be a relationship column if it is a colspec with no relspec part:
 	$colspec =~ /\./ and return $colspec;
@@ -408,11 +422,11 @@ sub expand_relspec_relationship_columns {
 	my @expanded = ();
 	foreach my $rel (keys %$rel_configs) {
 		next unless (match_glob($colspec,$rel));
-		
-		push @expanded, $rel;
 		push @expanded, $rel . '.' . $rel_configs->{$rel}->{displayField};
 		push @expanded, $rel . '.' . $rel_configs->{$rel}->{valueField};
 		push @expanded, $rel_configs->{$rel}->{keyField};
+		push @$added,@expanded;
+		unshift @expanded, $rel;
 	}
 	
 	return $colspec unless (@expanded > 0);
@@ -541,6 +555,43 @@ around colspec_test => sub {
 	return $result;
 };
 =cut
+
+
+# Tests whether or not the colspec in the second arg matches the colspec of the first arg
+# The second arg colspec does NOT expand wildcards, it has to be a specific rel/col string
+sub colspec_to_colspec_test {
+	my $self = shift;
+	my $colspec = shift;
+	my $test_spec = shift;
+	
+	$colspec =~ s/^(\!)//;
+	my $x = $1 ? -1 : 1;
+	
+	my @parts = split(/\./,$colspec);
+	my @test_parts = split(/\./,$test_spec);
+	return undef unless(scalar @parts == scalar @test_parts);
+
+	match_glob(pop @parts,pop @test_parts) or return undef for(@parts);
+	return $x;
+}
+
+sub colspecs_to_colspec_test {
+	my $self = shift;
+	my $colspecs = shift;
+	my $test_spec = shift;
+	
+	$colspecs = [ $colspecs ] unless (ref($colspecs) eq 'ARRAY');
+	
+	my $match = 0;
+	my $neg = 0;
+	
+	defined $_ and $match = $_ and $_ < 0 and $neg++ 
+		for map { $self->colspec_to_colspec_test($_,$test_spec) }
+			@$colspecs;
+	
+	$neg && return 0;
+	return $match;
+}
 
 
 # TODO:
@@ -745,9 +796,10 @@ sub get_relation_colspecs {
 	
 	# Set the base colspec to '*' if its empty:
 	push @{$data{''}}, '*' unless (@{$data{''}} > 0);
-	foreach my $rel (@order) {
-		push @{$data{$rel}}, '!*' unless ($end_rels{$rel});
-	}
+	#foreach my $rel (@order) {
+	#	push @{$data{$rel}}, '!*' unless ($end_rels{$rel});
+	#}
+	$end_rels{$_} or push @{$data{$_}}, '!*' for (@order);
 	
 	return {
 		order => \@order,
