@@ -418,44 +418,57 @@ has 'added_relationship_column_relspecs' => (
 	is => 'rw', isa => 'ArrayRef', default => sub {[]},
 	trigger => sub { my ($self,$val) = @_; uniq($val) }
 );
+
+
+
+
+
 sub expand_relspec_relationship_columns {
 	my $self = shift;
 	my $colspecs = shift;
 	my $update = shift || 0;
 	
+	my $rel_configs = $self->relationship_column_configs;
+	my $match_data = {};
+	my @rel_cols = $self->colspec_select_columns({
+		colspecs => $colspecs,
+		columns => [ keys %$rel_configs ],
+		best_match_look_ahead => 1,
+		match_data => $match_data
+	});
+	
+	my %exist = map{$_=>1} @$colspecs;
 	my $added = [];
-	my @expanded = map { $self->expand_relspec_relationship_column($_,$added,$update) } @$colspecs;
+	
+	my @new_colspecs = @$colspecs;
+	my $adj = 0;
+	foreach my $rel (@rel_cols) {
+		my @insert = ();
+		push @insert, $rel . '.' . $rel_configs->{$rel}->{displayField} unless ($update);
+		push @insert, $rel . '.' . $rel_configs->{$rel}->{valueField} unless ($update);
+		push @insert, $rel_configs->{$rel}->{keyField};
+		
+		# Remove any expanded colspecs that were already defined (important to honor the user supplied column order)
+		@insert = grep { !$exist{$_} } @insert;
+		
+		push @$added,@insert;
+		unshift @insert, $rel unless ($exist{$rel});
+		
+		my $offset = $adj + $match_data->{$rel}->{index} + 1;
+		
+		splice(@new_colspecs,$offset,0,@insert);
+		
+		%exist = map{$_=>1} @new_colspecs;
+		$adj += scalar @insert;
+	}
 	
 	my @new_adds = grep { ! $self->colspecs_to_colspec_test($colspecs,$_) } @$added;
 	$self->added_relationship_column_relspecs(\@new_adds);
 	
-	return @expanded;
+	return @new_colspecs;
+
 }
 
-
-sub expand_relspec_relationship_column {
-	my $self = shift;
-	my $colspec = shift;
-	my $added = shift || [];
-	my $update = shift; #<-- expands columns needed for update instead of read
-	
-	# the colspec can only be a relationship column if it is a colspec with no relspec part:
-	return $colspec if ($colspec =~ /\./);
-	
-	my $rel_configs = $self->relationship_column_configs;
-	
-	my @expanded = ();
-	foreach my $rel (keys %$rel_configs) {
-		next unless (match_glob($colspec,$rel));
-		push @expanded, $rel . '.' . $rel_configs->{$rel}->{displayField} unless ($update);
-		push @expanded, $rel . '.' . $rel_configs->{$rel}->{valueField} unless ($update);
-		push @expanded, $rel_configs->{$rel}->{keyField};
-		push @$added,@expanded;
-		unshift @expanded, $rel;
-	}
-	
-	return uniq($colspec,@expanded);
-}
 
 sub expand_relspec_wildcards {
 	my $self = shift;
@@ -578,53 +591,7 @@ sub filter_updatable_columns {
 	});
 }
 
-=pod
-around colspecs_to_colspec_test => sub {
-	my $orig = shift;
-	my $self = shift;
-	
-	my $full_colspec = $_[0];
-	my $col = $_[1];
-	
-	
-	
-	my $result = $self->$orig(@_);
-	
-	$full_colspec = join(',',@$full_colspec) if (ref($full_colspec) eq 'ARRAY');
-	
-	my $out = $result;
-	$out = UNDERLINE . 'undef' unless (defined $out);
-	
-	scream_color(GREEN,$self->relspec_prefix . ': colspecs_to_colspec_test: ' . $full_colspec . ' ' . $col . CLEAR . RED . '   ' . $out);
-	#scream_color(RED,$result);
-	
-	return $result;
-};
 
-
-
-around colspec_to_colspec_test => sub {
-	my $orig = shift;
-	my $self = shift;
-	
-	my $full_colspec = $_[0];
-	my $col = $_[1];
-	
-	
-	
-	my $result = $self->$orig(@_);
-	
-	$full_colspec = join(',',@$full_colspec) if (ref($full_colspec) eq 'ARRAY');
-	
-	my $out = $result;
-	$out = UNDERLINE . 'undef' unless (defined $out);
-	
-	scream_color(GREEN.BOLD,$self->relspec_prefix . ': colspec_to_colspec_test: ' . $full_colspec . ' ' . $col . CLEAR . RED . '   ' . $out);
-	#scream_color(RED,$result);
-	
-	return $result;
-};
-=cut
 
 # Tests whether or not the colspec in the second arg matches the colspec of the first arg
 # The second arg colspec does NOT expand wildcards, it has to be a specific rel/col string
@@ -674,10 +641,10 @@ sub colspecs_to_colspec_test {
 # Tests whether or not the supplied column name matches the supplied colspec.
 # Returns 1 for positive match, 0 for negative match (! prefix) and undef for no match
 #debug_around 'colspec_test' => ( arg_ignore => sub {  my $count = grep { $_ eq '*' } @_; return $count ? 0 : 1; } );
-debug_around 'colspec_test' => ( 
-	arg_ignore => sub { $_->relspec_prefix ne '' and return 1; return (grep { $_ eq '*' } @_) ? 0 : 1; }, 
-	return_ignore => sub { (shift) ? 0 : 1; },
-);
+#debug_around 'colspec_test' => ( 
+#	arg_ignore => sub { $_->relspec_prefix ne '' and return 1; return (grep { $_ eq '*' } @_) ? 0 : 1; }, 
+#	return_ignore => sub { (shift) ? 0 : 1; },
+#);
 sub colspec_test {
 	my $self = shift;
 	my $full_colspec = shift;
@@ -778,6 +745,8 @@ sub colspec_select_columns {
 	$colspecs = [ $colspecs ] unless (ref $colspecs);
 	$columns = [ $columns ] unless (ref $columns);
 	
+	$opt{match_data} = {} unless ($opt{match_data});
+	
 	my %match = map { $_ => 0 } @$columns;
 	my @order = ();
 	my $i = 0;
@@ -790,10 +759,14 @@ sub colspec_select_columns {
 			my $result = $self->colspec_test(@arg) or next;;
 			push @order, $col if ($result > 0);
 			$match{$col} = $result;
+			$opt{match_data}->{$col} = {
+				index => $i - 1,
+				colspec => $spec
+			} unless ($opt{match_data}->{$col});
 		}
 	}
 	
-	return grep { $match{$_} > 0 } @order;
+	return uniq(grep { $match{$_} > 0 } @order);
 }
 
 
