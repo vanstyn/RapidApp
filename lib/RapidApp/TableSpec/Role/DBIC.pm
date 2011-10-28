@@ -349,7 +349,7 @@ has 'updatable_colspec' => (
 		$self->_colspec_attr_init_trigger($spec);
 		
 		# Limited to include_colspec, with limited wildcard support:
-		@$spec = grep { $self->colspecs_to_colspec_test($self->include_colspec,$_) } @$spec;
+		#@$spec = grep { $self->colspecs_to_colspec_test($self->include_colspec,$_) } @$spec;
 		
 		@$spec = $self->expand_relspec_relationship_columns([@$spec],1);
 	}
@@ -537,12 +537,13 @@ has 'column_prefix' => ( is => 'ro', isa => 'Str', lazy => 1, default => sub {
 	return $col_pre . $self->relation_sep;
 });
 
-has 'base_colspec' => ( is => 'rw', isa => 'ArrayRef', lazy => 1,default => sub {
-	my $self = shift;
-	#init relation_colspecs:
-	$self->relation_order;
-	return $self->relation_colspecs->{''};
-});
+has 'base_colspec' => ( is => 'rw', isa => 'ArrayRef', default => sub {[]} );
+#has 'base_colspec' => ( is => 'rw', isa => 'ArrayRef', lazy => 1,default => sub {
+#	my $self = shift;
+#	#init relation_colspecs:
+#	$self->relation_order;
+#	return $self->relation_colspecs->{''};
+#});
 
 around 'get_column' => sub {
 	my $orig = shift;
@@ -575,9 +576,12 @@ sub filter_updatable_columns {
 	my $self = shift;
 	my @columns = @_;
 	
-	
-	scream_color(RED,$self->relspec_prefix,$self->updatable_colspec);
-	
+	# First filter by include_colspec:
+	@columns = $self->colspec_select_columns({
+		colspecs => $self->include_colspec,
+		columns => \@columns,
+	});
+
 	return $self->colspec_select_columns({
 		colspecs => $self->updatable_colspec,
 		columns => \@columns,
@@ -671,6 +675,8 @@ sub colspecs_to_colspec_test {
 	return $match;
 }
 
+add_debug_around 'colspec_test';
+#around colspec_test => &func_debug_around();
 
 # TODO:
 # abstract this logic (much of which is redundant) into its own proper class 
@@ -1047,6 +1053,7 @@ sub add_all_related_TableSpecs_recursive {
 }
 =cut
 
+# Is this func still used??
 # Like column_order but only considers columns in the local TableSpec object
 # (i.e. not in related TableSpecs)
 sub local_column_names {
@@ -1525,22 +1532,22 @@ sub get_or_create_rapidapp_module {
 
 # TODO: Find a better way to handle this. Is there a real API
 # in DBIC to find this information?
-sub get_foreign_column_from_cond {
-	my $self = shift;
-	my $cond = shift;
-	
-	die "currently only single-key hashref conditions are supported" unless (
-		ref($cond) eq 'HASH' and
-		scalar keys %$cond == 1
-	);
-	
-	foreach my $i (%$cond) {
-		my ($side,$col) = split(/\./,$i);
-		return $col if (defined $col and $side eq 'foreign');
-	}
-	
-	die "Failed to find forein column from condition: " . Dumper($cond);
-}
+#sub get_foreign_column_from_cond {
+#	my $self = shift;
+#	my $cond = shift;
+#	
+#	die "currently only single-key hashref conditions are supported" unless (
+#		ref($cond) eq 'HASH' and
+#		scalar keys %$cond == 1
+#	);
+#	
+#	foreach my $i (%$cond) {
+#		my ($side,$col) = split(/\./,$i);
+#		return $col if (defined $col and $side eq 'foreign');
+#	}
+#	
+#	die "Failed to find forein column from condition: " . Dumper($cond);
+#}
 
 # TODO: Find a better way to handle this. Is there a real API
 # in DBIC to find this information?

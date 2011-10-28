@@ -4340,6 +4340,8 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 			
 		},this);
 		
+		if(! this.fields.length > 0) { this.collapsed = true; }
+		
 		var params = { columns: Ext.encode(columns) };
 		
 		if(this.baseParams) {

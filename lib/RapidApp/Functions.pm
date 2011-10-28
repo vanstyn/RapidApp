@@ -15,10 +15,12 @@ sub scream {
 sub scream_color {
 	my $color = shift;
 	local $_ = caller_data(3) unless (
-		ref($_) eq 'ARRAY' and
-		scalar(@$_) == 3 and
-		ref($_->[0]) eq 'HASH' and 
-		defined $_->[0]->{package}
+		$_ eq 'no_caller_data' or (
+			ref($_) eq 'ARRAY' and
+			scalar(@$_) == 3 and
+			ref($_->[0]) eq 'HASH' and 
+			defined $_->[0]->{package}
+		)
 	);
 	
 	my $data = $_[0];
@@ -26,11 +28,11 @@ sub scream_color {
 	$data = Dumper($data) if (ref $data);
 	$data = '  ' . UNDERLINE . 'undef' unless (defined $data);
 
-	my $sub = $_->[2]->{subroutine} ? $_->[2]->{subroutine} . '  ' : '';
+	my $pre = '';
+	$pre = BOLD . ($_->[2]->{subroutine} ? $_->[2]->{subroutine} . '  ' : '') .
+		'[line ' . $_->[1]->{line} . ']: ' . CLEAR . "\n" unless ($_ eq 'no_caller_data');
 	
-	print STDERR 
-		BOLD . $sub . '[line ' . $_->[1]->{line} . ']: ' . CLEAR . "\n" .
-		$color . $data . CLEAR . "\n";
+	print STDERR $pre . $color . $data . CLEAR . "\n";
 }
 
 
@@ -161,6 +163,66 @@ sub uniq {
 	@{$_[0]} = uniq(@{$_[0]},$_[0]->[0]);
 	return @{$_[0]};
 }
+
+
+sub add_debug_around {
+	my ($pkg,$filename,$line) = caller;
+	foreach my $method (@_) {
+		my $around = func_debug_around($method, pkg => $pkg,line => $line);
+		$pkg->can('around')->($method => $around);
+	}
+}
+
+# Returns a coderef - designed to be a Moose around modifier - that will
+# print useful debug info about the given function to which it is attached
+sub func_debug_around {
+	my $name = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	%opt = (
+		color			=> GREEN,
+		ret_color	=> RED.BOLD,
+		%opt
+	);
+
+	return sub {
+		my $orig = shift;
+		my $self = shift;
+		my @args = @_;
+		
+		my @res = $self->$orig(@args);
+		my $result = $res[0];
+		
+		my $has_refs = 0;
+		ref $_ and $has_refs++ for (@res);
+		if($has_refs) {
+			$result = Dumper(\@res);
+		}
+		elsif (@res > 1) {
+			$result = '(' . join(',',@res) . ')';
+		}
+		
+		my $out = $result;
+		$out = UNDERLINE . 'undef' unless (defined $out);
+		
+		my $in;
+		$has_refs = 0;
+		ref $_ and $has_refs++ for (@args);
+		if($has_refs) {
+			$in = "\n  args: " . Dumper(\@args) . "\n: ";
+		}
+		else {
+			$in = '(' . join(',',@args) . '): ';
+		}
+		
+		local $_ = 'no_caller_data';
+		scream_color(CLEAR,'[' . $opt{line} . '] ' . CLEAR . $opt{color} . $opt{pkg} . CLEAR . '->' . $opt{color} . BOLD . $name . CLEAR .$in .  $opt{ret_color} . $out);
+
+		return @res;
+	};
+}
+
+
 
 # Automatically export all functions defined above:
 BEGIN {
