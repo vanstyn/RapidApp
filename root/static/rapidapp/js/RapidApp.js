@@ -4260,6 +4260,8 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		
 	storeReloadButton: true,
 	
+	viewConfig: { emptyText: '<span style="color:darkgrey;">(Empty)</span>' },
+		
 	initComponent: function() {
 		
 		this.bindStore = this.store;
@@ -4287,9 +4289,21 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 			// append to existing column list if set:
 			columns = Ext.decode(this.bindStore.baseParams.columns);
 		}
+		
+		// prune out 'no_column' fields:
+		var new_fields = [];
 		Ext.each(this.fields,function(field) {
 			field.id = field.dataIndex;
 			columns.push(field.dataIndex);
+			
+			if(field.no_column) { return; }
+			new_fields.push(field);
+		},this);
+		this.fields = new_fields;
+		
+		
+		Ext.each(this.fields,function(field) {
+			
 			var css;
 			// Extra logic to handle editors as simple xtypes and not already 
 			// GridEditor objects. This is handled by EditorGridPanel, but not

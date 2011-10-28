@@ -393,7 +393,11 @@ has 'relationship_column_configs' => ( is => 'ro', isa => 'HashRef', lazy => 1, 
 	return $rel_cols;
 }});
 
-
+# colspecs that were added solely for the relationship columns
+# get stored in 'added_relationship_column_relspecs' and are then
+# hidden in DbicLink2.
+# TODO: come up with a better way to handle this. It's ugly.
+has 'added_relationship_column_relspecs' => ( is => 'rw', isa => 'ArrayRef', default => sub {[]} );
 sub expand_relspec_relationship_columns {
 	my $self = shift;
 	my @colspecs = @_;
@@ -402,9 +406,8 @@ sub expand_relspec_relationship_columns {
 	my @expanded = map { $self->expand_relspec_relationship_column($_,$added) } @colspecs;
 
 	my @new_adds = grep { ! $self->colspecs_to_colspec_test(\@colspecs,$_) } @$added;
-	
-	scream_color(MAGENTA.BOLD,\@new_adds);
-	
+	$self->added_relationship_column_relspecs(\@new_adds);
+
 	return @expanded;
 }
 
@@ -436,6 +439,13 @@ sub expand_relspec_relationship_column {
 sub expand_relspec_wildcards {
 	my $self = shift;
 	my $colspec = shift;
+	
+	if(ref($colspec) eq 'ARRAY') {
+		my @exp = ();
+		push @exp, $self->expand_relspec_wildcards($_,@_) for (@$colspec);
+		return @exp;
+	}
+	
 	my $Source = shift || $self->ResultSource;
 	my @ovr_macro_keywords = @_;
 	
@@ -661,6 +671,9 @@ sub get_colspec_column_names {
 	my $self = shift;
 	my @colspecs = @_;
 	@colspecs = @{$_[0]} if (ref($_[0]) eq 'ARRAY');
+	
+	# support for passing colspecs with relspec wildcards:
+	@colspecs = $self->expand_relspec_wildcards(\@colspecs,undef,'?');
 	
 	return $self->colspec_select_columns({
 		colspecs => \@colspecs,

@@ -98,7 +98,7 @@ sub TableSpec_property_grids {
 	
 	my %cols = map { $_->{name} => $_ } @{ $self->column_list };
 	my @columns = map { $cols{$_} } $TableSpec->local_column_names;
-	my $fields = [ grep { not jstrue $_->{no_column} } @columns  ];
+	my $fields = \@columns;
 	
 	my $title = $TableSpec->relspec_prefix;
 	$title = $self->TableSpec->name . '.' . $title unless ($title eq '');

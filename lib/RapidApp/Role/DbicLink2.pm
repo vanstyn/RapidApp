@@ -42,23 +42,13 @@ sub _build_ResultClass {
 has 'TableSpec' => ( is => 'ro', isa => 'RapidApp::TableSpec', lazy_build => 1 );
 sub _build_TableSpec {
 	my $self = shift;
-
-	my $TableSpec = RapidApp::TableSpec->with_traits('RapidApp::TableSpec::Role::DBIC')->new(
+	return RapidApp::TableSpec->with_traits('RapidApp::TableSpec::Role::DBIC')->new(
 		name => $self->ResultClass->table,
 		relation_sep => $self->relation_sep,
 		ResultClass => $self->ResultClass,
 		include_colspec => $self->include_colspec
 	);
-
-	$self->apply_columns( $self->record_pk => { 
-		no_column => \1, 
-		no_multifilter => \1, 
-		no_quick_search => \1 
-	});
-	
-	return $TableSpec;
 }
-
 
 
 has 'record_pk' => ( is => 'ro', isa => 'Str', default => '___record_pk' );
@@ -126,6 +116,20 @@ sub DbicLink_around_BUILD {
 	
 	die "FATAL: DbicLink and DbicLink2 cannot both be loaded" if ($self->does('RapidApp::Role::DbicLink'));
 	
+	$self->apply_columns( $self->record_pk => { 
+		no_column => \1, 
+		no_multifilter => \1, 
+		no_quick_search => \1 
+	});
+	
+	# Hide any extra colspec columns that were only added for relationship
+	# columns:
+	$self->apply_colspec_columns($self->TableSpec->added_relationship_column_relspecs => {
+		no_column => \1, 
+		no_multifilter => \1, 
+		no_quick_search => \1 
+	});
+	
 	$self->$orig(@_);
 	
 	# init primary columns:
@@ -142,14 +146,17 @@ sub DbicLink_around_BUILD {
 	);
 }
 
-
 sub apply_colspec_columns {
 	my $self = shift;
 	my $colspec = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
-	my @colspecs = $self->expand_relspec_wildcards($colspec,undef,'?');
-	my @columns = $self->TableSpec->get_colspec_column_names(@colspecs);
+	if (ref($colspec) eq 'ARRAY') {
+		$self->apply_colspec_columns($_,@_) for (@$colspec);
+		return;
+	}
+
+	my @columns = $self->TableSpec->get_colspec_column_names($colspec);
 	$self->apply_columns( $_ => { %opt } ) for (@columns);
 }
 
@@ -213,6 +220,7 @@ sub read_records {
 		results => $Rs->pager->total_entries,
 	};
 }
+
 
 
 # Applies base request attrs to ResultSet:
