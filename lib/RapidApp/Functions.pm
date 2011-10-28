@@ -212,6 +212,7 @@ sub func_debug_around {
 		
 		my @res = $opt{around}->($orig,$self,@args);
 		
+		local $_ = $self;
 		if(!$opt{arg_ignore}->(@args) && !$opt{return_ignore}->(@res)) {
 		
 			my $result = $res[0];

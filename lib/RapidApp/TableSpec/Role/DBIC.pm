@@ -684,7 +684,10 @@ sub colspecs_to_colspec_test {
 # Tests whether or not the supplied column name matches the supplied colspec.
 # Returns 1 for positive match, 0 for negative match (! prefix) and undef for no match
 #debug_around 'colspec_test' => ( arg_ignore => sub {  my $count = grep { $_ eq '*' } @_; return $count ? 0 : 1; } );
-debug_around 'colspec_test' => ( arg_ignore => sub { (grep { $_ eq '*' } @_) ? 0 : 1; }, return_ignore => sub { (shift) ? 0 : 1; } );
+debug_around 'colspec_test' => ( 
+	arg_ignore => sub { $_->relspec_prefix ne '' and return 1; return (grep { $_ eq '*' } @_) ? 0 : 1; }, 
+	return_ignore => sub { (shift) ? 0 : 1; },
+);
 sub colspec_test {
 	my $self = shift;
 	my $full_colspec = shift;
