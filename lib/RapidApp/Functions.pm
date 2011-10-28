@@ -165,10 +165,23 @@ sub uniq {
 }
 
 
-sub add_debug_around {
+sub debug_around {
 	my ($pkg,$filename,$line) = caller;
-	foreach my $method (@_) {
-		my $around = func_debug_around($method, pkg => $pkg,line => $line);
+	my $method = shift;
+	my @methods = ( $method );
+	@methods = @$method if (ref($method) eq 'ARRAY');
+	
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	%opt = (
+		pkg			=> $pkg,
+		filename		=> $filename,
+		line			=> $line,
+		%opt
+	);
+	
+	foreach my $method (@methods) {
+		my $around = func_debug_around($method, %opt);
 		$pkg->can('around')->($method => $around);
 	}
 }
@@ -180,8 +193,10 @@ sub func_debug_around {
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	%opt = (
-		color			=> GREEN,
-		ret_color	=> RED.BOLD,
+		color				=> GREEN,
+		ret_color		=> RED.BOLD,
+		arg_ignore		=> sub { 0 }, # <-- no debug output prited when this returns true
+		return_ignore	=> sub { 0 },# <-- no debug output prited when this returns true
 		%opt
 	);
 
@@ -191,33 +206,36 @@ sub func_debug_around {
 		my @args = @_;
 		
 		my @res = $self->$orig(@args);
-		my $result = $res[0];
+		if(!$opt{arg_ignore}->(@args) && !$opt{return_ignore}->(@res)) {
 		
-		my $has_refs = 0;
-		ref $_ and $has_refs++ for (@res);
-		if($has_refs) {
-			$result = Dumper(\@res);
-		}
-		elsif (@res > 1) {
-			$result = '(' . join(',',@res) . ')';
+			my $result = $res[0];
+			
+			my $has_refs = 0;
+			ref $_ and $has_refs++ for (@res);
+			if($has_refs) {
+				$result = Dumper(\@res);
+			}
+			elsif (@res > 1) {
+				$result = '(' . join(',',@res) . ')';
+			}
+			
+			my $out = $result;
+			$out = UNDERLINE . 'undef' unless (defined $out);
+			
+			my $in;
+			$has_refs = 0;
+			ref $_ and $has_refs++ for (@args);
+			if($has_refs) {
+				$in = "\n  args: " . Dumper(\@args) . "\n: ";
+			}
+			else {
+				$in = '(' . join(',',@args) . '): ';
+			}
+			
+			local $_ = 'no_caller_data';
+			scream_color(CLEAR,'[' . $opt{line} . '] ' . CLEAR . $opt{color} . $opt{pkg} . CLEAR . '->' . $opt{color} . BOLD . $name . CLEAR .$in .  $opt{ret_color} . $out);
 		}
 		
-		my $out = $result;
-		$out = UNDERLINE . 'undef' unless (defined $out);
-		
-		my $in;
-		$has_refs = 0;
-		ref $_ and $has_refs++ for (@args);
-		if($has_refs) {
-			$in = "\n  args: " . Dumper(\@args) . "\n: ";
-		}
-		else {
-			$in = '(' . join(',',@args) . '): ';
-		}
-		
-		local $_ = 'no_caller_data';
-		scream_color(CLEAR,'[' . $opt{line} . '] ' . CLEAR . $opt{color} . $opt{pkg} . CLEAR . '->' . $opt{color} . BOLD . $name . CLEAR .$in .  $opt{ret_color} . $out);
-
 		return @res;
 	};
 }

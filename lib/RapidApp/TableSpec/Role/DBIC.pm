@@ -675,7 +675,7 @@ sub colspecs_to_colspec_test {
 	return $match;
 }
 
-add_debug_around 'colspec_test';
+
 #around colspec_test => &func_debug_around();
 
 # TODO:
@@ -683,6 +683,8 @@ add_debug_around 'colspec_test';
 # (merge with Mike's class)
 # Tests whether or not the supplied column name matches the supplied colspec.
 # Returns 1 for positive match, 0 for negative match (! prefix) and undef for no match
+#debug_around 'colspec_test' => ( arg_ignore => sub {  my $count = grep { $_ eq '*' } @_; return $count ? 0 : 1; } );
+debug_around 'colspec_test' => ( arg_ignore => sub { (grep { $_ eq '*' } @_) ? 0 : 1; }, return_ignore => sub { (shift) ? 0 : 1; } );
 sub colspec_test {
 	my $self = shift;
 	my $full_colspec = shift;
@@ -1532,22 +1534,22 @@ sub get_or_create_rapidapp_module {
 
 # TODO: Find a better way to handle this. Is there a real API
 # in DBIC to find this information?
-#sub get_foreign_column_from_cond {
-#	my $self = shift;
-#	my $cond = shift;
-#	
-#	die "currently only single-key hashref conditions are supported" unless (
-#		ref($cond) eq 'HASH' and
-#		scalar keys %$cond == 1
-#	);
-#	
-#	foreach my $i (%$cond) {
-#		my ($side,$col) = split(/\./,$i);
-#		return $col if (defined $col and $side eq 'foreign');
-#	}
-#	
-#	die "Failed to find forein column from condition: " . Dumper($cond);
-#}
+sub get_foreign_column_from_cond {
+	my $self = shift;
+	my $cond = shift;
+	
+	die "currently only single-key hashref conditions are supported" unless (
+		ref($cond) eq 'HASH' and
+		scalar keys %$cond == 1
+	);
+	
+	foreach my $i (%$cond) {
+		my ($side,$col) = split(/\./,$i);
+		return $col if (defined $col and $side eq 'foreign');
+	}
+	
+	die "Failed to find forein column from condition: " . Dumper($cond);
+}
 
 # TODO: Find a better way to handle this. Is there a real API
 # in DBIC to find this information?
