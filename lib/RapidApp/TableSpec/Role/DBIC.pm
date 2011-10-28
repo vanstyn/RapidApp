@@ -334,23 +334,44 @@ subtype 'ColSpec', as 'Str', where {
 };
 
 has 'include_colspec' => ( 
-	is => 'ro', isa => 'ArrayRef[ColSpec]',
-	required => 1,
+	is => 'ro', isa => 'ArrayRef[ColSpec]', required => 1,
 	trigger => sub {
 		my ($self,$spec) = @_;
-		my $sep = $self->relation_sep;
-		/${sep}/ and die "Fatal: ColSpec '$_' is invalid because it contains the relation separater string '$sep'" for (@$spec);
+		$self->_colspec_attr_init_trigger($spec);
+		@$spec = $self->expand_relspec_relationship_columns([@$spec]);
 	}
 );
+
+has 'updatable_colspec' => ( 
+	is => 'ro', isa => 'ArrayRef[ColSpec]', default => sub {[]},
+	trigger => sub {
+		my ($self,$spec) = @_;
+		$self->_colspec_attr_init_trigger($spec);
+		
+		# Limited to include_colspec, with limited wildcard support:
+		@$spec = grep { $self->colspecs_to_colspec_test($self->include_colspec,$_) } @$spec;
+		
+		@$spec = $self->expand_relspec_relationship_columns([@$spec],1);
+	}
+);
+
+sub _colspec_attr_init_trigger {
+	my ($self,$spec) = @_;
+	my $sep = $self->relation_sep;
+	/${sep}/ and die "Fatal: ColSpec '$_' is invalid because it contains the relation separater string '$sep'" for (@$spec);
+	@$spec = map { $self->expand_relspec_wildcards($_) } @$spec;
+	
+	# If there are no base cols defined at all, add '*'
+	my @base_specs = grep { !/\./ } @$spec;
+	unshift @$spec, '*' unless (@base_specs > 0);
+}
 
 
 sub init_relspecs {
 	my $self = shift;
 	
-	my @colspecs = map { $self->expand_relspec_wildcards($_) } @{$self->include_colspec};
-	@colspecs = $self->expand_relspec_relationship_columns(@colspecs);
-	
-	
+	my @colspecs = @{$self->include_colspec};
+
 	my $rel_colspecs = $self->get_relation_colspecs(@colspecs);
 	
 	foreach my $rel (@{$rel_colspecs->{order}}) {
@@ -397,17 +418,21 @@ has 'relationship_column_configs' => ( is => 'ro', isa => 'HashRef', lazy => 1, 
 # get stored in 'added_relationship_column_relspecs' and are then
 # hidden in DbicLink2.
 # TODO: come up with a better way to handle this. It's ugly.
-has 'added_relationship_column_relspecs' => ( is => 'rw', isa => 'ArrayRef', default => sub {[]} );
+has 'added_relationship_column_relspecs' => ( 
+	is => 'rw', isa => 'ArrayRef', default => sub {[]},
+	trigger => sub { my ($self,$val) = @_; uniq($val) }
+);
 sub expand_relspec_relationship_columns {
 	my $self = shift;
-	my @colspecs = @_;
+	my $colspecs = shift;
+	my $update = shift || 0;
 	
 	my $added = [];
-	my @expanded = map { $self->expand_relspec_relationship_column($_,$added) } @colspecs;
-
-	my @new_adds = grep { ! $self->colspecs_to_colspec_test(\@colspecs,$_) } @$added;
+	my @expanded = map { $self->expand_relspec_relationship_column($_,$added,$update) } @$colspecs;
+	
+	my @new_adds = grep { ! $self->colspecs_to_colspec_test($colspecs,$_) } @$added;
 	$self->added_relationship_column_relspecs(\@new_adds);
-
+	
 	return @expanded;
 }
 
@@ -416,17 +441,18 @@ sub expand_relspec_relationship_column {
 	my $self = shift;
 	my $colspec = shift;
 	my $added = shift || [];
+	my $update = shift; #<-- expands columns needed for update instead of read
 	
 	# the colspec can only be a relationship column if it is a colspec with no relspec part:
-	$colspec =~ /\./ and return $colspec;
+	return $colspec if ($colspec =~ /\./);
 	
 	my $rel_configs = $self->relationship_column_configs;
 	
 	my @expanded = ();
 	foreach my $rel (keys %$rel_configs) {
 		next unless (match_glob($colspec,$rel));
-		push @expanded, $rel . '.' . $rel_configs->{$rel}->{displayField};
-		push @expanded, $rel . '.' . $rel_configs->{$rel}->{valueField};
+		push @expanded, $rel . '.' . $rel_configs->{$rel}->{displayField} unless ($update);
+		push @expanded, $rel . '.' . $rel_configs->{$rel}->{valueField} unless ($update);
 		push @expanded, $rel_configs->{$rel}->{keyField};
 		push @$added,@expanded;
 		unshift @expanded, $rel;
@@ -544,8 +570,22 @@ sub filter_base_columns {
 	});
 }
 
+# accepts a list of column names and returns the names that match updatable_colspec
+sub filter_updatable_columns {
+	my $self = shift;
+	my @columns = @_;
+	
+	
+	scream_color(RED,$self->relspec_prefix,$self->updatable_colspec);
+	
+	return $self->colspec_select_columns({
+		colspecs => $self->updatable_colspec,
+		columns => \@columns,
+	});
+}
+
 =pod
-around colspec_test => sub {
+around colspecs_to_colspec_test => sub {
 	my $orig = shift;
 	my $self = shift;
 	
@@ -556,16 +596,41 @@ around colspec_test => sub {
 	
 	my $result = $self->$orig(@_);
 	
+	$full_colspec = join(',',@$full_colspec) if (ref($full_colspec) eq 'ARRAY');
+	
 	my $out = $result;
 	$out = UNDERLINE . 'undef' unless (defined $out);
 	
-	scream_color(GREEN,$self->relspec_prefix . ': colspec_test: ' . $full_colspec . ' ' . $col . CLEAR . RED . '   ' . $out);
+	scream_color(GREEN,$self->relspec_prefix . ': colspecs_to_colspec_test: ' . $full_colspec . ' ' . $col . CLEAR . RED . '   ' . $out);
+	#scream_color(RED,$result);
+	
+	return $result;
+};
+
+
+
+around colspec_to_colspec_test => sub {
+	my $orig = shift;
+	my $self = shift;
+	
+	my $full_colspec = $_[0];
+	my $col = $_[1];
+	
+	
+	
+	my $result = $self->$orig(@_);
+	
+	$full_colspec = join(',',@$full_colspec) if (ref($full_colspec) eq 'ARRAY');
+	
+	my $out = $result;
+	$out = UNDERLINE . 'undef' unless (defined $out);
+	
+	scream_color(GREEN.BOLD,$self->relspec_prefix . ': colspec_to_colspec_test: ' . $full_colspec . ' ' . $col . CLEAR . RED . '   ' . $out);
 	#scream_color(RED,$result);
 	
 	return $result;
 };
 =cut
-
 
 # Tests whether or not the colspec in the second arg matches the colspec of the first arg
 # The second arg colspec does NOT expand wildcards, it has to be a specific rel/col string
@@ -580,8 +645,12 @@ sub colspec_to_colspec_test {
 	my @parts = split(/\./,$colspec);
 	my @test_parts = split(/\./,$test_spec);
 	return undef unless(scalar @parts == scalar @test_parts);
-
-	match_glob(pop @parts,pop @test_parts) or return undef for(@parts);
+	
+	foreach my $part (@parts) {
+		my $test = shift @test_parts or return undef;
+		return undef unless (match_glob($part,$test));
+	}
+	
 	return $x;
 }
 
@@ -593,13 +662,12 @@ sub colspecs_to_colspec_test {
 	$colspecs = [ $colspecs ] unless (ref($colspecs) eq 'ARRAY');
 	
 	my $match = 0;
-	my $neg = 0;
+	foreach my $colspec (@$colspecs) {
+		my $result = $self->colspec_to_colspec_test($colspec,$test_spec) || next;
+		return 0 if ($result < 0);
+		$match = 1 if ($result > 0);
+	}
 	
-	defined $_ and $match = $_ and $_ < 0 and $neg++ 
-		for map { $self->colspec_to_colspec_test($_,$test_spec) }
-			@$colspecs;
-	
-	$neg && return 0;
 	return $match;
 }
 
@@ -807,7 +875,7 @@ sub get_relation_colspecs {
 		push @{$data{$rel}}, $subspec;
 	}
 	
-	# Set the base colspec to '*' if its empty:
+	# Set the base colspec to '*' if its empty: 
 	push @{$data{''}}, '*' unless (@{$data{''}} > 0);
 	#foreach my $rel (@order) {
 	#	push @{$data{$rel}}, '!*' unless ($end_rels{$rel});
@@ -1236,7 +1304,7 @@ sub add_relationship_columns {
 						$row->{$upd_key_col} = $row->{$colname};
 						delete $row->{$colname};
 						
-						scream_color(MAGENTA.BOLD,$row);
+						#scream_color(MAGENTA.BOLD,$row);
 						
 						
 						

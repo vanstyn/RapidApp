@@ -20,10 +20,7 @@ has 'get_record_display' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default =
 has 'include_colspec' => ( is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]} );
 has 'relation_sep' => ( is => 'ro', isa => 'Str', default => '__' );
 
-has 'dbiclink_updatable' => ( is => 'ro', isa => 'Bool', default => 0 );
-
-#TODO replace this with a 'updatable_colspec'
-has 'updatable_relationships' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default => sub {[]} );
+has 'updatable_colspec' => ( is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]} );
 
 has 'ResultSource' => (
 	is => 'ro',
@@ -46,7 +43,8 @@ sub _build_TableSpec {
 		name => $self->ResultClass->table,
 		relation_sep => $self->relation_sep,
 		ResultClass => $self->ResultClass,
-		include_colspec => $self->include_colspec
+		include_colspec => $self->include_colspec,
+		updatable_colspec => $self->updatable_colspec
 	);
 }
 
@@ -116,6 +114,11 @@ sub DbicLink_around_BUILD {
 	
 	die "FATAL: DbicLink and DbicLink2 cannot both be loaded" if ($self->does('RapidApp::Role::DbicLink'));
 	
+	# Disable editing on columns that aren't updatable:
+	$self->apply_except_colspec_columns($self->TableSpec->updatable_colspec => {
+		editor => ''
+	});
+	
 	$self->apply_columns( $self->record_pk => { 
 		no_column => \1, 
 		no_multifilter => \1, 
@@ -124,11 +127,11 @@ sub DbicLink_around_BUILD {
 	
 	# Hide any extra colspec columns that were only added for relationship
 	# columns:
-	$self->apply_colspec_columns($self->TableSpec->added_relationship_column_relspecs => {
+	$self->apply_colspec_columns($self->TableSpec->added_relationship_column_relspecs,
 		no_column => \1, 
 		no_multifilter => \1, 
 		no_quick_search => \1 
-	});
+	);
 	
 	$self->$orig(@_);
 	
@@ -151,12 +154,10 @@ sub apply_colspec_columns {
 	my $colspec = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
-	if (ref($colspec) eq 'ARRAY') {
-		$self->apply_colspec_columns($_,@_) for (@$colspec);
-		return;
-	}
+	my @colspecs = ( $colspec );
+	@colspecs = @$colspec if (ref($colspec) eq 'ARRAY');
 
-	my @columns = $self->TableSpec->get_colspec_column_names($colspec);
+	my @columns = $self->TableSpec->get_colspec_column_names(@colspecs);
 	$self->apply_columns( $_ => { %opt } ) for (@columns);
 }
 
@@ -166,12 +167,10 @@ sub apply_except_colspec_columns {
 	my $colspec = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 
-	if (ref($colspec) eq 'ARRAY') {
-		$self->apply_except_colspec_columns($_,@_) for (@$colspec);
-		return;
-	}
+	my @colspecs = ( $colspec );
+	@colspecs = @$colspec if (ref($colspec) eq 'ARRAY');
 	
-	my @columns = $self->TableSpec->get_except_colspec_column_names($colspec);
+	my @columns = $self->TableSpec->get_except_colspec_column_names(@colspecs);
 	$self->apply_columns( $_ => { %opt } ) for (@columns);
 }
 
@@ -471,7 +470,7 @@ before DataStore2_BUILD => sub {
 	# Dynamically toggle the addition of an 'update_records' method
 	# The existence of this method is part of the DataStore2 API
 	$self->meta->add_method('update_records', $self->meta->find_method_by_name('_dbiclink_update_records')) if (
-		$self->dbiclink_updatable and 
+		@{$self->TableSpec->updatable_colspec} > 0 and 
 		not $self->can('update_records')
 	);
 };
@@ -485,17 +484,13 @@ sub _dbiclink_update_records {
 	my $self = shift;
 	my $params = shift;
 	
-	
-	
 	my $arr = $params;
 	$arr = [ $params ] if (ref($params) eq 'HASH');
 	
 	my $Rs = $self->ResultSource->resultset;
 	
 	my @updated_keyvals = ();
-	
-	my %can_update = map {$_=>1} @{$self->updatable_relationships};
-	
+
 	try {
 		$self->ResultSource->schema->txn_do(sub {
 			foreach my $data (@$arr) {
@@ -505,12 +500,13 @@ sub _dbiclink_update_records {
 				
 				my @columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } keys %$data;
 				
+				scream(\@columns,$self->TableSpec->updatable_colspec);
+				@columns = $self->TableSpec->filter_updatable_columns(@columns);
+				scream_color(CYAN,\@columns);
+				
 				my $relspecs = $self->TableSpec->columns_to_relspec_map(@columns);
 				
-				# This is temp logic until updatable_relationships is replaced with updatable_colspecs:
-				my @valid_relspecs = grep { $_ eq '' || $can_update{(split(/\./,$_))[0]} } keys %$relspecs;
-				
-				my %rows_relspecs = map { $_ => $self->TableSpec->related_Row_from_relspec($BaseRow,$_) } @valid_relspecs;
+				my %rows_relspecs = map { $_ => $self->TableSpec->related_Row_from_relspec($BaseRow,$_) } keys %$relspecs;
 				
 				# Update all the individual Row objects, including the base row (last)
 				foreach my $relspec (reverse sort keys %rows_relspecs) {
