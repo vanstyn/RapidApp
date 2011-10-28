@@ -211,10 +211,10 @@ sub func_debug_around {
 		my @args = @_;
 		
 		my @res = $opt{around}->($orig,$self,@args);
-		
+
 		local $_ = $self;
 		if(!$opt{arg_ignore}->(@args) && !$opt{return_ignore}->(@res)) {
-		
+			
 			my $result = $res[0];
 			
 			my $has_refs = 0;
@@ -240,10 +240,13 @@ sub func_debug_around {
 			}
 			
 			local $_ = 'no_caller_data';
-			scream_color(CLEAR,'[' . $opt{line} . '] ' . CLEAR . $opt{color} . $opt{pkg} . CLEAR . '->' . $opt{color} . BOLD . $name . CLEAR .$in .  $opt{ret_color} . $out);
+			scream_color(
+				CLEAR,'[' . $opt{line} . '] ' . CLEAR . $opt{color} . $opt{pkg} . CLEAR . '->' . 
+				$opt{color} . BOLD . $name . CLEAR .$in .  $opt{ret_color} . $out
+			);
 		}
 		
-		return @res;
+		return wantarray ? @res : "@res";
 	};
 }
 
