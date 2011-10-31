@@ -21,6 +21,7 @@ has 'include_colspec' => ( is => 'ro', isa => 'ArrayRef[Str]', default => sub {[
 has 'relation_sep' => ( is => 'ro', isa => 'Str', default => '__' );
 
 has 'updatable_colspec' => ( is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]} );
+has 'creatable_colspec' => ( is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]} );
 
 has 'ResultSource' => (
 	is => 'ro',
@@ -44,7 +45,8 @@ sub _build_TableSpec {
 		relation_sep => $self->relation_sep,
 		ResultClass => $self->ResultClass,
 		include_colspec => $self->include_colspec,
-		updatable_colspec => $self->updatable_colspec
+		updatable_colspec => $self->updatable_colspec,
+		creatable_colspec => $self->creatable_colspec
 	);
 }
 
@@ -483,6 +485,13 @@ before DataStore2_BUILD => sub {
 		@{$self->TableSpec->updatable_colspec} > 0 and 
 		not $self->can('update_records')
 	);
+	
+	# Dynamically toggle the addition of a 'create_records' method
+	# The existence of this method is part of the DataStore2 API
+	$self->meta->add_method('create_records', $self->meta->find_method_by_name('_dbiclink_create_records')) if (
+		@{$self->TableSpec->creatable_colspec} > 0 and 
+		not $self->can('create_records')
+	);
 };
 
 # Gets programatically added as a method named 'update_records' (see BUILD modifier method above)
@@ -509,10 +518,7 @@ sub _dbiclink_update_records {
 				my $BaseRow = $Rs->search($self->record_pk_cond($pkVal))->next or die usererr "Failed to find row.";
 				
 				my @columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } keys %$data;
-				
-				scream(\@columns,$self->TableSpec->updatable_colspec);
 				@columns = $self->TableSpec->filter_updatable_columns(@columns);
-				scream_color(CYAN,\@columns);
 				
 				my $relspecs = $self->TableSpec->columns_to_relspec_map(@columns);
 				
@@ -557,6 +563,49 @@ sub _dbiclink_update_records {
 		msg => 'Update Succeeded'
 	};
 }
+
+
+# Gets programatically added as a method named 'create_records' (see BUILD modifier method above)
+sub _dbiclink_create_records {
+	my $self = shift;
+	my $params = shift;
+	
+	my $arr = $params;
+	$arr = [ $params ] if (ref($params) eq 'HASH');
+	
+	my $Rs = $self->ResultSource->resultset;
+	
+	my @updated_keyvals = ();
+
+	try {
+		$self->ResultSource->schema->txn_do(sub {
+			foreach my $data (@$arr) {
+			
+				# TODO: separate out columns to be created in other Tables, and create
+				# each accordning to creatable_colspec:
+				
+				my $Row = $Rs->create($data);
+				push @updated_keyvals, $self->generate_record_pk_value({ $Row->get_columns });
+				
+			}
+		});
+	}
+	catch {
+		my $err = shift;
+		die usererr rawhtml $self->make_dbic_exception_friendly($err), title => 'Database Error';
+	};
+	
+	# Perform a fresh lookup of all the records we just updated and send them back to the client:
+	my $newdata = $self->DataStore->read({ columns => [ keys %{ $arr->[0] } ], id_in => \@updated_keyvals });
+	
+	return {
+		%$newdata,
+		success => \1,
+		msg => 'Create Succeeded',
+		use_this => 1
+	};
+}
+
 
 
 sub make_dbic_exception_friendly {

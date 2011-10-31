@@ -351,6 +351,15 @@ has 'updatable_colspec' => (
 	}
 );
 
+has 'creatable_colspec' => ( 
+	is => 'ro', isa => 'ArrayRef[ColSpec]', default => sub {[]},
+	trigger => sub {
+		my ($self,$spec) = @_;
+		$self->_colspec_attr_init_trigger($spec);
+		@$spec = $self->expand_relspec_relationship_columns([@$spec],1);
+	}
+);
+
 sub _colspec_attr_init_trigger {
 	my ($self,$spec) = @_;
 	my $sep = $self->relation_sep;
@@ -591,6 +600,23 @@ sub filter_updatable_columns {
 	});
 }
 
+
+# accepts a list of column names and returns the names that match creatable_colspec
+sub filter_creatable_columns {
+	my $self = shift;
+	my @columns = @_;
+	
+	# First filter by include_colspec:
+	@columns = $self->colspec_select_columns({
+		colspecs => $self->include_colspec,
+		columns => \@columns,
+	});
+
+	return $self->colspec_select_columns({
+		colspecs => $self->creatable_colspec,
+		columns => \@columns,
+	});
+}
 
 
 # Tests whether or not the colspec in the second arg matches the colspec of the first arg
