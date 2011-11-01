@@ -172,6 +172,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2StoreButtons = {
 				if(store.proxy.getConnection().isLoading()) { return; }
 				var newRec = new store.recordType();
 				store.add(newRec);
+				if(grid.persist_immediately) { store.save(); }
 			}
 		},cnf || {}));
 	},
@@ -188,6 +189,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2StoreButtons = {
 				var store = grid.store;
 				if(store.proxy.getConnection().isLoading()) { return; }
 				store.remove(grid.getSelectionModel().getSelections());
+				if(grid.persist_immediately) { store.save(); }
 			}
 		},cnf || {}));
 		
@@ -225,6 +227,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2StoreButtons = {
 		
 		var api = grid.store.api;
 		if(!api.create && !api.update && !api.destroy) { return false; }
+		if(grid.persist_immediately) { return false; }
 		
 		var btn = new Ext.Button(Ext.apply({
 			tooltip: 'Save',
@@ -262,6 +265,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2StoreButtons = {
 		
 		var api = grid.store.api;
 		if(!api.create && !api.update && !api.destroy) { return false; }
+		if(grid.persist_immediately) { return false; }
 		
 		var btn =  new Ext.Button(Ext.apply({
 			tooltip: 'Undo',
@@ -406,6 +410,9 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		
 		
 		
+		if(this.persist_immediately && this.store.api.update) {
+			this.on('afteredit',function(){ this.getStore().save(); },this);
+		}
 		
 		this.store.undoChanges = function() {
 			this.each(function(Record){
