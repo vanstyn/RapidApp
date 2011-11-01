@@ -153,7 +153,156 @@ Ext.ux.RapidApp.AppTab.gridrow_nav = function(grid,index,e) {
 
 
 
+
+
+
+
+
+Ext.ux.RapidApp.AppTab.AppGrid2StoreButtons = {
 	
+	add: function(cnf,grid) {
+		
+		if(!grid.store.api.create) { return false; }
+		
+		return new Ext.Button(Ext.apply({
+			tooltip: 'Add',
+			iconCls: 'icon-add',
+			handler: function(btn) {
+				var store = grid.store;
+				if(store.proxy.getConnection().isLoading()) { return; }
+				var newRec = new store.recordType();
+				store.add(newRec);
+			}
+		},cnf || {}));
+	},
+	
+	delete: function(cnf,grid) {
+		
+		if(!grid.store.api.destroy) { return false; }
+		
+		var btn = new Ext.Button(Ext.apply({
+			tooltip: 'Delete',
+			iconCls: 'icon-delete',
+			disabled: true,
+			handler: function(btn) {
+				var store = grid.store;
+				if(store.proxy.getConnection().isLoading()) { return; }
+				store.remove(grid.getSelectionModel().getSelections());
+			}
+		},cnf || {}));
+		
+		grid.on('afterrender',function() {
+		
+			var toggleBtn = function(sm) {
+				if (sm.getSelections().length > 0) {
+					btn.setDisabled(false);
+				}
+				else {
+					btn.setDisabled(true);
+				}
+			};
+			
+			var sm = this.getSelectionModel();
+			sm.on('selectionchange',toggleBtn,sm);
+		},grid);
+			
+		return btn;
+	},
+	
+	reload: function(cnf,grid) {
+		
+		return new Ext.Button(Ext.apply({
+			tooltip: 'Reload',
+			iconCls: 'x-tbar-loading',
+			handler: function(btn) {
+				var store = grid.store;
+				store.reload();
+			}
+		},cnf || {}));
+	},
+	
+	save: function(cnf,grid) {
+		
+		var btn = new Ext.Button(Ext.apply({
+			tooltip: 'Save',
+			iconCls: 'icon-save',
+			disabled: true,
+			handler: function(btn) {
+				var store = grid.store;
+				store.save();
+			}
+		},cnf || {}));
+			
+		var toggleBtn = function(store) {
+			var modifiedRecords = store.getModifiedRecords();
+			if (store.getModifiedRecords().length > 0 || store.removed.length > 0) {
+				btn.setDisabled(false);
+			}
+			else {
+				btn.setDisabled(true);
+			}
+		};
+		
+		grid.store.on('load',toggleBtn,grid.store);
+		grid.store.on('read',toggleBtn,grid.store);
+		grid.store.on('write',toggleBtn,grid.store);
+		grid.store.on('datachanged',toggleBtn,grid.store);
+		grid.store.on('clear',toggleBtn,grid.store);
+		grid.store.on('update',toggleBtn,grid.store);
+		grid.store.on('remove',toggleBtn,grid.store);
+		grid.store.on('add',toggleBtn,grid.store);
+			
+		
+		
+		
+		
+		return btn;
+	},
+	
+	undo: function(cnf,grid) {
+		
+		var btn =  new Ext.Button(Ext.apply({
+			tooltip: 'Undo',
+			iconCls: 'icon-arrow-undo',
+			disabled: true,
+			handler: function(btn) {
+				var store = grid.store;
+				// custom function, see AppGrid2 below
+				store.undoChanges.call(store);
+			}
+		},cnf || {}));
+			
+		var toggleBtn = function(store) {
+			var modifiedRecords = store.getModifiedRecords();
+			if (store.getModifiedRecords().length > 0 || store.removed.length > 0) {
+				btn.setDisabled(false);
+			}
+			else {
+				btn.setDisabled(true);
+			}
+		};
+		
+		grid.store.on('load',toggleBtn,grid.store);
+		grid.store.on('read',toggleBtn,grid.store);
+		grid.store.on('write',toggleBtn,grid.store);
+		grid.store.on('datachanged',toggleBtn,grid.store);
+		grid.store.on('clear',toggleBtn,grid.store);
+		grid.store.on('update',toggleBtn,grid.store);
+		grid.store.on('remove',toggleBtn,grid.store);
+		grid.store.on('add',toggleBtn,grid.store);
+			
+		return btn;
+			
+	}
+	
+};
+
+
+
+
+
+
+
 Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	
 	viewConfig: { 
@@ -254,6 +403,33 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		var bbar_items = [];
 		if(Ext.isArray(this.bbar)) { bbar_items = this.bbar; }
 		
+		
+		
+		
+		this.store.undoChanges = function() {
+			this.each(function(Record){
+					if(Record.phantom) { this.remove(Record); } 
+				});
+			this.rejectChanges();
+			this.fireEvent('update',this);
+		};
+		this.store.on('beforeload',this.store.undoChanges,this.store);
+		
+		Ext.each(this.store_buttons,function(btn_name) {
+			// Skip redundant reload if we have a paging toolbar
+			if(btn_name == 'reload' && this.pageSize) { return; }
+			
+			var btn_constructor = Ext.ux.RapidApp.AppTab.AppGrid2StoreButtons[btn_name];
+			if(! btn_constructor) { return; }
+			var btn = btn_constructor({},this);
+			if(!btn) { return; }
+			bbar_items.push(btn);
+		},this);
+		
+		
+		
+		
+		
 		this.bbar = {
 			xtype:	'toolbar',
 			items: bbar_items
@@ -265,7 +441,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 				store: this.store,
 				pageSize: this.pageSize,
 				displayInfo : true,
-				prependButtons: true,
+				//prependButtons: true,
 				items: bbar_items
 			});
 			if(this.maxPageSize) { this.bbar.maxPageSize = this.maxPageSize; }
