@@ -223,6 +223,9 @@ Ext.ux.RapidApp.AppTab.AppGrid2StoreButtons = {
 	
 	save: function(cnf,grid) {
 		
+		var api = grid.store.api;
+		if(!api.create && !api.update && !api.destroy) { return false; }
+		
 		var btn = new Ext.Button(Ext.apply({
 			tooltip: 'Save',
 			iconCls: 'icon-save',
@@ -252,14 +255,13 @@ Ext.ux.RapidApp.AppTab.AppGrid2StoreButtons = {
 		grid.store.on('remove',toggleBtn,grid.store);
 		grid.store.on('add',toggleBtn,grid.store);
 			
-		
-		
-		
-		
 		return btn;
 	},
 	
 	undo: function(cnf,grid) {
+		
+		var api = grid.store.api;
+		if(!api.create && !api.update && !api.destroy) { return false; }
 		
 		var btn =  new Ext.Button(Ext.apply({
 			tooltip: 'Undo',
@@ -292,7 +294,6 @@ Ext.ux.RapidApp.AppTab.AppGrid2StoreButtons = {
 		grid.store.on('add',toggleBtn,grid.store);
 			
 		return btn;
-			
 	}
 	
 };
