@@ -20,8 +20,8 @@ has 'get_record_display' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default =
 has 'include_colspec' => ( is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]} );
 has 'relation_sep' => ( is => 'ro', isa => 'Str', default => '__' );
 
-has 'updatable_colspec' => ( is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]} );
-has 'creatable_colspec' => ( is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]} );
+has 'updatable_colspec' => ( is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default => undef );
+has 'creatable_colspec' => ( is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default => undef );
 
 has 'ResultSource' => (
 	is => 'ro',
@@ -40,14 +40,18 @@ sub _build_ResultClass {
 has 'TableSpec' => ( is => 'ro', isa => 'RapidApp::TableSpec', lazy_build => 1 );
 sub _build_TableSpec {
 	my $self = shift;
-	return RapidApp::TableSpec->with_traits('RapidApp::TableSpec::Role::DBIC')->new(
+	
+	my %opt = (
 		name => $self->ResultClass->table,
 		relation_sep => $self->relation_sep,
 		ResultClass => $self->ResultClass,
-		include_colspec => $self->include_colspec,
-		updatable_colspec => $self->updatable_colspec,
-		creatable_colspec => $self->creatable_colspec
+		include_colspec => $self->include_colspec
 	);
+	
+	$opt{updatable_colspec} = $self->updatable_colspec if (defined $self->updatable_colspec);
+	$opt{creatable_colspec} = $self->creatable_colspec if (defined $self->creatable_colspec);
+	
+	return RapidApp::TableSpec->with_traits('RapidApp::TableSpec::Role::DBIC')->new(%opt);
 }
 
 
@@ -482,14 +486,14 @@ before DataStore2_BUILD => sub {
 	# Dynamically toggle the addition of an 'update_records' method
 	# The existence of this method is part of the DataStore2 API
 	$self->meta->add_method('update_records', $self->meta->find_method_by_name('_dbiclink_update_records')) if (
-		@{$self->TableSpec->updatable_colspec} > 0 and 
+		defined $self->updatable_colspec and 
 		not $self->can('update_records')
 	);
 	
 	# Dynamically toggle the addition of a 'create_records' method
 	# The existence of this method is part of the DataStore2 API
 	$self->meta->add_method('create_records', $self->meta->find_method_by_name('_dbiclink_create_records')) if (
-		@{$self->TableSpec->creatable_colspec} > 0 and 
+		defined $self->creatable_colspec and 
 		not $self->can('create_records')
 	);
 };
@@ -538,7 +542,7 @@ sub _dbiclink_update_records {
 					$t->add($_,$current{$_},$change->{$_}) for (keys %$change);
 					
 					$relspec = '*' unless ($relspec and $relspec ne '');
-					scream_color(WHITE.ON_BLUE.BOLD,$relspec . '/' . ref($Row) . '  (update diff)' . "\n" . $t->render);
+					scream_color(WHITE.ON_BLUE.BOLD,$relspec . '/' . ref($Row) . '  (UPDATE)' . "\n" . $t->render);
 					#scream_color(WHITE.ON_BLUE.BOLD,$relspec . '/' . ref($Row) . '  (update diff)',$change);
 					
 					$Row->update($change) if (keys %$change > 0);
@@ -584,7 +588,18 @@ sub _dbiclink_create_records {
 				# TODO: separate out columns to be created in other Tables, and create
 				# each accordning to creatable_colspec:
 				
-				my $Row = $Rs->create($data);
+				my @columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } keys %$data;
+				@columns = $self->TableSpec->filter_creatable_columns(@columns);
+				
+				my %create = map { $_ => $data->{$_} } @columns;
+				
+				
+				my $t = Text::TabularDisplay->new(qw(column value));
+				$t->add($_,$create{$_}) for (keys %create);
+				scream_color(WHITE.ON_GREEN.BOLD, ref($Rs) . '  (CREATE)' . "\n" . $t->render);
+			
+				
+				my $Row = $Rs->create(\%create);
 				push @updated_keyvals, $self->generate_record_pk_value({ $Row->get_columns });
 				
 			}

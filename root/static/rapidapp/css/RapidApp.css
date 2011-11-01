@@ -172,6 +172,8 @@ pre {
 .icon-gray-down { background-image: url(/static/rapidapp/images/gray_down.png) !important; }
 .icon-gray-down-with-pencil { background-image: url(/static/rapidapp/images/gray_down_with_pencil.png) !important; }
 
+.icon-arrow-undo { background-image: url(/static/rapidapp/images/arrow_undo.png) !important; }
+
 .tbar-title-medium {
 	font-size:175% !important;
 	padding:6px !important;
