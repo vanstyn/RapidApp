@@ -385,6 +385,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			// "edit" element itself was clicked:
 			if(target.findParent('div.require-edit-click') && !target.hasClass('edit')) { return; }
 			this.set_field_editable(editEl,fieldname,index,Record);
+			
 		}
 		
 	},
@@ -489,8 +490,22 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 				var fieldname = this.get_fieldname_by_editEl(editEl);
 				this.set_field_editable(editEl,fieldname,index,Record);
 			},this);
-
+			
+			// Scroll into view:
+			this.scrollRecordIntoView.defer(100,this,[Record]);
 		}
+	},
+	
+	scrollRecordIntoView: function(Record) {
+		var node = this.getParentScrollNode(this.getEl().dom);
+		if(!node) { return; }
+		Ext.fly(this.getNode(Record)).scrollIntoView(node);
+	},
+	
+	getParentScrollNode: function(node) {
+		if(node.style.overflow == 'auto') { return node; }
+		if(node.parentNode) { return this.getParentScrollNode(node.parentNode); }
+		return null;
 	}
 });
 Ext.reg('appdv', Ext.ux.RapidApp.AppDV.DataView);
