@@ -11,6 +11,14 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		this.components = [];
 		
 		this.on('click',this.click_controller,this);
+		
+		this.store.on('beforesave',this.onBeforesave,this);
+	},
+	
+	onBeforesave: function() {
+		this.isSaving = true;
+		this.simulateSaveClick.call(this);
+		this.isSaving = false;
 	},
 	
 	refresh: function(){
@@ -477,6 +485,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 				Store.remove(Record);
 			}
 			
+			this.scrollBottomToolbarIntoView.defer(100,this);
+			if (this.isSaving) { return; }
 			return Store.save();
 		}
 		else {
