@@ -701,7 +701,7 @@ sub _dbiclink_destroy_records {
 			my @Rows = ();
 			foreach my $pk (@$arr) {
 				my $Row = $Rs->search($self->record_pk_cond($pk))->next or die usererr "Failed to find row by record_pd: $pk";
-				scream($self->destroyable_relspec);
+				
 				foreach my $rel (reverse sort @{$self->destroyable_relspec}) {
 					next unless(
 						$rel =~ /^[a-zA-Z0-9\-\_]+$/ 
