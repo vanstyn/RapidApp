@@ -4,13 +4,13 @@ Ext.ns('Ext.ux.RapidApp.AppDV');
 Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	
 	initComponent: function(){
-			Ext.each(this.items,function(item) {
-				item.ownerCt = this;
-			},this);
-			Ext.ux.RapidApp.AppDV.DataView.superclass.initComponent.call(this);
-			this.components = [];
-			
-			this.on('click',this.click_controller,this);
+		Ext.each(this.items,function(item) {
+			item.ownerCt = this;
+		},this);
+		Ext.ux.RapidApp.AppDV.DataView.superclass.initComponent.call(this);
+		this.components = [];
+		
+		this.on('click',this.click_controller,this);
 	},
 	
 	refresh: function(){
@@ -44,10 +44,16 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		var domEl = this.getNode(Record);
 		var editEl = new Ext.Element(domEl);
 		
+		this.currentEditEl = editEl;
+				
 		this.handle_edit_record(editEl,editEl,Record,index,editEl);
 	},
 	
 	onRemove: function(ds, record, index){
+		if(record == this.currentEditRecord) {
+			this.simulateCancelClick(record,index,this.currentEditEl);
+		}
+		
 		this.destroyItems(index);
 		Ext.ux.RapidApp.AppDV.DataView.superclass.onRemove.apply(this, arguments);
 	},
@@ -179,6 +185,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			return this.getStore().insert(0,newRec);
 		}
 	},
+	
+	
 	
 	set_field_editable: function(editEl,fieldname,index,Record) {
 		
@@ -388,19 +396,28 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		Record.endEdit();
 		this.currentEditRecord = null;
 	},
-	simulateSaveClick: function() {
+	simulateEditRecordClick: function(cls,Record,index,editEl) {
 		
-		var Record = this.currentEditRecord;
+		if(!Record) { Record = this.currentEditRecord; }
 		if(!Record) { return; }
 		
-		var domEl = this.getNode(Record);
-		var editEl = new Ext.Element(domEl);
+		if(!editEl) {
+			var domEl = this.getNode(Record);
+			editEl = new Ext.Element(domEl);
+		}
 
-		var saveTargetEl = editEl.child('div.save');		
-		var index = this.getStore().indexOf(Record);
+		var TargetEl = editEl.child(cls);		
+		if(typeof index === 'undefined') { index = this.getStore().indexOf(Record); }
 
-		return this.handle_edit_record(saveTargetEl,editEl,Record,index,editEl);
+		return this.handle_edit_record(TargetEl,editEl,Record,index,editEl);
 	},
+	simulateSaveClick: function() {
+		return this.simulateEditRecordClick('div.save');
+	},
+	simulateCancelClick: function(Record,index,editEl) {
+		return this.simulateEditRecordClick('div.cancel',Record,index,editEl);
+	},
+	
 	handle_edit_record: function (target,editEl,Record,index,domEl) {
 
 		var editDoms = domEl.query('div.editable-value');

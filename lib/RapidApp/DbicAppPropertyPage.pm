@@ -27,10 +27,10 @@ use RapidApp::Include qw(sugar perlutil);
 has 'ResultSource' => ( is => 'ro', required => 1 );
 
 
-has '+DataStore_build_params' => ( default => sub {{
-	store_autoLoad => 1,
-	reload_on_save => 0,
-}});
+#has '+DataStore_build_params' => ( default => sub {{
+#	store_autoLoad => 1,
+#	reload_on_save => 0,
+#}});
 
 
 sub BUILD {

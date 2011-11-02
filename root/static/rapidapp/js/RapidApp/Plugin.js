@@ -1247,7 +1247,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		Ext.copyTo(this,cmp,[
 			'store_buttons',
 			'show_store_button_text',
-			'store_button_cnf'
+			'store_button_cnf',
+			'store_add_initData'
 		]);
 		
 		this.initAdditionalStoreMethods.call(this,this.cmp.store);
@@ -1262,12 +1263,12 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		if(this.cmp.setup_bbar_store_buttons) {
 			this.cmp.on('render',this.insertStoreButtonsBbar,this);
 		}
-		
 	},
 	
 	show_store_button_text: false,
 	store_buttons: [ 'add', 'delete', 'reload', 'save', 'undo' ],
 	store_button_cnf: {},
+	store_add_initData: {},
 	
 	initAdditionalStoreMethods: function(store) {
 		
@@ -1314,7 +1315,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	getStoreButton: function(name,showtext) {
 		
 		if(!this.cmp.loadedStoreButtons[name]) {
-			var constructor = this.storeButtonConstructors[name];
+			var constructor = this.getStoreButtonConstructors.call(this)[name];
 			if(! constructor) { return; }
 			
 			var cnf = this.store_button_cnf[name] || {};
@@ -1328,146 +1329,154 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		return this.cmp.loadedStoreButtons[name];
 	},
 	
-	storeButtonConstructors: {
-		
-		add: function(cnf,cmp,showtext) {
-			
-			if(!cmp.store.api.create) { return false; }
-			
-			var btn = cmp.store.buttonConstructor(Ext.apply({
-				tooltip: 'Add',
-				iconCls: 'icon-add',
-				handler: function(btn) {
-					var store = cmp.store;
-					if(store.proxy.getConnection().isLoading()) { return; }
-					var newRec = new store.recordType();
-					store.add(newRec);
-					if(cmp.persist_immediately) { store.save(); }
-				}
-			},cnf || {}),showtext);
+	getStoreButtonConstructors: function() {
+		var initData = this.store_add_initData;
+		return {
+			add: function(cnf,cmp,showtext) {
 				
-			cmp.store.addTrackedToggleFunc(function(store) {
-				if (store.hasPhantomRecords()) {
-					btn.setDisabled(true);
-				}
-				else {
-					btn.setDisabled(false);
-				}
-			});
+				if(!cmp.store.api.create) { return false; }
 				
-			return btn;
-		},
-		
-		delete: function(cnf,cmp,showtext) {
+				var btn = cmp.store.buttonConstructor(Ext.apply({
+					tooltip: 'Add',
+					iconCls: 'icon-add',
+					handler: function(btn) {
+						var store = cmp.store;
+						if(store.proxy.getConnection().isLoading()) { return; }
+						var newRec = new store.recordType(initData);
+						store.add(newRec);
+						if(cmp.persist_immediately) { store.save(); }
+					}
+				},cnf || {}),showtext);
+					
+				cmp.store.addTrackedToggleFunc(function(store) {
+					if (store.hasPhantomRecords()) {
+						btn.setDisabled(true);
+					}
+					else {
+						btn.setDisabled(false);
+					}
+				});
+					
+				return btn;
+			},
 			
-			if(!cmp.store.api.destroy) { return false; }
+			delete: function(cnf,cmp,showtext) {
+				
+				if(!cmp.store.api.destroy) { return false; }
+				
+				var btn = cmp.store.buttonConstructor(Ext.apply({
+					tooltip: 'Delete',
+					iconCls: 'icon-delete',
+					disabled: true,
+					handler: function(btn) {
+						var store = cmp.store;
+						if(store.proxy.getConnection().isLoading()) { return; }
+						store.remove(cmp.getSelectionModel().getSelections());
+						if(cmp.persist_immediately) { store.save(); }
+					}
+				},cnf || {}),showtext);
+				
+				cmp.on('afterrender',function() {
+				
+					var toggleBtn = function(sm) {
+						if (sm.getSelections().length > 0) {
+							btn.setDisabled(false);
+						}
+						else {
+							btn.setDisabled(true);
+						}
+					};
+					
+					var sm = this.getSelectionModel();
+					sm.on('selectionchange',toggleBtn,sm);
+				},cmp);
+					
+				return btn;
+			},
 			
-			var btn = cmp.store.buttonConstructor(Ext.apply({
-				tooltip: 'Delete',
-				iconCls: 'icon-delete',
-				disabled: true,
-				handler: function(btn) {
-					var store = cmp.store;
-					if(store.proxy.getConnection().isLoading()) { return; }
-					store.remove(cmp.getSelectionModel().getSelections());
-					if(cmp.persist_immediately) { store.save(); }
-				}
-			},cnf || {}),showtext);
+			reload: function(cnf,cmp,showtext) {
+				
+				return cmp.store.buttonConstructor(Ext.apply({
+					tooltip: 'Reload',
+					iconCls: 'x-tbar-loading',
+					handler: function(btn) {
+						var store = cmp.store;
+						store.reload();
+					}
+				},cnf || {}),showtext);
+			},
 			
-			cmp.on('afterrender',function() {
-			
-				var toggleBtn = function(sm) {
-					if (sm.getSelections().length > 0) {
+			save: function(cnf,cmp,showtext) {
+				
+				var api = cmp.store.api;
+				if(!api.create && !api.update && !api.destroy) { return false; }
+				if(cmp.persist_immediately) { return false; }
+				
+				var btn = cmp.store.buttonConstructor(Ext.apply({
+					tooltip: 'Save',
+					iconCls: 'icon-save',
+					disabled: true,
+					handler: function(btn) {
+						var store = cmp.store;
+						store.save();
+					}
+				},cnf || {}),showtext);
+					
+				cmp.store.addTrackedToggleFunc(function(store) {
+					var modifiedRecords = store.getModifiedRecords();
+					if (store.getModifiedRecords().length > 0 || store.removed.length > 0) {
 						btn.setDisabled(false);
 					}
 					else {
 						btn.setDisabled(true);
 					}
-				};
-				
-				var sm = this.getSelectionModel();
-				sm.on('selectionchange',toggleBtn,sm);
-			},cmp);
-				
-			return btn;
-		},
-		
-		reload: function(cnf,cmp,showtext) {
+				});
+					
+				return btn;
+			},
 			
-			return cmp.store.buttonConstructor(Ext.apply({
-				tooltip: 'Reload',
-				iconCls: 'x-tbar-loading',
-				handler: function(btn) {
-					var store = cmp.store;
-					store.reload();
-				}
-			},cnf || {}),showtext);
-		},
-		
-		save: function(cnf,cmp,showtext) {
-			
-			var api = cmp.store.api;
-			if(!api.create && !api.update && !api.destroy) { return false; }
-			if(cmp.persist_immediately) { return false; }
-			
-			var btn = cmp.store.buttonConstructor(Ext.apply({
-				tooltip: 'Save',
-				iconCls: 'icon-save',
-				disabled: true,
-				handler: function(btn) {
-					var store = cmp.store;
-					store.save();
-				}
-			},cnf || {}),showtext);
+			undo: function(cnf,cmp,showtext) {
 				
-			cmp.store.addTrackedToggleFunc(function(store) {
-				var modifiedRecords = store.getModifiedRecords();
-				if (store.getModifiedRecords().length > 0 || store.removed.length > 0) {
-					btn.setDisabled(false);
-				}
-				else {
-					btn.setDisabled(true);
-				}
-			});
+				var api = cmp.store.api;
+				if(!api.create && !api.update && !api.destroy) { return false; }
+				if(cmp.persist_immediately) { return false; }
 				
-			return btn;
-		},
-		
-		undo: function(cnf,cmp,showtext) {
-			
-			var api = cmp.store.api;
-			if(!api.create && !api.update && !api.destroy) { return false; }
-			if(cmp.persist_immediately) { return false; }
-			
-			var btn = cmp.store.buttonConstructor(Ext.apply({
-				tooltip: 'Undo',
-				iconCls: 'icon-arrow-undo',
-				disabled: true,
-				handler: function(btn) {
-					var store = cmp.store;
-					store.undoChanges.call(store);
-				}
-			},cnf || {}),showtext);
-				
-			cmp.store.addTrackedToggleFunc(function(store) {
-				var modifiedRecords = store.getModifiedRecords();
-				if (store.getModifiedRecords().length > 0 || store.removed.length > 0) {
-					btn.setDisabled(false);
-				}
-				else {
-					btn.setDisabled(true);
-				}
-			});
-				
-			return btn;
-		}
+				var btn = cmp.store.buttonConstructor(Ext.apply({
+					tooltip: 'Undo',
+					iconCls: 'icon-arrow-undo',
+					disabled: true,
+					handler: function(btn) {
+						var store = cmp.store;
+						store.undoChanges.call(store);
+					}
+				},cnf || {}),showtext);
+					
+				cmp.store.addTrackedToggleFunc(function(store) {
+					var modifiedRecords = store.getModifiedRecords();
+					if (store.getModifiedRecords().length > 0 || store.removed.length > 0) {
+						btn.setDisabled(false);
+					}
+					else {
+						btn.setDisabled(true);
+					}
+				});
+					
+				return btn;
+			}
+		};
 	},
-	
 	
 	insertStoreButtonsBbar: function() {
 		var index = 0;
 		var skip_reload = false;
-		var bbar = this.cmp.getBottomToolbar();
+		var bbar;
+
+		if(Ext.isFunction(this.cmp.getBottomToolbar)) { 
+			bbar = this.cmp.getBottomToolbar();
+		}
+		else if (Ext.isFunction(this.cmp.ownerCt.getBottomToolbar)) {
+			bbar = this.cmp.ownerCt.getBottomToolbar();
+		}
 		
 		if(!bbar) { return; }
 		
