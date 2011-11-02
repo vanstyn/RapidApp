@@ -513,6 +513,32 @@ before DataStore2_BUILD => sub {
 	);
 };
 
+# convenience method: prints the primary keys of a Row object
+# just used to print info to the screen during CRUD ops below
+sub get_Row_Rs_label {
+	my $self = shift;
+	my $Row = shift;
+	my $verbose = shift;
+	
+	if($Row->isa('DBIx::Class::ResultSet')) {
+		my $Rs = $Row;
+		my $str = ref($Rs) . ' [' . $Rs->count . ' rows]';
+		return $str unless ($verbose);
+		$str .= "\n " . $self->get_Row_Rs_label($_) for ($Rs->all);
+		return $str;
+	}
+
+	my $Source = $Row->result_source;
+	my @keys = $Source->primary_columns;
+	my $data = { $Row->get_columns };
+	
+	my $str = ref($Row) . ' [';
+	$str .= $_ . ': ' . $data->{$_} for (@keys);
+	$str .= ']';
+	
+	return $str;
+}
+
 # Gets programatically added as a method named 'update_records' (see BUILD modifier method above)
 # 
 # This first runs updates on each supplied (and allowed) relation.
@@ -556,9 +582,9 @@ sub _dbiclink_update_records {
 					my $t = Text::TabularDisplay->new(qw(column old new));
 					$t->add($_,$current{$_},$change->{$_}) for (keys %$change);
 					
-					$relspec = '*' unless ($relspec and $relspec ne '');
-					scream_color(WHITE.ON_BLUE.BOLD,$relspec . '/' . ref($Row) . '  (UPDATE)' . "\n" . $t->render);
-					#scream_color(WHITE.ON_BLUE.BOLD,$relspec . '/' . ref($Row) . '  (update diff)',$change);
+					#$relspec = '*' unless ($relspec and $relspec ne '');
+					#scream_color(WHITE.ON_BLUE.BOLD,$relspec . '/' . ref($Row) . '  (UPDATE)' . "\n" . $t->render);
+					scream_color(WHITE.ON_BLUE.BOLD,'DbicLink2 UPDATE  --->  ' . $self->get_Row_Rs_label($Row) . "\n" . $t->render);
 					
 					$Row->update($change) if (keys %$change > 0);
 				}
@@ -611,10 +637,10 @@ sub _dbiclink_create_records {
 				
 				my $t = Text::TabularDisplay->new(qw(column value));
 				$t->add($_,$create{$_}) for (keys %create);
-				scream_color(WHITE.ON_GREEN.BOLD, ref($Rs) . '  (CREATE)' . "\n" . $t->render);
-			
-				
+				scream_color(WHITE.ON_GREEN.BOLD, 'DbicLink2 CREATE  --->  ' . ref($Rs) . "\n" . $t->render);
+
 				my $Row = $Rs->create(\%create);
+				
 				push @updated_keyvals, $self->generate_record_pk_value({ $Row->get_columns });
 				
 			}
@@ -657,8 +683,12 @@ sub _dbiclink_destroy_records {
 						$rel =~ /^[a-zA-Z0-9\-\_]+$/ and
 						$Row->can($rel)
 					);
+					
+					scream_color(WHITE.ON_RED.BOLD,'DbicLink2 DESTROY  --->  ' . $self->get_Row_Rs_label($Row->$rel) . "\n");
 					$Row->$rel->delete;
 				}
+				scream_color(WHITE.ON_RED.BOLD,'DbicLink2 DESTROY  --->  ' . $self->get_Row_Rs_label($Row) . "\n");
+				$Row->delete;
 			}
 		});
 	}
