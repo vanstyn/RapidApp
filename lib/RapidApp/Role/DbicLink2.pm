@@ -42,9 +42,14 @@ has 'get_ResultSet' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default => sub
 	return sub { $self->ResultSource->resultset };
 });
 
+sub baseResultSet {
+	my $self = shift;
+	return $self->get_ResultSet->(@_);
+}
+
 sub _ResultSet {
 	my $self = shift;
-	my $Rs = $self->get_ResultSet->(@_);
+	my $Rs = $self->baseResultSet(@_);
 	$Rs = $self->ResultSet($Rs) if ($self->can('ResultSet'));
 	return $Rs;
 }
@@ -561,7 +566,8 @@ sub _dbiclink_update_records {
 	my $arr = $params;
 	$arr = [ $params ] if (ref($params) eq 'HASH');
 	
-	my $Rs = $self->ResultSource->resultset;
+	#my $Rs = $self->ResultSource->resultset;
+	my $Rs = $self->baseResultSet;
 	
 	my @updated_keyvals = ();
 
@@ -570,7 +576,7 @@ sub _dbiclink_update_records {
 			foreach my $data (@$arr) {
 				my $pkVal= $data->{$self->record_pk};
 				defined $pkVal or die ref($self)."->update_records: Record is missing primary key '".$self->record_pk."'";
-				my $BaseRow = $Rs->search($self->record_pk_cond($pkVal))->next or die usererr "Failed to find row.";
+				my $BaseRow = $Rs->search($self->record_pk_cond($pkVal))->next or die usererr "Failed to find row by record_pk: $pkVal";
 				
 				my @columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } keys %$data;
 				@columns = $self->TableSpec->filter_updatable_columns(@columns);
@@ -606,7 +612,8 @@ sub _dbiclink_update_records {
 	}
 	catch {
 		my $err = shift;
-		die usererr rawhtml $self->make_dbic_exception_friendly($err), title => 'Database Error';
+		$self->handle_dbic_exception($err);
+		#die usererr rawhtml $self->make_dbic_exception_friendly($err), title => 'Database Error';
 	};
 	
 	# Perform a fresh lookup of all the records we just updated and send them back to the client:
@@ -628,7 +635,8 @@ sub _dbiclink_create_records {
 	my $arr = $params;
 	$arr = [ $params ] if (ref($params) eq 'HASH');
 	
-	my $Rs = $self->ResultSource->resultset;
+	#my $Rs = $self->ResultSource->resultset;
+	my $Rs = $self->baseResultSet;
 	
 	my @updated_keyvals = ();
 
@@ -658,7 +666,8 @@ sub _dbiclink_create_records {
 	}
 	catch {
 		my $err = shift;
-		die usererr rawhtml $self->make_dbic_exception_friendly($err), title => 'Database Error';
+		$self->handle_dbic_exception($err);
+		#die usererr rawhtml $self->make_dbic_exception_friendly($err), title => 'Database Error';
 	};
 	
 	# Perform a fresh lookup of all the records we just updated and send them back to the client:
@@ -680,13 +689,14 @@ sub _dbiclink_destroy_records {
 	my $arr = $params;
 	$arr = [ $params ] if (not ref($params));
 	
-	my $Rs = $self->ResultSource->resultset;
+	#my $Rs = $self->ResultSource->resultset;
+	my $Rs = $self->baseResultSet;
 	
 	try {
 		$self->ResultSource->schema->txn_do(sub {
 			my @Rows = ();
 			foreach my $pk (@$arr) {
-				my $Row = $Rs->search($self->record_pk_cond($pk))->next or die usererr "Failed to find row.";
+				my $Row = $Rs->search($self->record_pk_cond($pk))->next or die usererr "Failed to find row by record_pd: $pk";
 				scream($self->destroyable_relspec);
 				foreach my $rel (reverse sort @{$self->destroyable_relspec}) {
 					next unless(
@@ -706,10 +716,19 @@ sub _dbiclink_destroy_records {
 	}
 	catch {
 		my $err = shift;
-		die usererr rawhtml $self->make_dbic_exception_friendly($err), title => 'Database Error';
+		$self->handle_dbic_exception($err);
+		#die usererr rawhtml $self->make_dbic_exception_friendly($err), title => 'Database Error';
 	};
 	
 	return 1;
+}
+
+
+sub handle_dbic_exception {
+	my $self = shift;
+	my $exception = shift;
+	die $exception if (ref($exception) =~ /^RapidApp\:\:Responder/);
+	die usererr rawhtml $self->make_dbic_exception_friendly($exception), title => 'DbicLink2 Database Error';
 }
 
 
