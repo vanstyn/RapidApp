@@ -23,6 +23,14 @@ has 'relation_sep' => ( is => 'ro', isa => 'Str', default => '__' );
 has 'updatable_colspec' => ( is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default => undef );
 has 'creatable_colspec' => ( is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default => undef );
 
+# Specify a list of relspecs to enable record destroy anmd specify which related rows
+# should also be destroyed. For the base rel only, '*', specify other rels by name
+# NOTE: This is simular in principle, but NOT the same as the colspecs. There is currently
+# no real logic in this, no wildcard support, etc. It is just a list of relationship names
+# that will be followed and be deleted along with the base. BE CAREFUL! This will delete whole
+# sets of related rows. Most of the time you'll only want to put '*' in here
+has 'destroyable_relspec' => ( is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default => undef );
+
 has 'ResultSource' => (
 	is => 'ro',
 	isa => 'DBIx::Class::ResultSource',
@@ -496,6 +504,13 @@ before DataStore2_BUILD => sub {
 		defined $self->creatable_colspec and 
 		not $self->can('create_records')
 	);
+	
+	# Dynamically toggle the addition of a 'create_records' method
+	# The existence of this method is part of the DataStore2 API
+	$self->meta->add_method('destroy_records', $self->meta->find_method_by_name('_dbiclink_destroy_records')) if (
+		defined $self->destroyable_relspec and 
+		not $self->can('destroy_records')
+	);
 };
 
 # Gets programatically added as a method named 'update_records' (see BUILD modifier method above)
@@ -621,6 +636,39 @@ sub _dbiclink_create_records {
 	};
 }
 
+# Gets programatically added as a method named 'destroy_records' (see BUILD modifier method above)
+sub _dbiclink_destroy_records {
+	my $self = shift;
+	my $params = shift;
+	
+	my $arr = $params;
+	$arr = [ $params ] if (not ref($params));
+	
+	my $Rs = $self->ResultSource->resultset;
+	
+	try {
+		$self->ResultSource->schema->txn_do(sub {
+			my @Rows = ();
+			foreach my $pk (@$arr) {
+				my $Row = $Rs->search($self->record_pk_cond($pk))->next or die usererr "Failed to find row.";
+				
+				foreach my $rel (reverse sort @{$self->destroyable_relspec}) {
+					next unless(
+						$rel =~ /^[a-zA-Z0-9\-\_]+$/ and
+						$Row->can($rel)
+					);
+					$Row->$rel->delete;
+				}
+			}
+		});
+	}
+	catch {
+		my $err = shift;
+		die usererr rawhtml $self->make_dbic_exception_friendly($err), title => 'Database Error';
+	};
+	
+	return 1;
+}
 
 
 sub make_dbic_exception_friendly {
