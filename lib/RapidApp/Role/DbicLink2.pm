@@ -493,15 +493,22 @@ sub param_decodeIf {
 
 has 'DataStore_build_params' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 before DataStore2_BUILD => sub {
-	my $self= shift;
+	my $self = shift;
+	
+	my @store_fields = map {{ name => $_ }} uniq(
+		$self->TableSpec->updated_column_order,
+		'loadContentCnf', #<-- specific to AppGrid2
+		$self->record_pk
+	);
 	
 	# merge this way to make sure the opts get set, but yet still allow
 	# the opts to be specifically overridden DataStore_build_params attr
 	# is defined but with different params
 	%{ $self->DataStore_build_params } = (
-		#store_autoLoad => 1,
+		store_autoLoad => 1,
 		reload_on_save => 0,
 		remoteSort => \1,
+		store_fields => \@store_fields,
 		%{ $self->DataStore_build_params }
 	);
 	
@@ -593,7 +600,13 @@ sub _dbiclink_update_records {
 					
 					my $change = diff(\%current, \%update);
 					# why do I need to do this?:
-					$current{$_} eq $change->{$_} && delete $change->{$_} for (keys %$change);
+					foreach my $k (keys %$change) {
+						my $v1 = $current{$k};
+						my $v2 = $change->{$k};
+						delete $change->{$k} if (! defined $v1 and ! defined $v2);
+						next unless (defined $v1 and defined $v2);
+						delete $change->{$k} if ($v1 eq $v2);
+					}
 					
 					my $t = Text::TabularDisplay->new(qw(column old new));
 					$t->add($_,$current{$_},$change->{$_}) for (keys %$change);

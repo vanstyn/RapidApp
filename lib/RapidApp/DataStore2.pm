@@ -138,7 +138,7 @@ sub store_init_onrequest {
 		api 						=> $self->store_api,
 		#baseParams 				=> $self->base_params,
 		writer					=> $self->store_writer,
-		autoLoad 				=> $self->store_autoLoad,
+		#autoLoad 				=> $self->store_autoLoad,
 		autoSave 				=> \0,
 		loadMask 				=> \1,
 		autoDestroy 			=> \1,
@@ -149,6 +149,13 @@ sub store_init_onrequest {
 		totalProperty 			=> 'results',
 		#columns 					=> $self->column_list
 	);
+	
+	# Set this to an object so that it can be modified in javascript
+	# *after* the store has been constructed:
+	$self->apply_extconfig( autoLoad => { params => {
+		start => 0,
+		limit => $self->max_pagesize ? $self->max_pagesize : 400
+	}}) if (jstrue $self->store_autoLoad); 
 	
 	# If there is no Catalyst request, we can't get the base params:
 	if (defined $self->c) {
@@ -614,7 +621,7 @@ sub create {
 		
 	my $result = $self->create_handler->call($rows);
 	
-	scream_color(RED,$result);
+	#scream_color(RED,$result);
 	# TODO: get rid of this crap into DbicLink2
 	return $result if (delete $result->{use_this}); #<-- temp hack
 	

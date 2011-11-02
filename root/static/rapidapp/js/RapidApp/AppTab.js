@@ -160,40 +160,40 @@ Ext.ux.RapidApp.AppTab.gridrow_nav = function(grid,index,e) {
 
 Ext.ux.RapidApp.AppTab.AppGrid2StoreButtons = {
 	
-	add: function(cnf,grid) {
+	add: function(cnf,cmp) {
 		
-		if(!grid.store.api.create) { return false; }
+		if(!cmp.store.api.create) { return false; }
 		
 		return new Ext.Button(Ext.apply({
 			tooltip: 'Add',
 			iconCls: 'icon-add',
 			handler: function(btn) {
-				var store = grid.store;
+				var store = cmp.store;
 				if(store.proxy.getConnection().isLoading()) { return; }
 				var newRec = new store.recordType();
 				store.add(newRec);
-				if(grid.persist_immediately) { store.save(); }
+				if(cmp.persist_immediately) { store.save(); }
 			}
 		},cnf || {}));
 	},
 	
-	delete: function(cnf,grid) {
+	delete: function(cnf,cmp) {
 		
-		if(!grid.store.api.destroy) { return false; }
+		if(!cmp.store.api.destroy) { return false; }
 		
 		var btn = new Ext.Button(Ext.apply({
 			tooltip: 'Delete',
 			iconCls: 'icon-delete',
 			disabled: true,
 			handler: function(btn) {
-				var store = grid.store;
+				var store = cmp.store;
 				if(store.proxy.getConnection().isLoading()) { return; }
-				store.remove(grid.getSelectionModel().getSelections());
-				if(grid.persist_immediately) { store.save(); }
+				store.remove(cmp.getSelectionModel().getSelections());
+				if(cmp.persist_immediately) { store.save(); }
 			}
 		},cnf || {}));
 		
-		grid.on('afterrender',function() {
+		cmp.on('afterrender',function() {
 		
 			var toggleBtn = function(sm) {
 				if (sm.getSelections().length > 0) {
@@ -206,35 +206,35 @@ Ext.ux.RapidApp.AppTab.AppGrid2StoreButtons = {
 			
 			var sm = this.getSelectionModel();
 			sm.on('selectionchange',toggleBtn,sm);
-		},grid);
+		},cmp);
 			
 		return btn;
 	},
 	
-	reload: function(cnf,grid) {
+	reload: function(cnf,cmp) {
 		
 		return new Ext.Button(Ext.apply({
 			tooltip: 'Reload',
 			iconCls: 'x-tbar-loading',
 			handler: function(btn) {
-				var store = grid.store;
+				var store = cmp.store;
 				store.reload();
 			}
 		},cnf || {}));
 	},
 	
-	save: function(cnf,grid) {
+	save: function(cnf,cmp) {
 		
-		var api = grid.store.api;
+		var api = cmp.store.api;
 		if(!api.create && !api.update && !api.destroy) { return false; }
-		if(grid.persist_immediately) { return false; }
+		if(cmp.persist_immediately) { return false; }
 		
 		var btn = new Ext.Button(Ext.apply({
 			tooltip: 'Save',
 			iconCls: 'icon-save',
 			disabled: true,
 			handler: function(btn) {
-				var store = grid.store;
+				var store = cmp.store;
 				store.save();
 			}
 		},cnf || {}));
@@ -249,30 +249,30 @@ Ext.ux.RapidApp.AppTab.AppGrid2StoreButtons = {
 			}
 		};
 		
-		grid.store.on('load',toggleBtn,grid.store);
-		grid.store.on('read',toggleBtn,grid.store);
-		grid.store.on('write',toggleBtn,grid.store);
-		grid.store.on('datachanged',toggleBtn,grid.store);
-		grid.store.on('clear',toggleBtn,grid.store);
-		grid.store.on('update',toggleBtn,grid.store);
-		grid.store.on('remove',toggleBtn,grid.store);
-		grid.store.on('add',toggleBtn,grid.store);
+		cmp.store.on('load',toggleBtn,cmp.store);
+		cmp.store.on('read',toggleBtn,cmp.store);
+		cmp.store.on('write',toggleBtn,cmp.store);
+		cmp.store.on('datachanged',toggleBtn,cmp.store);
+		cmp.store.on('clear',toggleBtn,cmp.store);
+		cmp.store.on('update',toggleBtn,cmp.store);
+		cmp.store.on('remove',toggleBtn,cmp.store);
+		cmp.store.on('add',toggleBtn,cmp.store);
 			
 		return btn;
 	},
 	
-	undo: function(cnf,grid) {
+	undo: function(cnf,cmp) {
 		
-		var api = grid.store.api;
+		var api = cmp.store.api;
 		if(!api.create && !api.update && !api.destroy) { return false; }
-		if(grid.persist_immediately) { return false; }
+		if(cmp.persist_immediately) { return false; }
 		
 		var btn =  new Ext.Button(Ext.apply({
 			tooltip: 'Undo',
 			iconCls: 'icon-arrow-undo',
 			disabled: true,
 			handler: function(btn) {
-				var store = grid.store;
+				var store = cmp.store;
 				// custom function, see AppGrid2 below
 				store.undoChanges.call(store);
 			}
@@ -288,14 +288,14 @@ Ext.ux.RapidApp.AppTab.AppGrid2StoreButtons = {
 			}
 		};
 		
-		grid.store.on('load',toggleBtn,grid.store);
-		grid.store.on('read',toggleBtn,grid.store);
-		grid.store.on('write',toggleBtn,grid.store);
-		grid.store.on('datachanged',toggleBtn,grid.store);
-		grid.store.on('clear',toggleBtn,grid.store);
-		grid.store.on('update',toggleBtn,grid.store);
-		grid.store.on('remove',toggleBtn,grid.store);
-		grid.store.on('add',toggleBtn,grid.store);
+		cmp.store.on('load',toggleBtn,cmp.store);
+		cmp.store.on('read',toggleBtn,cmp.store);
+		cmp.store.on('write',toggleBtn,cmp.store);
+		cmp.store.on('datachanged',toggleBtn,cmp.store);
+		cmp.store.on('clear',toggleBtn,cmp.store);
+		cmp.store.on('update',toggleBtn,cmp.store);
+		cmp.store.on('remove',toggleBtn,cmp.store);
+		cmp.store.on('add',toggleBtn,cmp.store);
 			
 		return btn;
 	}
@@ -371,7 +371,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			orig_store_singleSort.apply(this,arguments);
 		}
 		// --
-		
+
 		if(this.title && this.titleCount) {
 			this.store.on('load',function() {
 				this.setTitle(this.initialConfig.title + ' (' + this.store.getTotalCount() + ')');
@@ -555,9 +555,9 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		var store_load_parms = {};
 		
 		if (this.sort) {
-			Ext.apply(store_load_parms,{
-				sort: this.sort
-			});
+			//Ext.apply(store_load_parms,{
+			//	sort: this.sort
+			//});
 			this.applyState({ sort: this.sort });
 		}
 		
@@ -568,7 +568,12 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			});
 		}
 		
-		this.store.load({ params: store_load_parms });
+		if(this.store.autoLoad && this.store.autoLoad.params) {
+			Ext.apply(this.store.autoLoad.params,store_load_parms);
+		}
+		else {
+			this.store.load({ params: store_load_parms });
+		}
 		
 		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.onRender.apply(this, arguments);
 	},
