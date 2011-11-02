@@ -492,8 +492,15 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			},this);
 			
 			// Scroll into view:
-			this.scrollRecordIntoView.defer(100,this,[Record]);
+			//this.scrollRecordIntoView.defer(10,this,[Record]);
+			this.scrollBottomToolbarIntoView.defer(10,this);
 		}
+	},
+	
+	scrollBottomToolbarIntoView: function(){
+		var node = this.getParentScrollNode(this.getEl().dom);
+		if(!node) { return; }
+		Ext.fly(this.ownerCt.getBottomToolbar().getEl()).scrollIntoView(node);
 	},
 	
 	scrollRecordIntoView: function(Record) {
