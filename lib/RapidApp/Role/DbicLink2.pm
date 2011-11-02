@@ -37,6 +37,24 @@ has 'ResultSource' => (
 	required => 1
 );
 
+has 'get_ResultSet' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default => sub {
+	my $self = shift;
+	return sub { $self->ResultSource->resultset };
+});
+
+sub _ResultSet {
+	my $self = shift;
+	my $Rs = $self->get_ResultSet->(@_);
+	$Rs = $self->ResultSet($Rs) if ($self->can('ResultSet'));
+	return $Rs;
+}
+
+#sub _ResultSet {
+#	my $self = shift;
+#	my $Rs = $self->ResultSource->resultset;
+#	$Rs = $self->ResultSet($Rs) if ($self->can('ResultSet'));
+#	return $Rs;
+#}
 
 has 'ResultClass' => ( is => 'ro', lazy_build => 1 );
 sub _build_ResultClass {
@@ -188,15 +206,6 @@ sub apply_except_colspec_columns {
 	$self->apply_columns( $_ => { %opt } ) for (@columns);
 }
 
-
-
-
-sub _ResultSet {
-	my $self = shift;
-	my $Rs = $self->ResultSource->resultset;
-	$Rs = $self->ResultSet($Rs) if ($self->can('ResultSet'));
-	return $Rs;
-}
 
 
 sub read_records {
