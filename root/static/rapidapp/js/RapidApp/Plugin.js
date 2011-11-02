@@ -1244,6 +1244,12 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	init: function(cmp) {
 		this.cmp = cmp;
 		
+		Ext.copyTo(this,cmp,[
+			'store_buttons',
+			'show_store_button_text',
+			'store_button_cnf'
+		]);
+		
 		this.initAdditionalStoreMethods.call(this,this.cmp.store);
 		
 		this.cmp.loadedStoreButtons = {};
@@ -1253,7 +1259,15 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			return plugin.getStoreButton.call(plugin,name,showtext);
 		};
 		
+		if(this.cmp.setup_bbar_store_buttons) {
+			this.cmp.on('render',this.insertStoreButtonsBbar,this);
+		}
+		
 	},
+	
+	show_store_button_text: false,
+	store_buttons: [ 'add', 'delete', 'reload', 'save', 'undo' ],
+	store_button_cnf: {},
 	
 	initAdditionalStoreMethods: function(store) {
 		
@@ -1302,7 +1316,10 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		if(!this.cmp.loadedStoreButtons[name]) {
 			var constructor = this.storeButtonConstructors[name];
 			if(! constructor) { return; }
-			var btn = constructor({},this.cmp,showtext);
+			
+			var cnf = this.store_button_cnf[name] || {};
+			
+			var btn = constructor(cnf,this.cmp,showtext);
 			if(!btn) { return; }
 			
 			this.cmp.loadedStoreButtons[name] = btn;
@@ -1444,7 +1461,40 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				
 			return btn;
 		}
-	}
+	},
+	
+	
+	insertStoreButtonsBbar: function() {
+		var index = 0;
+		var skip_reload = false;
+		var bbar = this.cmp.getBottomToolbar();
+		
+		if(!bbar) { return; }
+		
+		bbar.items.each(function(cmp,indx) {
+			if(cmp.tooltip == 'Refresh') { 
+				index = indx + 1; 
+				skip_reload = true;
+			};
+		});
+		
+		//console.dir(bbar);
+		
+		var showtext = false;
+		if(this.show_store_button_text) { showtext = true; }
+		
+		var bbar_items = [];
+		Ext.each(this.store_buttons,function(btn_name) {
+			// Skip redundant reload if we have a paging toolbar
+			if(btn_name == 'reload' && skip_reload) { return; }
+			
+			var btn = this.getStoreButton(btn_name,showtext);
+			if(!btn) { return; }
+			bbar_items.unshift(btn);
+		},this);
+		Ext.each(bbar_items,function(btn) { bbar.insert(index,btn); },this);
+		
+	},
 
 });
 Ext.preg('datastore-plus',Ext.ux.RapidApp.Plugin.CmpDataStorePlus);

@@ -260,7 +260,6 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			this.on('afteredit',function(){ this.getStore().save(); },this);
 		}
 		
-		
 		this.bbar = {
 			xtype:	'toolbar',
 			items: bbar_items
@@ -348,7 +347,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		}
 		
 		// Remove the bbar if its empty and there is no pageSize set (and there are no store buttons):
-		if (this.bbar.items.length == 0 && !this.pageSize && !this.store_buttons) { 
+		if (this.bbar.items.length == 0 && !this.pageSize && !this.setup_bbar_store_buttons) { 
 			delete this.bbar; 
 		}
 		
@@ -361,9 +360,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	},
 	
 	onRender: function() {
-		
-		this.insertStoreButtons();
-		
+
 		this.store.on('beforeload',this.reloadColumns,this);
 		
 		this.getColumnModel().on('hiddenchange',function(colmodel,colIndex,hidden) {
@@ -403,31 +400,6 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		}
 		
 		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.onRender.apply(this, arguments);
-	},
-	
-	insertStoreButtons: function() {
-		var index = 0;
-		var bbar = this.getBottomToolbar();
-		bbar.items.each(function(cmp,indx) {
-			if(cmp.tooltip == 'Refresh') { index = indx + 1; };
-		});
-		
-		//console.dir(bbar);
-		
-		var showtext = false;
-		if(this.show_store_button_text) { showtext = true; }
-		
-		var bbar_items = [];
-		Ext.each(this.store_buttons,function(btn_name) {
-			// Skip redundant reload if we have a paging toolbar
-			if(btn_name == 'reload' && this.pageSize) { return; }
-			
-			var btn = this.getStoreButton(btn_name,showtext);
-			if(!btn) { return; }
-			bbar_items.unshift(btn);
-		},this);
-		Ext.each(bbar_items,function(btn) { bbar.insert(index,btn); },this);
-		
 	},
 	
 	reloadColumns: function(store,opts) {

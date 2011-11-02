@@ -16,8 +16,10 @@ sub BUILD {
 		);
 	}
 	
+	$self->apply_extconfig( setup_bbar_store_buttons => \1 );
+	
 	# Defaults: only applicable items will actually be added:
-	$self->apply_extconfig( store_buttons => [ 'add', 'delete', 'reload', 'save', 'undo' ]);
+	#$self->apply_extconfig( store_buttons => [ 'add', 'delete', 'reload', 'save', 'undo' ]);
 }
 
 
