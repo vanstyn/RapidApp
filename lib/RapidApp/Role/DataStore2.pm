@@ -124,6 +124,8 @@ after 'BUILD' => sub {
 
 	## Apply the TableSpec if its defined ##
 	$self->apply_TableSpec_config;
+	
+	$self->add_plugin( 'datastore-plus' );
 };
 
 

@@ -1230,3 +1230,197 @@ Ext.ux.RapidApp.Plugin.TitleCollapsePlus = Ext.extend(Ext.util.Observable,{
 	}
 });
 Ext.preg('titlecollapseplus',Ext.ux.RapidApp.Plugin.TitleCollapsePlus);
+
+/*
+ Ext.ux.RapidApp.Plugin.CmpDataStorePlus
+ 2011-11-02 by HV
+
+ Plugin for components with stores (such as AppGrid2, AppDV).
+ This plugin contains generalized extra functionality applicable
+ to any components with stores (note that Ext.data.Store itself
+ cannot use plugins because its not a component)
+*/
+Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
+	init: function(cmp) {
+		this.cmp = cmp;
+		var plugin = this;
+		
+		var store = this.cmp.store;
+		store.undoChanges = function() {
+			store.each(function(Record){
+					if(Record.phantom) { store.remove(Record); } 
+				});
+			store.rejectChanges();
+			store.fireEvent('update',store);
+		};
+		store.on('beforeload',store.undoChanges,store);
+		
+		this.cmp.loadedStoreButtons = {};
+		
+		this.cmp.getStoreButton = function() {
+			return plugin.getStoreButton.apply(plugin,arguments);
+		};
+		
+	},
+	
+	getStoreButton: function(name) {
+		
+		if(!this.cmp.loadedStoreButtons[name]) {
+			var constructor = this.storeButtonConstructors[name];
+			if(! constructor) { return; }
+			var btn = constructor({},this.cmp);
+			if(!btn) { return; }
+			
+			this.cmp.loadedStoreButtons[name] = btn;
+		}
+
+		return this.cmp.loadedStoreButtons[name];
+	},
+	
+	storeButtonConstructors: {
+		
+		add: function(cnf,cmp) {
+			
+			if(!cmp.store.api.create) { return false; }
+			
+			return new Ext.Button(Ext.apply({
+				tooltip: 'Add',
+				iconCls: 'icon-add',
+				handler: function(btn) {
+					var store = cmp.store;
+					if(store.proxy.getConnection().isLoading()) { return; }
+					var newRec = new store.recordType();
+					store.add(newRec);
+					if(cmp.persist_immediately) { store.save(); }
+				}
+			},cnf || {}));
+		},
+		
+		delete: function(cnf,cmp) {
+			
+			if(!cmp.store.api.destroy) { return false; }
+			
+			var btn = new Ext.Button(Ext.apply({
+				tooltip: 'Delete',
+				iconCls: 'icon-delete',
+				disabled: true,
+				handler: function(btn) {
+					var store = cmp.store;
+					if(store.proxy.getConnection().isLoading()) { return; }
+					store.remove(cmp.getSelectionModel().getSelections());
+					if(cmp.persist_immediately) { store.save(); }
+				}
+			},cnf || {}));
+			
+			cmp.on('afterrender',function() {
+			
+				var toggleBtn = function(sm) {
+					if (sm.getSelections().length > 0) {
+						btn.setDisabled(false);
+					}
+					else {
+						btn.setDisabled(true);
+					}
+				};
+				
+				var sm = this.getSelectionModel();
+				sm.on('selectionchange',toggleBtn,sm);
+			},cmp);
+				
+			return btn;
+		},
+		
+		reload: function(cnf,cmp) {
+			
+			return new Ext.Button(Ext.apply({
+				tooltip: 'Reload',
+				iconCls: 'x-tbar-loading',
+				handler: function(btn) {
+					var store = cmp.store;
+					store.reload();
+				}
+			},cnf || {}));
+		},
+		
+		save: function(cnf,cmp) {
+			
+			var api = cmp.store.api;
+			if(!api.create && !api.update && !api.destroy) { return false; }
+			if(cmp.persist_immediately) { return false; }
+			
+			var btn = new Ext.Button(Ext.apply({
+				tooltip: 'Save',
+				iconCls: 'icon-save',
+				disabled: true,
+				handler: function(btn) {
+					var store = cmp.store;
+					store.save();
+				}
+			},cnf || {}));
+				
+			var toggleBtn = function(store) {
+				var modifiedRecords = store.getModifiedRecords();
+				if (store.getModifiedRecords().length > 0 || store.removed.length > 0) {
+					btn.setDisabled(false);
+				}
+				else {
+					btn.setDisabled(true);
+				}
+			};
+			
+			cmp.store.on('load',toggleBtn,cmp.store);
+			cmp.store.on('read',toggleBtn,cmp.store);
+			cmp.store.on('write',toggleBtn,cmp.store);
+			cmp.store.on('datachanged',toggleBtn,cmp.store);
+			cmp.store.on('clear',toggleBtn,cmp.store);
+			cmp.store.on('update',toggleBtn,cmp.store);
+			cmp.store.on('remove',toggleBtn,cmp.store);
+			cmp.store.on('add',toggleBtn,cmp.store);
+				
+			return btn;
+		},
+		
+		undo: function(cnf,cmp) {
+			
+			var api = cmp.store.api;
+			if(!api.create && !api.update && !api.destroy) { return false; }
+			if(cmp.persist_immediately) { return false; }
+			
+			var btn =  new Ext.Button(Ext.apply({
+				tooltip: 'Undo',
+				iconCls: 'icon-arrow-undo',
+				disabled: true,
+				handler: function(btn) {
+					var store = cmp.store;
+					// custom function, see AppGrid2 below
+					store.undoChanges.call(store);
+				}
+			},cnf || {}));
+				
+			var toggleBtn = function(store) {
+				var modifiedRecords = store.getModifiedRecords();
+				if (store.getModifiedRecords().length > 0 || store.removed.length > 0) {
+					btn.setDisabled(false);
+				}
+				else {
+					btn.setDisabled(true);
+				}
+			};
+			
+			cmp.store.on('load',toggleBtn,cmp.store);
+			cmp.store.on('read',toggleBtn,cmp.store);
+			cmp.store.on('write',toggleBtn,cmp.store);
+			cmp.store.on('datachanged',toggleBtn,cmp.store);
+			cmp.store.on('clear',toggleBtn,cmp.store);
+			cmp.store.on('update',toggleBtn,cmp.store);
+			cmp.store.on('remove',toggleBtn,cmp.store);
+			cmp.store.on('add',toggleBtn,cmp.store);
+				
+			return btn;
+		}
+		
+	}
+
+});
+Ext.preg('datastore-plus',Ext.ux.RapidApp.Plugin.CmpDataStorePlus);
+
