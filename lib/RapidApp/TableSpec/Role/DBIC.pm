@@ -67,12 +67,20 @@ sub init_local_columns {
 	foreach my $col (keys %inc_cols) {
 		my $info = $class->column_info($col);
 		my @profiles = ();
-		
+			
 		push @profiles, $info->{is_nullable} ? 'nullable' : 'notnull';
 		
 		my $type_profile = $self->data_type_profiles->{$info->{data_type}} || ['text'];
 		$type_profile = [ $type_profile ] unless (ref $type_profile);
-		push @profiles, @$type_profile; 
+		push @profiles, @$type_profile;
+		
+		
+		$inc_cols{$col}{profiles} = [ $inc_cols{$col}{profiles} ] if (
+			defined $inc_cols{$col}{profiles} and 
+			not ref $inc_cols{$col}{profiles}
+		);
+		push @profiles, @{$inc_cols{$col}{profiles}} if ($inc_cols{$col}{profiles});
+		
 		
 		$inc_cols{$col} = merge($inc_cols{$col},{ 
 			name => $self->column_prefix . $col,
