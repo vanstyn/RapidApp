@@ -1243,32 +1243,66 @@ Ext.preg('titlecollapseplus',Ext.ux.RapidApp.Plugin.TitleCollapsePlus);
 Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	init: function(cmp) {
 		this.cmp = cmp;
-		var plugin = this;
 		
-		var store = this.cmp.store;
-		store.undoChanges = function() {
+		this.initAdditionalStoreMethods.call(this,this.cmp.store);
+		
+		this.cmp.loadedStoreButtons = {};
+		
+		var plugin = this;
+		this.cmp.getStoreButton = function(name,showtext) {
+			return plugin.getStoreButton.call(plugin,name,showtext);
+		};
+		
+	},
+	
+	initAdditionalStoreMethods: function(store) {
+		
+		store.getPhantomRecords = function() {
+			var records = [];
 			store.each(function(Record){
-					if(Record.phantom) { store.remove(Record); } 
-				});
+				if(Record.phantom) { records.push(Record); } 
+			});
+			return records;
+		};
+		
+		store.hasPhantomRecords = function() {
+			if(store.getPhantomRecords().length > 0) { return true; }
+			return false;
+		};
+		
+		store.undoChanges = function() {
+			Ext.each(store.getPhantomRecords(),function(Rec){ store.remove(Rec); });
 			store.rejectChanges();
 			store.fireEvent('update',store);
 		};
 		store.on('beforeload',store.undoChanges,store);
 		
-		this.cmp.loadedStoreButtons = {};
+		store.addTrackedToggleFunc = function(func) {
+			store.on('load',func,store);
+			store.on('read',func,store);
+			store.on('write',func,store);
+			store.on('datachanged',func,store);
+			store.on('clear',func,store);
+			store.on('update',func,store);
+			store.on('remove',func,store);
+			store.on('add',func,store);
+		}
 		
-		this.cmp.getStoreButton = function() {
-			return plugin.getStoreButton.apply(plugin,arguments);
+		store.buttonConstructor = function(cnf,showtext) {
+			if (showtext) {
+				cnf.text = cnf.tooltip;
+				delete cnf.tooltip;
+			}
+			return new Ext.Button(cnf);
 		};
-		
 	},
 	
-	getStoreButton: function(name) {
+	getStoreButton: function(name,showtext) {
 		
 		if(!this.cmp.loadedStoreButtons[name]) {
 			var constructor = this.storeButtonConstructors[name];
 			if(! constructor) { return; }
-			var btn = constructor({},this.cmp);
+			var btn = constructor({},this.cmp,showtext);
 			if(!btn) { return; }
 			
 			this.cmp.loadedStoreButtons[name] = btn;
@@ -1279,11 +1313,11 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	
 	storeButtonConstructors: {
 		
-		add: function(cnf,cmp) {
+		add: function(cnf,cmp,showtext) {
 			
 			if(!cmp.store.api.create) { return false; }
 			
-			return new Ext.Button(Ext.apply({
+			var btn = cmp.store.buttonConstructor(Ext.apply({
 				tooltip: 'Add',
 				iconCls: 'icon-add',
 				handler: function(btn) {
@@ -1293,14 +1327,25 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					store.add(newRec);
 					if(cmp.persist_immediately) { store.save(); }
 				}
-			},cnf || {}));
+			},cnf || {}),showtext);
+				
+			cmp.store.addTrackedToggleFunc(function(store) {
+				if (store.hasPhantomRecords()) {
+					btn.setDisabled(true);
+				}
+				else {
+					btn.setDisabled(false);
+				}
+			});
+				
+			return btn;
 		},
 		
-		delete: function(cnf,cmp) {
+		delete: function(cnf,cmp,showtext) {
 			
 			if(!cmp.store.api.destroy) { return false; }
 			
-			var btn = new Ext.Button(Ext.apply({
+			var btn = cmp.store.buttonConstructor(Ext.apply({
 				tooltip: 'Delete',
 				iconCls: 'icon-delete',
 				disabled: true,
@@ -1310,7 +1355,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					store.remove(cmp.getSelectionModel().getSelections());
 					if(cmp.persist_immediately) { store.save(); }
 				}
-			},cnf || {}));
+			},cnf || {}),showtext);
 			
 			cmp.on('afterrender',function() {
 			
@@ -1330,25 +1375,25 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			return btn;
 		},
 		
-		reload: function(cnf,cmp) {
+		reload: function(cnf,cmp,showtext) {
 			
-			return new Ext.Button(Ext.apply({
+			return cmp.store.buttonConstructor(Ext.apply({
 				tooltip: 'Reload',
 				iconCls: 'x-tbar-loading',
 				handler: function(btn) {
 					var store = cmp.store;
 					store.reload();
 				}
-			},cnf || {}));
+			},cnf || {}),showtext);
 		},
 		
-		save: function(cnf,cmp) {
+		save: function(cnf,cmp,showtext) {
 			
 			var api = cmp.store.api;
 			if(!api.create && !api.update && !api.destroy) { return false; }
 			if(cmp.persist_immediately) { return false; }
 			
-			var btn = new Ext.Button(Ext.apply({
+			var btn = cmp.store.buttonConstructor(Ext.apply({
 				tooltip: 'Save',
 				iconCls: 'icon-save',
 				disabled: true,
@@ -1356,9 +1401,9 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					var store = cmp.store;
 					store.save();
 				}
-			},cnf || {}));
+			},cnf || {}),showtext);
 				
-			var toggleBtn = function(store) {
+			cmp.store.addTrackedToggleFunc(function(store) {
 				var modifiedRecords = store.getModifiedRecords();
 				if (store.getModifiedRecords().length > 0 || store.removed.length > 0) {
 					btn.setDisabled(false);
@@ -1366,38 +1411,28 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				else {
 					btn.setDisabled(true);
 				}
-			};
-			
-			cmp.store.on('load',toggleBtn,cmp.store);
-			cmp.store.on('read',toggleBtn,cmp.store);
-			cmp.store.on('write',toggleBtn,cmp.store);
-			cmp.store.on('datachanged',toggleBtn,cmp.store);
-			cmp.store.on('clear',toggleBtn,cmp.store);
-			cmp.store.on('update',toggleBtn,cmp.store);
-			cmp.store.on('remove',toggleBtn,cmp.store);
-			cmp.store.on('add',toggleBtn,cmp.store);
+			});
 				
 			return btn;
 		},
 		
-		undo: function(cnf,cmp) {
+		undo: function(cnf,cmp,showtext) {
 			
 			var api = cmp.store.api;
 			if(!api.create && !api.update && !api.destroy) { return false; }
 			if(cmp.persist_immediately) { return false; }
 			
-			var btn =  new Ext.Button(Ext.apply({
+			var btn = cmp.store.buttonConstructor(Ext.apply({
 				tooltip: 'Undo',
 				iconCls: 'icon-arrow-undo',
 				disabled: true,
 				handler: function(btn) {
 					var store = cmp.store;
-					// custom function, see AppGrid2 below
 					store.undoChanges.call(store);
 				}
-			},cnf || {}));
+			},cnf || {}),showtext);
 				
-			var toggleBtn = function(store) {
+			cmp.store.addTrackedToggleFunc(function(store) {
 				var modifiedRecords = store.getModifiedRecords();
 				if (store.getModifiedRecords().length > 0 || store.removed.length > 0) {
 					btn.setDisabled(false);
@@ -1405,20 +1440,10 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				else {
 					btn.setDisabled(true);
 				}
-			};
-			
-			cmp.store.on('load',toggleBtn,cmp.store);
-			cmp.store.on('read',toggleBtn,cmp.store);
-			cmp.store.on('write',toggleBtn,cmp.store);
-			cmp.store.on('datachanged',toggleBtn,cmp.store);
-			cmp.store.on('clear',toggleBtn,cmp.store);
-			cmp.store.on('update',toggleBtn,cmp.store);
-			cmp.store.on('remove',toggleBtn,cmp.store);
-			cmp.store.on('add',toggleBtn,cmp.store);
+			});
 				
 			return btn;
 		}
-		
 	}
 
 });

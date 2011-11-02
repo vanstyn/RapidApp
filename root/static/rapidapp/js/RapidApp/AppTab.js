@@ -414,12 +414,15 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		
 		//console.dir(bbar);
 		
+		var showtext = false;
+		if(this.show_store_button_text) { showtext = true; }
+		
 		var bbar_items = [];
 		Ext.each(this.store_buttons,function(btn_name) {
 			// Skip redundant reload if we have a paging toolbar
 			if(btn_name == 'reload' && this.pageSize) { return; }
 			
-			var btn = this.getStoreButton(btn_name);
+			var btn = this.getStoreButton(btn_name,showtext);
 			if(!btn) { return; }
 			bbar_items.unshift(btn);
 		},this);
