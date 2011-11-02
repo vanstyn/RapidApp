@@ -103,6 +103,8 @@ sub TableSpec_property_grids {
 	my $TableSpec = shift;
 	my $Row = shift || $self->req_Row;
 	
+	return $self->not_found_content unless ($Row);
+	
 	my %cols = map { $_->{name} => $_ } @{ $self->column_list };
 	my @columns = map { $cols{$_} } $TableSpec->local_column_names;
 	my $fields = \@columns;
@@ -181,7 +183,15 @@ sub property_grid {
 	return merge($conf,$opt);
 }
 
-
+sub not_found_content {
+	my $self = shift;
+	
+	my $msg = 'Record not found';
+	my $id = $self->supplied_id;
+	$msg = "Record ($id) not found" if ($id);
+	
+	return { html => '<pre>' . $msg . '</pre>' };
+}
 
 
 1;
