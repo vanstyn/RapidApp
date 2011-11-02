@@ -31,6 +31,7 @@ has 'creatable_colspec' => ( is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default 
 # sets of related rows. Most of the time you'll only want to put '*' in here
 has 'destroyable_relspec' => ( is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default => undef );
 
+
 has 'ResultSource' => (
 	is => 'ro',
 	isa => 'DBIx::Class::ResultSource',
@@ -501,38 +502,35 @@ before DataStore2_BUILD => sub {
 		$self->record_pk
 	);
 	
-	# merge this way to make sure the opts get set, but yet still allow
-	# the opts to be specifically overridden DataStore_build_params attr
-	# is defined but with different params
-	%{ $self->DataStore_build_params } = (
+	my $store_params = {
 		store_autoLoad => 1,
 		reload_on_save => 0,
 		remoteSort => \1,
-		store_fields => \@store_fields,
-		%{ $self->DataStore_build_params }
-	);
+		store_fields => \@store_fields
+	};
 	
-	# Dynamically toggle the addition of an 'update_records' method
-	# The existence of this method is part of the DataStore2 API
-	$self->meta->add_method('update_records', $self->meta->find_method_by_name('_dbiclink_update_records')) if (
-		defined $self->updatable_colspec and 
-		not $self->can('update_records')
-	);
-	
-	# Dynamically toggle the addition of a 'create_records' method
-	# The existence of this method is part of the DataStore2 API
-	$self->meta->add_method('create_records', $self->meta->find_method_by_name('_dbiclink_create_records')) if (
+	$store_params->{create_handler}	= RapidApp::Handler->new( scope => $self, method => '_dbiclink_create_records' ) if (
 		defined $self->creatable_colspec and 
 		not $self->can('create_records')
 	);
 	
-	# Dynamically toggle the addition of a 'create_records' method
-	# The existence of this method is part of the DataStore2 API
-	$self->meta->add_method('destroy_records', $self->meta->find_method_by_name('_dbiclink_destroy_records')) if (
+	$store_params->{update_handler}	= RapidApp::Handler->new( scope => $self, method => '_dbiclink_update_records' ) if (
+		defined $self->updatable_colspec and 
+		not $self->can('update_records')
+	);
+	
+	$store_params->{destroy_handler}	= RapidApp::Handler->new( scope => $self, method => '_dbiclink_destroy_records' ) if (
 		defined $self->destroyable_relspec and 
 		not $self->can('destroy_records')
 	);
+	
+	# merge this way to make sure the opts get set, but yet still allow
+	# the opts to be specifically overridden DataStore_build_params attr
+	# is defined but with different params
+	%{$self->DataStore_build_params} = ( %$store_params, %{$self->DataStore_build_params} );
 };
+
+
 
 # convenience method: prints the primary keys of a Row object
 # just used to print info to the screen during CRUD ops below
