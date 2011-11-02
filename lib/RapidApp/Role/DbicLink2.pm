@@ -643,24 +643,28 @@ sub _dbiclink_create_records {
 	try {
 		$self->ResultSource->schema->txn_do(sub {
 			foreach my $data (@$arr) {
-			
-				# TODO: separate out columns to be created in other Tables, and create
-				# each accordning to creatable_colspec:
-				
+
 				my @columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } keys %$data;
 				@columns = $self->TableSpec->filter_creatable_columns(@columns);
 				
-				my %create = map { $_ => $data->{$_} } @columns;
+				my $relspecs = $self->TableSpec->columns_to_relspec_map(@columns);
+			
+				my $create_hash = {};
+				foreach my $rel (keys %$relspecs) {
+					$create_hash->{$rel}->{$_->{local_colname}} = $data->{$_->{orig_colname}} 
+						for (@{$relspecs->{$rel}});
+				}
 				
-				
+				my $create = delete $create_hash->{''} || {};
+				$create = { %$create_hash, %$create };
+
 				my $t = Text::TabularDisplay->new(qw(column value));
-				$t->add($_,$create{$_}) for (keys %create);
+				$t->add($_,ref $create->{$_} ? Dumper($create->{$_}) : $create->{$_} ) for (keys %$create);
 				scream_color(WHITE.ON_GREEN.BOLD, 'DbicLink2 CREATE -->  ' . ref($Rs) . "\n" . $t->render);
 
-				my $Row = $Rs->create(\%create);
+				my $Row = $Rs->create($create);
 				
 				push @updated_keyvals, $self->generate_record_pk_value({ $Row->get_columns });
-				
 			}
 		});
 	}
