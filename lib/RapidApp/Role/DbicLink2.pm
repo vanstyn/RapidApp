@@ -524,6 +524,7 @@ sub get_Row_Rs_label {
 		my $Rs = $Row;
 		my $str = ref($Rs) . ' [' . $Rs->count . ' rows]';
 		return $str unless ($verbose);
+		$str .= ':';
 		$str .= "\n " . $self->get_Row_Rs_label($_) for ($Rs->all);
 		return $str;
 	}
@@ -584,7 +585,7 @@ sub _dbiclink_update_records {
 					
 					#$relspec = '*' unless ($relspec and $relspec ne '');
 					#scream_color(WHITE.ON_BLUE.BOLD,$relspec . '/' . ref($Row) . '  (UPDATE)' . "\n" . $t->render);
-					scream_color(WHITE.ON_BLUE.BOLD,'DbicLink2 UPDATE  --->  ' . $self->get_Row_Rs_label($Row) . "\n" . $t->render);
+					scream_color(WHITE.ON_BLUE.BOLD,'DbicLink2 UPDATE --> ' . $self->get_Row_Rs_label($Row) . "\n" . $t->render);
 					
 					$Row->update($change) if (keys %$change > 0);
 				}
@@ -637,7 +638,7 @@ sub _dbiclink_create_records {
 				
 				my $t = Text::TabularDisplay->new(qw(column value));
 				$t->add($_,$create{$_}) for (keys %create);
-				scream_color(WHITE.ON_GREEN.BOLD, 'DbicLink2 CREATE  --->  ' . ref($Rs) . "\n" . $t->render);
+				scream_color(WHITE.ON_GREEN.BOLD, 'DbicLink2 CREATE -->  ' . ref($Rs) . "\n" . $t->render);
 
 				my $Row = $Rs->create(\%create);
 				
@@ -677,17 +678,19 @@ sub _dbiclink_destroy_records {
 			my @Rows = ();
 			foreach my $pk (@$arr) {
 				my $Row = $Rs->search($self->record_pk_cond($pk))->next or die usererr "Failed to find row.";
-				
+				scream($self->destroyable_relspec);
 				foreach my $rel (reverse sort @{$self->destroyable_relspec}) {
 					next unless(
-						$rel =~ /^[a-zA-Z0-9\-\_]+$/ and
-						$Row->can($rel)
+						$rel =~ /^[a-zA-Z0-9\-\_]+$/ 
+						and $Row->can($rel)
 					);
 					
-					scream_color(WHITE.ON_RED.BOLD,'DbicLink2 DESTROY  --->  ' . $self->get_Row_Rs_label($Row->$rel) . "\n");
-					$Row->$rel->delete;
+					my $relObj = $Row->$rel;
+					
+					scream_color(WHITE.ON_RED.BOLD,'DbicLink2 DESTROY --> ' . ref($Row) . '->' . $rel . ' --> ' .$self->get_Row_Rs_label($relObj,1) . "\n");
+					$relObj->can('delete_all') ? $relObj->delete_all : $relObj->delete;
 				}
-				scream_color(WHITE.ON_RED.BOLD,'DbicLink2 DESTROY  --->  ' . $self->get_Row_Rs_label($Row) . "\n");
+				scream_color(WHITE.ON_RED.BOLD,'DbicLink2 DESTROY --> ' . $self->get_Row_Rs_label($Row,1) . "\n");
 				$Row->delete;
 			}
 		});
