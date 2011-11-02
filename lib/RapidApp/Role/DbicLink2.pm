@@ -55,6 +55,23 @@ sub _ResultSet {
 	return $Rs;
 }
 
+has 'get_CreateData' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default => sub {
+	my $self = shift;
+	return sub { {} };
+});
+
+sub baseCreateData {
+	my $self = shift;
+	return $self->get_CreateData->(@_);
+}
+
+sub _CreateData {
+	my $self = shift;
+	my $data = $self->baseCreateData(@_);
+	$data = $self->CreateData($data) if ($self->can('CreateData'));
+	return $data;
+}
+
 #sub _ResultSet {
 #	my $self = shift;
 #	my $Rs = $self->ResultSource->resultset;
@@ -654,6 +671,9 @@ sub _dbiclink_create_records {
 	try {
 		$self->ResultSource->schema->txn_do(sub {
 			foreach my $data (@$arr) {
+				
+				# Apply optional base/hard coded data:
+				%$data = ( %$data, %{$self->_CreateData} );
 
 				my @columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } keys %$data;
 				@columns = $self->TableSpec->filter_creatable_columns(@columns);

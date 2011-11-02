@@ -1248,7 +1248,6 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			'store_buttons',
 			'show_store_button_text',
 			'store_button_cnf',
-			'store_add_initData'
 		]);
 		
 		this.initAdditionalStoreMethods.call(this,this.cmp.store);
@@ -1268,7 +1267,6 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	show_store_button_text: false,
 	store_buttons: [ 'add', 'delete', 'reload', 'save', 'undo' ],
 	store_button_cnf: {},
-	store_add_initData: {},
 	
 	initAdditionalStoreMethods: function(store) {
 		
@@ -1330,7 +1328,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	},
 	
 	getStoreButtonConstructors: function() {
-		var initData = this.store_add_initData;
+
 		return {
 			add: function(cnf,cmp,showtext) {
 				
@@ -1342,7 +1340,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					handler: function(btn) {
 						var store = cmp.store;
 						if(store.proxy.getConnection().isLoading()) { return; }
-						var newRec = new store.recordType(initData);
+						var newRec = new store.recordType();
+						
 						store.add(newRec);
 						if(cmp.persist_immediately) { store.save(); }
 					}
