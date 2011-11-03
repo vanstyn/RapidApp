@@ -1248,7 +1248,11 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			'store_buttons',
 			'show_store_button_text',
 			'store_button_cnf',
+			'store_exclude_buttons',
 		]);
+		
+		this.exclude_btn_map = {};
+		Ext.each(this.store_exclude_buttons,function(item) { this.exclude_btn_map[item] = true; },this);
 		
 		this.initAdditionalStoreMethods.call(this,this.cmp.store);
 		
@@ -1267,6 +1271,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	show_store_button_text: false,
 	store_buttons: [ 'add', 'delete', 'reload', 'save', 'undo' ],
 	store_button_cnf: {},
+	store_exclude_buttons: [],
+	exclude_btn_map: {},
 	
 	initAdditionalStoreMethods: function(store) {
 		
@@ -1302,15 +1308,27 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		}
 		
 		store.buttonConstructor = function(cnf,showtext) {
-			if (showtext) {
-				cnf.text = cnf.tooltip;
-				delete cnf.tooltip;
+			if(cnf.text && !cnf.tooltip) {
+				cnf.tooltip = cnf.text;
+				delete cnf.text;
 			}
+			
+			if (showtext && !cnf.text) {
+				cnf.text = cnf.tooltip;
+				cnf.tooltip = null;
+			}
+			
+			if (!showtext && cnf.text) {
+				delete cnf.text;
+			}
+			
 			return new Ext.Button(cnf);
 		};
 	},
 	
 	getStoreButton: function(name,showtext) {
+		console.dir(name);
+		if(this.exclude_btn_map[name]) { return; }
 		
 		if(!this.cmp.loadedStoreButtons[name]) {
 			var constructor = this.getStoreButtonConstructors.call(this)[name];
