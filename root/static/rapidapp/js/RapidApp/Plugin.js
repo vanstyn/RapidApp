@@ -1569,6 +1569,15 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	},
 	
 	beforeRemoveConfirm: function(c,component) {
+		if(component != this.cmp) {
+			var parent = this.cmp.findParentBy(function(p) {
+				if(p == component) { return true; }
+				return false;
+			},this);
+			// This is a sibling removal which we need to ignore:
+			if(component != parent) { return true; }
+		}
+		
 		var store = this.cmp.store;
 		if(!store || !store.hasPendingChanges()) { 
 			c.un('beforeremove',this.beforeRemoveConfirm,this);
