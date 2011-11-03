@@ -117,10 +117,14 @@ sub xtemplate_cnf {
 	
 	#TODO: make this more robust/better:	
 	my @classes = ();
-	push @classes, 'no_create' unless ($self->can('create_records'));
-	push @classes, 'no_update' unless ($self->can('update_records'));
-	push @classes, 'no_destroy' unless ($self->can('destroy_records'));
-
+	#push @classes, 'no_create' unless ($self->can('create_records'));
+	#push @classes, 'no_update' unless ($self->can('update_records'));
+	#push @classes, 'no_destroy' unless ($self->can('destroy_records'));
+	push @classes, 'no_create' unless ($self->DataStore->create_handler);
+	push @classes, 'no_update' unless ($self->DataStore->update_handler);
+	push @classes, 'no_destroy' unless ($self->DataStore->destroy_handler);
+	
+	
 	return '<div class="' . join(' ',@classes) . '">' . $html_out . '</div>';
 }
 
