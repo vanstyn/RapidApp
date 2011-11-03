@@ -1266,6 +1266,23 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		if(this.cmp.setup_bbar_store_buttons) {
 			this.cmp.on('render',this.insertStoreButtonsBbar,this);
 		}
+		
+
+		if(Ext.isFunction(this.cmp.getSelectionModel)) {
+			// Give Grids getSelectedRecords() so they work like DataViews:
+			if(!Ext.isFunction(this.cmp.getSelectedRecords)) {
+				this.cmp.getSelectedRecords = function() {
+					
+					var sm = this.getSelectionModel();
+					return sm.getSelections.apply(sm,arguments);
+				}
+			}
+			
+			// Give grids the selectionchange event so they work like dataviews:
+			var sm = this.cmp.getSelectionModel();
+			this.cmp.relayEvents(sm,['selectionchange']);
+		}
+
 	},
 	
 	show_store_button_text: false,
@@ -1327,7 +1344,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	},
 	
 	getStoreButton: function(name,showtext) {
-		console.dir(name);
+		
 		if(this.exclude_btn_map[name]) { return; }
 		
 		if(!this.cmp.loadedStoreButtons[name]) {
@@ -1388,15 +1405,16 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					handler: function(btn) {
 						var store = cmp.store;
 						if(store.proxy.getConnection().isLoading()) { return; }
-						store.remove(cmp.getSelectionModel().getSelections());
+						//store.remove(cmp.getSelectionModel().getSelections());
+						store.remove(cmp.getSelectedRecords());
 						if(cmp.persist_immediately) { store.save(); }
 					}
 				},cnf || {}),showtext);
 				
 				cmp.on('afterrender',function() {
 				
-					var toggleBtn = function(sm) {
-						if (sm.getSelections().length > 0) {
+					var toggleBtn = function() {
+						if (this.getSelectedRecords.call(this).length > 0) {
 							btn.setDisabled(false);
 						}
 						else {
@@ -1404,8 +1422,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 						}
 					};
 					
-					var sm = this.getSelectionModel();
-					sm.on('selectionchange',toggleBtn,sm);
+					this.on('selectionchange',toggleBtn,this);
 				},cmp);
 					
 				return btn;
