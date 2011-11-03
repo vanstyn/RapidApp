@@ -1249,6 +1249,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			'show_store_button_text',
 			'store_button_cnf',
 			'store_exclude_buttons',
+			'close_unsaved_confirm'
 		]);
 		
 		this.exclude_btn_map = {};
@@ -1282,9 +1283,17 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			var sm = this.cmp.getSelectionModel();
 			this.cmp.relayEvents(sm,['selectionchange']);
 		}
+		
+		if(this.close_unsaved_confirm) {
+			this.cmp.bubble(function(){
+				//this.on('beforedestroy',plugin.beforeDestroy,plugin);
+				this.on('beforeremove',plugin.beforeRemoveConfirm,plugin);
+			});
+		}
 
 	},
 	
+	close_unsaved_confirm: true,
 	show_store_button_text: false,
 	store_buttons: [ 'add', 'delete', 'reload', 'save', 'undo' ],
 	store_button_cnf: {},
@@ -1303,6 +1312,13 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		
 		store.hasPhantomRecords = function() {
 			if(store.getPhantomRecords().length > 0) { return true; }
+			return false;
+		};
+		
+		store.hasPendingChanges = function() {
+			if(store.getModifiedRecords().length > 0 || store.removed.length > 0) { 
+				return true; 
+			}
 			return false;
 		};
 		
@@ -1457,8 +1473,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				},cnf || {}),showtext);
 					
 				cmp.store.addTrackedToggleFunc(function(store) {
-					var modifiedRecords = store.getModifiedRecords();
-					if (store.getModifiedRecords().length > 0 || store.removed.length > 0) {
+					if (store.hasPendingChanges()) {
 						btn.setDisabled(false);
 					}
 					else {
@@ -1486,8 +1501,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				},cnf || {}),showtext);
 					
 				cmp.store.addTrackedToggleFunc(function(store) {
-					var modifiedRecords = store.getModifiedRecords();
-					if (store.getModifiedRecords().length > 0 || store.removed.length > 0) {
+					if (store.hasPendingChanges()) {
 						btn.setDisabled(false);
 					}
 					else {
@@ -1538,6 +1552,46 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		Ext.each(bbar_items,function(btn) { bbar.insert(index,btn); },this);
 		
 	},
+	
+	beforeRemoveConfirm: function(c,component) {
+		var store = this.cmp.store;
+		if(!store || !store.hasPendingChanges()) { 
+			c.un('beforeremove',this.beforeRemoveConfirm,this);
+			return true; 
+		}
+		
+		Ext.Msg.show({
+			title: 'Save Changes?',
+			msg: '<b>There are unsaved changes on this page.</b><br><br>Save before closing?<br>',
+			icon: Ext.Msg.WARNING,
+			buttons: { yes: 'Save', no: 'Discard Changes', cancel: 'Cancel' }, 
+			fn: function(sel) {
+				if (sel == 'cancel') {
+					return;
+				}
+				else if (sel == 'yes') {
+					var onsave;
+					onsave = function() {
+						store.un('save',onsave);
+						c.un('beforeremove',this.beforeRemoveConfirm,this);
+						// Complete the original remove:
+						c.remove(component);
+					};
+					store.on('save',onsave); 
+					store.save();
+				}
+				else {
+					store.undoChanges();
+					c.un('beforeremove',this.beforeRemoveConfirm,this);
+					// Complete the original remove:
+					c.remove(component);
+				};
+			},
+			scope: this
+		});
+		
+		return false;
+	}
 
 });
 Ext.preg('datastore-plus',Ext.ux.RapidApp.Plugin.CmpDataStorePlus);

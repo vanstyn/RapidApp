@@ -520,6 +520,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	},
 	
 	getParentScrollNode: function(node) {
+		if(!node) { return null; }
 		if(node.style.overflow == 'auto') { return node; }
 		if(node.parentNode) { return this.getParentScrollNode(node.parentNode); }
 		return null;
