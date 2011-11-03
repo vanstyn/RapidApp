@@ -1329,6 +1329,23 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		};
 		store.on('beforeload',store.undoChanges,store);
 		
+		
+		store.addRecord = function(initData) {
+
+			var newRec = new store.recordType(Ext.apply({},initData || {}));
+						
+			//Set the value of each field expressly to null if its not defined
+			//This makes the fields show up as dirty in grids:
+			newRec.fields.each(function(f){ 
+				if(typeof newRec.data[f.name] == 'undefined') {
+					newRec.data[f.name] = null; 
+				}
+			},this);
+			
+			return store.add(newRec);
+			
+		};
+		
 		store.addTrackedToggleFunc = function(func) {
 			store.on('load',func,store);
 			store.on('read',func,store);
@@ -1391,9 +1408,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					handler: function(btn) {
 						var store = cmp.store;
 						if(store.proxy.getConnection().isLoading()) { return; }
-						var newRec = new store.recordType();
-						
-						store.add(newRec);
+						store.addRecord();
 						if(cmp.persist_immediately) { store.save(); }
 					}
 				},cnf || {}),showtext);
@@ -1457,7 +1472,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			},
 			
 			save: function(cnf,cmp,showtext) {
-				
+
 				var api = cmp.store.api;
 				if(!api.create && !api.update && !api.destroy) { return false; }
 				if(cmp.persist_immediately) { return false; }
