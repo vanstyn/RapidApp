@@ -256,9 +256,9 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		if(Ext.isArray(this.bbar)) { bbar_items = this.bbar; }
 		
 		
-		if(this.persist_immediately && this.store.api.update) {
-			this.on('afteredit',function(){ this.getStore().save(); },this);
-		}
+		//if(this.persist_immediately && this.store.api.update) {
+		//	this.on('afteredit',function(){ this.getStore().save(); },this);
+		//}
 		
 		this.bbar = {
 			xtype:	'toolbar',

@@ -19,8 +19,6 @@ has 'title_icon_href' => ( is => 'ro', default => undef );
 has 'open_record_class' => ( is => 'ro', default => undef, isa => 'Maybe[ClassName|HashRef]' );
 has 'add_record_class' => ( is => 'ro', default => undef, isa => 'Maybe[ClassName|HashRef]' );
 
-has 'persist_immediately' => ( is => 'ro', isa => 'Bool', default => 0 );
-
 # autoLoad needs to be false for the paging toolbar to not load the whole
 # data set
 has 'store_autoLoad' => ( is => 'ro', default => sub {\0} );
@@ -82,7 +80,6 @@ sub BUILD {
 		gridsearch				=> \1,
 		gridsearch_remote		=> \1,
 		column_allow_save_properties => [ 'width','hidden' ], #<-- is this still doing anything?
-		persist_immediately => \scalar($self->persist_immediately)
 	);
 	
 	# The record_pk is forced to be added/included as a column:

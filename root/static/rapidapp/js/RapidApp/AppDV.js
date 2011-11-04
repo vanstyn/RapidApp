@@ -13,6 +13,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		this.on('click',this.click_controller,this);
 		
 		this.store.on('beforesave',this.onBeforesave,this);
+		this.store.on('beforeremove',this.onBeforeremove,this);
 	},
 	
 	onBeforesave: function() {
@@ -46,17 +47,75 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			this.renderItems(index, index + records.length - 1);
 		}
 		
-		var Record = records[0];
-		this.currentEditRecord = Record;
+		var Record;
+		//Get first phantom record:
+		Ext.each(records,function(rec) {
+			if(Record || !rec.phantom) { return; }
+			Record = rec;
+		},this);
 		
-		var domEl = this.getNode(Record);
-		var editEl = new Ext.Element(domEl);
+		if(Record) {
+			this.currentEditRecord = Record;
+			var domEl = this.getNode(Record);
+			var editEl = new Ext.Element(domEl);
+			this.currentEditEl = editEl;
+			this.handle_edit_record(editEl,editEl,Record,index,editEl);
+		}
 		
-		this.currentEditEl = editEl;
-				
-		this.handle_edit_record(editEl,editEl,Record,index,editEl);
+		this.scrollRecordIntoView.defer(10,this,[records[records.length - 1]]);
+		this.highlightRecord.defer(10,this,[records]);
+
 	},
 	
+	forEachRecordNode: function(fn,record) {
+		if(Ext.isArray(record)){
+			Ext.each(record, function(r){
+				this.forEachRecordNode(fn,r);
+			},this);
+			return;
+	  }
+
+		var node = this.getNode(record);
+		if(!node) { return; }
+		var el = new Ext.Element(node);
+		fn(el);
+	},
+	
+	highlightRecord: function(record) {
+		this.forEachRecordNode(function(el){
+			el.highlight();
+		},record);
+	},
+	
+	puffRecord: function(record) {
+		this.forEachRecordNode(function(el){
+			el.fadeOut({
+				easing: 'easeNone',
+				duration: .5,
+				remove: false,
+				useDisplay: false,
+				concurrent: true
+			});
+			el.highlight();
+		},record);
+	},
+	
+	
+	onBeforeremove: function(ds, record){
+
+		if(this.removeInProgress) { return true; }
+		
+		this.puffRecord(record);
+		
+		this.removeInProgress = true;
+		var doRemove = function(){
+			ds.remove.apply(this,arguments);
+			this.removeInProgress = false;
+		};
+		doRemove.defer(300,this,[record]);
+		
+		return false;
+	},
 	onRemove: function(ds, record, index){
 		if(record == this.currentEditRecord) {
 			this.simulateCancelClick(record,index,this.currentEditEl);
@@ -354,8 +413,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 		var Store = this.getStore();
 		
-		Store.remove(Record);
-		if (!Record.phantom) { Store.save(); }
+		Store.removeRecord(Record);
+		//if (!Record.phantom) { Store.saveIfPersist(); }
 	},
 	handle_edit_field: function (target,editEl,Record,index,domEl) {
 		
@@ -380,7 +439,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			
 			if(target.hasClass('save')) {
 				if(!this.save_field_data(editEl,fieldname,index,Record)) { return; }
-				Store.save();
+				//Store.save();
+				Store.saveIfPersist();
 			}
 			else {
 				if(!target.hasClass('cancel')) { return; }
@@ -485,14 +545,15 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 				Store.remove(Record);
 			}
 			
-			this.scrollBottomToolbarIntoView.defer(100,this);
+			//this.scrollBottomToolbarIntoView.defer(100,this);
 			if (this.isSaving) { return; }
-			return Store.save();
+			//return Store.save();
+			return Store.saveIfPersist();
 		}
 		else {
 			// abort if another record is already being updated:
 			if(domEl.parent().hasClass('record-update')) { return; }
-			
+
 			domEl.parent().addClass('record-update');
 			domEl.addClass('editing-record');
 			
@@ -503,7 +564,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			
 			// Scroll into view:
 			//this.scrollRecordIntoView.defer(10,this,[Record]);
-			this.scrollBottomToolbarIntoView.defer(10,this);
+			//this.scrollBottomToolbarIntoView.defer(10,this);
 		}
 	},
 	
@@ -514,6 +575,10 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	},
 	
 	scrollRecordIntoView: function(Record) {
+		if(Record == Record.store.getLastRecord()) {
+			return this.scrollBottomToolbarIntoView();
+		}
+		
 		var node = this.getParentScrollNode(this.getEl().dom);
 		if(!node) { return; }
 		Ext.fly(this.getNode(Record)).scrollIntoView(node);
@@ -527,113 +592,3 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	}
 });
 Ext.reg('appdv', Ext.ux.RapidApp.AppDV.DataView);
-
-/*
-Ext.ux.RapidApp.AppDV.click_handler = function(dv, index, domEl, event) {
-	var target = event.getTarget(null,null,true);
-
-	// Limit processing to click nodes within this dataview (i.e. not in our submodules)
-	if(!target.findParent('div.appdv-click.' + dv.id)) { return; }
-
-	var clickEl = target;
-	if(!clickEl.hasClass('appdv-click-el')) { clickEl = target.parent('div.appdv-click-el'); }
-	if(!clickEl) { return; }
-	
-	var node = clickEl.dom;
-	// Needed for IE:
-	var classList = node.classList;
-	if(! classList) {
-		classList = node.className.split(' ');
-	}
-	
-	var fieldname = null;
-	Ext.each(classList,function(cls) {
-		var arr = cls.split('edit:');
-		if (arr.length > 1) {
-			fieldname = arr[1];
-		}
-	});
-	
-	if (!fieldname) { return; }
-	//console.log(fieldname);
-	
-	var topEl = new Ext.Element(domEl);
-	
-	//console.dir(topEl);
-	
-	var valueEl = topEl.child('div.appdv-field-value.' + fieldname);
-	//if (!valueEl) { return; }
-	
-	var dataEl = valueEl.child('div.data');
-	var fieldEl = valueEl.child('div.fieldholder');
-	var Store = dv.getStore()
-	var Record = Store.getAt(index);
-	
-	if (valueEl.hasClass('editing')) {
-	
-		var Field = dv.FieldCmp[index][fieldname];
-		
-		if(!target.hasClass('cancel')) {
-			var val = Field.getValue();
-			Record.set(fieldname,val);
-			Store.save();
-		}
-	
-		valueEl.removeClass('editing');
-		
-		//console.dir(dv.FieldCmp[index][fieldname].contentEl);
-		dv.FieldCmp[index][fieldname].contentEl.appendTo(valueEl);
-		dv.FieldCmp[index][fieldname].destroy();
-		//dataEl.setVisible(true);
-	}
-	else {
-		valueEl.addClass('editing');
-		
-		var cnf = {};
-		Ext.apply(cnf,dv.FieldCmp_cnf[fieldname]);
-		Ext.apply(cnf,{
-			value: Record.data[fieldname],
-			//renderTo: valueEl
-			renderTo: fieldEl,
-			contentEl: dataEl
-		});
-		
-		//console.dir(dataEl);
-		
-		if(!cnf.width) {	cnf.width = dataEl.getWidth(); }
-		if(!cnf.height) { cnf.height = dataEl.getHeight(); }
-		if(cnf.minWidth) { if(!cnf.width || cnf.width < cnf.minWidth) { cnf.width = cnf.minWidth; } }
-		if(cnf.minHeight) { if(!cnf.height || cnf.height < cnf.minHeight) { cnf.height = cnf.minHeight; } }
-				
-		var Field = Ext.ComponentMgr.create(cnf,'field');
-
-		if(Field.resizable) {
-			var resizer = new Ext.Resizable(Field.wrap, {
-				pinned: true,
-				handles: 's',
-				//handles: 's,e,se',
-				dynamic: true,
-				listeners : {
-					'resize' : function(resizable, height, width) {
-						Field.setSize(height,width);
-					}
-				}
-			});
-		}
-
-		Field.show();
-		//dataEl.setVisibilityMode(Ext.Element.DISPLAY);
-		//dataEl.setVisible(false);
-		
-		//Field.getEl().applyStyle(dataEl.getStyle());
-		
-		if(!Ext.isObject(dv.FieldCmp)) { dv.FieldCmp = {} }
-		if(!Ext.isObject(dv.FieldCmp[index])) { dv.FieldCmp[index] = {} }
-		dv.FieldCmp[index][fieldname] = Field;
-	}
-}
-
-*/
-
-
-

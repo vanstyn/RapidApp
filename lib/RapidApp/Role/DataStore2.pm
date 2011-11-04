@@ -16,6 +16,12 @@ has 'DataStore_class'	=> ( is => 'ro', default => 'RapidApp::DataStore2' );
 
 has 'max_pagesize'		=> ( is => 'ro', isa => 'Maybe[Int]', default => undef );
 
+has 'persist_all_immediately' => ( is => 'ro', isa => 'Bool', default => 0 );
+has 'persist_immediately' => ( is => 'ro', isa => 'HashRef', default => sub{{
+	create	=> \0,
+	update	=> \0,
+	destroy	=> \0
+}});
 
 has 'DataStore' => (
 	is			=> 'rw',
@@ -122,6 +128,11 @@ sub DataStore2_BUILD {
 after 'BUILD' => sub {
 	my $self = shift;
 
+	$self->apply_extconfig(
+		persist_all_immediately => \scalar($self->persist_all_immediately),
+		persist_immediately => $self->persist_immediately
+	);
+	
 	## Apply the TableSpec if its defined ##
 	$self->apply_TableSpec_config;
 	

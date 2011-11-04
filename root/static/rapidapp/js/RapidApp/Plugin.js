@@ -1244,18 +1244,39 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	init: function(cmp) {
 		this.cmp = cmp;
 		
+		if(!cmp.persist_immediately) { cmp.persist_immediately = {}; }
+		if(cmp.persist_all_immediately) {
+			cmp.persist_immediately = {
+				create: true,
+				update: true,
+				destroy: true
+			}
+		}
+		var miss = false;
+		if(cmp.store.api.create && !cmp.persist_immediately.create) { miss = true; }
+		if(cmp.store.api.update && !cmp.persist_immediately.update) { miss = true; }
+		if(cmp.store.api.destroy && !cmp.persist_immediately.destroy) { miss = true; }
+		cmp.persist_all_immediately = true;
+		if(miss) { cmp.persist_all_immediately = false; }
+		
+		Ext.iterate(cmp.persist_immediately,function(action,value){
+			
+		},this);
+		
 		Ext.copyTo(this,cmp,[
 			'store_buttons',
 			'show_store_button_text',
 			'store_button_cnf',
 			'store_exclude_buttons',
-			'close_unsaved_confirm'
+			'close_unsaved_confirm',
+			'persist_all_immediately',
+			'persist_immediately'
 		]);
 		
 		this.exclude_btn_map = {};
 		Ext.each(this.store_exclude_buttons,function(item) { this.exclude_btn_map[item] = true; },this);
 		
-		this.initAdditionalStoreMethods.call(this,this.cmp.store);
+		this.initAdditionalStoreMethods.call(this,this.cmp.store,this);
 		
 		this.cmp.loadedStoreButtons = {};
 		
@@ -1268,6 +1289,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			this.cmp.on('render',this.insertStoreButtonsBbar,this);
 		}
 		
+		this.cmp.on('afteredit',this.cmp.store.saveIfPersist,this);
 
 		if(Ext.isFunction(this.cmp.getSelectionModel)) {
 			// Give Grids getSelectedRecords() so they work like DataViews:
@@ -1300,7 +1322,16 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	store_exclude_buttons: [],
 	exclude_btn_map: {},
 	
-	initAdditionalStoreMethods: function(store) {
+	initAdditionalStoreMethods: function(store,plugin) {
+		
+		store.addEvents('beforeremove');
+		store.removeOrig = store.remove;
+		store.remove = function(record) {
+			if(store.fireEvent('beforeremove',store,record) !== false) {
+				return store.removeOrig.apply(store,arguments);
+			}
+			return -1;
+		};
 		
 		store.getPhantomRecords = function() {
 			var records = [];
@@ -1313,6 +1344,14 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		store.hasPhantomRecords = function() {
 			if(store.getPhantomRecords().length > 0) { return true; }
 			return false;
+		};
+		
+		store.getNonPhantomModifiedRecords = function() {
+			var records = [];
+			Ext.each(store.getModifiedRecords(),function(Record){
+				if(!Record.phantom) { records.push(Record); } 
+			});
+			return records;
 		};
 		
 		store.hasPendingChanges = function() {
@@ -1329,6 +1368,12 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		};
 		store.on('beforeload',store.undoChanges,store);
 		
+		store.getLastRecord = function() {
+			var count = store.getCount();
+			if(!count) { return null; }
+			var index = count - 1;
+			return store.getAt(index);
+		};
 		
 		store.addRecord = function(initData) {
 
@@ -1342,8 +1387,30 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				}
 			},this);
 			
-			return store.add(newRec);
-			
+			var ret = store.add(newRec);
+			if(plugin.persist_immediately.create) { store.saveIfPersist(); }
+			return ret;
+		};
+		
+		store.removeRecord = function(Record) {
+			var ret = store.remove(Record);
+			if(plugin.persist_immediately.destroy) { store.saveIfPersist(); }
+			return ret;
+		};
+		
+		store.doTransactionIfPersist = function(action) {
+			if(!plugin.persist_immediately[action]) { return; }
+			return store.doTransactionOrig.apply(store,arguments);
+		};
+		
+		store.saveIfPersist = function() {
+			if(!store.doTransactionOrig) {
+				store.doTransactionOrig = store.doTransaction;
+			}
+			store.doTransaction = store.doTransactionIfPersist;
+			var ret = store.save.apply(store,arguments);
+			store.doTransaction = store.doTransactionOrig;
+			return ret;
 		};
 		
 		store.addTrackedToggleFunc = function(func) {
@@ -1409,7 +1476,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 						var store = cmp.store;
 						if(store.proxy.getConnection().isLoading()) { return; }
 						store.addRecord();
-						if(cmp.persist_immediately) { store.save(); }
+						//store.saveIfPersist();
+						//if(cmp.persist_immediately) { store.save(); }
 					}
 				},cnf || {}),showtext);
 					
@@ -1437,8 +1505,9 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 						var store = cmp.store;
 						if(store.proxy.getConnection().isLoading()) { return; }
 						//store.remove(cmp.getSelectionModel().getSelections());
-						store.remove(cmp.getSelectedRecords());
-						if(cmp.persist_immediately) { store.save(); }
+						store.removeRecord(cmp.getSelectedRecords());
+						//store.saveIfPersist();
+						//if(cmp.persist_immediately) { store.save(); }
 					}
 				},cnf || {}),showtext);
 				
@@ -1473,9 +1542,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			
 			save: function(cnf,cmp,showtext) {
 
-				var api = cmp.store.api;
-				if(!api.create && !api.update && !api.destroy) { return false; }
-				if(cmp.persist_immediately) { return false; }
+				if(cmp.persist_all_immediately) { return false; }
 				
 				var btn = cmp.store.buttonConstructor(Ext.apply({
 					tooltip: 'Save',
@@ -1500,10 +1567,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			},
 			
 			undo: function(cnf,cmp,showtext) {
-				
-				var api = cmp.store.api;
-				if(!api.create && !api.update && !api.destroy) { return false; }
-				if(cmp.persist_immediately) { return false; }
+
+				if(cmp.persist_all_immediately) { return false; }
 				
 				var btn = cmp.store.buttonConstructor(Ext.apply({
 					tooltip: 'Undo',
