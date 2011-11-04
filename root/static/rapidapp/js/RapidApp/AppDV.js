@@ -586,7 +586,13 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			
 			//this.scrollBottomToolbarIntoView.defer(100,this);
 			if (this.isSaving) { return; }
-			//return Store.save();
+			
+			// persist_on_add is AppDV specific, and causes a store save to happen *after* a
+			// new record has been added via filling out fields. when persist_immediately.create
+			// is set empty records are instantly created without giving the user the chance
+			// set the initial values
+			if(Record.phantom && this.persist_on_add) { return Store.save(); }
+			
 			return Store.saveIfPersist();
 		}
 		else {

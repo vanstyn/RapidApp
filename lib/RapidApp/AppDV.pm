@@ -57,8 +57,13 @@ has '+DataStore_build_params' => ( default => sub {{
 	store_autoLoad => \1
 }});
 
+# persist_on_add is AppDV specific, and causes a store save to happen *after* a
+# new record has been added via filling out fields. when persist_immediately.create
+# is set empty records are instantly created without giving the user the chance
+# set the initial values
+has 'persist_on_add' => ( is => 'ro', isa => 'Bool', default => 1 );
 has '+persist_immediately' => ( default => sub {{
-	create	=> \1,
+	create	=> \0,
 	update	=> \1,
 	destroy	=> \1
 }});
@@ -72,6 +77,7 @@ sub BUILD {
 		multiSelect		=> \1,
 		simpleSelect	=> \1,
 		overClass		=> 'record-over',
+		persist_on_add	=> \scalar($self->persist_on_add),
 		items => []
 	);
 	
