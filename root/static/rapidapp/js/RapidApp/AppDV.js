@@ -70,12 +70,15 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	},
 	
 	forEachRecordNode: function(fn,record) {
+		
 		if(Ext.isArray(record)){
 			Ext.each(record, function(r){
 				this.forEachRecordNode(fn,r);
 			},this);
 			return;
-	  }
+		}
+	  
+		if(!record || !record.store) { return; }
 
 		var node = this.getNode(record);
 		if(!node) { return; }
@@ -138,10 +141,6 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		return false;
 	},
 	onRemove: function(ds, record, index){
-		//if(record == this.currentEditRecord) {
-		//	this.simulateCancelClick(record,index,this.currentEditEl);
-		//}
-		
 		this.destroyItems(index);
 		Ext.ux.RapidApp.AppDV.DataView.superclass.onRemove.apply(this, arguments);
 	},
@@ -596,6 +595,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	},
 	
 	scrollRecordIntoView: function(Record) {
+		if(!this.getStore()) { return; }
+		
 		if(Record == Record.store.getLastRecord()) {
 			return this.scrollBottomToolbarIntoView();
 		}
@@ -603,6 +604,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		var node = this.getParentScrollNode(this.getEl().dom);
 		if(!node) { return; }
 		Ext.fly(this.getNode(Record)).scrollIntoView(node);
+
 	},
 	
 	getParentScrollNode: function(node) {
