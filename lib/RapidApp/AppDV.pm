@@ -57,7 +57,11 @@ has '+DataStore_build_params' => ( default => sub {{
 	store_autoLoad => \1
 }});
 
-has '+persist_all_immediately' => ( default => 1 );
+has '+persist_immediately' => ( default => sub {{
+	create	=> \1,
+	update	=> \1,
+	destroy	=> \1
+}});
 
 sub BUILD {
 	my $self = shift;

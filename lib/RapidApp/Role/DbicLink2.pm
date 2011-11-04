@@ -331,8 +331,10 @@ sub chain_Rs_req_base_Attr {
 sub get_req_columns {
 	my $self = shift;
 	my $params = shift || $self->c->req->params;
+	my $param_name = shift || 'columns';
+	
 	my $columns = $params;
-	$columns = $self->param_decodeIf($params->{columns},[]) if (ref($params) eq 'HASH');
+	$columns = $self->param_decodeIf($params->{$param_name},[]) if (ref($params) eq 'HASH');
 	
 	die "get_req_columns(): bad options" unless(ref($columns) eq 'ARRAY');
 	
@@ -666,6 +668,8 @@ sub _dbiclink_create_records {
 	#my $Rs = $self->ResultSource->resultset;
 	my $Rs = $self->baseResultSet;
 	
+	my @req_columns = $self->get_req_columns(undef,'create_columns');
+	
 	my @updated_keyvals = ();
 
 	try {
@@ -674,15 +678,17 @@ sub _dbiclink_create_records {
 				
 				# Apply optional base/hard coded data:
 				%$data = ( %$data, %{$self->_CreateData} );
-
-				my @columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } keys %$data;
+				my @columns = uniq(keys %$data,@req_columns);
+				@columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } @columns;
 				@columns = $self->TableSpec->filter_creatable_columns(@columns);
 				
 				my $relspecs = $self->TableSpec->columns_to_relspec_map(@columns);
 			
 				my $create_hash = {};
+				
 				foreach my $rel (keys %$relspecs) {
-					$create_hash->{$rel}->{$_->{local_colname}} = $data->{$_->{orig_colname}} 
+					$create_hash->{$rel} = {} unless (defined $create_hash->{$rel}); 
+					$data->{$_->{orig_colname}} and $create_hash->{$rel}->{$_->{local_colname}} = $data->{$_->{orig_colname}} 
 						for (@{$relspecs->{$rel}});
 				}
 				

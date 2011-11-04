@@ -1309,6 +1309,34 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				this.on('beforeremove',plugin.beforeRemoveConfirm,plugin);
 			});
 		}
+		
+		// Override 'renderRows' of GridViews to get freshly added rows
+		// to show up as dirty. Fields associated with a modified value of
+		// undefined don't show up as dirty in the original code. This fixes
+		// that:
+		this.cmp.on('viewready',function(){
+			var view = this.cmp.getView();
+			if(!view.renderRowsOrig) { view.renderRowsOrig = view.renderRows; }
+			view.renderRows = function(startRow,endRow){
+				var grid = view.grid,
+				store    = grid.store,
+				rowCount = store.getCount(),
+				records;
+		  
+				if (rowCount < 1) { return ''; }
+		  
+				startRow = startRow || 0;
+				endRow   = Ext.isDefined(endRow) ? endRow : rowCount - 1;
+				records  = store.getRange(startRow, endRow);
+				
+				Ext.each(records,function(record) {
+					Ext.iterate(record.modified,function(k,v) {
+						if(typeof v == 'undefined') { record.modified[k] = null; }
+					},this);
+				},this);
+				return view.renderRowsOrig(startRow,endRow);
+			};
+		},this);
 
 	},
 	
@@ -1321,6 +1349,14 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	exclude_btn_map: {},
 	
 	initAdditionalStoreMethods: function(store,plugin) {
+		
+		store.on('beforewrite',function(ds,action,records,options,arg) {
+			if(action == 'create'){
+				var colnames = [];
+				store.fields.each(function(field){ colnames.push(field.name); });
+				options.params.create_columns = Ext.encode(colnames);
+			}
+		});
 		
 		store.addEvents('beforeremove');
 		store.removeOrig = store.remove;
@@ -1374,17 +1410,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		};
 		
 		store.addRecord = function(initData) {
-
 			var newRec = new store.recordType(Ext.apply({},initData || plugin.store_add_initData));
-						
-			//Set the value of each field expressly to null if its not defined
-			//This makes the fields show up as dirty in grids:
-			newRec.fields.each(function(f){ 
-				if(typeof newRec.data[f.name] == 'undefined') {
-					newRec.data[f.name] = null; 
-				}
-			},this);
-			
 			var ret = store.add(newRec);
 			if(plugin.persist_immediately.create) { store.saveIfPersist(); }
 			return ret;
