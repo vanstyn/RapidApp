@@ -38,6 +38,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		if(index > -1){
 				this.renderItems(index, index);
 		}
+		this.toggleDirtyCssRecord(record);
 	},
 	
 	onAdd: function(ds, records, index){
@@ -64,6 +65,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 		this.scrollRecordIntoView.defer(10,this,[records[records.length - 1]]);
 		this.highlightRecord.defer(10,this,[records]);
+		this.toggleDirtyCssRecord(records);
 
 	},
 	
@@ -78,7 +80,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		var node = this.getNode(record);
 		if(!node) { return; }
 		var el = new Ext.Element(node);
-		fn(el);
+		fn(el,record);
 	},
 	
 	highlightRecord: function(record) {
@@ -100,10 +102,29 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		},record);
 	},
 	
+	toggleDirtyCssRecord: function(record) {
+		var dv = this;
+		this.forEachRecordNode(function(el,rec){
+			if(rec.dirty) { 
+				var div = el.child('div');
+				if(!div.hasClass('border-dirty')) { div.addClass('border-dirty'); }
+			}
+			else {
+				el.child('div').removeClass('border-dirty');
+			}
+		},record);
+	},
+	
 	
 	onBeforeremove: function(ds, record){
 
 		if(this.removeInProgress) { return true; }
+		
+		if(record == this.currentEditRecord) {
+			var index = this.getStore().indexOf(record);
+			this.simulateCancelClick(record,index,this.currentEditEl);
+			return false;
+		}
 		
 		this.puffRecord(record);
 		
@@ -117,9 +138,9 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		return false;
 	},
 	onRemove: function(ds, record, index){
-		if(record == this.currentEditRecord) {
-			this.simulateCancelClick(record,index,this.currentEditEl);
-		}
+		//if(record == this.currentEditRecord) {
+		//	this.simulateCancelClick(record,index,this.currentEditEl);
+		//}
 		
 		this.destroyItems(index);
 		Ext.ux.RapidApp.AppDV.DataView.superclass.onRemove.apply(this, arguments);

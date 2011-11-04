@@ -1096,3 +1096,13 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 	width: 99%; */
 	word-wrap: break-word; /* Internet Explorer 5.5+ */
 }
+
+
+
+.border-dirty {
+  border-width:5px 0px 0px 5px;
+  -moz-border-image:url("/static/ext/resources/images/default/grid/dirty.gif") 50% 50% 50% 50% stretch;
+  -webkit-border-image:url("/static/ext/resources/images/default/grid/dirty.gif") 50% 50% 50% 50% stretch;
+  border-image: url("/static/ext/resources/images/default/grid/dirty.gif") 50% 50% 50% 50% stretch;
+}
+

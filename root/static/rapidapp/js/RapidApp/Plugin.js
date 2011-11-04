@@ -1259,10 +1259,6 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		cmp.persist_all_immediately = true;
 		if(miss) { cmp.persist_all_immediately = false; }
 		
-		Ext.iterate(cmp.persist_immediately,function(action,value){
-			
-		},this);
-		
 		Ext.copyTo(this,cmp,[
 			'store_buttons',
 			'show_store_button_text',
@@ -1270,7 +1266,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			'store_exclude_buttons',
 			'close_unsaved_confirm',
 			'persist_all_immediately',
-			'persist_immediately'
+			'persist_immediately',
+			'store_add_initData'
 		]);
 		
 		this.exclude_btn_map = {};
@@ -1315,6 +1312,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 
 	},
 	
+	store_add_initData: {},
 	close_unsaved_confirm: true,
 	show_store_button_text: false,
 	store_buttons: [ 'add', 'delete', 'reload', 'save', 'undo' ],
@@ -1377,7 +1375,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		
 		store.addRecord = function(initData) {
 
-			var newRec = new store.recordType(Ext.apply({},initData || {}));
+			var newRec = new store.recordType(Ext.apply({},initData || plugin.store_add_initData));
 						
 			//Set the value of each field expressly to null if its not defined
 			//This makes the fields show up as dirty in grids:
@@ -1463,7 +1461,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	},
 	
 	getStoreButtonConstructors: function() {
-
+		var plugin = this;
 		return {
 			add: function(cnf,cmp,showtext) {
 				
@@ -1476,8 +1474,6 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 						var store = cmp.store;
 						if(store.proxy.getConnection().isLoading()) { return; }
 						store.addRecord();
-						//store.saveIfPersist();
-						//if(cmp.persist_immediately) { store.save(); }
 					}
 				},cnf || {}),showtext);
 					
