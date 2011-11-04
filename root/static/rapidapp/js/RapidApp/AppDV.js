@@ -38,7 +38,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		if(index > -1){
 				this.renderItems(index, index);
 		}
-		this.toggleDirtyCssRecord(record);
+		this.toggleDirtyCssRecord(record,true);
 	},
 	
 	onAdd: function(ds, records, index){
@@ -60,12 +60,13 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			var domEl = this.getNode(Record);
 			var editEl = new Ext.Element(domEl);
 			this.currentEditEl = editEl;
+			this.clearSelections();
 			this.handle_edit_record(editEl,editEl,Record,index,editEl);
 		}
 		
 		this.scrollRecordIntoView.defer(10,this,[records[records.length - 1]]);
 		this.highlightRecord.defer(10,this,[records]);
-		this.toggleDirtyCssRecord(records);
+		this.toggleDirtyCssRecord(records,true);
 
 	},
 	
@@ -105,24 +106,41 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		},record);
 	},
 	
-	toggleDirtyCssRecord: function(record) {
+	toggleDirtyCssRecord: function(record,tog) {
 		var dv = this;
 		this.forEachRecordNode(function(el,rec){
-			if(rec.dirty) { 
-				var div = el.child('div');
-				if(!div.hasClass('border-dirty')) { div.addClass('border-dirty'); }
-			}
-			else {
-				el.child('div').removeClass('border-dirty');
+			if(rec.dirtyEl) { rec.dirtyEl.remove(); }
+			if(tog && el && rec.dirty) {
+				
+				var domCfg = {
+					tag: 'div',
+					style: 'position:absolute;',
+					children:[{
+						tag: 'div',
+						cls: 'x-grid3-dirty-cell',
+						style: 'position:relative;top:0;left:0;z-index:15000;height:10px;width:10px;'
+					}]
+				};
+				
+				if(el.dom.tagName.toUpperCase() == 'TR') {
+					domCfg = {
+						tag: 'tr',
+						children:[{
+							tag: 'td',
+							children:[domCfg]
+						}]
+					};
+				}
+				
+				rec.dirtyEl = el.insertSibling(domCfg,'before');
 			}
 		},record);
 	},
 	
-	
 	onBeforeremove: function(ds, record){
-
-		if(this.removeInProgress) { return true; }
 		
+		if(this.removeInProgress) { return true; }
+		this.toggleDirtyCssRecord(record,false);
 		if(record == this.currentEditRecord) {
 			var index = this.getStore().indexOf(record);
 			this.simulateCancelClick(record,index,this.currentEditEl);
@@ -141,6 +159,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		return false;
 	},
 	onRemove: function(ds, record, index){
+		
 		this.destroyItems(index);
 		Ext.ux.RapidApp.AppDV.DataView.superclass.onRemove.apply(this, arguments);
 	},

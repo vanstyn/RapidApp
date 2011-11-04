@@ -1250,7 +1250,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				create: true,
 				update: true,
 				destroy: true
-			}
+			};
 		}
 		var miss = false;
 		if(cmp.store.api.create && !cmp.persist_immediately.create) { miss = true; }
@@ -1420,7 +1420,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			store.on('update',func,store);
 			store.on('remove',func,store);
 			store.on('add',func,store);
-		}
+		};
 		
 		store.buttonConstructor = function(cnf,showtext) {
 			if(cnf.text && !cnf.tooltip) {
@@ -1489,7 +1489,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				return btn;
 			},
 			
-			delete: function(cnf,cmp,showtext) {
+			'delete': function(cnf,cmp,showtext) {
 				
 				if(!cmp.store.api.destroy) { return false; }
 				
