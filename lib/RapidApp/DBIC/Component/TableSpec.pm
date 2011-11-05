@@ -288,19 +288,41 @@ sub get_foreign_column_from_cond {
 	die "Failed to find forein column from condition: " . Dumper($cond);
 }
 
-# Stores arbitrary hashes, preserving their order
+
+my %hash_conf_params = map {$_=>1} qw(
+column_properties
+column_properties_ordered
+relationship_columns
+related_column_property_transforms
+column_order_overrides
+);
+
 sub TableSpec_set_conf {
 	my $self = shift;
-	my $param = shift;
-	if(@_ == 1) {
-		$self->TableSpec_cnf->{$param} = {
-			order => [],
-			data => $_[0]
-		};
-		return;
-	}
-	my %opt = get_mixed_hash_args_ordered(@_);
+	my $param = shift || return undef;
+	my $value = shift || die "TableSpec_set_conf(): missing value for param '$param'";
 	
+	return $self->TableSpec_set_hash_conf($param,$value,@_) 
+		if($hash_conf_params{$param} and @_ > 0);
+		
+	$self->TableSpec_cnf->{$param} = {
+		order => [],
+		data => $value
+	};
+	
+	return $self->TableSpec_set_conf(@_);
+}
+
+
+
+# Stores arbitrary hashes, preserving their order
+sub TableSpec_set_hash_conf {
+	my $self = shift;
+	my $param = shift;
+	
+	return $self->TableSpec_set_conf($param,@_) if (@_ == 1); 
+	
+	my %opt = get_mixed_hash_args_ordered(@_);
 	
 	my $i = 0;
 	my $order = [ grep { ++$i & 1 } @_ ]; #<--get odd elements (keys)

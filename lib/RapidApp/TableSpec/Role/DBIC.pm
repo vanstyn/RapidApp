@@ -153,10 +153,13 @@ hashash 'Cnf' => ( lazy => 1, default => sub {
 	$defaults{singleIconCls} = $Cnf->{singleIconCls} || $defaults{iconCls};
 	$defaults{title} = $Cnf->{title} || $self->name;
 	$defaults{title_multi} = $Cnf->{title_multi} || $defaults{title};
+	
+	my @display_columns = $Cnf->{display_column} ? ( $Cnf->{display_column} ) : $class->primary_columns;
 
+	# row_display coderef overrides display_column to provide finer grained display control
 	my $orig_row_display = $Cnf->{row_display} || sub {
 		my $record = $_;
-		my $title = join('/',map { $record->{$_} || '' } $class->primary_columns);
+		my $title = join('/',map { $record->{$_} || '' } @display_columns);
 		$title = sprintf('%.13s',$title) . '...' if (length $title > 13);
 		return $title;
 	};
