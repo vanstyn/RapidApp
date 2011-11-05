@@ -182,7 +182,17 @@ sub debug_around {
 	
 	foreach my $method (@methods) {
 		my $around = func_debug_around($method, %opt);
-		$pkg->can('around')->($method => $around);
+		
+		# It's a Moose class or otherwise already has an 'around' class method:
+		if($pkg->can('around')) {
+			$pkg->can('around')->($method => $around);
+			next;
+		}
+		
+		# The class doesn't have an around method, so we'll setup manually with Class::MOP:
+		my $meta = Class::MOP::Class->initialize($pkg);
+		$meta->add_around_method_modifier($method => $around)
+		
 	}
 }
 
@@ -210,14 +220,24 @@ sub func_debug_around {
 		my $self = shift;
 		my @args = @_;
 		
+		my $in;
+		my $has_refs = 0;
+		my @print_args = map { ref $_ and ++$has_refs ? ref $_ : $_ } @args;
+		my $in = '(' . join(',',@args) . '): ';
+		
+		print STDERR '[' . $opt{line} . '] ' . CLEAR . $opt{color} . $opt{pkg} . CLEAR . '->' . 
+				$opt{color} . BOLD . $name . CLEAR . $in;
+		
 		my @res = $opt{around}->($orig,$self,@args);
 
 		local $_ = $self;
 		if(!$opt{arg_ignore}->(@args) && !$opt{return_ignore}->(@res)) {
 			
+			print STDERR "\n  args: " . Dumper(\@args) . "\n: " if($has_refs);
+			
 			my $result = $res[0];
 			
-			my $has_refs = 0;
+			$has_refs = 0;
 			ref $_ and $has_refs++ for (@res);
 			if($has_refs) {
 				$result = Dumper(\@res);
@@ -229,21 +249,16 @@ sub func_debug_around {
 			my $out = $result;
 			$out = UNDERLINE . 'undef' unless (defined $out);
 			
-			my $in;
-			$has_refs = 0;
-			ref $_ and $has_refs++ for (@args);
-			if($has_refs) {
-				$in = "\n  args: " . Dumper(\@args) . "\n: ";
-			}
-			else {
-				$in = '(' . join(',',@args) . '): ';
-			}
-			
-			local $_ = 'no_caller_data';
-			scream_color(
-				CLEAR,'[' . $opt{line} . '] ' . CLEAR . $opt{color} . $opt{pkg} . CLEAR . '->' . 
-				$opt{color} . BOLD . $name . CLEAR .$in .  $opt{ret_color} . $out
-			);
+			print STDERR $opt{ret_color} . $out . CLEAR . "\n";
+		}
+		else {
+			# 'arg_ignore' and/or 'return_ignore' returned true, so we're not
+			# supposed to print anything... but since we already have, in case
+			# the function would have barfed, we'll print a \r to move the cursor
+			# to the begining of the line so it will get overwritten, which is
+			# almost as good as if we had not printed anything in the first place...
+			# (note if the function printed something too we're screwed)
+			print STDERR "\r";
 		}
 		
 		return wantarray ? @res : "@res";
