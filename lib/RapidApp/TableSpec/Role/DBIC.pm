@@ -5,6 +5,8 @@ use Moose::Util::TypeConstraints;
 
 use RapidApp::Include qw(sugar perlutil);
 
+use RapidApp::DBIC::Component::TableSpec;
+
 use Text::Glob qw( match_glob );
 use Text::WagnerFischer qw(distance);
 use Clone qw( clone );
@@ -108,14 +110,14 @@ sub init_relationship_columns_new {
 	
 	foreach my $rel (@rel_cols) {
 	
-		$self->add_relationship_columns( $rel,
+		#$self->add_relationship_columns( $rel,
 		
 		
-		);
+		#);
 	
 	}
 	
-	scream(@rel_cols);
+	#scream(@rel_cols);
 	
 }
 
@@ -137,55 +139,23 @@ sub init_relationship_columns {
 
 # Load and process config params from TableSpec_cnf in the ResultClass plus
 # additional defaults:
+hashash 'Cnf_order';
 hashash 'Cnf' => ( lazy => 1, default => sub {
 	my $self = shift;
-	my $Cnf = {};
 	my $class = $self->ResultClass;
-	if($self->ResultClass->can('TableSpec_cnf')) {
-		%$Cnf = map { $_ => $class->TableSpec_cnf->{$_}->{data} } keys %{ $class->TableSpec_cnf };
-		$self->apply_Cnf_order( $_ => $class->TableSpec_cnf->{$_}->{order} || undef ) for (keys %$Cnf);
+	
+	my $cf;
+	if($class->can('TableSpec_cnf')) {
+		$cf = $class->get_built_Cnf;
+	}
+	else {
+		$cf = RapidApp::DBIC::Component::TableSpec::default_TableSpec_cnf($class);
 	}
 	
-	my %defaults = ();
-	$defaults{iconCls} = $Cnf->{singleIconCls} if ($Cnf->{singleIconCls} and ! $Cnf->{iconCls});
-	$defaults{iconCls} = $defaults{iconCls} || $Cnf->{iconCls} || 'icon-application-view-detail';
-	$defaults{multiIconCls} = $Cnf->{multiIconCls} || 'icon-database_table';
-	$defaults{singleIconCls} = $Cnf->{singleIconCls} || $defaults{iconCls};
-	$defaults{title} = $Cnf->{title} || $self->name;
-	$defaults{title_multi} = $Cnf->{title_multi} || $defaults{title};
-	
-	my @display_columns = $Cnf->{display_column} ? ( $Cnf->{display_column} ) : $class->primary_columns;
-
-	# row_display coderef overrides display_column to provide finer grained display control
-	my $orig_row_display = $Cnf->{row_display} || sub {
-		my $record = $_;
-		my $title = join('/',map { $record->{$_} || '' } @display_columns);
-		$title = sprintf('%.13s',$title) . '...' if (length $title > 13);
-		return $title;
-	};
-	
-	$Cnf->{row_display} = sub {
-		my $display = $orig_row_display->(@_);
-		return $display if (ref $display);
-		return {
-			title => $display,
-			iconCls => $defaults{singleIconCls}
-		};
-	};
-	
-	my $rel_trans = {};
-	
-	#foreach my $rel ( $class->storage->schema->source($class)->relationships ) {
-	#	my $info = $class->relationship_info($rel);
-	#	$rel_trans->{$rel}->{editor} = sub {''} unless ($info->{attr}->{accessor} eq 'single');
-	#}
-	$defaults{related_column_property_transforms} = $rel_trans;
-
-	
-	
-	return merge(\%defaults,$Cnf);
+	%{$self->Cnf_order} = %{ $cf->{order} || {} };
+	return $cf->{data} || {};
 });
-hashash 'Cnf_order';
+
 
 
 has 'init_config_column_properties' => ( 

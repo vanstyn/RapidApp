@@ -14,6 +14,7 @@ __PACKAGE__->mk_classdata( 'TableSpec' );
 __PACKAGE__->mk_classdata( 'TableSpec_rel_columns' );
 
 __PACKAGE__->mk_classdata( 'TableSpec_cnf' );
+__PACKAGE__->mk_classdata( 'TableSpec_built_cnf' );
 
 # See default profile definitions in RapidApp::TableSpec::Column
 __PACKAGE__->mk_classdata( 'TableSpec_data_type_profiles' );
@@ -44,6 +45,7 @@ sub apply_TableSpec {
 	
 	$self->TableSpec_rel_columns({});
 	$self->TableSpec_cnf({});
+	$self->TableSpec_built_cnf(undef);
 }
 
 sub create_result_TableSpec {
@@ -289,6 +291,76 @@ sub get_foreign_column_from_cond {
 }
 
 
+sub get_built_Cnf {
+	my $self = shift;
+	
+	$self->TableSpec_build_cnf unless ($self->TableSpec_built_cnf);
+	return $self->TableSpec_built_cnf;
+}
+
+sub TableSpec_build_cnf {
+	my $self = shift;
+	
+	my $set_cnf = $self->TableSpec_cnf || {};
+	my $Data = { %{ $set_cnf->{data} || {} } };
+	my $Order = { %{ $set_cnf->{order} || {} } };
+	
+	my %def = $self->default_TableSpec_cnf($Data,$Order);
+	
+	$self->TableSpec_built_cnf({ 
+		data => merge($def{data},$Data), 
+		order => merge($def{order},$Order)
+	});
+}
+
+sub default_TableSpec_cnf {
+	my $self = shift;
+	my $Cnf = shift || {};
+	my $Order = shift || {};
+
+	my %defaults = ();
+	$defaults{iconCls} = $Cnf->{singleIconCls} if ($Cnf->{singleIconCls} and ! $Cnf->{iconCls});
+	$defaults{iconCls} = $defaults{iconCls} || $Cnf->{iconCls} || 'icon-application-view-detail';
+	$defaults{multiIconCls} = $Cnf->{multiIconCls} || 'icon-database_table';
+	$defaults{singleIconCls} = $Cnf->{singleIconCls} || $defaults{iconCls};
+	$defaults{title} = $Cnf->{title} || $self->table;
+	$defaults{title_multi} = $Cnf->{title_multi} || $defaults{title};
+	($defaults{display_column}) = $self->primary_columns;
+	
+	my @display_columns = $Cnf->{display_column} ? ( $Cnf->{display_column} ) : $self->primary_columns;
+
+	# row_display coderef overrides display_column to provide finer grained display control
+	my $orig_row_display = $Cnf->{row_display} || sub {
+		my $record = $_;
+		my $title = join('/',map { $record->{$_} || '' } @display_columns);
+		$title = sprintf('%.13s',$title) . '...' if (length $title > 13);
+		return $title;
+	};
+	
+	$defaults{row_display} = sub {
+		my $display = $orig_row_display->(@_);
+		return $display if (ref $display);
+		return {
+			title => $display,
+			iconCls => $defaults{singleIconCls}
+		};
+	};
+	
+	my $rel_trans = {};
+	
+	#foreach my $rel ( $class->storage->schema->source($class)->relationships ) {
+	#	my $info = $class->relationship_info($rel);
+	#	$rel_trans->{$rel}->{editor} = sub {''} unless ($info->{attr}->{accessor} eq 'single');
+	#}
+	$defaults{related_column_property_transforms} = $rel_trans;
+
+	return data => \%defaults, order => $Order;
+}
+
+
+
+
+# List of specific param names that we know should be hash confs:
 my %hash_conf_params = map {$_=>1} qw(
 column_properties
 column_properties_ordered
@@ -302,13 +374,13 @@ sub TableSpec_set_conf {
 	my $param = shift || return undef;
 	my $value = shift || die "TableSpec_set_conf(): missing value for param '$param'";
 	
+	$self->TableSpec_built_cnf(undef);
+	
 	return $self->TableSpec_set_hash_conf($param,$value,@_) 
 		if($hash_conf_params{$param} and @_ > 0);
 		
-	$self->TableSpec_cnf->{$param} = {
-		order => [],
-		data => $value
-	};
+	$self->TableSpec_cnf->{data}->{$param} = $value;
+	delete $self->TableSpec_cnf->{order}->{$param};
 	
 	return $self->TableSpec_set_conf(@_);
 }
@@ -322,6 +394,8 @@ sub TableSpec_set_hash_conf {
 	
 	return $self->TableSpec_set_conf($param,@_) if (@_ == 1); 
 	
+	$self->TableSpec_built_cnf(undef);
+	
 	my %opt = get_mixed_hash_args_ordered(@_);
 	
 	my $i = 0;
@@ -329,31 +403,57 @@ sub TableSpec_set_hash_conf {
 	
 	my $data = \%opt;
 	
-	$self->TableSpec_cnf->{$param} = {
-		order => $order,
-		data => $data
-	};
+	$self->TableSpec_cnf->{data}->{$param} = $data;
+	$self->TableSpec_cnf->{order}->{$param} = $order;
 }
 
 sub TableSpec_get_conf {
 	my $self = shift;
 	my $param = shift;
 	
-	my $cnf = $self->TableSpec_cnf->{$param} or return undef;
+	my $data = $self->get_built_Cnf->{data}->{$param} || return undef;
+	my $order = $self->get_built_Cnf->{order}->{$param} || return $data;
 	
-	return map { $_ => $cnf->{data}->{$_} } @{$cnf->{order}};
+	ref($data) eq 'HASH' or
+		die "FATAL: Unexpected data! '$param' has a stored order, but it's data is not a HashRef!";
+		
+	ref($order) eq 'ARRAY' or
+		die "FATAL: Unexpected data! '$param' order is not an ArrayRef!";
+		
+	my %order_indx = map {$_=>1} @$order;
+	
+	!$order_indx{$_} and
+		die "FATAL: Unexpected data! param '$param' - found key '$_' missing from stored order!"
+			for (keys %$data);
+			
+	!$data->{$_} and
+		die "FATAL: Unexpected data! param '$param' - missing declared ordered key '$_' from data!"
+			for (@$order);
+	
+	return map { $_ => $data->{$_} } @$order;
 }
 
 sub TableSpec_has_conf {
 	my $self = shift;
 	my $param = shift;
-	return 1 if (exists $self->TableSpec_cnf->{$param});
+	return 1 if (exists $self->get_built_Cnf->{data}->{$param});
 	return 0;
 }
 
+# Gets a TableSpec conf param, if exists, from a related Result Class
+sub TableSpec_related_get_conf {
+	my $self = shift;
+	my $rel = shift;
+	my $param = shift;
+	
+	my $info = $self->relationship_info($rel) || return undef;
+	
+	scream($info);
+	
+	
+}
 
-
-
+=pod
 sub TableSpec_set_conf_column_order {
 	my $self = shift;
 	my $offset = $_[0];
@@ -391,5 +491,6 @@ sub TableSpec_set_conf_column_order_base {
 		
 	push @{$self->TableSpec_cnf->{column_order_overrides}->{data}}, [$offset,\@cols];
 }
+=cut
 
 1;
