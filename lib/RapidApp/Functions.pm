@@ -6,6 +6,7 @@ use Class::MOP::Class;
 use Term::ANSIColor qw(:constants);
 use Data::Dumper;
 use RapidApp::RootModule;
+use Clone qw(clone);
 
 sub scream {
 	local $_ = caller_data(3);
@@ -222,28 +223,38 @@ sub func_debug_around {
 		
 		my $in;
 		my $has_refs = 0;
-		my @print_args = map { ref $_ and ++$has_refs ? ref $_ : $_ } @args;
-		my $in = '(' . join(',',@args) . '): ';
+		my @print_args = map { ref($_) and ++$has_refs ? ref($_) : $_ } @args;
+		my $in = '(' . join(',',@print_args) . '): ';
 		
 		print STDERR '[' . $opt{line} . '] ' . CLEAR . $opt{color} . $opt{pkg} . CLEAR . '->' . 
 				$opt{color} . BOLD . $name . CLEAR . $in;
 		
-		my @res = $opt{around}->($orig,$self,@args);
-
+		my $res;
+		my @res;
+		my @res_copy = ();
+		if(wantarray) {
+			@res = $opt{around}->($orig,$self,@args);
+			push @res_copy, @res;
+		}
+		else {
+			$res = $opt{around}->($orig,$self,@args);
+			push @res_copy,$res;
+		}
+		
 		local $_ = $self;
-		if(!$opt{arg_ignore}->(@args) && !$opt{return_ignore}->(@res)) {
+		if(!$opt{arg_ignore}->(@args) && !$opt{return_ignore}->(@res_copy)) {
 			
 			print STDERR "\n  args: " . Dumper(\@args) . "\n: " if($has_refs);
 			
 			my $result = $res[0];
 			
 			$has_refs = 0;
-			ref $_ and $has_refs++ for (@res);
+			ref $_ and $has_refs++ for (@res_copy);
 			if($has_refs) {
-				$result = Dumper(\@res);
+				$result = Dumper(\@res_copy);
 			}
-			elsif (@res > 1) {
-				$result = '(' . join(',',@res) . ')';
+			elsif (@res_copy > 1) {
+				$result = '(' . join(',',@res_copy) . ')';
 			}
 			
 			my $out = $result;
@@ -261,7 +272,7 @@ sub func_debug_around {
 			print STDERR "\r";
 		}
 		
-		return wantarray ? @res : "@res";
+		return wantarray ? @res : $res;
 	};
 }
 
