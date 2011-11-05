@@ -1,6 +1,52 @@
 package RapidApp::DBIC::Component::TableSpec;
-use base 'DBIx::Class';
+#use base 'DBIx::Class';
+# this makes Attribute::Handlers
+require base; base->import('DBIx::Class');
 
+#use Moose;
+#use MooseX::NonMoose;
+#use namespace::autoclean;
+#extends 'DBIx::Class';
+#no strict 'refs';
+=pod
+[15:44] <vs> Attribute::Handlers with DBIC Component classes, is there a trick to get it to work properly? I want to be able to have custom attributes defined in a separate package, and then include it it with use base, or load_componenets, or anything that will actually work, and have those attributes available for setting on the subs in the DBIC class... Sub::Attribute works, but has less features than Attribute::Handlers... is there a reason it doesn't work with Attribute::Hanlders?
+[15:45] <alnewkirk> vs, ... wtf?
+[15:45] <vs> heh
+[15:46] <alnewkirk> vs, DBIC already does this without any extra modules needed
+[15:48] <vs> ok.... how/where?
+[15:49] <vs> to clearify, I'm not talking about class accessors... I am talking about being able to define sub mysub :MyAttr { ... } and then be able to hook into the 'MyAttr' attribute
+[15:50] <alnewkirk> vs, why?
+[15:51] <vs> I'd like to use it for debug/introspection... but I really just want to be able t use it for any purposes that one would use attributes in any other regulat packages...
+[15:51] <vs> just wanting to understand why it seems to be different for DBIC..
+[15:52] <vs> is it related to class:c3  stuff?
+[16:04] <vs> Because it does work with MooseX::NonMoose/extends 'DBIx::Class', but does not work with use base 'DBIx::Class' ... I don't want to have to load Moose on my DBIC classes if I don't have to because of the extra overhead
+[16:05] * siracusa (~siracusa@pool-96-233-50-4.bstnma.fios.verizon.net) has joined #dbix-class
+[16:32] <@Caelum> vs: you need to put the ->load_components call into a BEGIN {} block
+[16:32] <@Caelum> ner0x: the difference between has_one and belongs_to, is that belongs_to defines a foreign key on deploy
+[16:32] <@Caelum> ner0x: so if you want a foreign key, use belongs_to
+[16:32] <vs> Caelum: I did that
+[16:33] <@Caelum> vs: still didn't work?
+[16:33] <purl> Maybe you should change the code!  Or your definition of "works". or like not good or nun violence never pays
+[16:33] <vs> I tried that, and use base qw(MyAttrClass DBIx::Class) and neither work
+[16:34] <vs> it does work with Sub::Attribute
+[16:35] <vs> It doesn't throw errors about invalid CODE attributes, but the handle code never gets called...
+[16:35] <@Caelum> so if you load your base class at runtime, it works, but at compile time it doesn't
+[16:36] <vs> I can only get it to work if I put the atttribute definitions in the package directly
+[16:36] <@Caelum> try: require base; base->import('DBIx::Class');
+[16:36] <@Caelum> that would be the equivalent of the Moose "extends"
+[16:37] <vs> aha... ok, let me try that... 
+[16:38] <vs> yep, that works!
+[16:38] <@Caelum> bonus points if you can figure out why and submit the appropriate RT tickets :)
+[16:39] <vs> I've been beating my head against this for hours... it reminds me how much I still don't know about perl...
+[16:41] <vs> but if I can figure it out, I'll send the feedback!
+[16:41] <@Caelum> I think there was a MODIFY_CODE_ATTRIBUTES method in DBIx/Class.pm
+[16:41] <@Caelum> I don't know why it's there
+[16:42] <vs> yep, I know there is... because during some of my tests i saw messsages about it being redefined
+[16:42] <vs> redefined by DBIx::Class....
+[16:42] <vs> I figured it had to be related to the c3 stuff
+[16:43] <@Caelum> it isn't
+[16:43] <@Caelum> ask ribasushi he probably knows
+=cut
 # DBIx::Class Component: ties a RapidApp::TableSpec object to
 # a Result class for use in configuring various modules that
 # consume/use a DBIC Source
@@ -17,8 +63,7 @@ __PACKAGE__->mk_classdata( 'TableSpec_cnf' );
 __PACKAGE__->mk_classdata( 'TableSpec_built_cnf' );
 
 # See default profile definitions in RapidApp::TableSpec::Column
-__PACKAGE__->mk_classdata( 'TableSpec_data_type_profiles' );
-__PACKAGE__->TableSpec_data_type_profiles({
+my $default_data_type_profiles = {
 	text 			=> [ 'bigtext' ],
 	blob 			=> [ 'bigtext' ],
 	varchar 		=> [ 'text' ],
@@ -30,9 +75,12 @@ __PACKAGE__->TableSpec_data_type_profiles({
 	bigint		=> [ 'number', 'int' ],
 	datetime		=> [ 'datetime' ],
 	timestamp	=> [ 'datetime' ],
-});
+};
+__PACKAGE__->mk_classdata( 'TableSpec_data_type_profiles' );
+__PACKAGE__->TableSpec_data_type_profiles({ %$default_data_type_profiles }); 
 
-sub apply_TableSpec {
+
+sub apply_TableSpec :Debug {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
@@ -75,6 +123,43 @@ sub create_result_TableSpec {
 	
 	return $TableSpec;
 }
+
+
+sub TableSpec_valid_db_columns :Debug {
+	my $self = shift;
+
+	my @cols = $self->columns;
+	
+	return @cols;
+	
+	
+	## FIXME: This goes recursive:
+	
+	my @rels = grep { $self->relationship_info($_)->{attrs}->{accessor} eq 'single' } $self->relationships;
+	
+	
+	foreach my $rel (@rels) {
+		scream($rel);
+		my $displayField = $self->TableSpec_related_get_conf($rel,'display_column') or next;
+		
+		push @cols,$rel;
+		
+		#my $width = $class->TableSpec_related_get_conf($rel
+		
+		scream($rel,$displayField);
+		
+		#$self->add_relationship_columns( $rel,
+		
+		
+		#);
+	
+	}
+	
+	#scream($self->relationships);
+	
+	return @cols;
+}
+
 
 
 sub TableSpec_add_columns_from_related {
@@ -304,25 +389,27 @@ sub TableSpec_build_cnf {
 	$self->TableSpec_built_cnf($self->default_TableSpec_cnf(\%set_cnf));
 }
 
-sub default_TableSpec_cnf {
+sub default_TableSpec_cnf  {
 	my $self = shift;
 	my $set = shift || {};
 
-	my $Cnf = $set->{data} || {};
+	my $data = $set->{data} || {};
+	my $order = $set->{order} || {};
+	my $deref = $set->{deref} || {};
 
 	my %defaults = ();
-	$defaults{iconCls} = $Cnf->{singleIconCls} if ($Cnf->{singleIconCls} and ! $Cnf->{iconCls});
-	$defaults{iconCls} = $defaults{iconCls} || $Cnf->{iconCls} || 'icon-application-view-detail';
-	$defaults{multiIconCls} = $Cnf->{multiIconCls} || 'icon-database_table';
-	$defaults{singleIconCls} = $Cnf->{singleIconCls} || $defaults{iconCls};
-	$defaults{title} = $Cnf->{title} || $self->table;
-	$defaults{title_multi} = $Cnf->{title_multi} || $defaults{title};
+	$defaults{iconCls} = $data->{singleIconCls} if ($data->{singleIconCls} and ! $data->{iconCls});
+	$defaults{iconCls} = $defaults{iconCls} || $data->{iconCls} || 'icon-application-view-detail';
+	$defaults{multiIconCls} = $data->{multiIconCls} || 'icon-database_table';
+	$defaults{singleIconCls} = $data->{singleIconCls} || $defaults{iconCls};
+	$defaults{title} = $data->{title} || $self->table;
+	$defaults{title_multi} = $data->{title_multi} || $defaults{title};
 	($defaults{display_column}) = $self->primary_columns;
 	
-	my @display_columns = $Cnf->{display_column} ? ( $Cnf->{display_column} ) : $self->primary_columns;
+	my @display_columns = $data->{display_column} ? ( $data->{display_column} ) : $self->primary_columns;
 
 	# row_display coderef overrides display_column to provide finer grained display control
-	my $orig_row_display = $Cnf->{row_display} || sub {
+	my $orig_row_display = $data->{row_display} || sub {
 		my $record = $_;
 		my $title = join('/',map { $record->{$_} || '' } @display_columns);
 		$title = sprintf('%.13s',$title) . '...' if (length $title > 13);
@@ -345,11 +432,99 @@ sub default_TableSpec_cnf {
 	#	$rel_trans->{$rel}->{editor} = sub {''} unless ($info->{attr}->{accessor} eq 'single');
 	#}
 	$defaults{related_column_property_transforms} = $rel_trans;
+	
+	my $defs = { data => \%defaults };
+	
+	my $col_cnf = $self->default_TableSpec_cnf_columns($set);
+	$defs = merge($defs,$col_cnf);
 
-	return merge({ data => \%defaults }, $set);
+	return merge($defs, $set);
+}
+
+sub default_TableSpec_cnf_columns {
+	my $self = shift;
+	my $set = shift || {};
+
+	my $data = $set->{data} || {};
+	my $order = $set->{order} || {};
+	my $deref = $set->{deref} || {};
+	
+	my @col_order = $self->default_TableSpec_cnf_column_order($set);
+	my $cols = { map { $_ => {} } @col_order };
+
+	$cols = merge($cols,$set->{data}->{column_properties_ordered} || {});
+		
+	# higher precidence:
+	$cols = merge($cols,$set->{data}->{column_properties} || {});
+
+	my $data_types = $self->TableSpec_data_type_profiles;
+	
+	foreach my $col (keys %$cols) {
+		my $info = $self->column_info($col);
+		my @profiles = ();
+			
+		push @profiles, $info->{is_nullable} ? 'nullable' : 'notnull';
+		
+		my $type_profile = $data_types->{$info->{data_type}} || ['text'];
+		$type_profile = [ $type_profile ] unless (ref $type_profile);
+		push @profiles, @$type_profile;
+		
+		$cols->{$col}->{profiles} = [ $cols->{$col}->{profiles} ] if (
+			defined $cols->{$col}->{profiles} and 
+			not ref $cols->{$col}->{profiles}
+		);
+		push @profiles, @{$cols->{$col}->{profiles}} if ($cols->{$col}->{profiles});
+		
+		$cols->{$col}->{profiles} = \@profiles
+	}
+	
+	return {
+		data => { columns => $cols },
+		order => { columns => \@col_order }
+	};
 }
 
 
+sub default_TableSpec_cnf_column_order :Debug {
+	my $self = shift;
+	my $set = shift || {};
+	
+	my @order = ();
+	push @order, @{ $self->TableSpec_get_conf('column_properties_ordered',$set) || [] };
+	#push @order, $self->columns;
+	push @order, $self->TableSpec_valid_db_columns; # <-- native dbic column order has precidence over the column_properties order
+	push @order, @{ $self->TableSpec_get_conf('column_properties',$set) || [] };
+		
+	# fold together removing duplicates:
+	@order = uniq @order;
+	
+	my $ovrs = $self->TableSpec_get_conf('column_order_overrides',$set) or return @order;
+	foreach my $ord (@$ovrs) {
+		my ($offset,$cols) = @$ord;
+		my %colmap = map { $_ => 1 } @$cols;
+		# remove colnames to be ordered differently:
+		@order = grep { !$colmap{$_} } @order;
+		
+		# If the offset is a column name prefixed with + (after) or - (before)
+		$offset =~ s/^([\+\-])//;
+		if($1) {
+			my $i = 0;
+			my $ndx = 0; # <-- default before (will become 0 below)
+			$ndx = scalar @order if ($1 eq '+'); # <-- default after
+			for my $col (@order) {
+				$ndx = $i and last if ($col eq $offset);
+				$i++;
+			}
+			$ndx++ if ($1 eq '+' and $ndx > 0);
+			$offset = $ndx;
+		}
+
+		$offset = scalar @order if ($offset > scalar @order);
+		splice(@order,$offset,0,@$cols);
+	}
+	
+	return uniq @order;
+}
 
 
 # List of specific param names that we know should be hash confs:
@@ -419,20 +594,22 @@ sub TableSpec_set_deref_conf {
 sub TableSpec_get_conf {
 	my $self = shift;
 	my $param = shift || return undef;
+	my $storage = shift || $self->get_built_Cnf;
 	
-	return $self->TableSpec_get_hash_conf($param) if ($self->get_built_Cnf->{order}->{$param});
+	return $self->TableSpec_get_hash_conf($param,$storage) if ($storage->{order}->{$param});
 	
-	my $data = $self->get_built_Cnf->{data}->{$param};
-	return deref($data) if ($self->get_built_Cnf->{deref}->{$param});
+	my $data = $storage->{data}->{$param};
+	return deref($data) if ($storage->{deref}->{$param});
 	return $data;
 }
 
 sub TableSpec_get_hash_conf {
 	my $self = shift;
 	my $param = shift || return undef;
+	my $storage = shift || $self->get_built_Cnf;
 	
-	my $data = $self->get_built_Cnf->{data}->{$param};
-	my $order = $self->get_built_Cnf->{order}->{$param};
+	my $data = $storage->{data}->{$param};
+	my $order = $storage->{order}->{$param};
 	
 	ref($data) eq 'HASH' or
 		die "FATAL: Unexpected data! '$param' has a stored order, but it's data is not a HashRef!";
@@ -456,7 +633,8 @@ sub TableSpec_get_hash_conf {
 sub TableSpec_has_conf {
 	my $self = shift;
 	my $param = shift;
-	return 1 if (exists $self->get_built_Cnf->{data}->{$param});
+	my $storage = shift || $self->get_built_Cnf;
+	return 1 if (exists $storage->{data}->{$param});
 	return 0;
 }
 

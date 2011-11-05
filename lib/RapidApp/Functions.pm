@@ -1,5 +1,4 @@
 package RapidApp::Functions;
-
 require Exporter;
 use Class::MOP::Class;
 
@@ -176,7 +175,8 @@ sub deref {
 }
 
 
-sub debug_around {
+
+sub debug_around($@) {
 	my ($pkg,$filename,$line) = caller;
 	my $method = shift;
 	my @methods = ( $method );
@@ -190,6 +190,8 @@ sub debug_around {
 		line			=> $line,
 		%opt
 	);
+	
+	$pkg = $opt{pkg};
 	
 	foreach my $method (@methods) {
 		my $around = func_debug_around($method, %opt);
@@ -214,6 +216,7 @@ sub func_debug_around {
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	%opt = (
+		verbose			=> 0,
 		color				=> GREEN,
 		ret_color		=> RED.BOLD,
 		arg_ignore		=> sub { 0 }, # <-- no debug output prited when this returns true
@@ -233,7 +236,8 @@ sub func_debug_around {
 		
 		my $in;
 		my $has_refs = 0;
-		my @print_args = map { ref($_) and ++$has_refs ? ref($_) : $_ } @args;
+		my @print_args = map { (ref($_) and ++$has_refs) ? "$_" : MAGENTA . "'$_'" . CLEAR } @args;
+		
 		my $in = '(' . join(',',@print_args) . '): ';
 		
 		print STDERR '[' . $opt{line} . '] ' . CLEAR . $opt{color} . $opt{pkg} . CLEAR . '->' . 
@@ -254,7 +258,7 @@ sub func_debug_around {
 		local $_ = $self;
 		if(!$opt{arg_ignore}->(@args) && !$opt{return_ignore}->(@res_copy)) {
 			
-			print STDERR "\n  args: " . Dumper(\@args) . "\n: " if($has_refs);
+			print STDERR "\n  args: " . Dumper(\@args) . "\n: " if($has_refs && $opt{verbose});
 			
 			my $result = $res[0];
 			
@@ -286,6 +290,16 @@ sub func_debug_around {
 	};
 }
 
+# Lets you create 
+sub debug_sub($&) {
+	my ($pkg,$filename,$line) = caller;
+	my ($name,$code) = @_; 
+	
+	my $meta = Class::MOP::Class->initialize($pkg);
+	$meta->add_method($name,$code);
+	
+	return debug_around $name, pkg => $pkg, filename => $filename, line => $line;
+}
 
 
 # Automatically export all functions defined above:

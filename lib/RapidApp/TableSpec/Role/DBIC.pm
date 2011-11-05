@@ -3,6 +3,8 @@ use strict;
 use Moose::Role;
 use Moose::Util::TypeConstraints;
 
+
+
 use RapidApp::Include qw(sugar perlutil);
 
 use RapidApp::DBIC::Component::TableSpec;
@@ -10,6 +12,10 @@ use RapidApp::DBIC::Component::TableSpec;
 use Text::Glob qw( match_glob );
 use Text::WagnerFischer qw(distance);
 use Clone qw( clone );
+
+
+
+
 
 has 'ResultSource', is => 'ro', isa => 'DBIx::Class::ResultSource',
 default => sub {
@@ -67,7 +73,48 @@ after BUILD => sub {
 	#$self->add_all_related_TableSpecs_recursive;
 };
 
-sub init_local_columns {
+
+sub init_local_columns  {
+	my $self = shift;
+	
+	my $class = $self->ResultClass;
+	$class->set_primary_key( $class->columns ) unless ( $class->primary_columns > 0 );
+	
+	my $cols = $self->get_Cnf('columns');
+	my @order = @{$self->get_Cnf_order('columns')};
+	@order = $self->filter_base_columns(@order);
+	
+	$self->add_db_column($_,$cols->{$_}) for (@order);
+};
+
+has 'db_col_indx', is => 'ro', isa => 'HashRef', lazy => 1, 
+default => sub {
+	my $self = shift;
+	return { map {$_=>1} $self->ResultClass->columns };
+};
+
+
+sub add_db_column {
+	my $self = shift;
+	my $name = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	$opt{name} = $self->column_prefix . $name;
+	
+	if($self->db_col_indx->{$name}) {
+		return $self->add_columns(\%opt);
+	}
+	
+	scream('Not a base column: ' + $name);
+
+}
+
+
+
+
+=pod
+
+sub init_local_columns_old {
 	my $self = shift;
 	
 	my $class = $self->ResultClass;
@@ -108,6 +155,7 @@ sub init_local_columns {
 	
 	#$self->init_relationship_columns_new;
 }
+=cut
 
 
 sub init_relationship_columns_new {
@@ -176,7 +224,7 @@ hashash 'Cnf' => ( lazy => 1, default => sub {
 });
 
 
-
+=pod
 has 'init_config_column_properties' => ( 
 	is => 'ro', 
 	isa => 'HashRef',
@@ -238,7 +286,7 @@ has 'init_config_column_order' => (
 	}
 );
 
-
+=cut
 
 
 =head1 ColSpec format 'include_colspec'
