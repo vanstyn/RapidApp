@@ -11,13 +11,23 @@ use Text::Glob qw( match_glob );
 use Text::WagnerFischer qw(distance);
 use Clone qw( clone );
 
-has 'ResultClass' => ( is => 'ro', isa => 'Str' );
-
-has 'ResultSource' => ( is => 'ro', lazy => 1, default => sub {
+has 'ResultSource', is => 'ro', isa => 'DBIx::Class::ResultSource',
+default => sub {
 	my $self = shift;
+	# TODO: get rid of this and make required => 1
 	my $c = RapidApp::ScopedGlobals->get('catalystClass');
 	return $c->model('DB')->source($self->ResultClass);
-});
+};
+
+
+
+has 'ResultClass', is => 'ro', isa => 'Str', lazy => 1, 
+default => sub {
+	my $self = shift;
+	my $source_name = $self->ResultSource->source_name;
+	return $self->ResultSource->schema->class($source_name);
+};
+
 
 has 'data_type_profiles' => ( is => 'ro', isa => 'HashRef', default => sub {{
 	text 			=> [ 'bigtext' ],
@@ -95,21 +105,30 @@ sub init_local_columns {
 	$self->add_columns($inc_cols{$_}) for (@order);
 	
 	$self->init_relationship_columns;
+	
+	#$self->init_relationship_columns_new;
 }
 
 
 sub init_relationship_columns_new {
 	my $self = shift;
 	
-	my $c = RapidApp::ScopedGlobals->get('catalystClass');
-	my $Source = $c->model('DB')->source($self->ResultClass);
+	my $class = $self->ResultClass;
+	my $Source = $self->ResultSource;
+	return unless ($class->can('TableSpec_cnf'));
 	
-	my @single_rels = grep { $Source->relationship_info($_)->{attrs}->{accessor} eq 'single' } $Source->relationships;
+	my @rels = grep { $Source->relationship_info($_)->{attrs}->{accessor} eq 'single' } $Source->relationships;
+	@rels = $self->filter_base_columns(@rels);
 	
-	my @rel_cols = $self->filter_base_columns(@single_rels);
+	foreach my $rel (@rels) {
 	
-	foreach my $rel (@rel_cols) {
-	
+		my $displayField = $class->TableSpec_related_get_conf($rel,'display_column');
+		
+		
+		#my $width = $class->TableSpec_related_get_conf($rel
+		
+		scream($rel,$displayField);
+		
 		#$self->add_relationship_columns( $rel,
 		
 		

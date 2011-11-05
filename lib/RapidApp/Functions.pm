@@ -165,6 +165,16 @@ sub uniq {
 	return @{$_[0]};
 }
 
+sub deref {
+	my $ref = shift;
+	my $type = ref $ref || return $ref,@_;
+	die 'deref(): more than 1 argument not supported' if (@_ > 0);
+	return $$ref if ($type eq 'SCALAR');
+	return @$ref if ($type eq 'ARRAY');
+	return %$ref if ($type eq 'HASH');
+	die "deref(): invalid ref type '$type' - supported types: SCALAR, ARRAY and HASH";
+}
+
 
 sub debug_around {
 	my ($pkg,$filename,$line) = caller;

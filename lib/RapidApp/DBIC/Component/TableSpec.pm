@@ -300,23 +300,15 @@ sub get_built_Cnf {
 
 sub TableSpec_build_cnf {
 	my $self = shift;
-	
-	my $set_cnf = $self->TableSpec_cnf || {};
-	my $Data = { %{ $set_cnf->{data} || {} } };
-	my $Order = { %{ $set_cnf->{order} || {} } };
-	
-	my %def = $self->default_TableSpec_cnf($Data,$Order);
-	
-	$self->TableSpec_built_cnf({ 
-		data => merge($def{data},$Data), 
-		order => merge($def{order},$Order)
-	});
+	my %set_cnf = %{ $self->TableSpec_cnf || {} };
+	$self->TableSpec_built_cnf($self->default_TableSpec_cnf(\%set_cnf));
 }
 
 sub default_TableSpec_cnf {
 	my $self = shift;
-	my $Cnf = shift || {};
-	my $Order = shift || {};
+	my $set = shift || {};
+
+	my $Cnf = $set->{data} || {};
 
 	my %defaults = ();
 	$defaults{iconCls} = $Cnf->{singleIconCls} if ($Cnf->{singleIconCls} and ! $Cnf->{iconCls});
@@ -354,7 +346,7 @@ sub default_TableSpec_cnf {
 	#}
 	$defaults{related_column_property_transforms} = $rel_trans;
 
-	return data => \%defaults, order => $Order;
+	return merge({ data => \%defaults }, $set);
 }
 
 
@@ -382,10 +374,9 @@ sub TableSpec_set_conf {
 	$self->TableSpec_cnf->{data}->{$param} = $value;
 	delete $self->TableSpec_cnf->{order}->{$param};
 	
-	return $self->TableSpec_set_conf(@_);
+	return $self->TableSpec_set_conf(@_) if (@_ > 0);
+	return 1;
 }
-
-
 
 # Stores arbitrary hashes, preserving their order
 sub TableSpec_set_hash_conf {
@@ -407,12 +398,41 @@ sub TableSpec_set_hash_conf {
 	$self->TableSpec_cnf->{order}->{$param} = $order;
 }
 
+# Sets a reference value with flag to dereference on TableSpec_get_conf
+sub TableSpec_set_deref_conf {
+	my $self = shift;
+	my $param = shift || return undef;
+	my $value = shift || die "TableSpec_set_deref_conf(): missing value for param '$param'";
+	die "TableSpec_set_deref_conf(): value must be a SCALAR, HASH, or ARRAY ref" unless (
+		ref($value) eq 'HASH' or
+		ref($value) eq 'ARRAY' or
+		ref($value) eq 'SCALAR'
+	);
+	
+	$self->TableSpec_cnf->{deref}->{$param} = 1;
+	my $ret = $self->TableSpec_set_conf($param,$value);
+
+	return $self->TableSpec_set_deref_conf(@_) if (@_ > 0);
+	return $ret;
+}
+
 sub TableSpec_get_conf {
 	my $self = shift;
-	my $param = shift;
+	my $param = shift || return undef;
 	
-	my $data = $self->get_built_Cnf->{data}->{$param} || return undef;
-	my $order = $self->get_built_Cnf->{order}->{$param} || return $data;
+	return $self->TableSpec_get_hash_conf($param) if ($self->get_built_Cnf->{order}->{$param});
+	
+	my $data = $self->get_built_Cnf->{data}->{$param};
+	return deref($data) if ($self->get_built_Cnf->{deref}->{$param});
+	return $data;
+}
+
+sub TableSpec_get_hash_conf {
+	my $self = shift;
+	my $param = shift || return undef;
+	
+	my $data = $self->get_built_Cnf->{data}->{$param};
+	my $order = $self->get_built_Cnf->{order}->{$param};
 	
 	ref($data) eq 'HASH' or
 		die "FATAL: Unexpected data! '$param' has a stored order, but it's data is not a HashRef!";
@@ -443,14 +463,14 @@ sub TableSpec_has_conf {
 # Gets a TableSpec conf param, if exists, from a related Result Class
 sub TableSpec_related_get_conf {
 	my $self = shift;
-	my $rel = shift;
-	my $param = shift;
+	my $rel = shift || return undef;
+	my $param = shift || return undef;
 	
 	my $info = $self->relationship_info($rel) || return undef;
-	
-	scream($info);
-	
-	
+	my $relclass = $info->{class};
+	#my $relclass = $self->related_class($rel) || return undef;
+	$relclass->can('TableSpec_get_conf') || return undef;
+	return $relclass->TableSpec_get_conf($param);
 }
 
 =pod

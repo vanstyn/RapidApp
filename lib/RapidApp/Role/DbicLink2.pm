@@ -91,9 +91,9 @@ sub _build_TableSpec {
 	my $self = shift;
 	
 	my %opt = (
-		name => $self->ResultClass->table,
+		name => $self->ResultSource->from,
 		relation_sep => $self->relation_sep,
-		ResultClass => $self->ResultClass,
+		ResultSource => $self->ResultSource,
 		include_colspec => $self->include_colspec
 	);
 	
