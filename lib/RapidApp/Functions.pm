@@ -232,6 +232,8 @@ sub func_debug_around {
 	);
 	
 	$opt{dump_func} = sub {
+		return UNDERLINE . 'undef' . CLEAR unless (@_ > 0);
+		return  join(',',map { ref $_ ? "$_" : "'$_'" } @_) unless ($opt{verbose});
 		return Dumper(@_) unless ($opt{use_json});
 		return encode_json(\@_);
 	} unless ($opt{dump_func});
@@ -264,17 +266,23 @@ sub func_debug_around {
 		
 		local $_ = $self;
 		if(!$opt{arg_ignore}->(@args) && !$opt{return_ignore}->(@res_copy)) {
+			my $spaces = ' ' x (2 + length($opt{line}));
+			print STDERR "\n$spaces Supplied arguments dump: " . $opt{dump_func}->(\@args) . "\n: " if($has_refs && $opt{verbose});
 			
-			print STDERR "\n  args: " . $opt{dump_func}->(\@args) . "\n: " if($has_refs && $opt{verbose});
+			my $result = $opt{ret_color} . $opt{dump_func}->(@res_copy) . CLEAR;
+			$result = "\n$spaces Returned: " . $result . "\n" if ($opt{verbose});
+			print STDERR $result . "\n";
 			
-			my $result = $res[0];
+			
+=pod
 			
 			$has_refs = 0;
 			ref $_ and $has_refs++ for (@res_copy);
 			if($has_refs) {
 				$result = $opt{dump_func}->(\@res_copy);
 			}
-			elsif (@res_copy > 1) {
+			elsif (@res_copy > 0) {
+				@res_copy = map { "$_" } @res_copy;
 				$result = '(' . join(',',@res_copy) . ')';
 			}
 			
@@ -282,6 +290,9 @@ sub func_debug_around {
 			$out = UNDERLINE . 'undef' unless (defined $out);
 			
 			print STDERR $opt{ret_color} . $out . CLEAR . "\n";
+			
+=cut
+			
 		}
 		else {
 			# 'arg_ignore' and/or 'return_ignore' returned true, so we're not
@@ -297,7 +308,7 @@ sub func_debug_around {
 	};
 }
 
-# Lets you create 
+# Lets you create a sub and set debug_around on it at the same time
 sub debug_sub($&) {
 	my ($pkg,$filename,$line) = caller;
 	my ($name,$code) = @_; 
