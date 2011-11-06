@@ -6,6 +6,7 @@ use Term::ANSIColor qw(:constants);
 use Data::Dumper;
 use RapidApp::RootModule;
 use Clone qw(clone);
+use JSON::PP qw(encode_json);
 
 sub scream {
 	local $_ = caller_data(3);
@@ -217,6 +218,7 @@ sub func_debug_around {
 	
 	%opt = (
 		verbose			=> 0,
+		use_json			=> 0,
 		color				=> GREEN,
 		ret_color		=> RED.BOLD,
 		arg_ignore		=> sub { 0 }, # <-- no debug output prited when this returns true
@@ -228,6 +230,11 @@ sub func_debug_around {
 								},
 		%opt
 	);
+	
+	$opt{dump_func} = sub {
+		return Dumper(@_) unless ($opt{use_json});
+		return encode_json(\@_);
+	} unless ($opt{dump_func});
 
 	return sub {
 		my $orig = shift;
@@ -258,14 +265,14 @@ sub func_debug_around {
 		local $_ = $self;
 		if(!$opt{arg_ignore}->(@args) && !$opt{return_ignore}->(@res_copy)) {
 			
-			print STDERR "\n  args: " . Dumper(\@args) . "\n: " if($has_refs && $opt{verbose});
+			print STDERR "\n  args: " . $opt{dump_func}->(\@args) . "\n: " if($has_refs && $opt{verbose});
 			
 			my $result = $res[0];
 			
 			$has_refs = 0;
 			ref $_ and $has_refs++ for (@res_copy);
 			if($has_refs) {
-				$result = Dumper(\@res_copy);
+				$result = $opt{dump_func}->(\@res_copy);
 			}
 			elsif (@res_copy > 1) {
 				$result = '(' . join(',',@res_copy) . ')';
