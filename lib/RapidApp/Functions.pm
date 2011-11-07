@@ -267,10 +267,10 @@ sub func_debug_around {
 		local $_ = $self;
 		if(!$opt{arg_ignore}->(@args) && !$opt{return_ignore}->(@res_copy)) {
 			my $spaces = ' ' x (2 + length($opt{line}));
-			print STDERR "\n$spaces Supplied arguments dump: " . $opt{dump_func}->(\@args) . "\n: " if($has_refs && $opt{verbose});
+			print STDERR "\n" . ON_WHITE.BOLD . BLUE . "$spaces Supplied arguments dump: " . $opt{dump_func}->(\@args) . "\n: " if($has_refs && $opt{verbose});
 			
 			my $result = $opt{ret_color} . $opt{dump_func}->(@res_copy) . CLEAR;
-			$result = "\n$spaces Returned: " . $result . "\n" if ($opt{verbose});
+			$result = "\n" . ON_WHITE.BOLD . "$spaces Returned: " . $result . "\n" if ($opt{verbose});
 			print STDERR $result . "\n";
 			
 			

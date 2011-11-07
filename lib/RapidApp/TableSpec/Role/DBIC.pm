@@ -87,26 +87,22 @@ sub init_local_columns  {
 	$self->add_db_column($_,$cols->{$_}) for (@order);
 };
 
-has 'db_col_indx', is => 'ro', isa => 'HashRef', lazy => 1, 
-default => sub {
-	my $self = shift;
-	return { map {$_=>1} $self->ResultClass->columns };
-};
+#has 'db_col_indx', is => 'ro', isa => 'HashRef', lazy => 1, 
+#default => sub {
+#	my $self = shift;
+#	return { map {$_=>1} $self->ResultClass->columns };
+#};
 
 
-sub add_db_column {
+sub add_db_column($@) {
 	my $self = shift;
 	my $name = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
+	return $self->add_relationship_column($name,\%opt) if($opt{relationship_info});
+	
 	$opt{name} = $self->column_prefix . $name;
-	
-	if($self->db_col_indx->{$name}) {
-		return $self->add_columns(\%opt);
-	}
-	
-	scream('Not a base column: ' + $name);
-
+	return $self->add_columns(\%opt);
 }
 
 
@@ -449,6 +445,20 @@ sub init_relspecs {
 }
 
 
+
+has 'relationship_column_configs', is => 'ro', isa => 'HashRef', lazy_build => 1; 
+sub _build_relationship_column_configs {
+	my $self = shift;
+	
+	my $class = $self->ResultClass;
+	#return {} unless ($class->can('TableSpec_cnf'));
+	
+	my %rel_cols_indx = map {$_=>1} @{$self->get_Cnf('relationship_column_names')};
+	my %columns = $class->TableSpec_get_conf('columns');
+	return { map { $_ => $columns{$_} } grep { $rel_cols_indx{$_} } keys %columns };
+};
+
+=pod
 has 'relationship_column_configs' => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {{
 	my $self = shift;
 	my $rel_cols = $self->get_Cnf('relationship_columns');
@@ -466,6 +476,7 @@ has 'relationship_column_configs' => ( is => 'ro', isa => 'HashRef', lazy => 1, 
 	}
 	return $rel_cols;
 }});
+=cut
 
 # colspecs that were added solely for the relationship columns
 # get stored in 'added_relationship_column_relspecs' and are then
@@ -486,6 +497,8 @@ sub expand_relspec_relationship_columns {
 	my $update = shift || 0;
 	
 	my $rel_configs = $self->relationship_column_configs;
+	return @$colspecs unless (keys %$rel_configs > 0);
+	
 	my $match_data = {};
 	my @rel_cols = $self->colspec_select_columns({
 		colspecs => $colspecs,
@@ -719,10 +732,10 @@ sub colspecs_to_colspec_test {
 #	arg_ignore => sub { $_->relspec_prefix ne '' and return 1; return (grep { $_ eq '*' } @_) ? 0 : 1; }, 
 #	return_ignore => sub { (shift) ? 0 : 1; },
 #);
-sub colspec_test {
+sub colspec_test($$) {
 	my $self = shift;
-	my $full_colspec = shift;
-	my $col = shift;
+	my $full_colspec = shift || die "full_colspec is required";
+	my $col = shift || die "col is required";
 	
 	# @other_colspecs - optional.
 	# If supplied, the column will also be tested against the colspecs in @other_colspecs,
@@ -1226,7 +1239,7 @@ sub resolve_dbic_rel_alias_by_column_name {
 	my $rel = $self->column_name_relationship_map->{$name};
 	unless ($rel) {
 	
-		
+		#scream($name,$self->custom_dbic_rel_aliases);
 	
 		# -- If this is a relationship column and the display field isn't already included:
 		my $cust = $self->custom_dbic_rel_aliases->{$name};
@@ -1239,6 +1252,8 @@ sub resolve_dbic_rel_alias_by_column_name {
 		$name =~ s/^${pre}//;
 		return ('me',$name,$self->needed_join);
 	}
+	
+	
 
 	my $TableSpec = $self->related_TableSpec->{$rel};
 	my ($alias,$dbname,$join) = $TableSpec->resolve_dbic_rel_alias_by_column_name($name);
@@ -1267,6 +1282,146 @@ sub chain_to_hash {
 
 
 
+sub add_relationship_column {
+	my $self = shift;
+	my $rel = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	my $conf = \%opt;
+	my $info = $conf->{relationship_info} or die "relationship_info is required";
+
+	#$conf = { %{ $self->default_column_properties }, %$conf } if ( $self->default_column_properties );
+	
+	die "displayField is required" unless (defined $conf->{displayField});
+	die "valueField is required" unless (defined $conf->{displayField});
+	
+	#my $info = $self->ResultClass->relationship_info($rel) or die "Relationship '$rel' not found.";
+	my $c = RapidApp::ScopedGlobals->get('catalystClass');
+	my $Source = $c->model('DB')->source($info->{source});
+	
+	#my $foreign_col = $self->get_foreign_column_from_cond($info->{cond});
+	
+	$conf = { %$conf,
+		render_col => $self->column_prefix . $rel . '__' . $conf->{displayField},
+		#foreign_col => $foreign_col,
+		#valueField => $foreign_col,
+		#key_col => $rel . '_' . $foreign_col
+	};
+	
+	my $key_col = $self->column_prefix . $rel . '__' . $conf->{valueField};
+	my $upd_key_col = $self->column_prefix . $rel . '_' . $conf->{valueField};
+	
+	
+
+	my $colname = $self->column_prefix . $rel;
+	
+	#scream_color(GREEN,$colname,$key_col,$upd_key_col,$conf->{render_col});
+	
+	$conf = { %$conf, 
+	
+		no_fetch => 1,
+		
+		no_quick_search => \1,
+		no_multifilter => \1,
+		
+		required_fetch_colspecs => [
+		
+		],
+		
+		required_fetch_columns => [ 
+			$self->column_prefix . $rel . '__' . $conf->{displayField},
+			#$upd_key_col,
+			#$key_col
+			#$key_col,
+			#$self->column_prefix . $rel . '__' . $conf->{displayField}
+			#$self->column_prefix . $conf->{key_col},
+			#$self->column_prefix . $conf->{render_col}
+		],
+		
+		read_raw_munger => RapidApp::Handler->new( code => sub {
+			my $rows = (shift)->{rows};
+			$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
+			foreach my $row (@$rows) {
+				
+				
+				#my $key = $self->column_prefix . $conf->{key_col};
+				$row->{$colname} = $row->{$key_col} if ($row->{$key_col});
+				
+				
+				#scream($colname,$key_col,$row);
+				
+			}
+		}),
+		
+		update_munger => RapidApp::Handler->new( code => sub {
+			my $rows = shift;
+			$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
+			foreach my $row (@$rows) {
+				if ($row->{$colname}) {
+					
+					#scream_color(MAGENTA,$row);
+					
+					#my $key = $self->column_prefix . $conf->{key_col};
+					$row->{$upd_key_col} = $row->{$colname};
+					delete $row->{$colname};
+					
+					#scream_color(MAGENTA.BOLD,$row);
+					
+					
+					
+				}
+			}
+		}),
+		
+		renderer => jsfunc(
+			'function(value, metaData, record, rowIndex, colIndex, store) {' .
+				'return record.data["' . $conf->{render_col} . '"];' .
+			'}', $conf->{renderer}
+		),
+	};
+	
+	if ($conf->{auto_editor_type} eq 'combo') {
+	
+		my $module_name = $self->ResultClass->table . '_' . $colname;
+		my $Module = $self->get_or_create_rapidapp_module( $module_name,
+			class	=> 'RapidApp::DbicAppCombo2',
+			params	=> {
+				valueField		=> $conf->{valueField},
+				displayField	=> $conf->{displayField},
+				name				=> $colname,
+				ResultSet		=> $Source->resultset,
+				record_pk		=> $conf->{valueField}
+			}
+		);
+		
+		$conf->{editor} =  $Module->content;
+	}
+	
+	$self->add_columns({ name => $colname, %$conf });
+	
+	# ---
+	my $render_name = $conf->{displayField};
+
+	$self->custom_dbic_rel_aliases->{$rel . $self->relation_sep . $render_name} = [ 
+		$rel, 
+		$render_name, 
+		{ $rel => {} }
+	];
+	
+	my $TableSpec = $self->addIf_related_TableSpec($rel, include_colspec => [ $conf->{valueField}, $conf->{displayField} ] ); 
+	
+	#$self->addIf_related_TableSpec($rel, include_colspec => [ '!*' ] );
+	#$self->column_name_relationship_map->{$rel . '__' . $conf->{valueField}} = $rel;
+	#$self->column_name_relationship_map->{$rel . '__' . $conf->{displayField}} = $rel;
+	
+	#scream('add_relationship_columns:',$colname,$conf);
+	
+	#scream_color(MAGENTA.BOLD,$self->custom_dbic_rel_aliases);
+
+}
+
+
+=pod
 sub add_relationship_columns {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
@@ -1405,6 +1560,9 @@ sub add_relationship_columns {
 		#scream('add_relationship_columns:',$colname,$conf);
 	}
 }
+
+=cut
+
 
 
 =pod
