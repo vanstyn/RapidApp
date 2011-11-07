@@ -14,9 +14,6 @@ use Text::WagnerFischer qw(distance);
 use Clone qw( clone );
 
 
-
-
-
 has 'ResultSource', is => 'ro', isa => 'DBIx::Class::ResultSource',
 default => sub {
 	my $self = shift;
@@ -25,15 +22,12 @@ default => sub {
 	return $c->model('DB')->source($self->ResultClass);
 };
 
-
-
 has 'ResultClass', is => 'ro', isa => 'Str', lazy => 1, 
 default => sub {
 	my $self = shift;
 	my $source_name = $self->ResultSource->source_name;
 	return $self->ResultSource->schema->class($source_name);
 };
-
 
 has 'data_type_profiles' => ( is => 'ro', isa => 'HashRef', default => sub {{
 	text 			=> [ 'bigtext' ],
@@ -49,19 +43,6 @@ has 'data_type_profiles' => ( is => 'ro', isa => 'HashRef', default => sub {{
 	timestamp	=> [ 'datetime' ],
 }});
 
-=pod
-around BUILDARGS => sub {
-	my $orig = shift;
-	my $self = shift;
-	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-	
-	# Exclude colspecs that start with #
-	@{$opt{include_colspec}} = grep { !/^#/ } @{$opt{include_colspec}} 
-		if (ref($opt{include_colspec}) eq 'ARRAY');
-	
-	return $self->$orig(%opt);
-};
-=cut
 
 sub BUILD {}
 after BUILD => sub {
@@ -224,8 +205,10 @@ has 'updatable_colspec' => (
 	is => 'ro', isa => 'ArrayRef[ColSpec]', default => sub {[]},
 	trigger => sub {
 		my ($self,$spec) = @_;
+		scream_color(YELLOW,$spec);
 		$self->_colspec_attr_init_trigger($spec);
 		@$spec = $self->expand_relspec_relationship_columns([@$spec],1);
+		scream_color(YELLOW.ON_WHITE,$spec)
 	}
 );
 
@@ -263,8 +246,6 @@ sub init_relspecs {
 		
 		$self->add_related_TableSpec($rel, include_colspec => $subspec );
 	}
-	
-	#my @base_colspecs = $self->expand_relspec_relationship_columns($rel_colspecs->{data}->{''});
 	
 	$self->base_colspec($rel_colspecs->{data}->{''});
 	
@@ -322,6 +303,8 @@ sub expand_relspec_relationship_columns {
 		best_match_look_ahead => 1,
 		match_data => $match_data
 	});
+	
+	scream_color(RED.ON_BLUE,\@rel_cols);
 	
 	my %exist = map{$_=>1} @$colspecs;
 	my $added = [];
@@ -482,11 +465,15 @@ sub filter_include_columns {
 }
 
 # accepts a list of column names and returns the names that match updatable_colspec
-sub filter_updatable_columns1 :Debug(stack=>5,verbose=>1) {
+sub filter_updatable_columns :Debug(stack=>5,verbose=>1) {
 	my $self = shift;
 	
+	scream_color(CYAN,$self->updatable_colspec);
+	
 	# First filter by include_colspec:
-	my @columns = $self->filter_include_columns(@_);
+	#my @columns = $self->filter_include_columns(@_);
+	
+	my @columns = @_;
 	
 	return $self->colspec_select_columns({
 		colspecs => $self->updatable_colspec,
@@ -494,7 +481,7 @@ sub filter_updatable_columns1 :Debug(stack=>5,verbose=>1) {
 	});
 }
 
-sub filter_updatable_columns :Debug(stack=>5,verbose=>1) {
+sub filter_updatable_columns1 :Debug(stack=>5,verbose=>1) {
 	my $self = shift;
 	#my @columns = @_;
 	
@@ -1278,6 +1265,7 @@ sub add_relationship_column {
 		$rows = shift;
 		$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
 		foreach my $row (@$rows) {
+			scream($colname,$upd_key_col,$row);
 			if ($row->{$colname}) {
 				$row->{$upd_key_col} = $row->{$colname};
 				delete $row->{$colname};
@@ -1336,13 +1324,13 @@ sub add_relationship_column {
 	$self->add_columns({ name => $colname, %$conf });
 	
 	# ---
-	my $render_name = $conf->{displayField};
+	#my $render_name = $conf->{displayField};
 
-	$self->custom_dbic_rel_aliases->{$rel . $self->relation_sep . $render_name} = [ 
-		$rel, 
-		$render_name, 
-		{ $rel => {} }
-	];
+	#$self->custom_dbic_rel_aliases->{$rel . $self->relation_sep . $render_name} = [ 
+	#	$rel, 
+	#	$render_name, 
+	#	{ $rel => {} }
+	#];
 	
 	my $TableSpec = $self->addIf_related_TableSpec($rel, include_colspec => [ $conf->{valueField}, $conf->{displayField} ] ); 
 	

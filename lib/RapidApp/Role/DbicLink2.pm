@@ -605,6 +605,8 @@ sub _dbiclink_update_records {
 				my $BaseRow = $Rs->search($self->record_pk_cond($pkVal))->next or die usererr "Failed to find row by record_pk: $pkVal";
 				
 				my @columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } keys %$data;
+				
+				@columns = $self->TableSpec->filter_updatable_columns(@columns);
 			
 				$self->TableSpec->walk_columns_deep(sub {
 					my $TableSpec = shift;
