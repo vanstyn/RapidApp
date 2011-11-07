@@ -9,6 +9,7 @@ use Data::Dumper;
 use RapidApp::RootModule;
 use Clone qw(clone);
 use JSON::PP qw(encode_json);
+use Try::Tiny;
 
 
 
@@ -222,6 +223,9 @@ sub func_debug_around {
 	
 	%opt = (
 		verbose			=> 0,
+		verbose_in		=> undef,
+		verbose_out		=> undef,
+		dump_maxdepth	=> 3,
 		use_json			=> 0,
 		stack				=> 0,
 		instance			=> 0,
@@ -237,10 +241,16 @@ sub func_debug_around {
 		%opt
 	);
 	
+	$opt{verbose_in} = 1 if ($opt{verbose} and not defined $opt{verbose_in});
+	$opt{verbose_out} = 1 if ($opt{verbose} and not defined $opt{verbose_out});
+	
 	$opt{dump_func} = sub {
+		my $verbose = shift;
 		return UNDERLINE . 'undef' . CLEAR unless (@_ > 0);
-		return  join(',',map { ref $_ ? "$_" : "'$_'" } @_) unless ($opt{verbose});
+		return  join(',',map { ref $_ ? "$_" : "'$_'" } @_) unless ($verbose);
+		local $Data::Dumper::Maxdepth = $opt{dump_maxdepth};
 		return Dumper(@_) unless ($opt{use_json});
+		#return JSON::PP->new->allow_blessed->convert_blessed->allow_nonref->encode(\@_);
 		return encode_json(\@_);
 	} unless ($opt{dump_func});
 
@@ -274,46 +284,37 @@ sub func_debug_around {
 		print STDERR '[' . $opt{line} . '] ' . CLEAR . $opt{color} . $class . CLEAR . '->' . 
 				$opt{color} . BOLD . $name . CLEAR . $in;
 		
+		my $spaces = ' ' x (2 + length($opt{line}));
+		my $in_func = sub {
+			print STDERR "\n" . ON_WHITE.BOLD . BLUE . "$spaces Supplied arguments dump: " . 
+				$opt{dump_func}->($opt{verbose_in},\@args) . CLEAR ."\n: " 
+					if($has_refs && $opt{verbose_in});
+		};
+		
 		my $res;
 		my @res;
 		my @res_copy = ();
 		if(wantarray) {
-			@res = $opt{around}->($orig,$self,@args);
+			try {
+				@res = $opt{around}->($orig,$self,@args);
+			} catch { $in_func->(); die (shift);};
 			push @res_copy, @res;
 		}
 		else {
-			$res = $opt{around}->($orig,$self,@args);
+			try {
+				$res = $opt{around}->($orig,$self,@args);
+			} catch { $in_func->(); die (shift);};
 			push @res_copy,$res;
 		}
 		
 		local $_ = $self;
 		if(!$opt{arg_ignore}->(@args) && !$opt{return_ignore}->(@res_copy)) {
-			my $spaces = ' ' x (2 + length($opt{line}));
-			print STDERR "\n" . ON_WHITE.BOLD . BLUE . "$spaces Supplied arguments dump: " . $opt{dump_func}->(\@args) . "\n: " if($has_refs && $opt{verbose});
 			
-			my $result = $opt{ret_color} . $opt{dump_func}->(@res_copy) . CLEAR;
-			$result = "\n" . ON_WHITE.BOLD . "$spaces Returned: " . $result . "\n" if ($opt{verbose});
+			$in_func->();
+			
+			my $result = $opt{ret_color} . $opt{dump_func}->($opt{verbose_out},@res_copy) . CLEAR;
+			$result = "\n" . ON_WHITE.BOLD . "$spaces Returned: " . $result . "\n" if ($opt{verbose_out});
 			print STDERR $result . "\n";
-			
-			
-=pod
-			
-			$has_refs = 0;
-			ref $_ and $has_refs++ for (@res_copy);
-			if($has_refs) {
-				$result = $opt{dump_func}->(\@res_copy);
-			}
-			elsif (@res_copy > 0) {
-				@res_copy = map { "$_" } @res_copy;
-				$result = '(' . join(',',@res_copy) . ')';
-			}
-			
-			my $out = $result;
-			$out = UNDERLINE . 'undef' unless (defined $out);
-			
-			print STDERR $opt{ret_color} . $out . CLEAR . "\n";
-			
-=cut
 			
 		}
 		else {
