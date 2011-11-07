@@ -4,6 +4,7 @@ use RapidApp::Include qw(sugar perlutil);
 unshift @UNIVERSAL::ISA, __PACKAGE__;
 
 use Attribute::Handlers;
+use strict;
 
 #     Note: These handlers are ignored in DBIC classes with:
 #
@@ -67,6 +68,9 @@ sub Debug :ATTR(CODE,BEGIN) {
 	my ($package, $symbol, $referent, $attr, $data, $phase, $filename, $linenum) = @_;
 	
 	my $name = *{$symbol}{NAME};
+	
+	die __PACKAGE__ . '::Debug(): invalid attribute data: "' . $data . '" - expected hash/list arguments' 
+		if (defined $data and ref($data) ne 'ARRAY');
 	
 	scream_color(BOLD.CYAN,"debug_around set on: $package" . '::' . "$name at line $linenum");
 	
