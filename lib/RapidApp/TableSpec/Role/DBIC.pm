@@ -1153,13 +1153,7 @@ sub add_relationship_column {
 			my $rows = (shift)->{rows};
 			$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
 			foreach my $row (@$rows) {
-				
-				
-				#my $key = $self->column_prefix . $conf->{key_col};
 				$row->{$colname} = $row->{$key_col} if ($row->{$key_col});
-				
-				
-				#scream($colname,$key_col,$row);
 				
 			}
 		}),
@@ -1168,22 +1162,9 @@ sub add_relationship_column {
 			my $rows = shift;
 			$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
 			foreach my $row (@$rows) {
-				scream_color(MAGENTA.BOLD,$row);
 				if ($row->{$colname}) {
-					
-					#scream_color(MAGENTA,$row);
-					
-					#my $key = $self->column_prefix . $conf->{key_col};
 					$row->{$upd_key_col} = $row->{$colname};
-					
-					scream_color(MAGENTA.BOLD,$upd_key_col,$colname);
-					
 					delete $row->{$colname};
-					
-					
-					
-					
-					
 				}
 			}
 		}),
@@ -1211,8 +1192,6 @@ sub add_relationship_column {
 		
 		$conf->{editor} =  $Module->content;
 	}
-	
-	scream($conf);
 	
 	$self->add_columns({ name => $colname, %$conf });
 	
