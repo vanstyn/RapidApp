@@ -3,7 +3,7 @@ use strict;
 use Moose::Role;
 use Moose::Util::TypeConstraints;
 
-
+use RapidApp::TableSpec::DbicTableSpec;
 
 use RapidApp::Include qw(sugar perlutil);
 
@@ -264,7 +264,11 @@ sub init_relspecs {
 		$self->add_related_TableSpec($rel, include_colspec => $subspec );
 	}
 	
+	#my @base_colspecs = $self->expand_relspec_relationship_columns($rel_colspecs->{data}->{''});
+	
 	$self->base_colspec($rel_colspecs->{data}->{''});
+	
+	#$self->base_colspec(\@base_colspecs);
 	$self->init_local_columns;
 	
 	foreach my $rel (@{$self->related_TableSpec_order}) {
@@ -277,7 +281,6 @@ sub init_relspecs {
 	
 	$self->reorder_by_colspec_list(\@colspecs);
 }
-
 
 
 has 'relationship_column_configs', is => 'ro', isa => 'HashRef', lazy_build => 1; 
@@ -349,10 +352,10 @@ sub expand_relspec_relationship_columns {
 	}
 	
 	my @new_adds = grep { ! $self->colspecs_to_colspec_test($colspecs,$_) } @$added;
+	
 	$self->added_relationship_column_relspecs(\@new_adds);
 	
 	return @new_colspecs;
-
 }
 
 
@@ -460,17 +463,22 @@ sub filter_base_columns {
 	});
 }
 
+sub filter_include_columns {
+	my $self = shift;
+	my @colspec = @{$self->added_relationship_column_relspecs},@{$self->include_colspec};
+	return $self->colspec_select_columns({
+		colspecs => \@colspec,
+		columns => \@_,
+	});
+}
+
 # accepts a list of column names and returns the names that match updatable_colspec
 sub filter_updatable_columns {
 	my $self = shift;
-	my @columns = @_;
 	
 	# First filter by include_colspec:
-	@columns = $self->colspec_select_columns({
-		colspecs => $self->include_colspec,
-		columns => \@columns,
-	});
-
+	my @columns = $self->filter_include_columns(@_);
+	
 	return $self->colspec_select_columns({
 		colspecs => $self->updatable_colspec,
 		columns => \@columns,
@@ -481,14 +489,10 @@ sub filter_updatable_columns {
 # accepts a list of column names and returns the names that match creatable_colspec
 sub filter_creatable_columns {
 	my $self = shift;
-	my @columns = @_;
-	
-	# First filter by include_colspec:
-	@columns = $self->colspec_select_columns({
-		colspecs => $self->include_colspec,
-		columns => \@columns,
-	});
 
+	# First filter by include_colspec:
+	my @columns = $self->filter_include_columns(@_);
+	
 	return $self->colspec_select_columns({
 		colspecs => $self->creatable_colspec,
 		columns => \@columns,
@@ -659,7 +663,7 @@ sub colspec_select_columns {
 			my @arg = ($spec,$col);
 			push @arg, @remaining if ($best_match); # <-- push the rest of the colspecs after the current for index
 			
-			my $result = $self->colspec_test(@arg) or next;;
+			my $result = $self->colspec_test(@arg) or next;
 			push @order, $col if ($result > 0);
 			$match{$col} = $result;
 			$opt{match_data}->{$col} = {
@@ -769,7 +773,8 @@ sub get_relation_colspecs {
 
 sub new_TableSpec {
 	my $self = shift;
-	return RapidApp::TableSpec->with_traits('RapidApp::TableSpec::Role::DBIC')->new(@_);
+	return RapidApp::TableSpec::DbicTableSpec->new(@_);
+	#return RapidApp::TableSpec->with_traits('RapidApp::TableSpec::Role::DBIC')->new(@_);
 }
 
 
@@ -836,7 +841,10 @@ sub column_TableSpec {
 
 	my $rel = $self->column_name_relationship_map->{$column};
 	unless ($rel) {
-		return $self if (exists $self->columns->{$column});
+		my %ndx = map {$_=>1} 
+			keys %{$self->columns}, 
+			@{$self->added_relationship_column_relspecs};
+		return $self if ($ndx{$column});
 		return undef;
 	}
 	
@@ -853,19 +861,7 @@ sub columns_to_relspec_map {
 	my $map = {};
 	
 	foreach my $col (@columns) {
-		my $TableSpec = $self->column_TableSpec($col);
-		unless ($TableSpec) {
-			# relationship column:
-			next if ($self->custom_dbic_rel_aliases->{$col});
-			
-			
-			next;
-			
-			scream_color(GREEN.BOLD,$col,$self->custom_dbic_rel_aliases);
-			
-			scream_color(RED.BOLD,caller_data_brief(12));
-			die "Invalid column name: '$col'";
-		}
+		my $TableSpec = $self->column_TableSpec($col) or next;
 		my $pre = $TableSpec->column_prefix;
 		my $local_name = $col;
 		$local_name =~ s/^${pre}//;
@@ -1127,11 +1123,30 @@ sub add_relationship_column {
 	my $key_col = $self->column_prefix . $rel . '__' . $conf->{valueField};
 	my $upd_key_col = $self->column_prefix . $rel . '_' . $conf->{valueField};
 	
-	
-
 	my $colname = $self->column_prefix . $rel;
 	
 	#scream_color(GREEN,$colname,$key_col,$upd_key_col,$conf->{render_col});
+	my $rows;
+	my $read_raw_munger = sub {
+			$rows = (shift)->{rows};
+			$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
+			foreach my $row (@$rows) {
+				$row->{$colname} = $row->{$key_col} if ($row->{$key_col});
+				
+			}
+		};
+	
+
+	my $update_munger = sub {
+		$rows = shift;
+		$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
+		foreach my $row (@$rows) {
+			if ($row->{$colname}) {
+				$row->{$upd_key_col} = $row->{$colname};
+				delete $row->{$colname};
+			}
+		}
+	};
 	
 	$conf = { %$conf, 
 	
@@ -1146,28 +1161,12 @@ sub add_relationship_column {
 		
 		required_fetch_columns => [ 
 			$conf->{render_col},
-			$key_col
+			$key_col,
+			$upd_key_col
 		],
 		
-		read_raw_munger => RapidApp::Handler->new( code => sub {
-			my $rows = (shift)->{rows};
-			$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
-			foreach my $row (@$rows) {
-				$row->{$colname} = $row->{$key_col} if ($row->{$key_col});
-				
-			}
-		}),
-		
-		update_munger => RapidApp::Handler->new( code => sub {
-			my $rows = shift;
-			$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
-			foreach my $row (@$rows) {
-				if ($row->{$colname}) {
-					$row->{$upd_key_col} = $row->{$colname};
-					delete $row->{$colname};
-				}
-			}
-		}),
+		read_raw_munger => RapidApp::Handler->new( code => $read_raw_munger ),
+		update_munger => RapidApp::Handler->new( code => $update_munger ),
 		
 		renderer => jsfunc(
 			'function(value, metaData, record, rowIndex, colIndex, store) {' .
@@ -1524,7 +1523,7 @@ sub get_or_create_rapidapp_module {
 	return $Module;
 }
 
-
+=pod
 
 # TODO: Find a better way to handle this. Is there a real API
 # in DBIC to find this information?
@@ -1567,7 +1566,7 @@ sub parse_relationship_cond {
 }
 
 
-=pod
+
 
 
 # returns a DBIC join attr based on the colspec

@@ -185,10 +185,11 @@ sub default_TableSpec_cnf_columns {
 						
 					my $cond_data = $self->parse_relationship_cond($info->{cond});
 					$cols->{$col}->{valueField} = $cond_data->{foreign} 
-						or die "couldn't get foreign col data for $col!";;
-					$cols->{$col}->{keyField} = $cond_data->{foreign};
+						or die "couldn't get foreign col condition data for $col relationship!";
 					$cols->{$col}->{relationship_info} = $info;
 					$cols->{$col}->{auto_editor_type} = 'combo';
+					$cols->{$col}->{keyField} = $cond_data->{self}
+						or die "couldn't get self col condition data for $col relationship!";
 					
 					next;
 				}

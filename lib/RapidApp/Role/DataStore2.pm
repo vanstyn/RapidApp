@@ -1,12 +1,14 @@
 package RapidApp::Role::DataStore2;
 use Moose::Role;
-use strict;
+use Moose::Util::TypeConstraints;
 
 use RapidApp::Include qw(sugar perlutil);
 
 use RapidApp::DataStore2;
 
-has 'TableSpec' => ( is => 'ro', isa => 'Maybe[RapidApp::TableSpec]', lazy_build => 1 );
+subtype 'TableSpec', as 'Object', where { $_->isa('RapidApp::TableSpec') };
+
+has 'TableSpec' => ( is => 'ro', isa => 'Maybe[TableSpec]', lazy_build => 1 );
 sub _build_TableSpec { undef; }
 
 has 'TableSpec_applied' => ( is => 'rw', isa => 'Bool', default => 0 );

@@ -246,7 +246,7 @@ sub func_debug_around {
 	
 	$opt{dump_func} = sub {
 		my $verbose = shift;
-		return UNDERLINE . 'undef' . CLEAR unless (@_ > 0);
+		return UNDERLINE . 'undef' . CLEAR unless (@_ > 0 and defined $_[0]);
 		return  join(',',map { ref $_ ? "$_" : "'$_'" } @_) unless ($verbose);
 		local $Data::Dumper::Maxdepth = $opt{dump_maxdepth};
 		return Dumper(@_) unless ($opt{use_json});

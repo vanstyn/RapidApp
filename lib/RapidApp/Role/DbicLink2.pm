@@ -3,7 +3,7 @@ use strict;
 use Moose::Role;
 
 use RapidApp::Include qw(sugar perlutil);
-use RapidApp::TableSpec::Role::DBIC;
+use RapidApp::TableSpec::DbicTableSpec;
 use Clone qw(clone);
 use Text::Glob qw( match_glob );
 use Hash::Diff qw( diff );
@@ -86,7 +86,8 @@ sub _build_ResultClass {
 	return $self->ResultSource->schema->class($source_name);
 }
 
-has 'TableSpec' => ( is => 'ro', isa => 'RapidApp::TableSpec', lazy_build => 1 );
+
+has 'TableSpec' => ( is => 'ro', isa => 'TableSpec', lazy_build => 1 );
 sub _build_TableSpec {
 	my $self = shift;
 	
@@ -100,7 +101,8 @@ sub _build_TableSpec {
 	$opt{updatable_colspec} = $self->updatable_colspec if (defined $self->updatable_colspec);
 	$opt{creatable_colspec} = $self->creatable_colspec if (defined $self->creatable_colspec);
 	
-	return RapidApp::TableSpec->with_traits('RapidApp::TableSpec::Role::DBIC')->new(%opt);
+	return RapidApp::TableSpec::DbicTableSpec->new(%opt);
+	#return RapidApp::TableSpec->with_traits('RapidApp::TableSpec::Role::DBIC')->new(%opt);
 }
 
 

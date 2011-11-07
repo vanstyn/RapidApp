@@ -4,7 +4,7 @@ use RapidApp::Include qw(sugar perlutil);
 unshift @UNIVERSAL::ISA, __PACKAGE__;
 
 use Attribute::Handlers;
-use strict;
+#use strict;
 
 #     Note: These handlers are ignored in DBIC classes with:
 #
