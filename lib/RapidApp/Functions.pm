@@ -1,6 +1,6 @@
 package RapidApp::Functions;
-use strict;
-use warnings;
+#use strict;
+#use warnings;
 require Exporter;
 use Class::MOP::Class;
 

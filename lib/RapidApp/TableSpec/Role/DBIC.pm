@@ -303,11 +303,8 @@ sub _build_relationship_column_configs {
 # TODO: come up with a better way to handle this. It's ugly.
 has 'added_relationship_column_relspecs' => ( 
 	is => 'rw', isa => 'ArrayRef', default => sub {[]},
-	trigger => sub { my ($self,$val) = @_; uniq($val) }
+	#trigger => sub { my ($self,$val) = @_; uniq($val) }
 );
-
-
-
 
 
 sub expand_relspec_relationship_columns {
@@ -353,7 +350,10 @@ sub expand_relspec_relationship_columns {
 	
 	my @new_adds = grep { ! $self->colspecs_to_colspec_test($colspecs,$_) } @$added;
 	
-	$self->added_relationship_column_relspecs(\@new_adds);
+	@{$self->added_relationship_column_relspecs} = uniq(
+		@{$self->added_relationship_column_relspecs},
+		@new_adds
+	);
 	
 	return @new_colspecs;
 }
@@ -1102,41 +1102,28 @@ sub add_relationship_column {
 	my $conf = \%opt;
 	my $info = $conf->{relationship_info} or die "relationship_info is required";
 
-	#$conf = { %{ $self->default_column_properties }, %$conf } if ( $self->default_column_properties );
-	
 	die "displayField is required" unless (defined $conf->{displayField});
 	die "valueField is required" unless (defined $conf->{displayField});
 	
-	#my $info = $self->ResultClass->relationship_info($rel) or die "Relationship '$rel' not found.";
 	my $c = RapidApp::ScopedGlobals->get('catalystClass');
 	my $Source = $c->model('DB')->source($info->{source});
 	
-	#my $foreign_col = $self->get_foreign_column_from_cond($info->{cond});
-	
-	$conf = { %$conf,
-		render_col => $self->column_prefix . $rel . '__' . $conf->{displayField},
-		#foreign_col => $foreign_col,
-		#valueField => $foreign_col,
-		#key_col => $rel . '_' . $foreign_col
-	};
-	
-	my $key_col = $self->column_prefix . $rel . '__' . $conf->{valueField};
-	my $upd_key_col = $self->column_prefix . $rel . '_' . $conf->{valueField};
+	my $render_col = $self->column_prefix . $rel . $self->relation_sep . $conf->{displayField};
+	my $key_col = $self->column_prefix . $rel . $self->relation_sep . $conf->{valueField};
+	my $upd_key_col = $self->column_prefix . $conf->{keyField};
 	
 	my $colname = $self->column_prefix . $rel;
-	
-	#scream_color(GREEN,$colname,$key_col,$upd_key_col,$conf->{render_col});
+
 	my $rows;
 	my $read_raw_munger = sub {
-			$rows = (shift)->{rows};
-			$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
-			foreach my $row (@$rows) {
-				$row->{$colname} = $row->{$key_col} if ($row->{$key_col});
-				
-			}
-		};
+		$rows = (shift)->{rows};
+		$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
+		foreach my $row (@$rows) {
+			$row->{$colname} = $row->{$key_col} if ($row->{$key_col});
+			
+		}
+	};
 	
-
 	my $update_munger = sub {
 		$rows = shift;
 		$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
@@ -1160,7 +1147,7 @@ sub add_relationship_column {
 		],
 		
 		required_fetch_columns => [ 
-			$conf->{render_col},
+			$render_col,
 			$key_col,
 			$upd_key_col
 		],
@@ -1170,7 +1157,7 @@ sub add_relationship_column {
 		
 		renderer => jsfunc(
 			'function(value, metaData, record, rowIndex, colIndex, store) {' .
-				'return record.data["' . $conf->{render_col} . '"];' .
+				'return record.data["' . $render_col . '"];' .
 			'}', $conf->{renderer}
 		),
 	};
@@ -1216,7 +1203,111 @@ sub add_relationship_column {
 }
 
 
-=pod
+
+
+sub get_or_create_rapidapp_module {
+	my $self = shift;
+	my $name = shift or die "get_or_create_rapidapp_module(): Missing module name";
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+
+	my $rootModule = RapidApp::ScopedGlobals->get("rootModule") or die "Failed to find RapidApp Root Module!!";
+	
+	$rootModule->apply_init_modules( tablespec => 'RapidApp::AppBase' ) 
+		unless ( $rootModule->has_module('tablespec') );
+	
+	my $TMod = $rootModule->Module('tablespec');
+	
+	$TMod->apply_init_modules( $name => \%opt ) unless ( $TMod->has_module($name) );
+	
+	my $Module = $TMod->Module($name);
+	$Module->call_ONREQUEST_handlers;
+	$Module->DataStore->call_ONREQUEST_handlers;
+	
+	return $Module;
+}
+
+1;__END__
+
+
+
+# returns a DBIC join attr based on the colspec
+has 'join' => ( is => 'ro', lazy_build => 1 );
+sub _build_join {
+	my $self = shift;
+	
+	my $join = {};
+	my @list = ();
+	
+	foreach my $item (@{ $self->include_colspec }) {
+		my @parts = split(/\./,$item);
+		my $colspec = pop @parts; # <-- the last field describes columns, not rels
+		my $relspec = join('.',@parts) || '';
+		
+		push @{$self->relspec_order}, $relspec unless ($self->relspec_colspec_map->{$relspec} or $relspec eq '');
+		push @{$self->relspec_colspec_map->{$relspec}}, $colspec;
+		
+		next unless (@parts > 0);
+		# Ignore exclude specs:
+		next if ($item =~ /^\!/);
+		
+		$join = merge($join,$self->chain_to_hash(@parts));
+	}
+	
+	# Add '*' to the base relspec if it is empty:
+	push @{$self->relspec_colspec_map->{''}}, '*' unless (defined $self->relspec_colspec_map->{''});
+	unshift @{$self->relspec_order}, ''; # <-- base relspec first
+	
+	return $self->hash_with_undef_values_to_array_deep($join);
+}
+has 'relspec_colspec_map' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
+has 'relspec_order' => ( is => 'ro', isa => 'ArrayRef', default => sub {[]} );
+
+
+
+
+sub hash_with_undef_values_to_array_deep {
+	my ($self,$hash) = @_;
+	return @_ unless (ref($hash) eq 'HASH');
+
+	my @list = ();
+	
+	foreach my $key (keys %$hash) {
+		if(defined $hash->{$key}) {
+			
+			if(ref($hash->{$key}) eq 'HASH') {
+				# recursive:
+				$hash->{$key} = $self->hash_with_undef_values_to_array_deep($hash->{$key});
+			}
+			
+			push @list, $self->leaf_hash_to_string({ $key => $hash->{$key} });
+			next;
+		}
+		push @list, $key;
+	}
+	
+	return $hash unless (@list > 0); #<-- there were no undef values
+	return $list[0] if (@list == 1);
+	return \@list;
+}
+
+sub leaf_hash_to_string {
+	my ($self,$hash) = @_;
+	return @_ unless (ref($hash) eq 'HASH');
+	
+	my @keys = keys %$hash;
+	my $key = shift @keys or return undef; # <-- empty hash
+	return $hash if (@keys > 0); # <-- not a leaf, more than 1 key
+	return $hash if (defined $self->leaf_hash_to_string($hash->{$key})); # <-- not a leaf, single value is not an empty hash
+	return $key;
+}
+
+
+
+
+
+
+
+
 sub add_relationship_columns {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
@@ -1499,150 +1590,3 @@ sub add_relationship_columns_old {
 		
 	}
 }
-
-=cut
-
-sub get_or_create_rapidapp_module {
-	my $self = shift;
-	my $name = shift or die "get_or_create_rapidapp_module(): Missing module name";
-	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-
-	my $rootModule = RapidApp::ScopedGlobals->get("rootModule") or die "Failed to find RapidApp Root Module!!";
-	
-	$rootModule->apply_init_modules( tablespec => 'RapidApp::AppBase' ) 
-		unless ( $rootModule->has_module('tablespec') );
-	
-	my $TMod = $rootModule->Module('tablespec');
-	
-	$TMod->apply_init_modules( $name => \%opt ) unless ( $TMod->has_module($name) );
-	
-	my $Module = $TMod->Module($name);
-	$Module->call_ONREQUEST_handlers;
-	$Module->DataStore->call_ONREQUEST_handlers;
-	
-	return $Module;
-}
-
-=pod
-
-# TODO: Find a better way to handle this. Is there a real API
-# in DBIC to find this information?
-sub get_foreign_column_from_cond {
-	my $self = shift;
-	my $cond = shift;
-	
-	die "currently only single-key hashref conditions are supported" unless (
-		ref($cond) eq 'HASH' and
-		scalar keys %$cond == 1
-	);
-	
-	foreach my $i (%$cond) {
-		my ($side,$col) = split(/\./,$i);
-		return $col if (defined $col and $side eq 'foreign');
-	}
-	
-	die "Failed to find forein column from condition: " . Dumper($cond);
-}
-
-# TODO: Find a better way to handle this. Is there a real API
-# in DBIC to find this information?
-sub parse_relationship_cond {
-	my $self = shift;
-	my $cond = shift;
-	
-	my $data = {};
-	
-	die "currently only single-key hashref conditions are supported" unless (
-		ref($cond) eq 'HASH' and
-		scalar keys %$cond == 1
-	);
-	
-	foreach my $i (%$cond) {
-		my ($side,$col) = split(/\./,$i);
-		$data->{$side} = $col;
-	}
-	
-	return $data;
-}
-
-
-
-
-
-# returns a DBIC join attr based on the colspec
-has 'join' => ( is => 'ro', lazy_build => 1 );
-sub _build_join {
-	my $self = shift;
-	
-	my $join = {};
-	my @list = ();
-	
-	foreach my $item (@{ $self->include_colspec }) {
-		my @parts = split(/\./,$item);
-		my $colspec = pop @parts; # <-- the last field describes columns, not rels
-		my $relspec = join('.',@parts) || '';
-		
-		push @{$self->relspec_order}, $relspec unless ($self->relspec_colspec_map->{$relspec} or $relspec eq '');
-		push @{$self->relspec_colspec_map->{$relspec}}, $colspec;
-		
-		next unless (@parts > 0);
-		# Ignore exclude specs:
-		next if ($item =~ /^\!/);
-		
-		$join = merge($join,$self->chain_to_hash(@parts));
-	}
-	
-	# Add '*' to the base relspec if it is empty:
-	push @{$self->relspec_colspec_map->{''}}, '*' unless (defined $self->relspec_colspec_map->{''});
-	unshift @{$self->relspec_order}, ''; # <-- base relspec first
-	
-	return $self->hash_with_undef_values_to_array_deep($join);
-}
-has 'relspec_colspec_map' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
-has 'relspec_order' => ( is => 'ro', isa => 'ArrayRef', default => sub {[]} );
-
-
-
-
-sub hash_with_undef_values_to_array_deep {
-	my ($self,$hash) = @_;
-	return @_ unless (ref($hash) eq 'HASH');
-
-	my @list = ();
-	
-	foreach my $key (keys %$hash) {
-		if(defined $hash->{$key}) {
-			
-			if(ref($hash->{$key}) eq 'HASH') {
-				# recursive:
-				$hash->{$key} = $self->hash_with_undef_values_to_array_deep($hash->{$key});
-			}
-			
-			push @list, $self->leaf_hash_to_string({ $key => $hash->{$key} });
-			next;
-		}
-		push @list, $key;
-	}
-	
-	return $hash unless (@list > 0); #<-- there were no undef values
-	return $list[0] if (@list == 1);
-	return \@list;
-}
-
-sub leaf_hash_to_string {
-	my ($self,$hash) = @_;
-	return @_ unless (ref($hash) eq 'HASH');
-	
-	my @keys = keys %$hash;
-	my $key = shift @keys or return undef; # <-- empty hash
-	return $hash if (@keys > 0); # <-- not a leaf, more than 1 key
-	return $hash if (defined $self->leaf_hash_to_string($hash->{$key})); # <-- not a leaf, single value is not an empty hash
-	return $key;
-}
-
-
-
-=cut
-
-
-1;
