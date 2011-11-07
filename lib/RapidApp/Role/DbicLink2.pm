@@ -605,17 +605,17 @@ sub _dbiclink_update_records {
 				my $BaseRow = $Rs->search($self->record_pk_cond($pkVal))->next or die usererr "Failed to find row by record_pk: $pkVal";
 				
 				my @columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } keys %$data;
-				@columns = $self->TableSpec->filter_updatable_columns(@columns);
-				
-				my $relspecs = $self->TableSpec->columns_to_relspec_map(@columns);
-				
-				my %rows_relspecs = map { $_ => $self->TableSpec->related_Row_from_relspec($BaseRow,$_) } keys %$relspecs;
-				
-				# Update all the individual Row objects, including the base row (last)
-				foreach my $relspec (reverse sort keys %rows_relspecs) {
-					my $Row = $rows_relspecs{$relspec};
-					my %update = map { $_->{local_colname} => $data->{$_->{orig_colname}} } @{$relspecs->{$relspec}};
-					my %current = $Row->get_columns;
+			
+				$self->TableSpec->walk_columns_deep(sub {
+					my $TableSpec = shift;
+					my @columns = @_;
+					
+					my $Row = $_{return} || $BaseRow;
+					my $rel = $_{rel};
+					my $UpdRow = $rel ? $Row->$rel : $Row;
+					
+					my %current = $UpdRow->get_columns;
+					my %update = map { $_ => $data->{ $_{name_map}->{$_} } } keys %{$_{name_map}};
 					
 					my $change = diff(\%current, \%update);
 					# why do I need to do this?:
@@ -630,12 +630,11 @@ sub _dbiclink_update_records {
 					my $t = Text::TabularDisplay->new(qw(column old new));
 					$t->add($_,$current{$_},$change->{$_}) for (keys %$change);
 					
-					#$relspec = '*' unless ($relspec and $relspec ne '');
-					#scream_color(WHITE.ON_BLUE.BOLD,$relspec . '/' . ref($Row) . '  (UPDATE)' . "\n" . $t->render);
-					scream_color(WHITE.ON_BLUE.BOLD,'DbicLink2 UPDATE --> ' . $self->get_Row_Rs_label($Row) . "\n" . $t->render);
+					scream_color(WHITE.ON_BLUE.BOLD,'DbicLink2 UPDATE --> ' . $self->get_Row_Rs_label($UpdRow) . "\n" . $t->render);
+					$UpdRow->update($change) if (keys %$change > 0);
 					
-					$Row->update($change) if (keys %$change > 0);
-				}
+					return $UpdRow;
+				},@columns);
 				
 				# Get the new record_pk for the row (it probably hasn't changed, but it could have):
 				push @updated_keyvals, $self->generate_record_pk_value({ $BaseRow->get_columns });

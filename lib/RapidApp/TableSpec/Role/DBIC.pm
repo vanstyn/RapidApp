@@ -465,15 +465,24 @@ sub filter_base_columns {
 
 sub filter_include_columns {
 	my $self = shift;
-	my @colspec = @{$self->added_relationship_column_relspecs},@{$self->include_colspec};
-	return $self->colspec_select_columns({
-		colspecs => \@colspec,
-		columns => \@_,
+	my @columns = @_;
+	
+	my @inc_cols = $self->colspec_select_columns({
+		colspecs => $self->include_colspec,
+		columns => \@columns,
 	});
+	
+	my @rel_cols = $self->colspec_select_columns({
+		colspecs => $self->added_relationship_column_relspecs,
+		columns => \@columns,
+	});
+	
+	my %allowed = map {$_=>1} @inc_cols,@rel_cols;
+	return grep { $allowed{$_} } @columns;
 }
 
 # accepts a list of column names and returns the names that match updatable_colspec
-sub filter_updatable_columns {
+sub filter_updatable_columns1 :Debug(stack=>5,verbose=>1) {
 	my $self = shift;
 	
 	# First filter by include_colspec:
@@ -484,6 +493,29 @@ sub filter_updatable_columns {
 		columns => \@columns,
 	});
 }
+
+sub filter_updatable_columns :Debug(stack=>5,verbose=>1) {
+	my $self = shift;
+	#my @columns = @_;
+	
+	my @columns = $self->filter_include_columns(@_);
+	
+	my @inc_cols = $self->colspec_select_columns({
+		colspecs => $self->updatable_colspec,
+		columns => \@columns,
+	});
+	
+	my @rel_cols = $self->colspec_select_columns({
+		colspecs => $self->added_relationship_column_relspecs,
+		columns => \@columns,
+	});
+	
+	scream($self->added_relationship_column_relspecs,$self->updatable_colspec,\@rel_cols);
+	
+	my %allowed = map {$_=>1} @inc_cols,@rel_cols;
+	return grep { $allowed{$_} } @columns;
+}
+
 
 
 # accepts a list of column names and returns the names that match creatable_colspec
@@ -844,6 +876,9 @@ sub column_TableSpec {
 		my %ndx = map {$_=>1} 
 			keys %{$self->columns}, 
 			@{$self->added_relationship_column_relspecs};
+			
+		#scream($column,\%ndx);
+			
 		return $self if ($ndx{$column});
 		return undef;
 	}
@@ -873,6 +908,121 @@ sub columns_to_relspec_map {
 	
 	return $map;
 }
+
+
+sub columns_to_reltree {
+	my $self = shift;
+	my @columns = @_;
+	my %map = (''=>[]);
+	foreach my $col (@columns) {
+		my $rel = $self->column_name_relationship_map->{$col} || '';
+		push @{$map{$rel}}, $col;
+	}
+	
+	my %tree = map {$_=>1} @{delete $map{''}};
+	#$tree{'@' . $_} = $self->columns_to_reltree(@{$map{$_}}) for (keys %map);
+	
+	foreach my $rel (keys %map) {
+		my $TableSpec = $self->related_TableSpec->{$rel} or die "Failed to find related TableSpec $rel";
+		$tree{'@' . $rel} = $TableSpec->columns_to_reltree(@{$map{$rel}});
+	}
+
+	return \%tree;
+}
+
+
+sub walk_columns_deep {
+	my $self = shift;
+	my $code = shift;
+	my @columns = @_;
+	
+	my $recurse = 0;
+	$recurse = 1 if((caller(1))[3] eq __PACKAGE__ . '::walk_columns_deep');
+	local $_{return} = undef unless ($recurse);
+	local $_{rel} = undef unless ($recurse);
+	local $_{depth} = 0 unless ($recurse);
+
+	
+	my %map = (''=>[]);
+	foreach my $col (@columns) {
+		my $rel = $self->column_name_relationship_map->{$col} || '';
+		push @{$map{$rel}}, $col;
+	}
+	
+=pod
+	local $_{depth} = $_{depth}; $_{depth}++;
+	local $_{return};
+	my $tree = $self->columns_to_reltree(@columns);
+	foreach my $rel (grep { /^\@/ } keys %$tree) {
+		my @cols = keys %{$tree->{$rel}};
+		$rel =~ s/^\@//;
+		
+		my $TableSpec = $self->related_TableSpec->{$rel} or die "Failed to find related TableSpec $rel";
+		local $_{rel} = $rel;
+		$_{return} = $TableSpec->walk_columns_deep($code,@cols)
+	}
+	
+	my @local_cols = grep { !/^\@/ } keys %$tree;
+	
+	my $pre = $self->column_prefix;
+	my %name_map = map { my $name = $_; $name =~ s/^${pre}//; $name => $_ } @local_cols;
+	local $_{name_map} = \%name_map;
+	
+	return $code->($self,@local_cols);
+=cut
+	
+	
+	
+	
+	
+	my @local_cols = @{delete $map{''}};
+	
+	my $pre = $self->column_prefix;
+	my %name_map = map { my $name = $_; $name =~ s/^${pre}//; $name => $_ } @local_cols;
+	local $_{name_map} = \%name_map;
+	local $_{return} = $code->($self,@local_cols);
+	local $_{depth} = $_{depth}; $_{depth}++;
+	foreach my $rel (keys %map) {
+		my $TableSpec = $self->related_TableSpec->{$rel} or die "Failed to find related TableSpec $rel";
+		local $_{last_rel} = $_{rel};
+		local $_{rel} = $rel;
+		$TableSpec->walk_columns_deep($code,@{$map{$rel}});
+	}
+	
+	
+	
+
+	
+	
+=pod
+	my @local_cols = @{delete $map{''}};
+	
+	local $_{depth} = $_{depth}; $_{depth}++;
+	local $_{return};
+	foreach my $rel (keys %map) {
+		my $TableSpec = $self->related_TableSpec->{$rel} or die "Failed to find related TableSpec $rel";
+		local $_{rel} = $rel;
+		$_{return} = $TableSpec->walk_columns_deep($code,@{$map{$rel}});
+	}
+	
+	my $pre = $self->column_prefix;
+	my %name_map = map { my $name = $_; $name =~ s/^${pre}//; $name => $_ } @local_cols;
+	local $_{name_map} = \%name_map;
+	
+	return $code->($self,@local_cols);
+=cut
+	
+}
+
+
+
+
+
+
+
+
+
+
 
 # Accepts a DBIC Row object and a relspec, and returns the related DBIC
 # Row object associated with that relspec
@@ -1135,6 +1285,14 @@ sub add_relationship_column {
 		}
 	};
 	
+	my $required_fetch_columns = [ 
+		$render_col,
+		$key_col,
+		$upd_key_col
+	];
+	
+	#scream($rel,$colname,$required_fetch_columns);
+	
 	$conf = { %$conf, 
 	
 		no_fetch => 1,
@@ -1146,11 +1304,7 @@ sub add_relationship_column {
 		
 		],
 		
-		required_fetch_columns => [ 
-			$render_col,
-			$key_col,
-			$upd_key_col
-		],
+		required_fetch_columns => $required_fetch_columns,
 		
 		read_raw_munger => RapidApp::Handler->new( code => $read_raw_munger ),
 		update_munger => RapidApp::Handler->new( code => $update_munger ),
