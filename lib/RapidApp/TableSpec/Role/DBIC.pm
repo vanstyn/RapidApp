@@ -68,9 +68,6 @@ after BUILD => sub {
 	my $self = shift;
 	
 	$self->init_relspecs;
-	
-	#$self->init_local_columns;
-	#$self->add_all_related_TableSpecs_recursive;
 };
 
 
@@ -87,12 +84,6 @@ sub init_local_columns  {
 	$self->add_db_column($_,$cols->{$_}) for (@order);
 };
 
-#has 'db_col_indx', is => 'ro', isa => 'HashRef', lazy => 1, 
-#default => sub {
-#	my $self = shift;
-#	return { map {$_=>1} $self->ResultClass->columns };
-#};
-
 
 sub add_db_column($@) {
 	my $self = shift;
@@ -105,99 +96,6 @@ sub add_db_column($@) {
 	return $self->add_columns(\%opt);
 }
 
-
-
-
-=pod
-
-sub init_local_columns_old {
-	my $self = shift;
-	
-	my $class = $self->ResultClass;
-	$class->set_primary_key( $class->columns ) unless ( $class->primary_columns > 0 );
-	
-	my $cols = $self->init_config_column_properties;
-	my %inc_cols = map { $_ => $cols->{$_} || {} } $self->filter_base_columns($class->columns);
-
-	foreach my $col (keys %inc_cols) {
-		my $info = $class->column_info($col);
-		my @profiles = ();
-			
-		push @profiles, $info->{is_nullable} ? 'nullable' : 'notnull';
-		
-		my $type_profile = $self->data_type_profiles->{$info->{data_type}} || ['text'];
-		$type_profile = [ $type_profile ] unless (ref $type_profile);
-		push @profiles, @$type_profile;
-		
-		
-		$inc_cols{$col}{profiles} = [ $inc_cols{$col}{profiles} ] if (
-			defined $inc_cols{$col}{profiles} and 
-			not ref $inc_cols{$col}{profiles}
-		);
-		push @profiles, @{$inc_cols{$col}{profiles}} if ($inc_cols{$col}{profiles});
-		
-		
-		$inc_cols{$col} = merge($inc_cols{$col},{ 
-			name => $self->column_prefix . $col,
-			profiles => \@profiles 
-		});
-	}
-	
-	my %seen = ();
-	my @order = grep { !$seen{$_}++ && exists $inc_cols{$_} } @{$self->init_config_column_order},keys %inc_cols;
-	$self->add_columns($inc_cols{$_}) for (@order);
-	
-	$self->init_relationship_columns;
-	
-	#$self->init_relationship_columns_new;
-}
-=cut
-
-
-sub init_relationship_columns_new {
-	my $self = shift;
-	
-	my $class = $self->ResultClass;
-	my $Source = $self->ResultSource;
-	return unless ($class->can('TableSpec_cnf'));
-	
-	my @rels = grep { $Source->relationship_info($_)->{attrs}->{accessor} eq 'single' } $Source->relationships;
-	@rels = $self->filter_base_columns(@rels);
-	
-	foreach my $rel (@rels) {
-	
-		my $displayField = $class->TableSpec_related_get_conf($rel,'display_column');
-		
-		
-		#my $width = $class->TableSpec_related_get_conf($rel
-		
-		scream($rel,$displayField);
-		
-		#$self->add_relationship_columns( $rel,
-		
-		
-		#);
-	
-	}
-	
-	#scream(@rel_cols);
-	
-}
-
-
-sub init_relationship_columns {
-	my $self = shift;
-	
-	
-	my $rel_cols = $self->get_Cnf('relationship_columns') or return;
-	
-	my %inc_rel_cols = map { $_ => $rel_cols->{$_} } $self->filter_base_columns(keys %$rel_cols);
-
-	#scream_color(MAGENTA.BOLD,$self->relspec_prefix,[keys %inc_rel_cols]);
-	
-	return $self->add_relationship_columns(\%inc_rel_cols);
-
-}
 
 
 # Load and process config params from TableSpec_cnf in the ResultClass plus
@@ -219,70 +117,6 @@ hashash 'Cnf' => ( lazy => 1, default => sub {
 	return $cf->{data} || {};
 });
 
-
-=pod
-has 'init_config_column_properties' => ( 
-	is => 'ro', 
-	isa => 'HashRef',
-	lazy => 1,
-	default => sub {
-		my $self = shift;
-		my $cols = {};
-		
-		# lower precidence:
-		$cols = merge($cols,$self->get_Cnf('column_properties_ordered') || {});
-		
-		# higher precidence:
-		$cols = merge($cols,$self->get_Cnf('column_properties') || {});
-		
-		return $cols;
-	}
-);
-has 'init_config_column_order' => ( 
-	is => 'ro', 
-	isa => 'ArrayRef',
-	lazy => 1,
-	default => sub {
-		my $self = shift;
-		
-		my @order = ();
-		push @order, @{ $self->get_Cnf_order('column_properties_ordered') || [] };
-		push @order, $self->ResultClass->columns; # <-- native dbic column order has precidence over the column_properties order
-		push @order, @{ $self->get_Cnf_order('column_properties') || [] };
-			
-		# fold together removing duplicates:
-		@order = uniq @order;
-		
-		my $ovrs = $self->get_Cnf('column_order_overrides') or return \@order;
-		foreach my $ord (@$ovrs) {
-			my ($offset,$cols) = @$ord;
-			my %colmap = map { $_ => 1 } @$cols;
-			# remove colnames to be ordered differently:
-			@order = grep { !$colmap{$_} } @order;
-			
-			# If the offset is a column name prefixed with + (after) or - (before)
-			$offset =~ s/^([\+\-])//;
-			if($1) {
-				my $i = 0;
-				my $ndx = 0; # <-- default before (will become 0 below)
-				$ndx = scalar @order if ($1 eq '+'); # <-- default after
-				for my $col (@order) {
-					$ndx = $i and last if ($col eq $offset);
-					$i++;
-				}
-				$ndx++ if ($1 eq '+' and $ndx > 0);
-				$offset = $ndx;
-			}
-
-			$offset = scalar @order if ($offset > scalar @order);
-			splice(@order,$offset,0,@$cols);
-		}
-		
-		return [uniq @order];
-	}
-);
-
-=cut
 
 
 =head1 ColSpec format 'include_colspec'
@@ -451,32 +285,14 @@ sub _build_relationship_column_configs {
 	my $self = shift;
 	
 	my $class = $self->ResultClass;
-	#return {} unless ($class->can('TableSpec_cnf'));
+	return {} unless ($class->can('TableSpec_cnf'));
 	
 	my %rel_cols_indx = map {$_=>1} @{$self->get_Cnf('relationship_column_names')};
 	my %columns = $class->TableSpec_get_conf('columns');
 	return { map { $_ => $columns{$_} } grep { $rel_cols_indx{$_} } keys %columns };
 };
 
-=pod
-has 'relationship_column_configs' => ( is => 'ro', isa => 'HashRef', lazy => 1, default => sub {{
-	my $self = shift;
-	my $rel_cols = $self->get_Cnf('relationship_columns');
-	
-	my $c = RapidApp::ScopedGlobals->get('catalystClass');
-	foreach my $rel (keys %$rel_cols) {
-		my $conf = $rel_cols->{$rel};
-		die "displayField is required" unless (defined $conf->{displayField});
-		
-		my $info = $self->ResultClass->relationship_info($rel) or die "Relationship '$rel' not found.";
-		my $Source = $c->model('DB')->source($info->{source});
-		my $cond_data = $self->parse_relationship_cond($info->{cond});
-		$conf->{valueField} = $cond_data->{foreign};
-		$conf->{keyField} = $cond_data->{self};
-	}
-	return $rel_cols;
-}});
-=cut
+
 
 # colspecs that were added solely for the relationship columns
 # get stored in 'added_relationship_column_relspecs' and are then
@@ -1329,13 +1145,8 @@ sub add_relationship_column {
 		],
 		
 		required_fetch_columns => [ 
-			$self->column_prefix . $rel . '__' . $conf->{displayField},
-			#$upd_key_col,
-			#$key_col
-			#$key_col,
-			#$self->column_prefix . $rel . '__' . $conf->{displayField}
-			#$self->column_prefix . $conf->{key_col},
-			#$self->column_prefix . $conf->{render_col}
+			$conf->{render_col},
+			$key_col
 		],
 		
 		read_raw_munger => RapidApp::Handler->new( code => sub {
@@ -1357,15 +1168,19 @@ sub add_relationship_column {
 			my $rows = shift;
 			$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
 			foreach my $row (@$rows) {
+				scream_color(MAGENTA.BOLD,$row);
 				if ($row->{$colname}) {
 					
 					#scream_color(MAGENTA,$row);
 					
 					#my $key = $self->column_prefix . $conf->{key_col};
 					$row->{$upd_key_col} = $row->{$colname};
+					
+					scream_color(MAGENTA.BOLD,$upd_key_col,$colname);
+					
 					delete $row->{$colname};
 					
-					#scream_color(MAGENTA.BOLD,$row);
+					
 					
 					
 					
@@ -1396,6 +1211,8 @@ sub add_relationship_column {
 		
 		$conf->{editor} =  $Module->content;
 	}
+	
+	scream($conf);
 	
 	$self->add_columns({ name => $colname, %$conf });
 	
