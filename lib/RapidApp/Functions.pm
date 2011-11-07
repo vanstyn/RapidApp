@@ -1,4 +1,6 @@
 package RapidApp::Functions;
+use strict;
+use warnings;
 require Exporter;
 use Class::MOP::Class;
 
@@ -7,6 +9,8 @@ use Data::Dumper;
 use RapidApp::RootModule;
 use Clone qw(clone);
 use JSON::PP qw(encode_json);
+
+
 
 sub scream {
 	local $_ = caller_data(3);
@@ -219,6 +223,8 @@ sub func_debug_around {
 	%opt = (
 		verbose			=> 0,
 		use_json			=> 0,
+		stack				=> 0,
+		instance			=> 0,
 		color				=> GREEN,
 		ret_color		=> RED.BOLD,
 		arg_ignore		=> sub { 0 }, # <-- no debug output prited when this returns true
@@ -243,13 +249,29 @@ sub func_debug_around {
 		my $self = shift;
 		my @args = @_;
 		
-		my $in;
 		my $has_refs = 0;
 		my @print_args = map { (ref($_) and ++$has_refs) ? "$_" : MAGENTA . "'$_'" . CLEAR } @args;
 		
 		my $in = '(' . join(',',@print_args) . '): ';
 		
-		print STDERR '[' . $opt{line} . '] ' . CLEAR . $opt{color} . $opt{pkg} . CLEAR . '->' . 
+		my $class = $opt{pkg};
+		if($opt{stack}) {
+			my $stack = caller_data_brief($opt{stack} + 3);
+			shift @$stack;
+			shift @$stack;
+			@$stack = reverse @$stack;
+			my $i = $opt{stack};
+			print STDERR "\n";
+			foreach my $data (@$stack) {
+				print STDERR '((stack ' . sprintf("%2s",$i--) . ')) ' . sprintf("%7s",'[' . $data->{line} . ']') . ' ' . 
+					GREEN . $data->{subroutine} . CLEAR . "\n";
+			}
+			print STDERR '((stack  0)) ' .  sprintf("%7s",'[' . $opt{line} . ']') . ' ' .
+				GREEN . $class . '::' . $name . "\n" . CLEAR;
+			$class = "$self";
+		}
+		
+		print STDERR '[' . $opt{line} . '] ' . CLEAR . $opt{color} . $class . CLEAR . '->' . 
 				$opt{color} . BOLD . $name . CLEAR . $in;
 		
 		my $res;
@@ -322,8 +344,8 @@ sub debug_sub($&) {
 
 # Automatically export all functions defined above:
 BEGIN {
-	@ISA = qw(Exporter);
-	@EXPORT = Class::MOP::Class->initialize(__PACKAGE__)->get_method_list;
+	our @ISA = qw(Exporter);
+	our @EXPORT = Class::MOP::Class->initialize(__PACKAGE__)->get_method_list;
 }
 
 1;
