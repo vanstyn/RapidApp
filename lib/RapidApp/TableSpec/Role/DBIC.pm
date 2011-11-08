@@ -182,9 +182,12 @@ sub add_db_column($@) {
 	my $name = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
-	return $self->add_relationship_column($name,\%opt) if($opt{relationship_info});
+	%opt = $self->get_relationship_column_cnf($name,\%opt) if($opt{relationship_info});
 	
 	$opt{name} = $self->column_prefix . $name;
+
+	$opt{editor} = '' unless ($self->filter_updatable_columns($opt{name}));
+	
 	return $self->add_columns(\%opt);
 }
 
@@ -1112,7 +1115,7 @@ sub chain_to_hash {
 
 
 
-sub add_relationship_column {
+sub get_relationship_column_cnf {
 	my $self = shift;
 	my $rel = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
@@ -1197,7 +1200,7 @@ sub add_relationship_column {
 		$conf->{editor} =  $Module->content;
 	}
 	
-	$self->add_columns({ name => $colname, %$conf });
+	return (name => $colname, %$conf);
 }
 
 
