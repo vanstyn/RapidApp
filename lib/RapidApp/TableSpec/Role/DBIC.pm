@@ -50,23 +50,21 @@ coerce 'ColSpec', from 'ArrayRef[Str]',
 	via { RapidApp::TableSpec::ColSpec->new(colspecs => $_) };
 
 has 'include_colspec', is => 'ro', isa => 'ColSpec', 
-	required => 1, coerce => 1, trigger => \&_colspec_attr_init_trigger;
+	required => 1, coerce => 1, trigger =>  sub { (shift)->_colspec_attr_init_trigger(@_) };
 	
 has 'updatable_colspec', is => 'ro', isa => 'ColSpec', 
-	default => sub {[]}, coerce => 1, trigger => \&_colspec_attr_init_trigger;
+	default => sub {[]}, coerce => 1, trigger =>  sub { (shift)->_colspec_attr_init_trigger(@_) };
 	
 has 'creatable_colspec', is => 'ro', isa => 'ColSpec', 
-	default => sub {[]}, coerce => 1, trigger => \&_colspec_attr_init_trigger;
+	default => sub {[]}, coerce => 1, trigger => sub { (shift)->_colspec_attr_init_trigger(@_) };
 
 sub _colspec_attr_init_trigger {
 	my ($self,$ColSpec) = @_;
 	my $sep = $self->relation_sep;
 	/${sep}/ and die "Fatal: ColSpec '$_' is invalid because it contains the relation separater string '$sep'" for ($ColSpec->all_colspecs);
 	
-	my $spec = $ColSpec->colspecs;
-	
 	$ColSpec->expand_colspecs(sub {
-		map { $self->expand_relspec_wildcards($_) } @_
+		$self->expand_relspec_wildcards(\@_)
 	});
 }
 
@@ -86,6 +84,7 @@ sub init_relspecs {
 	$self->include_colspec->expand_colspecs(sub {
 		$self->expand_relationship_columns(@_)
 	});
+	
 	
 	foreach my $col ($self->no_column_colspec->base_colspec->all_colspecs) {
 		$self->Cnf_columns->{$col} = {} unless ($self->Cnf_columns->{$col});
@@ -167,9 +166,6 @@ sub init_local_columns  {
 	my $class = $self->ResultClass;
 	$class->set_primary_key( $class->columns ) unless ( $class->primary_columns > 0 );
 	
-	
-	#scream_color(CYAN.BOLD,$self->Cnf_columns,$self->Cnf_columns_order);
-	
 	my @order = @{$self->Cnf_columns_order};
 	@order = $self->filter_base_columns(@order);
 	
@@ -185,8 +181,10 @@ sub add_db_column($@) {
 	%opt = $self->get_relationship_column_cnf($name,\%opt) if($opt{relationship_info});
 	
 	$opt{name} = $self->column_prefix . $name;
+	
+	my $editable = $self->filter_updatable_columns($name,$opt{name});
 
-	$opt{editor} = '' unless ($self->filter_updatable_columns($opt{name}));
+	$opt{editor} = '' unless ($editable);
 	
 	return $self->add_columns(\%opt);
 }
@@ -394,6 +392,10 @@ sub filter_base_columns {
 	my $self = shift;
 	my @columns = @_;
 	
+	# Why has this come up?
+	# filter out columns with invalid characters (*):
+	@columns = grep { /^[A-Za-z0-9\-\_\.]+$/ } @columns;
+	
 	return $self->colspec_select_columns({
 		colspecs => $self->base_colspec,
 		columns => \@columns,
@@ -500,12 +502,7 @@ sub colspecs_to_colspec_test {
 # (merge with Mike's class)
 # Tests whether or not the supplied column name matches the supplied colspec.
 # Returns 1 for positive match, 0 for negative match (! prefix) and undef for no match
-#debug_around 'colspec_test' => ( arg_ignore => sub {  my $count = grep { $_ eq '*' } @_; return $count ? 0 : 1; } );
-#debug_around 'colspec_test' => ( 
-#	arg_ignore => sub { $_->relspec_prefix ne '' and return 1; return (grep { $_ eq '*' } @_) ? 0 : 1; }, 
-#	return_ignore => sub { (shift) ? 0 : 1; },
-#);
-sub colspec_test($$) {
+sub colspec_test($$){
 	my $self = shift;
 	my $full_colspec = shift || die "full_colspec is required";
 	my $col = shift || die "col is required";
@@ -626,6 +623,7 @@ sub colspec_select_columns {
 	for my $spec (@$colspecs) {
 		my @remaining = @$colspecs[++$i .. $#$colspecs];
 		for my $col (@$columns) {
+
 			my @arg = ($spec,$col);
 			push @arg, @remaining if ($best_match); # <-- push the rest of the colspecs after the current for index
 			
@@ -1075,8 +1073,8 @@ sub resolve_dbic_rel_alias_by_column_name {
 		#scream($name,$self->custom_dbic_rel_aliases);
 	
 		# -- If this is a relationship column and the display field isn't already included:
-		my $cust = $self->custom_dbic_rel_aliases->{$name};
-		return @$cust if (defined $cust);
+		#my $cust = $self->custom_dbic_rel_aliases->{$name};
+		#return @$cust if (defined $cust);
 		# --
 		
 		#scream_color(CYAN.BOLD,$name,$self->custom_dbic_rel_aliases);
@@ -1130,7 +1128,7 @@ sub get_relationship_column_cnf {
 	my $Source = $self->ResultSource->related_source($rel);
 	
 	my $render_col = $self->column_prefix . $rel . $self->relation_sep . $conf->{displayField};
-	my $key_col = $self->column_prefix . $rel . $self->relation_sep . $conf->{valueField};
+	#my $key_col = $self->column_prefix . $rel . $self->relation_sep . $conf->{valueField};
 	my $upd_key_col = $self->column_prefix . $conf->{keyField};
 	
 	my $colname = $self->column_prefix . $rel;
@@ -1140,8 +1138,7 @@ sub get_relationship_column_cnf {
 		$rows = (shift)->{rows};
 		$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
 		foreach my $row (@$rows) {
-			$row->{$colname} = $row->{$key_col} if ($row->{$key_col});
-			
+			$row->{$colname} = $row->{$upd_key_col} if ($row->{$upd_key_col});
 		}
 	};
 	
@@ -1158,7 +1155,7 @@ sub get_relationship_column_cnf {
 	
 	my $required_fetch_columns = [ 
 		$render_col,
-		$key_col,
+		#$key_col,
 		$upd_key_col
 	];
 	

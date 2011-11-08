@@ -295,8 +295,6 @@ sub chain_Rs_req_base_Attr {
 		rows => $params->{limit}
 	};
 	
-	
-	
 	my $columns = $self->get_req_columns;
 	
 	my $used_aliases = {};
@@ -307,6 +305,7 @@ sub chain_Rs_req_base_Attr {
 		
 		my ($alias,$field) = split(/\./,$dbic_name);
 		my $prefix = $col;
+		
 		$prefix =~ s/${field}$//;
 		$used_aliases->{$alias} = {} unless ($used_aliases->{$alias});
 		$used_aliases->{$alias}->{$prefix}++ unless($alias eq 'me');
@@ -346,7 +345,7 @@ sub get_req_columns {
 	# TODO: move column request logic that's currently only in AppGrid2 to a 
 	# plugin/store where it can be used by other js modules like dataview
 	push @$columns, $self->TableSpec->get_colspec_column_names(
-		$self->TableSpec->include_colspec
+		$self->TableSpec->include_colspec->colspecs
 	) unless(@$columns > 0); 
 	# ---
 	
@@ -620,12 +619,16 @@ sub _dbiclink_update_records {
 						scream('NOTICE: Relationship/row "' . $rel . '" is not defined'); 
 						return;
 					}
-					
+
 					my %current = $UpdRow->get_columns;
 					my %update = map { $_ => $data->{ $_{name_map}->{$_} } } keys %{$_{name_map}};
-					my $alias = $TableSpec->column_data_alias;
 					
-					%update = map { $alias->{$_} ? $alias->{$_} : $_ => $update{$_} } keys %update;
+					# -- Need to do a map and a grep here; map to remap the values, and grep to prevent
+					# the new values from being clobbered by identical key names from the original data:
+					my $alias = $TableSpec->column_data_alias;
+					my %revalias = map {$_=>1} values %$alias;
+					%update = map { $alias->{$_} ? $alias->{$_} : $_ => $update{$_} } grep { !$revalias{$_} } keys %update;
+					# --
 					
 					my $change = diff(\%current, \%update);
 					# why do I need to do this?:
