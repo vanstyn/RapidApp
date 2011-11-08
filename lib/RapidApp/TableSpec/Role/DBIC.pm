@@ -4,6 +4,7 @@ use Moose::Role;
 use Moose::Util::TypeConstraints;
 
 use RapidApp::TableSpec::DbicTableSpec;
+use RapidApp::TableSpec::ColSpec;
 
 use RapidApp::Include qw(sugar perlutil);
 
@@ -12,6 +13,7 @@ use RapidApp::DBIC::Component::TableSpec;
 use Text::Glob qw( match_glob );
 use Text::WagnerFischer qw(distance);
 use Clone qw( clone );
+
 
 
 has 'ResultSource', is => 'ro', isa => 'DBIx::Class::ResultSource',
@@ -43,23 +45,49 @@ has 'data_type_profiles' => ( is => 'ro', isa => 'HashRef', default => sub {{
 	timestamp	=> [ 'datetime' ],
 }});
 
+subtype 'ColSpec', as 'Object';
+coerce 'ColSpec', from 'ArrayRef[Str]', 
+	via { RapidApp::TableSpec::ColSpec->new(colspecs => $_) };
+
+has 'include_colspec', is => 'ro', isa => 'ColSpec', 
+	required => 1, coerce => 1, trigger => \&_colspec_attr_init_trigger;
+	
+has 'updatable_colspec', is => 'ro', isa => 'ColSpec', 
+	default => sub {[]}, coerce => 1, trigger => \&_colspec_attr_init_trigger;
+	
+has 'creatable_colspec', is => 'ro', isa => 'ColSpec', 
+	default => sub {[]}, coerce => 1, trigger => \&_colspec_attr_init_trigger;
+
+sub _colspec_attr_init_trigger {
+	my ($self,$ColSpec) = @_;
+	my $sep = $self->relation_sep;
+	/${sep}/ and die "Fatal: ColSpec '$_' is invalid because it contains the relation separater string '$sep'" for ($ColSpec->all_colspecs);
+	
+	my $spec = $ColSpec->colspecs;
+	
+	$ColSpec->expand_colspecs(sub {
+		map { $self->expand_relspec_wildcards($_) } @_
+	});
+}
+
+
 
 sub BUILD {}
 after BUILD => sub {
 	my $self = shift;
 	
 	$self->init_relspecs;
+	
 };
 
 sub init_relspecs {
 	my $self = shift;
 	
-	my @colspecs = @{$self->include_colspec};
-
-	my $rel_colspecs = $self->get_relation_colspecs(@colspecs);
+	$self->include_colspec->expand_colspecs(sub {
+		$self->expand_relationship_columns(@_)
+	});
 	
-	my $no_columns = $self->get_no_column_relspecs_hash;
-	foreach my $col (@{$no_columns->{''}}) {
+	foreach my $col ($self->no_column_colspec->base_colspec->all_colspecs) {
 		$self->Cnf_columns->{$col} = {} unless ($self->Cnf_columns->{$col});
 		%{$self->Cnf_columns->{$col}} = (
 			%{$self->Cnf_columns->{$col}},
@@ -71,22 +99,10 @@ sub init_relspecs {
 	}
 	uniq($self->Cnf_columns_order);
 	
-	#scream($rel_colspecs);
+	my @rels = $self->include_colspec->all_rel_order;
 	
-	foreach my $rel (@{$rel_colspecs->{order}}) {
-		next if ($rel eq '');
-		my $subspec = $rel_colspecs->{data}->{$rel};
-		my $no_column_relspecs = [];
-		push @$no_column_relspecs,@{$no_columns->{$rel}} if ($no_columns->{$rel});
-		$self->add_related_TableSpec($rel, 
-			include_colspec => $subspec, 
-			no_column_relspecs => $no_column_relspecs 
-		);
-	}
+	$self->add_related_TableSpec($_) for (grep { $_ ne '' } @rels);
 	
-	$self->base_colspec($rel_colspecs->{data}->{''});
-	
-	#$self->base_colspec(\@base_colspecs);
 	$self->init_local_columns;
 	
 	foreach my $rel (@{$self->related_TableSpec_order}) {
@@ -97,33 +113,18 @@ sub init_relspecs {
 		}
 	}
 	
-	$self->reorder_by_colspec_list(\@colspecs);
+	$self->reorder_by_colspec_list($self->include_colspec->colspecs);
 }
 
 hashash 'column_update_alias';
-hasarray 'no_column_relspecs';
-sub get_no_column_relspecs_hash {
-	my $self = shift;
-	my $h = {''=>[]};
-	foreach my $spec ($self->all_no_column_relspecs) {
-		my @parts = split(/\./,$spec);
-		my $rel = shift @parts;
-		my $subspec = join('.',@parts);
-		unless(@parts > 0) { # <-- if its the base rel
-			$subspec = $rel;
-			$rel = '';
-		}
-		push @{$h->{$rel}},$subspec;
-	}
-	return $h;
-}
+has 'no_column_colspec', is => 'ro', isa => 'ColSpec', coerce => 1, default => sub {[]};
 sub expand_relationship_columns {
 	my $self = shift;
 	my @columns = @_;
 	my @expanded = ();
 	
 	my @rel_cols = @{$self->get_Cnf('relationship_column_names')};
-	
+	my @no_cols = ();
 	foreach my $col (@columns) {
 		push @expanded, $col;
 		
@@ -136,69 +137,20 @@ sub expand_relationship_columns {
 				$relcol . '.' . $self->Cnf_columns->{$relcol}->{valueField}
 			);
 			push @expanded, @add;
-			
 			$self->apply_column_update_alias( $relcol => $self->Cnf_columns->{$relcol}->{keyField});
-			
-			foreach my $new (@add) {
-				next if ($self->colspecs_to_colspec_test(\@columns,$new));
-				$self->add_no_column_relspecs($new);
-			}
+			push @no_cols, grep { !$self->colspecs_to_colspec_test(\@columns,$_) } @add;
 		}
 	}
+	$self->no_column_colspec->add_colspecs(@no_cols);
+	
 	return @expanded;
 }
 
-#divides a colspec set into separate sub-colspec sets, according to relation
-sub get_relation_colspecs {
-	my $self = shift;
-	my @colspecs = @_;
-	
-	@colspecs = $self->expand_relationship_columns(@colspecs);
-	
-	my @order = ('');
-	my %data = ('' => []);
-	
-	my %end_rels = ( '' => 1 );
-	foreach my $spec (@colspecs) {
-		my $pre; { $spec =~ s/^(\!)//; $pre = $1 ? $1 : ''; }
-		
-		my @parts = split(/\./,$spec);
-		my $rel = shift @parts;
-		my $subspec = join('.',@parts);
-		unless(@parts > 0) { # <-- if its the base rel
-			$subspec = $rel;
-			$rel = '';
-		}
-		
-		# end rels that link to colspecs and not just to relspecs 
-		# (intermediate rels with no direct columns)
-		$end_rels{$rel}++ if (
-			not $subspec =~ /\./ and 
-			$pre eq ''
-		 );
-		
-		unless(defined $data{$rel}) {
-			$data{$rel} = [];
-			push @order, $rel;
-		}
-		
-		push @{$data{$rel}}, $pre . $subspec;
-	}
-	
-	# Set the base colspec to '*' if its empty: 
-	push @{$data{''}}, '*' unless (@{$data{''}} > 0);
-	#foreach my $rel (@order) {
-	#	push @{$data{$rel}}, '!*' unless ($end_rels{$rel});
-	#}
-	$end_rels{$_} or push @{$data{$_}}, '!*' for (@order);
-	
-	return {
-		order => \@order,
-		data => \%data
-	};
-}
 
-has 'base_colspec' => ( is => 'rw', isa => 'ArrayRef', default => sub {[]} );
+sub base_colspec {
+	my $self = shift;
+	return $self->include_colspec->base_colspec->colspecs;
+}
 
 has 'Cnf_columns', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
 	my $self = shift;
@@ -259,137 +211,6 @@ hashash 'Cnf', lazy => 1, default => sub {
 
 
 
-=head1 ColSpec format 'include_colspec'
-
-The include_colspec attribute defines joins and columns to include. It consists 
-of a list of "ColSpecs"
-
-The ColSpec format is a string format consisting of consists of 2 parts: an 
-optional 'relspec' followed by a 'colspec'. The last dot "." in the string separates
-the relspec on the left from the colspec on the right. A string without periods
-has no (or an empty '') relspec.
-
-The relspec is a chain of relationship names delimited by dots. These must be exact
-relnames in the correct order. These are used to create the base DBIC join attr. For
-example, this relspec (to the left of .*):
-
- object.owner.contact.*
- 
-Would become this join:
-
- { object => { owner => 'contact' } }
- 
-Multple overlapping rels are collapsed in an inteligent manner. For example, this:
-
- object.owner.contact.*
- object.owner.notes.*
- 
-Gets collapsed into this join:
-
- { object => { owner => [ 'contact', 'notes' ] } }
- 
-The colspec to the right of the last dot "." is a glob pattern match string to identify
-which columns of that last relationship to include. Standard simple glob wildcards * ? [ ]
-are supported (this is powered by the Text::Glob module. ColSpecs with no relspec apply to
-the base table/class. If no base colspecs are defined, '*' is assumed, which will include
-all columns of the base table (but not of any related tables). 
-
-Note that this ColSpec:
-
- object.owner.contact
- 
-Would join { object => 'owner' } and include one column named 'contact' within the owner table.
-
-This ColSpec, on the other hand:
-
- object.owner.contact.*
- 
-Would join { object => { owner => 'contact' } } and include all columns within the contact table.
-
-The ! chacter can exclude instead of include. It can only be at the start of the line, and it will
-cause the colspec to exclude columns that match the pattern. For the purposes of joining, ! ColSpecs
-are ignored.
-
-=head1 EXAMPLE ColSpecs:
-
-	'name',
-	'!id',
-	'*',
-	'!*',
-	'project.*', 
-	'user.*',
-	'contact.notes.owner.foo*',
-	'contact.notes.owner.foo.sd',
-	'project.dist1.rsm.object.*_ts',
-	'relation.column',
-	'owner.*',
-	'!owner.*_*',
-
-=cut
-
-
-subtype 'ColSpec', as 'Str', where {
-	/\s+/ and warn "ColSpec '$_' is invalid because it contains whitespace" and return 0;
-	/[A-Z]+/ and warn "ColSpec '$_' is invalid because it contains upper case characters" and return 0;
-	/([^\#a-z0-9\-\_\.\!\*\?\[\]\{\}\:])/ and warn "ColSpec '$_' contains invalid characters ('$1')." and return 0;
-	/^\./ and warn "ColSpec '$_' is invalid: \".\" cannot be the first character" and return 0;
-	/\.$/ and warn "ColSpec '$_' is invalid: \".\" cannot be the last character (did you mean '$_*' ?)" and return 0;
-	
-	$_ =~ s/^\#//;
-		/\#/ and warn "ColSpec '$_' is invalid: # (comment) character may only be supplied at the begining of the string." and return 0;
-	
-	$_ =~ s/^\!//;
-	/\!/ and warn "ColSpec '$_' is invalid: ! (not) character may only be supplied at the begining of the string." and return 0;
-	
-	
-	
-	#my @parts = split(/\./,$_); pop @parts;
-	#my $relspec = join('.',@parts);
-	#$relspec =~ /([\*\?\[\]])/ and $relspec ne '*'
-	#	and warn "ColSpec '$_' is invalid: glob wildcards are only allowed in the column section, not in the relation section." and return 0;
-	
-	return 1;
-};
-
-has 'include_colspec' => ( 
-	is => 'ro', isa => 'ArrayRef[ColSpec]', required => 1,
-	trigger => sub {
-		my ($self,$spec) = @_;
-		$self->_colspec_attr_init_trigger($spec);
-		#@$spec = $self->expand_relspec_relationship_columns([@$spec]);
-	}
-);
-
-has 'updatable_colspec' => ( 
-	is => 'ro', isa => 'ArrayRef[ColSpec]', default => sub {[]},
-	trigger => sub {
-		my ($self,$spec) = @_;
-		#scream_color(YELLOW,$spec);
-		$self->_colspec_attr_init_trigger($spec);
-		#@$spec = $self->expand_relspec_relationship_columns([@$spec],1);
-		#scream_color(YELLOW.ON_WHITE,$spec)
-	}
-);
-
-has 'creatable_colspec' => ( 
-	is => 'ro', isa => 'ArrayRef[ColSpec]', default => sub {[]},
-	trigger => sub {
-		my ($self,$spec) = @_;
-		$self->_colspec_attr_init_trigger($spec);
-		#@$spec = $self->expand_relspec_relationship_columns([@$spec],1);
-	}
-);
-
-sub _colspec_attr_init_trigger {
-	my ($self,$spec) = @_;
-	my $sep = $self->relation_sep;
-	/${sep}/ and die "Fatal: ColSpec '$_' is invalid because it contains the relation separater string '$sep'" for (@$spec);
-	@$spec = map { $self->expand_relspec_wildcards($_) } @$spec;
-	
-	# If there are no base cols defined at all, add '*'
-	my @base_specs = grep { !/\./ } @$spec;
-	unshift @$spec, '*' unless (@base_specs > 0);
-}
 
 
 
@@ -581,7 +402,7 @@ sub filter_include_columns {
 	my @columns = @_;
 	
 	my @inc_cols = $self->colspec_select_columns({
-		colspecs => $self->include_colspec,
+		colspecs => $self->include_colspec->colspecs,
 		columns => \@columns,
 	});
 	
@@ -595,7 +416,7 @@ sub filter_include_columns {
 }
 
 # accepts a list of column names and returns the names that match updatable_colspec
-sub filter_updatable_columns {
+sub filter_updatable_columns :Debug{
 	my $self = shift;
 	
 	# First filter by include_colspec:
@@ -604,7 +425,7 @@ sub filter_updatable_columns {
 	my @columns = @_;
 	
 	return $self->colspec_select_columns({
-		colspecs => $self->updatable_colspec,
+		colspecs => $self->updatable_colspec->colspecs,
 		columns => \@columns,
 	});
 }
@@ -619,7 +440,7 @@ sub filter_creatable_columns {
 	my @columns = $self->filter_include_columns(@_);
 	
 	return $self->colspec_select_columns({
-		colspecs => $self->creatable_colspec,
+		colspecs => $self->creatable_colspec->colspecs,
 		columns => \@columns,
 	});
 }
@@ -845,19 +666,15 @@ sub reorder_by_colspec_list {
 	return $self->updated_column_order; #<-- for good measure
 }
 
-
-
-has 'relation_colspecs' => ( is => 'ro', isa => 'HashRef', default => sub {{ '' => [] }} );
-has 'relation_order' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default => sub {
+sub relation_colspecs {
 	my $self = shift;
-	
-	my $rel_colspecs = $self->get_relation_colspecs(@{ clone($self->include_colspec) });
-	
-	%{$self->relation_colspecs} = ( %{$self->relation_colspecs}, %{$rel_colspecs->{data}} );
-	return $rel_colspecs->{order};
-});
+	return $self->include_colspec->subspec;
+}
 
-
+sub relation_order {
+	my $self = shift;
+	return $self->include_colspec->rel_order;
+}
 
 
 sub new_TableSpec {
@@ -911,7 +728,7 @@ sub flattened_TableSpec {
 		name => $self->name,
 		ResultClass => $self->ResultClass,
 		relation_sep => $self->relation_sep,
-		include_colspec => $self->include_colspec,
+		include_colspec => $self->include_colspec->colspecs,
 		relspec_prefix => $self->relspec_prefix
 	);
 	
@@ -1145,8 +962,6 @@ sub add_related_TableSpec {
 	my $rel = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
-	#scream($self->relspec_prefix,$rel,caller_data_brief(20,'^RapidApp'));
-	
 	die "There is already a related TableSpec associated with the '$rel' relationship - " . Dumper(caller_data_brief(20,'^RapidApp')) if (
 		defined $self->related_TableSpec->{$rel}
 	);
@@ -1158,17 +973,17 @@ sub add_related_TableSpec {
 	$relspec_prefix .= '.' if ($relspec_prefix and $relspec_prefix ne '');
 	$relspec_prefix .= $rel;
 	
-	
-	$self->relation_order unless $self->relation_colspecs->{$rel};
-	
 	my %params = (
 		name => $relclass->table,
 		ResultClass => $relclass,
 		relation_sep => $self->relation_sep,
 		relspec_prefix => $relspec_prefix,
+		include_colspec => $self->include_colspec->get_subspec($rel)
 	);
 	
-	$params{include_colspec} = $self->relation_colspecs->{$rel} if ($self->relation_colspecs->{$rel});
+	$params{updatable_colspec} = $self->updatable_colspec->get_subspec($rel) || []; 
+	$params{creatable_colspec} = $self->creatable_colspec->get_subspec($rel) || [];
+	$params{no_column_colspec} = $self->no_column_colspec->get_subspec($rel) || [];
 		
 	%params = ( %params, %opt );
 	
@@ -1417,7 +1232,7 @@ sub _build_join {
 	my $join = {};
 	my @list = ();
 	
-	foreach my $item (@{ $self->include_colspec }) {
+	foreach my $item (@{ $self->include_colspec->colspecs }) {
 		my @parts = split(/\./,$item);
 		my $colspec = pop @parts; # <-- the last field describes columns, not rels
 		my $relspec = join('.',@parts) || '';

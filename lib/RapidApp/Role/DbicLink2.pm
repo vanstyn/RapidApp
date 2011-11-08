@@ -172,9 +172,9 @@ sub DbicLink_around_BUILD {
 	die "FATAL: DbicLink and DbicLink2 cannot both be loaded" if ($self->does('RapidApp::Role::DbicLink'));
 	
 	# Disable editing on columns that aren't updatable:
-	$self->apply_except_colspec_columns($self->TableSpec->updatable_colspec => {
-		editor => ''
-	});
+	#$self->apply_except_colspec_columns($self->TableSpec->updatable_colspec => {
+	#	editor => ''
+	#});
 	
 	$self->apply_columns( $self->record_pk => { 
 		no_column => \1, 

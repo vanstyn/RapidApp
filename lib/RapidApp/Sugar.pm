@@ -220,6 +220,7 @@ sub hasarray {
 			'add_' . $name => 'push',
 			'insert_' . $name => 'unshift',
 			'has_no_' . $name => 'is_empty',
+			'count_' . $name		=> 'count'
 		}
 	);
 	
