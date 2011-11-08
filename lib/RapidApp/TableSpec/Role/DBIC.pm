@@ -100,6 +100,7 @@ sub init_relspecs {
 	$self->reorder_by_colspec_list(\@colspecs);
 }
 
+hashash 'column_update_alias';
 hasarray 'no_column_relspecs';
 sub get_no_column_relspecs_hash {
 	my $self = shift;
@@ -135,6 +136,8 @@ sub expand_relationship_columns {
 				$relcol . '.' . $self->Cnf_columns->{$relcol}->{valueField}
 			);
 			push @expanded, @add;
+			
+			$self->apply_column_update_alias( $relcol => $self->Cnf_columns->{$relcol}->{keyField});
 			
 			foreach my $new (@add) {
 				next if ($self->colspecs_to_colspec_test(\@columns,$new));
@@ -592,10 +595,8 @@ sub filter_include_columns {
 }
 
 # accepts a list of column names and returns the names that match updatable_colspec
-sub filter_updatable_columns :Debug(stack=>5,verbose=>1) {
+sub filter_updatable_columns {
 	my $self = shift;
-	
-	scream_color(CYAN,$self->updatable_colspec);
 	
 	# First filter by include_colspec:
 	#my @columns = $self->filter_include_columns(@_);
@@ -606,28 +607,6 @@ sub filter_updatable_columns :Debug(stack=>5,verbose=>1) {
 		colspecs => $self->updatable_colspec,
 		columns => \@columns,
 	});
-}
-
-sub filter_updatable_columns1 :Debug(stack=>5,verbose=>1) {
-	my $self = shift;
-	#my @columns = @_;
-	
-	my @columns = $self->filter_include_columns(@_);
-	
-	my @inc_cols = $self->colspec_select_columns({
-		colspecs => $self->updatable_colspec,
-		columns => \@columns,
-	});
-	
-	my @rel_cols = $self->colspec_select_columns({
-		colspecs => $self->added_relationship_column_relspecs,
-		columns => \@columns,
-	});
-	
-	scream($self->added_relationship_column_relspecs,$self->updatable_colspec,\@rel_cols);
-	
-	my %allowed = map {$_=>1} @inc_cols,@rel_cols;
-	return grep { $allowed{$_} } @columns;
 }
 
 
@@ -648,7 +627,7 @@ sub filter_creatable_columns {
 
 # Tests whether or not the colspec in the second arg matches the colspec of the first arg
 # The second arg colspec does NOT expand wildcards, it has to be a specific rel/col string
-sub colspec_to_colspec_test :Debug(verbose=>1) {
+sub colspec_to_colspec_test {
 	my $self = shift;
 	my $colspec = shift;
 	my $test_spec = shift;
@@ -668,7 +647,7 @@ sub colspec_to_colspec_test :Debug(verbose=>1) {
 	return $x;
 }
 
-sub colspecs_to_colspec_test :Debug(verbose=>1){
+sub colspecs_to_colspec_test {
 	my $self = shift;
 	my $colspecs = shift;
 	my $test_spec = shift;
@@ -779,7 +758,7 @@ sub get_except_colspec_column_names {
 }
 
 # Tests if the supplied colspec set matches all of the supplied columns
-sub colspec_matches_columns :Debug {
+sub colspec_matches_columns {
 	my $self = shift;
 	my $colspecs = shift;
 	my @columns = @_;
@@ -1326,16 +1305,10 @@ sub add_relationship_column {
 	die "valueField is required" unless (defined $conf->{displayField});
 	die "keyField is required" unless (defined $conf->{displayField});
 	
-	#my $c = RapidApp::ScopedGlobals->get('catalystClass');
-	#my $Source = $c->model('DB')->source($info->{source});
 	my $Source = $self->ResultSource->related_source($rel);
 	
-	# we need this for read/display:
 	my $render_col = $self->column_prefix . $rel . $self->relation_sep . $conf->{displayField};
-	# we need this for read/display:
 	my $key_col = $self->column_prefix . $rel . $self->relation_sep . $conf->{valueField};
-	
-	# We need to translate the column name to this on update:
 	my $upd_key_col = $self->column_prefix . $conf->{keyField};
 	
 	my $colname = $self->column_prefix . $rel;
@@ -1350,25 +1323,22 @@ sub add_relationship_column {
 		}
 	};
 	
-	my $update_munger = sub {
-		$rows = shift;
-		$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
-		foreach my $row (@$rows) {
-			scream($colname,$upd_key_col,$row);
-			if ($row->{$colname}) {
-				$row->{$upd_key_col} = $row->{$colname};
-				delete $row->{$colname};
-			}
-		}
-	};
+	#my $update_munger = sub {
+	#	$rows = shift;
+	#	$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
+	#	foreach my $row (@$rows) {
+	#		if ($row->{$colname}) {
+	#			$row->{$upd_key_col} = $row->{$colname};
+	#			delete $row->{$colname};
+	#		}
+	#	}
+	#};
 	
 	my $required_fetch_columns = [ 
 		$render_col,
 		$key_col,
 		$upd_key_col
 	];
-	
-	#scream($rel,$colname,$required_fetch_columns);
 	
 	$conf = { %$conf, 
 	
@@ -1377,14 +1347,12 @@ sub add_relationship_column {
 		no_quick_search => \1,
 		no_multifilter => \1,
 		
-		required_fetch_colspecs => [
-		
-		],
+		#required_fetch_colspecs => [],
 		
 		required_fetch_columns => $required_fetch_columns,
 		
 		read_raw_munger => RapidApp::Handler->new( code => $read_raw_munger ),
-		update_munger => RapidApp::Handler->new( code => $update_munger ),
+		#update_munger => RapidApp::Handler->new( code => $update_munger ),
 		
 		renderer => jsfunc(
 			'function(value, metaData, record, rowIndex, colIndex, store) {' .
@@ -1411,36 +1379,6 @@ sub add_relationship_column {
 	}
 	
 	$self->add_columns({ name => $colname, %$conf });
-	
-	# ---
-	#my $render_name = $conf->{displayField};
-
-	#$self->custom_dbic_rel_aliases->{$rel . $self->relation_sep . $render_name} = [ 
-	#	$rel, 
-	#	$render_name, 
-	#	{ $rel => {} }
-	#];
-	
-	#my $include_colspec = [];
-	#my $updatable_colspec = [];
-	
-	#if($self->colspec_matches_columns($self->include_colspec,$rel)) {
-	#	push @$include_colspec, $conf->{valueField}, $conf->{displayField};
-	#}
-	
-	#my $TableSpec = $self->addIf_related_TableSpec($rel, 
-	#	include_colspec => $include_colspec,
-	#	updateable_colspec => [ $conf->{keyField} ]
-	#); 
-	
-	#$self->addIf_related_TableSpec($rel, include_colspec => [ '!*' ] );
-	#$self->column_name_relationship_map->{$rel . '__' . $conf->{valueField}} = $rel;
-	#$self->column_name_relationship_map->{$rel . '__' . $conf->{displayField}} = $rel;
-	
-	#scream('add_relationship_columns:',$colname,$conf);
-	
-	#scream_color(MAGENTA.BOLD,$self->custom_dbic_rel_aliases);
-
 }
 
 

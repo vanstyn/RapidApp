@@ -618,6 +618,9 @@ sub _dbiclink_update_records {
 					
 					my %current = $UpdRow->get_columns;
 					my %update = map { $_ => $data->{ $_{name_map}->{$_} } } keys %{$_{name_map}};
+					my $alias = $TableSpec->column_update_alias;
+					
+					%update = map { $alias->{$_} ? $alias->{$_} : $_ => $update{$_} } keys %update;
 					
 					my $change = diff(\%current, \%update);
 					# why do I need to do this?:
