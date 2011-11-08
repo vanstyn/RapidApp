@@ -184,11 +184,11 @@ sub DbicLink_around_BUILD {
 	
 	# Hide any extra colspec columns that were only added for relationship
 	# columns:
-	$self->apply_colspec_columns($self->TableSpec->added_relationship_column_relspecs,
-		no_column => \1, 
-		no_multifilter => \1, 
-		no_quick_search => \1 
-	);
+	#$self->apply_colspec_columns($self->TableSpec->added_relationship_column_relspecs,
+	#	no_column => \1, 
+	#	no_multifilter => \1, 
+	#	no_quick_search => \1 
+	#);
 	
 	$self->$orig(@_);
 	
