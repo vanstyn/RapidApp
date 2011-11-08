@@ -616,9 +616,14 @@ sub _dbiclink_update_records {
 					my $rel = $_{rel};
 					my $UpdRow = $rel ? $Row->$rel : $Row;
 					
+					unless (defined $UpdRow) {
+						scream('NOTICE: Relationship/row "' . $rel . '" is not defined'); 
+						return;
+					}
+					
 					my %current = $UpdRow->get_columns;
 					my %update = map { $_ => $data->{ $_{name_map}->{$_} } } keys %{$_{name_map}};
-					my $alias = $TableSpec->column_update_alias;
+					my $alias = $TableSpec->column_data_alias;
 					
 					%update = map { $alias->{$_} ? $alias->{$_} : $_ => $update{$_} } keys %update;
 					

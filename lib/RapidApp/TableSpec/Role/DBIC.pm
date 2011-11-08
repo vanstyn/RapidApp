@@ -116,7 +116,7 @@ sub init_relspecs {
 	$self->reorder_by_colspec_list($self->include_colspec->colspecs);
 }
 
-hashash 'column_update_alias';
+hashash 'column_data_alias';
 has 'no_column_colspec', is => 'ro', isa => 'ColSpec', coerce => 1, default => sub {[]};
 sub expand_relationship_columns {
 	my $self = shift;
@@ -137,7 +137,7 @@ sub expand_relationship_columns {
 				$relcol . '.' . $self->Cnf_columns->{$relcol}->{valueField}
 			);
 			push @expanded, @add;
-			$self->apply_column_update_alias( $relcol => $self->Cnf_columns->{$relcol}->{keyField});
+			$self->apply_column_data_alias( $relcol => $self->Cnf_columns->{$relcol}->{keyField} );
 			push @no_cols, grep { !$self->colspecs_to_colspec_test(\@columns,$_) } @add;
 		}
 	}
@@ -416,13 +416,16 @@ sub filter_include_columns {
 }
 
 # accepts a list of column names and returns the names that match updatable_colspec
-sub filter_updatable_columns :Debug{
+sub filter_updatable_columns {
 	my $self = shift;
+	my @columns = @_;
+	
+	
 	
 	# First filter by include_colspec:
 	#my @columns = $self->filter_include_columns(@_);
 	
-	my @columns = @_;
+	
 	
 	return $self->colspec_select_columns({
 		colspecs => $self->updatable_colspec->colspecs,
@@ -444,6 +447,7 @@ sub filter_creatable_columns {
 		columns => \@columns,
 	});
 }
+
 
 
 # Tests whether or not the colspec in the second arg matches the colspec of the first arg
