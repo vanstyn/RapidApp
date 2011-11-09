@@ -640,10 +640,16 @@ sub _dbiclink_update_records {
 						delete $change->{$k} if ($v1 eq $v2);
 					}
 					
-					my $t = Text::TabularDisplay->new(qw(column old new));
-					$t->add($_,$current{$_},$change->{$_}) for (keys %$change);
-					
-					scream_color(WHITE.ON_BLUE.BOLD,'DbicLink2 UPDATE --> ' . $self->get_Row_Rs_label($UpdRow) . "\n" . $t->render);
+					my $msg = 'UPDATE -> ' . $self->get_Row_Rs_label($UpdRow) . "\n";
+					if (keys %$change > 0){ 
+						my $t = Text::TabularDisplay->new(qw(column old new));
+						$t->add($_,disp($current{$_}),disp($change->{$_})) for (keys %$change);
+						$msg .= $t->render;
+					}
+					else {
+						$msg .= 'No Changes';
+					}
+					scream_color(WHITE.ON_BLUE.BOLD,$msg);
 					$UpdRow->update($change) if (keys %$change > 0);
 					
 					return $UpdRow;
@@ -708,11 +714,19 @@ sub _dbiclink_create_records {
 				
 				my $create = delete $create_hash->{''} || {};
 				$create = { %$create_hash, %$create };
-
-				my $t = Text::TabularDisplay->new(qw(column value));
-				$t->add($_,ref $create->{$_} ? Dumper($create->{$_}) : $create->{$_} ) for (keys %$create);
-				scream_color(WHITE.ON_GREEN.BOLD, 'DbicLink2 CREATE -->  ' . ref($Rs) . "\n" . $t->render);
-
+				
+				my $msg = 'CREATE -> ' . ref($Rs) . "\n";
+				if (keys %$create > 0){ 
+					my $t = Text::TabularDisplay->new(qw(column value));
+					#$t->add($_,ref $create->{$_} ? Dumper($create->{$_}) : $create->{$_} ) for (keys %$create);
+					#$t->add($_,disp(sub{ ref $_ ? Dumper($_) : undef },$create->{$_}) ) for (keys %$create);
+					$t->add($_,disp($create->{$_})) for (keys %$create);
+					$msg .= $t->render;
+				}
+				else {
+					$msg .= 'Empty Record';
+				}
+				scream_color(WHITE.ON_GREEN.BOLD,$msg);
 				my $Row = $Rs->create($create);
 				
 				push @updated_keyvals, $self->generate_record_pk_value({ $Row->get_columns });

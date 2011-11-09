@@ -180,7 +180,33 @@ sub deref {
 	die "deref(): invalid ref type '$type' - supported types: SCALAR, ARRAY and HASH";
 }
 
+# Generic function returns a short display string of a supplied value/values
+# This is like a lite version of Dumper meant more for single values
+# Accepts optional CodeRef as first argument for custom handling, for example,
+# this would allow you to use Dumper instead for all ref values:
+# print disp(sub{ ref $_ ? Dumper($_) : undef },$_) for (@vals);
+sub disp {
+	my $recurse = (caller(1))[3] eq __PACKAGE__ . '::disp' ? 1 : 0; #<-- true if called by ourself
 
+	local $_{code} = $recurse ? $_{code} : undef;
+	$_{code} = shift if(ref($_[0]) eq 'CODE' && @_>1 && $recurse == 0);
+	if($_{code}) {
+		local $_ = $_[0];
+		my $cust = $_{code}->(@_);
+		return $cust if (defined $cust);
+	}
+	
+	return join(',',map {disp($_)} @_) if(@_>1);
+	my $val = shift;
+	return 'undef' unless (defined $val);
+	if(ref $val) {
+		return '[' . disp(@$val) . ']' if (ref($val) eq 'ARRAY');
+		return '\\' . disp($$val) if (ref($val) eq 'SCALAR');
+		return '{ ' . join(',',map { $_ . ' => ' . disp($val->{$_}) } keys %$val) . ' }' if (ref($val) eq 'HASH'); 
+		return "$val" #<-- generic fall-back for other references
+	}
+	return "'" . $val . "'";
+}
 
 sub debug_around($@) {
 	my ($pkg,$filename,$line) = caller;
