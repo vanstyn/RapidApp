@@ -1138,7 +1138,7 @@ sub get_relationship_column_cnf {
 		$rows = (shift)->{rows};
 		$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
 		foreach my $row (@$rows) {
-			$row->{$colname} = $row->{$upd_key_col} if ($row->{$upd_key_col});
+			$row->{$colname} = $row->{$upd_key_col} if (exists $row->{$upd_key_col});
 		}
 	};
 	
