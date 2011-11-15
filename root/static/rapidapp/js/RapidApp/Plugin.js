@@ -1244,6 +1244,15 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	init: function(cmp) {
 		this.cmp = cmp;
 		
+		this.cmp.origInitEvents = this.cmp.initEvents;
+		this.cmp.initEvents = function() {
+			cmp.origInitEvents.call(cmp);
+			if(cmp.loadMask){
+				cmp.loadMask = new Ext.LoadMask(cmp.bwrap,
+						  Ext.apply({store:cmp.store}, cmp.loadMask));
+			}
+		}
+		
 		if(!cmp.persist_immediately) { cmp.persist_immediately = {}; }
 		if(cmp.persist_all_immediately) {
 			cmp.persist_immediately = {
