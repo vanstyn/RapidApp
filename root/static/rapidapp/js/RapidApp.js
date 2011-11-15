@@ -4306,7 +4306,7 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		
 		Ext.each(this.fields,function(field) {
 			
-			var css;
+			var wrapcss;
 			// Extra logic to handle editors as simple xtypes and not already 
 			// GridEditor objects. This is handled by EditorGridPanel, but not
 			// by the PropertyGrid:
@@ -4319,10 +4319,10 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 				}
 				
 				xtype = field.editor.field.xtype;
-				//css = ' with-background-right-image icon-gray-pencil';
-				//if (xtype == 'combo' || xtype == 'appcombo2') {
-				//	css = ' with-background-right-image icon-gray-down';
-				//}
+				wrapcss = ' with-background-right-image icon-gray-pencil';
+				if (xtype == 'combo' || xtype == 'appcombo2') {
+					wrapcss = ' with-background-right-image icon-gray-down';
+				}
 
 				this.editable_fields[field.name] = 1;
 			}
@@ -4330,23 +4330,23 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 			var orig_renderer = field.renderer;
 			field.renderer = function(value,metaData,record,rowIndex,colIndex) {
 				
-				//console.dir(arguments);
-				
-				if(css) { metaData.css += css; }
-				
-				//console.log(record.id);
-				
-				if (propgrid.dirtyprops && propgrid.dirtyprops[record.id]) {
-					console.log(record.id);
+				// Mark dirty like in normal grid:
+				var bindRec = propgrid.bindRecord
+				if(bindRec && bindRec.dirty && bindRec.modified[record.id]) {
 					metaData.css += ' x-grid3-dirty-cell';
 				}
 				
-				
 				// Translate the renderer to work like in a normal grid:
 				if(orig_renderer) {
-					if(!propgrid.bindRecord) { return orig_renderer.apply(field,arguments); }
-					return orig_renderer.call(field,value,metaData,propgrid.bindRecord,0,0,propgrid.bindStore);
+					if(!bindRec) { 
+						value = orig_renderer.apply(field,arguments); 
+					}
+					else {
+						value = orig_renderer.call(field,value,metaData,bindRec,0,0,propgrid.bindStore);
+					}
 				}
+				
+				if(wrapcss) { value = '<div class="' + wrapcss + '">' + value + '</div>'; }
 				return value;
 			}
 			
@@ -4362,7 +4362,6 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		
 		Ext.apply(this.bindStore.baseParams,params);
 		
-		
 		Ext.ux.RapidApp.AppPropertyGrid.superclass.initComponent.call(this);
 		
 		this.on('afterrender',this.loadFirstRecord,this);
@@ -4373,31 +4372,13 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 	},
 	
 	onBeforeEdit: function(e) {
-    var field_name = e.record.data.field.name;
-    if (this.editable_fields && ! this.editable_fields[field_name]) {
-      e.cancel = true;
-    }
+		var field_name = e.record.data.field.name;
+		if (this.editable_fields && ! this.editable_fields[field_name]) {
+			e.cancel = true;
+		}
 	},
 	
 	onPropertyChange: function(source,recordId,value,oldValue) {
-		
-		
-		var propRecord = this.propStore.store.getById(recordId);
-		propRecord.dirtyd = true;
-		
-		this.dirtyprops = { recordId: true };
-		
-		//propRecord.markDirty();
-		//propRecord.modified[recordId] = true;
-		//this.propStore.grid.view.refreshRow(propRecord);
-		
-		//console.dir(propRecord);
-		
-		//console.dir(arguments);
-		//console.dir(this.propStore.store);
-		
-		//console.log('old: "' + oldValue + '"');
-		//console.log('new: "' + value + '"');
 		this.bindRecord.beginEdit();
 		this.bindRecord.set(recordId,value);
 		this.bindRecord.endEdit();
