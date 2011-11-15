@@ -4261,7 +4261,9 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 	storeReloadButton: true,
 	
 	viewConfig: { emptyText: '<span style="color:darkgrey;">(Empty)</span>' },
-		
+	
+	markDirty: true,
+	
 	initComponent: function() {
 		
 		this.bindStore = this.store;
@@ -4317,18 +4319,28 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 				}
 				
 				xtype = field.editor.field.xtype;
-				css = ' with-background-right-image icon-gray-pencil';
-				if (xtype == 'combo' || xtype == 'appcombo2') {
-					css = ' with-background-right-image icon-gray-down';
-				}
+				//css = ' with-background-right-image icon-gray-pencil';
+				//if (xtype == 'combo' || xtype == 'appcombo2') {
+				//	css = ' with-background-right-image icon-gray-down';
+				//}
 
 				this.editable_fields[field.name] = 1;
 			}
 			
 			var orig_renderer = field.renderer;
-			field.renderer = function(value,metaData) {
+			field.renderer = function(value,metaData,record,rowIndex,colIndex) {
+				
+				//console.dir(arguments);
 				
 				if(css) { metaData.css += css; }
+				
+				//console.log(record.id);
+				
+				if (propgrid.dirtyprops && propgrid.dirtyprops[record.id]) {
+					console.log(record.id);
+					metaData.css += ' x-grid3-dirty-cell';
+				}
+				
 				
 				// Translate the renderer to work like in a normal grid:
 				if(orig_renderer) {
@@ -4368,12 +4380,28 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 	},
 	
 	onPropertyChange: function(source,recordId,value,oldValue) {
+		
+		
+		var propRecord = this.propStore.store.getById(recordId);
+		propRecord.dirtyd = true;
+		
+		this.dirtyprops = { recordId: true };
+		
+		//propRecord.markDirty();
+		//propRecord.modified[recordId] = true;
+		//this.propStore.grid.view.refreshRow(propRecord);
+		
+		//console.dir(propRecord);
+		
+		//console.dir(arguments);
+		//console.dir(this.propStore.store);
+		
 		//console.log('old: "' + oldValue + '"');
 		//console.log('new: "' + value + '"');
 		this.bindRecord.beginEdit();
 		this.bindRecord.set(recordId,value);
 		this.bindRecord.endEdit();
-		this.bindRecord.store.save();
+		this.bindRecord.store.saveIfPersist();
 	},
 	
 	getBindStore: function() {
