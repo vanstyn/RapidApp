@@ -1286,6 +1286,10 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			this.cmp.on('render',this.insertStoreButtonsBbar,this);
 		}
 		
+		if(this.cmp.setup_tbar_store_buttons) {
+			this.cmp.on('render',this.insertStoreButtonsTbar,this);
+		}
+		
 		this.cmp.on('afteredit',this.cmp.store.saveIfPersist,this);
 
 		if(Ext.isFunction(this.cmp.getSelectionModel)) {
@@ -1652,6 +1656,31 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			bbar_items.unshift(btn);
 		},this);
 		Ext.each(bbar_items,function(btn) { bbar.insert(index,btn); },this);
+		
+	},
+	
+	insertStoreButtonsTbar: function() {
+		var tbar;
+
+		if(Ext.isFunction(this.cmp.getTopToolbar)) { 
+			tbar = this.cmp.getTopToolbar();
+		}
+		else if (Ext.isFunction(this.cmp.ownerCt.getTopToolbar)) {
+			tbar = this.cmp.ownerCt.getTopToolbar();
+		}
+		
+		if(!tbar) { return; }
+		
+		var showtext = false;
+		if(this.show_store_button_text) { showtext = true; }
+		
+		var tbar_items = [ '->' ]; //<-- right-align buttons
+		Ext.each(this.store_buttons,function(btn_name) {
+			var btn = this.getStoreButton(btn_name,showtext);
+			if(!btn) { return; }
+			tbar_items.unshift(btn);
+		},this);
+		Ext.each(tbar_items,function(btn) { tbar.insert(0,btn); },this);
 		
 	},
 	
