@@ -587,7 +587,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			this.endEditRecord(Record);
 			
 			if(Record.phantom && !save) {
-				Store.remove(Record);
+				return Store.remove(Record);
 			}
 			
 			//this.scrollBottomToolbarIntoView.defer(100,this);
