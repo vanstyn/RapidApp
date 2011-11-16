@@ -1482,7 +1482,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		};
 		
 		store.removeRecord = function(Record) {
-			var ret = store.remove(Record);
+			var ret = store.removeOrig(Record);
 			if(plugin.persist_immediately.destroy) { store.saveIfPersist(); }
 			return ret;
 		};
