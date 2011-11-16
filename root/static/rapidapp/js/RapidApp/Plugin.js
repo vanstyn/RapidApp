@@ -1244,11 +1244,16 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	init: function(cmp) {
 		this.cmp = cmp;
 		
+		delete cmp.store.tiedChildStores;
+		
 		// bubbles up the parent components and records us as a tied child store:
 		cmp.bubbleTieStoreParents = function() {
 			this.bubble(function() {
 				if(this.bubbleTieStoreParents) {
-					if(!this.store.tiedChildStores) { this.store.tiedChildStores = {}; }
+					if(!this.store.tiedChildStores) {
+						this.store.tiedChildStores = {};
+						this.store.tiedChildStores[this.store.storeId] = this.store;
+					}
 					this.store.tiedChildStores[cmp.store.storeId] = cmp.store;
 				}
 			});
@@ -1420,6 +1425,14 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			return false;
 		};
 		
+		store.getParentStore = function() {
+			var parent = plugin.cmp.findParentBy(function(p) {
+				if(p.store && p.store.getParentStore) { return true; }
+				return false;
+			});
+			if(parent) { return parent.store; }
+			return null;
+		};
 		
 		store.eachTiedChild = function(fn) {
 			Ext.iterate(store.tiedChildStores,function(id,str) {
@@ -1518,6 +1531,37 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			
 			return new Ext.Button(cnf);
 		};
+		
+		store.allSaveCompleted = function() {
+			var completed = true;
+			store.eachTiedChild(function(s) {
+				if(s.save_inprogress) { completed = false; }
+			});
+			return completed;
+		};
+		
+		store.fireIfSaveAll = function() {
+			if(store.allSaveCompleted()) { 
+				store.fireEvent('saveall');
+				var pstore = store.getParentStore();
+				if(pstore) {
+					pstore.fireIfSaveAll();
+				}
+			}
+		};
+		
+		store.addEvents('saveall');
+		store.on('beforesave',function() { 
+			store.save_inprogress = true; 
+		});
+		this.cmp.on('afterrender',function(){
+			store.eachTiedChild(function(s) {
+				s.on('save',function() {
+					s.save_inprogress = false;
+					store.fireIfSaveAll();
+				});
+			});
+		});
 	},
 	
 	getStoreButton: function(name,showtext) {
@@ -1756,15 +1800,20 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	beforeRemoveConfirm: function(c,component) {
 		if(component != this.cmp) {
 			var parent = this.cmp.findParentBy(function(p) {
+				if(p.confirmRemoveInProg) { return false; }
+				
 				if(p == component) { return true; }
+				// if we're here, it's a sibling removal:
 				return false;
 			},this);
-			// This is a sibling removal which we need to ignore:
+			// This is a sibling removal, or our tied parent already handled the remove, which we need to ignore:
 			if(component != parent) { return true; }
 		}
 		
+		component.confirmRemoveInProg = true;
+		
 		var store = this.cmp.store;
-		if(!store || !store.hasPendingChanges()) { 
+		if(!store || !store.hasAnyPendingChanges()) { 
 			c.un('beforeremove',this.beforeRemoveConfirm,this);
 			return true; 
 		}
@@ -1776,21 +1825,22 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			buttons: { yes: 'Save', no: 'Discard Changes', cancel: 'Cancel' }, 
 			fn: function(sel) {
 				if (sel == 'cancel') {
+					delete component.confirmRemoveInProg;
 					return;
 				}
 				else if (sel == 'yes') {
 					var onsave;
 					onsave = function() {
-						store.un('save',onsave);
+						store.un('saveall',onsave);
 						c.un('beforeremove',this.beforeRemoveConfirm,this);
 						// Complete the original remove:
 						c.remove(component);
 					};
-					store.on('save',onsave); 
-					store.save();
+					store.on('saveall',onsave);
+					store.saveAll();
 				}
 				else {
-					store.undoChanges();
+					store.undoChangesAll();
 					c.un('beforeremove',this.beforeRemoveConfirm,this);
 					// Complete the original remove:
 					c.remove(component);
