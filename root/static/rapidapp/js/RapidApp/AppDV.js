@@ -3,6 +3,12 @@ Ext.ns('Ext.ux.RapidApp.AppDV');
 
 Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	
+	// TODO: make cascade recursive like in Ext.Container
+	cascade: function(fn,scope,args) {
+		fn.apply(scope || this, args || [this]);
+		return this;
+	},
+	
 	initComponent: function(){
 		Ext.each(this.items,function(item) {
 			item.ownerCt = this;

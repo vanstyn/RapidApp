@@ -1244,6 +1244,18 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	init: function(cmp) {
 		this.cmp = cmp;
 		
+		// bubbles up the parent components and records us as a tied child store:
+		cmp.bubbleTieStoreParents = function() {
+			this.bubble(function() {
+				if(this.bubbleTieStoreParents) {
+					if(!this.store.tiedChildStores) { this.store.tiedChildStores = {}; }
+					this.store.tiedChildStores[cmp.store.storeId] = cmp.store;
+				}
+			});
+		};
+		this.cmp.on('render',cmp.bubbleTieStoreParents,cmp);
+		
+		
 		this.cmp.origInitEvents = this.cmp.initEvents;
 		this.cmp.initEvents = function() {
 			cmp.origInitEvents.call(cmp);
@@ -1360,7 +1372,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	store_button_cnf: {},
 	store_exclude_buttons: [],
 	exclude_btn_map: {},
-	
+		
 	initAdditionalStoreMethods: function(store,plugin) {
 		
 		store.on('beforewrite',function(ds,action,records,options,arg) {
@@ -1408,6 +1420,33 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			return false;
 		};
 		
+		
+		store.eachTiedChild = function(fn) {
+			Ext.iterate(store.tiedChildStores,function(id,str) {
+				fn(str);
+			});
+		};
+		
+		store.hasAnyPendingChanges = function() {
+			var pend = false;
+			store.eachTiedChild(function(s) {
+				if(s.hasPendingChanges()) { pend = true; }
+			});
+			return pend;
+		};
+		
+		store.saveAll = function() {
+			store.eachTiedChild(function(s) { s.save(); });
+		};
+		
+		store.reloadAll = function() {
+			store.eachTiedChild(function(s) { s.reload(); });
+		};
+		
+		store.undoChangesAll = function() {
+			store.eachTiedChild(function(s) { s.undoChanges(); });
+		};
+		
 		store.undoChanges = function() {
 			Ext.each(store.getPhantomRecords(),function(Rec){ store.remove(Rec); });
 			store.rejectChanges();
@@ -1451,6 +1490,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		};
 		
 		store.addTrackedToggleFunc = function(func) {
+			//console.log('addTrackedToggleFunc: ' + store.storeId);
 			store.on('load',func,store);
 			store.on('read',func,store);
 			store.on('write',func,store);
@@ -1570,7 +1610,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					iconCls: 'x-tbar-loading',
 					handler: function(btn) {
 						var store = cmp.store;
-						store.reload();
+						store.reloadAll();
 					}
 				},cnf || {}),showtext);
 			},
@@ -1585,19 +1625,23 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					disabled: true,
 					handler: function(btn) {
 						var store = cmp.store;
-						store.save();
+						//store.save();
+						store.saveAll();
 					}
 				},cnf || {}),showtext);
-					
-				cmp.store.addTrackedToggleFunc(function(store) {
-					if (store.hasPendingChanges()) {
-						btn.setDisabled(false);
-					}
-					else {
-						btn.setDisabled(true);
-					}
+
+				cmp.cascade(function(){
+					if(!this.store || !this.store.addTrackedToggleFunc){ return; }
+					this.store.addTrackedToggleFunc(function(store) {
+						if (cmp.store.hasAnyPendingChanges()) {
+							btn.setDisabled(false);
+						}
+						else {
+							btn.setDisabled(true);
+						}
+					});
 				});
-					
+				
 				return btn;
 			},
 			
@@ -1611,10 +1655,25 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					disabled: true,
 					handler: function(btn) {
 						var store = cmp.store;
-						store.undoChanges.call(store);
+						//store.undoChanges.call(store);
+						store.undoChangesAll.call(store);
 					}
 				},cnf || {}),showtext);
+				
 					
+				cmp.cascade(function(){
+					if(!this.store || !this.store.addTrackedToggleFunc){ return; }
+					this.store.addTrackedToggleFunc(function(store) {
+						if (cmp.store.hasAnyPendingChanges()) {
+							btn.setDisabled(false);
+						}
+						else {
+							btn.setDisabled(true);
+						}
+					});
+				});
+					
+				/*
 				cmp.store.addTrackedToggleFunc(function(store) {
 					if (store.hasPendingChanges()) {
 						btn.setDisabled(false);
@@ -1623,6 +1682,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 						btn.setDisabled(true);
 					}
 				});
+				*/
 					
 				return btn;
 			}
