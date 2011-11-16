@@ -1410,6 +1410,10 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			return false;
 		};
 		
+		store.addNotAllowed = function() {
+			return store.hasPhantomRecords();
+		},
+		
 		store.getNonPhantomModifiedRecords = function() {
 			var records = [];
 			Ext.each(store.getModifiedRecords(),function(Record){
@@ -1449,21 +1453,22 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		};
 		
 		store.saveAll = function() {
-			store.eachTiedChild(function(s) { s.save(); });
+			store.eachTiedChild(function(s) { s.save.call(s); });
 		};
 		
 		store.reloadAll = function() {
-			store.eachTiedChild(function(s) { s.reload(); });
+			store.eachTiedChild(function(s) { s.reload.call(s); });
 		};
 		
 		store.undoChangesAll = function() {
-			store.eachTiedChild(function(s) { s.undoChanges(); });
+			store.eachTiedChild(function(s) { s.undoChanges.call(s); });
 		};
 		
 		store.undoChanges = function() {
+			var store = this;
 			Ext.each(store.getPhantomRecords(),function(Rec){ store.remove(Rec); });
 			store.rejectChanges();
-			store.fireEvent('update',store);
+			store.fireEvent('buttontoggle',store);
 		};
 		store.on('beforeload',store.undoChanges,store);
 		
@@ -1502,17 +1507,23 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			return ret;
 		};
 		
+		store.addEvents('buttontoggle');
+		store.fireButtonToggleEvent = function(){
+			store.fireEvent('buttontoggle',store);
+		}
+		store.on('load',store.fireButtonToggleEvent,store);
+		store.on('read',store.fireButtonToggleEvent,store);
+		store.on('write',store.fireButtonToggleEvent,store);
+		store.on('datachanged',store.fireButtonToggleEvent,store);
+		store.on('clear',store.fireButtonToggleEvent,store);
+		store.on('update',store.fireButtonToggleEvent,store);
+		store.on('remove',store.fireButtonToggleEvent,store);
+		store.on('add',store.fireButtonToggleEvent,store);
+		
 		store.addTrackedToggleFunc = function(func) {
-			//console.log('addTrackedToggleFunc: ' + store.storeId);
-			store.on('load',func,store);
-			store.on('read',func,store);
-			store.on('write',func,store);
-			store.on('datachanged',func,store);
-			store.on('clear',func,store);
-			store.on('update',func,store);
-			store.on('remove',func,store);
-			store.on('add',func,store);
+			store.on('buttontoggle',func,store);
 		};
+		//store.on('buttontoggle',function(){ console.log('buttontoggle'); });
 		
 		store.buttonConstructor = function(cnf,showtext) {
 			if(cnf.text && !cnf.tooltip) {
@@ -1601,7 +1612,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				},cnf || {}),showtext);
 					
 				cmp.store.addTrackedToggleFunc(function(store) {
-					if (store.hasPhantomRecords()) {
+					if (store.addNotAllowed()) {
 						btn.setDisabled(true);
 					}
 					else {

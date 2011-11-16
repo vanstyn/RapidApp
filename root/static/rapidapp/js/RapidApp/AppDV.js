@@ -20,6 +20,28 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 		this.store.on('beforesave',this.onBeforesave,this);
 		this.store.on('beforeremove',this.onBeforeremove,this);
+		
+		// Special AppDV override: addNotAllowed based on
+		// current edit record:
+		var cmp = this;
+		cmp.on('afterrender',function(){
+			cmp.store.addNotAllowed = function(){
+				if(cmp.currentEditRecord && cmp.currentEditRecord.editing) {
+					return true;
+				}
+				return false;
+			}
+			/* TODO:
+			if(!cmp.store.hasPendingChangesOrig) {
+				cmp.store.hasPendingChangesOrig = cmp.store.hasPendingChanges;
+			}
+			cmp.store.hasPendingChanges = function() {
+				//console.log('has pending changes');
+				if(cmp.store.addNotAllowed()) { return true; }
+				return cmp.store.hasPendingChangesOrig.apply(this,arguments);
+			};
+			*/
+		},this);
 	},
 	
 	onBeforesave: function() {
@@ -503,12 +525,18 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 	},
 	beginEditRecord: function(Record) {
+		if(Record.editing) { return; }
 		Record.beginEdit();
 		this.currentEditRecord = Record;
+		var Store = this.getStore();
+		Store.fireEvent('buttontoggle',Store);
 	},
 	endEditRecord: function(Record) {
+		if(!Record.editing) { return; }
 		Record.endEdit();
 		this.currentEditRecord = null;
+		var Store = this.getStore();
+		Store.fireEvent('buttontoggle',Store);
 	},
 	simulateEditRecordClick: function(cls,Record,index,editEl) {
 		
@@ -552,8 +580,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			else {
 				if(!target.hasClass('cancel')) { return; }
 			}
-			
-			//Record.beginEdit();
+
 			this.beginEditRecord(Record);
 		
 			var success = true;
@@ -612,10 +639,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 				var fieldname = this.get_fieldname_by_editEl(editEl);
 				this.set_field_editable(editEl,fieldname,index,Record);
 			},this);
-			
-			// Scroll into view:
-			//this.scrollRecordIntoView.defer(10,this,[Record]);
-			//this.scrollBottomToolbarIntoView.defer(10,this);
+
+			this.beginEditRecord(Record);
 		}
 	},
 	
