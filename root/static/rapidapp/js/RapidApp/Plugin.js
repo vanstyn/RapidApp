@@ -1454,7 +1454,9 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		};
 		
 		store.saveAll = function() {
-			store.eachTiedChild(function(s) { s.save.call(s); });
+			store.eachTiedChild(function(s) {
+				if(s.hasPendingChanges()) { s.save.call(s); }
+			});
 		};
 		
 		store.reloadAll = function() {
