@@ -31,6 +31,9 @@ has 'creatable_colspec' => ( is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default 
 # sets of related rows. Most of the time you'll only want to put '*' in here
 has 'destroyable_relspec' => ( is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default => undef );
 
+# These columns will always be fetched regardless of whether or not they were requested
+# by the client:
+has 'always_fetch_colspec' => ( is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default => undef );
 
 has 'ResultSource' => (
 	is => 'ro',
@@ -100,6 +103,7 @@ sub _build_TableSpec {
 	
 	$opt{updatable_colspec} = $self->updatable_colspec if (defined $self->updatable_colspec);
 	$opt{creatable_colspec} = $self->creatable_colspec if (defined $self->creatable_colspec);
+	$opt{always_fetch_colspec} = $self->always_fetch_colspec if (defined $self->always_fetch_colspec);
 	
 	return RapidApp::TableSpec::DbicTableSpec->new(%opt);
 	#return RapidApp::TableSpec->with_traits('RapidApp::TableSpec::Role::DBIC')->new(%opt);
@@ -329,6 +333,14 @@ sub chain_Rs_req_base_Attr {
 }
 
 
+hasarray 'always_fetch_columns', is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	return [] unless ($self->always_fetch_colspec);
+	return [ $self->TableSpec->get_colspec_column_names(
+		$self->TableSpec->always_fetch_colspec->colspecs
+	)];
+};
+
 sub get_req_columns {
 	my $self = shift;
 	my $params = shift || $self->c->req->params;
@@ -348,6 +360,8 @@ sub get_req_columns {
 		$self->TableSpec->include_colspec->colspecs
 	) unless(@$columns > 0); 
 	# ---
+	
+	push @$columns, $self->all_always_fetch_columns;
 	
 	my @exclude = ( $self->record_pk, 'loadContentCnf' );
 	

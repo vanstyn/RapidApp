@@ -57,6 +57,9 @@ has 'updatable_colspec', is => 'ro', isa => 'ColSpec',
 	
 has 'creatable_colspec', is => 'ro', isa => 'ColSpec', 
 	default => sub {[]}, coerce => 1, trigger => sub { (shift)->_colspec_attr_init_trigger(@_) };
+	
+has 'always_fetch_colspec', is => 'ro', isa => 'ColSpec', 
+	default => sub {[]}, coerce => 1, trigger => sub { (shift)->_colspec_attr_init_trigger(@_) };
 
 sub _colspec_attr_init_trigger {
 	my ($self,$ColSpec) = @_;
