@@ -1243,6 +1243,7 @@ Ext.preg('titlecollapseplus',Ext.ux.RapidApp.Plugin.TitleCollapsePlus);
 Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	init: function(cmp) {
 		this.cmp = cmp;
+		cmp.datastore_plus_plugin = this;
 		
 		delete cmp.store.tiedChildStores;
 		
