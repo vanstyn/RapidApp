@@ -4253,6 +4253,14 @@ Ext.reg("propertygrid2", Ext.ux.grid.PropertyGrid);
 /********************************************************************/
 
 
+/* GLOBAL OVERRIDE!!! 
+We always want to hide the contents of the grid cell while we're editing it...
+*/
+Ext.override(Ext.grid.GridEditor,{
+	hideEl: true
+});
+
+
 Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 	
@@ -4315,7 +4323,11 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 					field.editor = Ext.ComponentMgr.create(field.editor,'textfield'); 
 				}
 				if (!field.editor.startEdit){
-					field.editor = new Ext.grid.GridEditor(field.editor);
+					field.editor = new Ext.grid.GridEditor({ 
+						//autoSize: true, 
+						//hideEl: true, 
+						field: field.editor
+					});
 				}
 				
 				xtype = field.editor.field.xtype;

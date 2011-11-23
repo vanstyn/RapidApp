@@ -47,7 +47,7 @@ sub DEFAULT_PROFILES {{
 			editor => { xtype => 'logical-checkbox', plugins => [ 'booltoint' ] }
 		},
 		text => {
-			editor => { xtype => 'textfield' }
+			editor => { xtype => 'textfield', grow => \0 }
 		},
 		bigtext => {
 			renderer 	=> ['Ext.util.Format.nl2br'],
