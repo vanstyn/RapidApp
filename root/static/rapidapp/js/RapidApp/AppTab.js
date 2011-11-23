@@ -180,7 +180,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 				columns[item.name] = Ext.copyTo({},item,grid.column_allow_save_properties);
 				column_order.push(item.name);
 			}
-		});
+		},this);
 		
 		var view_config = {
 			columns: columns,
@@ -248,7 +248,17 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		// remove columns with 'no_column' set to true:
 		var new_columns = []
 		Ext.each(this.columns,function(column,index,arr) {
-			if(!column.no_column) { new_columns.push(column); }
+			if(!column.no_column) { 
+				
+				// autoExpandColumn feature relies on the "id" property. Here we set it
+				// automatically to be the same as the column name.
+				if(this.autoExpandColumn && this.autoExpandColumn == column.name) {
+					column.id = column.name;
+				}
+				
+				
+				new_columns.push(column);
+			}
 		},this);
 		this.columns = new_columns;
 		
