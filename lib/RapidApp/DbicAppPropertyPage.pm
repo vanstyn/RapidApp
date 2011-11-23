@@ -156,7 +156,8 @@ sub property_grid {
 	my $conf = {
 		
 		autoWidth		=> \1,
-		bodyCssClass => 'sbl-panel-body-noborder',
+		#bodyCssClass => 'sbl-panel-body-noborder',
+		bodyStyle => 'border: 1px solid #D0D0D0;',
 		collapsible => \1,
 		collapseFirst => \0,
 		titleCollapse => \1,
