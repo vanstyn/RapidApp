@@ -95,9 +95,10 @@ sub BUILD {
 		
 		# reach into the new sub-module and add a write listener to its store to
 		# make it call our store.load() whenever it changes:
-		$self->Module('item',1)->DataStore->add_listener( write => $self->DataStore->store_load_fn ) if (
-			$self->Module('item',1)->does('RapidApp::Role::DataStore2')
-		);
+		### Temp disabled because this can cause a big load/hit ##
+		#$self->Module('item',1)->DataStore->add_listener( write => $self->DataStore->store_load_fn ) if (
+		#	$self->Module('item',1)->does('RapidApp::Role::DataStore2')
+		#);
 	}
 	
 	if (defined $self->add_record_class) {
@@ -105,9 +106,11 @@ sub BUILD {
 		
 		# reach into the new sub-module and add a write listener to its store to
 		# make it call our store.load() whenever it changes:
-		$self->Module('add',1)->DataStore->add_listener( write => $self->DataStore->store_load_fn ) if (
-			$self->Module('add',1)->does('RapidApp::Role::DataStore2')
-		);
+		
+		### Temp disabled because this can cause a big load/hit ##
+		#$self->Module('add',1)->DataStore->add_listener( write => $self->DataStore->store_load_fn ) if (
+		#	$self->Module('add',1)->does('RapidApp::Role::DataStore2')
+		#);
 	}
 	
 	if (defined $self->open_record_url or defined $self->add_record_class) {

@@ -1464,7 +1464,9 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		};
 		
 		store.undoChangesAll = function() {
-			store.eachTiedChild(function(s) { s.undoChanges.call(s); });
+			store.eachTiedChild(function(s) { 
+				if(s.hasPendingChanges()) { s.undoChanges.call(s); }
+			});
 		};
 		
 		store.undoChanges = function() {
