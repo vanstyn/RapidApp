@@ -1193,7 +1193,10 @@ sub get_relationship_column_cnf {
 				displayField	=> $conf->{displayField},
 				name				=> $colname,
 				ResultSet		=> $Source->resultset,
-				record_pk		=> $conf->{valueField}
+				record_pk		=> $conf->{valueField},
+				# Optional custom ResultSet params applied to the dropdown query
+				RS_condition	=> $conf->{RS_condition} ? $conf->{RS_condition} : {},
+				RS_attr			=> $conf->{RS_attr} ? $conf->{RS_attr} : {}
 			}
 		);
 		
