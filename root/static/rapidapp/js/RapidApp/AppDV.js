@@ -355,8 +355,6 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			//contentEl: dataEl
 		});
 		
-		//console.dir(dataEl);
-		
 		if(!cnf.width) {	cnf.width = dataEl.getWidth(); }
 		if(!cnf.height) { cnf.height = dataEl.getHeight(); }
 		if(cnf.minWidth) { if(!cnf.width || cnf.width < cnf.minWidth) { cnf.width = cnf.minWidth; } }
@@ -580,7 +578,6 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		});
 		
 		var Store = this.getStore();
-		//console.dir(editEls);
 		
 		if(domEl.hasClass('editing-record')) {
 			
