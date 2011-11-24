@@ -42,6 +42,16 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			};
 			*/
 		},this);
+		
+		this.on('beforeselect',this.onBeforeselect,this);
+	},
+	
+	onBeforeselect: function() {
+		// We don't want to allow clicks to toggle record select status when
+		// we are editing:
+		if(this.currentEditRecord && this.currentEditRecord.editing) {
+			return false;
+		}
 	},
 	
 	onBeforesave: function() {
@@ -530,6 +540,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		this.currentEditRecord = Record;
 		var Store = this.getStore();
 		Store.fireEvent('buttontoggle',Store);
+		this.clearSelections();
 	},
 	endEditRecord: function(Record) {
 		if(!Record.editing) { return; }
