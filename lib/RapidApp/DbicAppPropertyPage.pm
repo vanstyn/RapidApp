@@ -87,22 +87,24 @@ sub init_multi_rel_modules {
 		my $mod_params = {
 			ResultSource => $Source,
 			include_colspec => $RelTS->include_colspec->colspecs,
-			updatable_colspec => $RelTS->updatable_colspec->colspecs,
-			creatable_colspec => $RelTS->creatable_colspec->colspecs,
+			updatable_colspec => $RelTS->updatable_colspec->colspecs
 		};
 		
 		my $colname = $TableSpec->column_prefix . $rel;
 		
 		# If this rel/colname is updatable in the top TableSpec, then that translates
-		# into these multi rel rows being deletable
-		$mod_params->{destroyable_relspec} = ['*'] if (
-			$self->TableSpec->colspec_matches_columns(
-				$self->TableSpec->updatable_colspec->colspecs,
-				$colname
-			)
-		);
-		
-		
+		# into these multi rel rows being addable/deletable
+		if ($self->TableSpec->colspec_matches_columns($self->TableSpec->updatable_colspec->colspecs,$colname)){
+			$mod_params->{creatable_colspec} = $RelTS->creatable_colspec->colspecs;
+			$mod_params->{destroyable_relspec} = ['*'];
+			delete $mod_params->{creatable_colspec} unless (@{$mod_params->{creatable_colspec}} > 0);
+			
+			# We *must* be able to create on the forein col name to be able to create the link/relationship:
+			if($mod_params->{creatable_colspec}) {
+				push @{$mod_params->{creatable_colspec}}, $cond_data->{foreign};
+				push @{$mod_params->{include_colspec}}, $cond_data->{foreign};
+			}
+		}
 		
 		
 		$self->apply_init_modules( $mod_name => {
