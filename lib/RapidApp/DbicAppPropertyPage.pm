@@ -84,16 +84,30 @@ sub init_multi_rel_modules {
 		
 		my $mod_name = 'rel_' . $RelTS->column_prefix . $rel;
 		
+		my $mod_params = {
+			ResultSource => $Source,
+			include_colspec => $RelTS->include_colspec->colspecs,
+			updatable_colspec => $RelTS->updatable_colspec->colspecs,
+			creatable_colspec => $RelTS->creatable_colspec->colspecs,
+		};
+		
+		my $colname = $TableSpec->column_prefix . $rel;
+		
+		# If this rel/colname is updatable in the top TableSpec, then that translates
+		# into these multi rel rows being deletable
+		$mod_params->{destroyable_relspec} = ['*'] if (
+			$self->TableSpec->colspec_matches_columns(
+				$self->TableSpec->updatable_colspec->colspecs,
+				$colname
+			)
+		);
+		
+		
+		
+		
 		$self->apply_init_modules( $mod_name => {
 			class 	=> 'RapidApp::DbicAppGrid3',
-			params	=> {
-				ResultSource => $Source,
-				include_colspec => $RelTS->include_colspec->colspecs,
-				# This now happens in baseParams on request:
-				#get_ResultSet => sub {
-				#	return $Source->resultset->search_rs({ 'me.' . $cond_data->{foreign} => $self->supplied_id });
-				#}
-			}
+			params	=> $mod_params
 		});
 	}
 }
@@ -202,6 +216,9 @@ sub TableSpec_property_grids {
 				baseParams => {
 					resultset_condition => $self->json->encode({ 'me.' . $cond_data->{foreign} => $Row->get_column($cond_data->{self}) })
 				},
+				store_add_initData => {
+					$cond_data->{foreign} => $Row->get_column($cond_data->{self})
+				}
 			};
 		}
 	}
