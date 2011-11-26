@@ -66,27 +66,33 @@ sub BUILD {
 # each request/when the page is rendered
 sub init_multi_rel_modules {
 	my $self = shift;
-	
-	my $TableSpec = $self->TableSpec;
+	my $TableSpec = shift || $self->TableSpec;
 	
 	foreach my $rel (@{$TableSpec->related_TableSpec_order}) {
-		my $info = $self->ResultSource->relationship_info($rel);
-		next unless ($info->{attrs}->{accessor} eq 'multi');
 		
 		my $RelTS = $TableSpec->related_TableSpec->{$rel};
 		
+		# Recursive:
+		$self->init_multi_rel_modules($RelTS);
+		
+		my $info = $TableSpec->ResultSource->relationship_info($rel);
+		next unless ($info->{attrs}->{accessor} eq 'multi');
+		
 		my $cond_data = RapidApp::DBIC::Component::TableSpec->parse_relationship_cond($info->{cond});
 		
-		my $Source = $self->ResultSource->related_source($rel);
+		my $Source = $TableSpec->ResultSource->related_source($rel);
 		
-		$self->apply_init_modules( 'rel_' . $rel => {
+		my $mod_name = 'rel_' . $RelTS->column_prefix . $rel;
+		
+		$self->apply_init_modules( $mod_name => {
 			class 	=> 'RapidApp::DbicAppGrid3',
 			params	=> {
 				ResultSource => $Source,
 				include_colspec => $RelTS->include_colspec->colspecs,
-				get_ResultSet => sub {
-					return $Source->resultset->search_rs({ 'me.' . $cond_data->{foreign} => $self->supplied_id });
-				}
+				# This now happens in baseParams on request:
+				#get_ResultSet => sub {
+				#	return $Source->resultset->search_rs({ 'me.' . $cond_data->{foreign} => $self->supplied_id });
+				#}
 			}
 		});
 	}
@@ -170,9 +176,15 @@ sub TableSpec_property_grids {
 		elsif($relRow->isa('DBIx::Class::ResultSet')) {
 		
 			my $RelTS = $TableSpec->related_TableSpec->{$rel};
+			
+			my $info = $Row->result_source->relationship_info($rel);
+			next unless ($info->{attrs}->{accessor} eq 'multi'); #<-- should be redundant
+			my $cond_data = RapidApp::DBIC::Component::TableSpec->parse_relationship_cond($info->{cond});
+			
+			my $mod_name = 'rel_' . $RelTS->column_prefix . $rel;
 		
 			push @multi_items, {
-				%{ $self->Module('rel_' . $rel)->content },
+				%{ $self->Module($mod_name)->content },
 				autoWidth		=> \1,
 				collapsible => \1,
 				collapseFirst => \1,
@@ -187,6 +199,9 @@ sub TableSpec_property_grids {
 				viewConfig => { emptyText => '<span style="color:darkgrey;">(No ' . $RelTS->get_Cnf('title_multi') . ')</span>' },
 				# Why do I have to set this manually?
 				bodyStyle => 'border: 1px solid #D0D0D0;',
+				baseParams => {
+					resultset_condition => $self->json->encode({ 'me.' . $cond_data->{foreign} => $Row->get_column($cond_data->{self}) })
+				},
 			};
 		}
 	}
