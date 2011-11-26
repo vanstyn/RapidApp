@@ -164,7 +164,7 @@ sub apply_TableSpec_config {
 sub defer_DataStore {
 	my $self = shift;
 	return $self->DataStore unless (defined $self->defer_to_store_module);
-	return $self->defer_to_store_module->DataStore if ($self->defer_to_store_module->can('DataStore'));
+	return $self->defer_to_store_module->defer_DataStore if ($self->defer_to_store_module->can('defer_DataStore'));
 	return $self->defer_to_store_module;
 }
 
