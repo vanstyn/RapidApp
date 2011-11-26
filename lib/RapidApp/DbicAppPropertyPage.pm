@@ -6,6 +6,8 @@ use Moose;
 extends 'RapidApp::AppDataStore2';
 with 'RapidApp::Role::DbicLink2';
 
+use RapidApp::DBIC::Component::TableSpec;
+
 use RapidApp::DbicAppPropertyPage1;
 
 # All-purpose record display module. Works great with AppGrid2/DbicLink2 like this:
@@ -54,7 +56,40 @@ sub BUILD {
 		frame => \1,
 	);
 	
+	$self->init_multi_rel_modules;
+	
 	$self->add_ONCONTENT_calls('apply_items_config');
+}
+
+
+# Adds sub Modules for each included multi relationship. These are then used later on
+# each request/when the page is rendered
+sub init_multi_rel_modules {
+	my $self = shift;
+	
+	my $TableSpec = $self->TableSpec;
+	
+	foreach my $rel (@{$TableSpec->related_TableSpec_order}) {
+		my $info = $self->ResultSource->relationship_info($rel);
+		next unless ($info->{attrs}->{accessor} eq 'multi');
+		
+		my $RelTS = $TableSpec->related_TableSpec->{$rel};
+		
+		my $cond_data = RapidApp::DBIC::Component::TableSpec->parse_relationship_cond($info->{cond});
+		
+		my $Source = $self->ResultSource->related_source($rel);
+		
+		$self->apply_init_modules( 'rel_' . $rel => {
+			class 	=> 'RapidApp::DbicAppGrid3',
+			params	=> {
+				ResultSource => $Source,
+				include_colspec => $RelTS->include_colspec->colspecs,
+				get_ResultSet => sub {
+					return $Source->resultset->search_rs({ 'me.' . $cond_data->{foreign} => $self->supplied_id });
+				}
+			}
+		});
+	}
 }
 
 
@@ -119,6 +154,7 @@ sub TableSpec_property_grids {
 	$title = $cnftitle . ' (' . $title . ')' unless ($TableSpec->name eq $cnftitle);
 
 	my @items = ();
+	my @multi_items = ();
 	push @items, $self->property_grid($title,$icon,$fields), { xtype => 'spacer', height => 5 } if (@$fields > 0);
 	#my @TableSpecs = map { $TableSpec->related_TableSpec->{$_} } @{$TableSpec->related_TableSpec_order};
 	
@@ -133,15 +169,31 @@ sub TableSpec_property_grids {
 		}
 		elsif($relRow->isa('DBIx::Class::ResultSet')) {
 		
-			#TODO
-			scream_color(GREEN.BOLD,ref($relRow) . ' isa DBIx::Class::ResultSet');
+			my $RelTS = $TableSpec->related_TableSpec->{$rel};
+		
+			push @multi_items, {
+				%{ $self->Module('rel_' . $rel)->content },
+				autoWidth		=> \1,
+				collapsible => \1,
+				collapseFirst => \1,
+				titleCollapse => \1,
+				#height => 400,
+				autoHeight => \1,
+				title => $RelTS->get_Cnf('title_multi') . ' (' . $rel . ')',
+				iconCls => $RelTS->get_Cnf('multiIconCls'),
+				gridsearch			=> undef,
+				pageSize			=> undef,
+				use_multifilters	=> \0,
+				viewConfig => { emptyText => '<span style="color:darkgrey;">(No ' . $RelTS->get_Cnf('title_multi') . ')</span>' },
+				# Why do I have to set this manually?
+				bodyStyle => 'border: 1px solid #D0D0D0;',
+			};
 		}
 	}
 	
+	unshift @multi_items, { xtype => 'spacer', height => 5 } if (@multi_items > 0);
 	
-	#push @items, $self->TableSpec_property_grids($_) for (@TableSpecs);
-	
-	return @items;
+	return @items,@multi_items;
 }
 
 
