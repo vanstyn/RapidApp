@@ -198,15 +198,18 @@ sub TableSpec_property_grids {
 			my $cond_data = RapidApp::DBIC::Component::TableSpec->parse_relationship_cond($info->{cond});
 			
 			my $mod_name = 'rel_' . $RelTS->column_prefix . $rel;
-		
+			
+			my $cur = $self->Module($mod_name)->content;
+			push @{$cur->{plugins}}, 'grid-autoheight', 'titlecollapseplus';
+			
 			push @multi_items, {
-				%{ $self->Module($mod_name)->content },
+				%$cur,
 				autoWidth		=> \1,
 				collapsible => \1,
 				collapseFirst => \1,
 				titleCollapse => \1,
 				#height => 400,
-				autoHeight => \1,
+				#autoHeight => \1,
 				title => $RelTS->get_Cnf('title_multi') . ' (' . $rel . ')',
 				iconCls => $RelTS->get_Cnf('multiIconCls'),
 				gridsearch			=> undef,
