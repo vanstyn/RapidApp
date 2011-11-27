@@ -98,7 +98,7 @@ sub get_mixed_hash_args_ordered {
 }
 
 
-# returns \0 and \1 and 0 and 1, and returns 0 and 1 as 0 and 1
+# returns \0 and \1 as 0 and 1, and returns 0 and 1 as 0 and 1
 sub jstrue {
 	my $v = shift;
 	ref($v) eq 'SCALAR' and return $$v;

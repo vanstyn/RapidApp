@@ -104,7 +104,7 @@ sub init_multi_rel_modules {
 				push @{$mod_params->{include_colspec}}, $cond_data->{foreign};
 			}
 		}
-		
+
 		$mod_params->{ResultSource} = $Source;
 	
 		$self->apply_init_modules( $mod_name => {
@@ -177,7 +177,8 @@ sub TableSpec_property_grids {
 
 	my @items = ();
 	my @multi_items = ();
-	push @items, $self->property_grid($title,$icon,$fields), { xtype => 'spacer', height => 5 } if (@$fields > 0);
+	my $visible = scalar grep { ! jstrue $_->{no_column} } @$fields;
+	push @items, $self->property_grid($title,$icon,$fields), { xtype => 'spacer', height => 5 } if ($visible);
 	#my @TableSpecs = map { $TableSpec->related_TableSpec->{$_} } @{$TableSpec->related_TableSpec_order};
 	
 	my @TableSpecs = ();
@@ -240,6 +241,8 @@ sub property_grid {
 	my $icon = shift;
 	my $fields = shift;
 	my $opt = shift || {};
+	
+	
 	
 	my $conf = {
 		
