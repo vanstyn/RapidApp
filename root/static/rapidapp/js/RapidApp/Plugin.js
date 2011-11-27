@@ -1896,16 +1896,23 @@ Ext.preg('datastore-plus',Ext.ux.RapidApp.Plugin.CmpDataStorePlus);
 // to be able to scroll left/right:
 Ext.ux.RapidApp.Plugin.gridAutoHeight = Ext.extend(Ext.util.Observable,{
 	init: function(cmp) {
-		cmp.on('afterrender',function(){
-			var set = function() {
-				var el1 = this.getEl().child('div.x-grid3');
-				if(el1) { el1.setHeight('auto'); }
-				var el2 = this.getEl().child('div.x-grid3-scroller');
-				if(el2) { el2.setHeight('auto'); }
-			};
-			set.defer(100,this);
-			set.defer(1000,this);
-		},cmp);
+		this.cmp = cmp;
+		cmp.on('resize',this.setAutoHeight,this);
+		cmp.on('viewready',this.onViewReady,this);
+	},
+	
+	onViewReady: function() {
+		this.setAutoHeight.call(this);
+		var view = this.cmp.getView();
+		view.on('refresh',this.setAutoHeight,this);
+	},
+	
+	setAutoHeight: function() {
+		var grid = this.cmp;
+		var el1 = grid.getEl().child('div.x-grid3');
+		if(el1) { el1.setHeight('auto'); }
+		var el2 = grid.getEl().child('div.x-grid3-scroller');
+		if(el2) { el2.setHeight('auto'); }
 	}
 });
 Ext.preg('grid-autoheight',Ext.ux.RapidApp.Plugin.gridAutoHeight);
