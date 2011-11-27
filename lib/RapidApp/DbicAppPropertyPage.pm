@@ -205,6 +205,7 @@ sub TableSpec_property_grids {
 			push @multi_items, {
 				%$cur,
 				autoWidth		=> \1,
+				titleCountLocal => \1,
 				collapsible => \1,
 				collapseFirst => \1,
 				titleCollapse => \1,

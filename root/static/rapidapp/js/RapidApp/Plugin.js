@@ -1303,6 +1303,26 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		this.initAdditionalStoreMethods.call(this,this.cmp.store,this);
 		
 		this.cmp.loadedStoreButtons = {};
+			
+		
+		// --vv-- Displays the number of records in the title (superscript)	
+		var titleCmp = cmp;
+		if(!cmp.title && cmp.ownerCt && (cmp.ownerCt.titleCountLocal || cmp.ownerCt.titleCount )){
+			titleCmp = cmp.ownerCt;
+		}
+		if(titleCmp.title && ( titleCmp.titleCountLocal || titleCmp.titleCount )) {
+			cmp.store.on('buttontoggle',function() {
+				var count = titleCmp.titleCountLocal ? cmp.store.getCount() : cmp.store.getTotalCount();
+				if(count == 0) { count = ''; }
+				titleCmp.setTitle(
+					titleCmp.initialConfig.title + 
+					' <span style="font-size: 0.9em; font-weight: lighter; position: relative;top: -4px;">' + 
+						count + 
+					'</span>'
+				);
+			},cmp);
+		}
+		// --^^--
 		
 		var plugin = this;
 		this.cmp.getStoreButton = function(name,showtext) {

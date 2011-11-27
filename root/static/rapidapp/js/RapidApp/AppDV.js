@@ -18,6 +18,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 		this.on('click',this.click_controller,this);
 		
+		//if(!this.store) { this.store = this.ownerCt.store; }
+		
 		this.store.on('beforesave',this.onBeforesave,this);
 		this.store.on('beforeremove',this.onBeforeremove,this);
 		
@@ -672,7 +674,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	},
 	
 	getParentScrollNode: function(node) {
-		if(!node) { return null; }
+		if(!node || !node.style) { return null; }
 		if(node.style.overflow == 'auto') { return node; }
 		if(node.parentNode) { return this.getParentScrollNode(node.parentNode); }
 		return null;
