@@ -1904,6 +1904,7 @@ Ext.ux.RapidApp.Plugin.gridAutoHeight = Ext.extend(Ext.util.Observable,{
 				if(el2) { el2.setHeight('auto'); }
 			};
 			set.defer(100,this);
+			set.defer(1000,this);
 		},cmp);
 	}
 });

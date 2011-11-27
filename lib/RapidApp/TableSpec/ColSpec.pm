@@ -91,6 +91,16 @@ subtype 'ColSpecStr', as 'Str', where {
 
 hasarray 'colspecs', isa => 'ArrayRef[ColSpecStr]', required => 1;
 
+# Store the orig/init colspec data in 'init_colspecs'
+has 'init_colspecs', is => 'ro', required => 1;
+around BUILDARGS => sub {
+	my $orig = shift;
+	my $class = shift;
+	my %params = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	$params{init_colspecs} = [ @{$params{colspecs}} ] if (ref($params{colspecs}) eq 'ARRAY');
+	return $class->$orig(%params);
+};
+
 sub BUILD {
 	my $self = shift;
 	$self->regen_subspec;

@@ -85,8 +85,7 @@ sub init_multi_rel_modules {
 		my $mod_name = 'rel_' . $RelTS->column_prefix . $rel;
 		
 		my $mod_params = {
-			ResultSource => $Source,
-			include_colspec => $RelTS->include_colspec->colspecs,
+			include_colspec => $RelTS->include_colspec->init_colspecs,
 			updatable_colspec => $RelTS->updatable_colspec->colspecs
 		};
 		
@@ -95,7 +94,7 @@ sub init_multi_rel_modules {
 		# If this rel/colname is updatable in the top TableSpec, then that translates
 		# into these multi rel rows being addable/deletable
 		if ($self->TableSpec->colspec_matches_columns($self->TableSpec->updatable_colspec->colspecs,$colname)){
-			$mod_params->{creatable_colspec} = $RelTS->creatable_colspec->colspecs;
+			$mod_params->{creatable_colspec} = $RelTS->updatable_colspec->colspecs;
 			$mod_params->{destroyable_relspec} = ['*'];
 			delete $mod_params->{creatable_colspec} unless (@{$mod_params->{creatable_colspec}} > 0);
 			
@@ -106,7 +105,8 @@ sub init_multi_rel_modules {
 			}
 		}
 		
-		
+		$mod_params->{ResultSource} = $Source;
+	
 		$self->apply_init_modules( $mod_name => {
 			class 	=> 'RapidApp::DbicAppGrid3',
 			params	=> $mod_params
@@ -209,8 +209,6 @@ sub TableSpec_property_grids {
 				collapsible => \1,
 				collapseFirst => \1,
 				titleCollapse => \1,
-				#height => 400,
-				#autoHeight => \1,
 				title => $RelTS->get_Cnf('title_multi') . ' (' . $rel . ')',
 				iconCls => $RelTS->get_Cnf('multiIconCls'),
 				gridsearch			=> undef,
