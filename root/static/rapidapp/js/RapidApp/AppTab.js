@@ -201,6 +201,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	titleCount: false,
 
 	initComponent: function() {
+		
+		this.store.on('beforeload',this.reloadColumns,this);
 
 		// -- Force default sort to be DESC instead of ASC:
 		var orig_store_singleSort = this.store.singleSort;
@@ -370,8 +372,6 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	},
 	
 	onRender: function() {
-
-		this.store.on('beforeload',this.reloadColumns,this);
 		
 		this.getColumnModel().on('hiddenchange',function(colmodel,colIndex,hidden) {
 			// Only reload the store when showing columns that aren't already loaded
