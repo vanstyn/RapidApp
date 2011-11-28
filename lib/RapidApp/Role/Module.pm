@@ -327,6 +327,13 @@ sub create_module {
 	$params->{parent_module_ref} = $self;
 	
 	my $app= RapidApp::ScopedGlobals->catalystClass;
+	
+	# TODO: figure out how to pass this to c->log->info (and have it actually be displayed)
+	print STDERR
+		' >> ' .
+		CYAN . "Load: " . BOLD . $params->{module_path} . CLEAR . 
+		CYAN . " [$class_name]" . CLEAR . "\n";
+	
 	my $ctor= ($app->debug && $class_name->can('timed_new')) || $class_name->can('new');
 	my $Object = $class_name->$ctor($params) or die "Failed to create module instance ($class_name)";
 	die "$class_name is not a valid RapidApp Module" unless ($Object->does('RapidApp::Role::Module'));
