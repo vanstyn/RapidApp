@@ -86,15 +86,29 @@ sub init_multi_rel_modules {
 		
 		my $mod_params = {
 			include_colspec => $RelTS->include_colspec->init_colspecs,
-			updatable_colspec => $RelTS->updatable_colspec->colspecs
+			updatable_colspec => $RelTS->updatable_colspec->init_colspecs
 		};
 		
 		my $colname = $TableSpec->column_prefix . $rel;
 		
+		
+		
+=pod		
 		# If this rel/colname is updatable in the top TableSpec, then that translates
 		# into these multi rel rows being addable/deletable
 		if ($self->TableSpec->colspec_matches_columns($self->TableSpec->updatable_colspec->colspecs,$colname)){
-			$mod_params->{creatable_colspec} = $RelTS->updatable_colspec->colspecs;
+			$mod_params->{creatable_colspec} = $RelTS->creatable_colspec->init_colspecs;
+			$mod_params->{destroyable_relspec} = ['*'];
+		}
+=cut		
+		
+		
+
+
+		# If this rel/colname is updatable in the top TableSpec, then that translates
+		# into these multi rel rows being addable/deletable
+		if ($self->TableSpec->colspec_matches_columns($self->TableSpec->updatable_colspec->colspecs,$colname)){
+			$mod_params->{creatable_colspec} = [ @{$RelTS->updatable_colspec->colspecs} ];
 			$mod_params->{destroyable_relspec} = ['*'];
 			delete $mod_params->{creatable_colspec} unless (@{$mod_params->{creatable_colspec}} > 0);
 			
@@ -102,6 +116,9 @@ sub init_multi_rel_modules {
 			if($mod_params->{creatable_colspec}) {
 				push @{$mod_params->{creatable_colspec}}, $cond_data->{foreign};
 				push @{$mod_params->{include_colspec}}, $cond_data->{foreign};
+				
+				# We can't change the key/link field:
+				push @{$mod_params->{updatable_colspec}}, '!' . $cond_data->{foreign};
 			}
 		}
 
@@ -163,7 +180,19 @@ sub TableSpec_property_grids {
 	return $self->not_found_content unless ($Row);
 	
 	my %cols = map { $_->{name} => $_ } @{ $self->column_list };
-	my @columns = map { $cols{$_} } $TableSpec->local_column_names;
+	
+	my @colnames = $TableSpec->local_column_names;
+
+	# -- Filter out non-existant relationship columns:
+	@colnames = grep {
+		exists $TableSpec->related_TableSpec->{$_} ?
+			$Row->can($_) ? $Row->$_ ? 1 : 0 
+				: 0
+					: 1;
+	} @colnames;
+	# --
+	
+	my @columns = map { $cols{$_} } @colnames;
 	my $fields = \@columns;
 	
 	my $title = $TableSpec->relspec_prefix;
