@@ -125,12 +125,13 @@ sub expand_relationship_columns {
 	my @columns = @_;
 	my @expanded = ();
 	
-	my @rel_cols = @{$self->get_Cnf('relationship_column_names')};
+	my $rel_cols = $self->get_Cnf('relationship_column_names') || return;
+
 	my @no_cols = ();
 	foreach my $col (@columns) {
 		push @expanded, $col;
 		
-		foreach my $relcol (@rel_cols) {
+		foreach my $relcol (@$rel_cols) {
 			next unless (match_glob($col,$relcol));
 		
 			my @add = (
@@ -201,13 +202,22 @@ hashash 'Cnf', lazy => 1, default => sub {
 	my $self = shift;
 	my $class = $self->ResultClass;
 	
-	my $cf;
-	if($class->can('TableSpec_cnf')) {
-		$cf = $class->get_built_Cnf;
+	#my $cf;
+	#if($class->can('TableSpec_cnf')) {
+	#	$cf = $class->get_built_Cnf;
+	#}
+	#else {
+	#	$cf = RapidApp::DBIC::Component::TableSpec::default_TableSpec_cnf($class);
+	#}
+	
+	# Load the TableSpec Component on the Result Class if it isn't already:
+	# (should this be done like this? this is a global change and could be an overreach)
+	unless($class->can('TableSpec_cnf')) {
+		$class->load_components('+RapidApp::DBIC::Component::TableSpec');
+		$class->apply_TableSpec;
 	}
-	else {
-		$cf = RapidApp::DBIC::Component::TableSpec::default_TableSpec_cnf($class);
-	}
+	
+	my $cf = $class->get_built_Cnf;
 	
 	%{$self->Cnf_order} = %{ $cf->{order} || {} };
 	return $cf->{data} || {};
@@ -1209,7 +1219,7 @@ sub get_relationship_column_cnf {
 
 
 
-sub get_or_create_rapidapp_module {
+sub get_or_create_rapidapp_module :Debug {
 	my $self = shift;
 	my $name = shift or die "get_or_create_rapidapp_module(): Missing module name";
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref

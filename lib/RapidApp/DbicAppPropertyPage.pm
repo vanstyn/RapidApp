@@ -8,7 +8,7 @@ with 'RapidApp::Role::DbicLink2';
 
 use RapidApp::DBIC::Component::TableSpec;
 
-use RapidApp::DbicAppPropertyPage1;
+#use RapidApp::DbicAppPropertyPage1;
 
 # All-purpose record display module. Works great with AppGrid2/DbicLink2 like this:
 #
@@ -41,13 +41,13 @@ sub BUILD {
 	
 	# WTF!!!!!!!!!! Without this the whole world breaks and I have no idea why
 	# FIXME!!!!!
-	$self->apply_init_modules( item => { 
-		class 	=> 'RapidApp::DbicAppPropertyPage1',
-		params	=> { 
-			ResultSource => $self->ResultSource, 
-			record_pk => $self->record_pk,
-		}
-	});
+	#$self->apply_init_modules( item => { 
+	#	class 	=> 'RapidApp::DbicAppPropertyPage1',
+	#	params	=> { 
+	#		ResultSource => $self->ResultSource, 
+	#		record_pk => $self->record_pk,
+	#	}
+	#});
 
 	$self->apply_extconfig(
 		xtype => 'panel',
@@ -55,6 +55,8 @@ sub BUILD {
 		autoScroll => \1,
 		frame => \1,
 	);
+	
+	scream('BUILD!!');
 	
 	$self->init_multi_rel_modules;
 	
@@ -64,9 +66,11 @@ sub BUILD {
 
 # Adds sub Modules for each included multi relationship. These are then used later on
 # each request/when the page is rendered
-sub init_multi_rel_modules {
+sub init_multi_rel_modules :Debug(stack=>5) {
 	my $self = shift;
 	my $TableSpec = shift || $self->TableSpec;
+	
+	print STDERR RED . 'init_multi_rel_modules: ' . $TableSpec->relspec_prefix . CLEAR . "\n\n";
 	
 	foreach my $rel (@{$TableSpec->related_TableSpec_order}) {
 		
@@ -123,6 +127,8 @@ sub init_multi_rel_modules {
 		}
 
 		$mod_params->{ResultSource} = $Source;
+		
+		scream('init: ' . $mod_name);
 	
 		$self->apply_init_modules( $mod_name => {
 			class 	=> 'RapidApp::DbicAppGrid3',
@@ -166,12 +172,27 @@ sub full_property_grid {
 	my $self = shift;
 	
 	my @items = $self->TableSpec_property_grids($self->TableSpec);
-	
-	my $last = pop @items;
-	push @items, $last unless (ref($last) eq 'HASH' and $last->{xtype} eq 'spacer');
-	
+	shift @items;
+
 	return @items;
 }
+
+
+sub TS_title {
+	my $self = shift;
+	my $TableSpec = shift;
+	my $parm = shift || 'title';
+	
+	my $title = $TableSpec->relspec_prefix;
+	$title = $self->TableSpec->name . '.' . $title unless ($title eq '');
+	$title = $self->TableSpec->name if ($title eq '');
+	
+	my $cnftitle = $TableSpec->get_Cnf($parm);
+	$title = $cnftitle . ' (' . $title . ')' unless ($TableSpec->name eq $cnftitle);
+	
+	return $title;
+}
+
 sub TableSpec_property_grids {
 	my $self = shift;
 	my $TableSpec = shift;
@@ -195,19 +216,13 @@ sub TableSpec_property_grids {
 	my @columns = map { $cols{$_} } @colnames;
 	my $fields = \@columns;
 	
-	my $title = $TableSpec->relspec_prefix;
-	$title = $self->TableSpec->name . '.' . $title unless ($title eq '');
-	$title = $self->TableSpec->name if ($title eq '');
-	
+
 	my $icon = $TableSpec->get_Cnf('singleIconCls');
 	
-	my $cnftitle = $TableSpec->get_Cnf('title');
-	$title = $cnftitle . ' (' . $title . ')' unless ($TableSpec->name eq $cnftitle);
-
 	my @items = ();
 	my @multi_items = ();
 	my $visible = scalar grep { ! jstrue $_->{no_column} } @$fields;
-	push @items, $self->property_grid($title,$icon,$fields), { xtype => 'spacer', height => 5 } if ($visible);
+	push @items, { xtype => 'spacer', height => 5 }, $self->property_grid($self->TS_title($TableSpec),$icon,$fields) if ($visible);
 	#my @TableSpecs = map { $TableSpec->related_TableSpec->{$_} } @{$TableSpec->related_TableSpec_order};
 	
 	my @TableSpecs = ();
@@ -232,6 +247,7 @@ sub TableSpec_property_grids {
 			my $cur = $self->Module($mod_name)->content;
 			push @{$cur->{plugins}}, 'grid-autoheight', 'titlecollapseplus';
 			
+			push @multi_items, { xtype => 'spacer', height => 5 };
 			push @multi_items, {
 				%$cur,
 				autoWidth		=> \1,
@@ -239,12 +255,13 @@ sub TableSpec_property_grids {
 				collapsible => \1,
 				collapseFirst => \1,
 				titleCollapse => \1,
-				title => $RelTS->get_Cnf('title_multi') . ' (' . $rel . ')',
+				title => $self->TS_title($RelTS,'title_multi'),
+				#title => $RelTS->get_Cnf('title_multi') . ' (' . $rel . ')',
 				iconCls => $RelTS->get_Cnf('multiIconCls'),
 				gridsearch			=> undef,
 				pageSize			=> undef,
 				use_multifilters	=> \0,
-				viewConfig => { emptyText => '<span style="color:darkgrey;">(No ' . $RelTS->get_Cnf('title_multi') . ')</span>' },
+				viewConfig => { emptyText => '<span style="color:darkgrey;">(No&nbsp;' . $RelTS->get_Cnf('title_multi') . ')</span>' },
 				# Why do I have to set this manually?
 				bodyStyle => 'border: 1px solid #D0D0D0;',
 				baseParams => {
