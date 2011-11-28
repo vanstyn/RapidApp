@@ -36,12 +36,17 @@ use Clone qw(clone);
 # native_rs.
 
 
+# Global package variable can be set to disable base_rs and revert
+# to normal DBIx::Class::ResultSet behavior:
+our $DISABLED = 0;
+
 # Define base_rs in the consuming ResultSet class. Should return a chained
 # ResultSet object, i.e. return $self->search_rs( $SEARCH, $ATTR );
 sub base_rs { (shift) }
 
 sub search_rs {
-	my $self = (shift)->_get_apply_base_rs;
+	my $self = shift;
+	$self = $self->_get_apply_base_rs unless ($DISABLED);
 	return $self->SUPER::search_rs(@_);
 }
 
