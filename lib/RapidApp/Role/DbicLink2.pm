@@ -628,12 +628,22 @@ sub _dbiclink_update_records {
 					my @columns = @_;
 					
 					my $Row = $_{return} || $BaseRow;
+					return ' ' if ($Row eq ' ');
+					
+					#my $Row = exists $_{return} ? $_{return} : $BaseRow;
+					#return undef unless (defined $Row);
+					
 					my $rel = $_{rel};
 					my $UpdRow = $rel ? $Row->$rel : $Row;
 					
 					unless (defined $UpdRow) {
 						scream('NOTICE: Relationship/row "' . $rel . '" is not defined'); 
-						return;
+						return ' ';
+					}
+					
+					if ($UpdRow->isa('DBIx::Class::ResultSet')) {
+						scream('NOTICE: Skipping multi relationship "' . $rel . '"'); 
+						return ' ';
 					}
 
 					my %current = $UpdRow->get_columns;
