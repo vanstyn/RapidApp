@@ -12,6 +12,9 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 			},this);
 		}
 		
+		if(!this.plugins) { this.plugins = []; };
+		this.plugins.push('tabpanel-closeall');
+		
 		Ext.ux.RapidApp.AppTab.TabPanel.superclass.initComponent.call(this);
 	},
 

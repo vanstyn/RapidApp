@@ -1916,3 +1916,32 @@ Ext.ux.RapidApp.Plugin.gridAutoHeight = Ext.extend(Ext.util.Observable,{
 	}
 });
 Ext.preg('grid-autoheight',Ext.ux.RapidApp.Plugin.gridAutoHeight);
+
+
+Ext.ux.RapidApp.Plugin.tabpanelCloseAllBtn = Ext.extend(Ext.util.Observable,{
+	init: function(cmp) {
+		this.cmp = cmp;
+		this.cmp.on('render',this.onRender,this);
+	},
+	onRender:function() {
+		
+		
+		//TODO!!!
+		
+		
+		//var stripEl = this.cmp.header;
+		
+		//console.dir(stripEl);
+		
+	},
+	closeAll: function() {
+		var tabpanel = this.cmp;
+		tabpanel.items.each(function(item) {
+			if (item.closable) {
+				tabpanel.remove(item);
+			}
+		});
+	}
+});
+Ext.preg('tabpanel-closeall',Ext.ux.RapidApp.Plugin.tabpanelCloseAllBtn);
+
