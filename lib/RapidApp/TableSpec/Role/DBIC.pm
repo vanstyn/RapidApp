@@ -1219,7 +1219,7 @@ sub get_relationship_column_cnf {
 
 
 
-sub get_or_create_rapidapp_module :Debug {
+sub get_or_create_rapidapp_module {
 	my $self = shift;
 	my $name = shift or die "get_or_create_rapidapp_module(): Missing module name";
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref

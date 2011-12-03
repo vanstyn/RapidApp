@@ -66,11 +66,11 @@ sub BUILD {
 
 # Adds sub Modules for each included multi relationship. These are then used later on
 # each request/when the page is rendered
-sub init_multi_rel_modules :Debug(stack=>5) {
+sub init_multi_rel_modules {
 	my $self = shift;
 	my $TableSpec = shift || $self->TableSpec;
 	
-	print STDERR RED . 'init_multi_rel_modules: ' . $TableSpec->relspec_prefix . CLEAR . "\n\n";
+	#print STDERR RED . 'init_multi_rel_modules: ' . $TableSpec->relspec_prefix . CLEAR . "\n\n";
 	
 	foreach my $rel (@{$TableSpec->related_TableSpec_order}) {
 		
@@ -127,8 +127,6 @@ sub init_multi_rel_modules :Debug(stack=>5) {
 		}
 
 		$mod_params->{ResultSource} = $Source;
-		
-		scream('init: ' . $mod_name);
 	
 		$self->apply_init_modules( $mod_name => {
 			class 	=> 'RapidApp::DbicAppGrid3',
@@ -173,6 +171,8 @@ sub full_property_grid {
 	
 	my @items = $self->TableSpec_property_grids($self->TableSpec);
 	shift @items;
+	
+	scream(scalar @items);
 
 	return @items;
 }
