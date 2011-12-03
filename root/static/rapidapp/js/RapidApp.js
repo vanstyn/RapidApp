@@ -4342,6 +4342,9 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 			var orig_renderer = field.renderer;
 			field.renderer = function(value,metaData,record,rowIndex,colIndex) {
 				
+				// Turn on word-wrap (set to off in a normal grid)
+				metaData.attr = 'style="white-space:normal;"';
+				
 				// Mark dirty like in normal grid:
 				var bindRec = propgrid.bindRecord
 				if(bindRec && bindRec.dirty && bindRec.modified[record.id]) {
