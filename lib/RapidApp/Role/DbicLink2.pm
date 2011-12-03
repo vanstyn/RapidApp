@@ -367,8 +367,10 @@ sub get_req_columns {
 	
 	push @$columns, @{$self->primary_columns};
 	
-	defined $self->columns->{$_} && push @$columns, 
+	my @req_fetch = ();
+	defined $self->columns->{$_} && push @req_fetch, 
 		@{ $self->columns->{$_}->required_fetch_columns || [] } for (@$columns);
+	push @$columns, @req_fetch;
 	
 	foreach my $col (@$columns) {
 		my $column = $self->columns->{$col};
