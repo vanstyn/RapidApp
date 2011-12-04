@@ -89,6 +89,13 @@ sub init_relspecs {
 	});
 	
 	
+	$self->include_colspec->expand_colspecs(sub {
+		$self->expand_related_required_fetch_colspecs(@_)
+	});
+	
+	
+	
+	
 	foreach my $col ($self->no_column_colspec->base_colspec->all_colspecs) {
 		$self->Cnf_columns->{$col} = {} unless ($self->Cnf_columns->{$col});
 		%{$self->Cnf_columns->{$col}} = (
@@ -146,6 +153,46 @@ sub expand_relationship_columns {
 	}
 	$self->no_column_colspec->add_colspecs(@no_cols);
 	
+	return @expanded;
+}
+
+sub expand_related_required_fetch_colspecs {
+	my $self = shift;
+	my @columns = @_;
+	my @expanded = ();
+	
+	my $local_cols = $self->get_Cnf_order('columns');
+
+	my @no_cols = ();
+	foreach my $spec (@columns) {
+		push @expanded, $spec;
+		
+		foreach my $col (@$local_cols) {
+			next unless (match_glob($spec,$col));
+		
+			my $req = $self->Cnf_columns->{$col}->{required_fetch_colspecs} or next;
+			$req = [ $req ] unless (ref $req);
+			
+			my @req_columns = ();
+			foreach my $spec (@$req) {
+				my $colname = $spec;
+				my $sep = $self->relation_sep;
+				$colname =~ s/\./${sep}/g;
+				push @req_columns, $self->column_prefix . $colname;
+				#push @req_columns, $colname;
+			}
+			# This is then used later during the store read request in DbicLink2
+			$self->Cnf_columns->{$col}->{required_fetch_columns} = [] 
+				unless (defined $self->Cnf_columns->{$col}->{required_fetch_columns});
+				
+			push @{$self->Cnf_columns->{$col}->{required_fetch_columns}}, @req_columns;
+
+			push @expanded, @$req;
+			push @no_cols, grep { !$self->colspecs_to_colspec_test(\@columns,$_) } @$req;
+		}
+	}
+	$self->no_column_colspec->add_colspecs(@no_cols);
+
 	return @expanded;
 }
 

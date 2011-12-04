@@ -361,6 +361,7 @@ sub get_req_columns {
 	) unless(@$columns > 0); 
 	# ---
 	
+	
 	push @$columns, $self->all_always_fetch_columns;
 	
 	my @exclude = ( $self->record_pk, 'loadContentCnf' );
@@ -368,9 +369,11 @@ sub get_req_columns {
 	push @$columns, @{$self->primary_columns};
 	
 	my @req_fetch = ();
-	defined $self->columns->{$_} && push @req_fetch, 
-		@{ $self->columns->{$_}->required_fetch_columns || [] } for (@$columns);
-	push @$columns, grep { defined $self->columns->{$_} } @req_fetch;
+	foreach my $col (grep {defined $self->columns->{$_}} @$columns) {
+		my $req = $self->columns->{$col}->required_fetch_columns or next;
+		push @req_fetch, grep { defined $self->columns->{$_} } @$req;
+	}
+	push @$columns, @req_fetch;
 	
 	foreach my $col (@$columns) {
 		my $column = $self->columns->{$col};
