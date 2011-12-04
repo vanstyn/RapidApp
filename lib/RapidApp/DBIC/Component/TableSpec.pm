@@ -53,6 +53,9 @@ sub apply_TableSpec {
 	$self->TableSpec_cnf({});
 	$self->TableSpec_built_cnf(undef);
 	
+	# Just doing this to ensure we're initialized:
+	$self->TableSpec_set_conf( apply_TableSpec_timestamp => time );
+	
 	return $self;
 }
 
