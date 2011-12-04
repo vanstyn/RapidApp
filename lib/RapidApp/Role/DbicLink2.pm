@@ -370,11 +370,10 @@ sub get_req_columns {
 	my @req_fetch = ();
 	defined $self->columns->{$_} && push @req_fetch, 
 		@{ $self->columns->{$_}->required_fetch_columns || [] } for (@$columns);
-	push @$columns, @req_fetch;
+	push @$columns, grep { defined $self->columns->{$_} } @req_fetch;
 	
 	foreach my $col (@$columns) {
 		my $column = $self->columns->{$col};
-		
 		push @exclude, $col if ($column->{no_fetch});
 	}
 	
