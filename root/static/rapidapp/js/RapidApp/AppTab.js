@@ -42,13 +42,21 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		
 		Ext.applyIf(cnf,{
 			xtype: 'autopanel',
-			title: 'Unnamed Tab',
-			iconCls: 'icon-default',
 			itemId: 'tab-' + Math.floor(Math.random()*100000),
 			layout: 'fit',
 			closable: true,
 			autoLoad: {}
 		});
+		
+		var setTitle,setIconCls;
+		if(!cnf.title) {
+			cnf.title = 'Loading';
+			setTitle = 'Unnamed Tab';
+		}
+		if(!cnf.iconCls) {
+			cnf.iconCls = 'icon-loading';
+			setIconCls = 'icon-document';
+		}
 		
 		Ext.applyIf(cnf.autoLoad, {
 			text: 'Loading...',
@@ -72,7 +80,26 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		}
 		// ---
 		
+		
+		if(!cnf.cmpListeners) { cnf.cmpListeners = {}; }
+		if(!cnf.cmpListeners.beforerender) { cnf.cmpListeners.beforerender = Ext.emptyFn; }
+		cnf.cmpListeners.beforerender = Ext.createInterceptor(
+			cnf.cmpListeners.beforerender,
+			function() {
+				var tab = this.ownerCt;
+				if(this.tabTitle) { setTitle = this.tabTitle; }
+				if(this.tabIconCls) { setIconCls = this.tabIconCls; }
+				
+				if(setTitle) { tab.setTitle(setTitle); }
+				if(setIconCls) { tab.setIconClass(setIconCls); }
+			}
+		);
+		
 		var new_tab = this.add(cnf);
+		
+		
+		//console.dir(new_tab)
+		
 		return this.activate(new_tab);
 	},
 	
