@@ -1235,7 +1235,21 @@ sub get_relationship_column_cnf {
 		
 		renderer => jsfunc(
 			'function(value, metaData, record, rowIndex, colIndex, store) {' .
-				'return record.data["' . $render_col . '"];' .
+				'var disp = record.data["' . $render_col . '"];' .
+				'if(!disp) { return value; }' .
+				
+				( # TODO: needs to be generalized better
+					$conf->{open_url} ?
+						qq~var loadCfg = { title: disp, autoLoad: { url: "~ . 
+							$conf->{open_url} . q~", params: { ___record_pk: "'" + value + "'" } }};~ .
+						'var href = "#loadcfg:" + Ext.urlEncode({data: Ext.encode(loadCfg)});'				.
+						'return disp + "&nbsp;" + ' .
+							'Ext.ux.RapidApp.inlineLink(href,"open","magnify-link-tiny",null,"Open/view \'" + disp + "\'");' 
+					:
+						'return disp;'
+				)
+				.
+				
 			'}', $conf->{renderer}
 		),
 	};

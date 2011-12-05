@@ -42,6 +42,13 @@ sub apply_TableSpec {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
+	# ignore/return if apply_TableSpec has already been called:
+	return if (
+		defined $self->TableSpec_cnf and
+		defined $self->TableSpec_cnf->{data} and
+		defined $self->TableSpec_cnf->{data}->{apply_TableSpec_timestamp}
+	);
+	
 	$self->TableSpec_data_type_profiles(
 		%{ $self->TableSpec_data_type_profiles || {} },
 		%{ delete $opt{TableSpec_data_type_profiles} }
@@ -185,6 +192,11 @@ sub default_TableSpec_cnf_columns {
 					# to prevent possible deep recursion:
 					$cols->{$col}->{displayField} = $self->TableSpec_related_get_set_conf($col,'display_column')
 						or die "$col doesn't have display_column set!";
+					
+					#TODO: needs to be more generalized/abstracted
+					#open_url, if defined, will add an autoLoad link to the renderer to
+					#open/navigate to the related item
+					$cols->{$col}->{open_url} = $self->TableSpec_related_get_set_conf($col,'open_url');
 						
 					my $cond_data = $self->parse_relationship_cond($info->{cond});
 					$cols->{$col}->{valueField} = $cond_data->{foreign} 

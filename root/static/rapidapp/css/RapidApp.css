@@ -206,6 +206,27 @@ pre {
 .icon-history-add-32x32 { background-image: url(/static/images/history_add_32x32.png) !important; }
 
 
+a.magnify-link-tiny {
+  background-image: url(/static/rapidapp/images/magnify.gif) !important;
+  background-repeat:no-repeat;
+  background-position: 0% 90%;
+  padding-left: 10px;
+  margin-left: 2px;
+  margin-bottom: 1px;
+  font-size: 9px;
+  font-family: "Helvetica Narrow","Arial Narrow",Tahoma,Arial,Helvetica,sans-serif;
+  text-decoration: none;
+  border-bottom: 1px transparent;
+  color: transparent;
+  opacity:0.4;
+  filter:alpha(opacity=40); /* For IE8 and earlier */
+}
+a.magnify-link-tiny:hover {
+  border-bottom: 1px dotted;
+  color: blue;
+  opacity:1.0;
+  filter:alpha(opacity=100); /* For IE8 and earlier */
+}
 
 .x-multifilter-not {
 	font-weight: bolder !important;

@@ -4452,3 +4452,41 @@ Ext.ux.RapidApp.renderPencil = function(val) {
 		'<img src="/static/ext/resources/images/default/s.gif" class="icon-14x14 icon-gray-pencil">';
 }
 
+
+/* -----
+ This inline link handler code sets listeners in pure JavaScript on
+ generated <a> tags. This is below the Ext level, but returns 'false'
+ and sets cancelBubble to override and prevent any other click handlers
+ (such as handlers to start editing in an EditorGrid, etc) from firing
+ This allows running isolated code. Currently this is just setup for
+ custom navigation/content loading but will handle a lot more scenarios
+ in the future
+*/
+Ext.ux.RapidApp.inlineLink = function(href,text,css,style,title) {
+	var link = 
+		'<a href="' + href + '"' +
+		(css ? ' class="' + css + '"' : '') +
+		(style ? ' style="' + style + '"' : '') +
+		(title ? ' title="' + title + '"' : '') +
+		' onclick="return Ext.ux.RapidApp.InlineLinkHandler.apply(this,arguments);"' +
+		' ondblclick="return Ext.ux.RapidApp.InlineLinkHandler.apply(this,arguments);"' +
+		'>' + text + '</a>';
+	return link;
+}
+Ext.ux.RapidApp.InlineLinkHandler = function(e) {
+	if (!e) var e = window.event;
+	e.cancelBubble = true;
+	if (e.stopPropagation) e.stopPropagation();
+	if(e.type == 'click' && this.hash) {
+		var parts = this.hash.split('#loadcfg:');
+		if(parts.length == 2) {
+			var obj = Ext.urlDecode(parts[1]);
+			var loadCfg = Ext.decode(obj.data);
+			var loadTarget = Ext.getCmp("explorer-id").getComponent("load-target");
+			loadTarget.loadContent(loadCfg);
+		}
+		
+	}
+	return false;
+}
+/* ----- */
