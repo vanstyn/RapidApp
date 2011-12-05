@@ -1316,9 +1316,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				if(count == 0) { count = ''; }
 				titleCmp.setTitle(
 					titleCmp.initialConfig.title + 
-					'&nbsp;<span style="color: navy; font-weight: lighter; position: relative;top: -4px;">' + 
-						count + 
-					'</span>'
+						'&nbsp;<span class="superscript-navy">' + count + '</span>'
 				);
 			},cmp);
 		}

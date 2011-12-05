@@ -84,16 +84,15 @@ after BUILD => sub {
 sub init_relspecs {
 	my $self = shift;
 	
+	$self->multi_rel_columns_indx;
+	
 	$self->include_colspec->expand_colspecs(sub {
 		$self->expand_relationship_columns(@_)
 	});
 	
-	
 	$self->include_colspec->expand_colspecs(sub {
 		$self->expand_related_required_fetch_colspecs(@_)
 	});
-	
-	
 	
 	
 	foreach my $col ($self->no_column_colspec->base_colspec->all_colspecs) {
@@ -125,6 +124,8 @@ sub init_relspecs {
 	$self->reorder_by_colspec_list($self->include_colspec->colspecs);
 }
 
+
+
 hashash 'column_data_alias';
 has 'no_column_colspec', is => 'ro', isa => 'ColSpec', coerce => 1, default => sub {[]};
 sub expand_relationship_columns {
@@ -133,7 +134,7 @@ sub expand_relationship_columns {
 	my @expanded = ();
 	
 	my $rel_cols = $self->get_Cnf('relationship_column_names') || return;
-
+	
 	my @no_cols = ();
 	foreach my $col (@columns) {
 		push @expanded, $col;
@@ -485,12 +486,8 @@ sub filter_updatable_columns {
 	my $self = shift;
 	my @columns = @_;
 	
-	
-	
-	# First filter by include_colspec:
-	#my @columns = $self->filter_include_columns(@_);
-	
-	
+	#exclude all multi relationship columns
+	@columns = grep {!$self->multi_rel_columns_indx->{$self->column_prefix . $_}} @columns;
 	
 	return $self->colspec_select_columns({
 		colspecs => $self->updatable_colspec->colspecs,
@@ -503,9 +500,13 @@ sub filter_updatable_columns {
 # accepts a list of column names and returns the names that match creatable_colspec
 sub filter_creatable_columns {
 	my $self = shift;
+	my @columns = @_;
+	
+	#exclude all multi relationship columns
+	@columns = grep {!$self->multi_rel_columns_indx->{$_}} @columns;
 
 	# First filter by include_colspec:
-	my @columns = $self->filter_include_columns(@_);
+	@columns = $self->filter_include_columns(@columns);
 	
 	return $self->colspec_select_columns({
 		colspecs => $self->creatable_colspec->colspecs,
@@ -1110,46 +1111,67 @@ around 'updated_column_order' => sub {
 	return @{$self->column_order};
 };
 
+
+hashash 'multi_rel_columns_indx', lazy => 1, default => sub {
+	my $self = shift;
+	my $list = $self->get_Cnf('multi_relationship_column_names') || [];
+	my %indx = map { $_ => $self->ResultClass->parse_relationship_cond(
+		$self->ResultClass->relationship_info($_)->{cond}
+	)} @$list;
+	return \%indx;
+};
+
 sub resolve_dbic_colname {
 	my $self = shift;
 	my $name = shift;
 	my $merge_join = shift;
-
-	my ($rel,$col,$join) = $self->resolve_dbic_rel_alias_by_column_name($name);
+	
+	my ($rel,$col,$join,$func) = $self->resolve_dbic_rel_alias_by_column_name($name);
 	$join = {} unless (defined $join);
 	%$merge_join = %{ merge($merge_join,$join) } if ($merge_join);
 	
-	return $rel . '.' . $col;
+	my $dbic_name = $rel . '.' . $col;
+	
+	if (defined $func and $rel eq 'me') {
+		my $cond_data = $self->multi_rel_columns_indx->{$col};
+		#We stored the parsed cond data for the multi relationship in the values of the
+		#index hash so we can use it here. All we need is any column in the related table
+		#to count on... So the foreign side of the key is one of them by definition, and
+		#being a key it is indexed and is probably small (i.e. its an efficient/convenient 
+		#column choice)
+		$dbic_name = { $func => $col . '.' . $cond_data->{foreign} } ;
+	}
+	return $dbic_name;
 }
 
 
-sub resolve_dbic_rel_alias_by_column_name {
+sub resolve_dbic_rel_alias_by_column_name  {
 	my $self = shift;
 	my $name = shift;
 	
+	
+	
 	my $rel = $self->column_name_relationship_map->{$name};
 	unless ($rel) {
-	
-		#scream($name,$self->custom_dbic_rel_aliases);
-	
-		# -- If this is a relationship column and the display field isn't already included:
-		#my $cust = $self->custom_dbic_rel_aliases->{$name};
-		#return @$cust if (defined $cust);
-		# --
 		
-		#scream_color(CYAN.BOLD,$name,$self->custom_dbic_rel_aliases);
+		my $join = $self->needed_join;
+		
+		# Special case for "multi" relationships... they return the related row count
+		my $func = $self->multi_rel_columns_indx->{$name} ? 'count' : undef;
+		%$join = %{ merge({ $name => {}},$join) } if ($func);
+		
 	
 		my $pre = $self->column_prefix;
 		$name =~ s/^${pre}//;
-		return ('me',$name,$self->needed_join);
+		return ('me',$name,$join,$func);
 	}
 	
 	
 
 	my $TableSpec = $self->related_TableSpec->{$rel};
-	my ($alias,$dbname,$join) = $TableSpec->resolve_dbic_rel_alias_by_column_name($name);
+	my ($alias,$dbname,$join,$func) = $TableSpec->resolve_dbic_rel_alias_by_column_name($name);
 	$alias = $rel if ($alias eq 'me');
-	return ($alias,$dbname,$join);
+	return ($alias,$dbname,$join,$func);
 }
 
 # This exists specifically to handle relationship columns:
@@ -1177,6 +1199,8 @@ sub get_relationship_column_cnf {
 	my $self = shift;
 	my $rel = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	return $self->get_multi_relationship_column_cnf($rel,\%opt) if ($self->multi_rel_columns_indx->{$rel});
 	
 	my $conf = \%opt;
 	my $info = $conf->{relationship_info} or die "relationship_info is required";
@@ -1278,6 +1302,69 @@ sub get_relationship_column_cnf {
 }
 
 
+sub get_multi_relationship_column_cnf {
+	my $self = shift;
+	my $rel = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	my $conf = \%opt;
+	
+	$conf->{editor} = '';
+	
+	my $title = $conf->{title_multi} ? $conf->{title_multi} : "Related '$rel' Rows";
+	
+	my $loadCfg = {
+		title => $title,
+		iconCls => $conf->{multiIconCls} ,
+		autoLoad => {
+			url => $conf->{open_url_multi},
+			params => {}
+		}
+	};
+	
+	my $div_open = 
+		'<div' . 
+		( $conf->{multiIconCls} ? ' class="with-icon ' . $conf->{multiIconCls} . '"' : '' ) . '><span>' .
+		$title .
+		'&nbsp;<span class="superscript-navy">';
+	
+	$conf->{renderer} = jsfunc(
+		'function(value, metaData, record, rowIndex, colIndex, store) {' .
+			"var disp = '$div_open' + value + '</span>';" .
+			
+			#'var key_key = ' .
+			'var key_val = record.data["' . $self->column_prefix . $conf->{relationship_cond_data}->{self} . '"];' .
+			
+			( # TODO: needs to be generalized better
+				$conf->{open_url_multi} ?
+					'if(key_val && value && value > 0) {' .
+						'var loadCfg = ' . JSON::PP::encode_json($loadCfg) . ';'.
+						
+						'var cond = {' .
+							'"me.' . $conf->{relationship_cond_data}->{foreign} . '": key_val' .
+						'};' .
+						
+						'loadCfg.autoLoad.params.base_params = Ext.encode({ resultset_condition: Ext.encode(cond) });' .
+						
+						'var href = "#loadcfg:" + Ext.urlEncode({data: Ext.encode(loadCfg)});' .
+						'disp += "&nbsp;" + Ext.ux.RapidApp.inlineLink(' .
+							'href,"open","magnify-link-tiny",null,"Open/view \'" + loadCfg.title + "\'"' .
+						');' .
+					'}'
+				:
+					''
+			) .
+			"disp += '</span></div>';" .
+			'return disp;' .
+		'}', $conf->{renderer}
+	);
+	
+	
+
+	$conf->{name} = $self->column_prefix . $rel;
+	
+	return %$conf;
+}
 
 
 sub get_or_create_rapidapp_module {

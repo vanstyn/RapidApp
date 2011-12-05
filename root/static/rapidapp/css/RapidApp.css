@@ -228,6 +228,13 @@ a.magnify-link-tiny:hover {
   filter:alpha(opacity=100); /* For IE8 and earlier */
 }
 
+.superscript-navy {
+  color: navy;
+  font-weight: lighter; 
+  position: relative;
+  top: -4px;
+}
+
 .x-multifilter-not {
 	font-weight: bolder !important;
 	font-size:145% !important;

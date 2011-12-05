@@ -186,6 +186,11 @@ sub default_TableSpec_cnf_columns {
 			# is it a rel col ?
 			if($self->has_relationship($col)) {
 				my $info = $self->relationship_info($col);
+				
+				$cols->{$col}->{relationship_info} = $info;
+				my $cond_data = $self->parse_relationship_cond($info->{cond});
+				$cols->{$col}->{relationship_cond_data} = $cond_data;
+				
 				if ($info->{attrs}->{accessor} eq 'single') {
 					
 					# Use TableSpec_related_get_set_conf instead of TableSpec_related_get_conf
@@ -198,18 +203,20 @@ sub default_TableSpec_cnf_columns {
 					#open/navigate to the related item
 					$cols->{$col}->{open_url} = $self->TableSpec_related_get_set_conf($col,'open_url');
 						
-					my $cond_data = $self->parse_relationship_cond($info->{cond});
+					
 					$cols->{$col}->{valueField} = $cond_data->{foreign} 
 						or die "couldn't get foreign col condition data for $col relationship!";
-					$cols->{$col}->{relationship_info} = $info;
+					
 					$cols->{$col}->{auto_editor_type} = 'combo';
 					$cols->{$col}->{keyField} = $cond_data->{self}
 						or die "couldn't get self col condition data for $col relationship!";
 					
 					next;
 				}
-				elsif($info->{attrs}->{accessor} eq 'single') {
-					#Future ....
+				elsif($info->{attrs}->{accessor} eq 'multi') {
+					$cols->{$col}->{title_multi} = $self->TableSpec_related_get_set_conf($col,'title_multi');
+					$cols->{$col}->{multiIconCls} = $self->TableSpec_related_get_set_conf($col,'multiIconCls');
+					$cols->{$col}->{open_url_multi} = $self->TableSpec_related_get_set_conf($col,'open_url_multi');
 				}
 			}
 			next;
@@ -250,7 +257,15 @@ sub TableSpec_valid_db_columns {
 	
 	$self->TableSpec_set_conf('relationship_column_names',\@rels);
 	
-	return uniq($self->columns,@rels);
+	
+	my @multi_rels = grep { 
+		$self->relationship_info($_)->{attrs}->{accessor} eq 'multi' 
+	} $self->relationships;
+	
+	$self->TableSpec_set_conf('multi_relationship_column_names',\@multi_rels);
+	
+	
+	return uniq($self->columns,@rels,@multi_rels);
 }
 
 sub default_TableSpec_cnf_column_order {
