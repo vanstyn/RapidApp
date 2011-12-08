@@ -1112,12 +1112,73 @@ around 'updated_column_order' => sub {
 };
 
 
+
+=pod
 hashash 'multi_rel_columns_indx', lazy => 1, default => sub {
 	my $self = shift;
 	my $list = $self->get_Cnf('multi_relationship_column_names') || [];
-	my %indx = map { $_ => $self->ResultClass->parse_relationship_cond(
-		$self->ResultClass->relationship_info($_)->{cond}
-	)} @$list;
+	
+
+	
+	my %indx = ();
+	foreach my $rel (@$list) {
+		my $rev_info = $self->ResultSource->reverse_relationship_info($rel) or next;
+		
+		my @hkeys = keys %$rev_info;
+		my $rev_rel = pop @hkeys;
+		my $rinfo = $self->ResultSource->related_source($rel)->reverse_relationship_info($rev_rel);
+		
+		my @hvalues = values %$rev_info;
+		
+		
+		my $info = $self->ResultSource->relationship_info($rel);
+		
+		scream_color(GREEN.BOLD,$rel,$rev_rel,$info,$rev_info,$rinfo);
+		
+		if(@hvalues > 1) { scream($rev_info); }
+		
+		
+		my $rev_cond = pop @hvalues or next;
+		my $cond = $rev_cond->{cond} or next;
+		$indx{$rel} = $self->ResultClass->parse_relationship_cond($cond);
+	}
+	
+	
+	#my %indx = map { $_ => $self->ResultClass->parse_relationship_cond(
+	#	$self->ResultSource->relationship_info($_)->{cond}
+	#)} @$list;
+	
+	
+	scream(\%indx);
+	
+	
+	return \%indx;
+};
+=cut
+
+
+hashash 'multi_rel_columns_indx', lazy => 1, default => sub {
+	my $self = shift;
+	my $list = $self->get_Cnf('multi_relationship_column_names') || [];
+	
+
+	
+	my %indx = ();
+	foreach my $rel (@$list) {
+		my $RelSource = $self->ResultSource->related_source($rel);
+		my @pkeys = $RelSource->primary_columns;
+		$indx{$rel} = pop @pkeys;
+	}
+	
+	
+	#my %indx = map { $_ => $self->ResultClass->parse_relationship_cond(
+	#	$self->ResultSource->relationship_info($_)->{cond}
+	#)} @$list;
+	
+	
+	#scream(\%indx);
+	
+	
 	return \%indx;
 };
 
@@ -1126,43 +1187,86 @@ sub resolve_dbic_colname {
 	my $name = shift;
 	my $merge_join = shift;
 	
-	my ($rel,$col,$join,$func) = $self->resolve_dbic_rel_alias_by_column_name($name);
+	#scream_color(GREEN,$name);
+	
+	my ($rel,$col,$join,$cond_data) = $self->resolve_dbic_rel_alias_by_column_name($name);
 	$join = {} unless (defined $join);
 	%$merge_join = %{ merge($merge_join,$join) } if ($merge_join);
 	
 	my $dbic_name = $rel . '.' . $col;
 	
-	if (defined $func and $rel eq 'me') {
-		my $cond_data = $self->multi_rel_columns_indx->{$col};
-		#We stored the parsed cond data for the multi relationship in the values of the
-		#index hash so we can use it here. All we need is any column in the related table
-		#to count on... So the foreign side of the key is one of them by definition, and
-		#being a key it is indexed and is probably small (i.e. its an efficient/convenient 
-		#column choice)
-		$dbic_name = { $func => $col . '.' . $cond_data->{foreign} } ;
+	if (defined $cond_data) {
+		#my $cond_data = $self->multi_rel_columns_indx->{$col};
+		
+		#TODO: this approach just won't work. Its a performance and structural problem
+		# need to do this with mungers outside of SQL, or find a way to do it with subqueries
+		$dbic_name = { 'count' => { 'distinct' => $col . '.' . $cond_data } };
 	}
 	return $dbic_name;
 }
+
+
 
 
 sub resolve_dbic_rel_alias_by_column_name  {
 	my $self = shift;
 	my $name = shift;
 	
-	
+	#scream($name,$self->multi_rel_columns_indx,$self->column_name_relationship_map) if($name eq 'process__process_steps' or $name eq 'process_steps');
 	
 	my $rel = $self->column_name_relationship_map->{$name};
 	unless ($rel) {
 		
 		my $join = $self->needed_join;
+		my $pre = $self->column_prefix;
+		$name =~ s/^${pre}//;
+		
+		# Special case for "multi" relationships... they return the related row count
+		my $cond_data = $self->multi_rel_columns_indx->{$name};
+		if ($cond_data) {
+			# Need to manually build the join to include the rel column:
+			my $rel_pre = $self->relspec_prefix;
+			$rel_pre .= '.' unless ($rel_pre eq '');
+			$rel_pre .= $name;
+			$join = $self->chain_to_hash(split(/\./,$rel_pre));
+			
+			return ('me',$name,$join,$cond_data)
+		}
+	
+		return ('me',$name,$join);
+	}
+	
+	my $TableSpec = $self->related_TableSpec->{$rel};
+	my ($alias,$dbname,$join,$cond_data) = $TableSpec->resolve_dbic_rel_alias_by_column_name($name);
+	$alias = $rel if ($alias eq 'me');
+	return ($alias,$dbname,$join,$cond_data);
+}
+
+
+
+sub resolve_dbic_rel_alias_by_column_name_old  {
+	my $self = shift;
+	my $name = shift;
+	
+	scream($name,$self->multi_rel_columns_indx,$self->column_name_relationship_map) if($name eq 'process__process_steps' or $name eq 'process_steps');
+	
+	my $rel = $self->column_name_relationship_map->{$name};
+	unless ($rel) {
+		
+		my $join = $self->needed_join;
+		my $pre = $self->column_prefix;
+		$name =~ s/^${pre}//;
 		
 		# Special case for "multi" relationships... they return the related row count
 		my $func = $self->multi_rel_columns_indx->{$name} ? 'count' : undef;
-		%$join = %{ merge({ $name => {}},$join) } if ($func);
-		
+		if ($func) {
+			# Need to manually build the join to include the rel column:
+			my $rel_pre = $self->relspec_prefix;
+			$rel_pre .= '.' unless ($rel_pre eq '');
+			$rel_pre .= $name;
+			$join = $self->chain_to_hash(split(/\./,$rel_pre));
+		}
 	
-		my $pre = $self->column_prefix;
-		$name =~ s/^${pre}//;
 		return ('me',$name,$join,$func);
 	}
 	
@@ -1311,7 +1415,7 @@ sub get_multi_relationship_column_cnf {
 	
 	$conf->{editor} = '';
 	
-	my $title = $conf->{title_multi} ? $conf->{title_multi} : "Related '$rel' Rows";
+	my $title = $conf->{title_multi} ? $conf->{title_multi} : 'Related "' . $rel . '" Rows';
 	
 	my $loadCfg = {
 		title => $title,
@@ -1328,9 +1432,13 @@ sub get_multi_relationship_column_cnf {
 		$title .
 		'&nbsp;<span class="superscript-navy">';
 	
+
+
+	
 	$conf->{renderer} = jsfunc(
 		'function(value, metaData, record, rowIndex, colIndex, store) {' .
-			"var disp = '$div_open' + value + '</span>';" .
+			"var div_open = '$div_open';" .
+			"var disp = div_open + value + '</span>';" .
 			
 			#'var key_key = ' .
 			'var key_val = record.data["' . $self->column_prefix . $conf->{relationship_cond_data}->{self} . '"];' .
@@ -1338,7 +1446,7 @@ sub get_multi_relationship_column_cnf {
 			( # TODO: needs to be generalized better
 				$conf->{open_url_multi} ?
 					'if(key_val && value && value > 0) {' .
-						'var loadCfg = ' . JSON::PP::encode_json($loadCfg) . ';'.
+						'var loadCfg = ' . JSON::PP::encode_json($loadCfg) . ';' .
 						
 						'var cond = {' .
 							'"me.' . $conf->{relationship_cond_data}->{foreign} . '": key_val' .
