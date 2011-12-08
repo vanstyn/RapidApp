@@ -1432,8 +1432,7 @@ sub get_multi_relationship_column_cnf {
 		$title .
 		'&nbsp;<span class="superscript-navy">';
 	
-
-
+	
 	
 	$conf->{renderer} = jsfunc(
 		'function(value, metaData, record, rowIndex, colIndex, store) {' .
@@ -1448,11 +1447,18 @@ sub get_multi_relationship_column_cnf {
 					'if(key_val && value && value > 0) {' .
 						'var loadCfg = ' . JSON::PP::encode_json($loadCfg) . ';' .
 						
-						'var cond = {' .
-							'"me.' . $conf->{relationship_cond_data}->{foreign} . '": key_val' .
-						'};' .
+						'var join_name = "' . $conf->{open_url_multi_rs_join_name} . '";' .
 						
-						'loadCfg.autoLoad.params.base_params = Ext.encode({ resultset_condition: Ext.encode(cond) });' .
+						'var cond = {};' .
+						'cond[join_name + ".' . $conf->{relationship_cond_data}->{foreign} . '"] = key_val;' .
+						
+						'var attr = {};' .
+						'if(join_name != "me"){ attr["join"] = join_name; }' .
+						
+						'loadCfg.autoLoad.params.base_params = Ext.encode({' .
+							'resultset_condition: Ext.encode(cond),' .
+							'resultset_attr: Ext.encode(attr)' .
+						'});' .
 						
 						'var href = "#loadcfg:" + Ext.urlEncode({data: Ext.encode(loadCfg)});' .
 						'disp += "&nbsp;" + Ext.ux.RapidApp.inlineLink(' .

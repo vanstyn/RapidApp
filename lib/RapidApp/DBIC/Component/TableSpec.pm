@@ -217,6 +217,9 @@ sub default_TableSpec_cnf_columns {
 					$cols->{$col}->{title_multi} = $self->TableSpec_related_get_set_conf($col,'title_multi');
 					$cols->{$col}->{multiIconCls} = $self->TableSpec_related_get_set_conf($col,'multiIconCls');
 					$cols->{$col}->{open_url_multi} = $self->TableSpec_related_get_set_conf($col,'open_url_multi');
+					
+					$cols->{$col}->{open_url_multi_rs_join_name} = 
+						$self->TableSpec_related_get_set_conf($col,'open_url_multi_rs_join_name') || 'me';
 				}
 			}
 			next;
