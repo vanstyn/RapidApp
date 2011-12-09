@@ -28,6 +28,8 @@ use RapidApp::Include qw(sugar perlutil);
 
 has 'ResultSource' => ( is => 'ro', required => 1 );
 
+has '+single_record_fetch', default => 1;
+
 
 #has '+DataStore_build_params' => ( default => sub {{
 #	store_autoLoad => 1,
@@ -55,8 +57,6 @@ sub BUILD {
 		autoScroll => \1,
 		frame => \1,
 	);
-	
-	scream('BUILD!!');
 	
 	$self->init_multi_rel_modules;
 	
@@ -172,7 +172,7 @@ sub full_property_grid {
 	my @items = $self->TableSpec_property_grids($self->TableSpec);
 	shift @items;
 	
-	scream(scalar @items);
+	#scream(scalar @items);
 
 	return @items;
 }

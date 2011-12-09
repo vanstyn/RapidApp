@@ -31,6 +31,8 @@ default => sub {
 	return $self->ResultSource->schema->class($source_name);
 };
 
+has 'schema', is => 'ro', lazy => 1, default => sub { (shift)->ResultSource->schema; };
+
 has 'data_type_profiles' => ( is => 'ro', isa => 'HashRef', default => sub {{
 	text 			=> [ 'bigtext' ],
 	blob 			=> [ 'bigtext' ],
@@ -1113,13 +1115,13 @@ around 'updated_column_order' => sub {
 
 
 
-=pod
+
 hashash 'multi_rel_columns_indx', lazy => 1, default => sub {
 	my $self = shift;
 	my $list = $self->get_Cnf('multi_relationship_column_names') || [];
 	
 
-	
+=pod
 	my %indx = ();
 	foreach my $rel (@$list) {
 		my $rev_info = $self->ResultSource->reverse_relationship_info($rel) or next;
@@ -1142,22 +1144,28 @@ hashash 'multi_rel_columns_indx', lazy => 1, default => sub {
 		my $cond = $rev_cond->{cond} or next;
 		$indx{$rel} = $self->ResultClass->parse_relationship_cond($cond);
 	}
+=cut
+	
+	my %indx = map { $_ => 
+		{ %{$self->ResultClass->parse_relationship_cond(
+				$self->ResultSource->relationship_info($_)->{cond}
+			)}, 
+			info => $self->ResultSource->relationship_info($_),
+			rev_relname => (keys %{$self->ResultSource->reverse_relationship_info($_)})[0],
+			relname => $_
+		} 
+	} @$list;
 	
 	
-	#my %indx = map { $_ => $self->ResultClass->parse_relationship_cond(
-	#	$self->ResultSource->relationship_info($_)->{cond}
-	#)} @$list;
-	
-	
-	scream(\%indx);
+	#scream(\%indx);
 	
 	
 	return \%indx;
 };
-=cut
 
 
-hashash 'multi_rel_columns_indx', lazy => 1, default => sub {
+
+hashash 'multi_rel_columns_indx1', lazy => 1, default => sub {
 	my $self = shift;
 	my $list = $self->get_Cnf('multi_relationship_column_names') || [];
 	
@@ -1196,11 +1204,40 @@ sub resolve_dbic_colname {
 	my $dbic_name = $rel . '.' . $col;
 	
 	if (defined $cond_data) {
+	
+	
+	
 		#my $cond_data = $self->multi_rel_columns_indx->{$col};
 		
 		#TODO: this approach just won't work. Its a performance and structural problem
 		# need to do this with mungers outside of SQL, or find a way to do it with subqueries
-		$dbic_name = { 'count' => { 'distinct' => $col . '.' . $cond_data } };
+		
+		# Method 1:
+		#$dbic_name = { 'count' => { 'distinct' => $col . '.' . $cond_data->{self} } };
+		
+		# Method 2:
+		my $source = $self->schema->source($cond_data->{info}->{source});
+		$dbic_name = \[ 
+			'(SELECT(COUNT(*)) from ' . $source->from . 
+				' where ' . $cond_data->{foreign} . ' = ' . $rel . '.' . $cond_data->{self} . ')'
+		];
+
+	
+	
+	
+		#$dbic_name = { select => { count => $col . '.' . $cond_data->{self} }, { where => { engineer_user_id => 3 } } };
+	
+		#$dbic_name = \[ 'SELECT(COUNT(DISTINCT(`' . $col . '`.`' . $cond_data->{self} . '`)))'];
+
+		
+		#my $rs = $self->schema->resultset($cond_data->{info}->{source});
+		#$rs = $rs->search_rs({ $cond_data->{foreign} => $cond_data->{relname} . '.' . $cond_data->{self} },{ join => $cond_data->{relname} });
+		
+		
+		#$rs = $rs->search_rs({ $cond_data->{foreign} => $cond_data->{rev_relname} . '.' . $cond_data->{self} },{ join => $cond_data->{rev_relname} });
+		#$rs = $rs->search_rs({ $cond_data->{foreign} => $rel . '.' . $cond_data->{self} });
+		#$dbic_name = $rs->count_rs->as_query;
+
 	}
 	return $dbic_name;
 }

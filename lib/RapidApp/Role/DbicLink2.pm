@@ -14,6 +14,10 @@ has 'get_record_display' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default =
 	return $self->TableSpec->get_Cnf('row_display');
 });
 
+# Useful for pages that display only the content of a single database record at a time.
+# When set to true, rows are limited to "1" in the ResultSet in read_records and the
+# pager is not used to perform the second query to get the total count
+has 'single_record_fetch', is => 'ro', isa => 'Bool', default => 0;
 
 
 # Colspec attrs can be specified as simple arrayrefs
@@ -260,6 +264,8 @@ sub read_records {
 	
 	#scream_color(BOLD.RED,$Rs->{attrs});
 	
+	$Rs = $Rs->search_rs({},{rows => 1}) if ($self->single_record_fetch);
+	
 	# don't use Row objects
 	$Rs = $Rs->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
 	
@@ -269,10 +275,12 @@ sub read_records {
 	foreach my $row (@$rows) {
 		$row->{$self->record_pk} = $self->generate_record_pk_value($row);
 	}
+	
+	my $total = $self->single_record_fetch ? 1 : $Rs->pager->total_entries;
 
 	return {
 		rows    => $rows,
-		results => $Rs->pager->total_entries,
+		results => $total,
 	};
 }
 
@@ -307,15 +315,17 @@ sub chain_Rs_req_base_Attr {
 	for my $col (@$columns) {
 		my $dbic_name = $self->TableSpec->resolve_dbic_colname($col,$attr->{join});
 		
-		my ($alias,$field) = split(/\./,$dbic_name);
-		my $prefix = $col;
-		
-		$prefix =~ s/${field}$//;
-		$used_aliases->{$alias} = {} unless ($used_aliases->{$alias});
-		$used_aliases->{$alias}->{$prefix}++ unless($alias eq 'me');
-		my $count = scalar(keys %{$used_aliases->{$alias}});
-		# automatically set alias for duplicate joins:
-		$dbic_name = $alias . '_' . $count . '.' . $field if($count > 1);
+		unless (ref $dbic_name) {
+			my ($alias,$field) = split(/\./,$dbic_name);
+			my $prefix = $col;
+			
+			$prefix =~ s/${field}$//;
+			$used_aliases->{$alias} = {} unless ($used_aliases->{$alias});
+			$used_aliases->{$alias}->{$prefix}++ unless($alias eq 'me');
+			my $count = scalar(keys %{$used_aliases->{$alias}});
+			# automatically set alias for duplicate joins:
+			$dbic_name = $alias . '_' . $count . '.' . $field if($count > 1);
+		}
 		
 		$dbic_name_map->{$col} = $dbic_name;
 		
