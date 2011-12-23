@@ -1244,7 +1244,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	init: function(cmp) {
 		this.cmp = cmp;
 		cmp.datastore_plus_plugin = this;
-		
+
 		delete cmp.store.tiedChildStores;
 		
 		// bubbles up the parent components and records us as a tied child store:
@@ -1294,7 +1294,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			'close_unsaved_confirm',
 			'persist_all_immediately',
 			'persist_immediately',
-			'store_add_initData'
+			'store_add_initData',
+			'use_add_form'
 		]);
 		
 		this.exclude_btn_map = {};
@@ -1396,6 +1397,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	store_button_cnf: {},
 	store_exclude_buttons: [],
 	exclude_btn_map: {},
+	use_add_form: false,
 		
 	initAdditionalStoreMethods: function(store,plugin) {
 		
@@ -1502,12 +1504,41 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			return store.getAt(index);
 		};
 		
+		store.prepareNewRecord = function(initData) {
+			return new store.recordType(
+				Ext.apply({},initData || plugin.store_add_initData)
+			);
+		};
+		
 		store.addRecord = function(initData) {
-			var newRec = new store.recordType(Ext.apply({},initData || plugin.store_add_initData));
+			var newRec = store.prepareNewRecord(initData);
 			var ret = store.add(newRec);
 			if(plugin.persist_immediately.create) { store.saveIfPersist(); }
 			return ret;
 		};
+		
+		store.addRecordForm = function(initData) {
+			var newRec = store.prepareNewRecord(initData);
+			
+			var win;
+			var close_handler = function(btn) { win.close(); };
+			
+			var formpanel = plugin.getAddFormPanel(newRec,close_handler);
+			
+			win = new Ext.Window({
+				title: 'Add Record',
+				layout: 'fit',
+				width: 700,
+				height: 500,
+				closable: true,
+				modal: true,
+				items: formpanel
+			});
+			
+			return win.show();
+		};
+		
+		
 		
 		store.removeRecord = function(Record) {
 			var ret = store.removeOrig(Record);
@@ -1630,7 +1661,12 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					handler: function(btn) {
 						var store = cmp.store;
 						if(store.proxy.getConnection().isLoading()) { return; }
-						store.addRecord();
+						if(cmp.use_add_form) {
+							store.addRecordForm();
+						}
+						else {
+							store.addRecord();
+						}
 					}
 				},cnf || {}),showtext);
 					
@@ -1884,7 +1920,74 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		});
 		
 		return false;
+	},
+	
+	// --- vv --- Code for an optional form for adding records
+	addFormItems: null,
+	getAddFormItems: function() {
+		if(!Ext.isArray(this.addFormItems)) {
+
+			var items = [];
+			
+			Ext.each(this.cmp.initialConfig.columns,function(col){
+				if(!Ext.isObject(col.editor)) { return; }
+				if(col.no_column) { return; }
+				
+				var field = Ext.apply({},col.editor);
+				field.name = col.name || col.dataIndex;
+				field.fieldLabel = col.header || field.name;
+				items.push(field);
+			},this);
+		
+			this.addFormItems = items;
+		}
+		return this.addFormItems; 
+	},
+	getAddFormPanel: function(newRec,close_handler) {
+	
+		close_handler = close_handler || Ext.emptyFn;
+		
+		var store = this.cmp.store;
+		var plugin = this;
+		
+		var save_handler = function(btn) {
+			var form = btn.ownerCt.ownerCt.getForm();
+			form.updateRecord(newRec);
+			var ret = store.add(newRec);
+			if(plugin.persist_immediately.create) { store.saveIfPersist(); }
+			close_handler(btn);
+		};
+		
+		var cancel_handler = function(btn) {
+			close_handler(btn);
+		};
+		
+		var formpanel = {
+			xtype: 'form',
+			frame: true,
+			items: this.getAddFormItems(),
+			buttons: [
+				{
+					text: 'Save',
+					iconCls: 'icon-save',
+					handler: save_handler
+				},
+				{
+					text: 'Cancel',
+					handler: cancel_handler
+				}
+			],
+			listeners: {
+				beforerender: function(){
+					var form = this.getForm();
+					form.loadRecord(newRec);
+				}
+			}
+		};
+		
+		return formpanel;
 	}
+	// --- ^^ ---
 
 });
 Ext.preg('datastore-plus',Ext.ux.RapidApp.Plugin.CmpDataStorePlus);
