@@ -1517,7 +1517,18 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			return ret;
 		};
 		
+		
+		
 		store.addRecordForm = function(initData) {
+			if(plugin.use_add_form == 'tab') {
+				return store.addRecordFormTab(initData);
+			}
+			else {
+				return store.addRecordFormWindow(initData);
+			}
+		};
+		
+		store.addRecordFormWindow = function(initData) {
 			var newRec = store.prepareNewRecord(initData);
 			
 			var win;
@@ -1525,8 +1536,12 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			
 			var formpanel = plugin.getAddFormPanel(newRec,close_handler);
 			
+			var title = 'Add Record';
+			if(plugin.store_button_cnf.add && plugin.store_button_cnf.add.text) {
+				title = plugin.store_button_cnf.add.text;
+			}
 			win = new Ext.Window({
-				title: 'Add Record',
+				title: title,
 				layout: 'fit',
 				width: 700,
 				height: 500,
@@ -1538,6 +1553,32 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			return win.show();
 		};
 		
+		store.addRecordFormTab = function(initData) {
+			var loadTarget = Ext.getCmp('main-load-target');
+			
+			// Fall back to Window if the load target can't be found for a Tab:
+			if(!loadTarget) { return store.addRecordFormWindow(initData); }
+			
+			var newRec = store.prepareNewRecord(initData);
+			
+			var tab;
+			var close_handler = function(btn) { loadTarget.remove(tab); };
+			
+			var formpanel = plugin.getAddFormPanel(newRec,close_handler);
+			
+			var title = 'Add Record';
+			if(plugin.store_button_cnf.add && plugin.store_button_cnf.add.text) {
+				title = plugin.store_button_cnf.add.text;
+			}
+			tab = loadTarget.add({
+				title: title,
+				layout: 'fit',
+				closable: true,
+				items: formpanel
+			});
+			
+			loadTarget.activate(tab);
+		};
 		
 		
 		store.removeRecord = function(Record) {
@@ -1965,7 +2006,12 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		var formpanel = {
 			xtype: 'form',
 			frame: true,
+			labelAlign: 'right',
+			labelWidth: 125,
+			bodyStyle: 'padding: 25px 10px 5px 5px;',
 			items: this.getAddFormItems(),
+			autoScroll: true,
+			buttonAlign: 'center',
 			buttons: [
 				{
 					text: 'Save',
