@@ -1231,6 +1231,56 @@ Ext.ux.RapidApp.Plugin.TitleCollapsePlus = Ext.extend(Ext.util.Observable,{
 });
 Ext.preg('titlecollapseplus',Ext.ux.RapidApp.Plugin.TitleCollapsePlus);
 
+
+
+// Automatically expands label width according to the longest fieldLabel
+// in a form panel's items, if needed
+Ext.ux.RapidApp.Plugin.DynamicFormLabelWidth = Ext.extend(Ext.util.Observable,{
+	init: function(cmp) {
+		this.cmp = cmp;
+		if(!cmp.labelWidth) { return; } // <-- a labelWidth must be set for plugin to be active
+		var longField = this.getLongestField();
+		if(!longField){ return; }
+		
+		Ext.applyIf(longField,this.cmp.defaults || {});
+		longField.hidden = true;
+		
+		var label = new Ext.form.Label({
+			renderTo: document.body,
+			cls: 'x-hide-offsets',
+			text: 'I',
+			hidden: true,
+			style: longField.labelStyle || ''
+		});
+		label.show();
+		var metrics = Ext.util.TextMetrics.createInstance(label.getEl());
+		var calcWidth = metrics.getWidth(longField.fieldLabel) + 5;
+		label.destroy();
+		
+		if(calcWidth > cmp.labelWidth) {
+			cmp.labelWidth = calcWidth;
+		}
+	},
+	
+	getLongestField: function() {
+		var longField = null;
+		var longLen = 0;
+		this.cmp.items.each(function(item){
+			if(!Ext.isString(item.fieldLabel)) { return; }
+			var curLen = item.fieldLabel.length;
+			if(curLen > longLen) {
+				longLen = curLen;
+				longField = item;
+			}
+		},this);
+		if(!longField){ return null; }
+		return Ext.apply({},longField); //<-- return a copy instead of original
+	}
+});
+Ext.preg('dynamic-label-width',Ext.ux.RapidApp.Plugin.DynamicFormLabelWidth);
+
+
+
 /*
  Ext.ux.RapidApp.Plugin.CmpDataStorePlus
  2011-11-02 by HV
@@ -1984,9 +2034,10 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		}
 		return this.addFormItems; 
 	},
-	getAddFormPanel: function(newRec,close_handler) {
+	getAddFormPanel: function(newRec,close_handler,cnf) {
 	
 		close_handler = close_handler || Ext.emptyFn;
+		cnf = cnf || {};
 		
 		var store = this.cmp.store;
 		var plugin = this;
@@ -2003,13 +2054,18 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			close_handler(btn);
 		};
 		
-		var formpanel = {
+		var formpanel = Ext.apply({
 			xtype: 'form',
 			frame: true,
 			labelAlign: 'right',
-			labelWidth: 125,
+			labelWidth: 70,
 			bodyStyle: 'padding: 25px 10px 5px 5px;',
+			defaults: {
+				xtype: 'textfield',
+				width: 250,
+			},
 			items: this.getAddFormItems(),
+			plugins: ['dynamic-label-width'],
 			autoScroll: true,
 			buttonAlign: 'center',
 			buttons: [
@@ -2029,7 +2085,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					form.loadRecord(newRec);
 				}
 			}
-		};
+		},cnf);
 		
 		return formpanel;
 	}
