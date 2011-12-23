@@ -2023,13 +2023,19 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			Ext.each(this.cmp.initialConfig.columns,function(col){
 				if(!Ext.isObject(col.editor)) { return; }
 				if(col.no_column) { return; }
-				
+			
 				var field = Ext.apply({},col.editor);
+					
+				// Important: autoDestroy must be false on teh store or else store-driven
+				// components (i.e. combos) will be broken as soon as the form is closed 
+				// the first time
+				if(field.store) { field.store.autoDestroy = false; }
+				
 				field.name = col.name || col.dataIndex;
 				field.fieldLabel = col.header || field.name;
 				items.push(field);
 			},this);
-		
+
 			this.addFormItems = items;
 		}
 		return this.addFormItems; 
