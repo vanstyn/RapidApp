@@ -2062,17 +2062,20 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			bodyStyle: 'padding: 25px 10px 5px 5px;',
 			defaults: {
 				xtype: 'textfield',
-				width: 250,
+				width: 250
 			},
 			items: this.getAddFormItems(),
 			plugins: ['dynamic-label-width'],
 			autoScroll: true,
+			//monitorValid: true,
 			buttonAlign: 'center',
+			minButtonWidth: 100,
 			buttons: [
 				{
 					text: 'Save',
 					iconCls: 'icon-save',
-					handler: save_handler
+					handler: save_handler,
+					//formBind: true
 				},
 				{
 					text: 'Cancel',
