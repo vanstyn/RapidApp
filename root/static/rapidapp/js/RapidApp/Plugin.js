@@ -1386,6 +1386,9 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			this.cmp.on('render',this.insertStoreButtonsTbar,this);
 		}
 		
+		// Only applies to editor grids; no effect/impact on other components
+		// without the beforeedit/afteredit events
+		this.cmp.on('beforeedit',this.beforeCellEdit,this);
 		this.cmp.on('afteredit',this.cmp.store.saveIfPersist,this);
 
 		if(Ext.isFunction(this.cmp.getSelectionModel)) {
@@ -1720,6 +1723,29 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		});
 	},
 	
+	// Only applies to Editor Grids implementing the 'beforeedit' event
+	beforeCellEdit: function(e) {
+		var column = e.grid.getColumnModel().getColumnById(e.column);
+		
+		// Adding a new record (phantom):
+		if(e.record.phantom) {
+			// Prevent editing if allow_add is set to false:
+			if(typeof column.allow_add !== "undefined" && !column.allow_add) {
+				e.cancel = true; //<-- redundant with return false but set for good measure
+				return false;
+			}
+		}
+		// Editing an existing record:
+		else {
+			// Prevent editing if allow_edit is set to false:
+			if(typeof column.allow_edit !== "undefined" && !column.allow_edit) {
+				e.cancel = true; //<-- redundant with return false but set for good measure
+				return false;
+			}
+		}
+		
+	},
+	
 	getStoreButton: function(name,showtext) {
 		
 		if(this.exclude_btn_map[name]) { return; }
@@ -2020,17 +2046,28 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 
 			var items = [];
 			
-			Ext.each(this.cmp.initialConfig.columns,function(col){
+			var column_list = this.cmp.initialConfig.columns;
+			
+			Ext.each(column_list,function(col){
+				// If there is no editor then there is no field to display.
+				// Because the backend automatically creates editors, we do *not*
+				// setup a default editor. We trust/rely on the backend. If it
+				// wanted us to have an editor, it would have provided one.
 				if(!Ext.isObject(col.editor)) { return; }
-				if(col.no_column) { return; }
+				
+				// Skip columns with 'no_column' set to true except if 'allow_add' is true:
+				if(col.no_column && !col.allow_add) { return; }
+				
+				// Skip if allow_add is defined but set to false:
+				if(typeof col.allow_add !== "undefined" && !col.allow_add) { return; }
 			
 				var field = Ext.apply({},col.editor);
 					
-				// Important: autoDestroy must be false on teh store or else store-driven
+				// Important: autoDestroy must be false on the store or else store-driven
 				// components (i.e. combos) will be broken as soon as the form is closed 
 				// the first time
 				if(field.store) { field.store.autoDestroy = false; }
-				
+
 				field.name = col.name || col.dataIndex;
 				field.fieldLabel = col.header || field.name;
 				items.push(field);

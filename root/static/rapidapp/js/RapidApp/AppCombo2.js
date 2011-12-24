@@ -143,4 +143,31 @@ Ext.ux.RapidApp.AppCombo2.IconCombo = Ext.extend(Ext.ux.RapidApp.AppCombo2.CssCo
 });
 Ext.reg('icon-combo',Ext.ux.RapidApp.AppCombo2.IconCombo);
 
-
+// TODO: remove Ext.ux.MultiFilter.StaticCombo and reconfigure MultiFilter
+// to use this here as a general purpose component
+Ext.ux.RapidApp.StaticCombo = Ext.extend(Ext.form.ComboBox,{
+	mode: 'local',
+	triggerAction: 'all',
+	editable: false,
+	value_list: false, //<-- set value_list to an array of the static values for the combo dropdown
+	valueField: 'valueField',
+	displayField: 'displayField',
+	initComponent: function() {
+		if (this.value_list) {
+			var data = [];
+			Ext.each(this.value_list,function(item,index){
+				//data.push([index,item]);
+				data.push([item,item]); //<-- valueField and displayField are identical
+			});
+			this.store = new Ext.data.ArrayStore({
+				fields: [
+					this.valueField,
+					this.displayField
+				],
+				data: data
+			});
+		}
+		Ext.ux.RapidApp.StaticCombo.superclass.initComponent.apply(this,arguments);
+	}
+});
+Ext.reg('static-combo',Ext.ux.RapidApp.StaticCombo);

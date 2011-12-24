@@ -4300,13 +4300,27 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 			columns = Ext.decode(this.bindStore.baseParams.columns);
 		}
 		
-		// prune out 'no_column' fields:
+		// prune/modify fields according to 'no_column'/'allow_edit'/'allow_view' :
 		var new_fields = [];
 		Ext.each(this.fields,function(field) {
 			field.id = field.dataIndex;
 			columns.push(field.dataIndex);
 			
-			if(field.no_column) { return; }
+			// prune out 'no_column' fields without either 'allow_edit' or 'allow_view':
+			if(field.no_column && !field.allow_edit && !field.allow_view) { return; }
+			
+			// prune out fields with 'allow_view' specificially set to false:
+			if(typeof field.allow_view !== "undefined" && !field.allow_view) { return; }
+			
+			if(typeof field.allow_edit !== "undefined" && !field.allow_edit) { 
+				// prune out fields with 'allow_edit' by itself (without aithout allow_view)
+				// specificially set to false:
+				if(!field.allow_view) { return; }
+				
+				// Otherwise, remove the editor (if needed):
+				if(field.editor) { delete field.editor; }
+			}
+			
 			new_fields.push(field);
 		},this);
 		this.fields = new_fields;
