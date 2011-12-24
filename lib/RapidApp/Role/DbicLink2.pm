@@ -723,6 +723,29 @@ sub _dbiclink_update_records {
 	};
 }
 
+# Works with the hashtree supplied to create_records to recursively 
+# remap columns according to supplied TableSpec column_data_aliases
+sub hashtree_col_alias_map_deep {
+	my $self = shift;
+	my $hash = shift;
+	my $TableSpec = shift;
+	
+	# Recursive:
+	foreach my $rel (grep { ref($hash->{$_}) eq 'HASH' } keys %$hash) {
+		my $rel_TableSpec = $TableSpec->related_TableSpec->{$rel} or next;
+		$hash->{$rel} = $self->hashtree_col_alias_map_deep($hash->{$rel},$rel_TableSpec);
+	}
+	
+	# -- Need to do a map and a grep here; map to remap the values, and grep to prevent
+	# the new values from being clobbered by identical key names from the original data:
+	my $alias = $TableSpec->column_data_alias;
+	my %revalias = map {$_=>1} grep {!exists $hash->{$_}} values %$alias;
+	%$hash = map { $alias->{$_} ? $alias->{$_} : $_ => $hash->{$_} } grep { !$revalias{$_} } keys %$hash;
+	# --
+	
+	return $hash;
+}
+
 
 # Gets programatically added as a method named 'create_records' (see BUILD modifier method above)
 sub _dbiclink_create_records {
@@ -742,29 +765,12 @@ sub _dbiclink_create_records {
 	try {
 		$self->ResultSource->schema->txn_do(sub {
 			foreach my $data (@$arr) {
-			
-			
-				#### TODO: MAKE THIS WORK RECURSIVELY!
-				
-				# Copied from update, which is recursive:
-
-				# -- Need to do a map and a grep here; map to remap the values, and grep to prevent
-				# the new values from being clobbered by identical key names from the original data:
-				my $alias = $self->TableSpec->column_data_alias;
-				my %revalias = map {$_=>1} grep {!exists $data->{$_}} values %$alias;
-				%$data = map { $alias->{$_} ? $alias->{$_} : $_ => $data->{$_} } grep { !$revalias{$_} } keys %$data;
-				# --
-				
-				####
-			
-			
 				
 				# Apply optional base/hard coded data:
 				%$data = ( %$data, %{$self->_CreateData} );
 				my @columns = uniq(keys %$data,@req_columns);
 				@columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } @columns;
 				@columns = $self->TableSpec->filter_creatable_columns(@columns);
-				
 				
 				my $relspecs = $self->TableSpec->columns_to_relspec_map(@columns);
 			
@@ -778,6 +784,10 @@ sub _dbiclink_create_records {
 				
 				my $create = delete $create_hash->{''} || {};
 				$create = { %$create_hash, %$create };
+				
+				# -- Recursively remap column_data_alias:
+				$create = $self->hashtree_col_alias_map_deep($create,$self->TableSpec);
+				# --
 				
 				my $msg = 'CREATE -> ' . ref($Rs) . "\n";
 				if (keys %$create > 0){ 
