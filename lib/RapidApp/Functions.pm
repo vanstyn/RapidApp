@@ -10,7 +10,7 @@ use RapidApp::RootModule;
 use Clone qw(clone);
 use JSON::PP qw(encode_json);
 use Try::Tiny;
-
+use Time::HiRes qw(gettimeofday tv_interval);
 
 
 sub scream {
@@ -248,6 +248,7 @@ sub func_debug_around {
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	%opt = (
+		time				=> 1,
 		verbose			=> 0,
 		verbose_in		=> undef,
 		verbose_out		=> undef,
@@ -317,6 +318,9 @@ sub func_debug_around {
 					if($has_refs && $opt{verbose_in});
 		};
 		
+		# before timestamp:
+		my $t0 = [gettimeofday];
+		
 		my $res;
 		my @res;
 		my @res_copy = ();
@@ -333,6 +337,9 @@ sub func_debug_around {
 			push @res_copy,$res;
 		}
 		
+		# after timestamp, calculate elapsed (to the millisecond):
+		my $elapsed = sprintf("%.3f", tv_interval($t0) );
+		
 		local $_ = $self;
 		if(!$opt{arg_ignore}->(@args) && !$opt{return_ignore}->(@res_copy)) {
 			
@@ -340,6 +347,7 @@ sub func_debug_around {
 			
 			my $result = $opt{ret_color} . $opt{dump_func}->($opt{verbose_out},@res_copy) . CLEAR;
 			$result = "\n" . ON_WHITE.BOLD . "$spaces Returned: " . $result . "\n" if ($opt{verbose_out});
+			$result .= ' ' . ON_WHITE.RED . '[' . $elapsed . 's]' . CLEAR if ($opt{time});
 			print STDERR $result . "\n";
 			
 		}
