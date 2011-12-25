@@ -693,15 +693,23 @@ sub _dbiclink_update_records {
 					%update = map { $alias->{$_} ? $alias->{$_} : $_ => $update{$_} } grep { !$revalias{$_} } keys %update;
 					# --
 					
-					my $change = diff(\%current, \%update);
-					# why do I need to do this?:
-					foreach my $k (keys %$change) {
-						my $v1 = $current{$k};
-						my $v2 = $change->{$k};
-						delete $change->{$k} if (! defined $v1 and ! defined $v2);
-						next unless (defined $v1 and defined $v2);
-						delete $change->{$k} if ($v1 eq $v2);
+					my $change = {};
+					foreach my $col (keys %update) {
+						next unless (exists $current{$col});
+						next if (! defined $update{$col} and ! defined $current{$col});
+						next if ($update{$col} eq $current{$col});
+						$change->{$col} = $update{$col};
 					}
+					
+					#my $change = diff(\%current, \%update);
+					## why do I need to do this?:
+					#foreach my $k (keys %$change) {
+					#	my $v1 = $current{$k};
+					#	my $v2 = $change->{$k};
+					#	delete $change->{$k} if (! defined $v1 and ! defined $v2);
+					#	next unless (defined $v1 and defined $v2);
+					#	delete $change->{$k} if ($v1 eq $v2);
+					#}
 					
 					my $msg = 'UPDATE -> ' . $self->get_Row_Rs_label($UpdRow) . "\n";
 					if (keys %$change > 0){ 
