@@ -625,6 +625,10 @@ sub _dbiclink_update_records {
 	my $self = shift;
 	my $params = shift;
 	
+	my $limit_columns;
+	my $declared_columns = $self->param_decodeIf($self->c->req->params->{columns});
+	$limit_columns = { map {$_=>1} @$declared_columns } if ($declared_columns);
+	
 	my $arr = $params;
 	$arr = [ $params ] if (ref($params) eq 'HASH');
 	
@@ -639,6 +643,18 @@ sub _dbiclink_update_records {
 				my $pkVal= $data->{$self->record_pk};
 				defined $pkVal or die ref($self)."->update_records: Record is missing primary key '".$self->record_pk."'";
 				my $BaseRow = $Rs->search($self->record_pk_cond($pkVal))->next or die usererr "Failed to find row by record_pk: $pkVal";
+				
+				# -- Filter out the supplied data packet according to the supplied 'columns' parameter
+				# if the client has supplied a column list, filter out fieldnames that aren't in it.
+				# The Ext store currently sends all of its configured store fields, including ones it never 
+				# loaded from the database. If we don't do this filtering, those fields will appear to have
+				# changed.
+				#
+				# FIXME: handle this on the client/js side so these fields aren't submitted at all
+				if($limit_columns) {
+					%$data = map { $_ => $data->{$_} } grep { $limit_columns->{$_} } keys %$data;
+				}
+				# --
 				
 				my @columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } keys %$data;
 				
