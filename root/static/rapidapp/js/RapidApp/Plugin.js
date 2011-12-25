@@ -1345,7 +1345,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			'persist_all_immediately',
 			'persist_immediately',
 			'store_add_initData',
-			'use_add_form'
+			'use_add_form',
+			'autoload_added_record'
 		]);
 		
 		this.exclude_btn_map = {};
@@ -1440,6 +1441,27 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				return view.renderRowsOrig(startRow,endRow);
 			};
 		},this);
+		
+		// Automatically tries to load newly created (from backend) records
+		// into loadTarget. This is roughly the same as a double-click on a
+		// grid row:
+		if(this.autoload_added_record) {
+			cmp.store.on('write',function(store,action,result,res,Record){
+				if(action == "create" && Ext.isObject(Record) && !Record.phantom && Record.data.loadContentCnf){
+					var loadTarget = Ext.getCmp("main-load-target");
+					
+					// TODO: move the rest of the logic (filteredRecordData, etc) out of
+					// AppGrid and into here
+					if(cmp.filteredRecordData) {
+						var rec_data = cmp.filteredRecordData(Record.data);
+						rec_data.loadContentCnf = Record.data.loadContentCnf;
+						Record.data = rec_data;
+					}
+					
+					return Ext.ux.RapidApp.AppTab.tryLoadTargetRecord(loadTarget,Record);
+				}
+			});
+		}
 
 	},
 	
@@ -1451,6 +1473,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	store_exclude_buttons: [],
 	exclude_btn_map: {},
 	use_add_form: false,
+	autoload_added_record: false,
 		
 	initAdditionalStoreMethods: function(store,plugin) {
 		

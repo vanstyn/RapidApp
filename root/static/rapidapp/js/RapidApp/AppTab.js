@@ -168,19 +168,26 @@ Ext.ux.RapidApp.AppTab.gridrow_nav = function(grid,index,e) {
 	var loadTarget = grid.loadTargetObj;
 	var Record = grid.getStore().getAt(index);
 	
-	var loadCfg = Ext.decode(Record.data.loadContentCnf);
-	var rec_data = {};
-	Ext.apply(rec_data,Record.data);
-	delete rec_data.loadContentCnf;
+	var rec_data = grid.filteredRecordData(Record.data);
+	rec_data.loadContentCnf = Record.data.loadContentCnf;
+	Record.data = rec_data;
 	
-	var orig_params = grid.filteredRecordData(rec_data);
-	
-	if (!loadCfg.params) { loadCfg.params = {}; }
-	Ext.apply(loadCfg.params,{ orig_params: Ext.encode(orig_params) });
-	
-	return loadTarget.loadContent(loadCfg);
+	return Ext.ux.RapidApp.AppTab.tryLoadTargetRecord(loadTarget,Record);
 }
 
+Ext.ux.RapidApp.AppTab.tryLoadTargetRecord = function(loadTarget,Record) {
+	if(Record.data.loadContentCnf) {
+		var loadCfg = Ext.decode(Record.data.loadContentCnf);
+		delete	Record.data.loadContentCnf;
+		
+		var orig_params = Record.data;
+		
+		if (!loadCfg.params) { loadCfg.params = {}; }
+		Ext.apply(loadCfg.params,{ orig_params: Ext.encode(orig_params) });
+		
+		return loadTarget.loadContent(loadCfg);
+	}
+}
 
 
 
