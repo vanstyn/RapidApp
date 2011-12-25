@@ -222,7 +222,7 @@ sub TableSpec_property_grids {
 	my @items = ();
 	my @multi_items = ();
 	my $visible = scalar grep { ! jstrue $_->{no_column} } @$fields;
-	push @items, { xtype => 'spacer', height => 5 }, $self->property_grid($self->TS_title($TableSpec),$icon,$fields) if ($visible);
+	push @items, { xtype => 'spacer', height => 5 }, $self->property_grid($TableSpec,$icon,$fields) if ($visible);
 	#my @TableSpecs = map { $TableSpec->related_TableSpec->{$_} } @{$TableSpec->related_TableSpec_order};
 	
 	my @TableSpecs = ();
@@ -283,12 +283,23 @@ sub TableSpec_property_grids {
 
 sub property_grid {
 	my $self = shift;
-	my $title = shift;
+	my $TableSpec = shift;
 	my $icon = shift;
 	my $fields = shift;
 	my $opt = shift || {};
 	
+	my $title = $self->TS_title($TableSpec);
 	
+	# -- Programatically remove the automatically appened relspec from the header
+	# (Search for 'column_property_transforms' in RapidApp::TableSpec::Role::DBIC for details)
+	# We are just doing this so the column headers are shorter/cleaner and it is redundant in
+	# this context (same info is in the title of the property grid).
+	my $pre = $TableSpec->relspec_prefix;
+	foreach my $column (@$fields) {
+		$column->{header} or next;
+		$column->{header} =~ s/\s+\(${pre}\)$//;
+	}
+	# --
 	
 	my $conf = {
 		
