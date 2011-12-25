@@ -79,7 +79,7 @@ around 'get_column' => sub {
 	my $orig = shift;
 	my $self = shift;
 	my $name = shift;
-	my $Column = $self->$orig($name);
+	my $Column = $self->$orig($name) || return undef;
 	
 	return $Column unless (
 		defined $self->column_property_transforms or (

@@ -1059,6 +1059,18 @@ sub add_related_TableSpec {
 	if($class->can('TableSpec_get_conf') and $class->TableSpec_has_conf('related_column_property_transforms')) {
 		my $rel_transforms = $class->TableSpec_cnf->{'related_column_property_transforms'}->{data};
 		$params{column_property_transforms} = $rel_transforms->{$rel} if ($rel_transforms->{$rel});
+		
+		# -- Hard coded default 'header' transform (2011-12-25 by HV)
+		# If there isn't already a configured column_property_transform for 'header'
+		# add one that appends the relspec prefix. This is currently built-in because
+		# it is such a ubiquotous need and it is just more intuitive than creating yet
+		# other param that will always be 'on'. I am sure there are cases where this is
+		# not desired, but until I run across them it will just be hard coded:
+		unless($params{column_property_transforms}->{header}) {
+			$params{column_property_transforms}->{header} = sub { $_ ? "$_ ($relspec_prefix)" : $_ };
+		}
+		# --
+		
 	}
 	
 	my $TableSpec = $self->new_TableSpec(%params) or die "Failed to create related TableSpec";
