@@ -241,7 +241,24 @@ sub apply_except_colspec_columns {
 	$self->apply_columns(%apply);
 }
 
+sub delete_colspec_columns {
+	my $self = shift;
+	my @colspecs = (ref($_[0]) eq 'ARRAY') ? @{$_[0]} : @_;
+	
+	my @columns = $self->TableSpec->get_colspec_column_names(@colspecs);
+	return $self->delete_columns(@columns);
+}
 
+# Delete all columns except those matching colspec:
+sub delete_except_colspec_columns {
+	my $self = shift;
+	my @colspecs = (ref($_[0]) eq 'ARRAY') ? @{$_[0]} : @_;
+	
+	die "delete_except_colspec_columns: no colspecs supplied" unless (@colspecs > 0);
+	
+	my @columns = $self->TableSpec->get_except_colspec_column_names(@colspecs);
+	return $self->delete_columns(@columns);
+}
 
 sub read_records {
 	my $self = shift;

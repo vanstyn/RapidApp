@@ -255,6 +255,31 @@ has 'exclude_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
 });
 
 
+
+has 'deleted_column_names', is => 'ro', isa => 'HashRef', default => sub {{}}, traits => ['RapidApp::Role::PerRequestBuildDefReset'];
+sub delete_columns {
+	my $self = shift;
+	my @columns = @_;
+	my %indx = map {$_=>1} @columns;
+	
+	# Besides deleting the column, add it to deleted_column_names to prevent
+	# it from being added back with apply_columns. This is just to prevent
+	# columns previously deleted from coming back which is probably not
+	# expected for desired. (although this could be considered breaking the API)
+	# This also means that columns can be deleted proactively (before they are added)
+	# -- This may be redundant to exclude_columns, need to look into combining these --
+	$self->deleted_column_names->{$_} = 1 for (@columns);
+	
+	# Delete by filtering out supplied column names:
+	%{$self->columns} = map { $_ => $self->columns->{$_} } grep { !$indx{$_} } keys %{$self->columns};
+	@{$self->column_order} = uniq(grep { !$indx{$_} } @{$self->column_order});
+	
+	#TODO: what happens if removed column had a read_raw_mungers/update_mungers?
+	
+	return $self->apply_columns;
+}
+
+
 # Does the same thing as apply_columns, but the order is also set 
 # (offset should be the first arg). Unlike apply_columns, column data
 # must be passed as a normal Hash (not Hashref). This is required 
@@ -270,6 +295,9 @@ sub apply_columns_ordered {
 	
 	my %columns = @_;
 	
+	# Filter out previously deleted column names:
+	%columns = map {$_=>$columns{$_}} grep { !$self->deleted_column_names->{$_} } keys %columns;
+	
 	# Get even indexed items from array (i.e. hash keys)
 	my @col_names = @_[map { $_ * 2 } 0 .. int($#_ / 2)];
 	
@@ -279,9 +307,12 @@ sub apply_columns_ordered {
 
 sub apply_columns {
 	my $self = shift;
-	my %column = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	my %columns = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
-	foreach my $name (keys %column) {
+	# Filter out previously deleted column names:
+	%columns = map {$_=>$columns{$_}} grep { !$self->deleted_column_names->{$_} } keys %columns;
+	
+	foreach my $name (keys %columns) {
 	
 		next unless ($self->valid_colname($name));
 	
@@ -290,7 +321,7 @@ sub apply_columns {
 			push @{ $self->column_order }, $name;
 		}
 		
-		$self->columns->{$name}->apply_attributes(%{$column{$name}});
+		$self->columns->{$name}->apply_attributes(%{$columns{$name}});
 		
 		$self->add_read_raw_mungers($self->columns->{$name}->read_raw_munger) if ($self->columns->{$name}->read_raw_munger);
 		$self->add_update_mungers($self->columns->{$name}->update_munger) if ($self->columns->{$name}->update_munger);

@@ -169,10 +169,16 @@ sub apply_items_config {
 sub full_property_grid {
 	my $self = shift;
 	
-	my @items = $self->TableSpec_property_grids($self->TableSpec);
+	my $real_columns = [];
+	my @items = $self->TableSpec_property_grids($self->TableSpec,$self->req_Row,$real_columns);
 	shift @items;
 	
-	#scream(scalar @items);
+	# -- for performance, delete all the remaining columns that don't exist for
+	# this row (such as relationships that don't exist for this row)
+	my %real_indx = map {$_=>1} @$real_columns;
+	my @delete_columns = grep { !$real_indx{$_} } keys %{$self->columns};
+	$self->delete_columns(@delete_columns);
+	# --
 
 	return @items;
 }
@@ -197,12 +203,14 @@ sub TableSpec_property_grids {
 	my $self = shift;
 	my $TableSpec = shift;
 	my $Row = shift || $self->req_Row;
+	my $real_columns = shift || [];
 	
 	return $self->not_found_content unless ($Row);
 	
 	my %cols = map { $_->{name} => $_ } @{ $self->column_list };
 	
 	my @colnames = $TableSpec->local_column_names;
+	push @$real_columns, @colnames;
 
 	# -- Filter out non-existant relationship columns:
 	@colnames = grep {
@@ -230,7 +238,7 @@ sub TableSpec_property_grids {
 	foreach my $rel (@{$TableSpec->related_TableSpec_order}) {
 		my $relRow = $Row->$rel or next;
 		if($relRow->isa('DBIx::Class::Row')) {
-			push @items, $self->TableSpec_property_grids($TableSpec->related_TableSpec->{$rel},$relRow);
+			push @items, $self->TableSpec_property_grids($TableSpec->related_TableSpec->{$rel},$relRow,$real_columns);
 		
 			
 		}
