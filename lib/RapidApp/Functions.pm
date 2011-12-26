@@ -255,6 +255,8 @@ sub func_debug_around {
 		verbose			=> 0,
 		verbose_in		=> undef,
 		verbose_out		=> undef,
+		list_args		=> 0,
+		list_out			=> 0,
 		dump_maxdepth	=> 3,
 		use_json			=> 0,
 		stack				=> 0,
@@ -277,7 +279,11 @@ sub func_debug_around {
 	$opt{dump_func} = sub {
 		my $verbose = shift;
 		return UNDERLINE . 'undef' . CLEAR unless (@_ > 0 and defined $_[0]);
-		return  join(',',map { ref $_ ? "$_" : "'$_'" } @_) unless ($verbose);
+		
+		# if list_out is false, return the number of items in the return, underlined
+		return $opt{list_out} ? join(',',map { ref $_ ? "$_" : "'$_'" } @_) : UNDERLINE . @_ . CLEAR
+			unless ($verbose);
+			
 		local $Data::Dumper::Maxdepth = $opt{dump_maxdepth};
 		return Dumper(@_) unless ($opt{use_json});
 		#return JSON::PP->new->allow_blessed->convert_blessed->allow_nonref->encode(\@_);
@@ -299,9 +305,12 @@ sub func_debug_around {
 		my $newline = "\n$indent";
 		
 		my $has_refs = 0;
-		my @print_args = map { (ref($_) and ++$has_refs) ? "$_" : MAGENTA . "'$_'" . CLEAR } @args;
 		
-		my $in = '(' . join(',',@print_args) . '): ';
+		my $in = '(' . UNDERLINE . @args . CLEAR . '): ';
+		if($opt{list_args}) {
+			my @print_args = map { (ref($_) and ++$has_refs) ? "$_" : MAGENTA . "'$_'" . CLEAR } @args;
+			$in = '(' . join(',',@print_args) . '): ';
+		}
 		
 		my $class = $opt{pkg};
 		if($opt{stack}) {
