@@ -288,7 +288,7 @@ sub read_records {
 	# don't use Row objects
 	$Rs = $Rs->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
 	
-	my $rows = [ $Rs->all ];
+	my $rows = [ $self->rs_all($Rs) ];
 		
 	#Hard coded munger for record_pk:
 	foreach my $row (@$rows) {
@@ -301,6 +301,11 @@ sub read_records {
 		rows    => $rows,
 		results => $total,
 	};
+}
+
+sub rs_all {
+	my $self = shift;
+	return (shift)->all;
 }
 
 
@@ -655,6 +660,16 @@ sub _dbiclink_update_records {
 	my $Rs = $self->baseResultSet;
 	
 	my @updated_keyvals = ();
+	
+	# FIXME!!
+	# There is a logic problem with update. The comparisons are done iteratively, and so when
+	# update is called on one row, and then the backend logic changes another row that is
+	# encountered later on in the update process, it can appear that rows were changed, when in fact they
+	# were the original values, and it can change the data in an inconsistent/non-atomic way.
+	# would be good to find a way to do this just like in create. What really needs to happen is
+	# at least the column_data_alias remapping needs to be atomic (like create).
+	# this currently only breaks in edge-cases (and where an incorrect/non-sensible set of colspecs
+	# was supplied to begin with, but still needs to be FIXED). Needs to be thought about...
 
 	try {
 		$self->ResultSource->schema->txn_do(sub {
@@ -678,6 +693,8 @@ sub _dbiclink_update_records {
 				my @columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } keys %$data;
 				
 				@columns = $self->TableSpec->filter_updatable_columns(@columns);
+				
+				my @update_queue = ();
 			
 				$self->TableSpec->walk_columns_deep(sub {
 					my $TableSpec = shift;
