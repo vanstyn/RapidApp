@@ -242,7 +242,10 @@ sub add_db_column($@) {
 	$opt{allow_edit} = \0 unless ($editable);
 	$opt{allow_add} = \0 unless ($creatable);
 
-	$opt{editor} = '' unless ($editable or $creatable);
+	unless ($editable or $creatable) {
+		$opt{rel_combo_field_cnf} = $opt{editor} if($opt{editor});
+		$opt{editor} = '' ;
+	}
 	
 	return $self->add_columns(\%opt);
 }

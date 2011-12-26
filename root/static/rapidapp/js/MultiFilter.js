@@ -67,11 +67,9 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		if(! this.grid.no_multifilter_fields) { this.grid.no_multifilter_fields = {}; }
 		Ext.each(columns,function(column) {
 			
-			if(column.editor) { 
-				if(column.editor.store) { column.editor.store.autoDestroy = false; }
-				
-				// legacy: the old name was 'rel_combo_field_cnf'
-				column.rel_combo_field_cnf = column.editor; 
+			if(Ext.isObject(column.editor)) { column.rel_combo_field_cnf = column.editor; }
+			if(column.rel_combo_field_cnf && column.rel_combo_field_cnf.store) { 
+				column.rel_combo_field_cnf.store.autoDestroy = false; 
 			}
 			
 			if (! this.grid.no_multifilter_fields[column.dataIndex] && ! column.no_multifilter) {
