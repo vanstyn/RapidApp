@@ -1400,8 +1400,11 @@ sub get_relationship_column_cnf {
 	
 		no_fetch => 1,
 		
-		no_quick_search => \1,
-		no_multifilter => \1,
+		#no_quick_search => \1,
+		#no_multifilter => \1,
+		
+		query_id_use_column => $upd_key_col,
+		query_search_use_column => $render_col,
 		
 		#required_fetch_colspecs => [],
 		
@@ -1468,6 +1471,9 @@ sub get_multi_relationship_column_cnf {
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	my $conf = \%opt;
+	
+	$conf->{no_multifilter} = \1;
+	$conf->{no_quick_search} = \1;
 	
 	$conf->{editor} = '';
 	

@@ -774,8 +774,18 @@ Ext.extend(Ext.ux.RapidApp.Plugin.GridQuickSearch, Ext.util.Observable, {
 	 * @private
 	 * @param {Ext.grid.GridPanel/Ext.grid.EditorGrid} grid reference to grid this plugin is used for
 	 */
+	 ,fieldNameMap: {}
 	,init:function(grid) {
 		this.grid = grid;
+		
+		// -- query_search_use_column support, added by HV 2011-12-26
+		var columns = this.grid.initialConfig.columns;
+		Ext.each(columns,function(column) {
+			if(column.query_search_use_column){
+				this.fieldNameMap[column.name] = column.query_search_use_column;
+			}
+		},this);
+		// --
 
 		// setup toolbar container if id was given
 		if('string' === typeof this.toolbarContainer) {
@@ -913,10 +923,13 @@ Ext.extend(Ext.ux.RapidApp.Plugin.GridQuickSearch, Ext.util.Observable, {
 	 * @private 
 	 */
 	,onTriggerClear:function() {
-		if(this.field.getValue()) {
+		// HV: added the baseParams check below. this fixes a bug, it is probably needed
+		// because of odd things we're doing in AppGrid2/Store
+		if(this.field.getValue() || this.grid.store.lastOptions.params.query || this.grid.store.baseParams.query) {
 			this.field.setValue('');
 			this.field.focus();
 			this.onTriggerSearch();
+			
 		}
 	} // eo function onTriggerClear
 	// }}}
@@ -967,9 +980,11 @@ Ext.extend(Ext.ux.RapidApp.Plugin.GridQuickSearch, Ext.util.Observable, {
 			var fields = [];
 			this.menu.items.each(function(item) {
 				if(item.checked) {
-					fields.push(item.dataIndex);
+					var col_name = item.dataIndex;
+					if(this.fieldNameMap[col_name]) { col_name = this.fieldNameMap[col_name]; }
+					fields.push(col_name);
 				}
-			});
+			},this);
 
 			// add fields and query to baseParams of store
 			delete(store.baseParams[this.paramNames.fields]);

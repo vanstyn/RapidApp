@@ -8,6 +8,8 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 	init: function(grid) {
 		this.grid = grid;
 		grid.multifilter = this;
+		
+		
 
 		this.store = grid.getStore();
 		
@@ -64,6 +66,14 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		
 		if(! this.grid.no_multifilter_fields) { this.grid.no_multifilter_fields = {}; }
 		Ext.each(columns,function(column) {
+			
+			if(column.editor) { 
+				if(column.editor.store) { column.editor.store.autoDestroy = false; }
+				
+				// legacy: the old name was 'rel_combo_field_cnf'
+				column.rel_combo_field_cnf = column.editor; 
+			}
+			
 			if (! this.grid.no_multifilter_fields[column.dataIndex] && ! column.no_multifilter) {
 				fields.push(column.dataIndex);
 			}
@@ -478,6 +488,11 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 
 		if(cust_dfield_cnf) {
 			Ext.apply(this.datafield_cnf,cust_dfield_cnf);
+			
+			// Make sure itemId is 'datafield'
+			// TODO: find a new way to do the lookup. If the cust_dfield/editor had
+			// an itemId it might have needed it for something that could be broken by this
+			this.datafield_cnf.itemId = 'datafield';
 		}
 		else if (this.condType == 'date') {
 			Ext.apply(this.datafield_cnf,{
@@ -515,12 +530,31 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 	getData: function() {
 		var field = this.getComponent('field_combo').getRawValue();
 		var cond = this.getComponent('cond_combo').getRawValue();
-		var val = this.getComponent('datafield').getRawValue();
+		var val = this.getComponent('datafield').getValue();
+
 		
 		//field combo
 		if(this.fieldNameMap[field]) {
 			field = this.fieldNameMap[field];
 		}
+		
+		
+		
+		// -------------
+		var column = this.columnMap[field];
+		if(column) {
+			
+			if (cond == 'is') {
+				if(column.query_id_use_column) { field = column.query_id_use_column; }
+			}
+			else {
+				if(column.query_search_use_column) { field = column.query_search_use_column; }
+			}
+		}
+		// -------------
+		
+		
+		
 		
 		if(this.conditionMap[cond]) {
 			cond = this.conditionMap[cond];
@@ -529,7 +563,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		var data = {};
 		data[field] = {};
 		data[field][cond] = val;
-	
+		
 		return data;
 	},
 	
