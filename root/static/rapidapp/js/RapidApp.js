@@ -4306,6 +4306,9 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 			field.id = field.dataIndex;
 			columns.push(field.dataIndex);
 			
+			// Give the field editor a refernce back to us/the propgrid:
+			if(field.editor) { field.editor.propgrid = propgrid; }
+			
 			// prune out 'no_column' fields without either 'allow_edit' or 'allow_view':
 			if(field.no_column && !field.allow_edit && !field.allow_view) { return; }
 			
@@ -4378,6 +4381,8 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 				if(wrapcss) { value = '<div class="' + wrapcss + '">' + value + '</div>'; }
 				return value;
 			}
+			
+			
 			
 		},this);
 		

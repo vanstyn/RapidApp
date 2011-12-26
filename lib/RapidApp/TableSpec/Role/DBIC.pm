@@ -1448,6 +1448,13 @@ sub get_relationship_column_cnf {
 			}
 		);
 		
+		# TODO: allow merging of any already configured 'editor' property,
+		# not just listeners (although listeners have special requirements in AppCmp)
+		if($conf->{editor} && $conf->{editor}->{listeners}) {
+			my $listeners = $conf->{editor}->{listeners};
+			$Module->add_listener( $_ => $listeners->{$_} ) for (keys %$listeners);
+		}
+		
 		$conf->{editor} =  $Module->content;
 	}
 	

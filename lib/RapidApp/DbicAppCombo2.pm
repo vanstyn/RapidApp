@@ -27,11 +27,17 @@ sub BUILD {
 	);
 }
 
+use RapidApp::Role::DbicLink2;
+sub param_decodeIf { RapidApp::Role::DbicLink2::param_decodeIf(@_) }
 
 sub read_records {
 	my $self = shift;
 	
 	my $Rs = $self->get_ResultSet;
+	
+	# TODO: Get this duplicate crap out of here and make this work natively with
+	# DbicLink2 methods
+	$Rs = $self->RapidApp::Role::DbicLink2::chain_Rs_req_explicit_resultset($Rs);
 	
 	my @rows = ();
 	foreach my $row ($Rs->all) {
