@@ -260,6 +260,21 @@ sub delete_except_colspec_columns {
 	return $self->delete_columns(@columns);
 }
 
+sub apply_except_colspec_columns_ordered {
+	my $self = shift;
+	my $indx = shift;
+	my $colspec = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+
+	my @colspecs = ( $colspec );
+	@colspecs = @$colspec if (ref($colspec) eq 'ARRAY');
+	
+	my @columns = $self->TableSpec->get_except_colspec_column_names(@colspecs);
+	my %apply = map { $_ => { %opt } } grep { exists $self->columns->{$_} } @columns;
+	$self->apply_columns_ordered($indx,%apply);
+}
+
+
 sub read_records {
 	my $self = shift;
 	my $params = shift || $self->c->req->params;

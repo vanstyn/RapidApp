@@ -27,11 +27,11 @@ sub DEFAULT_PROFILES {{
 		},
 		
 		nullable => {
-			editor => { xtype => 'textfield', plugins => [ 'emptytonull' ] }
+			editor => { xtype => 'textfield', allowBlank => \1, plugins => [ 'emptytonull' ] }
 		},
 		
 		notnull => {
-			editor => { xtype => 'textfield', plugins => [ 'nulltoempty' ] }
+			editor => { xtype => 'textfield', allowBlank => \0, plugins => [ 'nulltoempty' ] }
 		},
 		
 		number => {

@@ -237,8 +237,12 @@ sub add_db_column($@) {
 	$opt{name} = $self->column_prefix . $name;
 	
 	my $editable = $self->filter_updatable_columns($name,$opt{name});
+	my $creatable = $self->filter_creatable_columns($name,$opt{name});
+	
+	$opt{allow_edit} = \0 unless ($editable);
+	$opt{allow_add} = \0 unless ($creatable);
 
-	$opt{editor} = '' unless ($editable);
+	$opt{editor} = '' unless ($editable or $creatable);
 	
 	return $self->add_columns(\%opt);
 }
@@ -1451,11 +1455,12 @@ sub get_relationship_column_cnf {
 			}
 		);
 		
-		# TODO: allow merging of any already configured 'editor' property,
-		# not just listeners (although listeners have special requirements in AppCmp)
-		if($conf->{editor} && $conf->{editor}->{listeners}) {
-			my $listeners = $conf->{editor}->{listeners};
-			$Module->add_listener( $_ => $listeners->{$_} ) for (keys %$listeners);
+		if($conf->{editor}) {
+			if($conf->{editor}->{listeners}) {
+				my $listeners = delete $conf->{editor}->{listeners};
+				$Module->add_listener( $_ => $listeners->{$_} ) for (keys %$listeners);
+			}
+			$Module->apply_extconfig(%{$conf->{editor}}) if (keys %{$conf->{editor}} > 0);
 		}
 		
 		$conf->{editor} =  $Module->content;

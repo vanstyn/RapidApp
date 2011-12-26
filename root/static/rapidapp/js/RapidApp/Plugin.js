@@ -2090,12 +2090,18 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				// Skip if allow_add is defined but set to false:
 				if(typeof col.allow_add !== "undefined" && !col.allow_add) { return; }
 			
-				var field = Ext.apply({},col.editor);
+				var field = Ext.apply({},col.editor);  
 					
 				// Important: autoDestroy must be false on the store or else store-driven
 				// components (i.e. combos) will be broken as soon as the form is closed 
 				// the first time
 				if(field.store) { field.store.autoDestroy = false; }
+				
+				if(typeof field.allowBlank == 'undefined') { field.allowBlank = true; }
+				if(!field.allowBlank) {
+					field.labelStyle = field.labelStyle ? field.labelStyle : '';
+					field.labelStyle += 'font-weight:bold;';
+				}
 
 				field.name = col.name || col.dataIndex;
 				field.fieldLabel = col.header || field.name;
@@ -2139,7 +2145,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			items: this.getAddFormItems(),
 			plugins: ['dynamic-label-width'],
 			autoScroll: true,
-			//monitorValid: true,
+			monitorValid: true,
 			buttonAlign: 'center',
 			minButtonWidth: 100,
 			buttons: [
@@ -2147,7 +2153,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					text: 'Save',
 					iconCls: 'icon-save',
 					handler: save_handler,
-					//formBind: true
+					formBind: true
 				},
 				{
 					text: 'Cancel',
