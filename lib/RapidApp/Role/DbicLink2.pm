@@ -223,7 +223,8 @@ sub apply_colspec_columns {
 	@colspecs = @$colspec if (ref($colspec) eq 'ARRAY');
 
 	my @columns = $self->TableSpec->get_colspec_column_names(@colspecs);
-	$self->apply_columns( $_ => { %opt } ) for (@columns);
+	my %apply = map { $_ => { %opt } } @columns;
+	$self->apply_columns(%apply);
 }
 
 # Apply to all columns except those matching colspec:
@@ -236,7 +237,8 @@ sub apply_except_colspec_columns {
 	@colspecs = @$colspec if (ref($colspec) eq 'ARRAY');
 	
 	my @columns = $self->TableSpec->get_except_colspec_column_names(@colspecs);
-	$self->apply_columns( $_ => { %opt } ) for (@columns);
+	my %apply = map { $_ => { %opt } } @columns;
+	$self->apply_columns(%apply);
 }
 
 
