@@ -208,6 +208,9 @@ sub disp {
 	return "'" . $val . "'";
 }
 
+our $debug_around_nest_level = 0;
+our $debug_around_last_nest_level = 0;
+
 sub debug_around($@) {
 	my ($pkg,$filename,$line) = caller;
 	my $method = shift;
@@ -286,6 +289,15 @@ sub func_debug_around {
 		my $self = shift;
 		my @args = @_;
 		
+		my $cur_nest_level = $RapidApp::Functions::debug_around_nest_level;
+		local $RapidApp::Functions::debug_around_nest_level = $cur_nest_level + 1;
+		my $nest_level = $RapidApp::Functions::debug_around_nest_level - 1;
+		my $new_nest = 0;
+		$new_nest = 1 if ($RapidApp::Functions::debug_around_last_nest_level < $nest_level);
+		$RapidApp::Functions::debug_around_last_nest_level = $nest_level;
+		my $indent = $nest_level > 0 ? ('  ' x $nest_level) : '';
+		my $newline = "\n$indent";
+		
 		my $has_refs = 0;
 		my @print_args = map { (ref($_) and ++$has_refs) ? "$_" : MAGENTA . "'$_'" . CLEAR } @args;
 		
@@ -298,14 +310,17 @@ sub func_debug_around {
 			shift @$stack;
 			@$stack = reverse @$stack;
 			my $i = $opt{stack};
-			print STDERR "\n";
+			print STDERR $newline;
 			foreach my $data (@$stack) {
 				print STDERR '((stack ' . sprintf("%2s",$i--) . ')) ' . sprintf("%7s",'[' . $data->{line} . ']') . ' ' . 
-					GREEN . $data->{subroutine} . CLEAR . "\n";
+					GREEN . $data->{subroutine} . CLEAR . $newline;
 			}
 			print STDERR '((stack  0)) ' .  sprintf("%7s",'[' . $opt{line} . ']') . ' ' .
-				GREEN . $class . '::' . $name . "\n" . CLEAR;
+				GREEN . $class . '::' . $name . $newline . CLEAR;
 			$class = "$self";
+		}
+		else {
+			print STDERR $newline if ($new_nest);
 		}
 		
 		print STDERR '[' . $opt{line} . '] ' . CLEAR . $opt{color} . $class . CLEAR . '->' . 
@@ -313,8 +328,8 @@ sub func_debug_around {
 		
 		my $spaces = ' ' x (2 + length($opt{line}));
 		my $in_func = sub {
-			print STDERR "\n" . ON_WHITE.BOLD . BLUE . "$spaces Supplied arguments dump: " . 
-				$opt{dump_func}->($opt{verbose_in},\@args) . CLEAR ."\n: " 
+			print STDERR $newline . ON_WHITE.BOLD . BLUE . "$spaces Supplied arguments dump: " . 
+				$opt{dump_func}->($opt{verbose_in},\@args) . CLEAR . $newline . ": " 
 					if($has_refs && $opt{verbose_in});
 		};
 		
@@ -348,7 +363,13 @@ sub func_debug_around {
 			my $result = $opt{ret_color} . $opt{dump_func}->($opt{verbose_out},@res_copy) . CLEAR;
 			$result = "\n" . ON_WHITE.BOLD . "$spaces Returned: " . $result . "\n" if ($opt{verbose_out});
 			$result .= ' ' . ON_WHITE.RED . '[' . $elapsed . 's]' . CLEAR if ($opt{time});
-			print STDERR $result . "\n";
+			
+			$result =~ s/\n/${newline}/gm;
+			
+			# Reset cursor position if nesting happened:
+			print STDERR "\r$indent" unless ($RapidApp::Functions::debug_around_last_nest_level == $nest_level);
+			
+			print STDERR $result . $newline;
 			
 		}
 		else {
