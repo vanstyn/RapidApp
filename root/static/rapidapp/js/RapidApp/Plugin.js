@@ -1449,16 +1449,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			cmp.store.on('write',function(store,action,result,res,Record){
 				if(action == "create" && Ext.isObject(Record) && !Record.phantom && Record.data.loadContentCnf){
 					var loadTarget = Ext.getCmp("main-load-target");
-					
-					// TODO: move the rest of the logic (filteredRecordData, etc) out of
-					// AppGrid and into here
-					if(cmp.filteredRecordData) {
-						var rec_data = cmp.filteredRecordData(Record.data);
-						rec_data.loadContentCnf = Record.data.loadContentCnf;
-						Record.data = rec_data;
-					}
-					
-					return Ext.ux.RapidApp.AppTab.tryLoadTargetRecord(loadTarget,Record);
+					return Ext.ux.RapidApp.AppTab.tryLoadTargetRecord(loadTarget,Record,cmp);
 				}
 			});
 		}

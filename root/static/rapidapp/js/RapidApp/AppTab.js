@@ -167,21 +167,19 @@ Ext.ux.RapidApp.AppTab.cnt_init_loadTarget = function(cnt) {
 Ext.ux.RapidApp.AppTab.gridrow_nav = function(grid,index,e) {
 	var loadTarget = grid.loadTargetObj;
 	var Record = grid.getStore().getAt(index);
-	
-	var rec_data = grid.filteredRecordData(Record.data);
-	rec_data.loadContentCnf = Record.data.loadContentCnf;
-	Record.data = rec_data;
-	
-	return Ext.ux.RapidApp.AppTab.tryLoadTargetRecord(loadTarget,Record);
+	return Ext.ux.RapidApp.AppTab.tryLoadTargetRecord(loadTarget,Record,grid);
 }
 
-Ext.ux.RapidApp.AppTab.tryLoadTargetRecord = function(loadTarget,Record) {
-	if(Record.data.loadContentCnf) {
-		var loadCfg = Ext.decode(Record.data.loadContentCnf);
-		delete	Record.data.loadContentCnf;
+Ext.ux.RapidApp.AppTab.tryLoadTargetRecord = function(loadTarget,Record,cmp) {
+	var orig_params = Ext.apply({},Record.data);
+	if(orig_params.loadContentCnf) {
+		var loadCfg = Ext.decode(orig_params.loadContentCnf);	
+		delete orig_params.loadContentCnf;
 		
-		var orig_params = Record.data;
-		
+		if(cmp && cmp.filteredRecordData) {
+			orig_params = cmp.filteredRecordData(orig_params);
+		}
+	
 		if (!loadCfg.params) { loadCfg.params = {}; }
 		Ext.apply(loadCfg.params,{ orig_params: Ext.encode(orig_params) });
 		
