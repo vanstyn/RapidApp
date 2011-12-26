@@ -13,6 +13,8 @@ has 'RS_condition' => ( is => 'ro', isa => 'Ref', default => sub {{}} );
 has 'RS_attr' => ( is => 'ro', isa => 'Ref', default => sub {{}} );
 has 'record_pk' => ( is => 'ro', isa => 'Str', required => 1 );
 
+has 'display_column_rel', is => 'ro', isa => 'Maybe[Str]', default => undef;
+
 sub BUILD {
 	my $self = shift;
 	
@@ -36,6 +38,14 @@ sub read_records {
 	my @rows = ();
 	foreach my $row ($Rs->all) {
 		my $data = { $row->get_columns };
+		
+		# temp hack! FIX! HORRIBLE PERFORMANCE!
+		if ($self->display_column_rel) {
+			my $rel = $self->display_column_rel;
+			my $field = $self->get_extconfig_param('displayField');
+			$data->{$field} = $row->$rel->get_column($field)
+		}
+		
 		push @rows, $data;
 	}
 

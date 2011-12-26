@@ -198,6 +198,9 @@ sub default_TableSpec_cnf_columns {
 					$cols->{$col}->{displayField} = $self->TableSpec_related_get_set_conf($col,'display_column')
 						or die "$col doesn't have display_column set!";
 					
+					$cols->{$col}->{display_column_rel} = $self->TableSpec_related_get_set_conf($col,'display_column_rel');
+					$cols->{$col}->{render_col} = $self->TableSpec_related_get_set_conf($col,'render_col');
+					
 					#TODO: needs to be more generalized/abstracted
 					#open_url, if defined, will add an autoLoad link to the renderer to
 					#open/navigate to the related item

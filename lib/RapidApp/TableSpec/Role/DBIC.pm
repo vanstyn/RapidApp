@@ -1365,6 +1365,8 @@ sub get_relationship_column_cnf {
 	my $Source = $self->ResultSource->related_source($rel);
 	
 	my $render_col = $self->column_prefix . $rel . $self->relation_sep . $conf->{displayField};
+	$render_col = $self->column_prefix . $rel . $self->relation_sep . $conf->{render_col} if ($conf->{render_col});
+	
 	#my $key_col = $self->column_prefix . $rel . $self->relation_sep . $conf->{valueField};
 	my $upd_key_col = $self->column_prefix . $conf->{keyField};
 	
@@ -1444,7 +1446,8 @@ sub get_relationship_column_cnf {
 				record_pk		=> $conf->{valueField},
 				# Optional custom ResultSet params applied to the dropdown query
 				RS_condition	=> $conf->{RS_condition} ? $conf->{RS_condition} : {},
-				RS_attr			=> $conf->{RS_attr} ? $conf->{RS_attr} : {}
+				RS_attr			=> $conf->{RS_attr} ? $conf->{RS_attr} : {},
+				display_column_rel => $conf->{display_column_rel}
 			}
 		);
 		
