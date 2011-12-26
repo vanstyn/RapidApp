@@ -670,7 +670,10 @@ sub _dbiclink_update_records {
 	# at least the column_data_alias remapping needs to be atomic (like create).
 	# this currently only breaks in edge-cases (and where an incorrect/non-sensible set of colspecs
 	# was supplied to begin with, but still needs to be FIXED). Needs to be thought about...
-
+	# -- ^^^ --- UPDATE: I believe that I have solved this problem by now pushing rows into
+	#                    a queue and then running updates at the end. Need to spend a bit more
+	#                    time thinking about it though, so I am not removing the above comment yet
+	
 	try {
 		$self->ResultSource->schema->txn_do(sub {
 			foreach my $data (@$arr) {
@@ -747,7 +750,7 @@ sub _dbiclink_update_records {
 					#	delete $change->{$k} if ($v1 eq $v2);
 					#}
 					
-					my $msg = 'UPDATE -> ' . $self->get_Row_Rs_label($UpdRow) . "\n";
+					my $msg = 'Will UPDATE -> ' . $self->get_Row_Rs_label($UpdRow) . "\n";
 					if (keys %$change > 0){ 
 						my $t = Text::TabularDisplay->new(qw(column old new));
 						$t->add($_,disp($current{$_}),disp($change->{$_})) for (keys %$change);
@@ -757,10 +760,14 @@ sub _dbiclink_update_records {
 						$msg .= 'No Changes';
 					}
 					scream_color(WHITE.ON_BLUE.BOLD,$msg);
-					$UpdRow->update($change) if (keys %$change > 0);
+					push @update_queue,{ row => $UpdRow, change => $change };
+					#$UpdRow->update($change) if (keys %$change > 0);
 					
 					return $UpdRow;
 				},@columns);
+				
+				# Update all the rows at the end:
+				$_->{row}->update($_->{change}) for (@update_queue);
 				
 				# Get the new record_pk for the row (it probably hasn't changed, but it could have):
 				push @updated_keyvals, $self->generate_record_pk_value({ $BaseRow->get_columns });
