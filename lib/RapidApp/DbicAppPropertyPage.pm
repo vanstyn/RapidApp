@@ -212,6 +212,7 @@ sub TableSpec_property_grids {
 	my @colnames = $TableSpec->local_column_names;
 	push @$real_columns, @colnames;
 
+=pod
 	# -- Filter out non-existant relationship columns:
 	@colnames = grep {
 		exists $TableSpec->related_TableSpec->{$_} ?
@@ -220,6 +221,8 @@ sub TableSpec_property_grids {
 					: 1;
 	} @colnames;
 	# --
+=cut
+	
 	
 	my @columns = map { $cols{$_} } @colnames;
 	my $fields = \@columns;
@@ -236,6 +239,9 @@ sub TableSpec_property_grids {
 	my @TableSpecs = ();
 	
 	foreach my $rel (@{$TableSpec->related_TableSpec_order}) {
+		
+		# This is fundamentally flawed if a related record doesn't exist initially, but then 
+		# gets created, it will never be available!!
 		my $relRow = $Row->$rel or next;
 		if($relRow->isa('DBIx::Class::Row')) {
 			push @items, $self->TableSpec_property_grids($TableSpec->related_TableSpec->{$rel},$relRow,$real_columns);
