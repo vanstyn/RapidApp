@@ -4274,6 +4274,19 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 	
 	initComponent: function() {
 		
+		this.on('beforepropertychange',function(source,rec,n,o) {
+			
+			// FIXME!!!!!
+			
+			if(n == null && o == '0') { return false; }
+			if(o == null && n == '0') { return false; }
+			if(n == true && o == '1') { return false; }
+			if(o == true && n == '1') { return false; }
+			
+			
+			
+		},this);
+		
 		this.bindStore = this.store;
 		delete this.store;
 		

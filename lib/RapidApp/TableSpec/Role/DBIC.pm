@@ -1403,6 +1403,8 @@ sub get_relationship_column_cnf {
 		$upd_key_col
 	];
 	
+	$conf->{renderer} = 'Ext.ux.showNull' unless ($conf->{renderer});
+	
 	$conf = { %$conf, 
 	
 		no_fetch => 1,
@@ -1524,6 +1526,11 @@ sub get_multi_relationship_column_cnf {
 						
 						'var attr = {};' .
 						'if(join_name != "me"){ attr["join"] = join_name; }' .
+						
+						#Fix!!
+						'loadCfg.autoLoad.params.personality = join_name;' .
+					
+					
 						
 						'loadCfg.autoLoad.params.base_params = Ext.encode({' .
 							'resultset_condition: Ext.encode(cond),' .

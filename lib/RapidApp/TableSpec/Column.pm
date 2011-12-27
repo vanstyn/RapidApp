@@ -44,7 +44,11 @@ sub DEFAULT_PROFILES {{
 			# Renderer *not* in arrayref makes it replace instead of append previous
 			# profiles with th renderer property as an arrayref
 			renderer => 'Ext.ux.RapidApp.boolCheckMark',
-			editor => { xtype => 'logical-checkbox', plugins => [ 'booltoint' ] }
+			xtype => 'booleancolumn',
+			#trueText => '1',
+			#falseText => '0',
+			editor => { xtype => 'checkbox'  }
+			#editor => { xtype => 'logical-checkbox', plugins => [ 'booltoint' ] }
 		},
 		text => {
 			editor => { xtype => 'textfield', grow => \0 }

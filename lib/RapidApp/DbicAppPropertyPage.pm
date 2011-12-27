@@ -175,9 +175,9 @@ sub full_property_grid {
 	
 	# -- for performance, delete all the remaining columns that don't exist for
 	# this row (such as relationships that don't exist for this row)
-	my %real_indx = map {$_=>1} @$real_columns;
-	my @delete_columns = grep { !$real_indx{$_} } keys %{$self->columns};
-	$self->delete_columns(@delete_columns);
+	#my %real_indx = map {$_=>1} @$real_columns;
+	#my @delete_columns = grep { !$real_indx{$_} } keys %{$self->columns};
+	#$self->delete_columns(@delete_columns);
 	# --
 
 	return @items;
