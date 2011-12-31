@@ -4328,6 +4328,8 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 			// prune out fields with 'allow_view' specificially set to false:
 			if(typeof field.allow_view !== "undefined" && !field.allow_view) { return; }
 			
+			field.allow_view = true;
+			
 			if(typeof field.allow_edit !== "undefined" && !field.allow_edit) { 
 				// prune out fields with 'allow_edit' by itself (without aithout allow_view)
 				// specificially set to false:
