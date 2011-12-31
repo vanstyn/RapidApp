@@ -303,6 +303,13 @@ sub read_records {
 	# don't use Row objects
 	$Rs = $Rs->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
 	
+	
+	## -- When 'distinct' is true (group by all columns) it breaks getting a
+	##    total count. See TEMP WORKAROUND FOR DBIC BUG below.
+	$Rs = $Rs->search_rs({},{ distinct => 1 });
+	## --
+	
+	
 	my $rows = [ $self->rs_all($Rs) ];
 		
 	#Hard coded munger for record_pk:
@@ -310,7 +317,27 @@ sub read_records {
 		$row->{$self->record_pk} = $self->generate_record_pk_value($row);
 	}
 	
-	my $total = $self->single_record_fetch ? 1 : $Rs->pager->total_entries;
+	######################################################################
+	##   ----   TEMP WORKAROUND FOR DBIC BUG (2011-12-31 by HV)  ----   ##
+	#
+	#    my $total = $self->single_record_fetch ? 1 : $Rs->pager->total_entries;
+	#
+	# When 'distinct' is on '$Rs->pager->total_entries' throws an exception. This
+	# is a DBIC bug with MySQL as of v0.08195. Until its fixed, the below ugly
+	# and potentially very expensive, and potentially incorrect code gets the
+	# total count for paging. FIX ME!!!!!!!
+	my ($pri_col) = $Rs->result_source->primary_columns;
+	my $RsForCount = $Rs->search_rs({},{ 
+		select => [ $pri_col ], 
+		as => [ $pri_col ], 
+		order_by => $pri_col, 
+		group_by => $pri_col, 
+		rows => 1000000, 
+		page => 1 
+	});
+	my $total = $self->single_record_fetch ? 1 : scalar $RsForCount->all;
+	##   ------------------------------------------------------------   ##
+	######################################################################
 
 	return {
 		rows    => $rows,
