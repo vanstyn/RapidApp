@@ -30,6 +30,11 @@ has 'ResultSource' => ( is => 'ro', required => 1 );
 
 has '+single_record_fetch', default => 1;
 
+has 'exclude_grids_relationships', is => 'ro', isa => 'ArrayRef', default => sub {[]};
+has 'exclude_grids_relationships_map', is => 'ro', lazy => 1, isa => 'HashRef', default => sub {
+	my $self = shift;
+	return { map {$_=>1} @{$self->exclude_grids_relationships} };
+};
 
 #has '+DataStore_build_params' => ( default => sub {{
 #	store_autoLoad => 1,
@@ -239,6 +244,8 @@ sub TableSpec_property_grids {
 	my @TableSpecs = ();
 	
 	foreach my $rel (@{$TableSpec->related_TableSpec_order}) {
+		
+		next if ($self->exclude_grids_relationships_map->{$rel});
 		
 		# This is fundamentally flawed if a related record doesn't exist initially, but then 
 		# gets created, it will never be available!!
