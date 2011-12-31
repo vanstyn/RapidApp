@@ -4413,6 +4413,12 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		
 		Ext.ux.RapidApp.AppPropertyGrid.superclass.initComponent.call(this);
 		
+		/* -- vv -- Make text of the value column selectable (copy/paste) :*/
+		// TODO: expand/refine this
+		var val_col = this.getColumnModel().getColumnById('value');
+		val_col.css = '-moz-user-select: text;-khtml-user-select: text;';
+		/* -- ^^ -- */
+		
 		this.on('afterrender',this.loadFirstRecord,this);
 		this.bindStore.on('load',this.loadFirstRecord,this);
 		this.bindStore.on('update',this.loadFirstRecord,this);
