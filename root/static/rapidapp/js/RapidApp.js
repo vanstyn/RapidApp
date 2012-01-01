@@ -4744,4 +4744,12 @@ Ext.ux.RapidApp.renderJSONjsDump = function(v) {
 	}
 }
 
+Ext.ux.RapidApp.getWithIconClsRenderer = function(icon_cls) {
+	return function(value, metaData) {
+		if(icon_cls) { metaData.css = 'grid-cell-with-icon ' + icon_cls; }
+		return value;
+	};
+}
+
+
 
