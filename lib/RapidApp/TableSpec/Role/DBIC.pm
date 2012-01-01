@@ -1236,27 +1236,32 @@ sub resolve_dbic_colname {
 		
 		# Method 2:
 		my $source = $self->schema->source($cond_data->{info}->{source});
-		$dbic_name = \[ 
-			'(SELECT(COUNT(*)) from ' . $source->from . 
-				' where ' . $cond_data->{foreign} . ' = ' . $rel . '.' . $cond_data->{self} . ')'
-		];
-
-	
-	
-	
-		#$dbic_name = { select => { count => $col . '.' . $cond_data->{self} }, { where => { engineer_user_id => 3 } } };
-	
-		#$dbic_name = \[ 'SELECT(COUNT(DISTINCT(`' . $col . '`.`' . $cond_data->{self} . '`)))'];
-
+		#$dbic_name = \[ 
+		#	'(SELECT(COUNT(*)) from ' . $source->from . 
+		#		' where ' . $cond_data->{foreign} . ' = ' . $rel . '.' . $cond_data->{self} . ')'
+		#];
 		
-		#my $rs = $self->schema->resultset($cond_data->{info}->{source});
-		#$rs = $rs->search_rs({ $cond_data->{foreign} => $cond_data->{relname} . '.' . $cond_data->{self} },{ join => $cond_data->{relname} });
+		# Method 3: Same concept as Method 2 above, but uses DBIC instead of a raw SQL query
+		#my $cnd = $rel . '.' . $cond_data->{self};
+		my $cnd = 'ME.' . $cond_data->{self}; #<-- see the s/ME/${rel}/g line below
+		my $rs = $source->resultset->search_rs(
+			{ 'you.' . $cond_data->{foreign} => { '=' => \$cnd } }, 
+			{ alias => 'you' }
+		);
+		$dbic_name = $rs->count_rs->as_query;
 		
+		## -- experimental --
+		## Change the perspective of any remote conditions 
+		## (This is for things like 'me.deleted' => 0 in a base_rs)
+		## Is this sane? Or is this an example of how BaseRs doesn't actually
+		## work in all scenarios? Is this what the whole foreign/self alias paradigm is for?
+		${$dbic_name}->[0] =~ s/me/you/g;
+		${$dbic_name}->[0] =~ s/ME/${rel}/g; #<-- swap the rel here to be sure it didn't get replaced if it's 'me'
+		## --
+	
 		
-		#$rs = $rs->search_rs({ $cond_data->{foreign} => $cond_data->{rev_relname} . '.' . $cond_data->{self} },{ join => $cond_data->{rev_relname} });
-		#$rs = $rs->search_rs({ $cond_data->{foreign} => $rel . '.' . $cond_data->{self} });
-		#$dbic_name = $rs->count_rs->as_query;
-
+		#scream($rs->{attrs},$dbic_name,${$dbic_name}->[0],$rel);
+		
 	}
 	return $dbic_name;
 }

@@ -28,7 +28,10 @@ use RapidApp::Include qw(sugar perlutil);
 
 has 'ResultSource' => ( is => 'ro', required => 1 );
 
+# -- these aren't working... why ?
 has '+single_record_fetch', default => 1;
+has '+max_pagesize', default => 1;
+# --
 
 has 'exclude_grids_relationships', is => 'ro', isa => 'ArrayRef', default => sub {[]};
 has 'exclude_grids_relationships_map', is => 'ro', lazy => 1, isa => 'HashRef', default => sub {

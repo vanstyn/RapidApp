@@ -304,19 +304,6 @@ sub read_records {
 	$Rs = $Rs->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
 	
 	
-	## -- When 'distinct' is true (group by all columns) it breaks getting a
-	##    total count. See TEMP WORKAROUND FOR DBIC BUG below.
-	$Rs = $Rs->search_rs({},{ distinct => 1 });
-	## --
-	
-	
-	my $rows = [ $self->rs_all($Rs) ];
-		
-	#Hard coded munger for record_pk:
-	foreach my $row (@$rows) {
-		$row->{$self->record_pk} = $self->generate_record_pk_value($row);
-	}
-	
 	######################################################################
 	##   ----   TEMP WORKAROUND FOR DBIC BUG (2011-12-31 by HV)  ----   ##
 	#
@@ -338,6 +325,22 @@ sub read_records {
 	my $total = $self->single_record_fetch ? 1 : scalar $RsForCount->all;
 	##   ------------------------------------------------------------   ##
 	######################################################################
+	
+	## -- When 'distinct' is true (group by all columns) it breaks getting a
+	##    total count. See TEMP WORKAROUND FOR DBIC BUG above.
+	$Rs = $Rs->search_rs({},{ distinct => 1 });
+	## --
+	
+	
+	my $rows = [ $self->rs_all($Rs) ];
+		
+	#Hard coded munger for record_pk:
+	foreach my $row (@$rows) {
+		$row->{$self->record_pk} = $self->generate_record_pk_value($row);
+	}
+	
+	# This is how we should get the total: (see TEMP WORKAROUND FOR DBIC BUG above)
+	#my $total = $self->single_record_fetch ? 1 : $Rs->pager->total_entries;
 
 	return {
 		rows    => $rows,
