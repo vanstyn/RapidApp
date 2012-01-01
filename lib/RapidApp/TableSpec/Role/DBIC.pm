@@ -1138,33 +1138,7 @@ around 'updated_column_order' => sub {
 hashash 'multi_rel_columns_indx', lazy => 1, default => sub {
 	my $self = shift;
 	my $list = $self->get_Cnf('multi_relationship_column_names') || [];
-	
-
-=pod
-	my %indx = ();
-	foreach my $rel (@$list) {
-		my $rev_info = $self->ResultSource->reverse_relationship_info($rel) or next;
 		
-		my @hkeys = keys %$rev_info;
-		my $rev_rel = pop @hkeys;
-		my $rinfo = $self->ResultSource->related_source($rel)->reverse_relationship_info($rev_rel);
-		
-		my @hvalues = values %$rev_info;
-		
-		
-		my $info = $self->ResultSource->relationship_info($rel);
-		
-		scream_color(GREEN.BOLD,$rel,$rev_rel,$info,$rev_info,$rinfo);
-		
-		if(@hvalues > 1) { scream($rev_info); }
-		
-		
-		my $rev_cond = pop @hvalues or next;
-		my $cond = $rev_cond->{cond} or next;
-		$indx{$rel} = $self->ResultClass->parse_relationship_cond($cond);
-	}
-=cut
-	
 	my %indx = map { $_ => 
 		{ %{$self->ResultClass->parse_relationship_cond(
 				$self->ResultSource->relationship_info($_)->{cond}
@@ -1175,39 +1149,18 @@ hashash 'multi_rel_columns_indx', lazy => 1, default => sub {
 		} 
 	} @$list;
 	
+	# Add in any defined functions (this all needs to be cleaned up/refactored):
+	$self->Cnf_columns->{$_}->{function} and $indx{$_}->{function} = $self->Cnf_columns->{$_}->{function} 
+		for (keys %indx);
+		
+	#scream_color(GREEN,'loading');
+	#scream_color(GREEN.BOLD,$_,$self->Cnf_columns->{$_}) for (keys %indx);
 	
 	#scream(\%indx);
-	
-	
+
 	return \%indx;
 };
 
-
-
-hashash 'multi_rel_columns_indx1', lazy => 1, default => sub {
-	my $self = shift;
-	my $list = $self->get_Cnf('multi_relationship_column_names') || [];
-	
-
-	
-	my %indx = ();
-	foreach my $rel (@$list) {
-		my $RelSource = $self->ResultSource->related_source($rel);
-		my @pkeys = $RelSource->primary_columns;
-		$indx{$rel} = pop @pkeys;
-	}
-	
-	
-	#my %indx = map { $_ => $self->ResultClass->parse_relationship_cond(
-	#	$self->ResultSource->relationship_info($_)->{cond}
-	#)} @$list;
-	
-	
-	#scream(\%indx);
-	
-	
-	return \%indx;
-};
 
 sub resolve_dbic_colname {
 	my $self = shift;
@@ -1224,6 +1177,10 @@ sub resolve_dbic_colname {
 	
 	if (defined $cond_data) {
 	
+		### Support for a custom aggregate function ###
+		return $cond_data->{function}->($self,$rel,$col,$join,$cond_data) 
+			if(ref($cond_data->{function}) eq 'CODE');
+		###############################################
 	
 	
 		#my $cond_data = $self->multi_rel_columns_indx->{$col};
