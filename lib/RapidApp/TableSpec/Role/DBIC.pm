@@ -1267,6 +1267,29 @@ sub resolve_dbic_colname {
 		#scream(${$dbic_name}->[0],$rel);
 		#local $Data::Dumper::Maxdepth = 4;
 		#scream($rs->{attrs},$dbic_name,${$dbic_name}->[0],$rel,$cond_data);
+		
+		
+		
+		###################################################################################
+		#### Override for speed #### -- FIX/REMOVE ME --
+		#### Temp fall-back to raw SQL for rels that don't have a custom where
+		#### clause. For lots of rows, the count_rs can be painfully slow, depending
+		#### on how complex the subquery is. For GreenSheet, the above count_rs was
+		#### taking ~ 2 minutes to come back for "Engineer Projects", while with this raw 
+		#### count it took under a second. 
+		#### The reason is indexes that can't be used with the subquery like they can here.
+		#### going to have to implement a caching count column system, but setting this
+		#### for now for demoing. The problem with this method is that it does not honor
+		#### the details of the ResultSets, including things like excluding deleted,
+		#### applying permissions, etc.
+		unless($cond_data->{info}->{attrs}->{where}) {
+			$dbic_name = \[ 
+				'(SELECT(COUNT(*)) from ' . $source->from . 
+					' where ' . $cond_data->{foreign} . ' = ' . $rel . '.' . $cond_data->{self} . ')'
+			];
+		}
+		####
+		###################################################################################
 
 	}
 	return $dbic_name;
