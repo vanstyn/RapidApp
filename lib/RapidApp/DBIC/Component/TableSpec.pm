@@ -189,7 +189,7 @@ sub default_TableSpec_cnf_columns {
 				
 				$cols->{$col}->{relationship_info} = $info;
 				my $cond_data = $self->parse_relationship_cond($info->{cond});
-				$cols->{$col}->{relationship_cond_data} = $cond_data;
+				$cols->{$col}->{relationship_cond_data} = { %$cond_data, %$info };
 				
 				if ($info->{attrs}->{accessor} eq 'single') {
 					

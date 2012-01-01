@@ -1244,10 +1244,15 @@ sub resolve_dbic_colname {
 		# Method 3: Same concept as Method 2 above, but uses DBIC instead of a raw SQL query
 		#my $cnd = $rel . '.' . $cond_data->{self};
 		my $cnd = 'ME.' . $cond_data->{self}; #<-- see the s/ME/${rel}/g line below
+		
+		my $source_source = $source->related_source($cond_data->{rev_relname});
+			
 		my $rs = $source->resultset->search_rs(
 			{ 'you.' . $cond_data->{foreign} => { '=' => \$cnd } }, 
-			{ alias => 'you' }
+			{ alias => 'you' },
 		);
+		# Merge in the attrs from the relationship, important if it has a where/join:
+		$rs = $rs->search_rs({},$cond_data->{info}->{attrs});
 		$dbic_name = $rs->count_rs->as_query;
 		
 		## -- experimental --
@@ -1255,13 +1260,14 @@ sub resolve_dbic_colname {
 		## (This is for things like 'me.deleted' => 0 in a base_rs)
 		## Is this sane? Or is this an example of how BaseRs doesn't actually
 		## work in all scenarios? Is this what the whole foreign/self alias paradigm is for?
-		${$dbic_name}->[0] =~ s/me/you/g;
+		${$dbic_name}->[0] =~ s/\`me\`/\`you\`/g;
 		${$dbic_name}->[0] =~ s/ME/${rel}/g; #<-- swap the rel here to be sure it didn't get replaced if it's 'me'
 		## --
-	
 		
-		#scream($rs->{attrs},$dbic_name,${$dbic_name}->[0],$rel);
-		
+		#scream(${$dbic_name}->[0],$rel);
+		#local $Data::Dumper::Maxdepth = 4;
+		#scream($rs->{attrs},$dbic_name,${$dbic_name}->[0],$rel,$cond_data);
+
 	}
 	return $dbic_name;
 }
@@ -1492,6 +1498,29 @@ sub get_multi_relationship_column_cnf {
 	
 	$conf->{editor} = '';
 	
+	my $rel_data = clone($conf->{relationship_cond_data});
+	
+	## -- allow override of the associated TabsleSpec cnfs from the relationship attrs:
+	$conf->{title_multi} = delete $rel_data->{attrs}->{title_multi} if ($rel_data->{attrs}->{title_multi});
+	$conf->{multiIconCls} = delete $rel_data->{attrs}->{multiIconCls} if ($rel_data->{attrs}->{multiIconCls});
+	$conf->{open_url_multi} = delete $rel_data->{attrs}->{open_url_multi} if ($rel_data->{attrs}->{open_url_multi});
+	$conf->{open_url_multi_rs_join_name} = delete $rel_data->{attrs}->{open_url_multi_rs_join_name} if ($rel_data->{attrs}->{open_url_multi_rs_join_name});
+	delete $rel_data->{attrs}->{cascade_copy};
+	delete $rel_data->{attrs}->{cascade_delete};
+	delete $rel_data->{attrs}->{join_type};
+	delete $rel_data->{attrs}->{accessor};
+	
+	$rel_data->{attrs}->{join} = [ $rel_data->{attrs}->{join} ] if (
+		defined $rel_data->{attrs}->{join} and
+		ref($rel_data->{attrs}->{join}) ne 'ARRAY'
+	);
+	
+	if($rel_data->{attrs}->{join}) {
+		@{$rel_data->{attrs}->{join}} = grep { $_ ne $conf->{open_url_multi_rs_join_name} } @{$rel_data->{attrs}->{join}};
+		delete $rel_data->{attrs}->{join} unless (scalar @{$rel_data->{attrs}->{join}} > 0);
+	}
+	
+	
 	my $title = $conf->{title_multi} ? $conf->{title_multi} : 'Related "' . $rel . '" Rows';
 	
 	my $loadCfg = {
@@ -1509,6 +1538,11 @@ sub get_multi_relationship_column_cnf {
 		$title .
 		'&nbsp;<span class="superscript-navy">';
 	
+	#scream($conf->{relationship_cond_data});
+	
+	#my $attrs = {};
+	#$attrs->{join} = $conf->{relationship_cond_data}->{attrs}->{join} if ($conf->{relationship_cond_data}->{attrs}->{join});
+	
 	
 	
 	$conf->{renderer} = jsfunc(
@@ -1517,7 +1551,9 @@ sub get_multi_relationship_column_cnf {
 			"var disp = div_open + value + '</span>';" .
 			
 			#'var key_key = ' .
-			'var key_val = record.data["' . $self->column_prefix . $conf->{relationship_cond_data}->{self} . '"];' .
+			'var key_val = record.data["' . $self->column_prefix . $rel_data->{self} . '"];' .
+			
+			'var attr = ' . JSON::PP::encode_json($rel_data->{attrs}) . ';' .
 			
 			( # TODO: needs to be generalized better
 				$conf->{open_url_multi} ?
@@ -1527,15 +1563,16 @@ sub get_multi_relationship_column_cnf {
 						'var join_name = "' . $conf->{open_url_multi_rs_join_name} . '";' .
 						
 						'var cond = {};' .
-						'cond[join_name + ".' . $conf->{relationship_cond_data}->{foreign} . '"] = key_val;' .
+						'cond[join_name + ".' . $rel_data->{foreign} . '"] = key_val;' .
 						
-						'var attr = {};' .
-						'if(join_name != "me"){ attr["join"] = join_name; }' .
+						#'var attr = {};' .
+						'if(join_name != "me"){ if(!attr.join) { attr.join = []; } attr.join.push(join_name); }' .
+						
+						# Fix!!!
+						'if(join_name == "me" && Ext.isArray(attr.join) && attr.join.length > 0) { join_name = attr.join[0]; }' .
 						
 						#Fix!!
 						'loadCfg.autoLoad.params.personality = join_name;' .
-					
-					
 						
 						'loadCfg.autoLoad.params.base_params = Ext.encode({' .
 							'resultset_condition: Ext.encode(cond),' .
