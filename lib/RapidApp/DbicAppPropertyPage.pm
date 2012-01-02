@@ -162,11 +162,11 @@ sub ResultSet {
 	return $Rs->search_rs($self->record_pk_cond($value));
 }
 
-
-sub req_Row {
+has 'req_Row', is => 'ro', lazy => 1, traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ], default => sub {
+#sub req_Row {
 	my $self = shift;
 	return $self->_ResultSet->first;
-}
+};
 
 sub apply_items_config {
 	my $self = shift;
