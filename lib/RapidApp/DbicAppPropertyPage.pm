@@ -39,6 +39,8 @@ has 'exclude_grids_relationships_map', is => 'ro', lazy => 1, isa => 'HashRef', 
 	return { map {$_=>1} @{$self->exclude_grids_relationships} };
 };
 
+has 'setup_multi_grids', is => 'ro', isa => 'Bool', default => 1;
+
 #has '+DataStore_build_params' => ( default => sub {{
 #	store_autoLoad => 1,
 #	reload_on_save => 0,
@@ -258,7 +260,7 @@ sub TableSpec_property_grids {
 		
 			
 		}
-		elsif($relRow->isa('DBIx::Class::ResultSet')) {
+		elsif($relRow->isa('DBIx::Class::ResultSet') and $self->setup_multi_grids) {
 		
 			my $RelTS = $TableSpec->related_TableSpec->{$rel};
 			
