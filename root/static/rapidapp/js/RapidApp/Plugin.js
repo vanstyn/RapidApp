@@ -1361,6 +1361,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			'persist_immediately',
 			'store_add_initData',
 			'use_add_form',
+			'add_form_window_cnf',
 			'autoload_added_record'
 		]);
 		
@@ -1479,6 +1480,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	store_exclude_buttons: [],
 	exclude_btn_map: {},
 	use_add_form: false,
+	add_form_window_cnf: {},
 	autoload_added_record: false,
 		
 	initAdditionalStoreMethods: function(store,plugin) {
@@ -1622,7 +1624,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			if(plugin.store_button_cnf.add && plugin.store_button_cnf.add.text) {
 				title = plugin.store_button_cnf.add.text;
 			}
-			win = new Ext.Window({
+			win = new Ext.Window(Ext.apply({
 				title: title,
 				layout: 'fit',
 				width: 700,
@@ -1630,7 +1632,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				closable: true,
 				modal: true,
 				items: formpanel
-			});
+			},plugin.add_form_window_cnf));
 			
 			return win.show();
 		};
