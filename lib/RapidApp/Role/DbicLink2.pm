@@ -510,6 +510,26 @@ sub chain_Rs_req_explicit_resultset {
 	my $cond = $self->param_decodeIf($params->{resultset_condition},{});
 	my $attr = $self->param_decodeIf($params->{resultset_attr},{});
 	
+	
+	##
+	## TODO: make this code handle more cases
+	## This code converts [[ 'foo' ]] into \[ 'foo' ] and is needed because the later cannot
+	## be expressed in JSON. This allows the client to send a literal col name
+	if(ref($attr->{select}) eq 'ARRAY') {
+		my @new;
+		foreach my $sel (@{$attr->{select}}) {
+			if(ref($sel) eq 'ARRAY' and scalar @$sel == 1 and ref($sel->[0]) eq 'ARRAY') {
+				push @new, \[ $sel->[0]->[0] ];
+			}
+			else {
+				push @new,$sel;
+			}
+		}
+		@{$attr->{select}} = @new;
+	}
+	##
+	##
+	
 	return $Rs->search_rs($cond,$attr);
 }
 
@@ -678,8 +698,8 @@ sub get_Row_Rs_label {
 	my @keys = $Source->primary_columns;
 	my $data = { $Row->get_columns };
 	
-	my $str = ref($Row) . ' [';
-	$str .= $_ . ': ' . $data->{$_} for (@keys);
+	my $str = ref($Row) . ' [ ';
+	$str .= $_ . ': ' . $data->{$_} . ' ' for (@keys);
 	$str .= ']';
 	
 	return $str;
