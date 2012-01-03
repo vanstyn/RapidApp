@@ -1361,6 +1361,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			'persist_immediately',
 			'store_add_initData',
 			'use_add_form',
+			'add_form_url_params',
 			'add_form_window_cnf',
 			'autoload_added_record'
 		]);
@@ -1480,6 +1481,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	store_exclude_buttons: [],
 	exclude_btn_map: {},
 	use_add_form: false,
+	add_form_url_params: {},
 	add_form_window_cnf: {},
 	autoload_added_record: false,
 		
@@ -2120,6 +2122,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		if(store.lastOptions.params) { Ext.apply(params,store.lastOptions.params); }
 		if(store.baseParams) { Ext.apply(params,store.baseParams); }
 		if(plugin.cmp.baseParams) { Ext.apply(params,plugin.cmp.baseParams); }
+		Ext.apply(params,plugin.add_form_url_params);
 		
 		show_mask();
 		Ext.Ajax.request({
