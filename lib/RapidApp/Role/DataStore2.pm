@@ -3,6 +3,7 @@ use Moose::Role;
 use Moose::Util::TypeConstraints;
 
 use RapidApp::Include qw(sugar perlutil);
+use Clone qw(clone);
 
 use RapidApp::DataStore2;
 
@@ -133,11 +134,16 @@ after 'BUILD' => sub {
 
 	$self->apply_extconfig(
 		persist_all_immediately => \scalar($self->persist_all_immediately),
-		persist_immediately => $self->persist_immediately
+		persist_immediately => $self->persist_immediately,
 	);
 	
 	## Apply the TableSpec if its defined ##
 	$self->apply_TableSpec_config;
+	
+	if(defined $self->Module('store',1)->create_handler) {
+		$self->apply_actions( add_form => 'get_add_form' );
+		$self->apply_extconfig( add_form_url => $self->suburl('add_form') );
+	}
 	
 	$self->add_plugin( 'datastore-plus' );
 };
@@ -190,6 +196,74 @@ sub apply_store_to_extconfig {
 		$self->apply_extconfig( store => $self->Module('store')->JsonStore );
 	}
 }
+
+
+sub get_add_form_items {
+	my $self = shift;
+	my @items = ();
+	
+	foreach my $colname (@{$self->column_order}) {
+		my $Cnf = $self->columns->{$colname} or next;
+		next unless (defined $Cnf->{editor} and $Cnf->{editor} ne '');
+		
+		#Skip columns with 'no_column' set to true except if 'allow_add' is true:
+		next if (jstrue($Cnf->{no_column}) && ! jstrue($Cnf->{allow_add}));
+		
+		#Skip if allow_add is defined but set to false:
+		next if (defined $Cnf->{allow_add} && ! jstrue($Cnf->{allow_add}));
+		
+		my $field = clone($Cnf->{editor});
+		$field->{name} = $colname;
+		$field->{allowBlank} = \1 unless (defined $field->{allowBlank});
+		unless (jstrue $field->{allowBlank}) {
+			$field->{labelStyle} = '' unless (defined $field->{labelStyle});
+			$field->{labelStyle} .= 'font-weight:bold;';
+		}
+		$field->{header} = $Cnf->{header} if(defined $Cnf->{header});
+		$field->{header} = $colname unless (defined $field->{header} and $field->{header} ne '');
+		$field->{fieldLabel} = $field->{header};
+		
+		push @items, $field;
+	}
+	
+	return @items;
+}
+
+sub get_add_form {
+	my $self = shift;
+
+	return {
+		xtype => 'form',
+		frame => \1,
+		labelAlign => 'right',
+		labelWidth => 70,
+		plugins => ['dynamic-label-width'],
+		bodyStyle => 'padding: 25px 10px 5px 5px;',
+		defaults => {
+			width => 250
+		},
+		autoScroll => \1,
+		monitorValid => \1,
+		buttonAlign => 'center',
+		minButtonWidth => 100,
+		
+		# datastore-plus (client side) adds handlers based on the "name" properties 'save' and 'cancel' below
+		buttons => [
+			{
+				name => 'save',
+				text => 'Save',
+				iconCls => 'icon-save',
+				formBind => \1
+			},
+			{
+				name => 'cancel',
+				text => 'Cancel',
+			}
+		],
+		items => [ $self->get_add_form_items ]
+	};
+}
+
 
 
 

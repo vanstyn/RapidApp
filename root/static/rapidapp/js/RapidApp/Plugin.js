@@ -1618,23 +1618,29 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			var win;
 			var close_handler = function(btn) { win.close(); };
 			
-			var formpanel = plugin.getAddFormPanel(newRec,close_handler);
+			plugin.getAddFormPanel(newRec,close_handler,function(formpanel){
 			
-			var title = 'Add Record';
-			if(plugin.store_button_cnf.add && plugin.store_button_cnf.add.text) {
-				title = plugin.store_button_cnf.add.text;
-			}
-			win = new Ext.Window(Ext.apply({
-				title: title,
-				layout: 'fit',
-				width: 700,
-				height: 500,
-				closable: true,
-				modal: true,
-				items: formpanel
-			},plugin.add_form_window_cnf));
-			
-			return win.show();
+				var title;
+				if(plugin.store_button_cnf.add && plugin.store_button_cnf.add.text) {
+					title = plugin.store_button_cnf.add.text;
+				}
+				else {
+					title = 'Add Record'
+				}
+				if(formpanel.title) { title = formpanel.title; }
+				
+				win = new Ext.Window(Ext.apply({
+					title: title,
+					layout: 'fit',
+					width: 700,
+					height: 500,
+					closable: true,
+					modal: true,
+					items: formpanel
+				},plugin.add_form_window_cnf));
+				
+				return win.show();
+			});
 		};
 		
 		store.addRecordFormTab = function(initData) {
@@ -1648,20 +1654,27 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			var tab;
 			var close_handler = function(btn) { loadTarget.remove(tab); };
 			
-			var formpanel = plugin.getAddFormPanel(newRec,close_handler);
-			
-			var title = 'Add Record';
-			if(plugin.store_button_cnf.add && plugin.store_button_cnf.add.text) {
-				title = plugin.store_button_cnf.add.text;
-			}
-			tab = loadTarget.add({
-				title: title,
-				layout: 'fit',
-				closable: true,
-				items: formpanel
+			plugin.getAddFormPanel(newRec,close_handler,function(formpanel){
+
+				var title;
+				if(plugin.store_button_cnf.add && plugin.store_button_cnf.add.text) {
+					title = plugin.store_button_cnf.add.text;
+				}
+				else {
+					title = 'Add Record'
+				}
+				if(formpanel.title) { title = formpanel.title; }
+				
+				
+				tab = loadTarget.add({
+					title: title,
+					layout: 'fit',
+					closable: true,
+					items: formpanel
+				});
+				
+				loadTarget.activate(tab);
 			});
-			
-			loadTarget.activate(tab);
 		};
 		
 		
@@ -2070,57 +2083,16 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		return false;
 	},
 	
-	// --- vv --- Code for an optional form for adding records
-	addFormItems: null,
-	getAddFormItems: function() {
-		if(!Ext.isArray(this.addFormItems)) {
-
-			var items = [];
-			
-			var column_list = this.cmp.initialConfig.columns;
-			
-			Ext.each(column_list,function(col){
-				// If there is no editor then there is no field to display.
-				// Because the backend automatically creates editors, we do *not*
-				// setup a default editor. We trust/rely on the backend. If it
-				// wanted us to have an editor, it would have provided one.
-				if(!Ext.isObject(col.editor)) { return; }
-				
-				// Skip columns with 'no_column' set to true except if 'allow_add' is true:
-				if(col.no_column && !col.allow_add) { return; }
-				
-				// Skip if allow_add is defined but set to false:
-				if(typeof col.allow_add !== "undefined" && !col.allow_add) { return; }
-			
-				var field = Ext.apply({},col.editor);  
-					
-				// Important: autoDestroy must be false on the store or else store-driven
-				// components (i.e. combos) will be broken as soon as the form is closed 
-				// the first time
-				if(field.store) { field.store.autoDestroy = false; }
-				
-				if(typeof field.allowBlank == 'undefined') { field.allowBlank = true; }
-				if(!field.allowBlank) {
-					field.labelStyle = field.labelStyle ? field.labelStyle : '';
-					field.labelStyle += 'font-weight:bold;';
-				}
-
-				field.name = col.name || col.dataIndex;
-				field.fieldLabel = col.header || field.name;
-				items.push(field);
-			},this);
-
-			this.addFormItems = items;
-		}
-		return this.addFormItems; 
-	},
-	getAddFormPanel: function(newRec,close_handler,cnf) {
-	
-		close_handler = close_handler || Ext.emptyFn;
-		cnf = cnf || {};
+	getAddFormPanel: function(newRec,close_handler,callback) {
 		
-		var store = this.cmp.store;
 		var plugin = this;
+		var store = this.cmp.store;
+		
+		close_handler = close_handler || Ext.emptyFn;
+		
+		var cancel_handler = function(btn) {
+			close_handler(btn);
+		};
 		
 		var save_handler = function(btn) {
 			var form = btn.ownerCt.ownerCt.getForm();
@@ -2130,47 +2102,39 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			close_handler(btn);
 		};
 		
-		var cancel_handler = function(btn) {
-			close_handler(btn);
-		};
+		var myMask = new Ext.LoadMask(Ext.getBody(), {msg:"Loading Form..."});
+		var show_mask = function() { myMask.show(); }
+		var hide_mask = function() { myMask.hide(); }
 		
-		var formpanel = Ext.apply({
-			xtype: 'form',
-			frame: true,
-			labelAlign: 'right',
-			labelWidth: 70,
-			bodyStyle: 'padding: 25px 10px 5px 5px;',
-			defaults: {
-				xtype: 'textfield',
-				width: 250
+		show_mask();
+		Ext.Ajax.request({
+			url: plugin.cmp.add_form_url,
+			failure: hide_mask,
+			success: function(response,options) {
+				
+				var formpanel = Ext.decode(response.responseText);
+				
+				Ext.each(formpanel.items,function(field) {
+					// Important: autoDestroy must be false on the store or else store-driven
+					// components (i.e. combos) will be broken as soon as the form is closed 
+					// the first time
+					if(field.store) { field.store.autoDestroy = false; }
+				},this);
+				
+				Ext.each(formpanel.buttons,function(button) {
+					if(button.name == 'save') {
+						button.handler = save_handler;
+					}
+					else if(button.name == 'cancel') {
+						button.handler = cancel_handler;
+					}
+				},this);
+				
+				hide_mask();
+				callback(formpanel);
 			},
-			plugins: ['dynamic-label-width'],
-			autoScroll: true,
-			monitorValid: true,
-			buttonAlign: 'center',
-			minButtonWidth: 100,
-			buttons: [
-				{
-					text: 'Save',
-					iconCls: 'icon-save',
-					handler: save_handler,
-					formBind: true
-				},
-				{
-					text: 'Cancel',
-					handler: cancel_handler
-				}
-			],
-			listeners: {
-				beforerender: function(){
-					var form = this.getForm();
-					form.loadRecord(newRec);
-				}
-			},
-			items: this.getAddFormItems()
-		},cnf);
-		
-		return formpanel;
+			scope: this
+		});
 	}
 	// --- ^^ ---
 
