@@ -2238,3 +2238,49 @@ Ext.ux.RapidApp.Plugin.autoHeightIframe = Ext.extend(Ext.util.Observable,{
 Ext.preg('iframe-autoheight',Ext.ux.RapidApp.Plugin.autoHeightIframe);
 
 
+
+Ext.ux.RapidApp.Plugin.ReadOnlyField = Ext.extend(Ext.util.Observable,{
+	
+	styles: {
+		'background-color': 'transparent',
+		'border-color': 'transparent',
+		'background-image': 'none',
+		
+		// the normal text field has padding-top: 2px which makes the text sit towards
+		// the bottom of the field. We set top and bot here to move one of the px to the
+		// bottom so the text will be vertically centered but take up the same vertical
+		// size as a normal text field:
+		'padding-top': '1px',
+		'padding-bottom': '1px'
+	},
+	
+	getStyleString: function() {
+		var str = '';
+		Ext.iterate(this.styles,function(k,v) {
+			str += k + ':' + v + ';';
+		},this);
+		return str;
+	},
+	
+	init: function(cmp) {
+		this.cmp = cmp;
+		
+		cmp.style = cmp.style || '';
+		
+		if(Ext.isObject(cmp.style)) {
+			Ext.apply(cmp.style,this.styles);
+		}
+		else {
+			cmp.style += this.getStyleString();
+		}
+		
+		cmp.readOnly = true;
+		cmp.allowBlank = true;
+	}
+	
+});
+Ext.preg('read-only-field',Ext.ux.RapidApp.Plugin.ReadOnlyField);
+
+
+
+
