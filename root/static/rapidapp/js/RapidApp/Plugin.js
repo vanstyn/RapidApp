@@ -2144,7 +2144,6 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				xtype: 'textfield',
 				width: 250
 			},
-			items: this.getAddFormItems(),
 			plugins: ['dynamic-label-width'],
 			autoScroll: true,
 			monitorValid: true,
@@ -2167,7 +2166,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					var form = this.getForm();
 					form.loadRecord(newRec);
 				}
-			}
+			},
+			items: this.getAddFormItems()
 		},cnf);
 		
 		return formpanel;
@@ -2230,4 +2230,26 @@ Ext.ux.RapidApp.Plugin.tabpanelCloseAllBtn = Ext.extend(Ext.util.Observable,{
 	}
 });
 Ext.preg('tabpanel-closeall',Ext.ux.RapidApp.Plugin.tabpanelCloseAllBtn);
+
+
+
+// Plugin for ManagedIframe
+// Sets the height based on the iframe height after it's loaded
+Ext.ux.RapidApp.Plugin.autoHeightIframe = Ext.extend(Ext.util.Observable,{
+	init: function(cmp) {
+		this.cmp = cmp;
+		this.cmp.on('domready',this.onDocumentLoaded,this);
+	},
+	
+	onDocumentLoaded: function(el) {
+		this.setHeight.defer(100,this,[el]);
+	},
+	
+	setHeight:function(el) {
+		var height = el.dom.contentDocument.activeElement.scrollHeight;
+		this.cmp.setHeight(height + 35);
+	}
+});
+Ext.preg('iframe-autoheight',Ext.ux.RapidApp.Plugin.autoHeightIframe);
+
 
