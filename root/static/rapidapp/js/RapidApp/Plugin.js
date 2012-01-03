@@ -1628,12 +1628,18 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					title = 'Add Record'
 				}
 				if(formpanel.title) { title = formpanel.title; }
+				var height = formpanel.height || 500;
+				var width = formpanel.width || 700;
+				
+				delete formpanel.height;
+				delete formpanel.width;
+				delete formpanel.title;
 				
 				win = new Ext.Window(Ext.apply({
 					title: title,
 					layout: 'fit',
-					width: 700,
-					height: 500,
+					width: width,
+					height: height,
 					closable: true,
 					modal: true,
 					items: formpanel
@@ -1663,8 +1669,12 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				else {
 					title = 'Add Record'
 				}
-				if(formpanel.title) { title = formpanel.title; }
 				
+				title = formpanel.title || title;
+				
+				delete formpanel.height;
+				delete formpanel.width;
+				delete formpanel.title;
 				
 				tab = loadTarget.add({
 					title: title,
@@ -2106,9 +2116,15 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		var show_mask = function() { myMask.show(); }
 		var hide_mask = function() { myMask.hide(); }
 		
+		var params = {};
+		if(store.lastOptions.params) { Ext.apply(params,store.lastOptions.params); }
+		if(store.baseParams) { Ext.apply(params,store.baseParams); }
+		if(plugin.cmp.baseParams) { Ext.apply(params,plugin.cmp.baseParams); }
+		
 		show_mask();
 		Ext.Ajax.request({
 			url: plugin.cmp.add_form_url,
+			params: params,
 			failure: hide_mask,
 			success: function(response,options) {
 				
