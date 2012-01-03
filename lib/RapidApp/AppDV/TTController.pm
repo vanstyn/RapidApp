@@ -252,6 +252,29 @@ has 'autofield' => (
 			return '{' . $display . '}' unless ($Column->editor);
 			
 			my $config = $Column->get_field_config;
+			
+			
+			
+			##############
+			### FIX ME ###
+			##############
+			
+			## Temp hack workaround ##
+			## for some reason 'checkbox' field doesn't work in AppDV. The checkbox is not clickable.
+			## It is some kind of low-level browser issue
+			## I spent a bunch of time trying to figure it out and then finally have up and wrote
+			## 'logical-checkbox'.  (might be a fundamental flaw in AppDV)
+			## This is ugly and needs to be fixed, as this workaround is "spooky action at a distance"
+			$config->{xtype} = 'logical-checkbox' if ($config->{xtype} eq 'checkbox');
+			##
+			##
+			
+			##############
+			##############
+			##############
+			
+			
+			
 			$self->AppDV->FieldCmp->{$Column->name} = $self->AppDV->json->encode($config);
 			
 			# editable
