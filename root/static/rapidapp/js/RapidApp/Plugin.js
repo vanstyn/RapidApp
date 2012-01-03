@@ -2146,6 +2146,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					}
 				},this);
 				
+				formpanel.Record = newRec;
+				
 				hide_mask();
 				callback(formpanel);
 			},

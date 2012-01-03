@@ -4753,3 +4753,41 @@ Ext.ux.RapidApp.getWithIconClsRenderer = function(icon_cls) {
 
 
 
+// Gets the named value in the data set of the field (calling scope),
+// whether its a grid, a form, etc. Specific to RapidApp modules
+// use like this:
+// var value = Ext.ux.RapidApp.fieldContextDataGetValue.call(fieldObj,key);
+Ext.ux.RapidApp.fieldContextDataGetValue = function(name) {
+	
+	var rec_data = {};
+		
+	// In AppGrid2:
+	if(this.gridEditor && this.gridEditor.record) { 
+		rec_data = this.gridEditor.record.data;
+	}
+	
+	// In AppDV
+	if(this.Record) { 
+		rec_data = this.Record.data;
+	}
+	
+	// In AppPropertyGrid
+	if(this.propgrid && this.propgrid.bindRecord) { 
+		rec_data = this.propgrid.bindRecord.data;
+	}
+	
+	// In a form
+	if(this.ownerCt && this.ownerCt.getForm) { 
+		var form = this.ownerCt.getForm();
+		var field = form.findField(name);
+		if(name) { 
+			rec_data[name] = field.getValue(); 
+		}
+		if(this.ownerCt.Record && this.ownerCt.Record.data[name]) {
+			if(!rec_data[name] || rec_data[name] == '');
+			rec_data = this.ownerCt.Record.data;
+		}
+	}
+	
+	return rec_data[name];
+}
