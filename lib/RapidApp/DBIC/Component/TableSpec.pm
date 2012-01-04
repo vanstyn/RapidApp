@@ -253,22 +253,32 @@ sub default_TableSpec_cnf_columns {
 sub TableSpec_valid_db_columns {
 	my $self = shift;
 	
-	my @rels = grep { 
-		$self->relationship_info($_)->{attrs}->{accessor} eq 'single' and
-		$self->TableSpec_related_get_set_conf($_,'display_column')
-	} $self->relationships;
+	my @single_rels = ();
+	my @multi_rels = ();
 	
-	$self->TableSpec_set_conf('relationship_column_names',\@rels);
+	my %fk_cols = ();
 	
+	foreach my $rel ($self->relationships) {
+		my $info = $self->relationship_info($rel);
+		if($info->{attrs}->{accessor} eq 'single') {
+			push @single_rels, $rel;
+			
+			my ($fk) = keys %{$info->{attrs}->{fk_columns}};
+			$fk_cols{$fk} = $rel;
+		}
+		elsif($info->{attrs}->{accessor} eq 'multi') {
+			push @multi_rels, $rel;
+		
+		}
+		# TODO: what about other types? 'filter' ?
 	
-	my @multi_rels = grep { 
-		$self->relationship_info($_)->{attrs}->{accessor} eq 'multi' 
-	} $self->relationships;
+	}
 	
+	$self->TableSpec_set_conf('relationship_column_names',\@single_rels);
 	$self->TableSpec_set_conf('multi_relationship_column_names',\@multi_rels);
+	$self->TableSpec_set_conf('relationship_column_fks_map',\%fk_cols);
 	
-	
-	return uniq($self->columns,@rels,@multi_rels);
+	return uniq($self->columns,@single_rels,@multi_rels);
 }
 
 sub default_TableSpec_cnf_column_order {
