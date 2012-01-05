@@ -512,6 +512,85 @@ sub parse_relationship_cond {
 	return $data;
 }
 
+# Works like an around method modifier, but $self is expected as first arg and
+# $orig (method) is expected as second arg (reversed from a normal around modifier).
+# Calls the supplied method and returns what changed in the record from before to 
+# after the call. e.g.:
+#
+# my ($changes) = $self->proxy_method_get_changed('update',{ foo => 'sdfds'});
+#
+# This is typically used for update, but could be any other method, too.
+#
+# Detects/propogates wantarray context. Call like this to chain from another modifier:
+#my ($changes,@ret) = wantarray ?
+# $self->proxy_method_get_changed($orig,@_) :
+#  @{$self->proxy_method_get_changed($orig,@_)};
+#
+sub proxy_method_get_changed {
+	my $self = shift;
+	my $method = shift;
+	
+	my $origRow = $self->get_from_storage;
+	my %old = $origRow->get_columns;
+	
+	my @ret = ();
+	wantarray ? @ret = $self->$method(@_) : $ret[0] = $self->$method(@_);
+	
+	my %new = $self->get_columns;
+	
+	# This logic is duplicated in DbicLink2. Not sure how to avoid it, though,
+	# and keep a clean API
+	@changed = ();
+	foreach my $col (keys %new) {
+		next if (! defined $new{$col} and ! defined $old{$col});
+		next if ($new{$col} eq $old{$col});
+		push @changed, $col;
+	}
+	
+	return unless (@changed > 0);
+	
+	my @new_changed = ();
+	my $fk_map = $self->TableSpec_get_conf('relationship_column_fks_map');
+	foreach my $col (@changed) {
+		unless($fk_map->{$col}) {
+			push @new_changed, $col;
+			next;
+		}
+		
+		my $rel = $fk_map->{$col};
+		my $display_col = $self->TableSpec_related_get_set_conf($rel,'display_column');
+		
+		unless($display_col) {
+			push @new_changed, $col;
+			next;
+		}
+		
+		push @new_changed, $rel;
+		
+		$old{$rel} = $origRow->$rel->get_column($display_col);
+		$new{$rel} = $self->$rel->get_column($display_col);
+	}
+	
+	@changed = @new_changed;
+	
+	my $col_props = { $self->TableSpec_get_conf('columns') };
+	
+	my %diff = map {
+		$_ => { 
+			old => $old{$_}, 
+			new => $new{$_},
+			header => ($col_props->{$_} && $col_props->{$_}->{header}) ? 
+				$col_props->{$_}->{header} : $_
+		} 
+	} @changed;
+	
+	return wantarray ? (\%diff,@ret) : [\%diff,@ret];
+}
+
+
+
+1;__END__
+
 
 =pod
 sub TableSpec_set_conf_column_order {
@@ -553,11 +632,6 @@ sub TableSpec_set_conf_column_order_base {
 }
 =cut
 
-
-
-
-
-1;__END__
 
 
 sub related_TableSpec {
