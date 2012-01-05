@@ -1664,7 +1664,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			
 			plugin.getAddFormPanel(newRec,close_handler,function(formpanel){
 
-				var title;
+				var title, iconCls;
 				if(plugin.store_button_cnf.add && plugin.store_button_cnf.add.text) {
 					title = plugin.store_button_cnf.add.text;
 				}
@@ -1672,14 +1672,21 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					title = 'Add Record'
 				}
 				
+				if(plugin.store_button_cnf.add && plugin.store_button_cnf.add.iconCls) {
+					iconCls = plugin.store_button_cnf.add.iconCls;
+				}
+				
 				title = formpanel.title || title;
+				iconCls = formpanel.iconCls || iconCls;
 				
 				delete formpanel.height;
 				delete formpanel.width;
 				delete formpanel.title;
+				delete formpanel.iconCls;
 				
 				tab = loadTarget.add({
 					title: title,
+					iconCls: iconCls,
 					layout: 'fit',
 					closable: true,
 					items: formpanel
