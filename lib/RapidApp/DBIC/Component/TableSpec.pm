@@ -533,7 +533,7 @@ sub proxy_method_get_changed {
 	my $origRow = $self;
 	my %old = ();
 	if($self->in_storage) {
-		$origRow = $self->get_from_storage ;
+		$origRow = $self->get_from_storage || $self;
 		%old = $origRow->get_columns;
 	}
 	
