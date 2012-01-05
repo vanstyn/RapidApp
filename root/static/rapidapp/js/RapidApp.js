@@ -4751,6 +4751,14 @@ Ext.ux.RapidApp.getWithIconClsRenderer = function(icon_cls) {
 	};
 }
 
+Ext.ux.RapidApp.getRendererStatic = function(str,meta) {
+	meta = meta || {};
+	return function(value,metaData) { 
+		Ext.apply(metaData,meta);
+		return str; 
+	}
+}
+
 
 
 // Gets the named value in the data set of the field (calling scope),
