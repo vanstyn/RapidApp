@@ -567,15 +567,18 @@ sub proxy_method_get_changed {
 		my $rel = $fk_map->{$col};
 		my $display_col = $self->TableSpec_related_get_set_conf($rel,'display_column');
 		
-		unless($display_col) {
+		my $relOld = $origRow->$rel;
+		my $relNew = $self->$rel;
+		
+		unless($display_col and ($relOld or $relNew)) {
 			push @new_changed, $col;
 			next;
 		}
 		
 		push @new_changed, $rel;
 		
-		$old{$rel} = $origRow->$rel->get_column($display_col) if (exists $old{$col});
-		$new{$rel} = $self->$rel->get_column($display_col) if (exists $new{$col});
+		$old{$rel} = $relOld->get_column($display_col) if (exists $old{$col} and $relOld);
+		$new{$rel} = $relNew->get_column($display_col) if (exists $new{$col} and $relNew);
 	}
 	
 	@changed = @new_changed;
