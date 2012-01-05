@@ -530,24 +530,31 @@ sub proxy_method_get_changed {
 	my $self = shift;
 	my $method = shift;
 	
-	my $origRow = $self->get_from_storage;
-	my %old = $origRow->get_columns;
+	my $origRow = $self;
+	my %old = ();
+	if($self->in_storage) {
+		$origRow = $self->get_from_storage ;
+		%old = $origRow->get_columns;
+	}
 	
 	my @ret = ();
-	wantarray ? @ret = $self->$method(@_) : $ret[0] = $self->$method(@_);
+	wantarray ? 
+		@ret = $self->$method(@_) : 
+			$ret[0] = $self->$method(@_);
 	
-	my %new = $self->get_columns;
+	my %new = ();
+	if($self->in_storage) {
+		%new = $self->get_columns;
+	}
 	
 	# This logic is duplicated in DbicLink2. Not sure how to avoid it, though,
 	# and keep a clean API
 	@changed = ();
-	foreach my $col (keys %new) {
+	foreach my $col (uniq(keys %new,keys %old)) {
 		next if (! defined $new{$col} and ! defined $old{$col});
 		next if ($new{$col} eq $old{$col});
 		push @changed, $col;
 	}
-	
-	return unless (@changed > 0);
 	
 	my @new_changed = ();
 	my $fk_map = $self->TableSpec_get_conf('relationship_column_fks_map');
@@ -567,8 +574,8 @@ sub proxy_method_get_changed {
 		
 		push @new_changed, $rel;
 		
-		$old{$rel} = $origRow->$rel->get_column($display_col);
-		$new{$rel} = $self->$rel->get_column($display_col);
+		$old{$rel} = $origRow->$rel->get_column($display_col) if (exists $old{$col});
+		$new{$rel} = $self->$rel->get_column($display_col) if (exists $new{$col});
 	}
 	
 	@changed = @new_changed;
