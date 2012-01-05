@@ -1782,6 +1782,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	// Only applies to Editor Grids implementing the 'beforeedit' event
 	beforeCellEdit: function(e) {
 		var column = e.grid.getColumnModel().getColumnById(e.column);
+		if(!column) { return; }
 		
 		// Adding a new record (phantom):
 		if(e.record.phantom) {
