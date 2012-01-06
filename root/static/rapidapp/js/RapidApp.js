@@ -4573,6 +4573,29 @@ Ext.ux.RapidApp.InlineLinkHandler = function(e) {
 	}
 	return false;
 }
+
+Ext.ux.RapidApp.callFnLink = function(fn_name,text,args,attrs) {
+	
+	var arg_str = args;
+	if(Ext.isArray(args)) {
+		arg_str = "'" + args.join("','") + "'";
+	}
+	
+	var func_str = "return " + fn_name + ".call(this," + arg_str + ");";
+	
+	attrs = attrs || {};
+	attrs = Ext.apply({
+		href: '#',
+		onclick: func_str,
+		ondblclick: func_str
+	},attrs);
+	
+	var link = '<a';
+	Ext.iterate(attrs,function(k,v) { link += ' ' + k + '="' + v + '"'; });
+	link += '>' + text + '</a>';
+	
+	return link;
+}
 /* ----- */
 
 /* http://stackoverflow.com/questions/130404/javascript-data-formatting-pretty-printer */
