@@ -251,6 +251,35 @@ sub add_listener {
 }
 
 
+sub is_printview {
+	my $self = shift;
+	return 1 if ($self->c->req->header('X-RapidApp-View') eq 'print');
+	return 0;
+}
+
+# Available to derived classes. Can be added to toolbar buttons, etc
+sub print_view_button {
+	my $self = shift;
+	
+	my $params = $self->c->req->params;
+	delete $params->{_dc};
+	
+	my $cnf = {
+		url => $self->suburl('printview'),
+		params => $params
+	};
+	
+	my $json = $self->json->encode($cnf);
+	
+	return {
+		xtype	=> 'button',
+		text => 'Print View',
+		iconCls => 'icon-printer',
+		handler => jsfunc 'Ext.ux.RapidApp.winLoadUrlGET.createCallback(' . $json . ')'
+	};
+}
+
+
 
 #### --------------------- ####
 

@@ -15,6 +15,7 @@
         Ext.Ajax.request({
             url: config_url,
             params: config_params,
+				headers: { 'X-RapidApp-View': 'print' },
             success: function(response, opts) {
 				if(response.responseText) {
 					var cmpconf = Ext.decode(response.responseText);

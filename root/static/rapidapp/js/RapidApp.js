@@ -4866,3 +4866,9 @@ Ext.ux.RapidApp.fieldContextDataGetValue = function(name) {
 	
 	return rec_data[name];
 }
+
+
+Ext.ux.RapidApp.winLoadUrlGET = function(cnf) {
+	var url = Ext.urlEncode(cnf.params,cnf.url + '?');
+	window.open(url,'');
+}
