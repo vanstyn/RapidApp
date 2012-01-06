@@ -1773,7 +1773,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		};
 		
 		store.addEvents('saveall');
-		store.on('beforesave',function() { 
+		store.on('beforesave',function() {
 			store.save_inprogress = true; 
 		});
 		this.cmp.on('afterrender',function(){
@@ -1784,6 +1784,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				});
 			});
 		});
+		
+		store.on('exception',store.undoChanges,store);
 	},
 	
 	// Only applies to Editor Grids implementing the 'beforeedit' event
