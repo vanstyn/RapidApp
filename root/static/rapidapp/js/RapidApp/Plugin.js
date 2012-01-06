@@ -2118,10 +2118,44 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		
 		var save_handler = function(btn) {
 			var form = btn.ownerCt.ownerCt.getForm();
-			form.updateRecord(newRec);
-			var ret = store.add(newRec);
-			if(plugin.persist_immediately.create) { store.saveIfPersist(); }
-			close_handler(btn);
+			
+			// Use a copy of the new record in case the save fails and we need to try again:
+			var newRecord = newRec.copy();
+			newRecord.phantom = true; //<-- the copy doesn't have this set like the original... why?
+			
+			form.updateRecord(newRecord);
+			store.add(newRecord);
+			
+			if(plugin.persist_immediately.create) {
+				
+				var after_write_fn = Ext.emptyFn;
+				var remove_handler = Ext.emptyFn;
+				
+				remove_handler = function() { 
+					store.un('write',after_write_fn);
+					// Remove ourselves as we are also a single-use handler:
+					store.un('exception',remove_handler);
+				}
+				
+				after_write_fn = function(store,action) {
+					if(action == 'create') {
+						// Remove ourselves as we are a single-use handler:
+						remove_handler();
+						// close the add form only after successful create on the server:
+						close_handler(btn);
+					}
+				}
+				
+				store.on('write',after_write_fn,store);
+				
+				// Also remove this single-use handler on exception:
+				store.on('exception',remove_handler,store);
+				
+				store.saveIfPersist(); 
+			}
+			else {
+				close_handler(btn);
+			}
 		};
 		
 		var myMask = new Ext.LoadMask(Ext.getBody(), {msg:"Loading Form..."});
