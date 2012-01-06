@@ -1002,6 +1002,7 @@ sub _dbiclink_destroy_records {
 sub handle_dbic_exception {
 	my $self = shift;
 	my $exception = shift;
+	
 	die $exception if (ref($exception) =~ /^RapidApp\:\:Responder/);
 	die usererr rawhtml $self->make_dbic_exception_friendly($exception), title => 'DbicLink2 Database Error';
 }
@@ -1011,6 +1012,14 @@ sub make_dbic_exception_friendly {
 	my $self = shift;
 	my $exception = shift;
 	my $msg = "" . $exception . "";
+	
+	
+	#### Fix me!!!! ####
+	# Randomly getting this DBIx exception when throwing a customprompt object within CRUD operations
+	# no idea silently pass it up for now
+	die infostatus msg => "Bizarre copy of HASH in aassign", status => 500 if ($msg =~/Bizarre copy of HASH in aassign/);
+	
+	
 	
 	my @parts = split(/DBD\:\:mysql\:\:st execute failed\:\s*/,$msg);
 	return $exception unless (scalar @parts > 1);

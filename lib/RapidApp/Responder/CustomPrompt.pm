@@ -16,6 +16,9 @@ has 'items'			=> ( is => 'ro', isa => 'Maybe[ArrayRef|HashRef]', default => unde
 has 'formpanel_cnf'	=> ( is => 'ro', isa => 'Maybe[HashRef]', default => undef );
 has 'noCancel'			=> ( is => 'ro', default => undef );
 has 'validate'			=> ( is => 'ro', default => undef );
+has 'EnterButton' 	=> ( is => 'ro', isa => 'Maybe[Str]', default => undef );
+has 'EscButton' 		=> ( is => 'ro', isa => 'Maybe[Str]', default => undef );
+has 'focusField' 		=> ( is => 'ro', isa => 'Maybe[Str]', default => undef );
 
 sub customprompt_data {
 	my $self = shift;
@@ -31,6 +34,9 @@ sub customprompt_data {
 	$data->{formpanel_cnf} 	= $self->formpanel_cnf if (defined $self->formpanel_cnf);
 	$data->{noCancel}			= $self->noCancel if (defined $self->noCancel);
 	$data->{validate}			= $self->validate if (defined $self->validate);
+	$data->{EnterButton}		= $self->EnterButton if (defined $self->EnterButton);
+	$data->{EscButton}		= $self->EscButton if (defined $self->EscButton);
+	$data->{focusField}		= $self->focusField if (defined $self->focusField);
 
 	return $data;
 }

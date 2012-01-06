@@ -572,11 +572,14 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 		default_formpanel_cnf.monitorValid = true;
 	}
 	
+	
 	Ext.apply(default_formpanel_cnf,data.formpanel_cnf);
 	data.formpanel_cnf = default_formpanel_cnf;
 	
 	var btn_handler = function(btn) {
-	
+		
+		win.callingHandler = true;
+		
 		var formpanel = win.getComponent('formpanel');
 		var form = formpanel.getForm();
 		var data = form.getFieldValues();
@@ -593,16 +596,42 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 		return formpanel.success_callback(newopts);
 	}
 	
+	var onEsc = null;
+	
 	// Custom buttons:
 	var buttons = [];
 	Ext.each(data.buttons,function(text) {
 		var btn = {
 			xtype: 'button',
 			text: text,
-			handler: btn_handler
+			//handler: btn_handler
 		}
 		
-		if(data.validate) {
+		if(data.EnterButton && data.EnterButton == text) {
+			
+			var click_fn = btn_handler.createCallback({text: text});
+			
+			btn.listeners = {
+				click: click_fn,
+				afterrender: function(b) {
+					var fp = b.ownerCt.ownerCt;
+					
+					new Ext.KeyMap(fp.el, {
+						key: Ext.EventObject.ENTER,
+						shift: false,
+						alt: false,
+						fn: function(){ this.el.dom.click(); },
+						scope: b
+					});
+					
+				}
+			}
+		}
+		
+		if(data.EscButton && data.EscButton == text) {
+			onEsc = btn_handler.createCallback({text:text});
+		}
+		else if(data.validate) {
 			btn.formBind = true;
 		}
 		
@@ -625,6 +654,7 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 		});
 	}
 	
+		
 	var formpanel = {
 		xtype: 'form',
 		itemId: 'formpanel',
@@ -636,20 +666,34 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 	};
 	
 	Ext.apply(formpanel,data.formpanel_cnf);
-
-	win = new Ext.Window({
+	
+	var window_cnf = {
 		title: data.title,
 		layout: 'fit',
 		width: data.width,
 		height: data.height,
 		closable: true,
 		modal: true,
-		//autoScroll: true,
-		//buttons: buttons,
-		items: formpanel
-		
-	});
+		items: formpanel,
+		listeners: {
+			afterrender: function(w) {
+				if(!data.focusField) { return; }
+				var fp = w.getComponent('formpanel');
+				var field = fp.getForm().findField(data.focusField);
+				if(field) { field.focus('',10); field.focus('',200); field.focus('',500); }
+			},
+			beforeclose: function(w){
+				if(onEsc && !w.callingHandler) { 
+					w.callingHandler = true; 
+					onEsc(); 
+				}
+			}
+		}
+	};
+	
+	if(data.noCancel && !onEsc) { window_cnf.closable = false; }
 
+	win = new Ext.Window(window_cnf);
 	win.show();
 };
 
