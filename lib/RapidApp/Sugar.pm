@@ -19,7 +19,7 @@ Hash::Merge::set_behavior( 'RIGHT_PRECEDENT' );
 
 our @EXPORT = qw(
 	sessvar perreq asjson rawjs mixedjs ashtml rawhtml usererr userexception override_defaults 
-	merge_defaults DEBUG jsfunc blessed merge hasarray hashash
+	merge_defaults DEBUG jsfunc blessed merge hasarray hashash infostatus
 );
 
 # Module shortcuts
@@ -252,6 +252,12 @@ sub hashash {
 	return caller->can('has')->($name,%$conf);
 }
 
+
+sub infostatus {
+	my %opt = @_;
+	%opt = ( msg => $_[0] ) if (@_ == 1);
+	return RapidApp::Responder::InfoStatus->new(%opt);
+}
 
 
 1;

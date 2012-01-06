@@ -71,6 +71,7 @@ sub rapidapp_base {
 	calleruse 'RapidApp::Error::CustomPrompt';
 	calleruse 'RapidApp::Responder::UserError';
 	calleruse 'RapidApp::Responder::CustomPrompt';
+	calleruse 'RapidApp::Responder::InfoStatus';
 	calleruse 'RapidApp::ScopedGlobals';
 	calleruse 'RapidApp::JSONFunc';
 	calleruse 'RapidApp::JSON::MixedEncoder';
