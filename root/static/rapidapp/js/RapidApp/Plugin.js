@@ -1821,6 +1821,9 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			if(! constructor) { return; }
 			
 			var cnf = this.store_button_cnf[name] || {};
+				
+			if(cnf.text && !cnf.tooltip) { cnf.tooltip = cnf.text; }
+			if(typeof cnf.showtext != "undefined") { showtext = cnf.showtext; }
 			
 			var btn = constructor(cnf,this.cmp,showtext);
 			if(!btn) { return; }
