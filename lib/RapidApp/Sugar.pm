@@ -15,11 +15,12 @@ use HTML::Entities;
 use Scalar::Util qw(blessed);
 use Hash::Merge qw( merge );
 Hash::Merge::set_behavior( 'RIGHT_PRECEDENT' );
+use Clone qw(clone);
 
 
 our @EXPORT = qw(
 	sessvar perreq asjson rawjs mixedjs ashtml rawhtml usererr userexception override_defaults 
-	merge_defaults DEBUG jsfunc blessed merge hasarray hashash infostatus
+	merge_defaults DEBUG jsfunc blessed merge hasarray hashash infostatus clone
 );
 
 # Module shortcuts
