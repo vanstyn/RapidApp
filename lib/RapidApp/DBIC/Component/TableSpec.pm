@@ -32,6 +32,7 @@ my $default_data_type_profiles = {
 	bigint		=> [ 'number', 'int' ],
 	datetime		=> [ 'datetime' ],
 	timestamp	=> [ 'datetime' ],
+	date			=> [ 'date' ],
 };
 __PACKAGE__->mk_classdata( 'TableSpec_data_type_profiles' );
 __PACKAGE__->TableSpec_data_type_profiles({ %$default_data_type_profiles }); 

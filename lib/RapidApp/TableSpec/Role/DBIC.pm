@@ -33,6 +33,7 @@ default => sub {
 
 has 'schema', is => 'ro', lazy => 1, default => sub { (shift)->ResultSource->schema; };
 
+=pod
 has 'data_type_profiles' => ( is => 'ro', isa => 'HashRef', default => sub {{
 	text 			=> [ 'bigtext' ],
 	blob 			=> [ 'bigtext' ],
@@ -45,7 +46,9 @@ has 'data_type_profiles' => ( is => 'ro', isa => 'HashRef', default => sub {{
 	bigint		=> [ 'number', 'int' ],
 	datetime		=> [ 'datetime' ],
 	timestamp	=> [ 'datetime' ],
+	date			=> [ 'date' ]
 }});
+=cut
 
 subtype 'ColSpec', as 'Object';
 coerce 'ColSpec', from 'ArrayRef[Str]', 
