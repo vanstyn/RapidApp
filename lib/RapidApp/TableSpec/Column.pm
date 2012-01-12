@@ -64,6 +64,10 @@ sub DEFAULT_PROFILES {{
 			editor => { xtype => 'xdatetime2', minWidth => 200 },
 			renderer => ["Ext.ux.RapidApp.getDateFormatter('M d, Y g:i A')"]
 		},
+		date => {
+			editor => { xtype => 'datefield', minWidth => 120 },
+			renderer => ["Ext.ux.RapidApp.getDateFormatter('M d, Y')"]
+		},
 		money => {
 			editor => { xtype => 'textfield' },
 			renderer => 'Ext.ux.showNullusMoney'
