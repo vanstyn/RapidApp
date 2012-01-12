@@ -1169,10 +1169,11 @@ sub resolve_dbic_colname {
 	my $self = shift;
 	my $name = shift;
 	my $merge_join = shift;
+	my $get_render_col = shift || 0; 
 	
 	#scream_color(GREEN,$name);
 	
-	my ($rel,$col,$join,$cond_data) = $self->resolve_dbic_rel_alias_by_column_name($name);
+	my ($rel,$col,$join,$cond_data) = $self->resolve_dbic_rel_alias_by_column_name($name,$get_render_col);
 	$join = {} unless (defined $join);
 	%$merge_join = %{ merge($merge_join,$join) } if ($merge_join);
 	
@@ -1261,8 +1262,14 @@ sub resolve_dbic_colname {
 sub resolve_dbic_rel_alias_by_column_name  {
 	my $self = shift;
 	my $name = shift;
+	my $get_render_col = shift || 0; 
 	
-	#scream($name,$self->multi_rel_columns_indx,$self->column_name_relationship_map) if($name eq 'process__process_steps' or $name eq 'process_steps');
+	# -- applies only to relationship columns and currently only used for sort:
+	if($get_render_col) {
+		my $render_col = $self->relationship_column_render_column_map->{$name};
+		$name = $render_col if ($render_col);
+	}
+	# --
 	
 	my $rel = $self->column_name_relationship_map->{$name};
 	unless ($rel) {
@@ -1287,46 +1294,11 @@ sub resolve_dbic_rel_alias_by_column_name  {
 	}
 	
 	my $TableSpec = $self->related_TableSpec->{$rel};
-	my ($alias,$dbname,$join,$cond_data) = $TableSpec->resolve_dbic_rel_alias_by_column_name($name);
+	my ($alias,$dbname,$join,$cond_data) = $TableSpec->resolve_dbic_rel_alias_by_column_name($name,$get_render_col);
 	$alias = $rel if ($alias eq 'me');
 	return ($alias,$dbname,$join,$cond_data);
 }
 
-
-
-sub resolve_dbic_rel_alias_by_column_name_old  {
-	my $self = shift;
-	my $name = shift;
-	
-	scream($name,$self->multi_rel_columns_indx,$self->column_name_relationship_map) if($name eq 'process__process_steps' or $name eq 'process_steps');
-	
-	my $rel = $self->column_name_relationship_map->{$name};
-	unless ($rel) {
-		
-		my $join = $self->needed_join;
-		my $pre = $self->column_prefix;
-		$name =~ s/^${pre}//;
-		
-		# Special case for "multi" relationships... they return the related row count
-		my $func = $self->multi_rel_columns_indx->{$name} ? 'count' : undef;
-		if ($func) {
-			# Need to manually build the join to include the rel column:
-			my $rel_pre = $self->relspec_prefix;
-			$rel_pre .= '.' unless ($rel_pre eq '');
-			$rel_pre .= $name;
-			$join = $self->chain_to_hash(split(/\./,$rel_pre));
-		}
-	
-		return ('me',$name,$join,$func);
-	}
-	
-	
-
-	my $TableSpec = $self->related_TableSpec->{$rel};
-	my ($alias,$dbname,$join,$func) = $TableSpec->resolve_dbic_rel_alias_by_column_name($name);
-	$alias = $rel if ($alias eq 'me');
-	return ($alias,$dbname,$join,$func);
-}
 
 # This exists specifically to handle relationship columns:
 has 'custom_dbic_rel_aliases' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
@@ -1348,7 +1320,7 @@ sub chain_to_hash {
 }
 
 
-
+hashash 'relationship_column_render_column_map';
 sub get_relationship_column_cnf {
 	my $self = shift;
 	my $rel = shift;
@@ -1370,6 +1342,12 @@ sub get_relationship_column_cnf {
 	my $upd_key_col = $self->column_prefix . $conf->{keyField};
 	
 	my $colname = $self->column_prefix . $rel;
+	
+	# -- 
+	# Store the render column that is associated with this relationship column
+	# Currently we use this for sorting on relationship columns:
+	$self->relationship_column_render_column_map->{$colname} = $render_col;
+	# --
 
 	my $rows;
 	my $read_raw_munger = sub {

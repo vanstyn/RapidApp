@@ -404,16 +404,8 @@ sub chain_Rs_req_base_Attr {
 	
 	if (defined $params->{sort} and defined $params->{dir}) {
 		my $sort = lc($params->{sort});
-		
-		#--
-		# Handle sorts on relationship columns. Translate into underlying data value
-		# TODO: translate into *display* value so the sort makes sense (i.e. not based on)
-		# (Also, does this work on deep/joined rels? I don't think so...)
-		$sort = $self->TableSpec->column_data_alias->{$sort} 
-			if ($self->TableSpec->column_data_alias->{$sort});
-		#--
-		
-		my $sort_name = $dbic_name_map->{$sort} || $self->TableSpec->resolve_dbic_colname($sort,$attr->{join});		
+		my $get_render_col = 1;
+		my $sort_name = $dbic_name_map->{$sort} || $self->TableSpec->resolve_dbic_colname($sort,$attr->{join},$get_render_col);
 		$attr->{order_by} = { '-' . $params->{dir} => $sort_name } ;
 	}
 
