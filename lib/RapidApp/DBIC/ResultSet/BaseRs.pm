@@ -50,6 +50,39 @@ sub search_rs {
 	return $self->SUPER::search_rs(@_);
 }
 
+#-----------------------
+# Issue 13305: Fragile workaround for bug where DBIC's count
+# implementation called ->search_rs again in nested resultset, and BaseRs
+# puts on the where clause where it shouldn't.
+#
+# At the time 'count' is called, the base_rs is probably already applied to
+# our {attrs}, but we make sure, first.  We then set DISABLED so it won't
+# get applied to any newly created outer resultset.
+#
+# The actual mechanics of creating the outer resultset of the nested query
+# depends on the database driver.  See Dbic::Class::ResultSet->_count_subq_rs
+# for details.  This seems to be where our "_base_rs_applied" flag gets lost.
+#
+sub count_rs {
+	my $self= shift;
+	$self = $self->_get_apply_base_rs unless ($DISABLED);
+	
+	local $DISABLED= 1;
+	$self->SUPER::count_rs(@_);
+}
+#
+# also, count does not call count_rs, so we override this one too.
+#
+sub count {
+	my $self= shift;
+	$self = $self->_get_apply_base_rs unless ($DISABLED);
+	
+	local $DISABLED= 1;
+	$self->SUPER::count(@_);
+}
+# end workaround
+#------------------------
+
 sub _get_apply_base_rs {
 	my $Rs = shift;
 	return $Rs if ($Rs->{attrs}->{_base_rs_applied});

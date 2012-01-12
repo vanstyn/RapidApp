@@ -313,16 +313,16 @@ sub read_records {
 	# is a DBIC bug with MySQL as of v0.08195. Until its fixed, the below ugly
 	# and potentially very expensive, and potentially incorrect code gets the
 	# total count for paging. FIX ME!!!!!!!
-	my ($pri_col) = $Rs->result_source->primary_columns;
-	my $RsForCount = $Rs->search_rs({},{ 
-		select => [ $pri_col ], 
-		as => [ $pri_col ], 
-		order_by => $pri_col, 
-		group_by => $pri_col, 
-		rows => 1000000, 
-		page => 1 
-	});
-	my $total = $self->single_record_fetch ? 1 : scalar $RsForCount->all;
+	#my ($pri_col) = $Rs->result_source->primary_columns;
+	#my $RsForCount = $Rs->search_rs({},{ 
+	#	select => [ $pri_col ], 
+	#	as => [ $pri_col ], 
+	#	order_by => $pri_col, 
+	#	group_by => $pri_col, 
+	#	rows => 1000000, 
+	#	page => 1 
+	#});
+	#my $total = $self->single_record_fetch ? 1 : scalar $RsForCount->all;
 	##   ------------------------------------------------------------   ##
 	######################################################################
 	
@@ -340,7 +340,7 @@ sub read_records {
 	}
 	
 	# This is how we should get the total: (see TEMP WORKAROUND FOR DBIC BUG above)
-	#my $total = $self->single_record_fetch ? 1 : $Rs->pager->total_entries;
+	my $total = $self->single_record_fetch ? 1 : $Rs->pager->total_entries;
 
 	return {
 		rows    => $rows,
