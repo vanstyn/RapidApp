@@ -154,7 +154,8 @@ sub _rapidapp_top_level_dispatch {
 		|| '';
 	
 	# special die handler to capture stack traces for all errors
-	local $SIG{__DIE__}= \&RapidApp::TraceCapture::captureTrace;
+	local $SIG{__DIE__}= \&RapidApp::TraceCapture::captureTrace
+		if $c->rapidApp->enableTraceCapture;
 	
 	$c->stash->{onrequest_time_elapsed}= 0;
 	
@@ -177,7 +178,8 @@ sub _rapidapp_top_level_dispatch {
 	);
 	
 	# gather any stack traces we might have picked up
-	$c->stack_traces([ RapidApp::TraceCapture::collectTraces ]);
+	$c->stack_traces([ RapidApp::TraceCapture::collectTraces ])
+		if $c->rapidApp->enableTraceCapture;
 	
 	if (!scalar(@{$c->error}) && !defined $c->response->body) {
 		$c->error('Body was not defined!  (discovered at '.__FILE__.' '.__LINE__.')');

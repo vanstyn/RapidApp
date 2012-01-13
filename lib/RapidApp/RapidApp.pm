@@ -33,6 +33,8 @@ has 'preloadModules'    => ( is => 'rw', isa => 'Bool', default => 1 );
 # the root model instance
 has 'rootModule'        => ( is => 'rw', lazy_build => 1 );
 
+has 'enableTraceCapture'=> ( is => 'rw', isa => 'Bool', default => 0 );
+
 has 'enableDirectLink'  => ( is => 'rw', isa => 'Bool', default => 0 );
 
 # Whether to save errors to whichever ExceptionStore is available via whatever configuration
