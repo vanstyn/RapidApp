@@ -751,10 +751,15 @@ html, body { height:100%; }
 	display:block;
 }
 
-.appdv-edit-field .data-holder {
+.appdv-edit-field .data-holder, .onepx-transparent-border-bottom {
 	border-bottom-style: dotted;
 	border-bottom-width: 1px;
 	border-color: transparent;
+}
+
+/* prevent inheriting padding from parents */
+.appdv-edit-field td, .appdv-edit-field tr {
+  padding: 0px !important;
 }
 
 .appdv-edit-field:hover .data-holder {

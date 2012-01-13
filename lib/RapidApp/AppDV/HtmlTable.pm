@@ -90,7 +90,7 @@ default => sub {
 };
 
 
-has 'tt_table_data', is => 'ro', lazy => 1, isa => 'ArrayRef[ArrayRef[HashRef[Str]]]', traits => ['RapidApp::Role::PerRequestBuildDefReset'],
+has 'tt_table_data', is => 'ro', lazy => 1, isa => 'ArrayRef[ArrayRef[HashRef]]', traits => ['RapidApp::Role::PerRequestBuildDefReset'],
 default => sub {
 	my $self = shift;
 	
@@ -112,11 +112,25 @@ sub get_tt_column_data {
 	my $self = shift;
 	my $col = shift;
 	
-	return {
+	my $data = {
 		col	=> $col,
-		name	=> $self->columns->{$col}->{header} || $col,
-		value	=> $self->TTController->autofield->$col
+		name	=> ($self->columns->{$col}->{header} || $col) . ':',
+		value	=> $self->TTController->autofield->$col,
+		
+		name_cls => undef, #<-- optional css class name to apply to the name cell div
+		value_cls => undef, #<-- optional css class name to apply to the value cell div
 	};
+	
+	#This is a fine-grained tweak specifically for AppDV 'edit-field'. These have an extra
+	#1px bottom border, and unless the header/name also has this, the alignment between the
+	#two will be off. This inspects 'value' to determine if it is an edit-field and if so,
+	#applies the same class to 'name' so they line up. 
+	#TODO: change the way this works with z-index/position/relative/absolute wizardry to make 
+	#this whole thing more consistent and predictable
+	$data->{name_cls} = 'onepx-transparent-border-bottom'
+		if ($data->{value} =~ /class\=\"appdv\-edit\-field\"/); #<-- is this expensive?
+		
+	return $data;
 }
 
 

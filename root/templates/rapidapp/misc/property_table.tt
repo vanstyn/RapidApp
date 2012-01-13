@@ -21,9 +21,11 @@ table.property-table tr {
   vertical-align: top;
 }
 
-table.property-table td {
+table.property-table td div.cell {
   padding: 2px;
+  vertical-align: baseline;
 }
+
 
 [% self.tt_css_styles_str %]
 
@@ -47,7 +49,12 @@ table.property-table td {
             [% FOREACH col IN col_set %]
             
               <tr>
-                <td class="name">[% col.name %]:</td><td class="value">[% col.value %]</td>
+                <td class="name">
+                  <div class='[% col.name_cls ? "cell ${col.name_cls}" : "cell" %]'>[% col.name %]</div>
+                </td>
+                <td class="value">
+                  <div class='[% col.value_cls ? "cell ${col.value_cls}" : "cell" %]'>[% col.value %]</div>
+                </td>
               </tr>
             
             [% END %]
