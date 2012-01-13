@@ -254,6 +254,12 @@ has 'autofield' => (
 			my $config = $Column->get_field_config;
 			
 			
+			# -- TODO: refactor AppDV for all the changes that came with TableSpec
+			# in the mean time, this makes sure the editor/field isn't too small
+			$config->{minHeight} = 22 unless ($config->{minHeight});
+			$config->{minWidth} = $Column->width if ($Column->width and ! $config->{minWidth});
+			# --
+
 			
 			##############
 			### FIX ME ###
