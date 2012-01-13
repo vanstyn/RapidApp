@@ -4873,3 +4873,37 @@ Ext.ux.RapidApp.winLoadUrlGET = function(cnf) {
 	if(!cnf.params) { url = cnf.url; }
 	window.open(url,'');
 }
+
+
+/* http://www.sencha.com/forum/showthread.php?95486-Cursor-Position-in-TextField&p=609639&viewfull=1#post609639 */
+Ext.override(Ext.form.Field, {
+
+    setCursorPosition: function(pos) {
+       var el = this.getEl().dom;
+       if (el.createTextRange) {
+          var range = el.createTextRange();
+          range.move("character", pos);
+          range.select();
+       } else if(typeof el.selectionStart == "number" ) { 
+          el.focus(); 
+          el.setSelectionRange(pos, pos); 
+       } else {
+         alert('Method not supported');
+       }
+    },
+
+    getCursorPosition: function() {
+       var el = this.getEl().dom;
+       var rng, ii=-1;
+       if (typeof el.selectionStart=="number") {
+          ii=el.selectionStart;
+       } else if (document.selection && el.createTextRange){
+          rng=document.selection.createRange();
+          rng.collapse(true);
+          rng.moveStart("character", -el.value.length);
+          ii=rng.text.length;
+       }
+       return ii;
+    }
+   
+});
