@@ -1,0 +1,67 @@
+﻿
+<style>
+
+table.property-table table.column {
+  font-size: 12px;
+  padding-left: 25px;
+}
+
+table.property-table table.column td.name {
+  text-align: left;
+  font-weight: bold;
+  white-space: nowrap;
+  padding-right: 15px;
+}
+
+table.property-table table.column td.value {
+  min-width: 70px;
+}
+
+table.property-table tr {
+  vertical-align: top;
+}
+
+table.property-table td {
+  padding: 2px;
+}
+
+[% self.tt_css_styles_str %]
+
+</style>
+
+  
+<tpl for=".">
+  
+<div class="row">
+  
+<table class="property-table">
+  <tbody>
+  <tr>
+  
+    [% FOREACH col_set IN self.tt_table_data %]
+    
+       <td>
+        <table class="column">
+          <tbody>
+          
+            [% FOREACH col IN col_set %]
+            
+              <tr>
+                <td class="name">[% col.name %]:</td><td class="value">[% col.value %]</td>
+              </tr>
+            
+            [% END %]
+
+          </tbody>
+        </table>
+      </td>
+      
+    [% END %]
+  
+  </tr>
+  </tbody>
+</table>
+  
+</div>
+
+</tpl>

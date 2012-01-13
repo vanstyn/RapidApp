@@ -75,6 +75,13 @@ around 'columns' => sub {
 	return $self->defer_to_store_module->columns(@_);
 };
 
+around 'column_order' => sub {
+	my $orig = shift;
+	my $self = shift;
+	return $self->$orig(@_) unless (defined $self->defer_to_store_module);
+	return $self->defer_to_store_module->column_order(@_);
+};
+
 
 # We are doing it this way so we can hook into this exact spot with method modifiers in other places:
 sub BUILD {}
