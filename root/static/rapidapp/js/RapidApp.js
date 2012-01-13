@@ -604,7 +604,7 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 		var btn = {
 			xtype: 'button',
 			text: text,
-			//handler: btn_handler
+			handler: btn_handler
 		}
 		
 		if(data.EnterButton && data.EnterButton == text) {
