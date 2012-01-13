@@ -60,6 +60,15 @@ tt file (rapidapp/misc/property_table.tt) for direction on what css styles to ap
 You can also override the method 'get_tt_column_data' for fine-grained control when
 tt_table_data is being automatically generated from DataStore2 columns
 
+Besides 'name' and 'value', other column_data parameters are available:
+
+ * name_cls: if supplied, this css class name is applied to the name cell div
+ * value_cls: if supplied, this css class name is applied to the value cell div
+ * whole_col: if set to true, 'name' is ignored and colspan="2" is set on the 'value' cell/td
+ 
+The column data hash can be returned from get_tt_column_data, and arbitrary also column_data
+hashed can be supplied instead of a column name within 'column_layout'
+
 =head1 AUTHOR
 
 Henry Van Styn <vanstyn@intellitree.com>
@@ -74,7 +83,7 @@ has '+extra_tt_vars' => ( default => sub {
 	return { self => $self };
 });
 
-has 'column_layout', is => 'ro', lazy => 1, isa => 'ArrayRef[ArrayRef[Str]]', traits => ['RapidApp::Role::PerRequestBuildDefReset'],
+has 'column_layout', is => 'ro', lazy => 1, isa => 'ArrayRef[ArrayRef]', traits => ['RapidApp::Role::PerRequestBuildDefReset'],
 default => sub {
 	my $self = shift;
 	
@@ -98,10 +107,18 @@ default => sub {
 	
 	foreach my $col_set (@{$self->column_layout}) {
 		my $set = [];
-
-		$self->is_valid_colname($_) and 
-			push @$set, $self->get_tt_column_data($_) for (@$col_set);
 		
+		foreach my $col (@$col_set) {
+		
+			# Allow manual override:
+			if(ref($col) eq 'HASH') {
+				push @$set, $col;
+				next;
+			}
+		
+			push @$set, $self->get_tt_column_data($col) if ($self->is_valid_colname($col));
+		}
+
 		push @$arr, $set;
 	}
 	

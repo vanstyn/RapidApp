@@ -1,9 +1,17 @@
 ﻿
 <style>
 
+table.property-table {
+  padding: 3px;
+}
+
 table.property-table table.column {
   font-size: 12px;
   padding-left: 25px;
+}
+
+table.property-table td.first table.column {
+  padding-left: 3px;
 }
 
 table.property-table table.column td.name {
@@ -42,19 +50,31 @@ table.property-table td div.cell {
   
     [% FOREACH col_set IN self.tt_table_data %]
     
-       <td>
-        <table class="column">
+       <td [%- 'class="first"' IF loop.first %]>
+        <table class="column column-[% loop.count %]">
           <tbody>
           
             [% FOREACH col IN col_set %]
             
               <tr>
-                <td class="name">
-                  <div class='[% col.name_cls ? "cell ${col.name_cls}" : "cell" %]'>[% col.name %]</div>
-                </td>
-                <td class="value">
-                  <div class='[% col.value_cls ? "cell ${col.value_cls}" : "cell" %]'>[% col.value %]</div>
-                </td>
+              
+                [% IF col.whole_col %]
+                
+                  <td class="value" colspan="2">
+                    <div class='[% col.value_cls ? "cell ${col.value_cls}" : "cell" %]'>[% col.value %]</div>
+                  </td>
+                
+                [% ELSE %]
+              
+                  <td class="name">
+                    <div class='[% col.name_cls ? "cell ${col.name_cls}" : "cell" %]'>[% col.name %]</div>
+                  </td>
+                  <td class="value">
+                    <div class='[% col.value_cls ? "cell ${col.value_cls}" : "cell" %]'>[% col.value %]</div>
+                  </td>
+                
+                [% END %]
+                
               </tr>
             
             [% END %]
