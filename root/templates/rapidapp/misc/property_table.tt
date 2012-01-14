@@ -58,19 +58,34 @@ table.property-table td div.cell {
             
               <tr>
               
+                [% SET value_attrs = 
+                  "class='cell" _ 
+                  (col.value_cls ? " " _ col.value_cls : "") _ 
+                  "'" _ 
+                  (col.value_style ? " style='" _ col.value_style _ "'" : "")
+                %]
+                
+                [% SET name_attrs = 
+                  "class='cell" _ 
+                  (col.name_cls ? " " _ col.name_cls : "") _ 
+                  "'" _ 
+                  (col.name_style ? " style='" _ col.name_style _ "'" : "")
+                %]
+              
+              
                 [% IF col.whole_col %]
                 
                   <td class="value" colspan="2">
-                    <div class='[% col.value_cls ? "cell ${col.value_cls}" : "cell" %]'>[% col.value %]</div>
+                    <div [% value_attrs %]>[% col.value %]</div>
                   </td>
                 
                 [% ELSE %]
               
                   <td class="name">
-                    <div class='[% col.name_cls ? "cell ${col.name_cls}" : "cell" %]'>[% col.name %]</div>
+                    <div [% name_attrs %]>[% col.name %]</div>
                   </td>
                   <td class="value">
-                    <div class='[% col.value_cls ? "cell ${col.value_cls}" : "cell" %]'>[% col.value %]</div>
+                    <div [% value_attrs %]>[% col.value %]</div>
                   </td>
                 
                 [% END %]
