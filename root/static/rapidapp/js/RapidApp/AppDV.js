@@ -334,7 +334,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	
 	
 	
-	set_field_editable: function(editEl,fieldname,index,Record) {
+	set_field_editable: function(editEl,fieldname,index,Record,domEl) {
 		
 		//abort if its already editing:
 		if(editEl.hasClass('editing')) { return; }
@@ -375,7 +375,61 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		//	cnf.contentEl = dataEl;
 		//}
 		
+		var Store = this.getStore();
+		
 		var Field = Ext.create(cnf,'field');
+		
+		/*****************************************************/
+		// don't do this if the entire record is in edit mode or another record is already being updated:
+		if(domEl &&(!domEl.hasClass('editing-record') && !domEl.parent().hasClass('record-update'))) { 
+
+			var s = this.currentEditingFieldScope;
+			if(s) {
+				// cancel editing of any other field already being edited
+				this.cancel_field_editable(s.editEl,s.fieldname,s.index,s.Record);
+			}
+			
+			s = {
+				editEl: editEl,
+				fieldname: fieldname,
+				index: index,
+				Record: Record
+			};
+			
+			this.currentEditingFieldScope = s;
+			
+			// Setup keymaps for Enter and Esc:
+			Field.on('specialkey',function(field,e) {
+				if(e.getKey() == e.ENTER) {
+					if(! field.isValid()) { return; }
+					this.save_field_data(editEl,fieldname,index,Record);
+					Store.saveIfPersist();
+					this.cancel_field_editable(editEl,fieldname,index,Record);
+				}
+				else if(e.getKey() == e.ESC) {
+					this.cancel_field_editable(editEl,fieldname,index,Record);
+				}
+			},this);
+			
+			// If its a combo then set/save on select
+			Field.on('select',function(field) {
+				if(! field.isValid()) { return; }
+				this.save_field_data(editEl,fieldname,index,Record);
+				Store.saveIfPersist();
+				this.cancel_field_editable(editEl,fieldname,index,Record);
+			},this);
+			
+			if(Ext.isFunction(Field.selectText)) {
+				// Focus the field and put the cursor at the end
+				Field.on('show',function(field){
+					field.focus();
+					field.setCursorPosition(1000000);
+				},this);
+			}
+			
+		}
+		/*****************************************************/
+		
 
 		if(Field.resizable) {
 			var resizer = new Ext.Resizable(Field.wrap, {
@@ -427,6 +481,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			
 			editEl.removeClass('editing');
 		}
+		delete this.currentEditingFieldScope;
 	},
 	
 	click_controller: function(dv, index, domNode, event) {
@@ -529,7 +584,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			// require-edit-click is set by "edit-bigfield" to disallow going into edit mode unless the
 			// "edit" element itself was clicked:
 			if(target.findParent('div.require-edit-click') && !target.hasClass('edit')) { return; }
-			this.set_field_editable(editEl,fieldname,index,Record);
+			this.set_field_editable(editEl,fieldname,index,Record,domEl);
 			
 		}
 		

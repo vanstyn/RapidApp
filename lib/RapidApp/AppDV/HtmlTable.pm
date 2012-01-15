@@ -64,6 +64,8 @@ Besides 'name' and 'value', other column_data parameters are available:
 
  * name_cls: if supplied, this css class name is applied to the name cell div
  * value_cls: if supplied, this css class name is applied to the value cell div
+ * name_style: if supplied, this style is applied to the name cell div
+ * value_style: if supplied, this style is applied to the value cell div
  * whole_col: if set to true, 'name' is ignored and colspan="2" is set on the 'value' cell/td
  
 The column data hash can be returned from get_tt_column_data, and arbitrary also column_data
@@ -136,6 +138,9 @@ sub get_tt_column_data {
 		
 		name_cls => undef, #<-- optional css class name to apply to the name cell div
 		value_cls => undef, #<-- optional css class name to apply to the value cell div
+		
+		name_style => undef, #<-- optional css style to apply to the name cell div
+		value_style => undef, #<-- optional css styleto apply to the value cell div
 	};
 	
 	#This is a fine-grained tweak specifically for AppDV 'edit-field'. These have an extra
