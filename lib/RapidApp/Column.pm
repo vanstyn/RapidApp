@@ -105,11 +105,39 @@ sub _set_menu_select_editor {
 	
 	$self->{renderer} = jsfunc($js,$self->{renderer});
 	
-	$self->{editor} = {
-		xtype => 'icon-combo',
-		allowBlank => \0,
-		value_list => \@value_list,
-	} unless (defined $self->{allow_edit} and !jstrue($self->{allow_edit}));
+	unless (defined $self->{allow_edit} and !jstrue($self->{allow_edit})) {
+	
+		my $mode = $new->{mode} || 'combo';
+		
+		if($mode eq 'combo') {
+			$self->{editor} = {
+				xtype => 'icon-combo',
+				allowBlank => \0,
+				value_list => \@value_list,
+			};
+		}
+		elsif($mode eq 'menu') {
+		
+			# TODO
+		
+		}
+		elsif($mode eq 'cycle') {
+		
+			$self->{editor} = {
+				xtype => 'cycle-field',
+				saveOnSetValue => \1,
+				cycleOnShow => \1,
+				allowBlank => \0,
+				value_list => \@value_list,
+			};
+		
+		}
+		else {
+			die "menu_select_editor: Invalid mode '$mode' - must be 'combo', 'menu' or 'cycle'"
+		}
+		
+		$self->{editor}->{width} = $new->{width} if ($new->{width});
+	}
 }
 
 sub _set_allow_edit {

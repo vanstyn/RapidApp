@@ -171,3 +171,119 @@ Ext.ux.RapidApp.StaticCombo = Ext.extend(Ext.form.ComboBox,{
 	}
 });
 Ext.reg('static-combo',Ext.ux.RapidApp.StaticCombo);
+
+
+
+Ext.ux.RapidApp.ClickCycleField = Ext.extend(Ext.form.DisplayField,{
+	
+	value_list: [],
+	
+	nativeGetValue: Ext.form.DisplayField.prototype.getValue,
+	nativeSetValue: Ext.form.DisplayField.prototype.setValue,
+	
+	// cycleOnShow: if true, the the value is cycled when the field is shown
+	cycleOnShow: false,
+	
+	//isValid: function(){ return true; },
+	
+	initComponent: function() {
+		Ext.ux.RapidApp.ClickCycleField.superclass.initComponent.call(this);
+		this.addEvents( 'select' );
+		
+		var map = {};
+		var indexmap = {};
+		Ext.each(this.value_list,function(item,index) {
+			
+			var value, text, cls; 
+			if(Ext.isArray(item)) {
+				value = item[0];
+				text = item[1] || name;
+				cls = item[2];
+			}
+			else {
+				value = item;
+				text = item;
+			}
+			
+			map[value] = {
+				value: value,
+				text: text,
+				cls: cls,
+				index: index
+			};
+			indexmap[index] = map[value];
+			
+		},this);
+		
+		this.valueMap = map;
+		this.indexMap = indexmap;
+		
+		//this.on('select',function() { console.log('event: select');  });
+		
+		this.on('show',this.onShow,this);
+	},
+	
+	onShow: function() {
+		var el = this.getEl();
+		el.applyStyles('cursor:pointer');
+		// Click on the Element:
+		el.on('click',this.onClick,this);
+		
+		if(this.cycleOnShow) { 
+			this.cycleNext();
+		}
+	},
+	
+	onClick: function() {
+		//console.log('click')
+		this.cycleNext();
+	},
+	
+	setValue: function(v) {
+		this.dataValue = v;
+		var renderVal = v;
+		if(this.valueMap[v]) { 
+			var itm = this.valueMap[v];
+			renderVal = itm.text;
+			if(itm.cls) {
+				renderVal = '<div class="with-icon ' + itm.cls + '">' + itm.text + '</div>';
+			}
+		}
+		return this.nativeSetValue(renderVal);
+	},
+	
+	getValue: function() {
+		if(typeof this.dataValue !== "undefined") {
+			return this.dataValue;
+		}
+		return this.nativeGetValue();
+	},
+	
+	getCurrentIndex: function(){
+		var v = this.getValue();
+		var cur = this.valueMap[v];
+		if(!cur) { return null; }
+		return cur.index;
+	},
+	
+	getNextIndex: function() {
+		var cur = this.getCurrentIndex();
+		if(cur == null) { return 0; }
+		var next = cur + 1;
+		if(this.indexMap[next]) { return next; }
+		return 0;
+	},
+	
+	cycleNext: function() {
+		var nextIndex = this.getNextIndex();
+		var next = this.indexMap[nextIndex];
+		if(typeof next == "undefined") { return; }
+		var ret = this.setValue(next.value);
+		
+		if(ret) { this.fireEvent('select',this,next.value,next.index); }
+		return ret;
+	}
+});
+Ext.reg('cycle-field',Ext.ux.RapidApp.ClickCycleField);
+
+

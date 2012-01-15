@@ -379,6 +379,11 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 		var Field = Ext.create(cnf,'field');
 		
+		if(!Ext.isObject(this.FieldCmp)) { this.FieldCmp = {} }
+		if(!Ext.isObject(this.FieldCmp[index])) { this.FieldCmp[index] = {} }
+		this.FieldCmp[index][fieldname] = Field;
+		
+		
 		/*****************************************************/
 		// don't do this if the entire record is in edit mode or another record is already being updated:
 		if(domEl &&(!domEl.hasClass('editing-record') && !domEl.parent().hasClass('record-update'))) { 
@@ -396,27 +401,36 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 				Record: Record
 			};
 			
+			var endEdit = function() {
+				this.cancel_field_editable(editEl,fieldname,index,Record);
+			};
+			
+			var saveEndEdit = function() {
+				//console.log('saveEndEdit');
+				this.save_field_data(editEl,fieldname,index,Record);
+				Store.saveIfPersist();
+				endEdit.call(this);
+			};
+			
 			this.currentEditingFieldScope = s;
 			
 			// Setup keymaps for Enter and Esc:
 			Field.on('specialkey',function(field,e) {
 				if(e.getKey() == e.ENTER) {
 					if(! field.isValid()) { return; }
-					this.save_field_data(editEl,fieldname,index,Record);
-					Store.saveIfPersist();
-					this.cancel_field_editable(editEl,fieldname,index,Record);
+					saveEndEdit.call(this);
 				}
 				else if(e.getKey() == e.ESC) {
-					this.cancel_field_editable(editEl,fieldname,index,Record);
+					endEdit.call(this);
 				}
 			},this);
 			
 			// If its a combo then set/save on select
 			Field.on('select',function(field) {
+				//console.log('AppDV select');
+				
 				if(! field.isValid()) { return; }
-				this.save_field_data(editEl,fieldname,index,Record);
-				Store.saveIfPersist();
-				this.cancel_field_editable(editEl,fieldname,index,Record);
+				saveEndEdit.call(this);
 			},this);
 			
 			if(Ext.isFunction(Field.selectText)) {
@@ -430,7 +444,6 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		}
 		/*****************************************************/
 		
-
 		if(Field.resizable) {
 			var resizer = new Ext.Resizable(Field.wrap, {
 				pinned: true,
@@ -447,14 +460,10 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 		Field.show();
 		
-		if(!Ext.isObject(this.FieldCmp)) { this.FieldCmp = {} }
-		if(!Ext.isObject(this.FieldCmp[index])) { this.FieldCmp[index] = {} }
-		this.FieldCmp[index][fieldname] = Field;
 	},
 	
 	save_field_data: function(editEl,fieldname,index,Record) {
 		if(!editEl.hasClass('editing')) { return false; }
-		
 		var Field = this.FieldCmp[index][fieldname];
 			
 		if(!Field.validate()) { return false; }

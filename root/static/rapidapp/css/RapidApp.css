@@ -175,8 +175,11 @@ pre {
 .icon-gray-pencil { background-image: url(/static/rapidapp/images/gray_pencil.png) !important; }
 .icon-gray-down { background-image: url(/static/rapidapp/images/gray_down.png) !important; }
 .icon-gray-down-with-pencil { background-image: url(/static/rapidapp/images/gray_down_with_pencil.png) !important; }
-
 .icon-arrow-undo { background-image: url(/static/rapidapp/images/arrow_undo.png) !important; }
+.icon-cross-tiny { background-image: url(/static/rapidapp/images/cross_tiny.png) !important; }
+.icon-cross-tiny-light { background-image: url(/static/rapidapp/images/cross_tiny_light.png) !important; }
+.icon-tick-tiny { background-image: url(/static/rapidapp/images/tick_tiny.png) !important; }
+.icon-tick-tiny-light { background-image: url(/static/rapidapp/images/tick_tiny_light.png) !important; }
 
 .tbar-title-medium {
 	font-size:175% !important;
