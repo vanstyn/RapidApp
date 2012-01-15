@@ -383,6 +383,21 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		// don't do this if the entire record is in edit mode or another record is already being updated:
 		if(domEl &&(!domEl.hasClass('editing-record') && !domEl.parent().hasClass('record-update'))) { 
 
+			var s = this.currentEditingFieldScope;
+			if(s) {
+				// cancel editing of any other field already being edited
+				this.cancel_field_editable(s.editEl,s.fieldname,s.index,s.Record);
+			}
+			
+			s = {
+				editEl: editEl,
+				fieldname: fieldname,
+				index: index,
+				Record: Record
+			};
+			
+			this.currentEditingFieldScope = s;
+			
 			// Setup keymaps for Enter and Esc:
 			Field.on('specialkey',function(field,e) {
 				if(e.getKey() == e.ENTER) {
@@ -404,11 +419,14 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 				this.cancel_field_editable(editEl,fieldname,index,Record);
 			},this);
 			
-			// Focus the field and put the cursor at the end
-			Field.on('show',function(field){
-				field.focus();
-				field.setCursorPosition(1000000);
-			},this);
+			if(Ext.isFunction(Field.selectText)) {
+				// Focus the field and put the cursor at the end
+				Field.on('show',function(field){
+					field.focus();
+					field.setCursorPosition(1000000);
+				},this);
+			}
+			
 		}
 		/*****************************************************/
 		
@@ -463,6 +481,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			
 			editEl.removeClass('editing');
 		}
+		delete this.currentEditingFieldScope;
 	},
 	
 	click_controller: function(dv, index, domNode, event) {

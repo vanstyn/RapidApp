@@ -253,7 +253,8 @@ sub add_listener {
 
 sub is_printview {
 	my $self = shift;
-	return 1 if ($self->c->req->header('X-RapidApp-View') eq 'print');
+	my $header = $self->c->req->header('X-RapidApp-View') or return 0;
+	return 1 if ($header eq 'print');
 	return 0;
 }
 
