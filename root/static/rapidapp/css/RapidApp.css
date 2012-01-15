@@ -15,8 +15,11 @@ pre {
 
 .with-icon {
 	height: 16px;
-	padding-left: 18px;
+	padding-left: 19px;
 	background-repeat: no-repeat;
+	background-position: 1px center;
+	display: table-cell;
+  vertical-align: middle;
 }
 
 .grid-cell-with-icon {

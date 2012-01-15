@@ -8,15 +8,17 @@ our @gridColParams= qw(
 	id no_column no_multifilter no_quick_search extra_meta_data css listeners
 	filter field_cnf rel_combo_field_cnf field_cmp_config render_fn renderer
 	allow_add allow_edit allow_view query_id_use_column query_search_use_column
-	trueText falseText
+	trueText falseText menu_select_editor
 );
 our @attrs= ( @gridColParams, qw(
 	data_type required_fetch_columns read_raw_munger update_munger 
-	field_readonly field_readonly_config field_config no_fetch
+	field_readonly field_readonly_config field_config no_fetch 
 ) );
 our %triggers= (
-	render_fn => '_set_render_fn',
-	renderer  => '_set_renderer',
+	render_fn				=> '_set_render_fn',
+	renderer  				=> '_set_renderer',
+	menu_select_editor	=> '_set_menu_select_editor',
+	allow_edit				=> '_set_allow_edit'
 );
 
 
@@ -49,6 +51,9 @@ eval 'sub apply_defaults {
 
 sub _set_render_fn {
 	my ($self,$new,$old) = @_;
+	
+	die 'render_fn is depricated, please use renderer instead.';
+	
 	return unless ($new);
 	
 	# renderer takes priority over render_fn
@@ -67,6 +72,51 @@ sub _set_renderer {
 	
 	return unless (defined $new and not blessed $new);
 	$self->{renderer}= jsfunc($new);
+}
+
+sub _set_menu_select_editor {
+	my ($self,$new,$old) = @_;
+	return unless ($new);
+	
+	my %val_to_disp = ();
+	my @value_list = ();
+	
+	foreach my $sel (@{$new->{selections}}) {
+		push @value_list, [$sel->{value},$sel->{text},$sel->{iconCls}];
+		if(defined $sel->{value} and defined $sel->{text}) {
+			$val_to_disp{$sel->{value}} = $sel->{text};
+			
+			$val_to_disp{$sel->{value}} = '<div class="with-icon ' . $sel->{iconCls} . '">' . $sel->{text} . '</div>'
+				if($sel->{iconCls});
+				
+			$val_to_disp{$sel->{value}} = '<img src="/static/ext/resources/images/default/s.gif" class="with-icon ' . $sel->{iconCls} . '">'
+				if($sel->{iconCls} and jstrue($new->{render_icon_only}));
+		};
+		
+	}
+	
+	my $mapjs = encode_json(\%val_to_disp);
+	
+	my $js = 'function(v){' .
+		'var val_map = ' . $mapjs . ';' .
+		'if(typeof val_map[v] !== "undefined") { return val_map[v]; }' .
+		'return v;' .
+	'}';
+	
+	$self->{renderer} = jsfunc($js,$self->{renderer});
+	
+	$self->{editor} = {
+		xtype => 'icon-combo',
+		allowBlank => \0,
+		value_list => \@value_list,
+	} unless (defined $self->{allow_edit} and !jstrue($self->{allow_edit}));
+}
+
+sub _set_allow_edit {
+	my ($self,$new,$old) = @_;
+	return unless (defined $new);
+	
+	$self->{editor} = '' if(!jstrue($new) and defined $self->{editor});
 }
 
 our %attrKeySet= map { $_ => 1 } @attrs;
