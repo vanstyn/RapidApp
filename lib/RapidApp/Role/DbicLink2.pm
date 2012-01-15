@@ -303,35 +303,7 @@ sub read_records {
 	# don't use Row objects
 	$Rs = $Rs->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
 	
-	
-	######################################################################
-	##   ----   TEMP WORKAROUND FOR DBIC BUG (2011-12-31 by HV)  ----   ##
-	#
-	#    my $total = $self->single_record_fetch ? 1 : $Rs->pager->total_entries;
-	#
-	# When 'distinct' is on '$Rs->pager->total_entries' throws an exception. This
-	# is a DBIC bug with MySQL as of v0.08195. Until its fixed, the below ugly
-	# and potentially very expensive, and potentially incorrect code gets the
-	# total count for paging. FIX ME!!!!!!!
-	my ($pri_col) = $Rs->result_source->primary_columns;
-	my $RsForCount = $Rs->search_rs({},{ 
-		select => [ $pri_col ], 
-		as => [ $pri_col ], 
-		order_by => $pri_col, 
-		group_by => $pri_col, 
-		rows => 1000000, 
-		page => 1 
-	});
-	my $total = $self->single_record_fetch ? 1 : scalar $RsForCount->all;
-	##   ------------------------------------------------------------   ##
-	######################################################################
-	
-	## -- When 'distinct' is true (group by all columns) it breaks getting a
-	##    total count. See TEMP WORKAROUND FOR DBIC BUG above.
-	$Rs = $Rs->search_rs({},{ distinct => 1 });
-	## --
-	
-	
+	# pull in our rows
 	my $rows = [ $self->rs_all($Rs) ];
 		
 	#Hard coded munger for record_pk:
@@ -339,8 +311,8 @@ sub read_records {
 		$row->{$self->record_pk} = $self->generate_record_pk_value($row);
 	}
 	
-	# This is how we should get the total: (see TEMP WORKAROUND FOR DBIC BUG above)
-	#my $total = $self->single_record_fetch ? 1 : $Rs->pager->total_entries;
+	# Now calculate a total, for the grid to display the number of available pages
+	my $total = $self->single_record_fetch ? 1 : $Rs->pager->total_entries;
 
 	return {
 		rows    => $rows,
@@ -406,6 +378,11 @@ sub chain_Rs_req_base_Attr {
 		my $sort = lc($params->{sort});
 		my $get_render_col = 1;
 		my $sort_name = $dbic_name_map->{$sort} || $self->TableSpec->resolve_dbic_colname($sort,$attr->{join},$get_render_col);
+		if (ref $sort_name eq 'HASH') {
+			die "Can't sort by column if it doesn't have an SQL alias"
+				unless exists $sort_name->{-as};
+			$sort_name= $sort_name->{-as};
+		}
 		$attr->{order_by} = { '-' . $params->{dir} => $sort_name } ;
 	}
 

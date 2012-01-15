@@ -1165,98 +1165,52 @@ hashash 'multi_rel_columns_indx', lazy => 1, default => sub {
 };
 
 
+=head2 $tableSpec->resolve_dbic_colname( $fieldName, \%merge_join, $get_render_col )
+
+Returns a value which can be added to DBIC's ->{attr}{select} in order to select the column.
+
+$fieldName is the ExtJS column name to resolve.
+%merge_join is a in/out parameter which collects the total required joins
+	for this query.
+$get_render_col is a boolean of whether this function should instead return
+	the DBIC name of the render column.
+
+=cut
 sub resolve_dbic_colname {
-	my $self = shift;
-	my $name = shift;
-	my $merge_join = shift;
-	my $get_render_col = shift || 0; 
-	
-	#scream_color(GREEN,$name);
+	my ($self, $name, $merge_join, $get_render_col)= @_;
+	$get_render_col ||= 0;
 	
 	my ($rel,$col,$join,$cond_data) = $self->resolve_dbic_rel_alias_by_column_name($name,$get_render_col);
-	$join = {} unless (defined $join);
-	%$merge_join = %{ merge($merge_join,$join) } if ($merge_join);
 	
-	my $dbic_name = $rel . '.' . $col;
-	
-	if (defined $cond_data) {
-	
-		### Support for a custom aggregate function ###
-		return $cond_data->{function}->($self,$rel,$col,$join,$cond_data) 
-			if(ref($cond_data->{function}) eq 'CODE');
-		###############################################
-	
-	
-		#my $cond_data = $self->multi_rel_columns_indx->{$col};
+	%$merge_join = %{ merge($merge_join,$join) }
+		if ($merge_join and $join);
+
+	if (!defined $cond_data) {
+		# it is a simple column
+		return "$rel.$col";
+	} else {
+		# If cond_data is defined, the relation is a multi-relation, and we need to either
+		#  join and group-by, or run a sub-query.  If join-and-group-by happens twice, it
+		#  breaks COUNT() (because the number of joined rows gets multiplied) so by default
+		#  we only use sub-queries.  In fact, join and group-by has a lot of problems on
+		#  MySQL and we should probably never use it.
 		
-		#TODO: this approach just won't work. Its a performance and structural problem
-		# need to do this with mungers outside of SQL, or find a way to do it with subqueries
-		
-		# Method 1:
-		#$dbic_name = { 'count' => { 'distinct' => $col . '.' . $cond_data->{self} } };
-		
-		# Method 2:
-		my $source = $self->schema->source($cond_data->{info}->{source});
-		#$dbic_name = \[ 
-		#	'(SELECT(COUNT(*)) from ' . $source->from . 
-		#		' where ' . $cond_data->{foreign} . ' = ' . $rel . '.' . $cond_data->{self} . ')'
-		#];
-		
-		# Method 3: Same concept as Method 2 above, but uses DBIC instead of a raw SQL query
-		#my $cnd = $rel . '.' . $cond_data->{self};
-		my $cnd = 'ME.' . $cond_data->{self}; #<-- see the s/ME/${rel}/g line below
-		
-		my $source_source = $source->related_source($cond_data->{rev_relname});
-			
-		my $rs = $source->resultset->search_rs(
-			{ 'you.' . $cond_data->{foreign} => { '=' => \$cnd } }, 
-			{ alias => 'you' },
-		);
-		# Merge in the attrs from the relationship, important if it has a where/join:
-		$rs = $rs->search_rs({},$cond_data->{info}->{attrs});
-		$dbic_name = $rs->count_rs->as_query;
-		
-		## -- experimental --
-		## Change the perspective of any remote conditions 
-		## (This is for things like 'me.deleted' => 0 in a base_rs)
-		## Is this sane? Or is this an example of how BaseRs doesn't actually
-		## work in all scenarios? Is this what the whole foreign/self alias paradigm is for?
-		${$dbic_name}->[0] =~ s/\`me\`/\`you\`/g;
-		${$dbic_name}->[0] =~ s/ME/${rel}/g; #<-- swap the rel here to be sure it didn't get replaced if it's 'me'
-		## --
-		
-		#scream(${$dbic_name}->[0],$rel);
-		#local $Data::Dumper::Maxdepth = 4;
-		#scream($rs->{attrs},$dbic_name,${$dbic_name}->[0],$rel,$cond_data);
-		
-		
-		
-		###################################################################################
-		#### Override for speed #### -- FIX/REMOVE ME --
-		#### Temp fall-back to raw SQL for rels that don't have a custom where
-		#### clause. For lots of rows, the count_rs can be painfully slow, depending
-		#### on how complex the subquery is. For GreenSheet, the above count_rs was
-		#### taking ~ 2 minutes to come back for "Engineer Projects", while with this raw 
-		#### count it took under a second. 
-		#### The reason is indexes that can't be used with the subquery like they can here.
-		#### going to have to implement a caching count column system, but setting this
-		#### for now for demoing. The problem with this method is that it does not honor
-		#### the details of the ResultSets, including things like excluding deleted,
-		#### applying permissions, etc.
-		unless($cond_data->{info}->{attrs}->{where}) {
-			$dbic_name = \[ 
-				'(SELECT(COUNT(*)) from ' . $source->from . 
-					' where ' . $cond_data->{foreign} . ' = ' . $rel . '.' . $cond_data->{self} . ')'
-			];
+		# Support for a custom aggregate function
+		if (ref($cond_data->{function}) eq 'CODE') {
+			# TODO: we should use hash-style parameters
+			return $cond_data->{function}->($self,$rel,$col,$join,$cond_data,$name);
 		}
-		####
-		###################################################################################
-
+		else {
+			# If not customized, we return a sub-query which counts the related items
+			my $source = $self->schema->source($cond_data->{info}{source});
+			my $rel_rs= $source->resultset_class->new($source, { alias => 'inner' })->search_rs(
+				{ "inner.$cond_data->{foreign}" => \[" = $rel.$cond_data->{self}"] },
+				{ %{$cond_data->{info}{attrs} || {}} }
+			);
+			return { '' => $rel_rs->count_rs->as_query, -as => $name };
+		}
 	}
-	return $dbic_name;
 }
-
-
 
 
 sub resolve_dbic_rel_alias_by_column_name  {
@@ -1282,10 +1236,16 @@ sub resolve_dbic_rel_alias_by_column_name  {
 		my $cond_data = $self->multi_rel_columns_indx->{$name};
 		if ($cond_data) {
 			# Need to manually build the join to include the rel column:
-			my $rel_pre = $self->relspec_prefix;
-			$rel_pre .= '.' unless ($rel_pre eq '');
-			$rel_pre .= $name;
-			$join = $self->chain_to_hash(split(/\./,$rel_pre));
+			# Update: we no longer add this to the join, because we use a sub-select
+			#   to query the multi-relation, and don't want a product-style join in
+			#   the top-level query.
+			#my $rel_pre = $self->relspec_prefix;
+			#$rel_pre .= '.' unless ($rel_pre eq '');
+			#$rel_pre .= $name;
+			#$join = $self->chain_to_hash(split(/\./,$rel_pre));
+			
+			$join = $self->chain_to_hash($self->relspec_prefix)
+				if length $self->relspec_prefix;
 			
 			return ('me',$name,$join,$cond_data)
 		}
