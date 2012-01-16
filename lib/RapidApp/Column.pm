@@ -150,7 +150,7 @@ sub _set_allow_edit {
 	my ($self,$new,$old) = @_;
 	return unless (defined $new);
 	
-	$self->{editor} = '' if(!jstrue($new) and defined $self->{editor});
+	$self->{editor} = '' if(!jstrue($new) and defined $self->{editor} and !jstrue($self->allow_add));
 }
 
 our %attrKeySet= map { $_ => 1 } @attrs;
