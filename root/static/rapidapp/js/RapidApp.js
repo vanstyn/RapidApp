@@ -4468,6 +4468,68 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		this.bindStore.on('update',this.loadFirstRecord,this);
 		this.on('beforeedit',this.onBeforeEdit,this);
 		this.on('propertychange',this.onPropertyChange,this);
+		
+		
+		
+		
+		
+		
+		
+		
+		var cmp = this;
+		/* COPIED FROM datastore-plus FIXME*/
+		/* 
+			Property Grids (from DbicAppPropertyPage) aren't normal RapidApp/DataStore2
+			modules and so they don't get the datastore-plus plugin. This needs to be
+			fixed/refactored. In the mean time, this code is copied verbatim from the
+			datastore-plus plugin so that grid editors, specifically the new 'cycle-field'
+			and 'menu-field', behave the same as in normal AppGrid2 grids
+		*/
+		/**********************/
+		/** For Editor Grids **/
+		if(Ext.isFunction(cmp.startEditing)){
+			
+			cmp.startEditing_orig = cmp.startEditing;
+			
+			cmp.startEditing = function(row,col) {
+				var ed = this.colModel.getCellEditor(col, row);
+				if(ed) {
+					var field = ed.field;
+					if(field && !field.DataStorePlusApplied) {
+						
+						// For combos and other fields with a select listener, automatically
+						// finish the edit on select
+						field.on('select',cmp.stopEditing.createDelegate(cmp));
+						
+						// For cycle-field/menu-field:
+						field.cycleOnShow = false;
+						field.manuOnShow = false;
+						
+						//Call 'expand' for combos and other fields with an expand method (cycle-field)
+						if(Ext.isFunction(field.expand)) {
+							ed.on('startedit',function(){
+								this.expand();
+								// If it is specifically a combo, call expand again to make sure
+								// it really expands
+								if(Ext.isFunction(this.doQuery)) {
+									this.expand.defer(50,this);
+								}
+							},field);
+						}
+						
+						field.DataStorePlusApplied = true;
+					}
+				}
+				return cmp.startEditing_orig.apply(cmp,arguments);
+			}
+		}
+		/**********************/
+		/**********************/
+		
+		
+		
+		
+		
 	},
 	
 	onBeforeEdit: function(e) {

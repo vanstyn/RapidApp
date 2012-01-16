@@ -1409,10 +1409,10 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		this.cmp.on('beforeedit',this.beforeCellEdit,this);
 		this.cmp.on('afteredit',this.cmp.store.saveIfPersist,this);
 		
-		
 		/**********************/
 		/** For Editor Grids **/
 		if(Ext.isFunction(cmp.startEditing)){
+
 			cmp.startEditing_orig = cmp.startEditing;
 			
 			cmp.startEditing = function(row,col) {

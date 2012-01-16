@@ -1156,3 +1156,12 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
   border-image: url("/static/ext/resources/images/default/grid/dirty.gif") 50% 50% 50% 50% stretch;
 }
 
+
+
+
+.menu-field-current-value {
+	font-weight: bold;
+	background-repeat: no-repeat;
+	background-position: right center;
+	background-image: url(/static/rapidapp/images/checkbox_yes.png);
+}

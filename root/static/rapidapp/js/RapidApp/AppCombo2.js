@@ -337,6 +337,23 @@ Ext.ux.RapidApp.ClickMenuField = Ext.extend(Ext.ux.RapidApp.ClickCycleField,{
 		}
 	},
 	
+	updateItemsStyles: function(){
+		var Menu = this.getMenu();
+		var cur_val = this.getValue();
+		Menu.items.each(function(mitem) {
+			var el = mitem.getEl();
+			if(mitem.value == cur_val) {
+				el.addClass('menu-field-current-value');
+			}
+			else {
+				el.removeClass('menu-field-current-value');	
+			}
+			
+			//console.log(mitem.text);
+		},this);
+		
+	},
+	
 	getMenu: function() {
 		if(!this.clickMenu) {
 			
@@ -347,12 +364,14 @@ Ext.ux.RapidApp.ClickMenuField = Ext.extend(Ext.ux.RapidApp.ClickCycleField,{
 			Ext.each(this.valueList,function(itm) {
 				var menu_item = {
 					text: itm.text,
+					value: itm.value,
 					handler: function(){
 						//we just set the value. Hide is automatically called which will
 						//call selectValue, which will get the new value we're setting here
 						this.setValue(itm.value);
 					},
-					scope:this
+					scope:this,
+					
 				}
 				
 				if(itm.cls) { menu_item.iconCls = 'with-icon ' + itm.cls; }
@@ -388,6 +407,8 @@ Ext.ux.RapidApp.ClickMenuField = Ext.extend(Ext.ux.RapidApp.ClickCycleField,{
 				this.selectValue(this.getValue());
 			},this);
 			/*************************************************/
+			
+			this.clickMenu.on('show',this.updateItemsStyles,this);
 			
 		}
 		return this.clickMenu;
