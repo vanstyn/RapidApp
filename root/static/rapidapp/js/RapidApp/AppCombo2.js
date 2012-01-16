@@ -194,6 +194,7 @@ Ext.ux.RapidApp.ClickCycleField = Ext.extend(Ext.form.DisplayField,{
 		
 		var map = {};
 		var indexmap = {};
+		var itemlist = [];
 		Ext.each(this.value_list,function(item,index) {
 			
 			var value, text, cls; 
@@ -214,18 +215,20 @@ Ext.ux.RapidApp.ClickCycleField = Ext.extend(Ext.form.DisplayField,{
 				index: index
 			};
 			indexmap[index] = map[value];
+			itemlist.push(map[value]);
 			
 		},this);
 		
 		this.valueMap = map;
 		this.indexMap = indexmap;
+		this.valueList = itemlist;
 		
 		this.on('render',this.onShowMe,this);
 		this.on('show',this.onShowMe,this);
 	},
 	
 	onShowMe: function() {
-		console.log('onshow');
+		//console.log('onshow');
 		this.applyElOpts();
 		
 		if(this.cycleOnShow) {
@@ -272,6 +275,10 @@ Ext.ux.RapidApp.ClickCycleField = Ext.extend(Ext.form.DisplayField,{
 		return this.nativeGetValue();
 	},
 	
+	//getRawValue: function() {
+	//	return this.dataValue;
+	//},
+	
 	getCurrentIndex: function(){
 		var v = this.getValue();
 		var cur = this.valueMap[v];
@@ -299,13 +306,120 @@ Ext.ux.RapidApp.ClickCycleField = Ext.extend(Ext.form.DisplayField,{
 		var next = this.indexMap[nextIndex];
 		if(typeof next == "undefined") { return; }
 		
-		//console.log('cycleNext: ' + next.value + '/' + next.text);
-		var ret = this.setValue(next.value);
-		
-		if(ret) { this.fireEvent('select',this,next.value,next.index); }
+		return this.selectValue(next.value);
+	},
+	
+	selectValue: function(v) {
+		var itm = this.valueMap[v];
+		if(typeof itm == "undefined") { return; }
+
+		var ret = this.setValue(itm.value);
+
+		if(ret) { this.fireEvent('select',this,itm.value,itm.index); }
 		return ret;
 	}
+	
 });
 Ext.reg('cycle-field',Ext.ux.RapidApp.ClickCycleField);
 
+Ext.ux.RapidApp.ClickMenuField = Ext.extend(Ext.ux.RapidApp.ClickCycleField,{
+	
+	// cycleOnShow: if true, the the value is cycled when the field is shown
+	menuOnShow: false,
+	
+	onShowMe: function() {
+		Ext.ux.RapidApp.ClickMenuField.superclass.onShowMe.call(this);
+		
+		if(this.menuOnShow) {
+			//console.log('cycleOnShow true, calling cycleNext!');
+			//this.cycleNext.defer(20,this);
+			this.showMenu();
+		}
+	},
+	
+	getMenu: function() {
+		if(!this.clickMenu) {
+			
+			var cnf = {
+				items: []
+			};
+			
+			Ext.each(this.valueList,function(itm) {
+				var menu_item = {
+					text: itm.text,
+					handler: function(){
+						//we just set the value. Hide is automatically called which will
+						//call selectValue, which will get the new value we're setting here
+						this.setValue(itm.value);
+					},
+					scope:this
+				}
+				
+				if(itm.cls) { menu_item.iconCls = 'with-icon ' + itm.cls; }
+				
+				cnf.items.push(menu_item);
+			},this);
+			
+			this.clickMenu = new Ext.menu.Menu(cnf);
+			
+			/*************************************************/
+			/* TODO: fixme (see below)  */
+			this.clickMenu.on('beforehide',function(){ 
+				if (!this.hideAllow) {
+					this.hideAllow = true;
+					var func = function() {
+						// The hide only proceeds if hideAllow is still true.
+						// If show got called, it will be set back to false and
+						// the hide will not happen. This is to solve a race 
+						// condition where hide gets called before show. That isn't
+						// the *real* hide. Not sure why this happens
+						if(this.hideAllow) { this.clickMenu.hide(); }
+					}
+					func.defer(50,this);
+					return false; 
+				}
+			},this);
+			
+			this.clickMenu.on('show',function(){
+				this.hideAllow = false;
+			},this);
+			
+			this.clickMenu.on('hide',function(){
+				this.selectValue(this.getValue());
+			},this);
+			/*************************************************/
+			
+		}
+		return this.clickMenu;
+	},
+	
+	onClickMe: function(e) {
 
+		var pos = e.getXY();
+		pos[0] = pos[0] + 10;
+		pos[1] = pos[1] + 5;
+		
+		this.showMenu(pos);
+	},
+	
+	showMenu: function(pos) {
+		
+		var pos = pos || this.getEl().getXY();
+		
+		var Menu = this.getMenu();
+		
+		Menu.showAt(pos);
+		this.ignoreHide = false;
+	},
+	
+	expand: function(){
+		this.showMenu();
+	},
+	
+	cycleNext: function(){
+		
+	}
+	
+	
+});
+Ext.reg('menu-field',Ext.ux.RapidApp.ClickMenuField);

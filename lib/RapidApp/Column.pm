@@ -118,7 +118,11 @@ sub _set_menu_select_editor {
 		}
 		elsif($mode eq 'menu') {
 		
-			# TODO
+			$self->{editor} = {
+				xtype => 'menu-field',
+				menuOnShow => \1,
+				value_list => \@value_list,
+			};
 		
 		}
 		elsif($mode eq 'cycle') {
@@ -126,7 +130,6 @@ sub _set_menu_select_editor {
 			$self->{editor} = {
 				xtype => 'cycle-field',
 				cycleOnShow => \1,
-				allowBlank => \0,
 				value_list => \@value_list,
 			};
 		

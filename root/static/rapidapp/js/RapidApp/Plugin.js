@@ -1425,8 +1425,9 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 						// finish the edit on select
 						field.on('select',cmp.stopEditing.createDelegate(cmp));
 						
-						// For cycle-field:
+						// For cycle-field/menu-field:
 						field.cycleOnShow = false;
+						field.manuOnShow = false;
 						
 						//Call 'expand' for combos and other fields with an expand method (cycle-field)
 						if(Ext.isFunction(field.expand)) {

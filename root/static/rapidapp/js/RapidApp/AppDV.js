@@ -429,7 +429,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			Field.on('select',function(field) {
 				//console.log('AppDV select');
 				
-				if(! field.isValid()) { return; }
+				if(field && ! field.isValid()) { return; }
 				saveEndEdit.call(this);
 			},this);
 			
