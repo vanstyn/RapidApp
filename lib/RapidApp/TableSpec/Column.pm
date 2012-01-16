@@ -40,7 +40,33 @@ sub DEFAULT_PROFILES {{
 		int => {
 		
 		},
+		
 		bool => {
+			menu_select_editor => {
+			
+				#mode: 'combo', 'menu' or 'cycle':
+				mode => 'menu',
+			
+				render_icon_only => 1,
+			
+				selections => [
+					{
+						iconCls => "icon-cross-light-12x12",
+						#iconCls => "icon-cross-tiny",
+						text	=> 'No',
+						value	=> 0
+					},
+					{
+						iconCls => "icon-checkmark-12x12",
+						#iconCls => "icon-tick-tiny",
+						text	=> 'Yes',
+						value	=> 1
+					}
+				]
+			}
+		},
+		
+		bool_old => {
 			# Renderer *not* in arrayref makes it replace instead of append previous
 			# profiles with th renderer property as an arrayref
 			renderer => 'Ext.ux.RapidApp.boolCheckMark',

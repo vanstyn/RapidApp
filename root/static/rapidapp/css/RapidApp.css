@@ -22,6 +22,14 @@ pre {
   vertical-align: middle;
 }
 
+.icon-centered-16x16 {
+  height: 16px;
+  width: 16px;
+  background-repeat: no-repeat;
+  background-position: center center;
+}
+
+
 .grid-cell-with-icon {
 	height: 16px;
 	text-indent: 16px;

@@ -108,6 +108,21 @@ sub div_edit_field {
 }
 
 
+sub div_edit_field_no_icons {
+	my $self = shift;
+	my $name = shift;
+	my $display = shift;
+	$display = $name unless ($display);
+	return $self->div_editable_value($name,
+		'<div class="appdv-edit-field">' .	
+			'<table border="0" cellpadding="0" cellspacing="0"><tr>' .
+				'<td>' . $self->data_wrapper_div($name,$display) . '</td>' .
+
+			'</tr></table>' .
+		'</div>'
+	);
+}
+
 
 
 sub div_bigfield {
@@ -290,13 +305,17 @@ has 'autofield' => (
 				$config->{xtype} eq 'htmleditor'
 			);
 			
+			return $self->div_edit_field_no_icons($Column->name,$display) if (
+				$config->{xtype} eq 'cycle-field' or
+				$config->{xtype} eq 'menu-field'
+			);
+			
 			return $self->div_edit_field($Column->name,$display);
 		});
 	}
 );
 
-
-		
+	
 		
 has 'submodule' => (
 	is => 'ro',

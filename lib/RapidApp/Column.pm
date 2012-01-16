@@ -81,15 +81,17 @@ sub _set_menu_select_editor {
 	my %val_to_disp = ();
 	my @value_list = ();
 	
-	foreach my $sel (@{$new->{selections}}) {
+	scream($new);
+	
+	foreach my $sel (uniq(@{$new->{selections}})) {
 		push @value_list, [$sel->{value},$sel->{text},$sel->{iconCls}];
 		if(defined $sel->{value} and defined $sel->{text}) {
 			$val_to_disp{$sel->{value}} = $sel->{text};
-			
+
 			$val_to_disp{$sel->{value}} = '<div class="with-icon ' . $sel->{iconCls} . '">' . $sel->{text} . '</div>'
 				if($sel->{iconCls});
 				
-			$val_to_disp{$sel->{value}} = '<img src="/static/ext/resources/images/default/s.gif" class="with-icon ' . $sel->{iconCls} . '">'
+			$val_to_disp{$sel->{value}} = '<img src="/static/ext/resources/images/default/s.gif" class="icon-centered-16x16 ' . $sel->{iconCls} . '">'
 				if($sel->{iconCls} and jstrue($new->{render_icon_only}));
 		};
 		
@@ -122,6 +124,8 @@ sub _set_menu_select_editor {
 				xtype => 'menu-field',
 				menuOnShow => \1,
 				value_list => \@value_list,
+				minHeight => 10,
+				minWidth => 10
 			};
 		
 		}
@@ -131,6 +135,8 @@ sub _set_menu_select_editor {
 				xtype => 'cycle-field',
 				cycleOnShow => \1,
 				value_list => \@value_list,
+				minHeight => 10,
+				minWidth => 10
 			};
 		
 		}
