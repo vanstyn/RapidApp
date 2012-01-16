@@ -81,8 +81,6 @@ sub _set_menu_select_editor {
 	my %val_to_disp = ();
 	my @value_list = ();
 	
-	scream($new);
-	
 	foreach my $sel (uniq(@{$new->{selections}})) {
 		push @value_list, [$sel->{value},$sel->{text},$sel->{iconCls}];
 		if(defined $sel->{value} and defined $sel->{text}) {
