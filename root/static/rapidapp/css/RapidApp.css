@@ -70,6 +70,16 @@ pre {
 	background-position: right center;
 }
 
+/* http://stackoverflow.com/questions/826782/css-rule-to-disable-text-selection-highlighting */
+.no-text-select {
+	-webkit-user-select: none;
+	-khtml-user-select: none;
+	-moz-user-select: none;
+	-ms-user-select: none;
+	-o-user-select: none;
+	user-select: none;
+}
+
 .icon-server_database { background-image: url(/static/rapidapp/images/server_database.png) !important; }
 .icon-arrow_refresh_small { background-image: url(/static/rapidapp/images/arrow_refresh_small.png) !important; }
 .icon-database { background-image: url(/static/rapidapp/images/database.png) !important; }

@@ -1408,6 +1408,52 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		// without the beforeedit/afteredit events
 		this.cmp.on('beforeedit',this.beforeCellEdit,this);
 		this.cmp.on('afteredit',this.cmp.store.saveIfPersist,this);
+		
+		
+		/**********************/
+		/** For Editor Grids **/
+		if(Ext.isFunction(cmp.startEditing)){
+			cmp.startEditing_orig = cmp.startEditing;
+			
+			cmp.startEditing = function(row,col) {
+				var ed = this.colModel.getCellEditor(col, row);
+				if(ed) {
+					var field = ed.field;
+					if(field && !field.DataStorePlusApplied) {
+						
+						// For combos and other fields with a select listener, automatically
+						// finish the edit on select
+						field.on('select',cmp.stopEditing.createDelegate(cmp));
+						
+						// For cycle-field:
+						field.cycleOnShow = false;
+						
+						//Call 'expand' for combos and other fields with an expand method (cycle-field)
+						if(Ext.isFunction(field.expand)) {
+							ed.on('startedit',function(){
+								this.expand();
+								// If it is specifically a combo, call expand again to make sure
+								// it really expands
+								if(Ext.isFunction(this.doQuery)) {
+									this.expand.defer(50,this);
+								}
+							},field);
+						}
+						
+						field.DataStorePlusApplied = true;
+					}
+				}
+				return cmp.startEditing_orig.apply(cmp,arguments);
+			}
+		}
+		/**********************/
+		/**********************/
+		
+		
+		
+		
+		
+		
 
 		if(Ext.isFunction(this.cmp.getSelectionModel)) {
 			// Give Grids getSelectedRecords() so they work like DataViews:

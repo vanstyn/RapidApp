@@ -184,6 +184,8 @@ Ext.ux.RapidApp.ClickCycleField = Ext.extend(Ext.form.DisplayField,{
 	// cycleOnShow: if true, the the value is cycled when the field is shown
 	cycleOnShow: false,
 	
+	fieldClass: 'x-form-field x-grid3-hd-inner no-text-select',
+	
 	//isValid: function(){ return true; },
 	
 	initComponent: function() {
@@ -220,26 +222,38 @@ Ext.ux.RapidApp.ClickCycleField = Ext.extend(Ext.form.DisplayField,{
 		
 		//this.on('select',function() { console.log('event: select');  });
 		
-		this.on('show',this.onShow,this);
+		this.on('show',this.onShowMe,this);
 	},
 	
-	onShow: function() {
-		var el = this.getEl();
-		el.applyStyles('cursor:pointer');
-		// Click on the Element:
-		el.on('click',this.onClick,this);
+	onShowMe: function() {
+		//console.log('onshow');
+		this.applyElOpts();
 		
-		if(this.cycleOnShow) { 
+		if(this.cycleOnShow) {
+			//console.log('cycleOnShow true, calling cycleNext!');
+			//this.cycleNext.defer(20,this);
 			this.cycleNext();
 		}
 	},
 	
-	onClick: function() {
+	applyElOpts: function() {
+		var el = this.getEl();
+		if(!el.ElOptsApplied) {
+			el.applyStyles('cursor:pointer');
+			// Click on the Element:
+			el.on('click',this.onClickMe,this);
+			el.ElOptsApplied = true;
+		}
+	},
+	
+	onClickMe: function() {
 		//console.log('click')
 		this.cycleNext();
 	},
 	
 	setValue: function(v) {
+		//console.log('   setValue(' + v + ')');
+		
 		this.dataValue = v;
 		var renderVal = v;
 		if(this.valueMap[v]) { 
@@ -274,10 +288,19 @@ Ext.ux.RapidApp.ClickCycleField = Ext.extend(Ext.form.DisplayField,{
 		return 0;
 	},
 	
+	// Make us look like a combo with an 'expand' function:
+	expand: function(){
+		this.cycleNext();
+	},
+	
 	cycleNext: function() {
+		//console.log('cycleNext');
+		
 		var nextIndex = this.getNextIndex();
 		var next = this.indexMap[nextIndex];
 		if(typeof next == "undefined") { return; }
+		
+		//console.log('cycleNext: ' + next.value + '/' + next.text);
 		var ret = this.setValue(next.value);
 		
 		if(ret) { this.fireEvent('select',this,next.value,next.index); }

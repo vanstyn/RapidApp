@@ -125,7 +125,6 @@ sub _set_menu_select_editor {
 		
 			$self->{editor} = {
 				xtype => 'cycle-field',
-				saveOnSetValue => \1,
 				cycleOnShow => \1,
 				allowBlank => \0,
 				value_list => \@value_list,
