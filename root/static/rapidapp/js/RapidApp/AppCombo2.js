@@ -220,13 +220,12 @@ Ext.ux.RapidApp.ClickCycleField = Ext.extend(Ext.form.DisplayField,{
 		this.valueMap = map;
 		this.indexMap = indexmap;
 		
-		//this.on('select',function() { console.log('event: select');  });
-		
+		this.on('render',this.onShowMe,this);
 		this.on('show',this.onShowMe,this);
 	},
 	
 	onShowMe: function() {
-		//console.log('onshow');
+		console.log('onshow');
 		this.applyElOpts();
 		
 		if(this.cycleOnShow) {
