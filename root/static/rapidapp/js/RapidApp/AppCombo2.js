@@ -324,6 +324,8 @@ Ext.reg('cycle-field',Ext.ux.RapidApp.ClickCycleField);
 
 Ext.ux.RapidApp.ClickMenuField = Ext.extend(Ext.ux.RapidApp.ClickCycleField,{
 	
+	header: null,
+	
 	// cycleOnShow: if true, the the value is cycled when the field is shown
 	menuOnShow: false,
 	
@@ -341,6 +343,7 @@ Ext.ux.RapidApp.ClickMenuField = Ext.extend(Ext.ux.RapidApp.ClickCycleField,{
 		var Menu = this.getMenu();
 		var cur_val = this.getValue();
 		Menu.items.each(function(mitem) {
+			if(typeof mitem.value == "undefined") { return; }
 			var el = mitem.getEl();
 			if(mitem.value == cur_val) {
 				el.addClass('menu-field-current-value');
@@ -360,6 +363,20 @@ Ext.ux.RapidApp.ClickMenuField = Ext.extend(Ext.ux.RapidApp.ClickCycleField,{
 			var cnf = {
 				items: []
 			};
+			
+			if(this.header) {
+				cnf.items = [
+					{
+						canActivate: false,
+						iconCls : 'icon-bullet-arrow-down',
+						style: 'font-weight:bold;color:#333333;cursor:auto;padding-right:5px;',
+						text: this.header + ':',
+						hideOnClick: true,
+					},
+					{ xtype: 'menuseparator' }
+				];
+				
+			}
 			
 			Ext.each(this.valueList,function(itm) {
 				var menu_item = {
@@ -414,13 +431,8 @@ Ext.ux.RapidApp.ClickMenuField = Ext.extend(Ext.ux.RapidApp.ClickCycleField,{
 		return this.clickMenu;
 	},
 	
-	onClickMe: function(e) {
-
-		var pos = e.getXY();
-		pos[0] = pos[0] + 10;
-		pos[1] = pos[1] + 5;
-		
-		this.showMenu(pos);
+	onClickMe: function() {
+		this.showMenu();
 	},
 	
 	showMenu: function(pos) {

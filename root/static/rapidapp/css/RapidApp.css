@@ -147,6 +147,7 @@ pre {
 
 .icon-element-copy { background-image: url(/static/rapidapp/images/element_copy.png) !important; }
 .icon-element-into { background-image: url(/static/rapidapp/images/element_into.png) !important; }
+.icon-bullet-arrow-down { background-image: url(/static/rapidapp/images/bullet_arrow_down.png) !important; }
 
 .x-logical-checkbox {
 	width: 16px;

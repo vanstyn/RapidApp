@@ -120,6 +120,7 @@ sub _set_menu_select_editor {
 		
 			$self->{editor} = {
 				xtype => 'menu-field',
+				header => $self->header,
 				menuOnShow => \1,
 				value_list => \@value_list,
 				minHeight => 10,
