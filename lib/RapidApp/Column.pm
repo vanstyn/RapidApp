@@ -120,12 +120,17 @@ sub _set_menu_select_editor {
 		
 			$self->{editor} = {
 				xtype => 'menu-field',
-				header => $self->header,
 				menuOnShow => \1,
 				value_list => \@value_list,
 				minHeight => 10,
 				minWidth => 10
 			};
+			
+			$self->{editor}->{header} = $new->{header} || $self->header;
+			delete $self->{editor}->{header} unless (
+				defined $self->{editor}->{header} and
+				$self->{editor}->{header} ne ''
+			);
 		
 		}
 		elsif($mode eq 'cycle') {
