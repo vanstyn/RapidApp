@@ -1031,9 +1031,11 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 	if(! cfg.params)						{ cfg.params = {};					}
 	if(! cfg.valuesParamName)			{ cfg.valuesParamName = 'json_form_data';		}
 	if(! cfg.submitBtnText)			{ cfg.submitBtnText = 'Save';		}
-	if(! cfg.cancelHandler)			{ cfg.cancelHandler = function(){ Ext.getCmp(winId).close(); }	}
+	if(! cfg.cancelHandler)			{ cfg.cancelHandler = Ext.emptyFn;	}
 	if(! typeof(cfg.closable))		{ cfg.closable = true;	}
-
+	
+	var cancel_fn = function(){ Ext.getCmp(winId).close(); cfg.cancelHandler(); }
+	
 	cfg.fieldset['anchor'] = '100% 100%';
 
 	var scope = this;
@@ -1130,7 +1132,7 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 				},
 				{
 					text		: 'Cancel',
-					handler	: cfg.cancelHandler
+					handler	: cancel_fn
 				}
 			],
 			listeners: {

@@ -307,7 +307,9 @@ has 'autofield' => (
 			
 			return $self->div_edit_field_no_icons($Column->name,$display) if (
 				$config->{xtype} eq 'cycle-field' or
-				$config->{xtype} eq 'menu-field'
+				$config->{xtype} eq 'menu-field' or 
+				$config->{xtype} eq 'cas-upload-field' or
+				$config->{xtype} eq 'cas-image-field'
 			);
 			
 			return $self->div_edit_field($Column->name,$display);

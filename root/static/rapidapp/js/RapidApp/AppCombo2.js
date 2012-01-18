@@ -173,24 +173,77 @@ Ext.ux.RapidApp.StaticCombo = Ext.extend(Ext.form.ComboBox,{
 Ext.reg('static-combo',Ext.ux.RapidApp.StaticCombo);
 
 
-
-Ext.ux.RapidApp.ClickCycleField = Ext.extend(Ext.form.DisplayField,{
+Ext.ux.RapidApp.ClickActionField = Ext.extend(Ext.form.DisplayField,{
 	
-	value_list: [],
+	actionOnShow: false,
+	
+	actionFn: Ext.emptyFn,
 	
 	nativeGetValue: Ext.form.DisplayField.prototype.getValue,
 	nativeSetValue: Ext.form.DisplayField.prototype.setValue,
+	
+	initComponent: function() {
+		Ext.ux.RapidApp.ClickActionField.superclass.initComponent.call(this);
+		this.addEvents( 'select' );
+		this.on('select',this.onSelectMe,this);
+		this.on('render',this.onShowMe,this);
+		this.on('show',this.onShowMe,this);
+	},
+	
+	onSelectMe: function() {
+		this.actionRunning = false;
+	},
+	
+	onShowMe: function() {
+
+		this.applyElOpts();
+		
+		if(this.actionOnShow) {
+			this.callActionFn();
+		}
+	},
+	
+	callActionFn: function() {
+		if(this.actionRunning) { return; }
+		this.actionRunning = true;
+		this.actionFn.apply(this,arguments);
+	},
+	
+	applyElOpts: function() {
+		var el = this.getEl();
+		if(!el.ElOptsApplied) {
+			el.applyStyles('cursor:pointer');
+			// Click on the Element:
+			el.on('click',this.onClickMe,this);
+			el.ElOptsApplied = true;
+		}
+	},
+	
+	onClickMe: function(e) {
+		//this.actionRunning = false;
+		this.callActionFn(e);
+	},
+	
+	// Make us look like a combo with an 'expand' function:
+	expand: function(){
+		this.callActionFn();
+	}
+});
+Ext.reg('click-action-field',Ext.ux.RapidApp.ClickActionField);
+
+Ext.ux.RapidApp.ClickCycleField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
+	
+	value_list: [],
 	
 	// cycleOnShow: if true, the the value is cycled when the field is shown
 	cycleOnShow: false,
 	
 	fieldClass: 'x-form-field x-grid3-hd-inner no-text-select',
 	
-	//isValid: function(){ return true; },
-	
 	initComponent: function() {
 		Ext.ux.RapidApp.ClickCycleField.superclass.initComponent.call(this);
-		this.addEvents( 'select' );
+		
+		this.actionOnShow = this.cycleOnShow;
 		
 		var map = {};
 		var indexmap = {};
@@ -222,39 +275,9 @@ Ext.ux.RapidApp.ClickCycleField = Ext.extend(Ext.form.DisplayField,{
 		this.valueMap = map;
 		this.indexMap = indexmap;
 		this.valueList = itemlist;
-		
-		this.on('render',this.onShowMe,this);
-		this.on('show',this.onShowMe,this);
-	},
-	
-	onShowMe: function() {
-		//console.log('onshow');
-		this.applyElOpts();
-		
-		if(this.cycleOnShow) {
-			//console.log('cycleOnShow true, calling cycleNext!');
-			//this.cycleNext.defer(20,this);
-			this.cycleNext();
-		}
-	},
-	
-	applyElOpts: function() {
-		var el = this.getEl();
-		if(!el.ElOptsApplied) {
-			el.applyStyles('cursor:pointer');
-			// Click on the Element:
-			el.on('click',this.onClickMe,this);
-			el.ElOptsApplied = true;
-		}
-	},
-	
-	onClickMe: function() {
-		//console.log('click')
-		this.cycleNext();
 	},
 	
 	setValue: function(v) {
-		//console.log('   setValue(' + v + ')');
 		
 		this.dataValue = v;
 		var renderVal = v;
@@ -274,11 +297,7 @@ Ext.ux.RapidApp.ClickCycleField = Ext.extend(Ext.form.DisplayField,{
 		}
 		return this.nativeGetValue();
 	},
-	
-	//getRawValue: function() {
-	//	return this.dataValue;
-	//},
-	
+
 	getCurrentIndex: function(){
 		var v = this.getValue();
 		var cur = this.valueMap[v];
@@ -294,13 +313,7 @@ Ext.ux.RapidApp.ClickCycleField = Ext.extend(Ext.form.DisplayField,{
 		return 0;
 	},
 	
-	// Make us look like a combo with an 'expand' function:
-	expand: function(){
-		this.cycleNext();
-	},
-	
-	cycleNext: function() {
-		//console.log('cycleNext');
+	actionFn: function() {
 		
 		var nextIndex = this.getNextIndex();
 		var next = this.indexMap[nextIndex];
@@ -329,14 +342,10 @@ Ext.ux.RapidApp.ClickMenuField = Ext.extend(Ext.ux.RapidApp.ClickCycleField,{
 	// cycleOnShow: if true, the the value is cycled when the field is shown
 	menuOnShow: false,
 	
-	onShowMe: function() {
-		Ext.ux.RapidApp.ClickMenuField.superclass.onShowMe.call(this);
+	initComponent: function() {
+		Ext.ux.RapidApp.ClickMenuField.superclass.initComponent.call(this);
 		
-		if(this.menuOnShow) {
-			//console.log('cycleOnShow true, calling cycleNext!');
-			//this.cycleNext.defer(20,this);
-			this.showMenu();
-		}
+		this.actionOnShow = this.menuOnShow;
 	},
 	
 	updateItemsStyles: function(){
@@ -431,28 +440,121 @@ Ext.ux.RapidApp.ClickMenuField = Ext.extend(Ext.ux.RapidApp.ClickCycleField,{
 		return this.clickMenu;
 	},
 	
-	onClickMe: function() {
-		this.showMenu();
-	},
-	
-	showMenu: function(pos) {
+	actionFn: function() {
 		
-		var pos = pos || this.getEl().getXY();
+		var pos = this.getEl().getXY();
 		
 		var Menu = this.getMenu();
 		
 		Menu.showAt(pos);
 		this.ignoreHide = false;
-	},
-	
-	expand: function(){
-		this.showMenu();
-	},
-	
-	cycleNext: function(){
-		
 	}
-	
 	
 });
 Ext.reg('menu-field',Ext.ux.RapidApp.ClickMenuField);
+
+
+
+
+Ext.ux.RapidApp.CasUploadField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
+	
+	// TODO
+	
+	
+	initComponent: function() {
+		Ext.ux.RapidApp.CasUploadField.superclass.initComponent.call(this);
+		
+	}
+	
+});
+Ext.reg('cas-upload-field',Ext.ux.RapidApp.CasUploadField);
+
+
+Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
+	
+	uploadUrl: '/simplecas/upload_image',
+	
+	maxImageWidth: null,
+	
+	resizeWarn: true,
+	
+	minHeight: 2,
+	minWidth: 2,
+	
+	getUploadUrl: function() {
+		url = this.uploadUrl;
+		if(this.maxImageWidth) { url += '/' + this.maxImageWidth; }
+		return url;
+	},
+	
+	formUploadCallback: function(form,res) {
+		var img = Ext.decode(res.response.responseText);
+		
+		if(this.resizeWarn && img.resized) {
+			Ext.Msg.show({
+				title:'Notice: Image Resized',
+				msg: 
+					'The image has been resized by the server.<br><br>' +
+					'Original Size: <b>' + img.orig_width + 'x' + img.orig_height + '</b><br><br>' +
+					'New Size: <b>' + img.width + 'x' + img.height + '</b>'
+				,
+				buttons: Ext.Msg.OK,
+				icon: Ext.MessageBox.INFO
+			});
+		}
+		
+		img.link_url = '/simplecas/fetch_content/' + img.checksum + '/' + img.filename;
+		
+		if(!img.width || img.width < this.minWidth) { img.width = this.minWidth; }
+		if(!img.height || img.height < this.minHeight) { img.height = this.minHeight; }
+		var img_tag = 
+			'<img alt="\<img: ' + img.filename + '\>" src="' + img.link_url + 
+				'" width=' + img.width + ' height=' + img.height + 
+				' style="background-color:yellow;"' +
+			'>';
+		this.setValue(img_tag);
+		this.onActionComplete();
+	},
+	
+	onActionComplete: function() {
+		this.fireEvent.defer(50,this,['select']);
+	},
+	
+	actionFn: function(){
+		
+		var upload_field = {
+			xtype: 'fileuploadfield',
+			emptyText: 'Select image',
+			fieldLabel:'Select Image',
+			name: 'Filedata',
+			buttonText: 'Browse',
+			width: 300
+		};
+		
+		var fieldset = {
+			style: 'border: none',
+			hideBorders: true,
+			xtype: 'fieldset',
+			labelWidth: 80,
+			border: false,
+			items:[ upload_field ]
+		};
+		
+		Ext.ux.RapidApp.WinFormPost.call(this,{
+			title: 'Insert Image',
+			width: 440,
+			height:140,
+			url: this.getUploadUrl(),
+			useSubmit: true,
+			fileUpload: true,
+			fieldset: fieldset,
+			success: this.formUploadCallback,
+			cancelHandler: this.onActionComplete.createDelegate(this)
+		});
+	}
+	
+});
+Ext.reg('cas-image-field',Ext.ux.RapidApp.CasImageField);
+
+
+
