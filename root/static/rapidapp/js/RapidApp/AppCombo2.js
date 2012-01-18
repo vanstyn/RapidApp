@@ -198,7 +198,8 @@ Ext.ux.RapidApp.ClickActionField = Ext.extend(Ext.form.DisplayField,{
 
 		this.applyElOpts();
 		
-		if(this.actionOnShow) {
+		if(this.actionOnShow && this.nativeGetValue()) {
+			// If there is no value yet, don't call the action (such as in a form)
 			this.callActionFn();
 		}
 	},
@@ -471,6 +472,9 @@ Ext.reg('cas-upload-field',Ext.ux.RapidApp.CasUploadField);
 
 
 Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
+	
+	// init/default value:
+	value: '<div style="color:darkgray;">(select image)</div>',
 	
 	uploadUrl: '/simplecas/upload_image',
 	

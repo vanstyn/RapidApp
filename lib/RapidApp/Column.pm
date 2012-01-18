@@ -92,8 +92,10 @@ sub _set_menu_select_editor {
 			$val_to_disp{$sel->{value}} = '<img src="/static/ext/resources/images/default/s.gif" class="icon-centered-16x16 ' . $sel->{iconCls} . '">'
 				if($sel->{iconCls} and jstrue($new->{render_icon_only}));
 		};
-		
 	}
+	
+	my $first_val;
+	$first_val = $value_list[0]->[0] if (defined $value_list[0]);
 	
 	my $mapjs = encode_json(\%val_to_disp);
 	
@@ -122,6 +124,7 @@ sub _set_menu_select_editor {
 				xtype => 'menu-field',
 				menuOnShow => \1,
 				value_list => \@value_list,
+				value => $first_val,
 				minHeight => 10,
 				minWidth => 10
 			};
@@ -139,6 +142,7 @@ sub _set_menu_select_editor {
 				xtype => 'cycle-field',
 				cycleOnShow => \1,
 				value_list => \@value_list,
+				value => $first_val,
 				minHeight => 10,
 				minWidth => 10
 			};
