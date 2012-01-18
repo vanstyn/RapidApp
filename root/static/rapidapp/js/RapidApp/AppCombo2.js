@@ -195,12 +195,11 @@ Ext.ux.RapidApp.ClickActionField = Ext.extend(Ext.form.DisplayField,{
 	},
 	
 	onShowMe: function() {
-
 		this.applyElOpts();
 		
 		if(this.actionOnShow && this.nativeGetValue()) {
 			// If there is no value yet, don't call the action (such as in a form)
-			this.callActionFn();
+			this.callActionFn.defer(10,this);
 		}
 	},
 	
@@ -221,13 +220,12 @@ Ext.ux.RapidApp.ClickActionField = Ext.extend(Ext.form.DisplayField,{
 	},
 	
 	onClickMe: function(e) {
-		//this.actionRunning = false;
-		this.callActionFn(e);
+		this.callActionFn.defer(10,this,arguments);
 	},
 	
 	// Make us look like a combo with an 'expand' function:
 	expand: function(){
-		this.callActionFn();
+		this.callActionFn.defer(10,this);
 	}
 });
 Ext.reg('click-action-field',Ext.ux.RapidApp.ClickActionField);
@@ -441,9 +439,19 @@ Ext.ux.RapidApp.ClickMenuField = Ext.extend(Ext.ux.RapidApp.ClickCycleField,{
 		return this.clickMenu;
 	},
 	
-	actionFn: function() {
+	actionFn: function(e) {
+		var el = this.getEl();
+		var pos = [0,0];
+		if(el){ 
+			pos = el.getXY();
+		}
+		else if(e && e.getXY) { pos = e.getXY(); }
 		
-		var pos = this.getEl().getXY();
+		// TODO: sometimes it just fails to get the position! why?!
+		if(pos[0] <= 0) {
+			pos = this.getPosition(true);
+			//console.dir(this);
+		}
 		
 		var Menu = this.getMenu();
 		
