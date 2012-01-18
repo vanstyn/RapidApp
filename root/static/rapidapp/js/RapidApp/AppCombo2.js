@@ -197,10 +197,19 @@ Ext.ux.RapidApp.ClickActionField = Ext.extend(Ext.form.DisplayField,{
 	onShowMe: function() {
 		this.applyElOpts();
 		
-		if(this.actionOnShow && this.nativeGetValue()) {
-			// If there is no value yet, don't call the action (such as in a form)
+		if(this.actionOnShow && (this.nativeGetValue() || !this.isInForm())) {
+			// If there is no value yet *and* we're in a form, don't call the action
+			// We need this because in the case of a form we don't want the action to
+			// be called on show, we want it called on click. In the case of an edit 
+			// grid and AppDV, we want to run the action on show because on show in
+			// that context happens after we've clicked to start editing
 			this.callActionFn.defer(10,this);
 		}
+	},
+	
+	isInForm: function() {
+		if(this.ownerCt && this.ownerCt.getForm) { return true; }
+		return false;
 	},
 	
 	callActionFn: function() {
