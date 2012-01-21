@@ -413,9 +413,14 @@ sub get_req_columns {
 	# include_relspec
 	# TODO: move column request logic that's currently only in AppGrid2 to a 
 	# plugin/store where it can be used by other js modules like dataview
-	push @$columns, $self->TableSpec->get_colspec_column_names(
-		$self->TableSpec->include_colspec->colspecs
-	) unless(@$columns > 0); 
+	unless(@$columns > 0) {
+		push @$columns, $self->TableSpec->get_colspec_column_names(
+			$self->TableSpec->include_colspec->colspecs
+		);
+		# Limit to current real/valid columns according to DataStore2:
+		my %cols_indx = map {$_=>1} $self->column_name_list;
+		@$columns = grep { $cols_indx{$_} } @$columns;
+	}
 	# ---
 	
 	

@@ -312,7 +312,7 @@ sub apply_columns_ordered {
 	my %columns = @_;
 	
 	# Filter out previously deleted column names:
-	%columns = map {$_=>$columns{$_}} grep { !$self->deleted_column_names->{$_} } keys %columns;
+	#%columns = map {$_=>$columns{$_}} grep { !$self->deleted_column_names->{$_} } keys %columns;
 	
 	# Get even indexed items from array (i.e. hash keys)
 	my @col_names = @_[map { $_ * 2 } 0 .. int($#_ / 2)];
@@ -326,7 +326,7 @@ sub apply_columns {
 	my %columns = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	# Filter out previously deleted column names:
-	%columns = map {$_=>$columns{$_}} grep { !$self->deleted_column_names->{$_} } keys %columns;
+	#%columns = map {$_=>$columns{$_}} grep { !$self->deleted_column_names->{$_} } keys %columns;
 	
 	foreach my $name (keys %columns) {
 	
@@ -346,12 +346,16 @@ sub apply_columns {
 	return $self->apply_config(columns => $self->column_list);
 }
 
+sub column_name_list {
+	my $self = shift;
+	return grep { !$self->deleted_column_names->{$_} } @{$self->column_order};
+}
 
 sub column_list {
 	my $self = shift;
 	
 	# new, safer way to way to handle deleted columns
-	my @colnames = grep { !$self->deleted_column_names->{$_} } @{$self->column_order};
+	my @colnames = $self->column_name_list;
 	
 	my @list = ();
 	foreach my $name (@colnames) {
