@@ -254,6 +254,20 @@ has 'exclude_columns_hash' => ( is => 'ro', lazy => 1, default => sub {
 	return $hash;
 });
 
+sub has_column {
+	my $self = shift;
+	my $col = shift;
+	return 0 if ($self->deleted_column_names->{$col});
+	return 1 if (exists $self->columns->{$col}); 
+	return 0;
+}
+
+sub get_column {
+	my $self = shift;
+	my $col = shift;
+	return undef unless ($self->has_column($col));
+	return $self->columns->{$col};
+}
 
 
 has 'deleted_column_names', is => 'ro', isa => 'HashRef', default => sub {{}}, traits => ['RapidApp::Role::PerRequestBuildDefReset'];
@@ -270,13 +284,15 @@ sub delete_columns {
 	# -- This may be redundant to exclude_columns, need to look into combining these --
 	$self->deleted_column_names->{$_} = 1 for (@columns);
 	
-	# Delete by filtering out supplied column names:
-	%{$self->columns} = map { $_ => $self->columns->{$_} } grep { !$indx{$_} } keys %{$self->columns};
-	@{$self->column_order} = uniq(grep { !$indx{$_} } @{$self->column_order});
+	# vvv -- deleted columns are now filtered out in column_list instead of using the below code -- vvv
 	
-	#TODO: what happens if removed column had a read_raw_mungers/update_mungers?
-	
-	return $self->apply_columns;
+	## Delete by filtering out supplied column names:
+	#%{$self->columns} = map { $_ => $self->columns->{$_} } grep { !$indx{$_} } keys %{$self->columns};
+	#@{$self->column_order} = uniq(grep { !$indx{$_} } @{$self->column_order});
+	#
+	##TODO: what happens if removed column had a read_raw_mungers/update_mungers?
+	#
+	#return $self->apply_columns;
 }
 
 
@@ -334,8 +350,11 @@ sub apply_columns {
 sub column_list {
 	my $self = shift;
 	
+	# new, safer way to way to handle deleted columns
+	my @colnames = grep { !$self->deleted_column_names->{$_} } @{$self->column_order};
+	
 	my @list = ();
-	foreach my $name (@{ $self->column_order }) {
+	foreach my $name (@colnames) {
 		push @list, $self->columns->{$name}->get_grid_config;
 	}
 	

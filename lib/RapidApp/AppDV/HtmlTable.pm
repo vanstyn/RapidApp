@@ -133,7 +133,7 @@ sub get_tt_column_data {
 	
 	my $data = {
 		col	=> $col,
-		name	=> ($self->columns->{$col}->{header} || $col) . ':',
+		name	=> ($self->get_column($col)->{header} || $col) . ':',
 		value	=> $self->TTController->autofield->$col,
 		
 		name_cls => undef, #<-- optional css class name to apply to the name cell div
@@ -186,6 +186,8 @@ default => sub {
 sub is_valid_colname {
 	my $self = shift;
 	my $col = shift;
+	
+	return 0 unless ($self->has_column($col));
 	
 	return 1 unless (
 		not defined $self->columns->{$col} or

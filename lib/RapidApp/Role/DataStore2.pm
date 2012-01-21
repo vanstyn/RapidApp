@@ -58,29 +58,30 @@ has 'DataStore' => (
 		valid_colname				=> 'valid_colname',
 		apply_columns_ordered	=> 'apply_columns_ordered',
 		batch_apply_opts_existing => 'batch_apply_opts_existing',
-		delete_columns				=> 'delete_columns'
+		delete_columns				=> 'delete_columns',
+		has_column					=> 'has_column',
+		get_column					=> 'get_column',
+		deleted_column_names		=> 'deleted_column_names'
 		
 	}
 );
 
 
-has 'defer_to_store_module' => ( is => 'ro', isa => 'Maybe[Object]', lazy => 1, default => undef ); 
-
 has 'DataStore_build_params' => ( is => 'ro', default => undef, isa => 'Maybe[HashRef]' );
 
-around 'columns' => sub {
-	my $orig = shift;
-	my $self = shift;
-	return $self->$orig(@_) unless (defined $self->defer_to_store_module);
-	return $self->defer_to_store_module->columns(@_);
-};
+has 'defer_to_store_module' => ( is => 'ro', isa => 'Maybe[Object]', lazy => 1, default => undef ); 
 
-around 'column_order' => sub {
+around 'columns' => \&defer_store_around_modifier;
+around 'column_order' => \&defer_store_around_modifier;
+around 'has_column' => \&defer_store_around_modifier;
+around 'get_column' => \&defer_store_around_modifier;
+
+sub defer_store_around_modifier {
 	my $orig = shift;
 	my $self = shift;
 	return $self->$orig(@_) unless (defined $self->defer_to_store_module);
-	return $self->defer_to_store_module->column_order(@_);
-};
+	return $self->defer_to_store_module->$orig(@_);
+}
 
 
 # We are doing it this way so we can hook into this exact spot with method modifiers in other places:
