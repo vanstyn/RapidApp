@@ -47,6 +47,8 @@ has 'setup_multi_grids', is => 'ro', isa => 'Bool', default => 1;
 #}});
 
 
+our $ONLY_MULTI_GRIDS = 0;
+
 sub BUILD {
 	my $self = shift;
 	
@@ -176,8 +178,16 @@ sub apply_items_config {
 	$self->apply_extconfig( items => [ $self->full_property_grid ] );
 }
 
+sub multi_grids {
+	my $self = shift;
+	return $self->full_property_grid(1);
+}
+
 sub full_property_grid {
 	my $self = shift;
+	my $multi_only = shift || 0;
+	
+	local $ONLY_MULTI_GRIDS = 1 if ($multi_only);
 	
 	my $real_columns = [];
 	my @items = $self->TableSpec_property_grids($self->TableSpec,$self->req_Row,$real_columns);
@@ -208,6 +218,8 @@ sub TS_title {
 	
 	return $title;
 }
+
+
 
 sub TableSpec_property_grids {
 	my $self = shift;
@@ -243,8 +255,9 @@ sub TableSpec_property_grids {
 	my @items = ();
 	my @multi_items = ();
 	my $visible = scalar grep { ! jstrue $_->{no_column} } @$fields;
-	push @items, { xtype => 'spacer', height => 5 }, $self->property_grid($TableSpec,$icon,$fields) if ($visible);
-	#my @TableSpecs = map { $TableSpec->related_TableSpec->{$_} } @{$TableSpec->related_TableSpec_order};
+	
+	push @items, { xtype => 'spacer', height => 5 }, $self->property_grid($TableSpec,$icon,$fields) 
+		if ($visible && ! $ONLY_MULTI_GRIDS);
 	
 	my @TableSpecs = ();
 	
@@ -256,11 +269,13 @@ sub TableSpec_property_grids {
 		# gets created, it will never be available!!
 		my $relRow = $Row->$rel or next;
 		if($relRow->isa('DBIx::Class::Row')) {
-			push @items, $self->TableSpec_property_grids($TableSpec->related_TableSpec->{$rel},$relRow,$real_columns);
-		
-			
+			push @items, $self->TableSpec_property_grids(
+				$TableSpec->related_TableSpec->{$rel},
+				$relRow,
+				$real_columns
+			);
 		}
-		elsif($relRow->isa('DBIx::Class::ResultSet') and $self->setup_multi_grids) {
+		elsif($relRow->isa('DBIx::Class::ResultSet') and ($self->setup_multi_grids || $ONLY_MULTI_GRIDS)) {
 		
 			my $RelTS = $TableSpec->related_TableSpec->{$rel};
 			
@@ -301,7 +316,7 @@ sub TableSpec_property_grids {
 	}
 	
 	unshift @multi_items, { xtype => 'spacer', height => 5 } if (@multi_items > 0);
-	
+
 	return @items,@multi_items;
 }
 
