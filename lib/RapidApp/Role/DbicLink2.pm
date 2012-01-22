@@ -692,6 +692,10 @@ sub _dbiclink_update_records {
 	my $declared_columns = $self->param_decodeIf($self->c->req->params->{columns});
 	$limit_columns = { map {$_=>1} @$declared_columns } if ($declared_columns);
 	
+	# -- current real/valid columns according to DataStore2:
+	my %cols_indx = map {$_=>1} $self->column_name_list;
+	# --
+	
 	my $arr = $params;
 	$arr = [ $params ] if (ref($params) eq 'HASH');
 	
@@ -735,6 +739,10 @@ sub _dbiclink_update_records {
 				my @columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } keys %$data;
 				
 				@columns = $self->TableSpec->filter_updatable_columns(@columns);
+				
+				# -- Limit to current real/valid columns according to DataStore2:
+				@columns = grep { $cols_indx{$_} } @columns;
+				# --
 				
 				my @update_queue = ();
 			
@@ -866,6 +874,10 @@ sub _dbiclink_create_records {
 	
 	my @req_columns = $self->get_req_columns(undef,'create_columns');
 	
+	# -- current real/valid columns according to DataStore2:
+	my %cols_indx = map {$_=>1} $self->column_name_list;
+	# --
+	
 	my @updated_keyvals = ();
 
 	try {
@@ -877,6 +889,10 @@ sub _dbiclink_create_records {
 				my @columns = uniq(keys %$data,@req_columns);
 				@columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } @columns;
 				@columns = $self->TableSpec->filter_creatable_columns(@columns);
+				
+				# -- Limit to current real/valid columns according to DataStore2:
+				@columns = grep { $cols_indx{$_} } @columns;
+				# --
 				
 				my $relspecs = $self->TableSpec->columns_to_relspec_map(@columns);
 			
