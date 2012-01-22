@@ -73,7 +73,7 @@ sub data_wrapper_div {
 	
 	my $div = '<div class="data-holder"';
 	
-	my $Column = $self->AppDV->columns->{$name};
+	my $Column = $self->AppDV->get_column($name);
 	if($Column) {
 		my $style = $Column->get_field_config->{data_wrapper_style};
 		$div .= ' style=" ' . $style . '"' if ($style);
@@ -152,7 +152,7 @@ has 'field' => (
 		my $self = shift;
 		return RapidApp::RecAutoload->new( process_coderef => sub {
 			my $name = shift;
-			my $Column = $self->AppDV->columns->{$name} or return '';
+			my $Column = $self->AppDV->get_column($name) or return '';
 			$self->FieldCmp->{$Column->name} = $self->AppDV->json->encode($Column->get_field_config);
 			
 			return '<div class="' . $Column->name . '">{' . $Column->name . '}</div>';
@@ -173,7 +173,7 @@ has 'edit_field' => (
 			my $name = shift;
 			my $display = shift;
 			$display = $name unless ($display);
-			my $Column = $self->AppDV->columns->{$name} or return '';
+			my $Column = $self->AppDV->get_column($name) or return '';
 			
 			$self->AppDV->FieldCmp->{$Column->name} = $self->AppDV->json->encode($Column->get_field_config);
 
@@ -193,7 +193,7 @@ has 'edit_bigfield' => (
 			my $name = shift;
 			my $display = shift;
 			$display = $name unless ($display);
-			my $Column = $self->AppDV->columns->{$name} or return '';
+			my $Column = $self->AppDV->get_column($name) or return '';
 			
 			$self->AppDV->FieldCmp->{$Column->name} = $self->AppDV->json->encode($Column->get_field_config);
 
@@ -225,7 +225,7 @@ has 'edit_click_field' => (
 		my $self = shift;
 		return RapidApp::RecAutoload->new( process_coderef => sub {
 			my $name = shift;
-			my $Column = $self->AppDV->columns->{$name} or return '';
+			my $Column = $self->AppDV->get_column($name) or return '';
 			
 			$self->AppDV->FieldCmp->{$Column->name} = $self->AppDV->json->encode($Column->get_field_config);
 
@@ -257,7 +257,7 @@ has 'autofield' => (
 			my $name = shift;
 			my $display = shift;
 			$display = $name unless ($display);
-			my $Column = $self->AppDV->columns->{$name} or return '';
+			my $Column = $self->AppDV->get_column($name) or return '';
 			
 			if($Column->renderer) {
 				$display = '[this.renderField("' . $name . '",values,' . $Column->renderer->func . ')]';
@@ -265,6 +265,7 @@ has 'autofield' => (
 			
 			# read-only:
 			return '{' . $display . '}' unless ($Column->editor);
+			return '{' . $display . '}' if (defined $Column->allow_edit and ! jstrue($Column->allow_edit));
 			
 			my $config = $Column->get_field_config;
 			
