@@ -1307,6 +1307,8 @@ sub get_relationship_column_cnf {
 	# Store the render column that is associated with this relationship column
 	# Currently we use this for sorting on relationship columns:
 	$self->relationship_column_render_column_map->{$colname} = $render_col;
+	# Also store in the column itself - added for excel export - is this redundant to above? probably. FIXME
+	$conf->{render_column} = $render_col; 
 	# --
 
 	my $rows;

@@ -51,12 +51,16 @@ sub excel_read {
 	# filter out columns that we can't use, and also build the column definitions for ExcelTableWriter
 	my @colDefs = ();
 	foreach my $col (@$columns) {
-		my $field = $self->columns->{$col} or die "column $col does not exist in columns hash";
+		my $field = $self->get_column($col) or die "column $col does not exist in columns hash";
+		
+		# New: If render_column is defined, use it instead of name
+		my $colname = $field->render_column ? $field->render_column : $field->name;
+		
 		next if ($field->name eq 'icon');
 		next if ${ $field->no_column };
 		next unless (defined $field->header and defined $field->name);
 		push @colDefs, {
-			name => $field->name,
+			name => $colname,
 			label => $field->header
 		};
 	}
