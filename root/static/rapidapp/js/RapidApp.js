@@ -4986,3 +4986,18 @@ Ext.ux.RapidApp.getImgTagRendererDefault = function(src,w,h,alt) {
 	}
 }
 
+Ext.ux.RapidApp.renderPastDatetimeRed = function(v) {
+	var val = v;
+	if(v) {
+		var dt= new Date(Date.parseDate(v, "Y-m-d g:i:s"));
+		if(dt) {
+			var nowDt = new Date();
+			// in the past:
+			if(nowDt > dt) {
+				val = '<span style="color:red;">' + v + '</span>';
+			}
+		}
+	}
+	return Ext.ux.showNull(val);
+};
+
