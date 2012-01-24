@@ -112,7 +112,7 @@ sub add_resize_image :Private {
 	my ($orig_width,$orig_height) = ($width,$height);
 	if (defined $maxwidth) {
 		
-		my ($newheight,$newwidth) = ($width,$height);
+		my ($newwidth,$newheight) = ($width,$height);
 		
 		if($width > $maxwidth) {
 			my $ratio = $maxwidth/$width;
