@@ -436,6 +436,10 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		if(this.store.autoLoad && this.store.autoLoad.params) {
 			Ext.apply(this.store.autoLoad.params,store_load_parms);
 		}
+		// alternate 'store_autoLoad' setting - see DataStore2.pm and datastore-plus plugin:
+		else if(this.store.store_autoLoad && this.store.store_autoLoad.params) {
+			Ext.apply(this.store.store_autoLoad.params,store_load_parms);
+		}
 		else {
 			this.store.load({ params: store_load_parms });
 		}

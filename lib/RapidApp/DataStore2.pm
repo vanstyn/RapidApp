@@ -152,7 +152,7 @@ sub store_init_onrequest {
 	
 	# Set this to an object so that it can be modified in javascript
 	# *after* the store has been constructed:
-	$self->apply_extconfig( autoLoad => { params => {
+	$self->apply_extconfig( store_autoLoad => { params => {
 		start => 0,
 		limit => $self->max_pagesize ? $self->max_pagesize : 400
 	}}) if (jstrue $self->store_autoLoad); 

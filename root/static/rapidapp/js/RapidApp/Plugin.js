@@ -1336,6 +1336,25 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			}
 		}
 		
+		
+		// -- instead of standard store 'autoLoad' param, 'store_autoLoad' happens
+		// on 'render' in order to be delayed, in the case of the component being
+		// within a collapsed panel, etc. This is partnered with the setting set
+		// within DataStore2
+		if(cmp.store.store_autoLoad) {
+			var onFirstShow;
+			onFirstShow = function(){
+				// only load if its the first load and not collapsed:
+				if(!cmp.store.lastOptions && !cmp.collapsed){
+					cmp.store.load(cmp.store.store_autoLoad);
+				}
+			}
+			cmp.on('render',onFirstShow,this);
+			cmp.on('expand',onFirstShow,this);
+		}
+		// --
+		
+		
 		if(!cmp.persist_immediately) { cmp.persist_immediately = {}; }
 		if(cmp.persist_all_immediately) {
 			cmp.persist_immediately = {
