@@ -265,7 +265,16 @@ has 'autofield' => (
 			
 			# read-only:
 			return '{' . $display . '}' unless ($Column->editor);
-			return '{' . $display . '}' if (defined $Column->allow_edit and ! jstrue($Column->allow_edit));
+			
+			# -- TODO: this breaks create without update unless "allow_add" is specifically set on the column
+			# Needs fixed... probably the best way to handle it is to dynamically turn on "allow_add" when
+			# it isn't explicitly set but it should otherwise be addable (i.e. set in creatable_colspec)
+			return '{' . $display . '}' if (
+				defined $Column->allow_edit and
+				! jstrue($Column->allow_edit) and
+				! jstrue($Column->allow_add)
+			);
+			# --
 			
 			my $config = $Column->get_field_config;
 			
