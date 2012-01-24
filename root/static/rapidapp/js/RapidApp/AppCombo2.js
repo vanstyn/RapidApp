@@ -496,6 +496,7 @@ Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
 	uploadUrl: '/simplecas/upload_image',
 	
 	maxImageWidth: null,
+	maxImageHeight: null,
 	
 	resizeWarn: true,
 	
@@ -504,7 +505,13 @@ Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
 	
 	getUploadUrl: function() {
 		url = this.uploadUrl;
-		if(this.maxImageWidth) { url += '/' + this.maxImageWidth; }
+		if(this.maxImageHeight && !this.maxImageWidth) {
+			throw("Fatal: maxImageWidth must also be specified when using maxImageHeight.");
+		}
+		if(this.maxImageWidth) { 
+			url += '/' + this.maxImageWidth; 
+			if(this.maxImageHeight) { url += '/' + this.maxImageHeight; }
+		}
 		return url;
 	},
 	

@@ -3,6 +3,8 @@ our $VERSION = '0.01';
 use Moose;
 use namespace::autoclean;
 
+use RapidApp::Include qw(sugar perlutil);
+
 BEGIN { extends 'Catalyst::Controller' }
 
 use RapidApp::CatalystX::SimpleCAS::Content;
@@ -68,7 +70,7 @@ sub upload_content: Local  {
 
 
 sub upload_image: Local  {
-	my ($self, $c, $maxwidth) = @_;
+	my ($self, $c, $maxwidth, $maxheight) = @_;
 
 	my $upload = $c->req->upload('Filedata') or die "no upload object";
 	my $checksum = $self->Store->add_content_file_mv($upload->tempname) or die "Failed to add content";
@@ -79,25 +81,40 @@ sub upload_image: Local  {
 	
 	my ($width,$height) = $self->Store->image_size($checksum);
 	my ($orig_width,$orig_height) = ($width,$height);
-	if (defined $maxwidth and $width > $maxwidth) {
-		my $ratio = $maxwidth/$width;
-		my $newheight = int($ratio * $height);
+	if (defined $maxwidth) {
 		
-		my $image = Image::Resize->new($self->Store->checksum_to_path($checksum));
-		my $gd = $image->resize($maxwidth,$newheight);
+		my ($newheight,$newwidth) = ($width,$height);
 		
-		my $method = 'png';
-		$method = $subtype if ($gd->can($subtype));
+		if($width > $maxwidth) {
+			my $ratio = $maxwidth/$width;
+			$newheight = int($ratio * $height);
+			$newwidth = $maxwidth;
+		}
 		
-		my $tmpfile = '/tmp/' . String::Random->new->randregex('[a-z0-9A-Z]{15}');
-		open(FH, '> ' . $tmpfile);
-		print FH $gd->$method;
-		close(FH);
+		if(defined $maxheight and $newheight > $maxheight) {
+			my $ratio = $maxheight/$newheight;
+			$newwidth = int($ratio * $newwidth);
+			$newheight = $maxheight;
+		}
 		
-		my $newchecksum = $self->Store->add_content_file_mv($tmpfile);
+		unless ($newwidth == $width && $newheight == $height) {
 		
-		($checksum,$width,$height) = ($newchecksum,$maxwidth,$newheight);
-		$resized = \1;
+			my $image = Image::Resize->new($self->Store->checksum_to_path($checksum));
+			my $gd = $image->resize($newwidth,$newheight);
+			
+			my $method = 'png';
+			$method = $subtype if ($gd->can($subtype));
+			
+			my $tmpfile = '/tmp/' . String::Random->new->randregex('[a-z0-9A-Z]{15}');
+			open(FH, '> ' . $tmpfile);
+			print FH $gd->$method;
+			close(FH);
+			
+			my $newchecksum = $self->Store->add_content_file_mv($tmpfile);
+			
+			($checksum,$width,$height) = ($newchecksum,$newwidth,$newheight);
+			$resized = \1;
+		}
 	}
 	
 	my $tag = '<img src="/simplecas/fetch_content/' . $checksum . '"';

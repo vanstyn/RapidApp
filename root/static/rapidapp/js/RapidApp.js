@@ -4971,3 +4971,18 @@ Ext.override(Ext.form.Field, {
     }
    
 });
+
+Ext.ux.RapidApp.getImgTagRendererDefault = function(src,w,h,alt) {
+	var def = '<img ';
+	if(src){ def += 'src="' + src + '" '; }
+	if(w){ def += 'width="' + w + '" '; }
+	if(h){ def += 'height="' + h + '" '; }
+	if(alt){ def += 'alt="' + alt + '" '; }
+	def += '>';
+	
+	return function(v) {
+		if(!v) { return def; }
+		return v;
+	}
+}
+
