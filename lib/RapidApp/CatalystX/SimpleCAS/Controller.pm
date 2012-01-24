@@ -73,9 +73,38 @@ sub upload_image: Local  {
 	my ($self, $c, $maxwidth, $maxheight) = @_;
 
 	my $upload = $c->req->upload('Filedata') or die "no upload object";
-	my $checksum = $self->Store->add_content_file_mv($upload->tempname) or die "Failed to add content";
 	
 	my ($type,$subtype) = split(/\//,$upload->type);
+	
+	my ($checksum,$width,$height,$resized,$orig_width,$orig_height) 
+		= $self->add_resize_image($upload->tempname,$type,$subtype,$maxwidth,$maxheight);
+	
+	unlink $upload->tempname;
+	
+	#my $tag = '<img src="/simplecas/fetch_content/' . $checksum . '"';
+	#$tag .= ' width=' . $width . ' height=' . $height if ($width and $height);
+	#$tag .= '>';
+	
+	my $packet = {
+		success => \1,
+		checksum => $checksum,
+		height => $height,
+		width => $width,
+		resized => $resized,
+		orig_width => $orig_width,
+		orig_height => $orig_height,
+		filename => $self->safe_filename($upload->filename),
+	};
+	
+	return $c->res->body(JSON::PP::encode_json($packet));
+}
+
+
+
+sub add_resize_image :Private {
+	my ($self,$file,$type,$subtype,$maxwidth,$maxheight) = @_;
+
+	my $checksum = $self->Store->add_content_file($file) or die "Failed to add content";
 	
 	my $resized = \0;
 	
@@ -117,23 +146,9 @@ sub upload_image: Local  {
 		}
 	}
 	
-	my $tag = '<img src="/simplecas/fetch_content/' . $checksum . '"';
-	$tag .= ' width=' . $width . ' height=' . $height if ($width and $height);
-	$tag .= '>';
-	
-	my $packet = {
-		success => \1,
-		checksum => $checksum,
-		height => $height,
-		width => $width,
-		resized => $resized,
-		orig_width => $orig_width,
-		orig_height => $orig_height,
-		filename => $self->safe_filename($upload->filename),
-	};
-	
-	return $c->res->body(JSON::PP::encode_json($packet));
+	return ($checksum,$width,$height,$resized,$orig_width,$orig_height);
 }
+
 
 
 sub upload_file : Local {
