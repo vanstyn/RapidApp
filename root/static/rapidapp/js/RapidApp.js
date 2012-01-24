@@ -4986,18 +4986,21 @@ Ext.ux.RapidApp.getImgTagRendererDefault = function(src,w,h,alt) {
 	}
 }
 
-Ext.ux.RapidApp.renderPastDatetimeRed = function(v) {
-	var val = v;
-	if(v) {
-		var dt= new Date(Date.parseDate(v, "Y-m-d g:i:s"));
-		if(dt) {
-			var nowDt = new Date();
-			// in the past:
-			if(nowDt > dt) {
-				val = '<span style="color:red;">' + v + '</span>';
-			}
-		}
+
+
+Ext.ux.RapidApp.getRendererPastDatetimeRed = function(format) {
+	var renderer = Ext.ux.RapidApp.getDateFormatter(format);
+	return function(date) {
+		var dt = Date.parseDate(date,"Y-m-d H:i:s");
+		//if (! dt) { return date; }
+		if (! dt) { return Ext.ux.showNull(date); }
+		
+		var out = renderer(date);
+		var nowDt = new Date();
+		// in the past:
+		if(nowDt > dt) { return '<span style="color:red;">' + out + '</span>'; }
+		return out;
 	}
-	return Ext.ux.showNull(val);
-};
+}
+
 
