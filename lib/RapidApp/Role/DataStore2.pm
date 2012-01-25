@@ -62,7 +62,8 @@ has 'DataStore' => (
 		has_column					=> 'has_column',
 		get_column					=> 'get_column',
 		deleted_column_names		=> 'deleted_column_names',
-		column_name_list			=> 'column_name_list'
+		column_name_list			=> 'column_name_list',
+		get_columns_wildcards	=> 'get_columns_wildcards'
 		
 	}
 );

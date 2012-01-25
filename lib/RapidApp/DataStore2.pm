@@ -7,6 +7,7 @@ use RapidApp::Include qw(sugar perlutil);
 use String::Random;
 use RapidApp::Column;
 
+use Text::Glob qw( match_glob );
 
 has 'create_handler'		=> ( is => 'ro', default => undef,	isa => 'Maybe[RapidApp::Handler]' );
 has 'read_handler'		=> ( is => 'ro', default => undef,	isa => 'Maybe[RapidApp::Handler]' );
@@ -293,6 +294,19 @@ sub delete_columns {
 	##TODO: what happens if removed column had a read_raw_mungers/update_mungers?
 	#
 	#return $self->apply_columns;
+}
+
+
+sub get_columns_wildcards {
+	my $self = shift;
+	my @globspecs = @_;
+	my %cols = ();
+	
+	foreach my $gl (@globspecs) {
+		match_glob($gl,$_) and $cols{$_} = 1 for ($self->column_name_list);
+	}
+	
+	return keys %cols;
 }
 
 
