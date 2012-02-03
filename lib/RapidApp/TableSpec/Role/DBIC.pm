@@ -1421,57 +1421,37 @@ sub get_relationship_column_cnf {
 				params	=> {
 					ResultSource => $Source,
 					include_colspec => [ '{?:single}*.*' ],
-					#include_colspec => [ join(' ',@{$conf->{display_columns}}) ],
-					#init_pagesize => 12,
 					title => '',
 					onBUILD => sub {
 						my $self = shift;
 						$self->apply_to_all_columns( hidden => \1 );
 						$self->apply_columns_list($conf->{display_columns},{ hidden => \0 });
-					
 					}
 				}
 			);
 			
 			$conf->{editor} = $conf->{editor} || {};
-			$conf->{editor} = { %{$conf->{editor}},
-			
-				#xtype		=> 'custompickerfield',
-				xtype => 'datastore-app-field',
-				name		=> $colname,
-				load_url	=> $GridModule->base_url,
+			$conf->{editor} = { 
+
+				# These can be overridden
 				win_title		=> 'Select ' . $conf->{header},
 				win_height		=> 450,
 				win_width		=> 650,
-				#select_handler => jsfunc('function(app) { ' . 
-				#		#'return Ext.ux.RapidApp.AppTree_select_handler(app);' .
-				#		'console.debug("select_handler()");' .
-				#		'return { value: 2530, display: 2530 };' .
-				#	'}'
-				#),
-				#setValue_translator => RapidApp::JSONFunc->new( 
-				#	raw => 1, 
-				#	func => 'function(val,tf) { ' . 
-				#		'return Ext.ux.RapidApp.AppTree_setValue_translator(val,tf,"' . $url . '");' .
-				#	'}'
-				#),
-			
-			
-			
+				
+				%{$conf->{editor}},
+				
+				# These can't be overridden
+				name		=> $colname,
+				xtype => 'datastore-app-field',
+				valueField		=> $conf->{valueField},
+				displayField	=> $conf->{displayField},
+				load_url	=> $GridModule->base_url,
+				
 			};
-			
-			
-		
-			
-		
-		
-		
 		}
-	
+		
+		
 	}
-	
-	
-	#scream_color(RED.BOLD,$conf) if ($conf->{foo});
 	
 	return (name => $colname, %$conf);
 }

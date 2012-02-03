@@ -585,8 +585,9 @@ Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
 Ext.reg('cas-image-field',Ext.ux.RapidApp.CasImageField);
 
 
-
-Ext.WindowMgr.zseed = 90000;
+// increase from the default 9000 to prevent editor fields from showing through
+// Keep under 15000 for menus...
+Ext.WindowMgr.zseed = 12000;
 
 Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 	
@@ -596,6 +597,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 	win_width: 400,
 	win_height: 350,
 	
+	value: '<div style="color:darkgray;">(select)</div>',
 	
 	initComponent: function() {
 		Ext.ux.RapidApp.DataStoreAppField.superclass.initComponent.call(this);
@@ -607,29 +609,51 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 	},
 	
 	actionFn: function() {
-		
 		this.displayWindow();
-		
 	},
 	
+	setValue: function() {
+		delete this.dataValue;
+		return this.nativeSetValue.apply(this,arguments);
+	},
+	
+	getValue: function() {
+		if(typeof this.dataValue !== "undefined") {
+			return this.dataValue;
+		}
+		return this.nativeGetValue();
+	},
 	
 	displayWindow: function() {
 		var field = this;
 		var win;
 		
-		
 		var select_fn = function() {
 			var app = win.getComponent('app').items.first();
 			
-			win.close();
+			var records = app.getSelectedRecords();
+			var Record = records[0];
 			
-
-			
+			var value = Record.data[field.valueField];
+			var disp = Record.data[field.displayField];
+			if(typeof value != 'undefined') {
+				field.setValue(value);
+				if(typeof disp != 'undefined') {
+					field.setValue(disp);
+					field.dataValue = value;
+				}
+				win.close();
+			}
 		};
+		
+		var select_btn = new Ext.Button({
+			text: 'Select', 
+			handler: select_fn,
+			disabled: true
+		});
 		
 		win = new Ext.Window({
 			buttonAlign: 'right',
-			//bodyStyle: 'position: relative; z-index: 90000;',
 			title: this.win_title,
 			layout: 'fit',
 			width: this.win_width,
@@ -640,16 +664,37 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 				xtype: 'autopanel',
 				itemId: 'app',
 				autoLoad: { url: this.load_url },
-				layout: 'fit'
+				layout: 'fit',
+				cmpListeners: {
+					afterrender: function(){
+						var toggleBtn = function() {
+							if (this.getSelectedRecords.call(this).length > 0) {
+								select_btn.setDisabled(false);
+							}
+							else {
+								select_btn.setDisabled(true);
+							}
+						};
+						this.on('selectionchange',toggleBtn,this);
+					},
+					rowdblclick: select_fn
+				},
+				cmpConfig: {
+					// Obviously this is for grids... not sure if this will cause problems
+					// in the case of AppDVs
+					sm: new Ext.grid.RowSelectionModel({singleSelect:true}),
+				}
 			},
 			buttons: [
-				{ text: 'Select', handler: select_fn },
+				select_btn,
 				{ text: 'Cancel', handler: function(){ win.close(); } }
 			],
 			listeners: {
 				close: function(){ field.onActionComplete.call(field); }
 			}
 		});
+		
+
 
 		win.show();
 		
