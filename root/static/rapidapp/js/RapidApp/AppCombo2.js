@@ -599,11 +599,6 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 	
 	value: '<div style="color:darkgray;">(select)</div>',
 	
-	initComponent: function() {
-		Ext.ux.RapidApp.DataStoreAppField.superclass.initComponent.call(this);
-		
-	},
-	
 	onActionComplete: function() {
 		this.fireEvent.defer(50,this,['select']);
 	},
@@ -694,15 +689,8 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 			}
 		});
 		
-
-
 		win.show();
-		
-		
-		
 	}
-	
-	
 	
 });
 Ext.reg('datastore-app-field',Ext.ux.RapidApp.DataStoreAppField);

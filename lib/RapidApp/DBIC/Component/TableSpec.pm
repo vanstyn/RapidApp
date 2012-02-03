@@ -200,6 +200,14 @@ sub default_TableSpec_cnf_columns {
 					my $display_column = $self->TableSpec_related_get_set_conf($col,'display_column');
 					my $display_columns = $self->TableSpec_related_get_set_conf($col,'display_columns');
 					
+					# Can't do this yet because it causes a deep recursion issue:
+					#unless ($cols->{$col}->{auto_editor_type}) {
+					#	$cols->{$col}->{auto_editor_type} = 'combo' if ($display_column);
+					#	$cols->{$col}->{auto_editor_type} = 'grid' if ($display_columns);
+					#}
+					
+					$cols->{$col}->{auto_editor_type} = $cols->{$col}->{auto_editor_type} || 'combo';
+					
 					$display_column = $display_columns->[0] if (
 						! defined $display_column and
 						ref($display_columns) eq 'ARRAY' and
@@ -221,11 +229,9 @@ sub default_TableSpec_cnf_columns {
 					#open/navigate to the related item
 					$cols->{$col}->{open_url} = $self->TableSpec_related_get_set_conf($col,'open_url');
 						
-					
 					$cols->{$col}->{valueField} = $cond_data->{foreign} 
 						or die "couldn't get foreign col condition data for $col relationship!";
 					
-					$cols->{$col}->{auto_editor_type} = $cols->{$col}->{auto_editor_type} || 'combo';
 					$cols->{$col}->{keyField} = $cond_data->{self}
 						or die "couldn't get self col condition data for $col relationship!";
 					

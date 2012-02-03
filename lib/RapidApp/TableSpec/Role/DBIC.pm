@@ -1421,6 +1421,7 @@ sub get_relationship_column_cnf {
 				params	=> {
 					ResultSource => $Source,
 					include_colspec => [ '{?:single}*.*' ],
+					#include_colspec => [ ($conf->{valueField},$conf->{displayField},@{$conf->{display_columns}}) ],
 					title => '',
 					onBUILD => sub {
 						my $self = shift;
