@@ -586,3 +586,78 @@ Ext.reg('cas-image-field',Ext.ux.RapidApp.CasImageField);
 
 
 
+Ext.WindowMgr.zseed = 90000;
+
+Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
+	
+	actionOnShow: true,
+	
+	win_title: 'Select',
+	win_width: 400,
+	win_height: 350,
+	
+	
+	initComponent: function() {
+		Ext.ux.RapidApp.DataStoreAppField.superclass.initComponent.call(this);
+		
+	},
+	
+	onActionComplete: function() {
+		this.fireEvent.defer(50,this,['select']);
+	},
+	
+	actionFn: function() {
+		
+		this.displayWindow();
+		
+	},
+	
+	
+	displayWindow: function() {
+		var field = this;
+		var win;
+		
+		
+		var select_fn = function() {
+			var app = win.getComponent('app').items.first();
+			
+			win.close();
+			
+
+			
+		};
+		
+		win = new Ext.Window({
+			buttonAlign: 'right',
+			//bodyStyle: 'position: relative; z-index: 90000;',
+			title: this.win_title,
+			layout: 'fit',
+			width: this.win_width,
+			height: this.win_height,
+			closable: true,
+			modal: true,
+			items: {
+				xtype: 'autopanel',
+				itemId: 'app',
+				autoLoad: { url: this.load_url },
+				layout: 'fit'
+			},
+			buttons: [
+				{ text: 'Select', handler: select_fn },
+				{ text: 'Cancel', handler: function(){ win.close(); } }
+			],
+			listeners: {
+				close: function(){ field.onActionComplete.call(field); }
+			}
+		});
+
+		win.show();
+		
+		
+		
+	}
+	
+	
+	
+});
+Ext.reg('datastore-app-field',Ext.ux.RapidApp.DataStoreAppField);

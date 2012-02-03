@@ -9,6 +9,9 @@ use Text::Glob qw( match_glob );
 use Hash::Diff qw( diff );
 use Text::TabularDisplay;
 
+# This allows supplying custom BUILD code via a constructor:
+has 'onBUILD', is => 'ro', isa => 'Maybe[CodeRef]', default => undef;
+
 has 'get_record_display' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default => sub { 
 	my $self = shift;
 	return $self->TableSpec->get_Cnf('row_display');
@@ -212,6 +215,10 @@ sub DbicLink_around_BUILD {
 		remote_columns		=> \1,
 		loadMask				=> \1
 	);
+	
+	
+	# This allows supplying custom BUILD code via a constructor:
+	$self->onBUILD->($self) if ($self->onBUILD);
 }
 
 sub apply_colspec_columns {

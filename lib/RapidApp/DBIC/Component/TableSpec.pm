@@ -196,8 +196,25 @@ sub default_TableSpec_cnf_columns {
 					
 					# Use TableSpec_related_get_set_conf instead of TableSpec_related_get_conf
 					# to prevent possible deep recursion:
-					$cols->{$col}->{displayField} = $self->TableSpec_related_get_set_conf($col,'display_column')
-						or die "$col doesn't have display_column set!";
+					
+					my $display_column = $self->TableSpec_related_get_set_conf($col,'display_column');
+					my $display_columns = $self->TableSpec_related_get_set_conf($col,'display_columns');
+					
+					$display_column = $display_columns->[0] if (
+						! defined $display_column and
+						ref($display_columns) eq 'ARRAY' and
+						@$display_columns > 0
+					);
+					
+					$display_columns = [ $display_column ] if (
+						! defined $display_columns and
+						defined $display_column
+					);
+					
+					die "$col doesn't have display_column or display_columns set!" unless ($display_column);
+					
+					$cols->{$col}->{displayField} = $display_column;
+					$cols->{$col}->{display_columns} = $display_columns; #<-- in progress - used for grid instead of combo
 					
 					#TODO: needs to be more generalized/abstracted
 					#open_url, if defined, will add an autoLoad link to the renderer to
@@ -208,7 +225,7 @@ sub default_TableSpec_cnf_columns {
 					$cols->{$col}->{valueField} = $cond_data->{foreign} 
 						or die "couldn't get foreign col condition data for $col relationship!";
 					
-					$cols->{$col}->{auto_editor_type} = 'combo';
+					$cols->{$col}->{auto_editor_type} = $cols->{$col}->{auto_editor_type} || 'combo';
 					$cols->{$col}->{keyField} = $cond_data->{self}
 						or die "couldn't get self col condition data for $col relationship!";
 					
