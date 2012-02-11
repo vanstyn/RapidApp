@@ -11,24 +11,28 @@ has 'delete_button_text' => ( is => 'ro', isa => 'Str', default => 'Delete' );
 has 'delete_button_iconCls' => ( is => 'ro', isa => 'Str', default => 'icon-delete' );
 
 has 'use_contextmenu' => ( is => 'ro', isa => 'Bool', default => 0 );
+has 'no_dragdrop_menu' => ( is => 'ro', isa => 'Bool', default => 0 );
 has 'setup_tbar' => ( is => 'ro', isa => 'Bool', default => 0 );
+has 'no_recursive_delete' => ( is => 'ro', isa => 'Bool', default => 1 );
 
 has 'extra_node_actions' => ( is => 'ro', isa => 'Maybe[ArrayRef]', lazy => 1, default => undef );
 
 sub BUILD {
 	my $self = shift;
 	$self->apply_extconfig(
-		xtype					=> 'apptree',
-		border				=> \0,
-		layout				=> 'fit',
-		containerScroll 	=> \1,
-		autoScroll			=> \1,
-		animate				=> \1,
-		useArrows			=> \1,
+		xtype						=> 'apptree',
+		border					=> \0,
+		layout					=> 'fit',
+		containerScroll 		=> \1,
+		autoScroll				=> \1,
+		animate					=> \1,
+		useArrows				=> \1,
+		use_contextmenu		=> jstrue($self->use_contextmenu) ? \1 : \0,
+		no_dragdrop_menu		=> jstrue($self->no_dragdrop_menu) ? \1 : \0,
+		setup_tbar				=> jstrue($self->setup_tbar) ? \1 : \0,
+		no_recursive_delete	=> jstrue($self->no_recursive_delete) ? \1 : \0,
 	);
 	
-	$self->apply_extconfig( use_contextmenu => \1 ) if ($self->use_contextmenu);
-	$self->apply_extconfig( setup_tbar => \1 ) if ($self->setup_tbar);
 	$self->apply_extconfig( extra_node_actions => $self->extra_node_actions ) if ($self->extra_node_actions);
 	
 	$self->apply_extconfig(
@@ -144,7 +148,22 @@ has 'root_node_text'		=> ( is => 'ro', lazy => 1, default => sub { (shift)->root
 sub call_fetch_nodes {
 	my $self = shift;
 	my $node = $self->c->req->params->{node};
-	return $self->fetch_nodes($node);
+	
+	my $nodes = $self->fetch_nodes($node);
+	foreach my $n (@$nodes) {
+		next if (jstrue($n->{leaf}) or defined $n->{cls});
+		next if (defined $n->{allowChildren} and ! jstrue($n->{allowChildren}));
+		
+		# This is (imo) an ExtJS bug. It fixes the problem where empty nodes are automatically
+		# made "leaf" nodes and get a stupid, non-folder default icon
+		# http://www.sencha.com/forum/showthread.php?92553-Async-tree-make-empty-nodes-appear-as-quot-nodes-quot-not-quot-leaves-quot&p=441294&viewfull=1#post441294
+		$n->{cls} = 'x-tree-node-collapsed';
+		
+		# WARNING: note that setting 'children' of a node to an empty array will prevent subsequent
+		# ajax loading of the node's children (should any exist later)
+	}
+	
+	return $nodes;
 }
 
 sub call_fetch_node {

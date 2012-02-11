@@ -19,9 +19,13 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	node_action_collapseall: true,
 	
 	use_contextmenu: false,
+	no_dragdrop_menu: false,
 	setup_tbar: false,
+	no_recursive_delete: false,
 	
-	
+	// Set this to true to display extra options to dump the node and tree to
+	// the firebug console in the node right-click context menu
+	debug_menu_options: false,
 	
 	initComponent: function() {
 		
@@ -158,13 +162,14 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	initDragAndDrop: function() {
 		if(this.copy_node_url || this.move_node_url) {
 			this.enableDD = true;
-			this.ddAppendOnly = true;
+			this.ddAppendOnly = true; //<-- this disables setting "order"
 			this.on('beforenodedrop',this.beforeNodeDropHandler,this);
 		}
 	},
 	
 	beforeNodeDropHandler: function(dropEvent) {
-		if(!dropEvent.point == 'append') { return; } // <-- nothing but 'append' should get this far
+
+		if(dropEvent.point !== 'append') { return; } // <-- nothing but 'append' should get this far
 		if(this.nodeDropMenu(dropEvent.data.node,dropEvent.target,dropEvent.rawEvent)) {
 			// If we're here it means that the menu has been displayed.
 			// We are setting these attributes to prevent the "repair" ui
@@ -202,6 +207,16 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		
 		if(!menuItems.length) { return false; }
 		
+		// -- If no drop menu is set, and there is exactly 1 option (copy or move, but not both), 
+		// run that one option automatically:
+		if(this.no_dragdrop_menu && menuItems.length == 1) {
+			var item = menuItems[0];
+			item.handler.defer(10,item.scope);
+			return true;
+		}
+		// --
+		
+		
 		menuItems.push('-',{
 			text: 'Cancel',
 			iconCls: 'x-tool x-tool-close',
@@ -235,6 +250,11 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	
 	actionValidForNode: function(action,node) {
 		if(!node) { return false; }
+		
+		if(this.no_recursive_delete && action.text == this.delete_node_text) {
+			if(node.isLoaded() && node.hasChildNodes()) { return false; }
+		}
+		
 		if(!action.rootValid && node == this.root) { return false; }
 		if(!action.leafValid && node.isLeaf()) { return false; }
 		return true;
@@ -304,6 +324,25 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			});
 			
 		},this);
+		
+		
+		
+		//-- for debugging:
+		if(this.debug_menu_options) {
+			menuItems.push(
+				'-',
+				{
+					text: 'console.dir(node)',
+					handler: function() { console.dir(node); }
+				},
+				{
+					text: 'console.dir(tree)',
+					handler: function() { console.dir(node.getOwnerTree()); }
+				}
+			);
+		}
+		//--
+		
 		
 		if(menuItems.length == 0){ return false; }
 		
@@ -380,6 +419,15 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		var Func = ajaxFunc;
 
 		if (node.hasChildNodes()) {
+			
+			if(this.no_recursive_delete) {
+				Ext.Msg.alert(
+					'Cannot Delete',
+					'"' + node.attributes.text + '" cannot be deleted because it contains child items.'
+				);
+				return;
+			}
+			
 			params['recursive'] = true;
 			Func = function() {
 				Ext.ux.RapidApp.confirmDialogCall(
