@@ -23,6 +23,9 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	setup_tbar: false,
 	no_recursive_delete: false,
 	
+	// Controls if nodes can drag/drop between nodes as well as into (append) nodes
+	ddAppendOnly: true,
+	
 	// Set this to true to display extra options to dump the node and tree to
 	// the firebug console in the node right-click context menu
 	debug_menu_options: false,
@@ -162,15 +165,28 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	initDragAndDrop: function() {
 		if(this.copy_node_url || this.move_node_url) {
 			this.enableDD = true;
-			this.ddAppendOnly = true; //<-- this disables setting "order"
+			//this.ddAppendOnly = true; //<-- this disables setting "order"
 			this.on('beforenodedrop',this.beforeNodeDropHandler,this);
 		}
 	},
 	
 	beforeNodeDropHandler: function(dropEvent) {
-
-		if(dropEvent.point !== 'append') { return; } // <-- nothing but 'append' should get this far
-		if(this.nodeDropMenu(dropEvent.data.node,dropEvent.target,dropEvent.rawEvent)) {
+		// nothing but 'append' should get this far if ddAppendOnly is true
+		if(this.ddAppendOnly && dropEvent.point !== 'append') { return; }
+		
+		var node = dropEvent.data.node;
+		var target = dropEvent.target;
+		var e = dropEvent.rawEvent;
+		var point = dropEvent.point;
+		var point_node;
+		
+		// point of 'before' or 'after' for order/positioning:
+		if(point !== 'append') {
+			point_node = target;
+			target = target.parentNode;
+		}
+		
+		if(this.nodeDropMenu(node,target,e,point,point_node)) {
 			// If we're here it means that the menu has been displayed.
 			// We are setting these attributes to prevent the "repair" ui
 			// since we have to run an async round-trip to the server
@@ -179,7 +195,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		}
 	},
 	
-	nodeDropMenu: function(node,target,e) {
+	nodeDropMenu: function(node,target,e,point,point_node) {
 
 		var menuItems = [];
 		
@@ -188,7 +204,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 				text: 'Copy here',
 				iconCls: 'icon-element-copy',
 				handler: function() { 
-					this.nodeCopyMove(node,target,this.copy_node_url); 
+					this.nodeCopyMove(node,target,this.copy_node_url,false,point,point_node); 
 				},
 				scope: this
 			});
@@ -199,7 +215,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 				text: 'Move here',
 				iconCls: 'icon-element-into',
 				handler: function() { 
-					this.nodeCopyMove(node,target,this.move_node_url,true); 
+					this.nodeCopyMove(node,target,this.move_node_url,true,point,point_node); 
 				},
 				scope: this
 			});
@@ -231,19 +247,28 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		return true;
 	},
 	
-	nodeCopyMove: function(node,target,url,remSrc) {
+	nodeCopyMove: function(node,target,url,remSrc,point,point_node) {
+		
+		var params = { 
+			node: node.id,
+			target: target.id,
+			point: point
+		};
+		
+		if(point_node) { params.point_node = point_node.id; }
+		
 		Ext.Ajax.request({
 			url: url,
-			params: { 
-				node: node.id,
-				target: target.id
-			},
+			params: params,
 			scope: this,
 			success: function() {
 				if(remSrc) {
 					node.parentNode.removeChild(node,true);
 				}
-				this.nodeReload(target);
+				// Don't reload the target node for above/below (only for append)
+				//if(!point_node) {
+					this.nodeReload(target);
+				//}
 			}
 		});
 	},

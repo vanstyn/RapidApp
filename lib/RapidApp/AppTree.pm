@@ -15,6 +15,9 @@ has 'no_dragdrop_menu' => ( is => 'ro', isa => 'Bool', default => 0 );
 has 'setup_tbar' => ( is => 'ro', isa => 'Bool', default => 0 );
 has 'no_recursive_delete' => ( is => 'ro', isa => 'Bool', default => 1 );
 
+#Controls if nodes can drag/drop between nodes as well as into (append) nodes
+has 'ddAppendOnly' => ( is => 'ro', isa => 'Bool', default => 1 );
+
 has 'extra_node_actions' => ( is => 'ro', isa => 'Maybe[ArrayRef]', lazy => 1, default => undef );
 
 sub BUILD {
@@ -31,6 +34,7 @@ sub BUILD {
 		no_dragdrop_menu		=> jstrue($self->no_dragdrop_menu) ? \1 : \0,
 		setup_tbar				=> jstrue($self->setup_tbar) ? \1 : \0,
 		no_recursive_delete	=> jstrue($self->no_recursive_delete) ? \1 : \0,
+		ddAppendOnly			=> jstrue($self->ddAppendOnly) ? \1 : \0,
 	);
 	
 	$self->apply_extconfig( extra_node_actions => $self->extra_node_actions ) if ($self->extra_node_actions);
@@ -198,14 +202,28 @@ sub call_copy_node {
 	my $self = shift;
 	my $node = $self->c->req->params->{node};
 	my $target = $self->c->req->params->{target};
-	return $self->copy_node($node,$target);
+	
+	# point and point_node will be defined for positional information, if
+	# a node is dragged in-between 2 nodes (point above/below instead of append)
+	# point_node is undef if point is append
+	my $point_node = $self->c->req->params->{point_node};
+	my $point = $self->c->req->params->{point};
+	
+	return $self->copy_node($node,$target,$point,$point_node);
 }
 
 sub call_move_node {
 	my $self = shift;
 	my $node = $self->c->req->params->{node};
 	my $target = $self->c->req->params->{target};
-	return $self->move_node($node,$target);
+	
+	# point and point_node will be defined for positional information, if
+	# a node is dragged in-between 2 nodes (point above/below instead of append)
+	# point_node is undef if point is append
+	my $point_node = $self->c->req->params->{point_node};
+	my $point = $self->c->req->params->{point};
+	
+	return $self->move_node($node,$target,$point,$point_node);
 }
 
 
