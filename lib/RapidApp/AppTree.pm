@@ -111,7 +111,12 @@ sub init_jump_to_node {
 	return $node;
 }
 
+# If set to true, child nodes are automatically fetched recursively:
+has 'fetch_nodes_deep', is => 'ro', isa => 'Bool', default => 0;
 
+# Auto-sets 'expanded' on nodes with child nodes (only applies to children nodes
+# loaded within 'call_fetch_nodes' because of 'fetch_nodes_deep' being set to true)
+has 'default_expanded', is => 'ro', isa => 'Bool', default => 0;
 
 
 ##
@@ -146,22 +151,60 @@ has 'root_node_text'		=> ( is => 'ro', lazy => 1, default => sub { (shift)->root
 ##
 
 
-
-
-
 sub call_fetch_nodes {
 	my $self = shift;
-	my $node = $self->c->req->params->{node};
+	my $node = shift || $self->c->req->params->{node};
 	
 	my $nodes = $self->fetch_nodes($node);
+	
+	die "Error: 'fetch_nodes()' was supposed to return an ArrayRef, but instead if returned: " . Dumper($nodes)
+		unless (ref($nodes) eq 'ARRAY');
+	
+	my %seen_id = ();
+	
 	foreach my $n (@$nodes) {
-		next if (jstrue($n->{leaf}) or defined $n->{cls});
-		next if (defined $n->{allowChildren} and ! jstrue($n->{allowChildren}));
+		if (jstrue($n->{leaf}) or (exists $n->{allowChildren} and ! jstrue($n->{allowChildren}))) {
+			$n->{loaded} = \1 unless (exists $n->{loaded});
+			next;
+		}
+		
+		# Each sub-node definition should contain 'id' - its node path. But if it doesn't, 
+		# just leave it as-is:
+		next unless (exists $n->{id});
+		
+		## If we've gotten this far, it means the current node can contain child nodes
+		
+		die "Invalid node definition: id can't be the same as the parent node ($node): " . Dumper($n) 
+			if($n->{id} eq $node);
+			
+		die "Invalid node definition: duplicate id ($n->{id}): " . Dumper($n)
+			if($seen_id{$n->{id}}++);
+		
+		# The id should be a fully qualified '/' delim path prefixed with the (parent) node 
+		# path ($node supplied to this function). If it is not, assume it is a relative path 
+		# and prefix it automatically:
+		$n->{id} = $node . '/' . $n->{id} unless ($n->{id} =~ /^${node}/);
 		
 		# This is (imo) an ExtJS bug. It fixes the problem where empty nodes are automatically
 		# made "leaf" nodes and get a stupid, non-folder default icon
 		# http://www.sencha.com/forum/showthread.php?92553-Async-tree-make-empty-nodes-appear-as-quot-nodes-quot-not-quot-leaves-quot&p=441294&viewfull=1#post441294
-		$n->{cls} = 'x-tree-node-collapsed';
+		$n->{cls} = 'x-tree-node-collapsed' unless (exists $n->{cls});
+		
+		# legacy:
+		$n->{expanded} = \1 if ($n->{expand} and ! exists $n->{expanded});
+		
+		# Pre-fetch child nodes automatically if 'fetch_nodes_deep' is set to true:
+		if($self->fetch_nodes_deep and ! exists $n->{children}) {
+			my $children = $self->call_fetch_nodes($n->{id});
+			if(@$children > 0) {
+				$n->{children} = $children;
+				$n->{expanded} = \1 if ($self->default_expanded and ! exists $n->{expanded});
+			}
+			else {
+				# Set loaded to true if this node is empty (prevents being initialized with a +/- toggle):
+				$n->{loaded} = \1 unless (exists $n->{loaded});
+			}
+		}
 		
 		# WARNING: note that setting 'children' of a node to an empty array will prevent subsequent
 		# ajax loading of the node's children (should any exist later)
