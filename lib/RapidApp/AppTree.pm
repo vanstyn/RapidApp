@@ -74,6 +74,11 @@ sub BUILD {
 		$self->apply_extconfig( move_node_url => $self->suburl('move') );
 	}
 	
+	if($self->can('expand_node')) {
+		$self->apply_actions( expand 	=> 'call_expand_node' );
+		$self->apply_extconfig( expand_node_url => $self->suburl('expand') );
+	}
+	
 	$self->add_ONREQUEST_calls('init_onreq');
 }
 
@@ -239,6 +244,14 @@ sub call_rename_node {
 	my $name = $self->c->req->params->{name};
 	my $node = $self->c->req->params->{node};
 	return $self->rename_node($node,$name);
+}
+
+sub call_expand_node {
+	my $self = shift;
+	my $node = $self->c->req->params->{node};
+	my $expanded = $self->c->req->params->{expanded};
+	$expanded = 0 if ($expanded eq '0' || $expanded eq 'false');
+	return $self->expand_node($node,$expanded ? 1 : 0);
 }
 
 sub call_copy_node {

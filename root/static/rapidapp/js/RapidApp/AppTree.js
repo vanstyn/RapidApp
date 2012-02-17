@@ -113,6 +113,16 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 					tbarIconOnly: false
 				});
 			}
+			
+			if(this.expand_node_url) {
+				this.on('expandnode',function(node){
+					this.persistNodeExpandState(node,1);
+				},this);
+				this.on('collapsenode',function(node){
+					this.persistNodeExpandState(node,0);
+				},this);
+			}
+			
 				
 			if(Ext.isArray(this.extra_node_actions)) {
 				Ext.each(this.extra_node_actions,function(action) {
@@ -160,6 +170,16 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		
 		
 		Ext.ux.RapidApp.AppTree.superclass.initComponent.call(this);
+	},
+	
+	persistNodeExpandState: function(node,state) {
+		if(node == this.root) { return false; } // <-- ignore the root node
+		Ext.Ajax.request({
+			url: this.expand_node_url,
+			params: { node: node.id, expanded: state },
+			scope: this,
+			success: Ext.emptyFn //<-- assume it worked, don't do anything if it didn't
+		});
 	},
 	
 	initDragAndDrop: function() {
