@@ -255,8 +255,8 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			menuItems.push({
 				text: 'Copy here',
 				iconCls: 'icon-element-copy',
-				handler: function() { 
-					this.nodeCopyMove(node,target,this.copy_node_url,false,point,point_node); 
+				handler: function(no_reloads) { 
+					this.nodeCopyMove(node,target,this.copy_node_url,false,point,point_node,no_reloads); 
 				},
 				scope: this
 			});
@@ -266,8 +266,8 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			menuItems.push({
 				text: 'Move here',
 				iconCls: 'icon-element-into',
-				handler: function() { 
-					this.nodeCopyMove(node,target,this.move_node_url,true,point,point_node); 
+				handler: function(no_reloads) { 
+					this.nodeCopyMove(node,target,this.move_node_url,true,point,point_node,no_reloads); 
 				},
 				scope: this
 			});
@@ -279,8 +279,12 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		// run that one option automatically:
 		if(this.no_dragdrop_menu && menuItems.length == 1) {
 			var item = menuItems[0];
-			item.handler.defer(10,item.scope);
-			return true;
+			var no_reloads = true;
+			item.handler.defer(10,item.scope,[no_reloads]);
+			//return true;
+			
+			// return false to *prevent* cancelling the GUI drag/drop:
+			return false;
 		}
 		// --
 		
@@ -299,7 +303,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		return true;
 	},
 	
-	nodeCopyMove: function(node,target,url,remSrc,point,point_node) {
+	nodeCopyMove: function(node,target,url,remSrc,point,point_node,no_reloads) {
 		
 		var params = { 
 			node: node.id,
@@ -314,13 +318,30 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			params: params,
 			scope: this,
 			success: function() {
-				if(remSrc) {
-					node.parentNode.removeChild(node,true);
-				}
-				// Don't reload the target node for above/below (only for append)
-				//if(!point_node) {
+				
+				// no_reloads will be on when there is only one copy/move action
+				// setup and thus no need for a menu, and thus no need to cancel
+				// the GUI move, and thus no need to do node reloading because
+				// the GUI move operation is properly tracking what happened by itself:
+				if(!no_reloads) {
+					
+					// no_reloads also overrides/disables remSrc setting... so far this
+					// logic was tested and needed with "move" as the only DD operation
+					// and no menu display... again, since we don't cancel the GUI move,
+					// ExtJS is automatically handling this... TODO: what happens if copy
+					// were the only operation with no menu? Would that even make sense? 
+					// probably not...
+					if(remSrc) {
+						node.parentNode.removeChild(node,true);
+					}
+
 					this.nodeReload(target);
-				//}
+				}
+			},
+			failure: function() {
+				// If the operation failed on the server side, reload the whole tree to
+				// be safe and avoid any possible interface/database inconsistency
+				this.nodeReload(this.root);
 			}
 		});
 	},

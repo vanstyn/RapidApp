@@ -377,7 +377,7 @@ sub call_move_node {
 		success	=> \1,
 	} if ( $self->move_node($node,$target,$point,$point_node) );
 	
-	die "Move failed!";
+	die usererr "Move failed!";
 }
 
 
