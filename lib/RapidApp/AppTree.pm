@@ -306,10 +306,45 @@ sub call_rename_node {
 
 sub call_expand_node {
 	my $self = shift;
-	my $node = $self->c->req->params->{node};
-	my $expanded = $self->c->req->params->{expanded};
+	my $node = shift; $node = $self->c->req->params->{node} unless (defined $node);
+	my $expanded = shift; $expanded = $self->c->req->params->{expanded} unless (defined $expanded);
+	
+	# -- Handle optional batched updates:
+	if (ref($node) eq 'ARRAY' or ref($expanded) eq 'ARRAY') {
+		die "batch expand_node update data mismatch" unless (
+			ref($node) eq 'ARRAY' and
+			ref($expanded) eq 'ARRAY' and
+			scalar @$node == scalar @$expanded #<-- both should be arrays of equal length
+		);
+		
+		my $num = scalar @$node;
+		
+		for(my $i = 0; $i < $num; $i++) {
+			$self->call_expand_node($node->[$i],$expanded->[$i]);
+		};
+		
+		# Note: we don't actually check if this was successful on each call above...
+		# Currently we can't really do anything about it if it didn't work, the info is
+		# not important enough to subject the client to remediations/complexity. This should
+		# probably be handled properly in the future, though
+		return {
+			msg		=> 'Set Expanded State of ' . $num . ' nodes',
+			success	=> \1,
+		};
+	}
+	# --
+	
 	$expanded = 0 if ($expanded eq '0' || $expanded eq 'false');
-	return $self->expand_node($node,$expanded ? 1 : 0);
+	return {
+		msg		=> 'Set Expanded',
+		success	=> \1,
+	} if ( $self->expand_node($node,$expanded ? 1 : 0) );
+	
+	# Doesn't do anything, informational only:
+	return {
+		msg		=> 'note: expand_node did not return true',
+		success	=> \0,
+	}
 }
 
 sub call_copy_node {

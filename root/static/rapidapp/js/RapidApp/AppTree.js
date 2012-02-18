@@ -174,9 +174,41 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	
 	persistNodeExpandState: function(node,state) {
 		if(node == this.root) { return false; } // <-- ignore the root node
+		this.queuePersistExpandUpdates(node.id,state);
+	},
+	
+	queuePersistExpandUpdates: function(id,state) {
+		this.initPersistExpandQueue();
+		this.persistExpandQueue.nodes.push(id);
+		this.persistExpandQueue.states.push(state);
+		
+		if(!this.processPersistExpandPending) {
+			this.processPersistExpandPending = true;
+			this.processPersistExpandQueue.defer(1000,this);
+		}
+	},
+	
+	initPersistExpandQueue: function(delete_current) {
+		if(delete_current && this.persistExpandQueue) { 
+			delete this.persistExpandQueue;
+		}
+		if(! this.persistExpandQueue) {
+			this.persistExpandQueue = { nodes: [], states: [] };
+		}
+	},
+	
+	processPersistExpandQueue: function() {
+		this.processPersistExpandPending = false;
+		
+		// do nothing if the queue is empty:
+		if(this.persistExpandQueue.nodes.length == 0) { return true; }
+		
+		var queue = this.persistExpandQueue;
+		this.initPersistExpandQueue(true);
+		
 		Ext.Ajax.request({
 			url: this.expand_node_url,
-			params: { node: node.id, expanded: state },
+			params: { node: queue.nodes, expanded: queue.states },
 			scope: this,
 			success: Ext.emptyFn //<-- assume it worked, don't do anything if it didn't
 		});
