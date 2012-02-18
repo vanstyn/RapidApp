@@ -372,7 +372,12 @@ sub call_move_node {
 	my $point_node = $self->c->req->params->{point_node};
 	my $point = $self->c->req->params->{point};
 	
-	return $self->move_node($node,$target,$point,$point_node);
+	return {
+		msg		=> 'Moved',
+		success	=> \1,
+	} if ( $self->move_node($node,$target,$point,$point_node) );
+	
+	die "Move failed!";
 }
 
 

@@ -538,6 +538,23 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		
 		if(!cnf.url) { throw "url is a required parameter"; }
 		
+		var Field = Ext.create({
+			xtype: 'textfield',
+			name: cnf.name,
+			fieldLabel: cnf.fieldLabel,
+			value: cnf.value,
+			anchor: '100%'
+		},'field');
+		
+		Field.on('afterrender',function(field){ field.show.defer(300,field); });
+		
+		//Focus the field and put the cursor at the end
+		Field.on('show',function(field){
+			field.focus();
+			field.setCursorPosition(1000000);
+		},this);
+		
+		/*
 		var items = [
 			{
 				xtype: 'textfield',
@@ -553,6 +570,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 				}
 			}
 		];
+			*/
 
 		var fieldset = {
 			xtype: 'fieldset',
@@ -560,7 +578,8 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			hideBorders: true,
 			labelWidth: cnf.labelWidth,
 			border: false,
-			items: items
+			//items: items
+			items: Field
 		};
 
 		var winform_cfg = {
