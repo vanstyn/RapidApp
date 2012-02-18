@@ -186,13 +186,38 @@ sub apply_path_specific_node_opts {
 	return $n;
 }
 
-sub call_fetch_nodes {
+# Absolute maximum levels deep the whole tree can be
+has 'max_node_path_depth', is => 'ro', isa => 'Int', default => 100;
+
+# Max nested/recursive *single request* fetch depth that will be allowed. The tree can possibly
+# be deeper than this value, but it wouldn't be fetch-able in a single request
+has 'max_recursive_fetch_depth', is => 'ro', isa => 'Int', default => 10;
+
+our $DEEP_FETCH_DEPTH = 0;
+
+sub call_fetch_nodes :Debug(list_args=>1) {
 	my $self = shift;
 	my $node = shift || $self->c->req->params->{node};
 	
-	my $nodes = $self->fetch_nodes($node);
+	die usererr "max_node_path_depth (" . $self->max_node_path_depth . ") exceeded ($node)" 
+		if (scalar split(/\//,$node) > $self->max_node_path_depth);
 	
-	die "Error: 'fetch_nodes()' was supposed to return an ArrayRef, but instead if returned: " . Dumper($nodes)
+	#Track recursive depth:
+	local $DEEP_FETCH_DEPTH = $DEEP_FETCH_DEPTH + 1;
+	
+	# It shouldn't be possible to exceed 'max_recursive_fetch_depth':
+	die "call_fetch_nodes deep recursion stopped at depth $DEEP_FETCH_DEPTH ($node)!!" 
+		if($DEEP_FETCH_DEPTH > $self->max_recursive_fetch_depth);
+	
+	
+	######
+	######
+	my $nodes = $self->fetch_nodes($node);
+	######
+	######
+	
+	
+	die "Error: 'fetch_nodes()' was supposed to return an ArrayRef, but instead it returned: " . Dumper($nodes)
 		unless (ref($nodes) eq 'ARRAY');
 	
 	my %seen_id = ();
@@ -215,6 +240,7 @@ sub call_fetch_nodes {
 			( $self->fetch_nodes_deep or jstrue($n->{expanded}) )
 			and ! exists $n->{children}
 			and ! jstrue($n->{loaded})
+			and $DEEP_FETCH_DEPTH < $self->max_recursive_fetch_depth
 		);
 		
 		if($recurse) { # Pre-fetch child nodes automatically:
