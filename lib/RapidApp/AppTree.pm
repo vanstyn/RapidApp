@@ -156,6 +156,36 @@ has 'root_node_text'		=> ( is => 'ro', lazy => 1, default => sub { (shift)->root
 ##
 
 
+sub apply_path_specific_node_opts {
+	my $self = shift;
+	my $node = shift; #<-- path of a parent node
+	my $n = shift;
+	
+	return undef unless (exists $n->{id});
+	
+	die "Invalid node definition: id can't be the same as the parent node ($node): " . Dumper($n) 
+		if($n->{id} eq $node);
+	
+	# The id should be a fully qualified '/' delim path prefixed with the (parent) node 
+	# path ($node supplied to this function). If it is not, assume it is a relative path 
+	# and prefix it automatically:
+	$n->{id} = $node . '/' . $n->{id} unless ($n->{id} =~ /^${node}/);
+	
+	# This is (imo) an ExtJS bug. It fixes the problem where empty nodes are automatically
+	# made "leaf" nodes and get a stupid, non-folder default icon
+	# http://www.sencha.com/forum/showthread.php?92553-Async-tree-make-empty-nodes-appear-as-quot-nodes-quot-not-quot-leaves-quot&p=441294&viewfull=1#post441294
+	$n->{cls} = 'x-tree-node-collapsed' unless (exists $n->{cls});
+	
+	# legacy:
+	$n->{expanded} = \1 if ($n->{expand} and ! exists $n->{expanded});
+	
+	$n->{leaf} = \1 if (exists $n->{allowChildren} and ! jstrue($n->{allowChildren}));
+	
+	$n->{loaded} = \1 if(jstrue($n->{leaf}) and ! exists $n->{loaded});
+
+	return $n;
+}
+
 sub call_fetch_nodes {
 	my $self = shift;
 	my $node = shift || $self->c->req->params->{node};
@@ -173,33 +203,21 @@ sub call_fetch_nodes {
 			next;
 		}
 		
-		# Each sub-node definition should contain 'id' - its node path. But if it doesn't, 
-		# just leave it as-is:
-		next unless (exists $n->{id});
+		$self->apply_path_specific_node_opts($node,$n) or next;
 		
 		## If we've gotten this far, it means the current node can contain child nodes
 		
-		die "Invalid node definition: id can't be the same as the parent node ($node): " . Dumper($n) 
-			if($n->{id} eq $node);
-			
 		die "Invalid node definition: duplicate id ($n->{id}): " . Dumper($n)
 			if($seen_id{$n->{id}}++);
 		
-		# The id should be a fully qualified '/' delim path prefixed with the (parent) node 
-		# path ($node supplied to this function). If it is not, assume it is a relative path 
-		# and prefix it automatically:
-		$n->{id} = $node . '/' . $n->{id} unless ($n->{id} =~ /^${node}/);
+		my $recurse = 0;
+		$recurse = 1 if (
+			( $self->fetch_nodes_deep or jstrue($n->{expanded}) )
+			and ! exists $n->{children}
+			and ! jstrue($n->{loaded})
+		);
 		
-		# This is (imo) an ExtJS bug. It fixes the problem where empty nodes are automatically
-		# made "leaf" nodes and get a stupid, non-folder default icon
-		# http://www.sencha.com/forum/showthread.php?92553-Async-tree-make-empty-nodes-appear-as-quot-nodes-quot-not-quot-leaves-quot&p=441294&viewfull=1#post441294
-		$n->{cls} = 'x-tree-node-collapsed' unless (exists $n->{cls});
-		
-		# legacy:
-		$n->{expanded} = \1 if ($n->{expand} and ! exists $n->{expanded});
-		
-		# Pre-fetch child nodes automatically if 'fetch_nodes_deep' is set to true:
-		if($self->fetch_nodes_deep and ! exists $n->{children}) {
+		if($recurse) { # Pre-fetch child nodes automatically:
 			my $children = $self->call_fetch_nodes($n->{id});
 			if(@$children > 0) {
 				$n->{children} = $children;
@@ -228,7 +246,21 @@ sub call_add_node {
 	my $self = shift;
 	my $name = $self->c->req->params->{name};
 	my $node = $self->c->req->params->{node};
-	return $self->add_node($name,$node);
+	my $data = $self->add_node($name,$node);
+	
+	# The config/params of the created node should have been returned in the 'child' key:
+	if ($data->{child}) {
+		my $n = $data->{child};
+		die "id was not returned in 'child'" unless (exists $n->{id});
+		$self->apply_path_specific_node_opts($node,$n); 
+		
+		# Assume the new node doesn't have any children yet and force to loaded/expanded:
+		# (todo: it is conceivable that a new node might be created with children, add support for this in the future)
+		$n->{loaded} = \1;
+		$n->{expanded} = \1;
+	}
+	
+	return $data;
 }
 
 sub call_delete_node {
