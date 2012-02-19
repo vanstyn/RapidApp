@@ -559,8 +559,19 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	
 	nodeReload: function(node) {
 		if(!node) { node = this.activeNonLeafNode(); }
-		if((node.isLeaf() || node.attributes.children) && node.parentNode) { 
-			node = node.parentNode; 
+		return this.nodeReloadRecursive(node);
+	},
+	
+	// Recursively calls itself on parent nodes until it reaches a 
+	// node that can be reloaded:
+	nodeReloadRecursive: function(node) {
+		node = node || this.root; //<-- default to the root node
+		if(node !== this.root) {
+			// Leaf nodes can't be reloaded from the server, but neither can
+			// non-leaf nodes if they have a static defined list of children:
+			if(node.isLeaf() || node.attributes.children) {
+				return this.nodeReloadRecursive(node.parentNode);
+			}
 		}
 		this.getLoader().load(node,function(tp){
 			node.expand();

@@ -8,6 +8,8 @@ has 'module_scope', is => 'ro', lazy => 1, default => sub { return shift };
 
 has '+fetch_nodes_deep', default => 1;
 
+has 'double_click_nav', is => 'ro', isa => 'Bool', default => 0;
+
 sub BUILD {
 	my $self = shift;
 	$self->setup_nav_listeners;
@@ -16,7 +18,10 @@ sub BUILD {
 # Add these listeners in a sub so derived classes can override/remove this:
 sub setup_nav_listeners {
 	my $self = shift;
-	$self->add_listener( click => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.treenav_click' ) );
+	
+	my $event = $self->double_click_nav ? 'dblclick' : 'click';
+	
+	$self->add_listener( $event => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.treenav_click' ) );
 	$self->add_listener( beforerender => RapidApp::JSONFunc->new( raw => 1, func => 'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' ) );
 }
 
