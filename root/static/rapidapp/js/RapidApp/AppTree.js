@@ -218,7 +218,17 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		if(this.copy_node_url || this.move_node_url) {
 			this.enableDD = true;
 			//this.ddAppendOnly = true; //<-- this disables setting "order"
+			this.on('nodedragover',this.onNodeDragOver,this);
 			this.on('beforenodedrop',this.beforeNodeDropHandler,this);
+		}
+	},
+	
+	onNodeDragOver: function(dragOverEvent) {
+		// Nodes with allowLeafDropOnly will only allow leaf nodes dropped on them:
+		if(dragOverEvent.target.attributes.allowLeafDropOnly) {
+			if(!dragOverEvent.data.node.isLeaf()) {
+				dragOverEvent.cancel = true;
+			}
 		}
 	},
 	
@@ -349,12 +359,37 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	actionValidForNode: function(action,node) {
 		if(!node) { return false; }
 		
-		if(this.no_recursive_delete && action.text == this.delete_node_text) {
-			if(node.isLoaded() && node.hasChildNodes()) { return false; }
+		if(action.text == this.add_node_text) {
+			// The add action can be turned off for any given node by setting "allowDelete" to false:
+			if(typeof node.attributes.allowAdd !== "undefined" && !node.attributes.allowAdd) {
+				return false;
+			}
 		}
 		
-		if(!action.rootValid && node == this.root) { return false; }
-		if(!action.leafValid && node.isLeaf()) { return false; }
+		if(action.text == this.rename_node_text) {
+			// The rename action can be turned off for any given node by setting "allowRename" to false:
+			if(typeof node.attributes.allowRename !== "undefined" && !node.attributes.allowRename) {
+				return false;
+			}
+		}
+		
+		if(action.text == this.delete_node_text) {
+			if(this.no_recursive_delete && node.isLoaded() && node.hasChildNodes()) { 
+				return false; 
+			}
+			// The delete action can be turned off for any given node by setting "allowDelete" to false:
+			if(typeof node.attributes.allowDelete !== "undefined" && !node.attributes.allowDelete) {
+				return false;
+			}
+		}
+		
+		if(!action.rootValid && (node == this.root || node.attributes.rootValidActions)) { 
+			return false; 
+		}
+		
+		if(!action.leafValid && node.isLeaf()) { 
+			return false; 
+		}
 		return true;
 	},
 	
