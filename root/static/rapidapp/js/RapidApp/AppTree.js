@@ -14,6 +14,9 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	rename_node_iconCls: 'icon-textfield-rename',
 	rename_node_url: null,
 	
+	reload_node_text: 'Reload',
+	reload_node_iconCls: 'icon-refresh',
+	
 	node_action_reload: true,
 	node_action_expandall: true,
 	node_action_collapseall: true,
@@ -39,8 +42,8 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			
 			if(this.node_action_reload) {
 				this.node_actions.push({
-					text: 'Reload',
-					iconCls: 'icon-refresh',
+					text: this.reload_node_text,
+					iconCls: this.reload_node_iconCls,
 					handler: this.nodeReload,
 					rootValid: true,
 					leafValid: false,
@@ -369,6 +372,18 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		if(action.text == this.rename_node_text) {
 			// The rename action can be turned off for any given node by setting "allowRename" to false:
 			if(typeof node.attributes.allowRename !== "undefined" && !node.attributes.allowRename) {
+				return false;
+			}
+		}
+		
+		if(action.text == this.reload_node_text) {
+			// Nodes with static array of children can't be reloaded from the server:
+			if(typeof node.attributes.children !== "undefined") {
+				return false;
+			}
+			
+			// The reload action can be turned off for any given node by setting "allowReload" to false:
+			if(typeof node.attributes.allowReload !== "undefined" && !node.attributes.allowReload) {
 				return false;
 			}
 		}
