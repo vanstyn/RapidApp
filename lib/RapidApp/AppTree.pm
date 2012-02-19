@@ -14,6 +14,7 @@ has 'use_contextmenu' => ( is => 'ro', isa => 'Bool', default => 0 );
 has 'no_dragdrop_menu' => ( is => 'ro', isa => 'Bool', default => 0 );
 has 'setup_tbar' => ( is => 'ro', isa => 'Bool', default => 0 );
 has 'no_recursive_delete' => ( is => 'ro', isa => 'Bool', default => 1 );
+has 'no_recursive_copy' => ( is => 'ro', isa => 'Bool', default => 1 );
 
 #Controls if nodes can drag/drop between nodes as well as into (append) nodes
 has 'ddAppendOnly' => ( is => 'ro', isa => 'Bool', default => 1 );
@@ -34,6 +35,7 @@ sub BUILD {
 		no_dragdrop_menu		=> jstrue($self->no_dragdrop_menu) ? \1 : \0,
 		setup_tbar				=> jstrue($self->setup_tbar) ? \1 : \0,
 		no_recursive_delete	=> jstrue($self->no_recursive_delete) ? \1 : \0,
+		no_recursive_copy		=> jstrue($self->no_recursive_copy) ? \1 : \0,
 		ddAppendOnly			=> jstrue($self->ddAppendOnly) ? \1 : \0,
 	);
 	
@@ -351,6 +353,7 @@ sub call_copy_node {
 	my $self = shift;
 	my $node = $self->c->req->params->{node};
 	my $target = $self->c->req->params->{target};
+	my $name = $self->c->req->params->{name};
 	
 	# point and point_node will be defined for positional information, if
 	# a node is dragged in-between 2 nodes (point above/below instead of append)
@@ -358,7 +361,28 @@ sub call_copy_node {
 	my $point_node = $self->c->req->params->{point_node};
 	my $point = $self->c->req->params->{point};
 	
-	return $self->copy_node($node,$target,$point,$point_node);
+	my $data = $self->copy_node($node,$target,$point,$point_node,$name);
+	
+	die "copy_node() returned invalid data" unless (ref($data) eq 'HASH' and $data->{child}); 
+	
+	# The config/params of the created node should have been returned in the 'child' key:
+	if ($data->{child}) {
+		my $n = $data->{child};
+		die "id was not returned in 'child'" unless (exists $n->{id});
+		$self->apply_path_specific_node_opts($target,$n); 
+		
+		## Assume the new node doesn't have any children yet and force to loaded/expanded:
+		## (todo: it is conceivable that a new node might be created with children, add support for this in the future)
+		#$n->{loaded} = \1;
+		#$n->{expanded} = \1;
+	}
+	
+	# Setting this so it can be picked up in javascript to add the new child next to
+	# the copied node instead of within it (this logic was borrowed from add originally 
+	# and extended for copy) TODO: clean up this API
+	$data->{child_after} = \1;
+	
+	return $data;
 }
 
 sub call_move_node {

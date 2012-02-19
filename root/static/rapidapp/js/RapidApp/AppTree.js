@@ -17,6 +17,10 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	reload_node_text: 'Reload',
 	reload_node_iconCls: 'icon-refresh',
 	
+	copy_node_text: 'Copy',
+	copy_node_iconCls: 'icon-element-copy',
+	copy_node_url: null,
+	
 	node_action_reload: true,
 	node_action_expandall: true,
 	node_action_collapseall: true,
@@ -25,6 +29,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	no_dragdrop_menu: false,
 	setup_tbar: false,
 	no_recursive_delete: false,
+	no_recursive_copy: false,
 	
 	// Controls if nodes can drag/drop between nodes as well as into (append) nodes
 	ddAppendOnly: true,
@@ -117,6 +122,18 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 				});
 			}
 			
+			if(this.copy_node_url) {
+				this.node_actions.push({
+					text: this.copy_node_text,
+					iconCls: this.copy_node_iconCls,
+					handler: this.nodeCopyInPlace,
+					rootValid: false,
+					leafValid: true,
+					noTbar: false,
+					tbarIconOnly: false
+				});
+			}
+			
 			if(this.expand_node_url) {
 				this.on('expandnode',function(node){
 					this.persistNodeExpandState(node,1);
@@ -165,6 +182,9 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		}
 		
 		this.on('afterrender',function() {
+			// Init button states with the root node first:
+			this.notifyActionButtons(this.root);
+			
 			this.getSelectionModel().on('selectionchange',function(selMod,node) {
 				this.notifyActionButtons(node);
 			},this);
@@ -264,7 +284,16 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 
 		var menuItems = [];
 		
-		if(this.copy_node_url) {
+		/* New: Disable drop/copy option if 'no_dragdrop_menu' is true.
+		   the original logic/intent was that this setting would allow
+		   either *copy* or *move* to happen automatically, but after
+		   thinking about it more, automatic drag/drop copy doesn't make
+		   a lot of sense, and now a "Copy In-place" option is being added
+		   as a right-click "action" and will use 'copy_node_url' too, so
+		   I am just disabling this auto copy or auto move feature for now,
+		   leaving only 'auto move' when no_dragdrop_menu is turned on
+		*/
+		if(this.copy_node_url && !this.no_dragdrop_menu) {
 			menuItems.push({
 				text: 'Copy here',
 				iconCls: 'icon-element-copy',
@@ -290,6 +319,10 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		
 		// -- If no drop menu is set, and there is exactly 1 option (copy or move, but not both), 
 		// run that one option automatically:
+		// Update:
+		//  see above 'copy' comment. menuItems.length should now always be 1 if no_dragdrop_menu
+		//  is on, but I am leaving the redundant check in place in case this auto copy or auto
+		//  move feature wants to be turned back on...
 		if(this.no_dragdrop_menu && menuItems.length == 1) {
 			var item = menuItems[0];
 			var no_reloads = true;
@@ -362,6 +395,17 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	actionValidForNode: function(action,node) {
 		if(!node) { return false; }
 		
+		/* Broad validation by node type and action rules: */
+		if(!action.rootValid && (node == this.root || node.attributes.rootValidActions)) { 
+			return false; 
+		}
+		
+		if(!action.leafValid && node.isLeaf()) { 
+			return false; 
+		}
+		
+		
+		/* Per-action name validations: */
 		if(action.text == this.add_node_text) {
 			// The add action can be turned off for any given node by setting "allowDelete" to false:
 			if(typeof node.attributes.allowAdd !== "undefined" && !node.attributes.allowAdd) {
@@ -369,18 +413,19 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			}
 		}
 		
-		if(action.text == this.rename_node_text) {
+		else if(action.text == this.rename_node_text) {
 			// The rename action can be turned off for any given node by setting "allowRename" to false:
 			if(typeof node.attributes.allowRename !== "undefined" && !node.attributes.allowRename) {
 				return false;
 			}
 		}
 		
-		if(action.text == this.reload_node_text) {
+		else if(action.text == this.reload_node_text) {
 			// Nodes with static array of children can't be reloaded from the server:
-			if(typeof node.attributes.children !== "undefined") {
-				return false;
-			}
+			// Update: this is now handled in the nodeReload function
+			//if(typeof node.attributes.children !== "undefined") {
+			//	return false;
+			//}
 			
 			// The reload action can be turned off for any given node by setting "allowReload" to false:
 			if(typeof node.attributes.allowReload !== "undefined" && !node.attributes.allowReload) {
@@ -388,8 +433,8 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			}
 		}
 		
-		if(action.text == this.delete_node_text) {
-			if(this.no_recursive_delete && node.isLoaded() && node.hasChildNodes()) { 
+		else if(action.text == this.delete_node_text) {
+			if(this.no_recursive_delete && node.isLoaded && node.isLoaded() && node.hasChildNodes()) { 
 				return false; 
 			}
 			// The delete action can be turned off for any given node by setting "allowDelete" to false:
@@ -398,13 +443,18 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			}
 		}
 		
-		if(!action.rootValid && (node == this.root || node.attributes.rootValidActions)) { 
-			return false; 
+		
+		else if(action.text == this.copy_node_text) {
+			if(this.no_recursive_copy && node.isLoaded && node.isLoaded() && node.hasChildNodes()) { 
+				return false; 
+			}
+			// The copy action can be turned off for any given node by setting "allowCopy" to false:
+			if(typeof node.attributes.allowCopy !== "undefined" && !node.attributes.allowCopy) {
+				return false;
+			}
 		}
 		
-		if(!action.leafValid && node.isLeaf()) { 
-			return false; 
-		}
+		// If we made it to the end without being invalidated, then the action is valid for this node:
 		return true;
 	},
 	
@@ -491,6 +541,11 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		}
 		//--
 		
+		// remove a divider if it ends up as the last item:
+		if(menuItems.length && menuItems[menuItems.length-1] == '-') {
+			menuItems.pop();
+		}
+		
 		
 		if(menuItems.length == 0){ return false; }
 		
@@ -504,7 +559,9 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	
 	nodeReload: function(node) {
 		if(!node) { node = this.activeNonLeafNode(); }
-		if(node.isLeaf() && node.parentNode) { node = node.parentNode; }
+		if((node.isLeaf() || node.attributes.children) && node.parentNode) { 
+			node = node.parentNode; 
+		}
 		this.getLoader().load(node,function(tp){
 			node.expand();
 		});
@@ -534,6 +591,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	
 	nodeAdd: function(node) {
 		if(!node) { node = this.activeNonLeafNode(); }
+		
 		return this.nodeApplyDialog(node,{
 			title: this.add_node_text,
 			url: this.add_node_url
@@ -594,6 +652,25 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		);
 	},
 	
+	// This works like an action (right-click) instead of a drag-drop
+	// like nodeCopyMove. So it is really more like nodeAdd
+	nodeCopyInPlace: function(node) {
+		if(!node) { node = this.activeNonLeafNode(); }
+
+		return this.nodeApplyDialog(node,{
+			title: this.copy_node_text,
+			url: this.copy_node_url,
+			params : {
+				node: node.id,
+				target: node.parentNode.id,
+				point: 'below',
+				point_node: node.id
+			},
+			value: node.attributes.text + ' (Copy)'
+		});
+	},
+	
+	// General purpose functon for several operations, like add, rename
 	nodeApplyDialog: function(node,opt) {
 		var tree = this;
 		var cnf = Ext.apply({
@@ -604,6 +681,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			labelWidth: 40,
 			height: 130,
 			width: 350,
+			params: { node: node.id },
 			value: null
 		},opt);
 		
@@ -624,24 +702,6 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			field.focus();
 			field.setCursorPosition(1000000);
 		},this);
-		
-		/*
-		var items = [
-			{
-				xtype: 'textfield',
-				name: cnf.name,
-				fieldLabel: cnf.fieldLabel,
-				value: cnf.value,
-				anchor: '100%',
-				listeners: {
-					'afterrender': function() { 
-						// try to focus the field:
-						this.focus('',10); this.focus('',200); this.focus('',500);
-					}
-				}
-			}
-		];
-			*/
 
 		var fieldset = {
 			xtype: 'fieldset',
@@ -659,9 +719,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			width: cnf.width,
 			url: cnf.url,
 			useSubmit: true,
-			params: {
-				node: node.id
-			},
+			params: cnf.params,
 			fieldset: fieldset,
 			
 			success: function(response,options) {
@@ -675,8 +733,14 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 				// if 'child' is supplied in the response then we add it as a child to the current node
 				if (res.child) {
 					var newChild = tree.getLoader().createNode(res.child);
-					node.expand();
-					node.appendChild(newChild);
+					
+					if(res.child_after) { // <-- for 'copy in place'
+						node.parentNode.insertBefore(newChild,node.nextSibling);
+					}
+					else {
+						node.expand();
+						node.appendChild(newChild);
+					}
 					//newChild.ensureVisible();
 				}
 				
