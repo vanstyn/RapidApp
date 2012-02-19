@@ -247,11 +247,17 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	},
 	
 	onNodeDragOver: function(dragOverEvent) {
+		var t = dragOverEvent.target;
+		var leafOnly = false;
+		
 		// Nodes with allowLeafDropOnly will only allow leaf nodes dropped on them:
-		if(dragOverEvent.target.attributes.allowLeafDropOnly) {
-			if(!dragOverEvent.data.node.isLeaf()) {
-				dragOverEvent.cancel = true;
-			}
+		if(t.attributes.allowLeafDropOnly) { leafOnly = true; }
+		
+		// parents can also restrict their children with allowChildrenLeafDropOnly:
+		if(t.parentNode && t.parentNode.attributes.allowChildrenLeafDropOnly) { leafOnly = true; }
+		
+		if(leafOnly && !dragOverEvent.data.node.isLeaf()) {
+			dragOverEvent.cancel = true;
 		}
 	},
 	
