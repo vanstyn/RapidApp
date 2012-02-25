@@ -64,7 +64,8 @@ sub DEFAULT_PROFILES {{
 						value	=> 1
 					}
 				]
-			}
+			},
+			multifilter_type => 'bool'
 		},
 		
 		bool_old => {

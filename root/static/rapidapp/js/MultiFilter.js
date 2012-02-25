@@ -264,7 +264,13 @@ Ext.ux.MultiFilter.defaultTypeToConditionMap = {
 		'greater than'			: '>',
 		'equal to'				: '=',
 		'not equal to'			: '!='
-	}
+	},
+	
+	// bool is empty, leaving only 'is' in the dropdown, which
+	// defaults to the editor, which in the case of bool should
+	// allow the selection of the only possible values (0/1). No
+	// other conditions make sense (>, <, etc)
+	bool: {}
 
 };
 
