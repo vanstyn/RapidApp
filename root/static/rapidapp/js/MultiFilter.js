@@ -473,6 +473,11 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			if (column && column.filter && column.filter.type) {
 				this.condType = column.filter.type;
 			}
+			
+			// new: column.filter.type above is no longer set since TableSpec stuff:
+			if (column && column.multifilter_type) {
+				this.condType = column.multifilter_type;
+			}
 
 			if (column && column.rel_combo_field_cnf && this.last_cond_value == 'is') {
 				cust_dfield_cnf = {};

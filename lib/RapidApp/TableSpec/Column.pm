@@ -35,7 +35,8 @@ sub DEFAULT_PROFILES {{
 		},
 		
 		number => {
-			editor => { xtype => 'numberfield', style => 'text-align:left;' }
+			editor => { xtype => 'numberfield', style => 'text-align:left;' },
+			multifilter_type => 'number'
 		},
 		int => {
 		
@@ -88,15 +89,17 @@ sub DEFAULT_PROFILES {{
 		},
 		datetime => {
 			editor => { xtype => 'xdatetime2', minWidth => 200 },
-			renderer => ["Ext.ux.RapidApp.getDateFormatter('M d, Y g:i A')"]
+			renderer => ["Ext.ux.RapidApp.getDateFormatter('M d, Y g:i A')"],
+			multifilter_type => 'date'
 		},
 		date => {
 			editor => { xtype => 'datefield', minWidth => 120 },
-			renderer => ["Ext.ux.RapidApp.getDateFormatter('M d, Y')"]
+			renderer => ["Ext.ux.RapidApp.getDateFormatter('M d, Y')"],
+			multifilter_type => 'date'
 		},
 		money => {
 			editor => { xtype => 'textfield' },
-			renderer => 'Ext.ux.showNullusMoney'
+			renderer => 'Ext.ux.showNullusMoney',
 		},
 		percent => {
 			 renderer => ['Ext.ux.GreenSheet.num2pct']
