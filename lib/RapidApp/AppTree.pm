@@ -16,6 +16,9 @@ has 'setup_tbar' => ( is => 'ro', isa => 'Bool', default => 0 );
 has 'no_recursive_delete' => ( is => 'ro', isa => 'Bool', default => 1 );
 has 'no_recursive_copy' => ( is => 'ro', isa => 'Bool', default => 1 );
 
+# Double-pane tree - useful for drag/drop
+has 'double_tree' => ( is => 'ro', isa => 'Bool', default => 0 );
+
 #Controls if nodes can drag/drop between nodes as well as into (append) nodes
 has 'ddAppendOnly' => ( is => 'ro', isa => 'Bool', default => 1 );
 
@@ -36,6 +39,7 @@ sub BUILD {
 		setup_tbar				=> jstrue($self->setup_tbar) ? \1 : \0,
 		no_recursive_delete	=> jstrue($self->no_recursive_delete) ? \1 : \0,
 		no_recursive_copy		=> jstrue($self->no_recursive_copy) ? \1 : \0,
+		double_tree				=> jstrue($self->double_tree) ? \1 : \0,
 		ddAppendOnly			=> jstrue($self->ddAppendOnly) ? \1 : \0,
 	);
 	
@@ -83,6 +87,49 @@ sub BUILD {
 	
 	$self->add_ONREQUEST_calls('init_onreq');
 }
+
+around 'content' => sub {
+	my $orig = shift;
+	my $self = shift;
+	
+	my $content = $self->$orig(@_);
+	
+	return $content unless ($self->double_tree);
+
+	return {
+		xtype => 'container',
+		
+		#Emulate border layout:
+		style => { 'background-color' => '#f0f0f0' },
+		
+		layout => 'hbox',
+		layoutConfig => {
+			align => 'stretch',
+			pack => 'start'
+		},
+		
+		items => [
+			{
+				%$content,
+				flex => \1,
+				hideBorders => \1,
+				margins => {
+					top => 0,
+					right => 5,
+					bottom => 0,
+					left => 0
+				},
+			},
+			{
+				%$content,
+				id => $content->{id} . '2',
+				flex => \1,
+				hideBorders => \1,
+			}
+		]
+	};
+};
+
 
 
 sub init_onreq {
