@@ -64,7 +64,13 @@ sub get_ResultSet {
 		scalar (keys %{ $self->RS_condition }) > 0 #<-- if RS_Condition is empty don't restrict
 	);
 	
-	return $self->ResultSet->search_rs($search,$self->RS_attr);
+	my $Rs = $self->ResultSet;
+	
+	# Allow creating a custom 'AppComboRs' method within the ResultSet Class
+	# for global use: (TODO: get a better/more well though out API):
+	$Rs = $Rs->AppComboRs if ($Rs->can('AppComboRs'));
+	
+	return $Rs->search_rs($search,$self->RS_attr);
 }
 
 
