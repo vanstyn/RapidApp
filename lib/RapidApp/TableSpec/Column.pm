@@ -103,7 +103,7 @@ sub DEFAULT_PROFILES {{
 			renderer => 'Ext.ux.showNullusMoney',
 		},
 		percent => {
-			 renderer => ['Ext.ux.GreenSheet.num2pct']
+			 renderer => ['Ext.ux.RapidApp.num2pct']
 		},
 		noedit => {
 			editor => ''

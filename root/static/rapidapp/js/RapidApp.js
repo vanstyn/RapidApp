@@ -5003,4 +5003,10 @@ Ext.ux.RapidApp.getRendererPastDatetimeRed = function(format) {
 	}
 }
 
-
+Ext.ux.RapidApp.num2pct = function(num) {
+	if (num != 0 && isFinite(num)) {
+		num = Ext.util.Format.round(100*num,2) + '%';
+	}
+	if(num == 0) { num = '0%'; }
+	return num;
+}
