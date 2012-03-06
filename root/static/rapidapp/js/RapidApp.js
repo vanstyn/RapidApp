@@ -4992,7 +4992,8 @@ Ext.ux.RapidApp.getRendererPastDatetimeRed = function(format) {
 	var renderer = Ext.ux.RapidApp.getDateFormatter(format);
 	return function(date) {
 		var dt = Date.parseDate(date,"Y-m-d H:i:s");
-		//if (! dt) { return date; }
+		if (! dt) { dt = Date.parseDate(date,"Y-m-d"); }
+		
 		if (! dt) { return Ext.ux.showNull(date); }
 		
 		var out = renderer(date);
