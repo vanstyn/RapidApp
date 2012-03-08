@@ -555,6 +555,7 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 	};
 	
 	var default_formpanel_cnf = {
+		itemId: 'formpanel',
 		frame: true,
 		labelAlign: 'right',
 		bodyStyle: 'padding:20px 20px 10px 10px;',
@@ -581,6 +582,8 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 		win.callingHandler = true;
 		
 		var formpanel = win.getComponent('formpanel');
+		if(!formpanel) { return; }
+		
 		var form = formpanel.getForm();
 		var data = form.getFieldValues();
 		
