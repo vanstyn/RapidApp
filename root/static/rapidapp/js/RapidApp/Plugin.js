@@ -1383,7 +1383,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			'add_form_url_params',
 			'add_form_window_cnf',
 			'autoload_added_record',
-			'add_records_first'
+			'add_records_first',
+			'store_exclude_api'
 		]);
 		
 		this.exclude_btn_map = {};
@@ -1552,8 +1553,13 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	add_form_window_cnf: {},
 	autoload_added_record: false,
 	add_records_first: false,
+	store_exclude_api: [],
 		
 	initAdditionalStoreMethods: function(store,plugin) {
+		
+		Ext.each(plugin.store_exclude_api,function(item){
+			if(store.api[item]) { delete store.api[item]; }
+		});
 		
 		store.on('beforewrite',function(ds,action,records,options,arg) {
 			if(action == 'create'){

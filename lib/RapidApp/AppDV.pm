@@ -108,6 +108,23 @@ sub load_xtemplate {
 	$self->apply_extconfig( printview_url => $self->suburl('printview') . '?' . $qry_str );
 }
 
+
+sub xtemplate_cnf_classes {
+	my $self = shift;
+
+	#TODO: make this more robust/better:	
+	my @classes = ();
+
+	push @classes, 'no_create' unless ($self->DataStore->create_handler);
+	push @classes, 'no_update' unless ($self->DataStore->update_handler);
+	push @classes, 'no_destroy' unless ($self->DataStore->destroy_handler);
+	
+	my $excl = $self->get_extconfig_param('store_exclude_api') || [];
+	push @classes, 'no_' . $_ for (@$excl);
+	
+	return uniq @classes;
+}
+
 sub xtemplate_cnf {
 	my $self = shift;
 	
@@ -127,17 +144,7 @@ sub xtemplate_cnf {
 	
 	return $html_out unless ($self->apply_css_restrict);
 	
-	#TODO: make this more robust/better:	
-	my @classes = ();
-	#push @classes, 'no_create' unless ($self->can('create_records'));
-	#push @classes, 'no_update' unless ($self->can('update_records'));
-	#push @classes, 'no_destroy' unless ($self->can('destroy_records'));
-	push @classes, 'no_create' unless ($self->DataStore->create_handler);
-	push @classes, 'no_update' unless ($self->DataStore->update_handler);
-	push @classes, 'no_destroy' unless ($self->DataStore->destroy_handler);
-	
-	
-	return '<div class="' . join(' ',@classes) . '">' . $html_out . '</div>';
+	return '<div class="' . join(' ',$self->xtemplate_cnf_classes) . '">' . $html_out . '</div>';
 }
 
 
