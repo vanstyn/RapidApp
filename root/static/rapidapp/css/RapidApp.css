@@ -201,6 +201,8 @@ pre {
 .icon-cross-tiny-light { background-image: url(/static/rapidapp/images/cross_tiny_light.png) !important; }
 .icon-tick-tiny { background-image: url(/static/rapidapp/images/tick_tiny.png) !important; }
 .icon-tick-tiny-light { background-image: url(/static/rapidapp/images/tick_tiny_light.png) !important; }
+.icon-function { background-image: url(/static/rapidapp/images/function.png) !important; }
+.icon-function-small { background-image: url(/static/rapidapp/images/function_small.png) !important; }
 
 .tbar-title-medium {
 	font-size:175% !important;

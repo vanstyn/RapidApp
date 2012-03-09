@@ -2413,6 +2413,11 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 	
 	showMenu : true,
 	menuSummaryText : 'Summary Function',
+	headerIcoDomCfg: {
+		tag: 'div',
+		cls: 'icon-function-small',
+		style: 'float:left;width:10px;height:12px;'
+	},
 	
 	init: function(grid) {
 		Ext.ux.RapidApp.Plugin.AppGridSummary.superclass.init.apply(this,arguments);
@@ -2435,6 +2440,8 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 			return true;
 		});
 		
+		grid.on('reconfigure',this.updateColumnHeadings,this);
+		
 		if (grid.rendered) {
 			this.onRender();
 		} else {
@@ -2451,8 +2458,14 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		//this.toggleSummary(false);
 		
 		if(this.getSummaryCols()) {
+			this.grid.getView().on('refresh', this.onRefresh, this);
 			this.createMenu();
+			this.updateColumnHeadings();
 		}
+	},
+	
+	onRefresh : function () {
+		this.updateColumnHeadings();
 	},
 	
 	getSummaryCols: function() {
@@ -2555,13 +2568,49 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		if(summary_data) {
 			var val = summary_data['function'];
 			if(val && val !== '') {
-				menu.setIconClass('icon-checkbox-yes');
+				//menu.setIconClass('icon-checkbox-yes');
+				menu.setIconClass('icon-function');
 				return field.setValue(val);
 			}
 		}
 		
 		menu.setIconClass('icon-checkbox-no');
 		return field.setValue(null);
+	},
+	
+	hdIcos: {},
+	
+	updateColumnHeadings: function () {
+		var view = this.grid.getView(),
+			hds, i, len, summary_data;
+		if (view.mainHd) {
+
+			hds = view.mainHd.select('td');
+			for (i = 0, len = view.cm.config.length; i < len; i++) {
+				var itm = hds.item(i);
+				
+				if(this.hdIcos[i]) { this.hdIcos[i].remove(); delete this.hdIcos[i]; }
+				summary_data = this.getColSummary(view.cm.config[i].name);
+				if (summary_data) {
+					this.hdIcos[i] = itm.child('div').insertFirst(this.headerIcoDomCfg);
+				}
+			}
+		}
+	},
+	
+	
+	updateColumnHeadings1: function () {
+		var view = this.grid.getView(),
+			hds, i, len, summary_data;
+		if (view.mainHd) {
+			hds = view.mainHd.select('td').removeClass(this.activeHeaderCls);
+			for (i = 0, len = view.cm.config.length; i < len; i++) {
+				summary_data = this.getColSummary(view.cm.config[i].name);
+				if (summary_data) {
+					hds.item(i).addClass(this.activeHeaderCls);
+				}
+			}
+		}
 	},
 	
 	getActiveColName: function() {
@@ -2648,12 +2697,10 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		if(columns.length == 0) {
 			delete store.column_summaries;
 		};
-		
+		this.updateColumnHeadings();
 		store.reload();
 	},
 	
-	
-
 	// override Ext.ux.grid.GridSummary.calculate:
 	calculate: function() {
 		
