@@ -278,6 +278,10 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		this.plugins.push('grid-hmenu-columns-toggle');
 		// -- ^^ --
 		
+		
+		this.plugins.push('appgrid-summary');
+		
+		
 		// remove columns with 'no_column' set to true:
 		var new_columns = []
 		Ext.each(this.columns,function(column,index,arr) {

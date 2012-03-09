@@ -2409,5 +2409,46 @@ Ext.ux.RapidApp.Plugin.ReadOnlyField = Ext.extend(Ext.util.Observable,{
 Ext.preg('read-only-field',Ext.ux.RapidApp.Plugin.ReadOnlyField);
 
 
+Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
+	
+	init: function() {
+		
+		
+		
+		
+		console.log('init');
+		Ext.ux.RapidApp.Plugin.AppGridSummary.superclass.init.apply(this,arguments);
+		
+		//this.grid.on('beforeshow',this.onBeforeshow,this);
+		
+		this.grid.on('render',this.onRender,this);
+	},
+	
+	calculate: function() {
+		
+		var data = Ext.ux.RapidApp.Plugin.AppGridSummary.superclass.calculate.apply(this,arguments);
+		
+		//console.dir(data);
+		
+		return data;
+	},
+	
 
-
+	
+	onRender: function() {
+		this.toggleSummary(false);
+		this.grid.getTopToolbar().add({
+            text: 'Toggle',
+            tooltip: 'Toggle the visibility of summary row',
+            handler: function(){this.toggleSummary();},
+				scope: this
+        });
+		
+		//console.log('show');
+		//this.toggleSummaries(true);
+		
+	}
+	
+	
+});
+Ext.preg('appgrid-summary',Ext.ux.RapidApp.Plugin.AppGridSummary);
