@@ -2411,43 +2411,264 @@ Ext.preg('read-only-field',Ext.ux.RapidApp.Plugin.ReadOnlyField);
 
 Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 	
-	init: function() {
-		
-		
-		
-		
-		console.log('init');
+	showMenu : true,
+	menuSummaryText : 'Summary Function',
+	
+	init: function(grid) {
 		Ext.ux.RapidApp.Plugin.AppGridSummary.superclass.init.apply(this,arguments);
 		
-		//this.grid.on('beforeshow',this.onBeforeshow,this);
+		grid.appgridsummary = this;
 		
-		this.grid.on('render',this.onRender,this);
+		this.store = grid.getStore();
+		
+		if(grid.init_state && grid.init_state.column_summaries) {
+			this.store.column_summaries = grid.init_state.column_summaries;
+		}
+		
+		this.store.on('beforeload',function(store,options) {
+			if(store.column_summaries) {
+				var encoded = Ext.encode(store.column_summaries);
+				Ext.apply(options.params, {
+					'column_summaries': encoded 
+				});
+			}
+			return true;
+		});
+		
+		if (grid.rendered) {
+			this.onRender();
+		} else {
+			grid.on({
+				scope: this,
+				single: true,
+				afterrender: this.onRender
+			});
+		}
 	},
 	
+	onRender: function() {
+		// Always start with summary line hidden:
+		//this.toggleSummary(false);
+		
+		if(this.getSummaryCols()) {
+			this.createMenu();
+		}
+	},
+	
+	getSummaryCols: function() {
+		if(!this.summaryCols) {
+			var summaryCols = {};
+			var count = 0;
+			var columns = this.grid.initialConfig.columns;
+			Ext.each(columns,function(column){
+				if(Ext.isArray(column.summary_functions)) {
+					summaryCols[column.name] = column.summary_functions;
+					count++
+				}
+			},this);
+			this.summaryCols = summaryCols;
+			if(count == 0) { this.summaryCols = null; }
+		}
+		return this.summaryCols;
+	},
+	
+	getFunctionsField: function() {
+		if(!this.functionsField) {
+			var cnf = {
+				id: this.grid.id + '-summary-funcs-field',
+				name: 'function',
+				fieldLabel: 'Function',
+				//hideLabel: true,
+				xtype: 'textfield',
+				width: 150,
+				enableKeyEvents:true,
+				listeners:{
+					keyup:{
+						scope: this,
+						buffer: 150,
+						fn: function(field, e) {
+							if (Ext.EventObject.ENTER == e.getKey()){
+								this.applySelection();
+							}
+						}
+					}
+				}
+			};
+			this.functionsField = Ext.ComponentMgr.create(cnf,'textfield');
+		}
+		return this.functionsField;
+	},
+	
+	createMenu : function () {
+		var view = this.grid.getView(),
+			hmenu = view.hmenu;
+
+		if (this.showMenu && hmenu) {
+			
+			this.sep = hmenu.addSeparator();
+			this.summaryMenu = new Ext.menu.Menu({
+				id: this.grid.id + '-summary-menu',
+				layout: 'form',
+				showSeparator: false,
+				labelAlign: 'top',
+				labelWidth: 90,
+				items: this.getFunctionsField()
+			}); 
+			this.menu = hmenu.add({
+				hideOnClick: false,
+				iconCls: 'icon-checkbox-no',
+				itemId: 'summary',
+				text: this.menuSummaryText,
+				menu: this.summaryMenu
+			});
+
+			hmenu.on('beforeshow', this.onMenu, this);
+		}
+	},
+	
+	applySelection: function() {
+		var colname = this.getActiveColName(),
+			field = this.getFunctionsField();
+		
+		if(!colname || !field) { return false; }
+		
+		if(field.validate()) {
+			var func_str = field.getValue();
+			this.grid.view.hmenu.hide();
+			this.setColSummary(colname,func_str);
+			return true;
+		}
+		else {
+			field.markInvalid();
+			return false;
+		}
+	},
+	
+	loadSelection: function() {
+		var colname = this.getActiveColName(),
+			field = this.getFunctionsField(),
+			menu = this.menu;
+		
+		if(!field) { return false; }
+		
+		var summary_data = this.getColSummary(colname);
+		if(summary_data) {
+			var val = summary_data['function'];
+			if(val && val !== '') {
+				menu.setIconClass('icon-checkbox-yes');
+				return field.setValue(val);
+			}
+		}
+		
+		menu.setIconClass('icon-checkbox-no');
+		return field.setValue(null);
+	},
+	
+	getActiveColName: function() {
+		var view = this.grid.getView();
+		if (!view || view.hdCtxIndex === undefined) {
+			return null;
+		}
+		var col = view.cm.config[view.hdCtxIndex];
+		if(!col){ return null; }
+		return col.name;
+	},
+	
+	getColFuncList : function () {
+		var colname = this.getActiveColName(),
+			summaryCols = this.getSummaryCols();
+		
+		if (!summaryCols || !colname) { return null; }
+		return summaryCols[colname];
+	},
+	
+	onMenu: function(){
+		var funcs = this.getColFuncList();
+		if(funcs) {
+			this.loadSelection();
+		}
+		this.menu.setVisible(funcs !== undefined);
+		this.sep.setVisible(funcs !== undefined);
+	},
+	
+	getColSummary: function(colname) {
+		var column_summaries = this.store.column_summaries;
+		if(!colname || !column_summaries || !column_summaries[colname]){
+			return null;
+		}
+		return column_summaries[colname];
+	},
+	
+	setColSummary: function(colname,func_str,title) {
+		title = title || func_str;
+		
+		var cur = this.getColSummary(colname);
+		if(cur && cur['function'] == func_str && cur['title'] == title) {
+			return; //<-- nothing changed
+		}
+		
+		if(!func_str || func_str == '') {
+			if(!cur) { return; }
+			return this.removeColSummary(colname);
+		}
+		
+		var store = this.store;
+		if(!store.column_summaries) { store.column_summaries = {}; }
+		
+		store.column_summaries[colname] = {
+			'function': func_str,
+			'title': title
+		};
+		
+		this.onSummaryDataChange();
+	},
+	
+	removeColSummary: function(colname) {
+		var column_summaries = this.store.column_summaries;
+		if(!colname || !column_summaries || !column_summaries[colname]){
+			return;
+		}
+		delete column_summaries[colname];
+		this.onSummaryDataChange();
+	},
+	
+	getSummaryColumnList: function() {
+		var column_summaries = this.store.column_summaries;
+		if(!column_summaries) { return []; }
+		var columns = [];
+		Ext.iterate(column_summaries,function(k,v){
+			columns.push(k);
+		},this);
+		return columns;
+	},
+	
+	onSummaryDataChange: function() {
+		var store = this.store;
+		var columns = this.getSummaryColumnList();
+		if(columns.length == 0) {
+			delete store.column_summaries;
+		};
+		
+		store.reload();
+	},
+	
+	
+
+	// override Ext.ux.grid.GridSummary.calculate:
 	calculate: function() {
 		
 		var data = Ext.ux.RapidApp.Plugin.AppGridSummary.superclass.calculate.apply(this,arguments);
 		
 		//console.dir(data);
 		
+		return { project__price: data.project__price };
+		
 		return data;
-	},
+	}
 	
 
 	
-	onRender: function() {
-		this.toggleSummary(false);
-		this.grid.getTopToolbar().add({
-            text: 'Toggle',
-            tooltip: 'Toggle the visibility of summary row',
-            handler: function(){this.toggleSummary();},
-				scope: this
-        });
-		
-		//console.log('show');
-		//this.toggleSummaries(true);
-		
-	}
+	
 	
 	
 });

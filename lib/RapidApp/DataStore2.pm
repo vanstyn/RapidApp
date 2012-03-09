@@ -458,9 +458,12 @@ sub batch_apply_opts {
 		if ($opt eq 'columns' and ref($opts{$opt}) eq 'HASH') {				$self->apply_columns($opts{$opt});				}
 		elsif ($opt eq 'column_order') {		$self->set_columns_order(0,$opts{$opt});		}
 		elsif ($opt eq 'sort') {				$self->set_sort($opts{$opt});						}
-		elsif ($opt eq 'filterdata') {		$self->apply_config($opt => $opts{$opt});		}
-		elsif ($opt eq 'pageSize') {		$self->apply_config($opt => $opts{$opt});		}
-		else { die "invalid option '$opt' passed to batch_apply_opts";							}
+		else { 
+			$self->apply_extconfig( $opt => $opts{$opt} );
+		}
+		#elsif ($opt eq 'filterdata') {		$self->apply_config($opt => $opts{$opt});		}
+		#elsif ($opt eq 'pageSize') {		$self->apply_config($opt => $opts{$opt});		}
+		#else { die "invalid option '$opt' passed to batch_apply_opts";							}
 	}
 }
 

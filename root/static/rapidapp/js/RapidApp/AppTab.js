@@ -204,6 +204,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	},
 	
 	// Function to get the current grid state needed to save a search
+	// TODO: factor to use Built-in ExtJS "state machine"
 	getCurSearchData: function () {
 		var grid = this;
 		var colModel = grid.getColumnModel();
@@ -224,8 +225,13 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		var sort = grid.getState().sort;
 		if(sort) { view_config.sort = sort; }
 		
-		var filterdata = grid.getStore().filterdata;
-		if(filterdata) { view_config.filterdata = filterdata; }
+		var store = grid.getStore();
+	
+		//MultiFilter data:
+		if(store.filterdata) { view_config.filterdata = store.filterdata; }
+		
+		//GridSummary data
+		if(store.column_summaries) { view_config.column_summaries = store.column_summaries; }
 		
 		view_config.pageSize = grid.getBottomToolbar().pageSize;
 		
