@@ -66,6 +66,7 @@ has 'get_record_display' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default =
 
 has 'init_pagesize' => ( is => 'ro', isa => 'Int', default => 25 );
 has '+max_pagesize' => ( default => 500 );
+has 'use_column_summaries', is => 'ro', isa => 'Bool', default => 0;
 
 sub BUILD {
 	my $self = shift;
@@ -80,6 +81,7 @@ sub BUILD {
 		gridsearch				=> \1,
 		gridsearch_remote		=> \1,
 		column_allow_save_properties => [ 'width','hidden' ], #<-- is this still doing anything?
+		use_column_summaries => $self->use_column_summaries ? \1 : \0
 	);
 	
 	# The record_pk is forced to be added/included as a column:
