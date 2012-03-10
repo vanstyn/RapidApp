@@ -2418,11 +2418,24 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		cls: 'icon-function-small',
 		style: 'float:left;width:10px;height:12px;'
 	},
+	allow_cust_funcs: true,
+	
+	// These functions will use the same renderer for the normal column, all others
+	// will render raw data:
+	orig_renderer_funcs: ['min','max','sum','avg'],
 	
 	init: function(grid) {
 		Ext.ux.RapidApp.Plugin.AppGridSummary.superclass.init.apply(this,arguments);
 		
 		grid.appgridsummary = this;
+		if(typeof grid.allow_custom_summary_functions !== "undefined") {
+			this.allow_cust_funcs = grid.allow_custom_summary_functions;
+		}
+		
+		this.orig_renderer_map = {};
+		Ext.each(this.orig_renderer_funcs,function(f){ 
+			this.orig_renderer_map[f.toUpperCase()] = true; 
+		},this);
 		
 		this.store = grid.getStore();
 		
@@ -2485,6 +2498,11 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 			var count = 0;
 			var columns = this.grid.initialConfig.columns;
 			Ext.each(columns,function(column){
+				
+				if(this.allow_cust_funcs){
+					column.summary_functions = column.summary_functions || [];
+				}
+				
 				if(Ext.isArray(column.summary_functions)) {
 					summaryCols[column.name] = column.summary_functions;
 					count++
@@ -2730,68 +2748,35 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 			buf = [],
 			last = cs.length - 1;
 		
-		/*
-		Ext.iterate(o.data,function(colname,value) {
-			
-			console.log(colname + ': ' + value);
-			
-			var i = cm.findColumnIndex(colname);
-			if(!i) { return; }
-			
-			var c = cs[i], cf = cfg[i], p = {};
-				
-			p.id = c.id;
-			p.style = c.style;
-			p.css = i === 0 ? 'x-grid3-cell-first ' : (i == last ? 'x-grid3-cell-last ' : '');
-			p.value = c.renderer(value);
-				
-			console.dir(p);
-			
-			if (p.value === undefined || p.value === "") {
-				p.value = "&#160;";
-			}
-			buf[buf.length] = this.cellTpl.apply(p);
-
-		},this);
-		
-		
-		for (var i = 0, len = cs.length; i < len; i++) {
-			var c = cs[i], cf = cfg[i], p = {};
-
-			p.id = c.id;
-			p.style = c.style;
-			p.css = i === 0 ? 'x-grid3-cell-first ' : (i == last ? 'x-grid3-cell-last ' : '');
-
-			if (cf.summaryType || cf.summaryRenderer) {
-				 p.value = (cf.summaryRenderer || c.renderer)(o.data[c.name], p, o);
-			} else {
-				 p.value = '';
-			}
-			if (p.value === undefined || p.value === "") {
-				 p.value = "&#160;";
-			}
-			buf[buf.length] = this.cellTpl.apply(p);
-		}
-		*/
-		
-		
-		
 		for (var i = 0, len = cs.length; i < len; i++) {
 			var c = cs[i], cf = cfg[i], p = {};
 				
 			p.id = c.id;
 			p.style = c.style;
 			p.css = i === 0 ? 'x-grid3-cell-first ' : (i == last ? 'x-grid3-cell-last ' : '');
+			
+			var summary = this.getColSummary(c.name) || {};
+			var func = summary['function'];
+			if(func) { func = func.toUpperCase(); }
 
 			if (o.data[c.name]) {
-				p.value = c.renderer(o.data[c.name], p, o);
+				p.value = o.data[c.name];
+				if(this.orig_renderer_map[func]) {
+					p.value = c.renderer(o.data[c.name], p, o);
+				}
 				
-				var title = (this.getColSummary(c.name) || {}).title;
+				if(o.data[c.name] == 'BadFunc!' || o.data[c.name] == 'FuncError!') {
+					p.value = '<span style="font-size:.9em;font-family:Courier;color:red;">' +
+						o.data[c.name] +
+					'</span>';
+				}
+				
+				var title = summary.title;
 					
 				if(title && title !== '') {
 					var html = '<div style="padding-top:6px;padding-bottom:5px;font-size:.9em;color:darkgray">' + 
 						Ext.DomHelper.markup(this.headerIcoDomCfg) + 
-						'<div>(' + title + '):</div></div>' +
+						'<div>' + title + '</div></div>' +
 					'<div>' + p.value + '</div>';
 					
 					p.value = html;

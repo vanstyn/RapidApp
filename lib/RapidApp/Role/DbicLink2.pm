@@ -308,10 +308,10 @@ sub read_records {
 	$Rs = $Rs->search_rs({},{rows => 1}) if ($self->single_record_fetch);
 	
 	# don't use Row objects
-	$Rs = $Rs->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
+	my $Rs2 = $Rs->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
 	
 	# pull in our rows
-	my $rows = [ $self->rs_all($Rs) ];
+	my $rows = [ $self->rs_all($Rs2) ];
 		
 	#Hard coded munger for record_pk:
 	foreach my $row (@$rows) {
@@ -319,14 +319,14 @@ sub read_records {
 	}
 	
 	# Now calculate a total, for the grid to display the number of available pages
-	my $total = $self->single_record_fetch ? 1 : $Rs->pager->total_entries;
+	my $total = $self->single_record_fetch ? 1 : $Rs2->pager->total_entries;
 
 	my $ret = {
 		rows    => $rows,
 		results => $total,
 	};
 	
-	$self->calculate_column_summaries($ret,$Rs,$params);
+	$self->calculate_column_summaries($ret,$Rs,$params) unless($self->single_record_fetch);
 	
 	return $ret;
 }
@@ -346,17 +346,59 @@ sub calculate_column_summaries {
 	}
 	# --
 	
-	my $data = {};
-	foreach my $col (keys %$sums) {
-		$data->{$col} = 123;
+	my $select = [];
+	my $as = [];
+	
+	my %extra = ();
+	
+	my $i = 0;
+	foreach my $col (@{$Rs->{attrs}->{as}}) {
+		my $sum = $sums->{$col};
+		if($sum) {
+			my $sel = $self->get_col_summary_select($Rs->{attrs}->{select}->[$i],$sum);
+			if($sel) {
+				push @$select, $sel;
+				push @$as, $col;
+			}
+			else { $extra{$col} = 'BadFunc!'; }
+		}
+		$i++;
 	}
 	
-	return unless (keys %$data > 0);
+	try {
+		my $agg_row = $Rs->search_rs(undef,{
+			page => undef,
+			rows => undef,
+			select => $select,
+			as => $as
+		})->first or return;
 	
-	scream($data);
-	
-	$ret->{column_summaries} = $data;
+		$ret->{column_summaries} = { $agg_row->get_columns, %extra };
+	}
+	catch {
+		$ret->{column_summaries} = { map {$_=>'FuncError!'} keys %$sums };
+	};
 };
+
+sub get_col_summary_select {
+	my $self = shift;
+	my $col = shift;
+	my $func = shift;
+	
+	$func =~ s/^\s+//;
+	$func =~ s/\s+$//;
+	
+	# Simple function name
+	return { uc($func) => $col } if ($func =~ /^[a-zA-Z]+$/);
+	
+	# Replace macro string '{x}' with the column name
+	$func =~ s/\{x\}/${col}/g;
+	
+	return \[ $func ];
+	
+	return undef;
+}
+
 
 sub rs_all {
 	my $self = shift;
