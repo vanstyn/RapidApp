@@ -321,11 +321,42 @@ sub read_records {
 	# Now calculate a total, for the grid to display the number of available pages
 	my $total = $self->single_record_fetch ? 1 : $Rs->pager->total_entries;
 
-	return {
+	my $ret = {
 		rows    => $rows,
 		results => $total,
 	};
+	
+	$self->calculate_column_summaries($ret,$Rs,$params);
+	
+	return $ret;
 }
+
+sub calculate_column_summaries {
+	my ($self,$ret,$Rs,$params) = @_;
+	return unless ($params && $params->{column_summaries});
+	
+	my $sums = $self->param_decodeIf($params->{column_summaries},{});
+	return unless (keys %$sums > 0);
+	
+	# -- Filter out summaries for cols that weren't requested in 'columns':
+	my $req_cols = $self->c->req->params->{req_columns}; #<-- previously calculated in get_req_columns():
+	if($req_cols && @$req_cols > 0) {
+		my %limit = map {$_=>1} @$req_cols;
+		%$sums = map {$_=>$sums->{$_}} grep {$limit{$_}} keys %$sums;
+	}
+	# --
+	
+	my $data = {};
+	foreach my $col (keys %$sums) {
+		$data->{$col} = 123;
+	}
+	
+	return unless (keys %$data > 0);
+	
+	scream($data);
+	
+	$ret->{column_summaries} = $data;
+};
 
 sub rs_all {
 	my $self = shift;
@@ -452,6 +483,9 @@ sub get_req_columns {
 	uniq($columns);
 	my %excl = map { $_ => 1 } @exclude;
 	@$columns = grep { !$excl{$_} } @$columns;
+	
+	# quick and dirty way to get at this later on in the request:
+	$self->c->req->params->{req_columns} = $columns;
 	
 	return $columns;
 }

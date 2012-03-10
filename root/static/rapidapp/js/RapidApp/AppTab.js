@@ -291,7 +291,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		// remove columns with 'no_column' set to true:
 		var new_columns = []
 		Ext.each(this.columns,function(column,index,arr) {
-			if(!column.no_column) { 
+			if(!column.no_column) {
 				
 				// autoExpandColumn feature relies on the "id" property. Here we set it
 				// automatically to be the same as the column name.
@@ -299,6 +299,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 					column.id = column.name;
 				}
 				
+				if(column.summary_functions) { column.summaryType = 'dummy'; }
 				
 				new_columns.push(column);
 			}

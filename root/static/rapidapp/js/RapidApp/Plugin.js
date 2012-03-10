@@ -2432,15 +2432,16 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		
 		this.store.on('beforeload',function(store,options) {
 			if(store.column_summaries) {
-				var encoded = Ext.encode(store.column_summaries);
 				Ext.apply(options.params, {
-					'column_summaries': encoded 
+					'column_summaries': this.getEncodedParamVal() 
 				});
 			}
 			return true;
-		});
+		},this);
 		
 		grid.on('reconfigure',this.updateColumnHeadings,this);
+		
+		this.cm.on('hiddenchange',this.autoToggle,this);
 		
 		if (grid.rendered) {
 			this.onRender();
@@ -2453,9 +2454,19 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		}
 	},
 	
+	getEncodedParamVal: function() {
+		var column_summaries = this.store.column_summaries || {};
+		var data = {};
+				
+		Ext.iterate(column_summaries,function(k,v){
+			if(v['function']) { data[k] = v['function']; }
+		},this);
+		return Ext.encode(data);
+	},
+	
 	onRender: function() {
 		// Always start with summary line hidden:
-		//this.toggleSummary(false);
+		this.autoToggle();
 		
 		if(this.getSummaryCols()) {
 			this.grid.getView().on('refresh', this.onRefresh, this);
@@ -2598,21 +2609,6 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		}
 	},
 	
-	
-	updateColumnHeadings1: function () {
-		var view = this.grid.getView(),
-			hds, i, len, summary_data;
-		if (view.mainHd) {
-			hds = view.mainHd.select('td').removeClass(this.activeHeaderCls);
-			for (i = 0, len = view.cm.config.length; i < len; i++) {
-				summary_data = this.getColSummary(view.cm.config[i].name);
-				if (summary_data) {
-					hds.item(i).addClass(this.activeHeaderCls);
-				}
-			}
-		}
-	},
-	
 	getActiveColName: function() {
 		var view = this.grid.getView();
 		if (!view || view.hdCtxIndex === undefined) {
@@ -2640,12 +2636,32 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		this.sep.setVisible(funcs !== undefined);
 	},
 	
-	getColSummary: function(colname) {
+	autoToggle: function() {
+		this.toggleSummary(this.hasActiveSummaries() ? true : false);
+	},
+	
+	hasActiveSummaries: function() {
 		var column_summaries = this.store.column_summaries;
-		if(!colname || !column_summaries || !column_summaries[colname]){
-			return null;
+		if(!column_summaries) { return false; }
+		var cm = this.grid.getColumnModel();
+		for(i in cm.config) {
+			var c = cm.config[i];
+			if(c && column_summaries[c.name] && !c.hidden) {
+				return true;
+			}
 		}
-		return column_summaries[colname];
+		return false;
+	},
+	
+	getColSummary: function(colname) {
+		var summary, column_summaries = this.store.column_summaries;
+		if(!colname || !column_summaries || !column_summaries[colname]){
+			summary = null;
+		}
+		else {
+			summary = column_summaries[colname];
+		}
+		return summary;
 	},
 	
 	setColSummary: function(colname,func_str,title) {
@@ -2699,24 +2715,108 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		};
 		this.updateColumnHeadings();
 		store.reload();
+		this.autoToggle();
 	},
 	
 	// override Ext.ux.grid.GridSummary.calculate:
 	calculate: function() {
-		
-		var data = Ext.ux.RapidApp.Plugin.AppGridSummary.superclass.calculate.apply(this,arguments);
-		
-		//console.dir(data);
-		
-		return { project__price: data.project__price };
-		
-		return data;
-	}
+		var jsonData = this.store.reader.jsonData;
+		return (jsonData && jsonData.column_summaries) ? jsonData.column_summaries : {};
+	},
 	
+	renderSummary : function(o, cs, cm) {
+		cs = cs || this.view.getColumnData();
+		var cfg = cm.config,
+			buf = [],
+			last = cs.length - 1;
+		
+		/*
+		Ext.iterate(o.data,function(colname,value) {
+			
+			console.log(colname + ': ' + value);
+			
+			var i = cm.findColumnIndex(colname);
+			if(!i) { return; }
+			
+			var c = cs[i], cf = cfg[i], p = {};
+				
+			p.id = c.id;
+			p.style = c.style;
+			p.css = i === 0 ? 'x-grid3-cell-first ' : (i == last ? 'x-grid3-cell-last ' : '');
+			p.value = c.renderer(value);
+				
+			console.dir(p);
+			
+			if (p.value === undefined || p.value === "") {
+				p.value = "&#160;";
+			}
+			buf[buf.length] = this.cellTpl.apply(p);
 
-	
-	
-	
+		},this);
+		
+		
+		for (var i = 0, len = cs.length; i < len; i++) {
+			var c = cs[i], cf = cfg[i], p = {};
+
+			p.id = c.id;
+			p.style = c.style;
+			p.css = i === 0 ? 'x-grid3-cell-first ' : (i == last ? 'x-grid3-cell-last ' : '');
+
+			if (cf.summaryType || cf.summaryRenderer) {
+				 p.value = (cf.summaryRenderer || c.renderer)(o.data[c.name], p, o);
+			} else {
+				 p.value = '';
+			}
+			if (p.value === undefined || p.value === "") {
+				 p.value = "&#160;";
+			}
+			buf[buf.length] = this.cellTpl.apply(p);
+		}
+		*/
+		
+		
+		
+		for (var i = 0, len = cs.length; i < len; i++) {
+			var c = cs[i], cf = cfg[i], p = {};
+				
+			p.id = c.id;
+			p.style = c.style;
+			p.css = i === 0 ? 'x-grid3-cell-first ' : (i == last ? 'x-grid3-cell-last ' : '');
+
+			if (o.data[c.name]) {
+				p.value = c.renderer(o.data[c.name], p, o);
+				
+				var title = (this.getColSummary(c.name) || {}).title;
+					
+				if(title && title !== '') {
+					var html = '<div style="padding-top:6px;padding-bottom:5px;font-size:.9em;color:darkgray">' + 
+						Ext.DomHelper.markup(this.headerIcoDomCfg) + 
+						'<div>(' + title + '):</div></div>' +
+					'<div>' + p.value + '</div>';
+					
+					p.value = html;
+				}
+				
+			} else {
+				 p.value = '';
+			}
+			if (p.value === undefined || p.value === "") {
+				 p.value = "&#160;";
+			}
+
+			
+			buf[buf.length] = this.cellTpl.apply(p);
+		}
+		
+		var tstyle = 
+			'width:' + this.view.getTotalWidth() + ';' +
+			'height:44px;';
+
+		return this.rowTpl.apply({
+			tstyle: tstyle,
+			cells: buf.join('')
+		});
+	}
 	
 });
 Ext.preg('appgrid-summary',Ext.ux.RapidApp.Plugin.AppGridSummary);
