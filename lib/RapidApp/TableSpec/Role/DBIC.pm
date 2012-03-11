@@ -1219,6 +1219,7 @@ sub resolve_dbic_rel_alias_by_column_name  {
 	my $get_render_col = shift || 0; 
 	
 	# -- applies only to relationship columns and currently only used for sort:
+	#  UPDATE: now also used for column_summaries
 	if($get_render_col) {
 		my $render_col = $self->relationship_column_render_column_map->{$name};
 		$name = $render_col if ($render_col);

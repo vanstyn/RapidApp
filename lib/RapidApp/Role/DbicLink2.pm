@@ -8,6 +8,7 @@ use Clone qw(clone);
 use Text::Glob qw( match_glob );
 use Hash::Diff qw( diff );
 use Text::TabularDisplay;
+use Time::HiRes qw(gettimeofday tv_interval);
 
 # This allows supplying custom BUILD code via a constructor:
 has 'onBUILD', is => 'ro', isa => 'Maybe[CodeRef]', default => undef;
@@ -324,6 +325,7 @@ sub read_records {
 	my $ret = {
 		rows    => $rows,
 		results => $total,
+		query_time => $self->query_time
 	};
 	
 	$self->calculate_column_summaries($ret,$Rs,$params) unless($self->single_record_fetch);
@@ -339,7 +341,7 @@ sub calculate_column_summaries {
 	return unless (keys %$sums > 0);
 	
 	# -- Filter out summaries for cols that weren't requested in 'columns':
-	my $req_cols = $self->c->req->params->{req_columns}; #<-- previously calculated in get_req_columns():
+	my $req_cols = $self->c->stash->{req_columns}; #<-- previously calculated in get_req_columns():
 	if($req_cols && @$req_cols > 0) {
 		my %limit = map {$_=>1} @$req_cols;
 		%$sums = map {$_=>$sums->{$_}} grep {$limit{$_}} keys %$sums;
@@ -351,18 +353,18 @@ sub calculate_column_summaries {
 	
 	my %extra = ();
 	
-	my $i = 0;
-	foreach my $col (@{$Rs->{attrs}->{as}}) {
+	#foreach my $col (@{$Rs->{attrs}->{as}}) {
+	foreach my $col (keys %$sums) {
 		my $sum = $sums->{$col};
 		if($sum) {
-			my $sel = $self->get_col_summary_select($Rs->{attrs}->{select}->[$i],$sum);
+			my $dbic_name = $self->resolve_dbic_render_colname($col);
+			my $sel = $self->get_col_summary_select($dbic_name,$sum);
 			if($sel) {
 				push @$select, $sel;
 				push @$as, $col;
 			}
 			else { $extra{$col} = 'BadFunc!'; }
 		}
-		$i++;
 	}
 	
 	try {
@@ -399,13 +401,24 @@ sub get_col_summary_select {
 	return undef;
 }
 
+before rs_all => sub { 
+	my $self = shift;
+	$self->c->stash->{query_start} = [gettimeofday]; 
+};
 
-sub rs_all {
+sub rs_all { 
 	my $self = shift;
 	return (shift)->all;
 }
 
+after rs_all => sub { 
+	my $self = shift;
+	my $start = $self->c->stash->{query_start} || return undef;
+	my $elapsed = tv_interval($start);
+	$self->c->stash->{query_time} = sprintf('%.3f',$elapsed) . 's';
+};
 
+sub query_time { (shift)->c->stash->{query_time} }
 
 # Applies base request attrs to ResultSet:
 sub chain_Rs_req_base_Attr {
@@ -434,7 +447,7 @@ sub chain_Rs_req_base_Attr {
 	my $dbic_name_map = {};
 	
 	for my $col (@$columns) {
-		my $dbic_name = $self->TableSpec->resolve_dbic_colname($col,$attr->{join});
+		my $dbic_name = $self->resolve_dbic_colname($col,$attr->{join});
 		
 		unless (ref $dbic_name) {
 			my ($alias,$field) = split(/\./,$dbic_name);
@@ -456,8 +469,7 @@ sub chain_Rs_req_base_Attr {
 	
 	if (defined $params->{sort} and defined $params->{dir}) {
 		my $sort = lc($params->{sort});
-		my $get_render_col = 1;
-		my $sort_name = $dbic_name_map->{$sort} || $self->TableSpec->resolve_dbic_colname($sort,$attr->{join},$get_render_col);
+		my $sort_name = $dbic_name_map->{$sort} || $self->resolve_dbic_render_colname($sort,$attr->{join});
 		if (ref $sort_name eq 'HASH') {
 			die "Can't sort by column if it doesn't have an SQL alias"
 				unless exists $sort_name->{-as};
@@ -469,6 +481,25 @@ sub chain_Rs_req_base_Attr {
 	return $Rs->search_rs({},$attr);
 }
 
+sub resolve_dbic_colname {
+	my $self = shift;
+	return $self->TableSpec->resolve_dbic_colname(@_);
+}
+
+
+sub resolve_dbic_render_colname {
+	my $self = shift;
+	my $name = shift;
+	my $join = shift || {};
+	
+	$self->c->stash->{dbic_render_colnames} = $self->c->stash->{dbic_render_colnames} || {};
+	my $h = $self->c->stash->{dbic_render_colnames};
+	
+	my $get_render_col = 1;
+	$h->{$name} = $h->{$name} || $self->resolve_dbic_colname($name,$join,$get_render_col);
+	
+	return $h->{$name};
+}
 
 hasarray 'always_fetch_columns', is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
@@ -487,6 +518,8 @@ sub get_req_columns {
 	$columns = $self->param_decodeIf($params->{$param_name},[]) if (ref($params) eq 'HASH');
 	
 	die "get_req_columns(): bad options" unless(ref($columns) eq 'ARRAY');
+	
+	$self->c->stash->{req_columns} = [@$columns];
 	
 	# ---
 	# If no columns were supplied by the client, add all the columns from
@@ -525,9 +558,6 @@ sub get_req_columns {
 	uniq($columns);
 	my %excl = map { $_ => 1 } @exclude;
 	@$columns = grep { !$excl{$_} } @$columns;
-	
-	# quick and dirty way to get at this later on in the request:
-	$self->c->req->params->{req_columns} = $columns;
 	
 	return $columns;
 }
