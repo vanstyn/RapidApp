@@ -11,6 +11,7 @@ use RapidApp::TraceCapture;
 use Hash::Merge;
 use RapidApp::Log;
 use RapidApp::Debug 'DEBUG';
+use Text::SimpleTable::AutoWidth;
 
 # initialize properties of our debug messages
 RapidApp::Debug->default_instance->applyChannelConfig({
@@ -417,5 +418,57 @@ sub properly_decode_action_params {
 	}
 }
 
+# reset stats for each request:
+before 'dispatch' => sub { %$RapidApp::Functions::debug_around_stats = (); };
+after 'dispatch' => \&_report_debug_around_stats;
+
+sub _report_debug_around_stats {
+	my $c = shift;
+	my $stats = $RapidApp::Functions::debug_around_stats || return;
+	return unless (ref($stats) && keys %$stats > 0);
+	
+	my $total = $c->stats->elapsed;
+	
+	my $auto_width = 'calls';
+	my @order = qw(class sub calls min/max/avg total pct);
+	
+	$_->{pct} = ($_->{total}/$total)*100 for (values %$stats);
+	
+	my $tsum = 0;
+	my $csum = 0;
+	my $count = 0;
+	my @rows = ();
+	foreach my $stat (sort {$b->{pct} <=> $a->{pct}} values %$stats) {
+		$tsum += $stat->{total};
+		$csum += $stat->{calls};
+		$count++;
+		
+		$stat->{$_} = sprintf('%.3f',$stat->{$_}) for(qw(min max avg total));
+		$stat->{'min/max/avg'} = $stat->{min} . '/' . $stat->{max} . '/' . $stat->{avg};
+		$stat->{pct} = sprintf('%.1f',$stat->{pct}) . '%';
+
+		push @rows, [ map {$stat->{$_}} @order ];
+	}
+
+	my $tpct = sprintf('%.1f',($tsum/$total)*100) . '%';
+	$tsum = sprintf('%.3f',$tsum);
+	
+	my $t = Text::SimpleTable::AutoWidth->new(
+		max_width => Catalyst::Utils::term_width(),
+		captions => \@order
+	);
+
+	$t->row(@$_) for (@rows);
+	$t->row(' ',' ',' ',' ',' ',' ');
+	$t->row('(' . $count . ' Tracked Functions)','',$csum,'',$tsum,$tpct);
+	
+	my $table = $t->draw;
+	
+	my $display = BOLD . "Tracked Functions (debug_around) Stats (current request):\n" . CLEAR .
+		BOLD.MAGENTA . $table . CLEAR .
+		BOLD . "Catalyst Request Elapsed: " . YELLOW . sprintf('%.3f',$total) . CLEAR . "s\n\n";
+	
+	print STDERR "\n" . $display;
+}
 
 1;

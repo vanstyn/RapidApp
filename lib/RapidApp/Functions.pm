@@ -11,7 +11,7 @@ use Clone qw(clone);
 use JSON::PP qw(encode_json);
 use Try::Tiny;
 use Time::HiRes qw(gettimeofday tv_interval);
-
+use Text::SimpleTable;
 
 sub scream {
 	local $_ = caller_data(3);
@@ -208,8 +208,11 @@ sub disp {
 	return "'" . $val . "'";
 }
 
+our $debug_arounds_set = {};
 our $debug_around_nest_level = 0;
 our $debug_around_last_nest_level = 0;
+our $debug_around_stats = {}; 
+our $debug_around_nest_elapse = 0;
 
 sub debug_around($@) {
 	my ($pkg,$filename,$line) = caller;
@@ -229,6 +232,7 @@ sub debug_around($@) {
 	$pkg = $opt{pkg};
 	
 	foreach my $method (@methods) {
+		next if ($debug_arounds_set->{$pkg . '->' . $method}++); #<-- if its already set
 		my $around = func_debug_around($method, %opt);
 		
 		# It's a Moose class or otherwise already has an 'around' class method:
@@ -240,7 +244,6 @@ sub debug_around($@) {
 		# The class doesn't have an around method, so we'll setup manually with Class::MOP:
 		my $meta = Class::MOP::Class->initialize($pkg);
 		$meta->add_around_method_modifier($method => $around)
-		
 	}
 }
 
@@ -251,6 +254,7 @@ sub func_debug_around {
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	%opt = (
+		track_stats		=> 1,
 		time				=> 1,
 		verbose			=> 0,
 		verbose_in		=> undef,
@@ -295,12 +299,15 @@ sub func_debug_around {
 		my $self = shift;
 		my @args = @_;
 		
-		my $cur_nest_level = $RapidApp::Functions::debug_around_nest_level;
-		local $RapidApp::Functions::debug_around_nest_level = $cur_nest_level + 1;
-		my $nest_level = $RapidApp::Functions::debug_around_nest_level - 1;
-		my $new_nest = 0;
-		$new_nest = 1 if ($RapidApp::Functions::debug_around_last_nest_level < $nest_level);
-		$RapidApp::Functions::debug_around_last_nest_level = $nest_level;
+		my $nest_level = $debug_around_nest_level;
+		local $debug_around_nest_level = $debug_around_nest_level + 1;
+		
+		my $new_nest = $debug_around_last_nest_level < $nest_level ? 1 : 0;
+		my $leave_nest = $debug_around_last_nest_level > $nest_level ? 1 : 0;
+		$debug_around_last_nest_level = $nest_level;
+		
+		$debug_around_nest_elapse = 0 if ($nest_level == 0);
+
 		my $indent = $nest_level > 0 ? ('  ' x $nest_level) : '';
 		my $newline = "\n$indent";
 		
@@ -342,36 +349,70 @@ sub func_debug_around {
 					if($has_refs && $opt{verbose_in});
 		};
 		
-		# before timestamp:
-		my $t0 = [gettimeofday];
-		
 		my $res;
 		my @res;
 		my @res_copy = ();
-		if(wantarray) {
-			try {
-				@res = $opt{around}->($orig,$self,@args);
-			} catch { $in_func->(); die (shift);};
-			push @res_copy, @res;
-		}
-		else {
-			try {
-				$res = $opt{around}->($orig,$self,@args);
-			} catch { $in_func->(); die (shift);};
-			push @res_copy,$res;
+		
+		# before timestamp:
+		my $t0 = [gettimeofday];
+		my $current_nest_elapse;
+		{
+			local $debug_around_nest_elapse = 0;
+			if(wantarray) {
+				try {
+					@res = $opt{around}->($orig,$self,@args);
+				} catch { $in_func->(); die (shift);};
+				push @res_copy, @res;
+			}
+			else {
+				try {
+					$res = $opt{around}->($orig,$self,@args);
+				} catch { $in_func->(); die (shift);};
+				push @res_copy,$res;
+			}
+			# How much of the elapsed time was in nested funcs below us:
+			$current_nest_elapse = $debug_around_nest_elapse;
 		}
 		
 		# after timestamp, calculate elapsed (to the millisecond):
-		my $elapsed = sprintf("%.3f", tv_interval($t0) );
+		my $elapsed_raw = tv_interval($t0);
+		my $adj_elapsed = $elapsed_raw - $current_nest_elapse;
+		$debug_around_nest_elapse += $elapsed_raw; #<-- send our elapsed time up the chain
+		
+		# -- Track stats in global %$RapidApp::Functions::debug_around_stats:
+		if($opt{track_stats}) {
+			my $k = $class . '->' . $name;
+			$debug_around_stats->{$k} = $debug_around_stats->{$k} || {};
+			$stats = $debug_around_stats->{$k};
+			%$stats = (
+				class => $class,
+				sub => $name,
+				line => $opt{line},
+				calls => $stats->{calls} + 1,
+				real_total => $stats->{real_total} + $elapsed_raw,
+				total => $stats->{total} + $adj_elapsed,
+				min => exists $stats->{min} ? $stats->{min} : $adj_elapsed,
+				max => exists $stats->{max} ? $stats->{max} : $adj_elapsed,
+			);
+			$stats->{avg} = $stats->{total}/$stats->{calls};
+			$stats->{min} = $adj_elapsed if ($adj_elapsed < $stats->{min});
+			$stats->{max} = $adj_elapsed if ($adj_elapsed > $stats->{max});
+		}
+		# --
 		
 		local $_ = $self;
 		if(!$opt{arg_ignore}->(@args) && !$opt{return_ignore}->(@res_copy)) {
 			
 			$in_func->();
 			
+			#my $elapsed_short = '[' . sprintf("%.3f", $elapsed_raw ) . 's]';
+			
+			my @a = map { sprintf('%.3f',$_) } ($elapsed_raw,$adj_elapsed);
+			my $elapsed_long = '[' . join('|',@a) . ']';
+			
 			my $result = $opt{ret_color} . $opt{dump_func}->($opt{verbose_out},@res_copy) . CLEAR;
 			$result = "\n" . ON_WHITE.BOLD . "$spaces Returned: " . $result . "\n" if ($opt{verbose_out});
-			$result .= ' ' . ON_WHITE.RED . '[' . $elapsed . 's]' . CLEAR if ($opt{time});
+			$result .= ' ' . ON_WHITE.RED . $elapsed_long . CLEAR if ($opt{time});
 			
 			$result =~ s/\n/${newline}/gm;
 			
@@ -406,6 +447,11 @@ sub debug_sub($&) {
 	return debug_around $name, pkg => $pkg, filename => $filename, line => $line;
 }
 
+sub debug_around_all {
+	$pkg = shift || caller;
+	my $meta = Class::MOP::Class->initialize($pkg);
+	debug_around($_, pkg => $pkg) for ($meta->get_method_list);
+}
 
 # Automatically export all functions defined above:
 BEGIN {
