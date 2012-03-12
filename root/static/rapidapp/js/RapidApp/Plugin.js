@@ -2499,6 +2499,8 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 			var columns = this.grid.initialConfig.columns;
 			Ext.each(columns,function(column){
 				
+				if(column.no_summary) { return; }
+				
 				if(this.allow_cust_funcs){
 					column.summary_functions = column.summary_functions || [];
 				}

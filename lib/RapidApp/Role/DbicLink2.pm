@@ -371,6 +371,7 @@ sub calculate_column_summaries {
 		my $agg_row = $Rs->search_rs(undef,{
 			page => undef,
 			rows => undef,
+			order_by => undef,
 			select => $select,
 			as => $as
 		})->first or return;
@@ -378,6 +379,7 @@ sub calculate_column_summaries {
 		$ret->{column_summaries} = { $agg_row->get_columns, %extra };
 	}
 	catch {
+		$self->c->log->error("$_");
 		$ret->{column_summaries} = { map {$_=>'FuncError!'} keys %$sums };
 	};
 };
