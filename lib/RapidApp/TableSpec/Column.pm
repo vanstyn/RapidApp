@@ -21,18 +21,27 @@ our @number_summary_funcs = (
 	{ function => 'sum', title => 'Total' },
 	{ function => 'max', title => 'Max Val' },
 	{ function => 'min', title => 'Min Val' },
-	{ function => 'count(distinct({x}))', title => 'Count Unique' }
+	{ function => 'count(distinct({x}))', title => 'Count Unique' },
+	{ function => 'count', title => 'Count (Set)' },
 );
 
 our @text_summary_funcs = (
 	{ function => 'count(distinct({x}))', title => 'Count Unique' },
+	{ function => 'count', title => 'Count (Set)' },
 	#{ function => 'max(length({x})', title => 'Longest' },
 );
 
-our @date_summary_funcs = (@number_summary_funcs,@text_summary_funcs);
+our @date_summary_funcs = (
+	@number_summary_funcs,
+	@text_summary_funcs,
+	#{ function => 'CONCAT(DATEDIFF(NOW(),avg({x})),\' days\')', title => 'Ave Age (days)' }, #<-- doesn't work
+	{ function => 'CONCAT(DATEDIFF(NOW(),min({x})),\' days\')', title => 'Oldest (days)' },
+	{ function => 'CONCAT(DATEDIFF(NOW(),max({x})),\' days\')', title => 'Youngest (days)' },
+	{ function => 'CONCAT(DATEDIFF(max({x}),min({x})),\' days\')', title => 'Age Range (days)' }
+);
 
 push @number_summary_funcs, (
-	{ function => 'avg', title => 'Average' },
+	{ function => 'round(avg({x}),2)', title => 'Average' },
 );
 
 # Default named column profiles. Column properties will be merged
