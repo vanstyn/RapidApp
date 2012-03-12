@@ -21,7 +21,6 @@ our @number_summary_funcs = (
 	{ function => 'sum', title => 'Total' },
 	{ function => 'max', title => 'Max Val' },
 	{ function => 'min', title => 'Min Val' },
-	{ function => 'avg', title => 'Average' },
 	{ function => 'count(distinct({x}))', title => 'Count Unique' }
 );
 
@@ -30,7 +29,11 @@ our @text_summary_funcs = (
 	#{ function => 'max(length({x})', title => 'Longest' },
 );
 
-our @date_summary_funs = (@number_summary_funcs,@text_summary_funcs);
+our @date_summary_funcs = (@number_summary_funcs,@text_summary_funcs);
+
+push @number_summary_funcs, (
+	{ function => 'avg', title => 'Average' },
+);
 
 # Default named column profiles. Column properties will be merged
 # with the definitions below if supplied by name in the property 'profiles'
@@ -38,7 +41,8 @@ sub DEFAULT_PROFILES {{
 		
 		BASE => { 
 			renderer => ['Ext.ux.showNull'] ,
-			editor => { xtype => 'textfield', minWidth => 80, minHeight => 22 }
+			editor => { xtype => 'textfield', minWidth => 80, minHeight => 22 },
+			summary_functions => \@text_summary_funcs
 		},
 		
 		nullable => {

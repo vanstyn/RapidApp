@@ -13,6 +13,25 @@ pre {
 	margin-bottom: 0px;
 }
 
+
+.field-empty-text {
+  color: darkgrey !important;
+  font-family: Arial !important;
+  font-size:.9em !important;
+}
+
+.blue-text-code {
+  color: #083772;
+  font-family: "Lucida Console", Monaco, monospace;
+}
+
+.blue-text-code-bold {
+  color: #083772;
+  font-family: "Lucida Console", Monaco, monospace;
+  font-weight: bold;
+}
+
+
 .with-icon {
 	height: 16px;
 	padding-left: 19px;

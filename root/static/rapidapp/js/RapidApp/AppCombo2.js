@@ -81,7 +81,7 @@ Ext.ux.RapidApp.AppCombo2.CssCombo = Ext.extend(Ext.form.ComboBox,{
 			var record = this.findRecord(this.valueField, v);
 			if (record) {
 				var addclass = record.data[this.valueCssField];
-				if (addclass) { 
+				if (addclass && this.el) { 
 					this.el.replaceClass(this.lastValueClass,addclass);
 					this.lastValueClass = addclass;
 				}
@@ -145,29 +145,47 @@ Ext.reg('icon-combo',Ext.ux.RapidApp.AppCombo2.IconCombo);
 
 // TODO: remove Ext.ux.MultiFilter.StaticCombo and reconfigure MultiFilter
 // to use this here as a general purpose component
-Ext.ux.RapidApp.StaticCombo = Ext.extend(Ext.form.ComboBox,{
+Ext.ux.RapidApp.StaticCombo = Ext.extend(Ext.ux.RapidApp.AppCombo2.CssCombo,{
 	mode: 'local',
 	triggerAction: 'all',
 	editable: false,
+	forceSelection: true,
 	value_list: false, //<-- set value_list to an array of the static values for the combo dropdown
 	valueField: 'valueField',
 	displayField: 'displayField',
+	valueCssField: 'valueCssField',
+	itemStyleField: 'itemStyleField',
 	initComponent: function() {
 		if (this.value_list || this.storedata) {
 			if(!this.storedata) {
 				this.storedata = [];
 				Ext.each(this.value_list,function(item,index){
-					//data.push([index,item]);
-					this.storedata.push([item,item]); //<-- valueField and displayField are identical
+					if(Ext.isArray(item)) {
+						this.storedata.push([item[0],item[1],item[2],item[3]]);
+					}
+					else {
+						// x-null-class because it has to be something for replaceClass to work
+						this.storedata.push([item,item,'x-null-class','']);
+					}
 				},this);
 			}
 			this.store = new Ext.data.ArrayStore({
 				fields: [
 					this.valueField,
-					this.displayField
+					this.displayField,
+					this.valueCssField,
+					this.itemStyleField
 				],
 				data: this.storedata
 			});
+			
+			this.tpl = 
+				'<tpl for=".">' +
+					'<div class="x-combo-list-item {' + this.valueCssField + '}" ' +
+						'style="{' + this.itemStyleField + '}">' +
+						'{' + this.displayField + '}' +
+					'</div>' +
+				'</tpl>';
 		}
 		Ext.ux.RapidApp.StaticCombo.superclass.initComponent.apply(this,arguments);
 	}

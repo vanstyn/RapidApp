@@ -2522,30 +2522,41 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 				id: this.grid.id + '-summary-combo-field',
 				storedata: [],
 				editable: false,
+				forceSelection: true,
 				name: 'combo',
-				//listClass:'x-menu',
-				hideOnClick: false,
-				//getListParent: function() {
-				//	return this.el.up('.x-menu');
-				//},
-				listClass:'x-menu',
 				fieldLabel: 'Select Function',
 				hideLabel: true,
 				xtype: 'static-combo',
-				width: 150,
+				width: 200,
 				listeners:{
 					select: {
 						scope: this,
 						fn: function(combo,record,index) {
 							
-							var func = record.data.valueField;
-							var setVal = func;
-							if(func == '(None)' || func == 'Custom Function:') { setVal = null; }
-							var field = this.getFunctionsField();
+							var func = record.data.valueField,
+								title = record.data.displayField;
+							
+							var currentVal = combo.getValue();
+							
+							var setVal = func, setTitle = title;
+							if(func == '(None)' || func == 'Custom Function:') { 
+								// Don't clear the custom func if its already set
+								//if(currentVal == func && func == 'Custom Function:') {  
+								//} else {
+									setVal = null;
+									setTitle = null;
+								//}
+							}
+							
+							var field = this.getFunctionsField(), 
+								tfield = this.getTitleField();
+							
 							field.setValue(setVal);
+							tfield.setValue(setTitle);
 							
 							if (func == 'Custom Function:') {
 								field.setVisible(true);
+								tfield.setVisible(true);
 							}
 							else {
 								this.applySelection();
@@ -2585,9 +2596,13 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 				id: this.grid.id + '-summary-funcs-field',
 				name: 'function',
 				fieldLabel: 'Custom Function',
+				emptyText: '(Enter Function Code)',
+				emptyClass: 'field-empty-text',
+				fieldClass: 'blue-text-code',
+				//style: { 'font-family': 'Courier', color: 'blue' },
 				hideLabel: true,
 				xtype: 'textfield',
-				width: 150,
+				width: 200,
 				enableKeyEvents:true,
 				listeners:{
 					keyup:{
@@ -2606,6 +2621,36 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		return this.functionsField;
 	},
 	
+	getTitleField: function() {
+		if(!this.titleField) {
+			var cnf = {
+				id: this.grid.id + '-title-field',
+				name: 'title',
+				fieldLabel: 'Title',
+				emptyText: '(Optional)',
+				emptyClass: 'field-empty-text',
+				//hideLabel: true,
+				xtype: 'textfield',
+				//width: 170,
+				anchor: "100%",
+				enableKeyEvents:true,
+				listeners:{
+					keyup:{
+						scope: this,
+						buffer: 150,
+						fn: function(field, e) {
+							if (Ext.EventObject.ENTER == e.getKey()){
+								this.applySelection();
+							}
+						}
+					}
+				}
+			};
+			this.titleField = Ext.ComponentMgr.create(cnf,'textfield');
+		}
+		return this.titleField;
+	},
+	
 	createMenu : function () {
 		var view = this.grid.getView(),
 			hmenu = view.hmenu;
@@ -2617,11 +2662,12 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 				id: this.grid.id + '-summary-menu',
 				layout: 'form',
 				showSeparator: false,
-				labelAlign: 'top',
-				labelWidth: 90,
+				labelAlign: 'right',
+				labelWidth: 30,
 				items: [
 					this.getComboField(),
-					this.getFunctionsField()
+					this.getFunctionsField(),
+					this.getTitleField()
 				],
 			}); 
 			this.menu = hmenu.add({
@@ -2640,7 +2686,8 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 	
 	applySelection: function() {
 		var colname = this.getActiveColName(),
-			field = this.getFunctionsField();
+			field = this.getFunctionsField(),
+			tfield = this.getTitleField();
 		
 		if(!colname || !field) { return false; }
 		
@@ -2648,8 +2695,12 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		
 		if(field.validate()) {
 			var func_str = field.getValue();
+			var title = tfield.getValue();
+			if(!title || title == '') { 
+				title = this.getColSummaryFuncTitle(colname,func_str) || func_str; 
+			}
 			this.grid.view.hmenu.hide();
-			this.setColSummary(colname,func_str);
+			this.setColSummary(colname,func_str,title);
 			return true;
 		}
 		else {
@@ -2663,10 +2714,20 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		return summaryCols[colname] || [];
 	},
 	
+	getColSummaryFuncTitle: function(colname,f) {
+		var funcs = this.getColSummaryFuncs(colname);
+		var title = null;
+		Ext.each(funcs,function(func) {
+			if(func['function'] == f) { title = func.title; }
+		},this);
+		return title;
+	},
+	
 	loadSelection: function() {
 		var colname = this.getActiveColName(),
 			field = this.getFunctionsField(),
 			combo = this.getComboField(),
+			tfield = this.getTitleField(),
 			menu = this.menu;
 		
 		if(!field) { return false; }
@@ -2676,33 +2737,46 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		var funcs = this.getColSummaryFuncs(colname);
 		
 		var storedata = [];
-		storedata.push(['(None)','(None)']);
+		storedata.push([
+			'(None)',
+			'(None)',
+			'field-empty-text',
+			'padding-bottom:6px;'
+		]);
+		
 		var seen_funcs = {};
 		Ext.each(funcs,function(func){
 			if(!func['function'] || seen_funcs[func['function']]) { return; }
 			seen_funcs[func['function']] = true;
 			func.title = func.title || func['function'];
-			storedata.push([func['function'],func.title]);
+			storedata.push([func['function'],func.title,'x-no-class','']);
 		},this);
-		storedata.push(['Custom Function:','Custom Function:']);
+		
+		storedata.push([
+			'Custom Function:',
+			'Custom Function:',
+			'blue-text-code-bold',
+			'padding-top:6px;font-size:1.15em;'
+		]);
 		
 		combo.getStore().loadData(storedata);
 		
-
-		
 		if(summary_data) {
-			var val = summary_data['function'];
+			var val = summary_data['function'], title = summary_data['title'];
 			if(val && val !== '') {
 				//menu.setIconClass('icon-checkbox-yes');
 				menu.setIconClass('icon-function');
 				field.setValue(val);
+				tfield.setValue(title);
 				if(seen_funcs[val]) {
 					combo.setValue(val);
 					field.setVisible(false);
+					tfield.setVisible(false);
 				}
 				else {
 					combo.setValue('Custom Function:');
 					field.setVisible(true);
+					tfield.setVisible(true);
 				}
 			}
 		}
@@ -2710,6 +2784,8 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 			combo.setValue('(None)');
 			menu.setIconClass('icon-checkbox-no');
 			field.setVisible(false);
+			tfield.setVisible(false);
+			tfield.setValue(null);
 			return field.setValue(null);
 		}
 	},
