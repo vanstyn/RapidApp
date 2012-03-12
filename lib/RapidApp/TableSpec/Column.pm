@@ -17,6 +17,21 @@ sub DEFAULT_BASE_PROFILES {(
 )}
 
 
+our @number_summary_funcs = (
+	{ function => 'sum', title => 'Total' },
+	{ function => 'max', title => 'Max Val' },
+	{ function => 'min', title => 'Min Val' },
+	{ function => 'avg', title => 'Average' },
+	{ function => 'count(distinct({x}))', title => 'Count Unique' }
+);
+
+our @text_summary_funcs = (
+	{ function => 'count(distinct({x}))', title => 'Count Unique' },
+	#{ function => 'max(length({x})', title => 'Longest' },
+);
+
+our @date_summary_funs = (@number_summary_funcs,@text_summary_funcs);
+
 # Default named column profiles. Column properties will be merged
 # with the definitions below if supplied by name in the property 'profiles'
 sub DEFAULT_PROFILES {{
@@ -36,7 +51,8 @@ sub DEFAULT_PROFILES {{
 		
 		number => {
 			editor => { xtype => 'numberfield', style => 'text-align:left;' },
-			multifilter_type => 'number'
+			multifilter_type => 'number',
+			summary_functions => \@number_summary_funcs
 		},
 		int => {
 		
@@ -79,31 +95,38 @@ sub DEFAULT_PROFILES {{
 			#editor => { xtype => 'logical-checkbox', plugins => [ 'booltoint' ] }
 		},
 		text => {
-			editor => { xtype => 'textfield', grow => \0 }
+			editor => { xtype => 'textfield', grow => \0 },
+			summary_functions => \@text_summary_funcs 
 		},
 		bigtext => {
 			renderer 	=> ['Ext.util.Format.nl2br'],
 			editor		=> { xtype => 'textarea', grow => \1 },
+			summary_functions => \@text_summary_funcs 
 		},
 		email => {
-			editor => { xtype => 'textfield' }
+			editor => { xtype => 'textfield' },
+			summary_functions => \@text_summary_funcs,
 		},
 		datetime => {
 			editor => { xtype => 'xdatetime2', minWidth => 200 },
 			renderer => ["Ext.ux.RapidApp.getDateFormatter('M d, Y g:i A')"],
-			multifilter_type => 'date'
+			multifilter_type => 'date',
+			summary_functions => \@date_summary_funcs
 		},
 		date => {
 			editor => { xtype => 'datefield', minWidth => 120 },
 			renderer => ["Ext.ux.RapidApp.getDateFormatter('M d, Y')"],
-			multifilter_type => 'date'
+			multifilter_type => 'date',
+			summary_functions => \@date_summary_funcs
 		},
 		money => {
 			editor => { xtype => 'textfield' },
 			renderer => 'Ext.ux.showNullusMoney',
+			summary_functions => \@number_summary_funcs
 		},
 		percent => {
-			 renderer => ['Ext.ux.RapidApp.num2pct']
+			 renderer => ['Ext.ux.RapidApp.num2pct'],
+			 summary_functions => \@number_summary_funcs
 		},
 		noedit => {
 			editor => ''

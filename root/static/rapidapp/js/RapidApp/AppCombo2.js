@@ -153,18 +153,20 @@ Ext.ux.RapidApp.StaticCombo = Ext.extend(Ext.form.ComboBox,{
 	valueField: 'valueField',
 	displayField: 'displayField',
 	initComponent: function() {
-		if (this.value_list) {
-			var data = [];
-			Ext.each(this.value_list,function(item,index){
-				//data.push([index,item]);
-				data.push([item,item]); //<-- valueField and displayField are identical
-			});
+		if (this.value_list || this.storedata) {
+			if(!this.storedata) {
+				this.storedata = [];
+				Ext.each(this.value_list,function(item,index){
+					//data.push([index,item]);
+					this.storedata.push([item,item]); //<-- valueField and displayField are identical
+				},this);
+			}
 			this.store = new Ext.data.ArrayStore({
 				fields: [
 					this.valueField,
 					this.displayField
 				],
-				data: data
+				data: this.storedata
 			});
 		}
 		Ext.ux.RapidApp.StaticCombo.superclass.initComponent.apply(this,arguments);

@@ -2516,13 +2516,76 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		return this.summaryCols;
 	},
 	
+	getComboField: function() {
+		if(!this.comboField) {
+			var cnf = {
+				id: this.grid.id + '-summary-combo-field',
+				storedata: [],
+				editable: false,
+				name: 'combo',
+				//listClass:'x-menu',
+				hideOnClick: false,
+				//getListParent: function() {
+				//	return this.el.up('.x-menu');
+				//},
+				listClass:'x-menu',
+				fieldLabel: 'Select Function',
+				hideLabel: true,
+				xtype: 'static-combo',
+				width: 150,
+				listeners:{
+					select: {
+						scope: this,
+						fn: function(combo,record,index) {
+							
+							var func = record.data.valueField;
+							var setVal = func;
+							if(func == '(None)' || func == 'Custom Function:') { setVal = null; }
+							var field = this.getFunctionsField();
+							field.setValue(setVal);
+							
+							if (func == 'Custom Function:') {
+								field.setVisible(true);
+							}
+							else {
+								this.applySelection();
+							}
+						}
+					},
+					beforequery: function(qe){
+						delete qe.combo.lastQuery;
+					},
+					expand: {
+						scope: this,
+						fn: function() { this.setPreventMenuHide(true); }
+					},
+					collapse: {
+						scope: this,
+						fn: function() { this.setPreventMenuHide.defer(300,this,[false]); }
+					}
+				}
+			};
+			this.comboField = Ext.ComponentMgr.create(cnf,'static-combo');
+		}
+		return this.comboField;
+	},
+	
+	menuHideAllowed: function() {
+		var bool = this.preventMenuHide ? true : false;
+		return bool;
+	},
+	
+	setPreventMenuHide: function(bool) {
+		this.preventMenuHide = bool ? false : true;
+	},
+	
 	getFunctionsField: function() {
 		if(!this.functionsField) {
 			var cnf = {
 				id: this.grid.id + '-summary-funcs-field',
 				name: 'function',
-				fieldLabel: 'Function',
-				//hideLabel: true,
+				fieldLabel: 'Custom Function',
+				hideLabel: true,
 				xtype: 'textfield',
 				width: 150,
 				enableKeyEvents:true,
@@ -2556,7 +2619,10 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 				showSeparator: false,
 				labelAlign: 'top',
 				labelWidth: 90,
-				items: this.getFunctionsField()
+				items: [
+					this.getComboField(),
+					this.getFunctionsField()
+				],
 			}); 
 			this.menu = hmenu.add({
 				hideOnClick: false,
@@ -2567,6 +2633,8 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 			});
 
 			hmenu.on('beforeshow', this.onMenu, this);
+			hmenu.on('beforehide',this.menuHideAllowed,this);
+			this.summaryMenu.on('beforehide',this.menuHideAllowed,this);
 		}
 	},
 	
@@ -2575,6 +2643,8 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 			field = this.getFunctionsField();
 		
 		if(!colname || !field) { return false; }
+		
+		this.setPreventMenuHide(false);
 		
 		if(field.validate()) {
 			var func_str = field.getValue();
@@ -2588,25 +2658,60 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		}
 	},
 	
+	getColSummaryFuncs: function(colname) {
+		var summaryCols = this.getSummaryCols() || {};
+		return summaryCols[colname] || [];
+	},
+	
 	loadSelection: function() {
 		var colname = this.getActiveColName(),
 			field = this.getFunctionsField(),
+			combo = this.getComboField(),
 			menu = this.menu;
 		
 		if(!field) { return false; }
 		
 		var summary_data = this.getColSummary(colname);
+		
+		var funcs = this.getColSummaryFuncs(colname);
+		
+		var storedata = [];
+		storedata.push(['(None)','(None)']);
+		var seen_funcs = {};
+		Ext.each(funcs,function(func){
+			if(!func['function'] || seen_funcs[func['function']]) { return; }
+			seen_funcs[func['function']] = true;
+			func.title = func.title || func['function'];
+			storedata.push([func['function'],func.title]);
+		},this);
+		storedata.push(['Custom Function:','Custom Function:']);
+		
+		combo.getStore().loadData(storedata);
+		
+
+		
 		if(summary_data) {
 			var val = summary_data['function'];
 			if(val && val !== '') {
 				//menu.setIconClass('icon-checkbox-yes');
 				menu.setIconClass('icon-function');
-				return field.setValue(val);
+				field.setValue(val);
+				if(seen_funcs[val]) {
+					combo.setValue(val);
+					field.setVisible(false);
+				}
+				else {
+					combo.setValue('Custom Function:');
+					field.setVisible(true);
+				}
 			}
 		}
-		
-		menu.setIconClass('icon-checkbox-no');
-		return field.setValue(null);
+		else {
+			combo.setValue('(None)');
+			menu.setIconClass('icon-checkbox-no');
+			field.setVisible(false);
+			return field.setValue(null);
+		}
 	},
 	
 	hdIcos: {},
@@ -2648,6 +2753,8 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 	},
 	
 	onMenu: function(){
+		this.setPreventMenuHide(false);
+		this.summaryMenu.hide();
 		var funcs = this.getColFuncList();
 		if(funcs) {
 			this.loadSelection();
