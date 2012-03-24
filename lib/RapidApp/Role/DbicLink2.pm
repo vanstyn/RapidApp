@@ -709,6 +709,21 @@ sub multifilter_to_dbf {
 			$multi->{$dbfName}->{'not like'} = '%' . $multi->{$dbfName}->{not_contain} . '%';
 			delete $multi->{$dbfName}->{not_contain};
 		}
+		
+		if (defined $multi->{$dbfName}->{is_null}) {
+			$multi->{$dbfName}->{'='} = undef;
+			delete $multi->{$dbfName}->{is_null};
+		}
+		
+		if (defined $multi->{$dbfName}->{is_empty}) {
+			$multi->{$dbfName}->{'='} = '';
+			delete $multi->{$dbfName}->{is_empty};
+		}
+		
+		if (defined $multi->{$dbfName}->{null_or_empty}) {
+			$multi->{'-or'} = [{ $dbfName => undef },{ $dbfName => '' }];
+			delete $multi->{$dbfName};
+		}
 	}
 	
 	return $multi;

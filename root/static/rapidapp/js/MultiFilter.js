@@ -238,7 +238,11 @@ Ext.ux.MultiFilter.defaultConditionMap = {
 	'contains'					: 'contains',
 	'starts with'				: 'starts_with',
 	'ends with'					: 'ends_with',
-	"doesn't contain"			: 'not_contain'
+	"doesn't contain"			: 'not_contain',
+	
+	'is null' : 'is_null',
+	'is empty' : 'is_empty',
+	'is null or empty': 'null_or_empty'
 
 };
 
@@ -348,6 +352,10 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			value_list.push(key);
 		});
 		
+		value_list.push('is null');
+		value_list.push('is empty');
+		value_list.push('is null or empty');
+		
 		// Extra condition for use with rel_combo_field_cnf:
 		value_list.push('is');
 		
@@ -402,7 +410,22 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 						var val = combo.getRawValue();
 						
 						if(val == criteria.last_cond_value) { return; }
-						if(val != 'is' && criteria.last_cond_value != 'is') { return; }
+						
+						// -- new support for null/empty selectors
+						// TODO: make the dropdown "null/empty" and then instead of hiding the datafield,
+						// make it a dropdown to select null/empty/either
+						// TODO 2: make this restore/load properly (when multifilter is reopened)
+						if(val == 'is null' || val == 'is empty' || val == 'is null or empty') {
+							Ext.apply(criteria.datafield_cnf,{ hidden: true });
+							Ext.apply(criteria.cond_combo_cnf,{ value: val });
+							return criteria.configSelector();
+						}
+						else {
+							delete criteria.datafield_cnf.hidden;
+						}
+						// --
+						
+						//if(val != 'is' && criteria.last_cond_value != 'is') { return; }
 						
 						Ext.apply(criteria.cond_combo_cnf,{
 							value: val
