@@ -261,7 +261,20 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			orig_store_singleSort.apply(this,arguments);
 		}
 		// --
-
+		
+		// -- Workaround - manual single-use loadMask for the very first load
+		// Need to investigate more why this is needed, and why the 'loadMask' grid
+		// setting doesn't work on the first store load. I think it is related to
+		// load order and possibly autoPanel. 
+		// TODO: generalize/move this into datastore-plus
+		this.on('afterrender',function() {
+			var lMask = new Ext.LoadMask(this.getEl(),{ msg: "Loading Data Set" });
+			lMask.show();
+			var hide_fn;
+			hide_fn = function(){ lMask.hide(); this.store.un('load',hide_fn); };
+			this.store.on('load',hide_fn,this);
+		},this);
+		// --
 		
 		
 		if(this.storeReloadButton) {
@@ -443,6 +456,10 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 				limit: parseFloat(this.pageSize)
 			});
 		}
+		
+		
+		
+		
 		
 		if(this.store.autoLoad && this.store.autoLoad.params) {
 			Ext.apply(this.store.autoLoad.params,store_load_parms);
