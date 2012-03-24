@@ -16,12 +16,18 @@ use Clone qw( clone );
 
 use Switch qw(switch);
 
-has 'ResultSource', is => 'ro', isa => 'DBIx::Class::ResultSource',
+# ---
+# Attributes 'ResultSource', 'ResultClass' and 'schema' are interdependent. If ResultSource
+# is not supplied to the constructor, both ResultClass and schema must be.
+has 'ResultSource', is => 'ro', isa => 'DBIx::Class::ResultSource', lazy => 1,
 default => sub {
 	my $self = shift;
-	# TODO: get rid of this and make required => 1
-	my $c = RapidApp::ScopedGlobals->get('catalystClass');
-	return $c->model('DB')->source($self->ResultClass);
+	
+	my $schema_attr = $self->meta->get_attribute('schema');
+	$self->meta->throw_error("'schema' not supplied; cannot get ResultSource automatically!")
+		unless ($schema_attr->has_value($self));
+	
+	return $self->schema->source($self->ResultClass);
 };
 
 has 'ResultClass', is => 'ro', isa => 'Str', lazy => 1, 
@@ -32,6 +38,8 @@ default => sub {
 };
 
 has 'schema', is => 'ro', lazy => 1, default => sub { (shift)->ResultSource->schema; };
+# ---
+
 
 =pod
 has 'data_type_profiles' => ( is => 'ro', isa => 'HashRef', default => sub {{
@@ -1054,9 +1062,10 @@ sub add_related_TableSpec {
 	my %params = (
 		name => $relclass->table,
 		ResultClass => $relclass,
+		schema => $self->schema, #<-- need both ResultClass and schema to identify ResultSource
 		relation_sep => $self->relation_sep,
 		relspec_prefix => $relspec_prefix,
-		include_colspec => $self->include_colspec->get_subspec($rel)
+		include_colspec => $self->include_colspec->get_subspec($rel),
 	);
 	
 	$params{updatable_colspec} = $self->updatable_colspec->get_subspec($rel) || []; 
