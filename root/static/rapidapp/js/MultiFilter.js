@@ -376,17 +376,27 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 	},
 	
 	getNullEmptyDfield: function () {
+		
+		var init_value = 'is null';// <-- default
+		var value_list = [
+			'is null', 
+			'is empty', 
+			'is null or empty',
+			'is not null', 
+			'is not empty', 
+			'is not null or empty'
+		];
+		
+		// Set to the current value ONLY if its one of the vals in the value_list
+		var cur_value = this.datafield_cnf.value;
+		Ext.each(value_list,function(val){
+			if(cur_value == val) { init_value = cur_value; }
+		},this);
+		
 		return {
 			xtype: 'static-combo',
-			value: 'is null', // <-- default
-			value_list: [
-				'is null', 
-				'is empty', 
-				'is null or empty',
-				'is not null', 
-				'is not empty', 
-				'is not null or empty'
-			]
+			value: init_value, 
+			value_list: value_list
 		};
 	},
 		
@@ -436,19 +446,10 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 						
 						if(val == criteria.last_cond_value) { return; }
 						
-						// -- new support for null/empty selectors
-						// TODO: make the dropdown "null/empty" and then instead of hiding the datafield,
-						// make it a dropdown to select null/empty/either
-						// TODO 2: make this restore/load properly (when multifilter is reopened)
-						if(val == 'is null' || val == 'is empty' || val == 'is null or empty') {
-							Ext.apply(criteria.datafield_cnf,{ hidden: true });
-							Ext.apply(criteria.cond_combo_cnf,{ value: val });
-							return criteria.configSelector();
+						// clear the data field if we're switching from null/empty:
+						if(criteria.last_cond_value == 'null/empty status') {
+							delete criteria.datafield_cnf.value;
 						}
-						else {
-							delete criteria.datafield_cnf.hidden;
-						}
-						// --
 						
 						//if(val != 'is' && criteria.last_cond_value != 'is') { return; }
 						
@@ -473,7 +474,6 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			}
 		});
 	
-
 		this.items = this.createFieldCombo();
 
 		Ext.ux.MultiFilter.Criteria.superclass.initComponent.call(this);
@@ -647,6 +647,8 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 				}
 				this.cond_combo_cnf.value = cond;
 				this.datafield_cnf.value = v2;
+				
+				this.last_cond_value = cond;
 			},this);
 		},this);
 		
