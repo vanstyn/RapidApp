@@ -210,6 +210,10 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		}
 		// --
 	},
+	
+	getOptionsMenu: function() {
+		return Ext.getCmp(this.options_menu_id);
+	},
 
 	filteredRecordData: function(data) {
 		// Return data as-is if primary_columns is not set:
@@ -312,9 +316,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		this.plugins.push('grid-hmenu-columns-toggle');
 		// -- ^^ --
 		
-		if(this.use_column_summaries) {
-			this.plugins.push('appgrid-summary');
-		}
+		if(this.use_column_summaries) { this.plugins.push('appgrid-summary'); }
+		if(this.use_autosize_columns) { this.plugins.push('appgrid-auto-colwidth'); }
 		
 		// remove columns with 'no_column' set to true:
 		var new_columns = []

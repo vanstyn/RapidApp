@@ -67,11 +67,13 @@ has 'get_record_display' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default =
 has 'init_pagesize' => ( is => 'ro', isa => 'Int', default => 25 );
 has '+max_pagesize' => ( default => 500 );
 has 'use_column_summaries', is => 'ro', isa => 'Bool', default => 0;
+has 'use_autosize_columns', is => 'ro', isa => 'Bool', default => 1;
+has 'auto_autosize_columns', is => 'ro', isa => 'Bool', default => 0;
 
 sub BUILD {
 	my $self = shift;
 	
-	$self->apply_config(
+	$self->apply_extconfig(
 		xtype						=> 'appgrid2',
 		pageSize					=> $self->init_pagesize,
 		maxPageSize				=> $self->max_pagesize,
@@ -81,8 +83,12 @@ sub BUILD {
 		gridsearch				=> \1,
 		gridsearch_remote		=> \1,
 		column_allow_save_properties => [ 'width','hidden' ], #<-- is this still doing anything?
-		use_column_summaries => $self->use_column_summaries ? \1 : \0
+		use_column_summaries => $self->use_column_summaries ? \1 : \0,
+		use_autosize_columns => $self->use_autosize_columns ? \1 : \0,
+		auto_autosize_columns => $self->auto_autosize_columns ? \1 : \0
 	);
+	
+	$self->apply_extconfig( use_autosize_columns => \1 ) if ($self->auto_autosize_columns);
 	
 	# The record_pk is forced to be added/included as a column:
 	if (defined $self->record_pk) {
@@ -242,13 +248,18 @@ sub options_menu {
 	my $items = $self->options_menu_items or return undef;
 	return undef unless (ref($items) eq 'ARRAY') && scalar(@$items);
 	
+	# Make it easy to find the options menu on the client side (JS):
+	my $menu_id = $self->instance_id . '-options-menu';
+	$self->apply_extconfig('options_menu_id' => $menu_id );
+	
 	return {
 		xtype		=> 'button',
 		id			=> $self->options_menu_button_Id,
 		text		=> 'Options',
 		iconCls	=> 'icon-gears',
 		menu => {
-			items	=> $items
+			items => $items,
+			id => $menu_id
 		}
 	};
 }

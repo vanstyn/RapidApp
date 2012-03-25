@@ -2990,3 +2990,68 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 	
 });
 Ext.preg('appgrid-summary',Ext.ux.RapidApp.Plugin.AppGridSummary);
+
+
+
+Ext.ux.RapidApp.Plugin.AppGridAutoColWidth = Ext.extend(Ext.util.Observable,{
+	
+	maxColWidth: 1500,
+	
+	init: function(grid) {
+		grid.on('render',this.onRender,grid);
+		grid.maxColWidth = grid.maxColWidth || this.maxColWidth;
+		
+		Ext.apply(grid,{
+			// ------- http://extjs.com/forum/showthread.php?p=97676#post97676
+			autoSizeColumns: function() {
+				if (this.colModel) {
+
+					this.colModel.suspendEvents();
+					for (var i = 0; i < this.colModel.getColumnCount(); i++) {
+						this.autoSizeColumn(i);
+					}
+					this.colModel.resumeEvents();
+					this.view.refresh(true);
+					this.store.removeListener('load',this.autoSizeColumns,this);
+
+				}
+			},
+			autoSizeColumn: function(c) {
+				var colid = this.colModel.getColumnId(c);
+				var column = this.colModel.getColumnById(colid);
+				var col = this.view.el.select("td.x-grid3-td-" + colid + " div:first-child");
+				if (col) {
+
+					var add = 6;
+					var w = col.getTextWidth() + Ext.get(col.elements[0]).getFrameWidth('lr') + add;
+
+					if (this.MaxColWidth && w > this.MaxColWidth) { w =  this.MaxColWidth; }
+					if (column.width && w < column.width) { w = column.width; }
+
+					this.colModel.setColumnWidth(c, w);
+					return w;
+				}
+			}
+			// ------------------------
+		});
+	},
+	
+	onRender: function() {
+		
+		if(this.auto_autosize_columns) {
+			this.store.on('load',this.autoSizeColumns,this);
+		}
+		
+		var menu = this.getOptionsMenu();
+		if(!menu) { return; }
+		menu.add({
+			text: "AutoSize Columns",
+			iconCls: 'icon-left-right',
+			handler:this.autoSizeColumns,
+			scope: this
+		});
+	}
+	
+});
+Ext.preg('appgrid-auto-colwidth',Ext.ux.RapidApp.Plugin.AppGridAutoColWidth);
+
