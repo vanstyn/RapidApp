@@ -192,8 +192,23 @@ Ext.ux.RapidApp.AppTab.tryLoadTargetRecord = function(loadTarget,Record,cmp) {
 
 Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	
-	viewConfig: { 
-			emptyText: '<div style="font-size:16px;color:#d0d0d0;padding-top:10px;padding-left:25px">(No Data)</div>' 
+	viewConfig: {
+		emptyText: '<div style="font-size:16px;color:#d0d0d0;padding-top:10px;padding-left:25px">' +
+			'(No Data)</div>',
+		
+		// -- http://www.sencha.com/learn/legacy/Ext_FAQ_Grid#Maintain_GridPanel_scroll_position_across_Store_reloads
+		onLoad: Ext.emptyFn,
+		listeners: {
+			beforerefresh: function(v) {
+				v.scrollTop = v.scroller.dom.scrollTop;
+				v.scrollHeight = v.scroller.dom.scrollHeight;
+			},
+			refresh: function(v) {
+				v.scroller.dom.scrollTop = v.scrollTop + 
+				(v.scrollTop == 0 ? 0 : v.scroller.dom.scrollHeight - v.scrollHeight);
+			}
+		}
+		// --
 	},
 
 	filteredRecordData: function(data) {
