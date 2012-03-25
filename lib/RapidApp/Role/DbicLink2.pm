@@ -9,6 +9,7 @@ use Text::Glob qw( match_glob );
 use Hash::Diff qw( diff );
 use Text::TabularDisplay;
 use Time::HiRes qw(gettimeofday tv_interval);
+use Switch qw( switch );
 
 # This allows supplying custom BUILD code via a constructor:
 has 'onBUILD', is => 'ro', isa => 'Maybe[CodeRef]', default => undef;
@@ -690,6 +691,12 @@ sub multifilter_to_dbf {
 		delete $multi->{$f};
 		
 		# --- translate special content conditions to "LIKE" conditions
+		# not used yet:
+		#if (exists $multi->{$dbfName}->{is}) {
+		#	$multi->{$dbfName}->{'='} = $multi->{$dbfName}->{is};
+		#	delete $multi->{$dbfName}->{is};
+		#}
+		
 		if (defined $multi->{$dbfName}->{contains}) {
 			$multi->{$dbfName}->{like} = '%' . $multi->{$dbfName}->{contains} . '%';
 			delete $multi->{$dbfName}->{contains};
@@ -709,20 +716,23 @@ sub multifilter_to_dbf {
 			$multi->{$dbfName}->{'not like'} = '%' . $multi->{$dbfName}->{not_contain} . '%';
 			delete $multi->{$dbfName}->{not_contain};
 		}
-		
-		if (defined $multi->{$dbfName}->{is_null}) {
-			$multi->{$dbfName}->{'='} = undef;
-			delete $multi->{$dbfName}->{is_null};
-		}
-		
-		if (defined $multi->{$dbfName}->{is_empty}) {
-			$multi->{$dbfName}->{'='} = '';
-			delete $multi->{$dbfName}->{is_empty};
-		}
-		
-		if (defined $multi->{$dbfName}->{null_or_empty}) {
-			$multi->{'-or'} = [{ $dbfName => undef },{ $dbfName => '' }];
-			delete $multi->{$dbfName};
+
+		if (defined $multi->{$dbfName}->{null_empty}) {
+			my $val = delete $multi->{$dbfName}->{null_empty} || 'is null or empty';
+			switch($val) {
+				case 'is null' 			{ $multi->{$dbfName}->{'='} = undef;	}
+				case 'is empty' 		{ $multi->{$dbfName}->{'='} = ''; 		}
+				case 'is not null' 		{ $multi->{$dbfName}->{'!='} = undef;	}
+				case 'is not empty' 	{ $multi->{$dbfName}->{'!='} = ''; 		}
+				case 'is null or empty'	{ 
+					$multi->{'-or'} = [{ $dbfName => undef },{ $dbfName => '' }];
+					delete $multi->{$dbfName};
+				}
+				case 'is not null or empty'	{ 
+					$multi->{'-and'} = [{ $dbfName => { '!=' => undef } },{ $dbfName => { '!=' =>  '' } }];
+					delete $multi->{$dbfName};
+				}
+			}
 		}
 	}
 	

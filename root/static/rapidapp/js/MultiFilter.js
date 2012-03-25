@@ -221,7 +221,7 @@ Ext.ux.MultiFilter.StaticCombo = Ext.extend(Ext.form.ComboBox,{
 		Ext.ux.MultiFilter.StaticCombo.superclass.initComponent.apply(this,arguments);
 	}
 });
-
+Ext.reg('multifilter-sc', Ext.ux.MultiFilter.StaticCombo);
 
 
 Ext.ux.MultiFilter.defaultConditionMap = {
@@ -240,9 +240,12 @@ Ext.ux.MultiFilter.defaultConditionMap = {
 	'ends with'					: 'ends_with',
 	"doesn't contain"			: 'not_contain',
 	
-	'is null' : 'is_null',
-	'is empty' : 'is_empty',
-	'is null or empty': 'null_or_empty'
+	'null/empty status'  : 'null_empty',
+	
+	
+	//'is null' : 'is_null',
+	//'is empty' : 'is_empty',
+	//'is null or empty': 'null_or_empty'
 
 };
 
@@ -336,7 +339,8 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			//value_list: this.fieldList
 			value_list: val_list
 		});
-		return new Ext.ux.MultiFilter.StaticCombo(this.field_combo_cnf);
+		//return new Ext.ux.MultiFilter.StaticCombo(this.field_combo_cnf);
+		return Ext.ComponentMgr.create(this.field_combo_cnf,'static-combo');
 	},
 	
 	condType: 'default',
@@ -352,9 +356,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			value_list.push(key);
 		});
 		
-		value_list.push('is null');
-		value_list.push('is empty');
-		value_list.push('is null or empty');
+		value_list.push('null/empty status');
 		
 		// Extra condition for use with rel_combo_field_cnf:
 		value_list.push('is');
@@ -362,7 +364,30 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		Ext.apply(this.cond_combo_cnf,{
 			value_list: value_list
 		});
-		return new Ext.ux.MultiFilter.StaticCombo(this.cond_combo_cnf);
+		//return new Ext.ux.MultiFilter.StaticCombo(this.cond_combo_cnf);
+		return Ext.ComponentMgr.create(this.cond_combo_cnf,'static-combo');
+	},
+	
+	createDataField: function () {
+		
+		var cnf = Ext.apply({},this.datafield_cnf);
+		
+		return Ext.ComponentMgr.create(cnf,'textfield');
+	},
+	
+	getNullEmptyDfield: function () {
+		return {
+			xtype: 'static-combo',
+			value: 'is null', // <-- default
+			value_list: [
+				'is null', 
+				'is empty', 
+				'is null or empty',
+				'is not null', 
+				'is not empty', 
+				'is not null or empty'
+			]
+		};
 	},
 		
 	initComponent: function() {
@@ -402,7 +427,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			cond_combo_cnf: {
 				name: 'cond_combo',
 				itemId: 'cond_combo',
-				width: 100,
+				width: 110,
 				value_list: [],
 				listeners: {
 					select: function(combo) {
@@ -514,8 +539,13 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 				delete cust_dfield_cnf.id;
 				delete cust_dfield_cnf.width;
 			}
+			
+			if(this.last_cond_value == 'null/empty status') {
+				cust_dfield_cnf = this.getNullEmptyDfield();
+			}
+			
 		}
-		
+				
 		if(this.datafield_cnf.width) { delete this.datafield_cnf.width; }
 
 		if(cust_dfield_cnf) {
@@ -537,6 +567,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		else if(this.condType == 'number') {
 			Ext.apply(this.datafield_cnf,{
 				xtype	: 'numberfield',
+				style: 'text-align:left;',
 				flex: 1
 			});
 		}
@@ -554,7 +585,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		this.add(
 			this.createFieldCombo(),
 			this.createCondCombo(),
-			this.datafield_cnf
+			this.createDataField()
 		);
 		this.doLayout();
 	},
