@@ -67,7 +67,7 @@ has 'get_record_display' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default =
 has 'init_pagesize' => ( is => 'ro', isa => 'Int', default => 25 );
 has '+max_pagesize' => ( default => 500 );
 has 'use_column_summaries', is => 'ro', isa => 'Bool', default => 0;
-has 'use_autosize_columns', is => 'ro', isa => 'Bool', default => 1;
+has 'use_autosize_columns', is => 'ro', isa => 'Bool', default => 0;
 has 'auto_autosize_columns', is => 'ro', isa => 'Bool', default => 0;
 
 sub BUILD {
@@ -87,8 +87,6 @@ sub BUILD {
 		use_autosize_columns => $self->use_autosize_columns ? \1 : \0,
 		auto_autosize_columns => $self->auto_autosize_columns ? \1 : \0
 	);
-	
-	$self->apply_extconfig( use_autosize_columns => \1 ) if ($self->auto_autosize_columns);
 	
 	# The record_pk is forced to be added/included as a column:
 	if (defined $self->record_pk) {

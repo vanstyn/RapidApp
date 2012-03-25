@@ -1454,17 +1454,7 @@ Ext.ux.FetchEval = function(url,params) {
 
 
 
-// ------- http://extjs.com/forum/showthread.php?p=97676#post97676
-Ext.override(Ext.CompositeElementLite, {
-	 getTextWidth: function() {
-		  var i, e, els = this.elements, result = 0;
-		  for(i = 0; e = Ext.get(els[i]); i++) {
-				result = Math.max(result, e.getTextWidth.apply(e, arguments));
-		  }
-		  return result;
-	 }
-});
-// -------
+
 
 
 /* This is crap since 'anchor' exists

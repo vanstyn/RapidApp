@@ -2992,6 +2992,27 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 Ext.preg('appgrid-summary',Ext.ux.RapidApp.Plugin.AppGridSummary);
 
 
+// ------- http://extjs.com/forum/showthread.php?p=97676#post97676
+// Note that the "shallow" options below were added by HV, and only consider the headers...
+// this was done because this can take a long time with big grids
+Ext.override(Ext.CompositeElementLite, {
+	getTextWidth: function() {
+		var i, e, els = this.elements, result = 0;
+		for(i = 0; e = Ext.get(els[i]); i++) {
+			result = Math.max(result, e.getTextWidth.apply(e, arguments));
+		}
+		return result;
+	 },
+	 getTextWidthShallow: function() {
+		var i, e, els = this.elements, result = 0;
+		for(i = 0; e = Ext.get(els[i]); i++) {
+			result = Math.max(result, e.getTextWidth.apply(e, arguments));
+			return result;
+		}
+		return result;
+	 }
+});
+// -------
 
 Ext.ux.RapidApp.Plugin.AppGridAutoColWidth = Ext.extend(Ext.util.Observable,{
 	
@@ -3003,12 +3024,15 @@ Ext.ux.RapidApp.Plugin.AppGridAutoColWidth = Ext.extend(Ext.util.Observable,{
 		
 		Ext.apply(grid,{
 			// ------- http://extjs.com/forum/showthread.php?p=97676#post97676
-			autoSizeColumns: function() {
+			autoSizeColumnsShallow: function() { 
+				return this.autoSizeColumns(true); 
+			},
+			autoSizeColumns: function(shallow) {
 				if (this.colModel) {
 
 					this.colModel.suspendEvents();
 					for (var i = 0; i < this.colModel.getColumnCount(); i++) {
-						this.autoSizeColumn(i);
+						this.autoSizeColumn(i,shallow);
 					}
 					this.colModel.resumeEvents();
 					this.view.refresh(true);
@@ -3016,14 +3040,21 @@ Ext.ux.RapidApp.Plugin.AppGridAutoColWidth = Ext.extend(Ext.util.Observable,{
 
 				}
 			},
-			autoSizeColumn: function(c) {
+			autoSizeColumn: function(c,shallow) {
 				var colid = this.colModel.getColumnId(c);
 				var column = this.colModel.getColumnById(colid);
 				var col = this.view.el.select("td.x-grid3-td-" + colid + " div:first-child");
 				if (col) {
 
 					var add = 6;
-					var w = col.getTextWidth() + Ext.get(col.elements[0]).getFrameWidth('lr') + add;
+					var w = add;
+					if(shallow) {
+						w += col.getTextWidthShallow();
+					}
+					else {
+						w += col.getTextWidth();
+					}
+					w += Ext.get(col.elements[0]).getFrameWidth('lr');
 
 					if (this.MaxColWidth && w > this.MaxColWidth) { w =  this.MaxColWidth; }
 					if (column.width && w < column.width) { w = column.width; }
@@ -3039,17 +3070,19 @@ Ext.ux.RapidApp.Plugin.AppGridAutoColWidth = Ext.extend(Ext.util.Observable,{
 	onRender: function() {
 		
 		if(this.auto_autosize_columns) {
-			this.store.on('load',this.autoSizeColumns,this);
+			this.store.on('load',this.autoSizeColumnsShallow,this); //<-- this only does headers, faster...
 		}
 		
-		var menu = this.getOptionsMenu();
-		if(!menu) { return; }
-		menu.add({
-			text: "AutoSize Columns",
-			iconCls: 'icon-left-right',
-			handler:this.autoSizeColumns,
-			scope: this
-		});
+		if(this.use_autosize_columns) {
+			var menu = this.getOptionsMenu();
+			if(!menu) { return; }
+			menu.add({
+				text: "AutoSize Columns",
+				iconCls: 'icon-left-right',
+				handler:this.autoSizeColumns, //<-- this does the full autosize which could be slow
+				scope: this
+			});
+		}
 	}
 	
 });

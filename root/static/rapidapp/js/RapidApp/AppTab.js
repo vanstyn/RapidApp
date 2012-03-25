@@ -317,7 +317,9 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		// -- ^^ --
 		
 		if(this.use_column_summaries) { this.plugins.push('appgrid-summary'); }
-		if(this.use_autosize_columns) { this.plugins.push('appgrid-auto-colwidth'); }
+		if(this.use_autosize_columns || this.auto_autosize_columns) { 
+			this.plugins.push('appgrid-auto-colwidth'); 
+		}
 		
 		// remove columns with 'no_column' set to true:
 		var new_columns = []
