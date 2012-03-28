@@ -45,6 +45,8 @@ sub apply_TableSpecs {
 			open_url_multi => $path,
 		) if ($path and $path ne '');
 		
+		$conf{priority_rel_columns} = $opt{priority_rel_columns} if ($opt{priority_rel_columns});
+		
 		return %conf;
 	};
 	

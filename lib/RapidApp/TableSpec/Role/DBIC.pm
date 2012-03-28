@@ -998,7 +998,7 @@ sub related_Row_from_relspec {
 	my $info = $Row->result_source->relationship_info($rel) or die "Relationship $rel not found";
 	
 	# Skip unless its a single (not multi) relationship:
-	return undef unless ($info->{attrs}->{accessor} eq 'single');
+	return undef unless ($info->{attrs}->{accessor} eq 'single' || $info->{attrs}->{accessor} eq 'filter');
 	
 	my $Related = $Row->$rel;
 	return $self->related_Row_from_relspec($Related,join('.',@parts));
@@ -1300,16 +1300,27 @@ sub get_relationship_column_cnf {
 	
 	my $conf = \%opt;
 	my $info = $conf->{relationship_info} or die "relationship_info is required";
-
-	die "displayField is required" unless (defined $conf->{displayField});
-	die "valueField is required" unless (defined $conf->{displayField});
-	die "keyField is required" unless (defined $conf->{displayField});
+	
+	my $err_info = "rel col: " . $self->ResultSource->from . ".$rel - " . Dumper($conf);
+	
+	die "displayField is required ($err_info)" unless (defined $conf->{displayField});
+	die "valueField is required ($err_info)" unless (defined $conf->{valueField});
+	die "keyField is required ($err_info)" unless (defined $conf->{keyField});
 	
 	my $Source = $self->ResultSource->related_source($rel);
 	
+
 	my $render_col = $self->column_prefix . $rel . $self->relation_sep . $conf->{displayField};
-	#my $key_col = $self->column_prefix . $rel . $self->relation_sep . $conf->{valueField};
+	my $key_col = $self->column_prefix . $rel . $self->relation_sep . $conf->{valueField};
 	my $upd_key_col = $self->column_prefix . $conf->{keyField};
+	
+	# -- Assume the the column profiles of the display column:
+	my $relTS = $self->related_TableSpec->{$rel};
+	if($relTS) {
+		my $relconf = $relTS->Cnf_columns->{$conf->{displayField}};
+		$conf->{profiles} = $relconf->{profiles} || $conf->{profiles};
+	}
+	# --
 	
 	my $colname = $self->column_prefix . $rel;
 	
@@ -1330,20 +1341,9 @@ sub get_relationship_column_cnf {
 		}
 	};
 	
-	#my $update_munger = sub {
-	#	$rows = shift;
-	#	$rows = [ $rows ] unless (ref($rows) eq 'ARRAY');
-	#	foreach my $row (@$rows) {
-	#		if ($row->{$colname}) {
-	#			$row->{$upd_key_col} = $row->{$colname};
-	#			delete $row->{$colname};
-	#		}
-	#	}
-	#};
-	
 	my $required_fetch_columns = [ 
 		$render_col,
-		#$key_col,
+		$key_col,
 		$upd_key_col
 	];
 	
@@ -1369,6 +1369,8 @@ sub get_relationship_column_cnf {
 		renderer => jsfunc(
 			'function(value, metaData, record, rowIndex, colIndex, store) {' .
 				'var disp = record.data["' . $render_col . '"];' .
+				'if(!value) { value = record.data["' . $key_col . '"]; }' .
+				'if(!value) { return disp; }' .
 				'if(!disp) { return value; }' .
 				
 				( # TODO: needs to be generalized better

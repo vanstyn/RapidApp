@@ -147,10 +147,6 @@ sub default_TableSpec_cnf  {
 	
 	my $rel_trans = {};
 	
-	#foreach my $rel ( $class->storage->schema->source($class)->relationships ) {
-	#	my $info = $class->relationship_info($rel);
-	#	$rel_trans->{$rel}->{editor} = sub {''} unless ($info->{attr}->{accessor} eq 'single');
-	#}
 	$defaults{related_column_property_transforms} = $rel_trans;
 	
 	my $defs = { data => \%defaults };
@@ -183,7 +179,21 @@ sub default_TableSpec_cnf_columns {
 	
 	foreach my $col (keys %$cols) {
 		
-		unless ($self->has_column($col)) {
+		my $is_local = $self->has_column($col) ? 1 : 0;
+		
+		# If this is both a local column and a relationship, allow the rel to take over
+		# if 'priority_rel_columns' is true:
+		$is_local = 0 if (
+			$is_local and
+			$self->has_relationship($col) and
+			$set->{data}->{'priority_rel_columns'}
+		);
+		
+		# Never allow a rel col to take over a primary key:
+		my %pri_cols = map {$_=>1} $self->primary_columns;
+		$is_local = 1 if ($pri_cols{$col});
+		
+		unless ($is_local) {
 			# is it a rel col ?
 			if($self->has_relationship($col)) {
 				my $info = $self->relationship_info($col);
@@ -192,7 +202,7 @@ sub default_TableSpec_cnf_columns {
 				my $cond_data = $self->parse_relationship_cond($info->{cond});
 				$cols->{$col}->{relationship_cond_data} = { %$cond_data, %$info };
 				
-				if ($info->{attrs}->{accessor} eq 'single') {
+				if ($info->{attrs}->{accessor} eq 'single' || $info->{attrs}->{accessor} eq 'filter') {
 					
 					# Use TableSpec_related_get_set_conf instead of TableSpec_related_get_conf
 					# to prevent possible deep recursion:
@@ -249,7 +259,6 @@ sub default_TableSpec_cnf_columns {
 			next;
 		}
 		
-		
 		my $info = $self->column_info($col);
 		my @profiles = ();
 			
@@ -281,21 +290,29 @@ sub TableSpec_valid_db_columns {
 	my @multi_rels = ();
 	
 	my %fk_cols = ();
+	my %pri_cols = map {$_=>1} $self->primary_columns;
 	
 	foreach my $rel ($self->relationships) {
 		my $info = $self->relationship_info($rel);
-		if($info->{attrs}->{accessor} eq 'single') {
+		
+		my $accessor = $info->{attrs}->{accessor};
+		
+		# 'filter' means single, but the name is also a local column
+		$accessor = 'single' if (
+			$accessor eq 'filter' and
+			$self->TableSpec_cnf->{data}->{'priority_rel_columns'} and
+			! $pri_cols{$rel} #<-- exclude primary column names. TODO: this check is performed later, fix
+		);
+		
+		if($accessor eq 'single') {
 			push @single_rels, $rel;
 			
 			my ($fk) = keys %{$info->{attrs}->{fk_columns}};
 			$fk_cols{$fk} = $rel;
 		}
-		elsif($info->{attrs}->{accessor} eq 'multi') {
+		elsif($accessor eq 'multi') {
 			push @multi_rels, $rel;
-		
 		}
-		# TODO: what about other types? 'filter' ?
-	
 	}
 	
 	$self->TableSpec_set_conf('relationship_column_names',\@single_rels);

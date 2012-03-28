@@ -375,6 +375,9 @@ has 'roles_permissions_columns_map' => ( is => 'rw', isa => 'HashRef', default =
 sub update_column_permissions_roles_code {
 	my $self = shift;
 	
+	# NOT IN USE
+	return;
+	
 	my $roles = {};
 	
 	foreach my $Column ($self->column_list) {
