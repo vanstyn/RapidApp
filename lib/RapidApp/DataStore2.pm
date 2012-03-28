@@ -417,6 +417,20 @@ sub apply_columns_list {
 	return $self->apply_config(columns => $self->column_list);
 }
 
+# Pass a coderef and opts hash to apply columns. Coderef is called for each existing,
+# non-deleted column. Column name is supplied to the coderef as $_ (and the first arg)
+# For columns where the coderef returns true, the opts are applied.
+sub apply_coderef_columns {
+	my $self = shift;
+	my $coderef = shift;
+	
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	$coderef->($_) and $self->columns->{$_}->apply_attributes(%opt) 
+		for ($self->column_name_list);
+	
+	return $self->apply_config(columns => $self->column_list);
+}
 
 sub set_sort {
 	my $self = shift;
