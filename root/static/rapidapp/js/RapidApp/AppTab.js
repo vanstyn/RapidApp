@@ -286,13 +286,15 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		// setting doesn't work on the first store load. I think it is related to
 		// load order and possibly autoPanel. 
 		// TODO: generalize/move this into datastore-plus
-		this.on('afterrender',function() {
-			var lMask = new Ext.LoadMask(this.getEl(),{ msg: "Loading Data Set" });
-			lMask.show();
-			var hide_fn;
-			hide_fn = function(){ lMask.hide(); this.store.un('load',hide_fn); };
-			this.store.on('load',hide_fn,this);
-		},this);
+		if(!this.collapsed) {
+			this.on('afterrender',function() {
+				var lMask = new Ext.LoadMask(this.getEl(),{ msg: "Loading Data Set" });
+				lMask.show();
+				var hide_fn;
+				hide_fn = function(){ lMask.hide(); this.store.un('load',hide_fn); };
+				this.store.on('load',hide_fn,this);
+			},this);
+		}
 		// --
 		
 		
