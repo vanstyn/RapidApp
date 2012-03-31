@@ -14,6 +14,7 @@ sub apply_TableSpecs {
 	my %opt = @_;
 	
 	$opt{TableSpec_confs} = $opt{TableSpec_confs} || {};
+	$opt{TableSpec_column_properties} = $opt{TableSpec_column_properties} || {};
 	
 	# Optional coderef to dynamically calculate the "open_url" and "open_url_multi"
 	$opt{get_path_code} = $opt{get_path_code} || sub {
@@ -63,6 +64,9 @@ sub apply_TableSpecs {
 			%{ $opt{TableSpec_confs}->{$source} || {} }, # <-- (optional) static conf defined in the Schema class
 			%{ $class->TableSpec_cnf } # <-- (optional) static conf defined in the Result class (highest priority)
 		);
+
+		my $col_props = $opt{TableSpec_column_properties}->{$source} or next;
+		$class->TableSpec_set_conf('column_properties_ordered', %$col_props);
 	}
 }
 
