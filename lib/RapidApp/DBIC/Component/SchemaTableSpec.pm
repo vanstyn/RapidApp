@@ -65,8 +65,14 @@ sub apply_TableSpecs {
 			%{ $class->TableSpec_cnf } # <-- (optional) static conf defined in the Result class (highest priority)
 		);
 
-		my $col_props = $opt{TableSpec_column_properties}->{$source} or next;
-		$class->TableSpec_set_conf('column_properties_ordered', %$col_props);
+		my $col_props = $opt{TableSpec_column_properties}->{$source};
+		$class->TableSpec_set_conf('column_properties_ordered', %$col_props) if ($col_props);
+		
+		if($opt{auto_headers}) {
+			$col_props = {};
+			$col_props->{$_}->{header} = $_ for ($class->TableSpec_valid_db_columns);
+			$class->TableSpec_set_conf('column_properties_defaults', %$col_props)
+		}
 	}
 }
 

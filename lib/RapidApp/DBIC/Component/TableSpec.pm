@@ -168,6 +168,9 @@ sub default_TableSpec_cnf_columns {
 	my @col_order = $self->default_TableSpec_cnf_column_order($set);
 	
 	my $cols = { map { $_ => {} } @col_order };
+	
+	# lowest precidence:
+	$cols = merge($cols,$set->{data}->{column_properties_defaults} || {});
 
 	$cols = merge($cols,$set->{data}->{column_properties_ordered} || {});
 		
@@ -368,6 +371,7 @@ sub default_TableSpec_cnf_column_order {
 my %hash_conf_params = map {$_=>1} qw(
 column_properties
 column_properties_ordered
+column_properties_defaults
 relationship_columns
 related_column_property_transforms
 column_order_overrides
@@ -510,8 +514,21 @@ sub TableSpec_related_get_set_conf {
 	
 	my $relclass = $self->TableSpec_related_class($rel) || return undef;
 
-	return $relclass->TableSpec_get_conf($param,$relclass->TableSpec_cnf);
+	#return $relclass->TableSpec_get_conf($param,$relclass->TableSpec_cnf);
+	return $relclass->TableSpec_get_set_conf($param);
 }
+
+# The "set conf" is different from the "built conf" in that it is passive, and only
+# returns the values which have been expressly "set" on the Result class with a 
+# "TableSpec_set_conf" call. The built conf reaches out to code to build a configuration,
+# which causes recursive limitations in that code that reaches out to other TableSpec
+# classes.
+sub TableSpec_get_set_conf {
+	my $self = shift;
+	my $param = shift || return undef;
+	return $self->TableSpec_get_conf($param,$self->TableSpec_cnf);
+}
+
 
 # TODO: Find a better way to handle this. Is there a real API
 # in DBIC to find this information?
