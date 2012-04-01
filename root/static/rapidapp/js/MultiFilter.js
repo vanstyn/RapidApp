@@ -42,6 +42,8 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		
 		var data = this.store.filterdata;
 		
+		//console.dir(data);
+		
 		return Ext.encode(data);
 	},
 	
@@ -229,6 +231,7 @@ Ext.ux.MultiFilter.StaticCombo = Ext.extend(Ext.form.ComboBox,{
 Ext.reg('multifilter-sc', Ext.ux.MultiFilter.StaticCombo);
 
 
+/*
 Ext.ux.MultiFilter.defaultConditionMap = {
 
 	'is'							: '=',
@@ -253,8 +256,12 @@ Ext.ux.MultiFilter.defaultConditionMap = {
 	//'is null or empty': 'null_or_empty'
 
 };
+*/
 
+// Moved condition remapping to the back end:
+Ext.ux.MultiFilter.defaultConditionMap = {};
 
+// This now needs to be simplified:
 Ext.ux.MultiFilter.defaultTypeToConditionMap = {
 
 	'default': {
@@ -605,8 +612,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			field = this.fieldNameMap[field];
 		}
 		
-		
-		
+		/* Moved into the back end:
 		// --- translate relationship column to its id *or* render col ---
 		var column = this.columnMap[field];
 		if(column) {
@@ -619,9 +625,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			}
 		}
 		// --- ---
-		
-		
-		
+		*/
 		
 		if(this.conditionMap[cond]) {
 			cond = this.conditionMap[cond];

@@ -669,76 +669,114 @@ sub multifilter_to_dbf {
 	
 	return $self->multifilter_to_dbf({ '-and' => $multi },$join) if (ref($multi) eq 'ARRAY');
 	
-	die 'Invalid multifilter' unless (ref($multi) eq 'HASH');
+	die RED.BOLD."Invalid multifilter:\n" . Dumper($multi).CLEAR unless (
+		ref($multi) eq 'HASH' and
+		keys %$multi == 1
+	);
 	
-	foreach my $f (keys %$multi) {
-		if($f eq '-and' or $f eq '-or') {
-			die "-and/-or must reference an ARRAY/LIST" unless (ref($multi->{$f}) eq 'ARRAY');
-			my $new = [];
-			push @$new, $self->multifilter_to_dbf($_,$join) for (@{$multi->{$f}});
-			$multi->{$f} = $new;
-			next;
-		}
-		
-		my $dbfName = $self->TableSpec->resolve_dbic_colname($f,$join);
-			
-		if (!defined $dbfName) {
-			$self->c->log->error("Client supplied Unknown multifilter-field '$f' in Ext Query!");
-			next;
-		}
-		
-		$multi->{$dbfName} = $multi->{$f};
-		delete $multi->{$f};
-		
-		# --- translate special content conditions to "LIKE" conditions
-		# not used yet:
-		#if (exists $multi->{$dbfName}->{is}) {
-		#	$multi->{$dbfName}->{'='} = $multi->{$dbfName}->{is};
-		#	delete $multi->{$dbfName}->{is};
-		#}
-		
-		if (defined $multi->{$dbfName}->{contains}) {
-			$multi->{$dbfName}->{like} = '%' . $multi->{$dbfName}->{contains} . '%';
-			delete $multi->{$dbfName}->{contains};
-		}
-		
-		if (defined $multi->{$dbfName}->{starts_with}) {
-			$multi->{$dbfName}->{like} = $multi->{$dbfName}->{starts_with} . '%';
-			delete $multi->{$dbfName}->{starts_with};
-		}
-		
-		if (defined $multi->{$dbfName}->{ends_with}) {
-			$multi->{$dbfName}->{like} = '%' . $multi->{$dbfName}->{ends_with};
-			delete $multi->{$dbfName}->{ends_with};
-		}
-		
-		if (defined $multi->{$dbfName}->{not_contain}) {
-			$multi->{$dbfName}->{'not like'} = '%' . $multi->{$dbfName}->{not_contain} . '%';
-			delete $multi->{$dbfName}->{not_contain};
-		}
-
-		if (defined $multi->{$dbfName}->{null_empty}) {
-			my $val = delete $multi->{$dbfName}->{null_empty} || 'is null or empty';
-			switch($val) {
-				case 'is null' 			{ $multi->{$dbfName}->{'='} = undef;	}
-				case 'is empty' 		{ $multi->{$dbfName}->{'='} = ''; 		}
-				case 'is not null' 		{ $multi->{$dbfName}->{'!='} = undef;	}
-				case 'is not empty' 	{ $multi->{$dbfName}->{'!='} = ''; 		}
-				case 'is null or empty'	{ 
-					$multi->{'-or'} = [{ $dbfName => undef },{ $dbfName => '' }];
-					delete $multi->{$dbfName};
-				}
-				case 'is not null or empty'	{ 
-					$multi->{'-and'} = [{ $dbfName => { '!=' => undef } },{ $dbfName => { '!=' =>  '' } }];
-					delete $multi->{$dbfName};
-				}
-			}
-		}
+	my ($f,$cond) = (%$multi);
+	if($f eq '-and' or $f eq '-or') {
+		die "-and/-or must reference an ARRAY/LIST" unless (ref($cond) eq 'ARRAY');
+		my @list = map { $self->multifilter_to_dbf($_,$join) } @$cond;
+		return { $f => \@list };
 	}
 	
-	return $multi;
+	# -- relationship column:
+	my $column = $self->get_column($f) || {};
+	$f = $column->{query_search_use_column} || $f;
+	$f = $column->{query_id_use_column} || $f if ($f eq 'is');
+	# --
+	
+	my $dbfName = $self->TableSpec->resolve_dbic_colname($f,$join)
+		or die "Client supplied Unknown multifilter-field '$f' in Ext Query!";
+		
+	return $self->multifilter_translate_cond($cond,$dbfName,$f);
 }
 
+# Dynamic map to convert supplied multifilter key names into proper
+# dbic search/key names. Can be simple key/values with values as strings,
+# or CodeRefs which can return either key/value strings, or single HashRefs
+# which will be used as the whole condition, verbatim. See multifilter_translate_cond
+# below for the values supplied to the CddeRef in '$_' (as a HashRef)
+has 'multifilter_keymap', is => 'ro', default => sub {{
+	
+	'is'					=> '=',
+	'equal to'				=> '=',
+	'is equal to'			=> '=',
+	'before'				=> '<',
+	'less than'				=> '<',
+	'greater than'			=> '>',
+	'after'					=> '>',
+	'not equal to'			=> '!=',
+	'is not equal to'		=> '!=',
+	
+	"doesn't contain"		=> 'not_contain',
+	'starts with'			=> 'starts_with',
+	'ends with'				=> 'ends_with',
+	
+	'contains'				=> sub { ('like','%'.$_->{v}.'%') },
+	'starts_with'			=> sub { ('like',$_->{v}.'%') },
+	'ends_with'				=> sub { ('like','%'.$_->{v}) },
+	'not_contain'			=> sub { ('not like','%'.$_->{v}.'%') },
+	'is null'				=> sub { ('=',undef) },
+	'is empty'				=> sub { ('=','') },
+	'null_empty'			=> 'null/empty status',
+	'null/empty status' => sub {
+		switch($_->{v}) {
+			case 'is null' 				{ return ('=',undef)	}
+			case 'is empty' 			{ return ('=','') 		}
+			case 'is not null' 			{ return ('!=',undef)	}
+			case 'is not empty' 		{ return ('!=','') 		}
+			case 'is null or empty'		{ return { '-or',[{ $_->{dbfName} => undef },{ $_->{dbfName} => '' }] } }
+			case 'is not null or empty'	{ return { '-and',[{ $_->{dbfName} => { '!=' => undef } },{ $_->{dbfName} => { '!=' =>  '' } }] } }
+			
+			die "Invalid null/empty condition supplied:\n" . Dumper($_);
+		}
+	},
+	
+}};
+
+sub multifilter_translate_cond {
+	my $self = shift;
+	my $cond = shift;
+	my $dbfName = shift;
+	my $field = shift;
+	
+	# There should be exactly 1 key/value:
+	die "invalid multifilter condition: must have exactly 1 key/value pair:\n" . Dumper($cond) 
+		unless (keys %$cond == 1);
+		
+	my ($k,$v) = (%$cond);
+	my $map = $self->multifilter_keymap->{$k};
+	
+	if(ref($map) eq 'CODE') {
+		
+		local $_ = { 
+			v 		=> $v, 
+			k 		=> $k, 
+			cond 	=> $cond, 
+			dbfName	=> $dbfName, 
+			field 	=> $field 
+		};
+		
+		my @new = &$map;
+		($k) = @new;
+		
+		return $k if ref($k); #<-- if the coderef returns a ref, use verbatim
+		
+		($k,$v) = @new if (scalar @new > 1); #<-- if 2 args were returned (this approach allows $v of undef)
+	}
+	else {
+		# If we're here, $map should be a scalar/string:
+		die "unexpected data in 'multifilter_keymap'!" if ref($map);
+	
+		# remap/recall recursively to support multi-level keyname map translations:
+		# (i.e. 'equal to' could map to 'is equal to' which could map to '=')
+		return $self->multifilter_translate_cond({ $map => $v },$dbfName,$field) if ($map);
+	}
+	
+	return { $dbfName => { $k => $v } };
+}
 
 
 sub param_decodeIf {
