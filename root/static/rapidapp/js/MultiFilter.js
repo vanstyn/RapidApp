@@ -18,16 +18,14 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		}
 		
 		
-		
 		this.store.on('beforeload',function(store,options) {
 			if(store.filterdata) {
-				var encoded = Ext.encode(store.filterdata);
 				Ext.apply(options.params, {
-					'multifilter': encoded 
+					'multifilter': this.getMultiFilterParam() 
 				});
 			}
 			return true;
-		});
+		},this);
 	
 		if (grid.rendered) {
 			this.onRender();
@@ -39,7 +37,14 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			 });
 		}
 	},
+	
+	getMultiFilterParam: function() {
 		
+		var data = this.store.filterdata;
+		
+		return Ext.encode(data);
+	},
+	
 	onRender: function() {
 	
 		this.filtersBtn = new Ext.Button({
@@ -500,7 +505,6 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			this.reverseFieldNameMap[val] = key;
 		},this);
 		
-		
 		return this.columnMap;
 	},
 	
@@ -593,7 +597,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 	getData: function() {
 		var field = this.getComponent('field_combo').getRawValue();
 		var cond = this.getComponent('cond_combo').getRawValue();
-		var val = this.getComponent('datafield').getValue();
+		var val = this.getComponent('datafield').getRawValue();
 
 		
 		//field combo
@@ -603,7 +607,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		
 		
 		
-		// -------------
+		// --- translate relationship column to its id *or* render col ---
 		var column = this.columnMap[field];
 		if(column) {
 			
@@ -614,7 +618,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 				if(column.query_search_use_column) { field = column.query_search_use_column; }
 			}
 		}
-		// -------------
+		// --- ---
 		
 		
 		
@@ -626,7 +630,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		var data = {};
 		data[field] = {};
 		data[field][cond] = val;
-		
+			
 		return data;
 	},
 	
