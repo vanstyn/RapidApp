@@ -450,17 +450,72 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	
 	onRender: function() {
 		
+		this.reloadColumnsTask = new Ext.util.DelayedTask(function(){
+			this.reloadColumns();
+		},this);
+		
+		this.storeReloadTask = new Ext.util.DelayedTask(function(){
+			this.reloadColumns();
+			this.store.reload();
+		},this);
+		
+		// ------ Column menu "Toggle All" ------ //
+		this.on('afterrender',function(){
+			var view = this.getView(), cm = this.getColumnModel();
+			view.colMenu.on('beforeshow',function(){
+				view.colMenu.insert(0, new Ext.menu.CheckItem({
+					text: 'Toggle All',
+					checked: true,
+					hideOnClick: false,
+					handler: function(item) {
+						var checked = ! item.checked;
+						var first_skipped = false;
+						var fn;
+						var totalCount = item.parentMenu.items.getCount();
+						var mask =  myMask = new Ext.LoadMask(item.parentMenu.getEl(), {msg:"Please wait"});
+						mask.show();
+						fn = function(ndx) {
+							
+							mask.el.mask("Please wait (" + Math.round(((ndx+1)/totalCount)*100) + "%)", mask.msgCls);
+							
+							var i = item.parentMenu.items.itemAt(ndx);
+							if(!i || !item.parentMenu.isVisible()) { mask.hide(); return; }
+							if(item !== i && i.setChecked && !i.disabled) {
+								if(i.checked == checked) { return fn.defer(0,this,[ndx+1]); }
+								// when unchecking all, leave one checked
+								if(!checked && i.checked && !first_skipped) {
+									first_skipped = true;
+									return fn.defer(0,this,[ndx+1]);
+								}
+								i.setChecked(checked,true);
+								var itemId = i.getItemId(), index = cm.getIndexById(itemId.substr(4));
+								if (index != -1) { cm.setHidden(index, !checked); }
+							}
+							fn.defer(1,this,[ndx+1]);
+						};
+						fn.defer(0,this,[0]);
+					},
+					scope: this
+				}),'-');
+			},this);
+		},this);
+		// -------------------------------------- //
+		
 		this.getColumnModel().on('hiddenchange',function(colmodel,colIndex,hidden) {
 			// Only reload the store when showing columns that aren't already loaded
-			if(hidden || this.loadedColumnIndexes[colIndex] ) { 
+			if(hidden || this.loadedColumnIndexes[colIndex]) { 
 				// Need to set reloadColumns even if no store reload is needed so
 				// that clicking to sort on a column will use the new column data
 				// on its request to the store:
-				this.reloadColumns();
+				//this.reloadColumns();
+				this.reloadColumnsTask.delay(100);
 				return; 
 			}
-			this.reloadColumns(); // <-- this has to be done effectively twice to make sure lastOptions are changed
-			this.store.reload();
+			//this.reloadColumnsTask.delay(100);
+			//this.reloadColumns(); // <-- this has to be done effectively twice to make sure lastOptions are changed
+			
+			//store reload task with delay for clicking several columns at once:
+			this.storeReloadTask.delay(750); 
 		},this);
 		
 		var store_load_parms = {};
