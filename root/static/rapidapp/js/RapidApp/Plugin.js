@@ -3093,60 +3093,230 @@ Ext.ux.RapidApp.Plugin.AppGridAutoColWidth = Ext.extend(Ext.util.Observable,{
 Ext.preg('appgrid-auto-colwidth',Ext.ux.RapidApp.Plugin.AppGridAutoColWidth);
 
 
-// Adds a special "Toggle All" checkbox to the top of the grid Columns menu:
-Ext.ux.RapidApp.Plugin.AppGridToggleAllCols = Ext.extend(Ext.util.Observable,{
+
+// Base plugin class for plugins that add special items to the col menu:
+Ext.ux.RapidApp.Plugin.AppGridColMenuPlug = Ext.extend(Ext.util.Observable,{
+	
+	maxSeparatorPosition: 4,
 	
 	init: function(grid) {
-		grid.on('render',this.onRender,grid);
-		
+		this.grid = grid;
+		grid.on('render',this.onRender,this);
 	},
-
+	
+	getColItem: Ext.emptyFn,
+	
+	getColCount: function() {
+		return this.view.colMenu.items.getCount();
+	},
+	
+	getExistingSeparatorIndex: function() {
+		var items = this.colMenu.items.items;
+		for (ndx in items) {
+			if(ndx > this.maxSeparatorPosition) { return -1; }
+			if(this.isSeparator(items[ndx])) { return ndx; }
+		}
+		return -1;
+	},
+	
+	isSeparator: function(item) {
+		if((Ext.isObject(item) && item.itemCls == 'x-menu-sep') || item == '-') {
+			return true;
+		}
+		return false;
+	},
+	
+	getInsertPosition: function() {
+		var pos = this.getExistingSeparatorIndex();
+		if(pos == -1) { 
+			this.colMenu.insert(0,'-');
+			return 0;
+		}
+		return pos;
+	},
+	
 	onRender: function() {
-		
-		var view = this.getView(), cm = this.getColumnModel();
-		view.colMenu.on('beforeshow',function(){
-			var colCount = view.colMenu.items.getCount();
-			view.colMenu.insert(0, new Ext.menu.CheckItem({
-				text: 'Toggle All (' + colCount + ' columns)',
-				checked: true,
-				hideOnClick: false,
-				handler: function(item) {
-					var checked = ! item.checked;
-					
-					var msg = checked ? 'Toggling all on' : 'Toggling all off';
-					
-					var first_skipped = false;
-					var fn;
-					var totalCount = item.parentMenu.items.getCount();
-					var mask =  myMask = new Ext.LoadMask(item.parentMenu.getEl(), {msg:msg});
-					mask.show();
-					fn = function(ndx) {
-						
-						mask.el.mask(msg + " (" + Math.round(((ndx+1)/totalCount)*100) + "%)", mask.msgCls);
-						
-						var i = item.parentMenu.items.itemAt(ndx);
-						if(!i || !item.parentMenu.isVisible()) { mask.hide(); return; }
-						if(item !== i && i.setChecked && !i.disabled) {
-							if(i.checked == checked) { return fn.defer(0,this,[ndx+1]); }
-							// when unchecking all, leave one checked
-							if(!checked && i.checked && !first_skipped) {
-								first_skipped = true;
-								return fn.defer(0,this,[ndx+1]);
-							}
-							i.setChecked(checked,true);
-							var itemId = i.getItemId(), index = cm.getIndexById(itemId.substr(4));
-							if (index != -1) { cm.setHidden(index, !checked); }
-						}
-						fn.defer(1,this,[ndx+1]);
-					};
-					fn.defer(0,this,[0]);
-				},
-				scope: this
-			}),'-');
+		this.view = this.grid.getView();
+		this.cm = this.grid.getColumnModel();
+		this.colMenu = this.view.colMenu;
+		if(!this.colMenu) { return; }
+		this.colMenu.on('beforeshow',function(){
+			var colItem = this.getColItem();
+			if(!colItem) { return; }
+			var pos = this.getInsertPosition();
+			this.colMenu.insert(pos,colItem);
 		},this);
+	}
+});
+
+
+
+// Adds a special "Toggle All" checkbox to the top of the grid Columns menu:
+Ext.ux.RapidApp.Plugin.AppGridToggleAllCols = Ext.extend(Ext.ux.RapidApp.Plugin.AppGridColMenuPlug,{
+	
+	getColItem: function() {
+		var grid = this.grid, colCount = this.getColCount();
+		return new Ext.menu.CheckItem({
+			text: 'Toggle All (' + colCount + ' columns)',
+			checked: true,
+			hideOnClick: false,
+			handler: this.toggleCheckHandler,
+			scope: grid
+		});
+	},
+	
+	// 'this' scope expected to be 'grid':
+	toggleCheckHandler: function(item) {
+		var checked = ! item.checked, cm = this.getColumnModel();
+					
+		var msg = checked ? 'Toggling all on' : 'Toggling all off';
+		
+		var first_skipped = false;
+		var fn;
+		var totalCount = item.parentMenu.items.getCount();
+		var mask =  myMask = new Ext.LoadMask(item.parentMenu.getEl(), {msg:msg});
+		mask.show();
+		fn = function(ndx) {
+			
+			mask.el.mask(msg + " (" + Math.round(((ndx+1)/totalCount)*100) + "%)", mask.msgCls);
+			
+			var i = item.parentMenu.items.itemAt(ndx);
+			if(!i || !item.parentMenu.isVisible()) { mask.hide(); return; }
+			if(item !== i && i.setChecked && !i.disabled) {
+				if(i.checked == checked) { return fn.defer(0,this,[ndx+1]); }
+				// when unchecking all, leave one checked
+				if(!checked && i.checked && !first_skipped) {
+					first_skipped = true;
+					return fn.defer(0,this,[ndx+1]);
+				}
+				i.setChecked(checked,true);
+				var itemId = i.getItemId(), index = cm.getIndexById(itemId.substr(4));
+				if (index != -1) { cm.setHidden(index, !checked); }
+			}
+			fn.defer(1,this,[ndx+1]);
+		};
+		fn.defer(0,this,[0]);
 	}
 	
 });
 Ext.preg('appgrid-toggle-all-cols',Ext.ux.RapidApp.Plugin.AppGridToggleAllCols);
+
+
+Ext.ux.RapidApp.Plugin.AppGridFilterCols = Ext.extend(Ext.ux.RapidApp.Plugin.AppGridColMenuPlug,{
+	
+	
+	filterByString: function(str) {
+		if(!this.colMenu.isVisible()) { return; }
+		
+		var past_sep,past_label,add_at,remove;
+		this.colMenu.items.each(function(item,ndx){
+			if(!past_sep) {
+				if(this.isSeparator(item)){ past_sep = true; }
+				return;
+			}
+			else if (!past_label) {
+				past_label = true;
+				if(item.isFilterLabel) {
+					remove = item;
+				}
+				else {
+					if(str && str != '') {
+						add_at = ndx;
+					}
+				}
+			}
+			
+			var match = true;
+			if(str && str != '') {
+				match = (item.text.indexOf(str) != -1) ? true : false; //<-- is str contained within item.text
+			}
+			
+			//console.log('test: "' + str + '" within "' + item.text + '" - ' + (match ? 'yes' : 'no') );
+			
+			//if(item.isVisible()) {
+			if(!item.hidden) {
+				//console.log(item.text + ' is visable');
+				if(!match) {
+					item.setVisible(false);
+					item.isFiltered = true;
+				}
+			}
+			else {
+				//console.log(item.text + ' is NOT visable');
+				if(match && item.isFiltered) {
+					delete item.isFiltered;
+					item.setVisible(true);
+				}
+			}
+			
+		},this);
+		
+		if(remove) { this.colMenu.remove(remove,true); }
+		
+		if(add_at) {
+			this.colMenu.insert(add_at,{
+				isFilterLabel: true,
+				xtype: 'label',
+				html: '<b><i><center>Filtered:</center></i></b>'
+			});
+		}
+	},
+	
+	getColItem: function() {
+		return {
+			xtype:'textfield',
+			emptyText: 'Type to Filter',
+			//width: '95%',
+			width: '200px',
+			enableKeyEvents:true,
+
+			listeners: {
+				render: {
+					scope: this,
+					fn: function(field) {
+						field.filterTask = new Ext.util.DelayedTask(function(f){
+							this.filterByString(f.getValue());
+						},this,[field]);
+					}
+				},
+				keyup: {
+					scope: this,
+					buffer: 150,
+					fn: function(field, e) {
+						if(field.filterTask) { field.filterTask.delay(500); }
+					}
+				}
+			}
+			/*
+			listeners:{
+				keyup:{
+					buffer: 150, 
+					fn: function(field, e) {
+						if(Ext.EventObject.ESC == e.getKey()) {
+							field.onTriggerClick();
+						}
+						//else {
+						else if (Ext.EventObject.ENTER == e.getKey()){
+							//Filter.treeLoadAll();
+							var callback = function() {
+								var val = field.getRawValue();
+								Ext.ux.RapidApp.AppTree.set_next_treeload_params(tree,{search:val});
+								var re = new RegExp('.*' + val + '.*', 'i');
+								tree.filter.clear();
+								tree.filter.filter(re, 'text');
+							}
+							
+							Ext.ux.RapidApp.AppTree.ensure_recursive_load(tree,callback);
+						}
+					}
+				}
+			}
+			*/
+		};
+	},
+
+	
+});
+Ext.preg('appgrid-filter-cols',Ext.ux.RapidApp.Plugin.AppGridFilterCols);
 
 
