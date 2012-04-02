@@ -323,6 +323,9 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			this.plugins.push('appgrid-auto-colwidth'); 
 		}
 		
+		// Toggle All:
+		this.plugins.push('appgrid-toggle-all-cols'); 
+		
 		// remove columns with 'no_column' set to true:
 		var new_columns = []
 		Ext.each(this.columns,function(column,index,arr) {
@@ -459,48 +462,6 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			this.store.reload();
 		},this);
 		
-		// ------ Column menu "Toggle All" ------ //
-		this.on('afterrender',function(){
-			var view = this.getView(), cm = this.getColumnModel();
-			view.colMenu.on('beforeshow',function(){
-				view.colMenu.insert(0, new Ext.menu.CheckItem({
-					text: 'Toggle All',
-					checked: true,
-					hideOnClick: false,
-					handler: function(item) {
-						var checked = ! item.checked;
-						var first_skipped = false;
-						var fn;
-						var totalCount = item.parentMenu.items.getCount();
-						var mask =  myMask = new Ext.LoadMask(item.parentMenu.getEl(), {msg:"Please wait"});
-						mask.show();
-						fn = function(ndx) {
-							
-							mask.el.mask("Please wait (" + Math.round(((ndx+1)/totalCount)*100) + "%)", mask.msgCls);
-							
-							var i = item.parentMenu.items.itemAt(ndx);
-							if(!i || !item.parentMenu.isVisible()) { mask.hide(); return; }
-							if(item !== i && i.setChecked && !i.disabled) {
-								if(i.checked == checked) { return fn.defer(0,this,[ndx+1]); }
-								// when unchecking all, leave one checked
-								if(!checked && i.checked && !first_skipped) {
-									first_skipped = true;
-									return fn.defer(0,this,[ndx+1]);
-								}
-								i.setChecked(checked,true);
-								var itemId = i.getItemId(), index = cm.getIndexById(itemId.substr(4));
-								if (index != -1) { cm.setHidden(index, !checked); }
-							}
-							fn.defer(1,this,[ndx+1]);
-						};
-						fn.defer(0,this,[0]);
-					},
-					scope: this
-				}),'-');
-			},this);
-		},this);
-		// -------------------------------------- //
-		
 		this.getColumnModel().on('hiddenchange',function(colmodel,colIndex,hidden) {
 			// Only reload the store when showing columns that aren't already loaded
 			if(hidden || this.loadedColumnIndexes[colIndex]) { 
@@ -533,10 +494,6 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 				limit: parseFloat(this.pageSize)
 			});
 		}
-		
-		
-		
-		
 		
 		if(this.store.autoLoad && this.store.autoLoad.params) {
 			Ext.apply(this.store.autoLoad.params,store_load_parms);

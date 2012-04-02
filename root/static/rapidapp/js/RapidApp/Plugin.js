@@ -3092,3 +3092,61 @@ Ext.ux.RapidApp.Plugin.AppGridAutoColWidth = Ext.extend(Ext.util.Observable,{
 });
 Ext.preg('appgrid-auto-colwidth',Ext.ux.RapidApp.Plugin.AppGridAutoColWidth);
 
+
+// Adds a special "Toggle All" checkbox to the top of the grid Columns menu:
+Ext.ux.RapidApp.Plugin.AppGridToggleAllCols = Ext.extend(Ext.util.Observable,{
+	
+	init: function(grid) {
+		grid.on('render',this.onRender,grid);
+		
+	},
+
+	onRender: function() {
+		
+		var view = this.getView(), cm = this.getColumnModel();
+		view.colMenu.on('beforeshow',function(){
+			var colCount = view.colMenu.items.getCount();
+			view.colMenu.insert(0, new Ext.menu.CheckItem({
+				text: 'Toggle All (' + colCount + ' columns)',
+				checked: true,
+				hideOnClick: false,
+				handler: function(item) {
+					var checked = ! item.checked;
+					
+					var msg = checked ? 'Toggling all on' : 'Toggling all off';
+					
+					var first_skipped = false;
+					var fn;
+					var totalCount = item.parentMenu.items.getCount();
+					var mask =  myMask = new Ext.LoadMask(item.parentMenu.getEl(), {msg:msg});
+					mask.show();
+					fn = function(ndx) {
+						
+						mask.el.mask(msg + " (" + Math.round(((ndx+1)/totalCount)*100) + "%)", mask.msgCls);
+						
+						var i = item.parentMenu.items.itemAt(ndx);
+						if(!i || !item.parentMenu.isVisible()) { mask.hide(); return; }
+						if(item !== i && i.setChecked && !i.disabled) {
+							if(i.checked == checked) { return fn.defer(0,this,[ndx+1]); }
+							// when unchecking all, leave one checked
+							if(!checked && i.checked && !first_skipped) {
+								first_skipped = true;
+								return fn.defer(0,this,[ndx+1]);
+							}
+							i.setChecked(checked,true);
+							var itemId = i.getItemId(), index = cm.getIndexById(itemId.substr(4));
+							if (index != -1) { cm.setHidden(index, !checked); }
+						}
+						fn.defer(1,this,[ndx+1]);
+					};
+					fn.defer(0,this,[0]);
+				},
+				scope: this
+			}),'-');
+		},this);
+	}
+	
+});
+Ext.preg('appgrid-toggle-all-cols',Ext.ux.RapidApp.Plugin.AppGridToggleAllCols);
+
+
