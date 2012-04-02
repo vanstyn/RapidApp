@@ -602,27 +602,36 @@ Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu = Ext.extend(Ext.menu.Menu,{
 
 		this.items = [
 			{
-				text: 'This Page, Active Columns',
+				//text: 'This Page, Active Columns',
+				text: 'Current Page',
+				iconCls: 'icon-table-selection-row',
 				handler: function(item) {
 					var cmp = item.ownerCt;
 					Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler.call(this,cmp,cmp.url,false,false);
 				},
 				scope: this
 			},
+			
+			/*
 			{
 				text: 'This Page, All Columns',
 				handler: function(item) {
 					var cmp = item.ownerCt;
 					Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler(cmp,cmp.url,false,true);
 				}
-			},
+			}*/
+			
 			{
-				text: 'All Pages, Active Columns',
+				//text: 'All Pages, Active Columns',
+				text: 'All Pages',
+				iconCls: 'icon-table-selection-all',
 				handler: function(item) {
 					var cmp = item.ownerCt;
 					Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler(cmp,cmp.url,true,false);
 				}
-			},
+			}
+			
+			/*,
 			{
 				text: 'All Pages, All Columns',
 				handler: function(item) {
@@ -630,6 +639,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu = Ext.extend(Ext.menu.Menu,{
 					Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler(cmp,cmp.url,true,true);
 				}
 			}
+			*/
 		];
 		
 		Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu.superclass.initComponent.call(this);

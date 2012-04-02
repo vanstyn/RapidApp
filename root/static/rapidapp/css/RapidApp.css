@@ -223,6 +223,9 @@ pre {
 .icon-function { background-image: url(/static/rapidapp/images/function.png) !important; }
 .icon-function-small { background-image: url(/static/rapidapp/images/function_small.png) !important; }
 .icon-left-right { background-image: url(/static/rapidapp/images/left_right.png) !important; }
+.icon-table-selection-all { background-image: url(/static/rapidapp/images/table_selection_all.png) !important; }
+.icon-table-selection-row { background-image: url(/static/rapidapp/images/table_selection_row.png) !important; }
+
 
 .tbar-title-medium {
 	font-size:175% !important;
