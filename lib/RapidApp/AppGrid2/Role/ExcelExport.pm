@@ -24,7 +24,8 @@ around 'options_menu_items' => sub {
 	$items = [] unless (defined $items);
 	
 	push @$items, {
-		text		=> 'Excel Export',
+		text => 'Excel Export',
+		hideOnClick => \0,
 		iconCls	=> 'icon-excel',
 		menu => RapidApp::JSONFunc->new( func => 'new Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu',
 			parm => {
@@ -95,10 +96,43 @@ sub excel_read {
 	#$tw->writePreamble('Export of Project Data');
 	#$tw->writePreamble();
 	
-	foreach my $row (@{ $data->{rows} }) {
-		$tw->writeRow($row)
+	#########################################
+	$tw->writeRow($_) for (@{$data->{rows}});
+	#########################################
+	
+	#### Column Summaries ####
+	if(exists $data->{column_summaries}) {
+		my $sums = $data->{column_summaries};
+		$self->convert_render_cols_hash($sums);
+		
+		my $funcs;
+		if ($params->{column_summaries}) {
+			$funcs = $self->json->decode($params->{column_summaries});
+			$self->convert_render_cols_hash($funcs);
+		}
+		
+		$tw->writeRow({});
+		$tw->writeRow({});
+		my $fmt = $xls->add_format;
+		$fmt->set_bold();
+		local $RapidApp::Spreadsheet::ExcelTableWriter::writeRowFormat = $fmt;
+		$tw->writeRow('Col Summaries');
+		$fmt->set_italic();
+		
+		if($data->{results} && $data->{results} > @{$data->{rows}}) {
+			my $fmt = $xls->add_format;
+			$fmt->set_italic();
+			local $RapidApp::Spreadsheet::ExcelTableWriter::writeRowFormat = $fmt;
+			$tw->writeRow('(Note: all rows are not shown above)');
+		}
+		$tw->writeRow({});
+		$tw->writeRow($funcs) if ($funcs);
+		
+		$RapidApp::Spreadsheet::ExcelTableWriter::writeRowFormat = undef;
+		$tw->writeRow($sums);
 	}
-
+	####
+	
 	$tw->autosizeColumns();
 	$xls->close();
 	
@@ -117,6 +151,17 @@ sub excel_read {
 	return $dlData;
 }
 
+
+sub convert_render_cols_hash {
+	my $self = shift;
+	my $hash = shift;
+	
+	foreach my $col (keys %$hash) {
+		my $field = $self->get_column($col) or die "column $col does not exist in columns hash";
+		my $colname = $field->render_column ? $field->render_column : $field->name;
+		$hash->{$colname} = delete $hash->{$col};
+	}
+}
 
 
 1;

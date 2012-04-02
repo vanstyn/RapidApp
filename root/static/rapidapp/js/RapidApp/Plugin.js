@@ -2443,14 +2443,18 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 			this.store.column_summaries = grid.init_state.column_summaries;
 		}
 		
-		this.store.on('beforeload',function(store,options) {
+		var plugin = this, store = this.store;
+		grid.applyColumnSummaryParams = function(){
 			if(store.column_summaries) {
-				Ext.apply(options.params, {
-					'column_summaries': this.getEncodedParamVal() 
-				});
+				var params = { 'column_summaries': plugin.getEncodedParamVal()  };
+				Ext.apply(store.baseParams,params);
+				// Set lastOptions as well so reload() gets the changes:
+				Ext.apply(store.lastOptions.params,params);
 			}
 			return true;
-		},this);
+		}
+		
+		this.store.on('beforeload',grid.applyColumnSummaryParams);
 		
 		grid.on('reconfigure',this.updateColumnHeadings,this);
 		

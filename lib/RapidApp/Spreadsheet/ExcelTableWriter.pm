@@ -239,6 +239,9 @@ sub writeHeaders {
 	$self->{_curRow}++;
 }
 
+
+
+
 =head2 writeRow
 
   $tableWriter->writeRow( \@rowdata );
@@ -260,6 +263,7 @@ Alternatively, a hash can be used, with the name of the columns as keys.
 If the first parameter is not a array/hash reference, the argument array is treated as the data array.
 
 =cut
+our $writeRowFormat; #<-- quick/dirty global var for 'format' (see $workbook->add_format in Spreadsheet::WriteExcel)
 sub writeRow {
 	my $self= shift;
 	my $rowData;
@@ -275,10 +279,12 @@ sub writeRow {
 	
 	for (my $i=0; $i < $self->colCount; $i++) {
 		my ($ws, $wsCol)= $self->sheetForCol($i);
+		my @args = ($self->curRow, $wsCol, $rowData->[$i]);
+		push @args, $writeRowFormat if ($writeRowFormat);
 		if ($self->columns->[$i]->isString) {
-			$ws->write_string($self->curRow, $wsCol, $rowData->[$i]);
+			$ws->write_string(@args);
 		} else {
-			$ws->write($self->curRow, $wsCol, $rowData->[$i]);
+			$ws->write(@args);
 		}
 		$self->columns->[$i]->updateWidest(length $rowData->[$i]) if (defined $rowData->[$i]);
 	}
