@@ -3204,51 +3204,73 @@ Ext.preg('appgrid-toggle-all-cols',Ext.ux.RapidApp.Plugin.AppGridToggleAllCols);
 
 Ext.ux.RapidApp.Plugin.AppGridFilterCols = Ext.extend(Ext.ux.RapidApp.Plugin.AppGridColMenuPlug,{
 	
+	testMatch: function(item,str) {
+		// If the string is not set, match is true per default:
+		if(!str || str == '' || !item.text) { return true; }
+		
+		str = str.toLowerCase();
+		var text = item.text.toLowerCase();
+		
+		// Test menu item text
+		if(text.indexOf(str) != -1) { return true; }
+		var column = this.menuItemToColumn(item);
+		if (column) {
+			// Test column name
+			if(column.name) {
+				var text = column.name.toLowerCase();
+				if(text.indexOf(str) != -1) { return true; }
+			}
+			// Test column header:
+			if(column.header) {
+				var text = column.header.toLowerCase();
+				if(text.indexOf(str) != -1) { return true; }
+			}
+		}
+		return false;
+	},
+	
+	menuItemToColumn: function(item) {
+		var colModel = this.cm,
+			itemId = item.getItemId(),
+			colId = itemId.substr(4);
+		
+		return colModel.config[colId];
+	},
 	
 	filterByString: function(str) {
+		if(str == '') { str = null; }
 		if(!this.colMenu.isVisible()) { return; }
 		
-		var past_sep,past_label,add_at,remove;
+		var past_sep,past_label,add_at,remove,match_count = 0;
 		this.colMenu.items.each(function(item,ndx){
 			if(!past_sep) {
 				if(this.isSeparator(item)){ past_sep = true; }
 				return;
 			}
 			else if (!past_label) {
+				if(str) { add_at = ndx; }
 				past_label = true;
 				if(item.isFilterLabel) {
 					remove = item;
-				}
-				else {
-					if(str && str != '') {
-						add_at = ndx;
-					}
+					return;
 				}
 			}
 			
-			var match = true;
-			if(str && str != '') {
-				match = (item.text.indexOf(str) != -1) ? true : false; //<-- is str contained within item.text
-			}
+			var match = this.testMatch(item,str);
+			if(match) { match_count++; }
 			
-			//console.log('test: "' + str + '" within "' + item.text + '" - ' + (match ? 'yes' : 'no') );
-			
-			//if(item.isVisible()) {
 			if(!item.hidden) {
-				//console.log(item.text + ' is visable');
 				if(!match) {
 					item.setVisible(false);
 					item.isFiltered = true;
 				}
 			}
 			else {
-				//console.log(item.text + ' is NOT visable');
 				if(match && item.isFiltered) {
 					delete item.isFiltered;
 					item.setVisible(true);
 				}
 			}
-			
 		},this);
 		
 		if(remove) { this.colMenu.remove(remove,true); }
@@ -3257,7 +3279,7 @@ Ext.ux.RapidApp.Plugin.AppGridFilterCols = Ext.extend(Ext.ux.RapidApp.Plugin.App
 			this.colMenu.insert(add_at,{
 				isFilterLabel: true,
 				xtype: 'label',
-				html: '<b><i><center>Filtered:</center></i></b>'
+				html: '<b><i><center>Filtered (' + match_count + ' columns)</center></i></b>'
 			});
 		}
 	},
@@ -3265,11 +3287,10 @@ Ext.ux.RapidApp.Plugin.AppGridFilterCols = Ext.extend(Ext.ux.RapidApp.Plugin.App
 	getColItem: function() {
 		return {
 			xtype:'textfield',
-			emptyText: 'Type to Filter',
-			//width: '95%',
+			emptyText: 'Type to Filter Column List',
+			emptyClass: 'field-empty-text',
 			width: '200px',
 			enableKeyEvents:true,
-
 			listeners: {
 				render: {
 					scope: this,
@@ -3287,35 +3308,8 @@ Ext.ux.RapidApp.Plugin.AppGridFilterCols = Ext.extend(Ext.ux.RapidApp.Plugin.App
 					}
 				}
 			}
-			/*
-			listeners:{
-				keyup:{
-					buffer: 150, 
-					fn: function(field, e) {
-						if(Ext.EventObject.ESC == e.getKey()) {
-							field.onTriggerClick();
-						}
-						//else {
-						else if (Ext.EventObject.ENTER == e.getKey()){
-							//Filter.treeLoadAll();
-							var callback = function() {
-								var val = field.getRawValue();
-								Ext.ux.RapidApp.AppTree.set_next_treeload_params(tree,{search:val});
-								var re = new RegExp('.*' + val + '.*', 'i');
-								tree.filter.clear();
-								tree.filter.filter(re, 'text');
-							}
-							
-							Ext.ux.RapidApp.AppTree.ensure_recursive_load(tree,callback);
-						}
-					}
-				}
-			}
-			*/
 		};
-	},
-
-	
+	}
 });
 Ext.preg('appgrid-filter-cols',Ext.ux.RapidApp.Plugin.AppGridFilterCols);
 

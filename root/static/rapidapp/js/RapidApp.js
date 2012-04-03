@@ -170,7 +170,11 @@ Ext.override(Ext.menu.Menu, {
         this.hidden = false;
         this.focus();
         this.fireEvent("show", this);
-    }
+    },
+	 
+	// Added 2012-04-02 by HV: further turn off the default tiny menu scroller functions:
+	enableScrolling: false
+	 
 });
 // --------
 
