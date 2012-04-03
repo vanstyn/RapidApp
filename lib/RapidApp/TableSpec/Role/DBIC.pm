@@ -134,7 +134,10 @@ sub init_relspecs {
 		}
 	}
 	
-	$self->reorder_by_colspec_list($self->include_colspec->colspecs);
+	# turned off by HV 2012-04-03: this is causing relationship columns to get moved to the
+	# end of the list (out of their natural order) and I don't think is doing anything
+	# useful
+	#$self->reorder_by_colspec_list($self->include_colspec->colspecs);
 }
 
 
