@@ -779,17 +779,6 @@ sub multifilter_translate_cond {
 }
 
 
-sub param_decodeIf {
-	my $self = shift;
-	my $param = shift;
-	my $default = shift || undef;
-	
-	return $default unless (defined $param);
-	
-	return $param if (ref $param);
-	return $self->json->decode($param);
-}
-
 has 'DataStore_build_params' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 before DataStore2_BUILD => sub {
 	my $self = shift;

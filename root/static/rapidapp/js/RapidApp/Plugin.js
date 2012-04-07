@@ -3321,25 +3321,22 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 	init: function(grid) {
 		this.grid = grid;
 		grid.on('render',this.onRender,this);
-		
 	},
 	
 	onRender: function() {
 		
-		var store = this.grid.getStore();
+		var grid = this.grid, 
+			store = grid.getStore(), 
+			menu = grid.getOptionsMenu();
 		
-		if(!store.api.update) { return; }
-		
-		console.log(this.getEditColumns().length);
-		
-		var menu = this.grid.getOptionsMenu();
-		if(!menu) { return; }
+		if(!grid.batch_update_url || !store.api.update || !menu) { 
+			return; 
+		}
 		
 		menu.add(this.getMenu());
 		
 		store.on('load',this.updateEditMenus,this);
-		this.grid.getSelectionModel().on('selectionchange',this.updateEditMenus,this);
-		
+		grid.getSelectionModel().on('selectionchange',this.updateEditMenus,this);
 	},
 	
 	getMenu: function() {
@@ -3352,20 +3349,62 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 					{
 						itemId: 'all',
 						text: 'All Active Rows',
-						iconCls: 'icon-table-edit-all'
+						iconCls: 'icon-table-edit-all',
+						scope: this,
+						handler: this.doBatchEditAll
 					},
 					{
 						itemId: 'selected',
 						text: 'Selected Rows',
 						iconCls: 'icon-table-edit-row',
 						scope: this,
-						handler: this.showBatchEditWindow
+						handler: this.doBatchEditSelected
 					}
 				]
 			});
 		}
 		return this.editMenu;
 	},
+	
+	getStoreParams: function() {
+		var store = this.grid.getStore();
+		
+		var params = {};
+		Ext.apply(params,store.lastOptions.params);
+		Ext.apply(params,store.baseParams);
+			
+		return params;
+	},
+	
+	getSelectedIds: function() {
+		var selections = this.grid.getSelectionModel().getSelections();
+		var ids = [];
+		Ext.each(selections,function(item){
+			ids.push(item.id);
+		},this);
+		
+		return ids;
+	},
+	
+	getBatchEditSpec: function(sel) {
+		
+		var opt = { read_params: this.getStoreParams() };
+		
+		if(sel) {
+			var ids = this.getSelectedIds();
+			Ext.apply(opt,{
+				selectedIds: ids,
+				count: ids.length
+			});
+		}
+		else {
+			opt.count = this.grid.getStore().getTotalCount();
+		}
+		
+		return opt;
+	},
+	
+	
 	
 	updateEditMenus: function() {
 		var menu = this.getMenu().menu;
@@ -3430,13 +3469,24 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 				textarea.ownerCt.doLayout(); // == compositeField.innerCt.doLayout()
 			});
 
-			var Toggle = new Ext.form.Checkbox({ 
-				itemId: 'toggle',
-				name: '___check'
-			});
+			var Toggle = new Ext.form.Checkbox({ itemId: 'toggle' });
 			Toggle.on('check',function(checkbox,checked){
-				Field.setDisabled(!checked);
+				var disabled = !checked
+				var labelEl = Field.getEl().parent('div.x-form-item').first('label');
+				Field.setDisabled(disabled);
 				fp.updateSelections();
+				if(disabled){ 
+					Field.clearInvalid();
+					labelEl.setStyle('font-weight','normal');
+					labelEl.setStyle('font-style','normal');
+					labelEl.setStyle('color','black');
+				}
+				else{
+					Field.validate();
+					labelEl.setStyle('font-weight','bold');
+					labelEl.setStyle('font-style','italic');
+					labelEl.setStyle('color','green');
+				}
 			},fp);
 			
 			var comp_field = {
@@ -3454,20 +3504,27 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 		return fields;
 	},
 	
-	showBatchEditWindow: function() {
+	doBatchEditAll: function() { this.doBatchEdit(); },
+	doBatchEditSelected: function() { this.doBatchEdit(true); },
+	
+	doBatchEdit: function(sel) {
+		var editSpec = this.getBatchEditSpec(sel);
 		
 		var win,fp;
 		
 		fp = new Ext.form.FormPanel({
 			xtype: 'form',
 			frame: true,
-			labelAlign: 'left',
-			plugins: ['dynamic-label-width'],
-			bodyStyle: 'padding: 25px 10px 5px 5px;',
+			labelAlign: 'right',
+			
+			//plugins: ['dynamic-label-width'],
+			labelWidth: 130,
+			labelPad: 15,
+			bodyStyle: 'padding: 10px 25px 5px 5px;',
 			defaults: { anchor: '-0' },
 			autoScroll: true,
 			//monitorValid: true,
-			buttonAlign: 'center',
+			buttonAlign: 'right',
 			minButtonWidth: 100,
 			
 			getSaveBtn: function() {
@@ -3511,10 +3568,19 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 					width: 175,
 					formBind: true,
 					disabled: true,
+					scope: this,
 					handler: function(btn) {
-						var data = fp.getForm().getValues();
-						delete data.___check;
-						console.dir(data);
+						var data = {};
+						fp.getForm().items.each(function(comp_field){
+							// get the field out of the composit field. expects 2 items, the checkbox then the field
+							// need to do it this way to make sure we call the field's getValue() function
+							f = comp_field.items.items[1];
+							if(f && !f.disabled && f.name && Ext.isFunction(f.getValue)) {
+								data[f.name] = f.getValue();
+							}
+						},this);
+
+						this.postUpdate(editSpec,data,win);
 					}
 				},
 				{
@@ -3525,30 +3591,116 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 					}
 				}
 			]
-				
-			//items: 
 		});
 		
-		fp.stopMonitoring();
+		var txt = 'Changes will be applied to all ' + editSpec.count + ' records in the active search.';
+		if(sel) { txt = 'Changes will be applied to the ' + editSpec.count + ' selected records.'; }
+		//txt += "(only checked fields will be modified).";
 		
-		fp.add(this.getBatchEditFields(fp));
-		//fp.on('render',fp.updateSelections,this);
+		var items = this.getBatchEditFields(fp);
+		items.unshift(
+			{ html: '<div class="ra-batch-edit-heading">' +
+				'Batch Modify <span class="num">' + editSpec.count + '</span> Records:' +
+			'</div>' },
+			{ html: '<div class="ra-batch-edit-sub-heading">' +
+				'Click the checkboxes below to enter field values to change/update in each record.<br>' + txt +
+				'<div class="warn-line"><span class="warn">WARNING</span>: This operation cannot be undone.</div>' +
+			'</div>'}
+		);
+		
+		fp.add(items);
+		
+		//fp.stopMonitoring();
+			
+		var title = 'Batch Modify Active Records';
+		if(sel) { title = 'Batch Modify Selected Records'; }
 		
 		win = new Ext.Window({
-			title: 'Batch Modify',
-			//autoDestroy: false,
+			title: title,
 			layout: 'fit',
-			width: 500,
+			width: 600,
 			height: 500,
+			minWidth: 475,
+			minHeight: 350,
 			closable: true,
 			modal: true,
 			items: fp
 		});
 		
 		win.show();
-		
-	}
+	},
 	
+	postUpdate: function(editSpec,data,win){
+		
+		// ---
+		// If selectedIds is set, it means we're updating records in the local store and
+		// we can update them them locally, no need t go to the server or use the custom
+		// batch_edit call:
+		if(editSpec.selectedIds) {
+			return this.localUpdate(editSpec.selectedIds,data,win);
+		}
+		// ---
+		
+		var Conn = new Ext.data.Connection();
+		
+		var myMask = new Ext.LoadMask(win.getEl(), {msg:"Updating Records, please wait..."});
+		var showMask = function(){ myMask.show(); }
+		var hideMask = function(){ myMask.hide(); }
+		
+		Conn.on('beforerequest', showMask, this);
+		Conn.on('requestcomplete', hideMask, this);
+		Conn.on('requestexception', hideMask, this);
+		
+		editSpec.update = data;
+		
+		Conn.request({
+			url: this.grid.batch_update_url,
+			params: { editSpec: Ext.encode(editSpec) },
+			scope: this,
+			success: function(){
+				win.close();
+				this.grid.getStore().reload();
+			}
+		});
+	},
+	
+	localUpdate: function(ids,data,win) {
+		var store = this.grid.getStore();
+			
+		Ext.each(ids,function(id) {
+			var Record = store.getById(id);
+			Record.beginEdit();
+			for (i in data) { 
+				Record.set(i,data[i]); 
+			}
+			Record.endEdit();
+		},this);
+		
+		// create a single-use load mask for the update:
+		if(store.hasPendingChanges()) { //<-- it is *possible* nothing was changed
+			
+			var colnames = this.grid.currentVisibleColnames.call(this.grid);
+			for (i in data) { colnames.push(i); }
+			store.setBaseParam('columns',Ext.encode(colnames));
+			
+			var lMask = new Ext.LoadMask(win.getEl(),{ msg:"Updating Records, please wait..."});
+			lMask.show();
+			var hide_fn;
+			hide_fn = function(){ 
+				lMask.hide(); 
+				store.un('write',hide_fn);
+				win.close();
+			};
+			store.on('write',hide_fn,this);
+			store.save();
+		}
+		else {
+			// if we're here it means there was nothing to change (the records all already had the values
+			// that were specified). Call store save for good measure and close the window:
+			store.save();
+			return win.close();
+		}
+	}
 });
 Ext.preg('appgrid-batch-edit',Ext.ux.RapidApp.Plugin.AppGridBatchEdit);
 

@@ -26,6 +26,8 @@ has 'persist_immediately' => ( is => 'ro', isa => 'HashRef', default => sub{{
 	destroy	=> \0
 }});
 
+has 'allow_batch_update', is => 'ro', isa => 'Bool', default => 1;
+
 has 'DataStore' => (
 	is			=> 'rw',
 	isa		=> 'RapidApp::DataStore2',
@@ -156,6 +158,11 @@ after 'BUILD' => sub {
 		$self->apply_extconfig( add_form_url => $self->suburl('add_form') );
 	}
 	
+	if($self->allow_batch_update && defined $self->Module('store',1)->update_handler) {
+		$self->apply_actions( batch_update => 'batch_update' );
+		$self->apply_extconfig( batch_update_url => $self->suburl('batch_update') );
+	}
+	
 	$self->add_plugin( 'datastore-plus' );
 };
 
@@ -276,8 +283,27 @@ sub get_add_form {
 }
 
 
+sub batch_update {
+	my $self = shift;
+	my $editSpec = $self->param_decodeIf($self->c->req->params->{editSpec});
+	
+	scream($editSpec);
+
+	
+	return 1;
+}
 
 
+sub param_decodeIf {
+	my $self = shift;
+	my $param = shift;
+	my $default = shift || undef;
+	
+	return $default unless (defined $param);
+	
+	return $param if (ref $param);
+	return $self->json->decode($param);
+}
 
 
 #### --------------------- ####

@@ -524,24 +524,35 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.onRender.apply(this, arguments);
 	},
 	
-	reloadColumns: function(store,opts) {
-		if(!store){ store = this.store; }
+	currentVisibleColnames: function() {
+		var cm = this.getColumnModel();
 		
 		// Reset loadedColumnIndexes back to none
 		this.loadedColumnIndexes = {};
-			
-		var cm = this.getColumnModel();
 		
 		var columns = cm.getColumnsBy(function(c){
 			if(c.hidden || c.dataIndex == "") { return false; }
 			return true;
-		});
+		},this);
 		
 		var colDataIndexes = [];
+		var seen = {};
 		Ext.each(columns,function(i) {
-			colDataIndexes.push(i.dataIndex);
+			if(!seen[i.dataIndex]) {
+				colDataIndexes.push(i.dataIndex);
+				seen[i.dataIndex] = true;
+			}
 			this.loadedColumnIndexes[cm.findColumnIndex(i.dataIndex)] = true;
 		},this);
+		
+		return colDataIndexes;
+		
+	},
+	
+	reloadColumns: function(store,opts) {
+		if(!store){ store = this.store; }
+
+		var colDataIndexes = this.currentVisibleColnames();
 		
 		var params = { columns: Ext.encode(colDataIndexes) };
 		if(opts && opts.params) {
