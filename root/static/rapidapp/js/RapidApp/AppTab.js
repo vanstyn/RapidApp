@@ -327,6 +327,13 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		this.plugins.push('appgrid-toggle-all-cols');
 		this.plugins.push('appgrid-filter-cols');
 		
+		
+		
+		this.plugins.push('appgrid-batch-edit'); 
+		
+		
+		
+		
 		// remove columns with 'no_column' set to true:
 		var new_columns = []
 		Ext.each(this.columns,function(column,index,arr) {

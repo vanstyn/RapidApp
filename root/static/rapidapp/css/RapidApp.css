@@ -225,6 +225,9 @@ pre {
 .icon-left-right { background-image: url(/static/rapidapp/images/left_right.png) !important; }
 .icon-table-selection-all { background-image: url(/static/rapidapp/images/table_selection_all.png) !important; }
 .icon-table-selection-row { background-image: url(/static/rapidapp/images/table_selection_row.png) !important; }
+.icon-table-edit-all { background-image: url(/static/rapidapp/images/table_edit_all.png) !important; }
+.icon-table-edit-row { background-image: url(/static/rapidapp/images/table_edit_row.png) !important; }
+.icon-table-sql-edit { background-image: url(/static/rapidapp/images/table_sql_edit.png) !important; }
 
 
 .tbar-title-medium {

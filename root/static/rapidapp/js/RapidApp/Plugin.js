@@ -3314,3 +3314,74 @@ Ext.ux.RapidApp.Plugin.AppGridFilterCols = Ext.extend(Ext.ux.RapidApp.Plugin.App
 Ext.preg('appgrid-filter-cols',Ext.ux.RapidApp.Plugin.AppGridFilterCols);
 
 
+
+
+Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
+	
+	init: function(grid) {
+		this.grid = grid;
+		grid.on('render',this.onRender,this);
+		
+	},
+	
+	onRender: function() {
+		
+		var store = this.grid.getStore();
+		
+		if(!store.api.update) { return; }
+		
+		var menu = this.grid.getOptionsMenu();
+		if(!menu) { return; }
+		
+		menu.add(this.getMenu());
+		
+		store.on('load',this.updateEditMenus,this);
+		this.grid.getSelectionModel().on('selectionchange',this.updateEditMenus,this);
+		
+	},
+	
+	getMenu: function() {
+		if(!this.editMenu) {
+			this.editMenu = new Ext.menu.Item({
+				text: 'Batch Edit',
+				iconCls: 'icon-table-sql-edit',
+				hideOnClick: false,
+				menu: [
+					{
+						itemId: 'all',
+						text: 'All Active Rows',
+						iconCls: 'icon-table-edit-all'
+					},
+					{
+						itemId: 'selected',
+						text: 'Selected Rows',
+						iconCls: 'icon-table-edit-row'
+					}
+				]
+			});
+		}
+		return this.editMenu;
+	},
+	
+	updateEditMenus: function() {
+		var menu = this.getMenu().menu;
+		if(!menu) { return; }
+		
+		var allItem = menu.getComponent('all');
+		var count = this.grid.getStore().getTotalCount();
+		allItem.setText('All Active Rows (' + count + ')');
+		allItem.setDisabled(count <= 1);
+		
+		var selItem = menu.getComponent('selected');
+		count = this.grid.getSelectionModel().getSelections().length;
+		selItem.setText('Selected Rows (' + count + ')');
+		selItem.setDisabled(count <= 1);
+		
+	}
+	
+	
+});
+Ext.preg('appgrid-batch-edit',Ext.ux.RapidApp.Plugin.AppGridBatchEdit);
+
+
+
