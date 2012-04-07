@@ -3321,6 +3321,7 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 	init: function(grid) {
 		this.grid = grid;
 		grid.on('render',this.onRender,this);
+		grid.on('rowcontextmenu',this.onRowcontextmenu,this);
 	},
 	
 	onRender: function() {
@@ -3339,6 +3340,27 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 		grid.getSelectionModel().on('selectionchange',this.updateEditMenus,this);
 	},
 	
+	onRowcontextmenu: function(grid,rowIndex,e) {
+		count = this.selectedCount();
+		if(count <= 1) { return; }
+		
+		//stop browser menu:
+		e.stopEvent();
+		
+		var menuItems = [{
+			text: 'Batch Modify Selected Records (' + count + ')',
+			iconCls: 'icon-table-edit-row',
+			scope: this,
+			handler: this.doBatchEditSelected
+		}];
+
+		var menu = new Ext.menu.Menu({ items: menuItems });
+		var pos = e.getXY();
+		pos[0] = pos[0] + 10;
+		pos[1] = pos[1] + 5;
+		menu.showAt(pos);
+	},
+	
 	getMenu: function() {
 		if(!this.editMenu) {
 			this.editMenu = new Ext.menu.Item({
@@ -3348,14 +3370,14 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 				menu: [
 					{
 						itemId: 'all',
-						text: 'All Active Rows',
+						text: 'All Active Records',
 						iconCls: 'icon-table-edit-all',
 						scope: this,
 						handler: this.doBatchEditAll
 					},
 					{
 						itemId: 'selected',
-						text: 'Selected Rows',
+						text: 'Selected Records',
 						iconCls: 'icon-table-edit-row',
 						scope: this,
 						handler: this.doBatchEditSelected
@@ -3405,6 +3427,9 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 	},
 	
 	
+	selectedCount: function() {
+		return this.grid.getSelectionModel().getSelections().length;
+	},
 	
 	updateEditMenus: function() {
 		var menu = this.getMenu().menu;
@@ -3414,12 +3439,12 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 		
 		var allItem = menu.getComponent('all');
 		var count = this.grid.getStore().getTotalCount();
-		allItem.setText('All Active Rows (' + count + ')');
+		allItem.setText('All Active Records (' + count + ')');
 		allItem.setDisabled(count <= 1);
 		
 		var selItem = menu.getComponent('selected');
-		count = this.grid.getSelectionModel().getSelections().length;
-		selItem.setText('Selected Rows (' + count + ')');
+		count = this.selectedCount();
+		selItem.setText('Selected Records (' + count + ')');
 		selItem.setDisabled(count <= 1);
 		
 	},
