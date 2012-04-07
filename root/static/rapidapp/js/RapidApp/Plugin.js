@@ -3330,6 +3330,8 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 		
 		if(!store.api.update) { return; }
 		
+		console.log(this.getEditColumns().length);
+		
 		var menu = this.grid.getOptionsMenu();
 		if(!menu) { return; }
 		
@@ -3343,7 +3345,7 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 	getMenu: function() {
 		if(!this.editMenu) {
 			this.editMenu = new Ext.menu.Item({
-				text: 'Batch Edit',
+				text: 'Batch Modify',
 				iconCls: 'icon-table-sql-edit',
 				hideOnClick: false,
 				menu: [
@@ -3355,7 +3357,9 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 					{
 						itemId: 'selected',
 						text: 'Selected Rows',
-						iconCls: 'icon-table-edit-row'
+						iconCls: 'icon-table-edit-row',
+						scope: this,
+						handler: this.showBatchEditWindow
 					}
 				]
 			});
@@ -3367,6 +3371,8 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 		var menu = this.getMenu().menu;
 		if(!menu) { return; }
 		
+		//console.log(this.getEditColumns().length);
+		
 		var allItem = menu.getComponent('all');
 		var count = this.grid.getStore().getTotalCount();
 		allItem.setText('All Active Rows (' + count + ')');
@@ -3377,8 +3383,171 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 		selItem.setText('Selected Rows (' + count + ')');
 		selItem.setDisabled(count <= 1);
 		
-	}
+	},
 	
+	getEditColumns: function() {
+		if(!this.editColumns) {
+			var columns = [];
+			var cm = this.grid.getColumnModel();
+			for (i in cm.config) {
+				if(cm.isCellEditable(i,0)) {
+					columns.push(cm.config[i]);
+				}
+			}
+			
+			this.editColumns = columns;
+		};
+		return this.editColumns;
+	},
+	
+	getBatchEditFields: function(fp) {
+		//var fp = fp;
+		var fields = [];
+		var columns = this.getEditColumns();
+		Ext.each(columns,function(column) {
+
+			var field = {};
+			if(Ext.isFunction(column.editor.cloneConfig)) {
+				field = column.editor.cloneConfig();
+			}
+			else {
+				Ext.apply(field,column.editor);
+			}
+			
+			Ext.apply(field,{
+				name: column.name,
+				fieldLabel: column.header || column.name,
+				flex: 1,
+				disabled: true
+			});
+			
+			// Turn into a component object now:
+			var Field = Ext.ComponentMgr.create(field,'textfield');
+			
+			// If this is a textarea with "grow" on:
+			// http://www.sencha.com/forum/showthread.php?104490-Solved-Auto-growing-textarea-in-CompositeField&p=498813&viewfull=1#post498813
+			Field.on('autosize', function(textarea){
+				textarea.ownerCt.doLayout(); // == compositeField.innerCt.doLayout()
+			});
+
+			var Toggle = new Ext.form.Checkbox({ 
+				itemId: 'toggle',
+				name: '___check'
+			});
+			Toggle.on('check',function(checkbox,checked){
+				Field.setDisabled(!checked);
+				fp.updateSelections();
+			},fp);
+			
+			var comp_field = {
+				xtype: 'compositefield',
+				items: [Toggle,Field]
+			};
+			
+			fields.push(
+				{ xtype: 'spacer', height: 10 },
+				comp_field
+			);
+			
+		},this);
+		
+		return fields;
+	},
+	
+	showBatchEditWindow: function() {
+		
+		var win,fp;
+		
+		fp = new Ext.form.FormPanel({
+			xtype: 'form',
+			frame: true,
+			labelAlign: 'left',
+			plugins: ['dynamic-label-width'],
+			bodyStyle: 'padding: 25px 10px 5px 5px;',
+			defaults: { anchor: '-0' },
+			autoScroll: true,
+			//monitorValid: true,
+			buttonAlign: 'center',
+			minButtonWidth: 100,
+			
+			getSaveBtn: function() {
+				for (i in fp.buttons) {
+					if(fp.buttons[i].name == 'save') { return fp.buttons[i]; }
+				}
+				return null;
+			},
+			
+			getCount: function() {
+				var count = 0;
+				fp.items.each(function(itm){
+					if(!itm.items) { return; }
+					var cb = itm.items.find( // have to reproduce: itm.getComponent('toggle')
+						function(i){ if (i.itemId == 'toggle'){ return true; }},
+					this);
+					if(cb && cb.getValue()) { count++; }
+				},this);
+				return count;
+			},
+			
+			updateSelections: function() {
+				fp.stopMonitoring();
+				var count = fp.getCount();
+				var saveBtn = fp.getSaveBtn();
+				saveBtn.setText('Apply Changes (' + count + ' fields)');
+				
+				if(count > 0) {
+					fp.startMonitoring();
+				}
+				else {
+					saveBtn.setDisabled(true);
+				}
+			},
+			
+			buttons: [
+				{
+					name: 'save',
+					text: 'Apply Changes (0 fields)',
+					iconCls: 'icon-save',
+					width: 175,
+					formBind: true,
+					disabled: true,
+					handler: function(btn) {
+						var data = fp.getForm().getValues();
+						delete data.___check;
+						console.dir(data);
+					}
+				},
+				{
+					name: 'cancel',
+					text: 'Cancel',
+					handler: function(btn) {
+						win.close();
+					}
+				}
+			]
+				
+			//items: 
+		});
+		
+		fp.stopMonitoring();
+		
+		fp.add(this.getBatchEditFields(fp));
+		//fp.on('render',fp.updateSelections,this);
+		
+		win = new Ext.Window({
+			title: 'Batch Modify',
+			//autoDestroy: false,
+			layout: 'fit',
+			width: 500,
+			height: 500,
+			closable: true,
+			modal: true,
+			items: fp
+		});
+		
+		win.show();
+		
+	}
 	
 });
 Ext.preg('appgrid-batch-edit',Ext.ux.RapidApp.Plugin.AppGridBatchEdit);

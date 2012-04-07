@@ -339,6 +339,11 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		Ext.each(this.columns,function(column,index,arr) {
 			if(!column.no_column) {
 				
+				// check for special 'allow_edit' attribute:
+				if(typeof column.allow_edit != "undefined" && !column.allow_edit) { 
+					column.editable = false; 
+				}
+				
 				// autoExpandColumn feature relies on the "id" property. Here we set it
 				// automatically to be the same as the column name.
 				if(this.autoExpandColumn && this.autoExpandColumn == column.name) {
@@ -351,6 +356,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			}
 		},this);
 		this.columns = new_columns;
+		
+		
 		
 		var bbar_items = [];
 		if(Ext.isArray(this.bbar)) { bbar_items = this.bbar; }
