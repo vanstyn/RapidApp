@@ -341,7 +341,9 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 				
 				// check for special 'allow_edit' attribute:
 				if(typeof column.allow_edit != "undefined" && !column.allow_edit) { 
-					column.editable = false; 
+					if(!column.allow_batchedit) {
+						column.editable = false;
+					}
 				}
 				
 				// autoExpandColumn feature relies on the "id" property. Here we set it

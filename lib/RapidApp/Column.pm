@@ -9,7 +9,7 @@ our @gridColParams= qw(
 	filter field_cnf rel_combo_field_cnf field_cmp_config render_fn renderer
 	allow_add allow_edit allow_view query_id_use_column query_search_use_column
 	trueText falseText menu_select_editor render_column multifilter_type summary_functions
-	no_summary
+	no_summary allow_batchedit
 );
 our @attrs= ( @gridColParams, qw(
 	data_type required_fetch_columns read_raw_munger update_munger 
