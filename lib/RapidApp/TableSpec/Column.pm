@@ -142,7 +142,9 @@ sub DEFAULT_PROFILES {{
 			 summary_functions => \@number_summary_funcs
 		},
 		noedit => {
-			editor => ''
+			editor => '',
+			allow_edit => \0,
+			allow_batchedit => \0
 		}
 
 }};

@@ -3453,10 +3453,14 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 		var columns = [];
 		var cm = this.grid.getColumnModel();
 		for (i in cm.config) {
-			var column = cm.config[i];
+			var c = cm.config[i];
 			// Only show editable, non-hidden columns:
-			if(!column.hidden && cm.isCellEditable(i,0)) {
-				columns.push(column);
+			var valid = false;
+			if(!c.hidden && cm.isCellEditable(i,0)) { valid = true; }
+			if(typeof c.allow_batchedit != 'undefined' && !c.allow_batchedit) { valid = false; }
+			
+			if(valid) { 
+				columns.push(c); 
 			}
 		}
 		return columns;
@@ -3687,7 +3691,7 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 		//var Conn = new Ext.data.Connection();
 		var Conn = Ext.ux.RapidApp.newConn({ timeout: 300000 }); //<-- 5 minute timeout
 		
-		var myMask = new Ext.LoadMask(win.getEl(), {msg:"Updating Multiple Records - Please Wait..."});
+		var myMask = new Ext.LoadMask(win.getEl(), {msg:"Updating Multiple Records - This may take several minutes..."});
 		var showMask = function(){ myMask.show(); }
 		var hideMask = function(){ myMask.hide(); }
 		
