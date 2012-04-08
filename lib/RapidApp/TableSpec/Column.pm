@@ -121,13 +121,13 @@ sub DEFAULT_PROFILES {{
 			summary_functions => \@text_summary_funcs,
 		},
 		datetime => {
-			editor => { xtype => 'xdatetime2', minWidth => 200 },
+			editor => { xtype => 'xdatetime2', plugins => ['form-relative-datetime'], minWidth => 200 },
 			renderer => ["Ext.ux.RapidApp.getDateFormatter('M d, Y g:i A')"],
 			multifilter_type => 'date',
 			summary_functions => \@date_summary_funcs
 		},
 		date => {
-			editor => { xtype => 'datefield', minWidth => 120 },
+			editor => { xtype => 'datefield', plugins => ['form-relative-datetime'], minWidth => 120 },
 			renderer => ["Ext.ux.RapidApp.getDateFormatter('M d, Y')"],
 			multifilter_type => 'date',
 			summary_functions => \@date_summary_funcs

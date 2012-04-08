@@ -584,6 +584,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		else if (this.condType == 'date') {
 			Ext.apply(this.datafield_cnf,{
 				xtype	: 'datefield',
+				plugins: ['form-relative-datetime'],
 				format: 'Y-m-d H:i:s',
 				width: 130,
 				flex: 0

@@ -3754,3 +3754,155 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 });
 Ext.preg('appgrid-batch-edit',Ext.ux.RapidApp.Plugin.AppGridBatchEdit);
 
+
+
+
+
+/*
+ Ext.ux.RapidApp.Plugin.RelativeDateTime
+ 2012-04-08 by HV
+
+ Plugin for DateTime fields that allows and processes relative date strings.
+*/
+Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
+	init: function(cmp) {
+		this.cmp = cmp;
+		var plugin = this;
+		
+		var native_parseDate = cmp.parseDate;
+		cmp.parseDate = function(value) {
+			if(value && value.charAt) {
+				var f = value.charAt(0); // <-- first character
+				if(f == '+' || f == '-'){ 
+					var ret = plugin.parseRelativeDate.apply(plugin,arguments);
+					if(ret) { return ret; }
+				}
+			}
+			return native_parseDate.apply(cmp,arguments);
+		}
+		
+	},
+	
+	parseRelativeDate: function(value) {
+		var sign = value.substr(0,1);
+		var str = value.substr(1);
+		
+		var parts = this.extractDurationParts(str);
+		if(!parts) { return null; }
+		
+		var dt = new Date();
+		Ext.each(parts,function(part){
+			if(sign == '-') { part.num = '-' + part.num; }
+			var num = parseInt(part.num);
+			if(num == NaN) { return null; }
+			
+			var newDt = this.addToDate(dt,num,part.unit);
+
+			if(!newDt) { return null; }
+			dt = newDt;
+		},this);
+		
+		return dt;
+	},
+	
+	extractDurationParts: function(str) {
+		
+		// strip commas and whitespace:
+		str = str.replace(/\,/g,'');
+		str = str.replace(/\s*/g,'');
+		
+		var parts = [];
+		while(str.length > 0) {
+			var pos,num,unit;
+			
+			// find the offset of the first letter after some numbers
+			pos = str.search(/\D/);
+			
+			// If there are no numbers (pos == 0) or we didn't find any letters (pos == -1)
+			// this is an invalid duration string, return:
+			if(pos <= 0) { return null; }
+			
+			// this is the number:
+			num = str.substr(0,pos);
+			
+			// remove it off the front of the string before proceding:
+			str = str.substr(pos);
+			
+			// find the offset of the next number after some letters
+			pos = str.search(/\d/);
+			
+			// if no numbers were found, this must be the last part
+			if(pos == -1) {
+				// this is the unit:
+				unit = str;
+				
+				// empty the string
+				str = '';
+			}
+			else {
+				// this is the unit:
+				unit = str.substr(0,pos);
+				
+				// remove it off the front of the string before proceding:
+				str = str.substr(pos);
+			}
+			
+			// Make sure num is a valid int/number:
+			if(!/^\d+$/.test(num)) { return null; }
+			
+			parts.push({num:num,unit:unit});
+		}
+		
+		return parts;
+	},
+	
+	unitMap: {
+		y			: Date.YEAR,
+		year		: Date.YEAR,
+		years		: Date.YEAR,
+		yr			: Date.YEAR,
+		yrs		: Date.YEAR,
+		
+		m			: Date.MONTH,
+		mo			: Date.MONTH,
+		month		: Date.MONTH,
+		months	: Date.MONTH,
+		
+		d			: Date.DAY,
+		day		: Date.DAY,
+		days		: Date.DAY,
+		dy			: Date.DAY,
+		dys		: Date.DAY,
+		
+		h			: Date.HOUR,
+		hour		: Date.HOUR,
+		hours		: Date.HOUR,
+		hr			: Date.HOUR,
+		hrs		: Date.HOUR,
+		
+		i			: Date.MINUTE,
+		mi			: Date.MINUTE,
+		min		: Date.MINUTE,
+		mins		: Date.MINUTE,
+		minute	: Date.MINUTE,
+		minutes	: Date.MINUTE,
+		
+		s			: Date.SECOND,
+		sec		: Date.SECOND,
+		secs		: Date.SECOND,
+		second	: Date.SECOND,
+		second	: Date.SECOND
+	},
+	
+	addToDate: function(dt,num,unit) {
+		dt = dt || new Date();
+		
+		var interval = this.unitMap[unit];
+		if(!interval) { return null; }
+		
+		return dt.add(interval,num);
+	}
+	
+});
+Ext.preg('form-relative-datetime',Ext.ux.RapidApp.Plugin.RelativeDateTime);
+
