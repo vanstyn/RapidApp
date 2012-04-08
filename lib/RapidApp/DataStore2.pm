@@ -14,6 +14,8 @@ has 'read_handler'		=> ( is => 'ro', default => undef,	isa => 'Maybe[RapidApp::H
 has 'update_handler'		=> ( is => 'ro', default => undef,	isa => 'Maybe[RapidApp::Handler]' );
 has 'destroy_handler'	=> ( is => 'ro', default => undef,	isa => 'Maybe[RapidApp::Handler]' );
 
+# global variable/flag (set/localized in RapidApp::Role::DataStore2)
+our $BATCH_UPDATE_IN_PROGRESS = 0;
 
 has 'record_pk' 			=> ( is => 'ro', default => undef );
 has 'store_fields' 		=> ( is => 'ro', default => undef );
@@ -661,6 +663,13 @@ sub update {
 	my $params = $self->c->req->params;
 	my $rows = $self->json->decode($params->{rows});
 	delete $params->{rows};
+	
+	# -- Set the $BATCH_UPDATE_IN_PROGRESS flag if the client says this is a
+	# batch update. This codepath is followed for "local" batch updates. See
+	# also the 'batch_update' method/action in RapidApp::Role::DataStore2
+	local $BATCH_UPDATE_IN_PROGRESS = $BATCH_UPDATE_IN_PROGRESS;
+	$BATCH_UPDATE_IN_PROGRESS = 1 if ($params->{batch_update});
+	# --
 	
 	if (defined $params->{orig_params}) {
 		my $orig_params = $self->json->decode($params->{orig_params});

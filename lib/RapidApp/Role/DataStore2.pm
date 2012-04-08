@@ -27,6 +27,10 @@ has 'persist_immediately' => ( is => 'ro', isa => 'HashRef', default => sub{{
 }});
 
 has 'allow_batch_update', is => 'ro', isa => 'Bool', default => 1;
+has 'batch_update_max_rows', is => 'ro', isa => 'Int', default => 500;
+
+# not implimented yet:
+#has 'batch_update_warn_rows', is => 'ro', isa => 'Int', default => 100;
 
 has 'DataStore' => (
 	is			=> 'rw',
@@ -282,15 +286,73 @@ sub get_add_form {
 	};
 }
 
+before 'batch_update' => sub {
+	my $self = shift;
+	my $editSpec = $self->param_decodeIf($self->c->req->params->{editSpec});
+	my $update = $editSpec->{update};
+	
+	die usererr "Invalid editSpec - record_pk found in update data!!" 
+		if (exists $update->{$self->record_pk});
+	
+	my $count = $editSpec->{count} or die usererr "Invalid editSpec - no count supplied";
+	
+	my $max = $self->batch_update_max_rows;
+	
+	die usererr 
+		"Too many rows for batch update ($count) - max allowed rows: $max",
+		title => "Batch Update Denied"
+	if($max && $count > $max);
+};
 
+# This is expensive, but compatible with the generic DataStore2 (update) API.
+# Should be overridden in more specific derived classes, like in DbicLink2, to
+# perform a smarter/more efficient operation
 sub batch_update {
 	my $self = shift;
 	my $editSpec = $self->param_decodeIf($self->c->req->params->{editSpec});
+	my $read_params = $editSpec->{read_params};
+	my $update = $editSpec->{update};
 	
-	scream($editSpec);
-
+	delete $read_params->{start};
+	delete $read_params->{limit};
 	
-	return 1;
+	# perform a read to verify that totalCount matches the supplied/expected count
+	my %orig_params = %{$self->c->req->params};
+	%{$self->c->req->params} = %$read_params;
+	my $readdata = $self->read_records();
+	my $rows = $readdata->{rows};
+	
+	die "Actual row count (" . @$rows . ") doesn't agree with 'results' property (" . $readdata->{results} . ")"
+		unless (@$rows == $readdata->{results});
+	
+	die usererr "Update count mismatch (" . 
+		$editSpec->{count} . ' vs ' . $readdata->{results} . ') ' .
+		"- This can happen if someone else modified one or more of the records in the update set.<br><br>" .
+		"Reload the the grid and try again."
+	unless ($editSpec->{count} == $readdata->{results});
+	
+	# apply update data to rows:
+	%$_ = (%$_,%$update) for (@$rows);
+	
+	my $result;
+	{
+		local $RapidApp::DataStore2::BATCH_UPDATE_IN_PROGRESS = 1;
+		$result = $self->DataStore->update_handler->call($rows,$read_params);
+	}
+	
+	%{$self->c->req->params} = %orig_params;
+	
+	return $result if (
+		ref($result) eq 'HASH' and
+		defined $result->{success}
+	);
+	
+	return {
+		success => \1,
+		msg => 'Batch Update Succeeded'
+	} if ($result);
+	
+	die "Update Failed";
 }
 
 

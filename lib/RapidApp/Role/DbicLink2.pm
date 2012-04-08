@@ -1190,4 +1190,15 @@ sub make_dbic_exception_friendly {
 }
 
 
+sub param_decodeIf {
+	my $self = shift;
+	my $param = shift;
+	my $default = shift || undef;
+	
+	return $default unless (defined $param);
+	
+	return $param if (ref $param);
+	return $self->json->decode($param);
+}
+
 1;

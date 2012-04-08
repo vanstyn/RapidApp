@@ -458,6 +458,7 @@ Ext.ux.RapidApp.ClickMenuField = Ext.extend(Ext.ux.RapidApp.ClickCycleField,{
 			},this);
 			
 			this.clickMenu.on('hide',function(){
+				if(!this.isVisible()){ return; }
 				this.selectValue(this.getValue());
 			},this);
 			/*************************************************/

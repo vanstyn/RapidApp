@@ -3391,11 +3391,6 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 	getStoreParams: function() {
 		var store = this.grid.getStore();
 		
-		
-		console.dir(store.lastOptions.params);
-		console.dir(store.baseParams);
-		
-		
 		var params = {};
 		Ext.apply(params,store.lastOptions.params);
 		Ext.apply(params,store.baseParams);
@@ -3455,18 +3450,16 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 	},
 	
 	getEditColumns: function() {
-		if(!this.editColumns) {
-			var columns = [];
-			var cm = this.grid.getColumnModel();
-			for (i in cm.config) {
-				if(cm.isCellEditable(i,0)) {
-					columns.push(cm.config[i]);
-				}
+		var columns = [];
+		var cm = this.grid.getColumnModel();
+		for (i in cm.config) {
+			var column = cm.config[i];
+			// Only show editable, non-hidden columns:
+			if(!column.hidden && cm.isCellEditable(i,0)) {
+				columns.push(column);
 			}
-			
-			this.editColumns = columns;
-		};
-		return this.editColumns;
+		}
+		return columns;
 	},
 	
 	getBatchEditFields: function(fp) {
@@ -3475,11 +3468,14 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 		var columns = this.getEditColumns();
 		Ext.each(columns,function(column) {
 
-			var field = {};
+			var Field,field;
 			if(Ext.isFunction(column.editor.cloneConfig)) {
 				field = column.editor.cloneConfig();
+				//Field = column.editor;
+				if(field.store){ field.store.autoDestroy = false; }
 			}
 			else {
+				//Field = Ext.ComponentMgr.create(field,'textfield');
 				Ext.apply(field,column.editor);
 			}
 			
@@ -3491,7 +3487,7 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 			});
 			
 			// Turn into a component object now:
-			var Field = Ext.ComponentMgr.create(field,'textfield');
+			Field = Ext.ComponentMgr.create(field,'textfield');
 			
 			// If this is a textarea with "grow" on:
 			// http://www.sencha.com/forum/showthread.php?104490-Solved-Auto-growing-textarea-in-CompositeField&p=498813&viewfull=1#post498813
@@ -3623,11 +3619,22 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 			]
 		});
 		
-		var txt = 'Changes will be applied to all ' + editSpec.count + ' records in the active search.';
-		if(sel) { txt = 'Changes will be applied to the ' + editSpec.count + ' selected records.'; }
-		//txt += "(only checked fields will be modified).";
-		
+		var txt = 'Changes will be applied (identically) to all ' + editSpec.count + ' records in the active search.';
+		if(sel) { txt = 'Changes will be applied (identically) to the ' + editSpec.count + ' selected records.'; }
+
 		var items = this.getBatchEditFields(fp);
+		
+		if(items.length == 0) {
+			return Ext.Msg.show({
+				icon: Ext.Msg.WARNING,
+				title: 'No editable columns to Batch Modify',
+				msg: 
+					'None of the currently selected columns are batch editable - nothing to Batch Modify.' +
+					'<br><br>Select at least one editable column from the Columns menu and try again.',
+				buttons: Ext.Msg.OK
+			});
+		}
+		
 		items.unshift(
 			{ html: '<div class="ra-batch-edit-heading">' +
 				'Batch Modify <span class="num">' + editSpec.count + '</span> Records:' +
@@ -3637,11 +3644,18 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 				'<div class="warn-line"><span class="warn">WARNING</span>: This operation cannot be undone.</div>' +
 			'</div>'}
 		);
+			
+		items.push(
+			{ xtype: 'spacer', height: 15 },
+			{ html: '<div class="ra-batch-edit-sub-heading">' +
+				'<div class="warn-line">' +
+					'<i><span class="warn">Note</span>: only currently active/selected, editable columns shown.</i>' +
+				'</div>'
+			}
+		);
 		
 		fp.add(items);
-		
-		//fp.stopMonitoring();
-			
+
 		var title = 'Batch Modify Active Records';
 		if(sel) { title = 'Batch Modify Selected Records'; }
 		
@@ -3662,7 +3676,6 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 	
 	postUpdate: function(editSpec,data,win){
 		
-		
 		/* --------------------------------------------------------------------------------- */
 		// If selectedIds is set, it means we're updating records in the local store and
 		// we can update them them locally, no need to go to the server with a custom
@@ -3670,7 +3683,6 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 		// *completely* different mechanism, although it is transparent to the user:
 		if(editSpec.selectedIds) { return this.localUpdate(editSpec.selectedIds,data,win); }
 		/* --------------------------------------------------------------------------------- */
-		
 		
 		//var Conn = new Ext.data.Connection();
 		var Conn = Ext.ux.RapidApp.newConn();
@@ -3729,7 +3741,7 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 			delete store.baseParams.batch_update; //<-- remove the tmp added batch_update param
 		}
 		else {
-			// if we're here it means there was nothing to change (the records all already had the values
+			// if we're here it means there was nothing to change (all the records already had the values
 			// that were specified). Call store save for good measure and close the window:
 			store.save();
 			return win.close();
@@ -3737,6 +3749,4 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 	}
 });
 Ext.preg('appgrid-batch-edit',Ext.ux.RapidApp.Plugin.AppGridBatchEdit);
-
-
 
