@@ -17,7 +17,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			this.store.filterdata = grid.init_state.multifilters;
 		}
 		
-		
+		/*
 		this.store.on('beforeload',function(store,options) {
 			if(store.filterdata) {
 				Ext.apply(options.params, {
@@ -26,6 +26,20 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			}
 			return true;
 		},this);
+		*/
+		
+		this.store.on('beforeload',function(store,options) {
+			if(store.filterdata) {
+				Ext.apply(store.baseParams, {
+					'multifilter': this.getMultiFilterParam() 
+				});
+			}
+			else {
+				delete store.baseParams.multifilter;
+			}
+			return true;
+		},this);
+		
 	
 		if (grid.rendered) {
 			this.onRender();

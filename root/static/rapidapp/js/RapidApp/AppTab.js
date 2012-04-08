@@ -660,12 +660,14 @@ Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler = function(cmp,url,all_pages,
 			// --
 			Ext.apply(options.params,store.baseParams);
 			
+			/*
 			if(store.filterdata) {
 				var encoded = Ext.encode(store.filterdata);
 				Ext.apply(options.params, {
 					'multifilter': encoded 
 				});
 			}
+			*/
 			
 			if(all_pages) { 
 				if (options.params.limit) { delete options.params.limit; } 
