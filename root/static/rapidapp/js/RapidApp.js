@@ -253,6 +253,7 @@ Ext.Ajax.on('requestexception',Ext.ux.RapidApp.ajaxCheckException);
 Ext.Ajax.on('beforerequest',Ext.ux.RapidApp.ajaxRequestContentType);
 
 
+
 Ext.ux.RapidApp.ajaxShowGlobalMask = function(conn,options) {
 	if(options.loadMaskMsg) {
 	
@@ -271,6 +272,45 @@ Ext.ux.RapidApp.ajaxHideGlobalMask = function(conn,options) {
 Ext.Ajax.on('beforerequest',Ext.ux.RapidApp.ajaxShowGlobalMask,this);
 Ext.Ajax.on('requestcomplete',Ext.ux.RapidApp.ajaxHideGlobalMask,this);
 Ext.Ajax.on('requestexception',Ext.ux.RapidApp.ajaxHideGlobalMask,this);
+
+Ext.ux.RapidApp.checkLocalTimezone = function(conn,options) {
+	if (!options.headers) { options.headers= {}; }
+	var dt= new Date();
+	Ext.ux.RapidApp.userPrefs.timezoneOffset= -dt.getTimezoneOffset();
+	options.headers['X-RapidApp-TimezoneOffset']= Ext.ux.RapidApp.userPrefs.timezoneOffset;
+};
+Ext.Ajax.on('beforerequest',Ext.ux.RapidApp.checkLocalTimezone);
+
+
+/* -------------------------------------------------------------------------------------
+/* ------------------------------------------------------------------------------------- 
+ This should be used instead of 'new Ext.data.Connection()' whenever creating a
+ custom Conn object. The reason one might want to create a custom Conn object
+ instead of using the Ext.Ajax singleton is to be able to set custom event listeners
+ that apply to just that one connection. But we want these to also fire the global
+ RapidApp event listeners, too:                                                         */
+Ext.ux.RapidApp.newConn = function(config) {
+	
+	config = config || {};
+	config.timeout = config.timeout || Ext.Ajax.timeout;
+		
+	var Conn = new Ext.data.Connection(config);
+	
+	Conn.on('requestcomplete',Ext.ux.RapidApp.ajaxCheckException);
+	Conn.on('requestexception',Ext.ux.RapidApp.ajaxCheckException);
+	Conn.on('beforerequest',Ext.ux.RapidApp.ajaxRequestContentType);
+	
+	Conn.on('beforerequest',Ext.ux.RapidApp.ajaxShowGlobalMask,this);
+	Conn.on('requestcomplete',Ext.ux.RapidApp.ajaxHideGlobalMask,this);
+	Conn.on('requestexception',Ext.ux.RapidApp.ajaxHideGlobalMask,this);
+		
+	Conn.on('beforerequest',Ext.ux.RapidApp.checkLocalTimezone);
+	
+	return Conn;
+};
+/* -------------------------------------------------------------------------------------
+/* -------------------------------------------------------------------------------------
+/* ------------------------------------------------------------------------------------- */
 
 /**
  * We override Connection so that **Every** AJAX request gets our processing added to it.
@@ -3127,13 +3167,7 @@ Ext.ux.RapidApp.renderUtcDate= function(dateStr) {
 	}
 }
 
-Ext.ux.RapidApp.checkLocalTimezone = function(conn,options) {
-	if (!options.headers) { options.headers= {}; }
-	var dt= new Date();
-	Ext.ux.RapidApp.userPrefs.timezoneOffset= -dt.getTimezoneOffset();
-	options.headers['X-RapidApp-TimezoneOffset']= Ext.ux.RapidApp.userPrefs.timezoneOffset;
-};
-Ext.Ajax.on('beforerequest',Ext.ux.RapidApp.checkLocalTimezone);
+
 
 
 /*  Ext.ux.RapidApp.AjaxCmp

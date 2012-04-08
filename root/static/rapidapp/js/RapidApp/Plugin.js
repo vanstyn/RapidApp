@@ -3391,6 +3391,11 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 	getStoreParams: function() {
 		var store = this.grid.getStore();
 		
+		
+		console.dir(store.lastOptions.params);
+		console.dir(store.baseParams);
+		
+		
 		var params = {};
 		Ext.apply(params,store.lastOptions.params);
 		Ext.apply(params,store.baseParams);
@@ -3657,16 +3662,18 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 	
 	postUpdate: function(editSpec,data,win){
 		
-		// ---
-		// If selectedIds is set, it means we're updating records in the local store and
-		// we can update them them locally, no need t go to the server or use the custom
-		// batch_edit call:
-		if(editSpec.selectedIds) {
-			return this.localUpdate(editSpec.selectedIds,data,win);
-		}
-		// ---
 		
-		var Conn = new Ext.data.Connection();
+		/* --------------------------------------------------------------------------------- */
+		// If selectedIds is set, it means we're updating records in the local store and
+		// we can update them them locally, no need to go to the server with a custom
+		// batch_edit call (use a regular store/api update). This is essentially a 
+		// *completely* different mechanism, although it is transparent to the user:
+		if(editSpec.selectedIds) { return this.localUpdate(editSpec.selectedIds,data,win); }
+		/* --------------------------------------------------------------------------------- */
+		
+		
+		//var Conn = new Ext.data.Connection();
+		var Conn = Ext.ux.RapidApp.newConn();
 		
 		var myMask = new Ext.LoadMask(win.getEl(), {msg:"Updating Records, please wait..."});
 		var showMask = function(){ myMask.show(); }
@@ -3707,6 +3714,7 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 			var colnames = this.grid.currentVisibleColnames.call(this.grid);
 			for (i in data) { colnames.push(i); }
 			store.setBaseParam('columns',Ext.encode(colnames));
+			store.setBaseParam('batch_update',true);
 			
 			var lMask = new Ext.LoadMask(win.getEl(),{ msg:"Updating Records, please wait..."});
 			lMask.show();
@@ -3718,6 +3726,7 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 			};
 			store.on('write',hide_fn,this);
 			store.save();
+			delete store.baseParams.batch_update; //<-- remove the tmp added batch_update param
 		}
 		else {
 			// if we're here it means there was nothing to change (the records all already had the values
