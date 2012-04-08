@@ -284,10 +284,10 @@ sub apply_except_colspec_columns_ordered {
 }
 
 
-sub read_records {
+sub get_read_records_Rs {
 	my $self = shift;
 	my $params = shift || $self->c->req->params;
-	
+
 	my $Rs = $self->_ResultSet;
 	
 	# Apply base Attrs:
@@ -305,7 +305,14 @@ sub read_records {
 	# Apply multifilter:
 	$Rs = $self->chain_Rs_req_multifilter($Rs,$params);
 	
-	#scream_color(BOLD.RED,$Rs->{attrs});
+	return $Rs;
+}
+
+sub read_records {
+	my $self = shift;
+	my $params = shift || $self->c->req->params;
+	
+	my $Rs = $self->get_read_records_Rs($params);
 	
 	$Rs = $Rs->search_rs({},{rows => 1}) if ($self->single_record_fetch);
 	
@@ -911,75 +918,8 @@ sub _dbiclink_update_records {
 				@columns = grep { $cols_indx{$_} } @columns;
 				# --
 				
-				my @update_queue = ();
+				my @update_queue = $self->prepare_record_updates($BaseRow,\@columns,$data);
 			
-				$self->TableSpec->walk_columns_deep(sub {
-					my $TableSpec = shift;
-					my @columns = @_;
-					
-					my $Row = $_{return} || $BaseRow;
-					return ' ' if ($Row eq ' ');
-					
-					#my $Row = exists $_{return} ? $_{return} : $BaseRow;
-					#return undef unless (defined $Row);
-					
-					my $rel = $_{rel};
-					my $UpdRow = $rel ? $Row->$rel : $Row;
-					
-					unless (defined $UpdRow) {
-						scream('NOTICE: Relationship/row "' . $rel . '" is not defined'); 
-						return ' ';
-					}
-					
-					if ($UpdRow->isa('DBIx::Class::ResultSet')) {
-						scream('NOTICE: Skipping multi relationship "' . $rel . '"'); 
-						return ' ';
-					}
-
-					my %current = $UpdRow->get_columns;
-					my %update = map { $_ => $data->{ $_{name_map}->{$_} } } keys %{$_{name_map}};
-					
-					# -- Need to do a map and a grep here; map to remap the values, and grep to prevent
-					# the new values from being clobbered by identical key names from the original data:
-					my $alias = $TableSpec->column_data_alias;
-					my %revalias = map {$_=>1} values %$alias;
-					%update = map { $alias->{$_} ? $alias->{$_} : $_ => $update{$_} } grep { !$revalias{$_} } keys %update;
-					# --
-					
-					my $change = {};
-					foreach my $col (keys %update) {
-						next unless (exists $current{$col});
-						next if (! defined $update{$col} and ! defined $current{$col});
-						next if ($update{$col} eq $current{$col});
-						$change->{$col} = $update{$col};
-					}
-					
-					#my $change = diff(\%current, \%update);
-					## why do I need to do this?:
-					#foreach my $k (keys %$change) {
-					#	my $v1 = $current{$k};
-					#	my $v2 = $change->{$k};
-					#	delete $change->{$k} if (! defined $v1 and ! defined $v2);
-					#	next unless (defined $v1 and defined $v2);
-					#	delete $change->{$k} if ($v1 eq $v2);
-					#}
-					
-					my $msg = 'Will UPDATE -> ' . $self->get_Row_Rs_label($UpdRow) . "\n";
-					if (keys %$change > 0){ 
-						my $t = Text::TabularDisplay->new(qw(column old new));
-						$t->add($_,disp($current{$_}),disp($change->{$_})) for (keys %$change);
-						$msg .= $t->render;
-					}
-					else {
-						$msg .= 'No Changes';
-					}
-					scream_color(WHITE.ON_BLUE.BOLD,$msg);
-					push @update_queue,{ row => $UpdRow, change => $change };
-					#$UpdRow->update($change) if (keys %$change > 0);
-					
-					return $UpdRow;
-				},@columns);
-				
 				# Update all the rows at the end:
 				$_->{row}->update($_->{change}) for (@update_queue);
 				
@@ -1002,6 +942,80 @@ sub _dbiclink_update_records {
 		success => \1,
 		msg => 'Update Succeeded'
 	};
+}
+
+# moved/generalized out of _dbiclink_update_records to also be used by batch_update:
+sub prepare_record_updates {
+	my $self = shift;
+	my $BaseRow = shift;
+	my $columns = shift;
+	my $data = shift;
+	my $ignore_current = shift;
+	
+	my @update_queue = ();
+	
+	$self->TableSpec->walk_columns_deep(sub {
+		my $TableSpec = shift;
+		my @columns = @_;
+		
+		my $Row = $_{return} || $BaseRow;
+		return ' ' if ($Row eq ' ');
+		
+		my $rel = $_{rel};
+		my $UpdRow = $rel ? $Row->$rel : $Row;
+		
+		unless (defined $UpdRow) {
+			scream('NOTICE: Relationship/row "' . $rel . '" is not defined'); 
+			return ' ';
+		}
+		
+		if ($UpdRow->isa('DBIx::Class::ResultSet')) {
+			scream('NOTICE: Skipping multi relationship "' . $rel . '"'); 
+			return ' ';
+		}
+
+		
+		my %update = map { $_ => $data->{ $_{name_map}->{$_} } } keys %{$_{name_map}};
+		
+		# -- Need to do a map and a grep here; map to remap the values, and grep to prevent
+		# the new values from being clobbered by identical key names from the original data:
+		my $alias = $TableSpec->column_data_alias;
+		my %revalias = map {$_=>1} values %$alias;
+		%update = map { $alias->{$_} ? $alias->{$_} : $_ => $update{$_} } grep { !$revalias{$_} } keys %update;
+		# --
+		
+		my $change = \%update;
+		
+		unless($ignore_current) {
+		
+			my %current = $UpdRow->get_columns;
+			
+			$change = {};
+			foreach my $col (keys %update) {
+				next unless (exists $current{$col});
+				next if (! defined $update{$col} and ! defined $current{$col});
+				next if ($update{$col} eq $current{$col});
+				$change->{$col} = $update{$col};
+			}
+			
+			my $msg = 'Will UPDATE -> ' . $self->get_Row_Rs_label($UpdRow) . "\n";
+			if (keys %$change > 0){ 
+				my $t = Text::TabularDisplay->new(qw(column old new));
+				$t->add($_,disp($current{$_}),disp($change->{$_})) for (keys %$change);
+				$msg .= $t->render;
+			}
+			else {
+				$msg .= 'No Changes';
+			}
+			scream_color(WHITE.ON_BLUE.BOLD,$msg);
+		}
+		
+		push @update_queue,{ row => $UpdRow, change => $change };
+
+		return $UpdRow;
+	},@$columns);
+	
+	return @update_queue;
 }
 
 # Works with the hashtree supplied to create_records to recursively 
@@ -1200,5 +1214,64 @@ sub param_decodeIf {
 	return $param if (ref $param);
 	return $self->json->decode($param);
 }
+
+
+# This is a DbicLink2-specific implementation of batch_update. Overrides generic method 
+# in DataStore2. It is able to perform much better with large batches
+sub batch_update {
+	my $self = shift;
+	
+	# See DataStore2:
+	$self->before_batch_update;
+	
+	my $editSpec = $self->param_decodeIf($self->c->req->params->{editSpec});
+	my $read_params = $editSpec->{read_params};
+	my $update = $editSpec->{update};
+	
+	delete $read_params->{start};
+	delete $read_params->{limit};
+	
+	my %orig_params = %{$self->c->req->params};
+	%{$self->c->req->params} = %$read_params;
+	my $Rs = $self->get_read_records_Rs($read_params);
+	%{$self->c->req->params} = %orig_params;
+	
+	# Remove select/as so the columns are normal (these select/as attrs only apply to read_records)
+	delete $Rs->{attrs}->{select};
+	delete $Rs->{attrs}->{as};
+	
+	my $total = $Rs->pager->total_entries;
+	
+	die usererr "Update count mismatch (" . 
+		$editSpec->{count} . ' vs ' . $total . ') ' .
+		"- This can happen if someone else modified one or more of the records in the update set.\n\n" .
+		"Reload the the grid and try again."
+	unless ($editSpec->{count} == $total);
+	
+	my @columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } keys %$update;
+	@columns = $self->TableSpec->filter_updatable_columns(@columns);
+	
+	
+	
+	try {
+		$self->ResultSource->schema->txn_do(sub {
+		
+			my $ignore_current = 1;
+			my @update_queue = ();
+			push(@update_queue, $self->prepare_record_updates($_,\@columns,$update,$ignore_current)) 
+				for ($Rs->all);
+			
+			# Update all the rows at the end:
+			$_->{row}->update($_->{change}) for (@update_queue);
+		});
+	}
+	catch {
+		my $err = shift;
+		$self->handle_dbic_exception($err);
+	};
+	
+	return 1;
+}
+
 
 1;

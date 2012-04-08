@@ -3649,7 +3649,7 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 			{ xtype: 'spacer', height: 15 },
 			{ html: '<div class="ra-batch-edit-sub-heading">' +
 				'<div class="warn-line">' +
-					'<i><span class="warn">Note</span>: only currently active/selected, editable columns shown.</i>' +
+					'<i><span class="warn">Note</span>: available fields limited to visible + editable columns</i>' +
 				'</div>'
 			}
 		);
@@ -3685,9 +3685,9 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 		/* --------------------------------------------------------------------------------- */
 		
 		//var Conn = new Ext.data.Connection();
-		var Conn = Ext.ux.RapidApp.newConn();
+		var Conn = Ext.ux.RapidApp.newConn({ timeout: 300000 }); //<-- 5 minute timeout
 		
-		var myMask = new Ext.LoadMask(win.getEl(), {msg:"Updating Records, please wait..."});
+		var myMask = new Ext.LoadMask(win.getEl(), {msg:"Updating Multiple Records - Please Wait..."});
 		var showMask = function(){ myMask.show(); }
 		var hideMask = function(){ myMask.hide(); }
 		
@@ -3728,7 +3728,7 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 			store.setBaseParam('columns',Ext.encode(colnames));
 			store.setBaseParam('batch_update',true);
 			
-			var lMask = new Ext.LoadMask(win.getEl(),{ msg:"Updating Records, please wait..."});
+			var lMask = new Ext.LoadMask(win.getEl(),{ msg:"Updating Multiple Records - Please Wait..."});
 			lMask.show();
 			var hide_fn;
 			hide_fn = function(){ 

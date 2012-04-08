@@ -286,7 +286,7 @@ sub get_add_form {
 	};
 }
 
-before 'batch_update' => sub {
+sub before_batch_update {
 	my $self = shift;
 	my $editSpec = $self->param_decodeIf($self->c->req->params->{editSpec});
 	my $update = $editSpec->{update};
@@ -309,6 +309,12 @@ before 'batch_update' => sub {
 # perform a smarter/more efficient operation
 sub batch_update {
 	my $self = shift;
+	
+	# this is called directly instead of adding a method modifier because a modifier
+	# would not get called when batch_update is overridden by another Role (such as in
+	# DbicLink2)
+	$self->before_batch_update;
+	
 	my $editSpec = $self->param_decodeIf($self->c->req->params->{editSpec});
 	my $read_params = $editSpec->{read_params};
 	my $update = $editSpec->{update};
@@ -327,7 +333,7 @@ sub batch_update {
 	
 	die usererr "Update count mismatch (" . 
 		$editSpec->{count} . ' vs ' . $readdata->{results} . ') ' .
-		"- This can happen if someone else modified one or more of the records in the update set.<br><br>" .
+		"- This can happen if someone else modified one or more of the records in the update set.\n\n" .
 		"Reload the the grid and try again."
 	unless ($editSpec->{count} == $readdata->{results});
 	
