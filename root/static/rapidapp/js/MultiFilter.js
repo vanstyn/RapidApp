@@ -292,6 +292,11 @@ Ext.ux.MultiFilter.defaultTypeToConditionMap = {
 		'after'					: '>'
 	},
 	
+	datetime: {
+		'before'					: '<',
+		'after'					: '>'
+	},
+	
 	number: {
 		'less than'				: '<',
 		'greater than'			: '>',
@@ -585,7 +590,19 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			Ext.apply(this.datafield_cnf,{
 				xtype	: 'datefield',
 				plugins: ['form-relative-datetime'],
-				format: 'Y-m-d H:i:s',
+				//format: 'M d, Y',
+				format: 'Y-m-d',
+				width: 100,
+				flex: 0
+			});
+		}
+		else if (this.condType == 'datetime') {
+			Ext.apply(this.datafield_cnf,{
+				xtype	: 'datefield',
+				plugins: ['form-relative-datetime'],
+				//format: 'M d, Y g:i A',
+				//format: 'Y-m-d H:i:s',
+				format: 'Y-m-d H:i',
 				width: 130,
 				flex: 0
 			});

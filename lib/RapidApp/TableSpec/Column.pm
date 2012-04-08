@@ -123,7 +123,7 @@ sub DEFAULT_PROFILES {{
 		datetime => {
 			editor => { xtype => 'xdatetime2', plugins => ['form-relative-datetime'], minWidth => 200 },
 			renderer => ["Ext.ux.RapidApp.getDateFormatter('M d, Y g:i A')"],
-			multifilter_type => 'date',
+			multifilter_type => 'datetime',
 			summary_functions => \@date_summary_funcs
 		},
 		date => {
