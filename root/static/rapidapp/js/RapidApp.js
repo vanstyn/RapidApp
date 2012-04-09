@@ -3772,7 +3772,9 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 					labelWidth: 90,
 					items: this.pageSizeField,
 					listeners: {
-						beforeshow: function() {
+						beforeshow: function(menu) {
+							//Disable the menu keyNav to allow arrow keys to work in fields within the menu:
+							if(menu.keyNav){ menu.keyNav.disable(); }
 							paging.pageSizeField.setValue(paging.pageSize);
 						},
 						show: function() {

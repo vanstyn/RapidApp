@@ -3140,7 +3140,12 @@ Ext.ux.RapidApp.Plugin.AppGridColMenuPlug = Ext.extend(Ext.util.Observable,{
 		this.cm = this.grid.getColumnModel();
 		this.colMenu = this.view.colMenu;
 		if(!this.colMenu) { return; }
+		
 		this.colMenu.on('beforeshow',function(){
+			
+			//Disable the menu keyNav to allow arrow keys to work in fields within the menu:
+			if(this.colMenu.keyNav){ this.colMenu.keyNav.disable(); }
+			
 			var colItem = this.getColItem();
 			if(!colItem) { return; }
 			var pos = this.getInsertPosition();
