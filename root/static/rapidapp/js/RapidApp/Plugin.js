@@ -4042,7 +4042,7 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 		var plugin = this;
 		if(!this.relativeDateMenu) {
 			var menu = new Ext.menu.Menu({
-				style: 'padding: 5px;',
+				style: 'padding-top:5px;padding-left:5px;padding-right:5px;',
 				width: 225,
 				layout: 'anchor',
 				showSeparator: false,
@@ -4069,12 +4069,24 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 				]
 			});
 			
+			menu.okbtn = new Ext.Button({
+				text: 'Ok',
+				scope: this,
+				handler: this.doMenuSaveRelative,
+				disabled: true
+			});
+			
 			menu.field = new Ext.form.TextField({
 				anchor: '100%',
 				fieldClass: 'blue-text-code',
 				validator: function(v) {
-					if(!v) { return true; }
-					return plugin.parseRelativeDate.call(plugin,v) ? true : false;
+					if(!v) { 
+						menu.okbtn.setDisabled(true); 
+						return true; 
+					}
+					var test = plugin.parseRelativeDate.call(plugin,v) ? true : false;
+					menu.okbtn.setDisabled(!test); 
+					return test;
 				},
 				enableKeyEvents:true,
 				listeners:{
@@ -4083,13 +4095,7 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 						buffer: 10,
 						fn: function(field, e) {
 							if (field.isVisible() && Ext.EventObject.ENTER == e.getKey()){
-								var v = field.getValue();
-								if(v && v != '' && field.isValid()){
-									this.cmp.setValue(v);
-									this.cmp.resumeEvents();
-									this.cmp.fireEvent('blur');
-									menu.hide();
-								}
+								this.doMenuSaveRelative();
 							}
 						}
 					}
@@ -4097,12 +4103,28 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 			});
 			menu.add(menu.field);
 			
+			menu.add({
+				xtype: 'panel',
+				buttonAlign: 'center',
+				border: false,
+				buttons: [
+					{
+						xtype: 'button',
+						text: 'Cancel',
+						handler: function() {
+							menu.hide();
+						}
+					},
+					menu.okbtn
+				]
+			});
+			
 			menu.on('show',function(){
 				
 				//Disable the menu keyNav to allow arrow keys to work in fields within the menu:
 				menu.keyNav.disable();
 				
-				this.cmp.suspendEvents(true);
+				this.cmp.suspendEvents();
 				var field = menu.field;
 				field.setValue(this.cmp.getDurationString());
 				field.focus(false,50);
@@ -4111,6 +4133,7 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 			},this);
 			
 			menu.on('beforehide',function(){
+				
 				var field = menu.field;
 				
 				var value = field.getValue();
@@ -4121,13 +4144,32 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 					this.cmp.focus(false,50);
 				}
 				
-				this.cmp.resumeEvents();
 				return true;
+			},this);
+			
+			menu.on('hide',function(){
+				this.cmp.resumeEvents();
 			},this);
 			
 			this.relativeDateMenu = menu;
 		}
 		return this.relativeDateMenu;
+	},
+	
+	doMenuSaveRelative: function() {
+		
+		var menu = this.relativeDateMenu;
+		if(!menu || !menu.isVisible()) { return; }
+		var field = menu.field;
+		if(!field) { return; }
+		
+		var v = field.getValue();
+		if(v && v != '' && field.isValid()){
+			this.cmp.setValue(v);
+			this.cmp.resumeEvents();
+			this.cmp.fireEvent('blur');
+			menu.hide();
+		}
 	}
 	
 });
