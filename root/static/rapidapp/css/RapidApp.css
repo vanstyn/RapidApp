@@ -20,6 +20,7 @@ pre {
   font-size:.9em !important;
 }
 
+
 .blue-text-code {
   color: #083772;
   font-family: "Lucida Console", Monaco, monospace;
@@ -1204,3 +1205,80 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 	background-position: right center;
 	background-image: url(/static/rapidapp/images/checkbox_yes.png);
 }
+
+
+.ra-batch-edit-heading {
+  font-size: 1.7em;
+  font-weight: bold;
+  text-align: center;
+  padding-bottom:15px;
+}
+
+.ra-batch-edit-heading span.num {
+  color: green;
+  font-size:1.25em;
+  font-weight:900;
+}
+
+.ra-batch-edit-sub-heading {
+  text-align: center;
+  padding-bottom:20px;
+  color:gray;
+}
+
+.ra-batch-edit-sub-heading .warn-line {
+  padding-top:10px;
+}
+
+.ra-batch-edit-sub-heading span.warn {
+  font-weight: bold;
+  color: #DAA520;
+}
+
+
+
+.ra-relative-date {
+  font-size: 11px;
+  font-family: arial,tahoma,verdana,helvetica;
+  color: #333333;
+  background-image: url(/static/rapidapp/images/clock_run_24x24.png);
+	background-repeat: no-repeat;
+	background-position: 4px 2px;
+}
+
+.ra-relative-date .title {
+  
+  text-align: center;
+  font-size: 1.6em;
+  padding-left: 18px;
+  padding-top:2px;
+  padding-bottom: 8px;
+  line-height: 24px;
+}
+
+.ra-relative-date .mono {
+  font-family: Consolas,Menlo,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New,monospace,serif;
+  color: gray !important;
+}
+
+.ra-relative-date .sub {
+  padding-bottom: 6px;
+}
+
+.ra-relative-date .examples {
+  font-weight: bold;
+}
+
+.ra-relative-date ul {
+  padding-top: 4px;
+  padding-left: 12px;
+  padding-bottom: 8px;
+}
+
+.ra-relative-date li {
+  padding: 1px;
+  font-family: Consolas,Menlo,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New,monospace,serif;
+  color: gray;
+}
+
+

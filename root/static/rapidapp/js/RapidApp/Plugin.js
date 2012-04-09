@@ -4027,7 +4027,6 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 	
 	showRelativeDateMenu: function(btn,e) {
 		var dmenu = this.cmp.menu, rmenu = this.getRelativeDateMenu();
-		rmenu.setWidth(dmenu.getWidth());
 		// the dmenu automatically hides itself:
 		rmenu.showAt(dmenu.getPosition());
 	},
@@ -4036,18 +4035,36 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 		var plugin = this;
 		if(!this.relativeDateMenu) {
 			var menu = new Ext.menu.Menu({
+				style: 'padding: 5px;',
+				width: 225,
 				layout: 'anchor',
 				showSeparator: false,
 				items: [
 					{ 
 						xtype: 'label',
-						html: '<div class="ra-relative-date">Enter Relative Date (+/-)</div>' 
+						html: '<div class="ra-relative-date">' + 
+							'<div class="title">Relative Date/Time</div>' + 
+							'<div class="sub">' + 
+								'Enter a time length/duration for a date/time <i>relative</i> to the current time. ' +
+								'Prefix with a minus <span class="mono">(-)</span> for a date in the past or a plus ' + 
+								'<span class="mono">(+)</span> for a date in the future.  ' +
+							'</div>' +
+							'<div class="examples">Examples:</div>' + 
+							'<ul>' +
+								'<li>-1 day</li>' +
+								'<li>+20 hours, 30 minutes</li>' +
+								'<li>-3d4h18mins</li>' +
+								'<li>+2m3d5h</li>' +
+								'<li>-2 years</li>' +
+							'</ul>' + 
+						'</div>' 
 					}
 				]
 			});
 			
 			menu.field = new Ext.form.TextField({
 				anchor: '100%',
+				fieldClass: 'blue-text-code',
 				validator: function(v) {
 					if(!v) { return true; }
 					return plugin.parseRelativeDate.call(plugin,v) ? true : false;
@@ -4083,6 +4100,7 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 				field.setValue(this.cmp.getDurationString());
 				field.focus(false,50);
 				field.focus(false,200);
+				field.setCursorPosition(1000000);
 			},this);
 			
 			menu.on('beforehide',function(){
