@@ -3819,6 +3819,13 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 		};
 		
 		cmp.getDurationString = function() {
+			var v = cmp.getRawValue();
+			// If the current value is already a valid duration string, return it outright:
+			if(plugin.parseRelativeDate.call(plugin,v)) { 
+				cmp.lastDurationString = v;
+				return v; 
+			}
+			
 			if(!cmp.lastDurationString) { return null; }
 			
 			// check to see that the current/inflated value still matches the last
@@ -3826,8 +3833,8 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 			// If they don't match, it could mean that a different, non duration value 
 			// has been entered, or, if the value is just different (such as in places
 			// where the field is reused in several places, like grid editors):
-			var dt1 = cmp.parseDate(cmp.lastDurationString);
-			var dt2 = cmp.parseDate(cmp.getRawValue());
+			var dt1 = cmp.parseDate(v);
+			var dt2 = cmp.parseDate(cmp.lastDurationString);
 			if(dt1 && dt2 && cmp.formatDate(dt1) == cmp.formatDate(dt2)) {
 				return cmp.lastDurationString;
 			}
@@ -3835,6 +3842,20 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 			cmp.lastDurationString = null;
 			return null;
 		};
+		
+		
+		if(Ext.isFunction(cmp.onTriggerClick)) {
+			var native_onTriggerClick = cmp.onTriggerClick;
+			cmp.onTriggerClick = function() {
+				if(cmp.disabled){ return; }
+				
+				// Sets cmp.menu before the original onTriggerClick has a chance to:
+				plugin.getDateMenu.call(plugin);
+				
+				native_onTriggerClick.apply(cmp,arguments);
+			}
+		}
+		
 	},
 
 	isDurationString: function(str) {
@@ -3847,6 +3868,9 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 	
 	parseRelativeDate: function(value) {
 		var sign = value.substr(0,1);
+		
+		if(sign != '+' && sign != '-') { return null; }
+		
 		var str = value.substr(1);
 		
 		var parts = this.extractDurationParts(str);
@@ -3966,6 +3990,119 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 		if(!interval) { return null; }
 		
 		return dt.add(interval,num);
+	},
+	
+	getDateMenu: function() {
+		
+		if(!this.cmp.menu) {
+			
+			var menu = new Ext.menu.DateMenu({
+				hideOnClick: false,
+				focusOnSelect: false
+			});
+			
+			menu.on('afterrender',function(){
+				var el = menu.getEl();
+				var existBtn = el.child('td.x-date-bottom table');
+				
+				if(existBtn) {
+					existBtn.setStyle('float','left');
+					newEl = existBtn.insertSibling({ tag: 'div', style: 'float:right;' },'after');
+					var relBtn = new Ext.Button({
+						iconCls: 'icon-clock-run',
+						text: 'Relative Date',
+						handler: this.showRelativeDateMenu,
+						scope: this
+					});
+					relBtn.render(newEl);
+				}
+
+			},this);
+			
+			this.cmp.menu = menu;
+		}
+		
+		return this.cmp.menu;
+	},
+	
+	showRelativeDateMenu: function(btn,e) {
+		var dmenu = this.cmp.menu, rmenu = this.getRelativeDateMenu();
+		rmenu.setWidth(dmenu.getWidth());
+		// the dmenu automatically hides itself:
+		rmenu.showAt(dmenu.getPosition());
+	},
+	
+	getRelativeDateMenu: function() {
+		var plugin = this;
+		if(!this.relativeDateMenu) {
+			var menu = new Ext.menu.Menu({
+				layout: 'anchor',
+				showSeparator: false,
+				items: [
+					{ 
+						xtype: 'label',
+						html: '<div class="ra-relative-date">Enter Relative Date (+/-)</div>' 
+					}
+				]
+			});
+			
+			menu.field = new Ext.form.TextField({
+				anchor: '100%',
+				validator: function(v) {
+					if(!v) { return true; }
+					return plugin.parseRelativeDate.call(plugin,v) ? true : false;
+				},
+				enableKeyEvents:true,
+				listeners:{
+					keyup:{
+						scope: this,
+						buffer: 10,
+						fn: function(field, e) {
+							if (field.isVisible() && Ext.EventObject.ENTER == e.getKey()){
+								var v = field.getValue();
+								if(v && v != '' && field.isValid()){
+									this.cmp.setValue(v);
+									this.cmp.resumeEvents();
+									this.cmp.fireEvent('blur');
+									menu.hide();
+								}
+							}
+						}
+					}
+				}
+			});
+			menu.add(menu.field);
+			
+			menu.on('show',function(){
+				
+				//Disable the menu keyNav to allow arrow keys to work in fields within the menu:
+				menu.keyNav.disable();
+				
+				this.cmp.suspendEvents(true);
+				var field = menu.field;
+				field.setValue(this.cmp.getDurationString());
+				field.focus(false,50);
+				field.focus(false,200);
+			},this);
+			
+			menu.on('beforehide',function(){
+				var field = menu.field;
+				
+				var value = field.getValue();
+				if(!value || value == '' || !field.isValid()) {
+					// If the input field isn't valid then the real field wasnt updated
+					// (by ENTER keystroke in input field listener) and it didn't call blur.
+					// refocus the field:
+					this.cmp.focus(false,50);
+				}
+				
+				this.cmp.resumeEvents();
+				return true;
+			},this);
+			
+			this.relativeDateMenu = menu;
+		}
+		return this.relativeDateMenu;
 	}
 	
 });
