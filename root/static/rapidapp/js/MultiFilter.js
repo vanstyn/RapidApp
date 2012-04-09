@@ -590,6 +590,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			Ext.apply(this.datafield_cnf,{
 				xtype	: 'datefield',
 				plugins: ['form-relative-datetime'],
+				noReplaceDurations: true, //<-- option of the form-relative-datetime plugin
 				//format: 'M d, Y',
 				format: 'Y-m-d',
 				width: 100,
@@ -600,6 +601,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			Ext.apply(this.datafield_cnf,{
 				xtype	: 'datefield',
 				plugins: ['form-relative-datetime'],
+				noReplaceDurations: true, //<-- option of the form-relative-datetime plugin
 				//format: 'M d, Y g:i A',
 				//format: 'Y-m-d H:i:s',
 				format: 'Y-m-d H:i',
@@ -637,7 +639,6 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		var field = this.getComponent('field_combo').getRawValue();
 		var cond = this.getComponent('cond_combo').getRawValue();
 		var val = this.getComponent('datafield').getRawValue();
-
 		
 		//field combo
 		if(this.fieldNameMap[field]) {

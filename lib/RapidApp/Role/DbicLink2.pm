@@ -748,12 +748,16 @@ sub multifilter_translate_cond {
 	my $cond = shift;
 	my $dbfName = shift;
 	my $field = shift;
+	my $column = $self->get_column($field) || {};
 	
 	# There should be exactly 1 key/value:
 	die "invalid multifilter condition: must have exactly 1 key/value pair:\n" . Dumper($cond) 
 		unless (keys %$cond == 1);
 		
 	my ($k,$v) = (%$cond);
+	
+	$v = $self->inflate_multifilter_date($v) if($column->{multifilter_type} =~ /^date/);
+	
 	my $map = $self->multifilter_keymap->{$k};
 	
 	if(ref($map) eq 'CODE') {
@@ -784,6 +788,93 @@ sub multifilter_translate_cond {
 	
 	return { $dbfName => { $k => $v } };
 }
+
+
+# This is a clone of the JavaScript logic in the function parseRelativeDate() in the plugin
+# class Ext.ux.RapidApp.Plugin.RelativeDateTime. While it is not ideal to have to reproduce
+# this and have to maintain in both Perl and JavaScript simultaneously, this is the most
+# straightforward way to achive the desired functionality. This is because these relative
+# dates have to be inflated at query/request time, and MultiFilters wasn't designed with that
+# in mind. To do this in the client side, multifilters would need significant modifications
+# to get it to munge its filters on every request, which is was not designed to do.
+sub inflate_multifilter_date {
+	my $self = shift;
+	my $v = shift;
+	
+	my $sign = substr($v,0,1);
+	return $v unless ($sign eq '-' || $sign eq '+');
+	
+	my $str = substr($v,1);
+	
+	# Strip whitespace and commas:
+	$str =~ s/[\s\,]*//g;
+	
+	my @parts = ();
+	while(length $str) {
+		my ($num,$unit);
+		$str =~ s/^(\d+)//; $num = $1;
+		$str =~ s/^(\D+)//; $unit = $1;
+		push @parts, { num => $num, unit => $unit } if ($num && $unit);
+	}
+	
+	return $v unless (@parts > 0);
+	
+	my $dt = DateTime->now( time_zone => 'local' );
+	my $method = ($sign eq '-') ? 'subtract' : 'add';
+	
+	my $map = $self->inflate_multifilter_date_unit_map;
+	my $count = 0;
+	foreach my $part (@parts) {
+		my $interval = $map->{$part->{unit}} or next;
+		my $newDt = $dt->$method( $interval => $part->{num} ) or next;
+		$count++;
+		$dt = $newDt;
+	}
+	
+	return $v unless ($count);
+	
+	return $dt->ymd . ' ' . $dt->hms;
+}
+
+# Equiv to Ext.ux.RapidApp.Plugin.RelativeDateTime.unitMap
+has 'inflate_multifilter_date_unit_map', is => 'ro', default => sub {{
+	
+	y			=> 'years',
+	year		=> 'years',
+	years		=> 'years',
+	yr			=> 'years',
+	yrs			=> 'years',
+	
+	m			=> 'months',
+	mo			=> 'months',
+	month		=> 'months',
+	months		=> 'months',
+	
+	d			=> 'days',
+	day			=> 'days',
+	days		=> 'days',
+	dy			=> 'days',
+	dys			=> 'days',
+	
+	h			=> 'hours',
+	hour		=> 'hours',
+	hours		=> 'hours',
+	hr			=> 'hours',
+	hrs			=> 'hours',
+	
+	i			=> 'minutes',
+	mi			=> 'minutes',
+	min			=> 'minutes',
+	mins		=> 'minutes',
+	minute		=> 'minutes',
+	minutes		=> 'minutes',
+	
+	s			=> 'seconds',
+	sec			=> 'seconds',
+	secs		=> 'seconds',
+	second		=> 'seconds',
+	second		=> 'seconds'
+}};
 
 
 has 'DataStore_build_params' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );

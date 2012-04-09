@@ -3769,18 +3769,80 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 		this.cmp = cmp;
 		var plugin = this;
 		
+		// Override parseDate, redirecting to parseRelativeDate for strings 
+		// starting with '-' or '+', otherwise, use native behavior
 		var native_parseDate = cmp.parseDate;
 		cmp.parseDate = function(value) {
-			if(value && value.charAt) {
-				var f = value.charAt(0); // <-- first character
-				if(f == '+' || f == '-'){ 
-					var ret = plugin.parseRelativeDate.apply(plugin,arguments);
-					if(ret) { return ret; }
-				}
+			if(plugin.isDurationString(value)) {
+				var ret = plugin.parseRelativeDate.apply(plugin,arguments);
+				if(ret) { return ret; }
 			}
 			return native_parseDate.apply(cmp,arguments);
 		}
 		
+		if(cmp.noReplaceDurations) {
+			var native_setValue = cmp.setValue;
+			cmp.setValue = function(value) {
+				if(plugin.isDurationString.call(plugin,value)) {
+					// Generic setValue function on the non-inflated value:
+					return Ext.form.TextField.superclass.setValue.call(cmp,value);
+				}
+				return native_setValue.apply(cmp,arguments);
+			};
+		}
+		
+		cmp.beforeBlur = function() {
+			var value = cmp.getRawValue(),
+				v = cmp.parseDate(value);
+			
+			if(plugin.isDurationString.call(plugin,value)) {
+				if(v) {
+					// save the duration string before it gets overwritten:
+					cmp.lastDurationString = value;
+					
+					// Don't inflate/replace duration strings with parsed dates in the field
+					if(cmp.noReplaceDurations) { return; }
+				}
+				else {
+					cmp.lastDurationString = null;
+				}
+			}
+			
+			//native DateField beforeBlur behavior:
+			if(v) {
+				// This is the place where the actual value inflation occurs. In the native class,
+				// this is destructive, in that after this point, the original raw value is 
+				// replaced and lost. That is why we save it in 'durationString' above, and also
+				// why we optionally skip this altogether if 'noReplaceDurations' is true:
+				cmp.setValue(v);
+			}
+		};
+		
+		cmp.getDurationString = function() {
+			if(!cmp.lastDurationString) { return null; }
+			
+			// check to see that the current/inflated value still matches the last
+			// duration string by parsing and rendering it and the current field value. 
+			// If they don't match, it could mean that a different, non duration value 
+			// has been entered, or, if the value is just different (such as in places
+			// where the field is reused in several places, like grid editors):
+			var dt1 = cmp.parseDate(cmp.lastDurationString);
+			var dt2 = cmp.parseDate(cmp.getRawValue());
+			if(dt1 && dt2 && cmp.formatDate(dt1) == cmp.formatDate(dt2)) {
+				return cmp.lastDurationString;
+			}
+			
+			cmp.lastDurationString = null;
+			return null;
+		};
+	},
+
+	isDurationString: function(str) {
+		if(str && Ext.isString(str)) {
+			var f = str.charAt(0); // <-- first character
+			if(f == '+' || f == '-'){ return true; }
+		}
+		return false;
 	},
 	
 	parseRelativeDate: function(value) {
@@ -3791,18 +3853,21 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 		if(!parts) { return null; }
 		
 		var dt = new Date();
+		var invalid = false;
 		Ext.each(parts,function(part){
+			if(invalid) { return; }
+			
 			if(sign == '-') { part.num = '-' + part.num; }
 			var num = parseInt(part.num);
-			if(num == NaN) { return null; }
+			if(num == NaN) { invalid = true; return; }
 			
 			var newDt = this.addToDate(dt,num,part.unit);
 
-			if(!newDt) { return null; }
+			if(!newDt) { invalid = true; return; }
 			dt = newDt;
 		},this);
 		
-		return dt;
+		return invalid ? null : dt;
 	},
 	
 	extractDurationParts: function(str) {
