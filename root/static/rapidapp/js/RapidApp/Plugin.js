@@ -3991,6 +3991,8 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 	addToDate: function(dt,num,unit) {
 		dt = dt || new Date();
 		
+		unit = unit.toLowerCase();
+		
 		var interval = this.unitMap[unit];
 		if(!interval) { return null; }
 		

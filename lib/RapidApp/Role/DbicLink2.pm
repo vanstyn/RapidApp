@@ -809,6 +809,8 @@ sub inflate_multifilter_date {
 	# Strip whitespace and commas:
 	$str =~ s/[\s\,]*//g;
 	
+	$str = lc($str);
+	
 	my @parts = ();
 	while(length $str) {
 		my ($num,$unit);
