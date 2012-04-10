@@ -44,6 +44,12 @@ has 'destroyable_relspec' => ( is => 'ro', isa => 'Maybe[ArrayRef[Str]]', defaul
 # by the client:
 has 'always_fetch_colspec' => ( is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default => undef );
 
+# quicksearch_mode: either 'like' or 'exact' - see chain_Rs_req_quicksearch()
+# currently any value other than 'exact' is treated like 'like', the default and
+# original behavior.
+# TODO: add 'phrases' mode to act like google searches with +/- and quotes around phrases
+has 'quicksearch_mode', is => 'ro', isa => 'Str', default => 'like';
+
 has 'ResultSource' => (
 	is => 'ro',
 	isa => 'DBIx::Class::ResultSource',
@@ -631,7 +637,7 @@ sub chain_Rs_req_explicit_resultset {
 }
 
 
-# Applies multifilter search to ResultSet:
+# Applies Quick Search to ResultSet:
 sub chain_Rs_req_quicksearch {
 	my $self = shift;
 	my $Rs = shift || $self->_ResultSet;
@@ -646,10 +652,16 @@ sub chain_Rs_req_quicksearch {
 	my $attr = { join => {} };
 	
 	my @search = ();
-	push @search, { 
-		$self->TableSpec->resolve_dbic_colname($_,$attr->{join}) => 
-		{ like =>  '%' . $query . '%' } 
-	} for (@$fields);
+	foreach my $f (@$fields) {
+		my $dbicname = $self->TableSpec->resolve_dbic_colname($f,$attr->{join});
+		
+		if($self->quicksearch_mode eq 'exact') {
+			push @search, { $dbicname => $query };
+		}
+		else { # default: $self->quicksearch_mode eq 'like'
+			push @search, { $dbicname => { like => '%' . $query . '%' } };
+		}
+	}
 	
 	return $Rs->search_rs({ '-or' => \@search },$attr);
 }
