@@ -774,9 +774,14 @@ Ext.extend(Ext.ux.RapidApp.Plugin.GridQuickSearch, Ext.util.Observable, {
 	 * @private
 	 * @param {Ext.grid.GridPanel/Ext.grid.EditorGrid} grid reference to grid this plugin is used for
 	 */
-	 ,fieldNameMap: {}
-	,init:function(grid) {
+	 ,fieldNameMap: {},
+	
+	init:function(grid) {
 		this.grid = grid;
+		
+		// -- New: disable plugin if there are no quick_search columns (2012-04-11 by HV)
+		if(!this.getQuickSearchColumns().length > 0) { return; }
+		// --
 		
 		// -- query_search_use_column support, added by HV 2011-12-26
 		var columns = this.grid.initialConfig.columns;
@@ -795,14 +800,14 @@ Ext.extend(Ext.ux.RapidApp.Plugin.GridQuickSearch, Ext.util.Observable, {
 		// do our processing after grid render and reconfigure
 		grid.onRender = grid.onRender.createSequence(this.onRender, this);
 		grid.reconfigure = grid.reconfigure.createSequence(this.reconfigure, this);
-	} // eo function init
+	}, // eo function init
 	// }}}
 	// {{{
 	/**
 	 * adds plugin controls to <b>existing</b> toolbar and calls reconfigure
 	 * @private
 	 */
-	,onRender:function() {
+	onRender:function() {
 		var panel = this.toolbarContainer || this.grid;
 		var tb = 'bottom' === this.position ? panel.bottomToolbar : panel.topToolbar;
 		// add menu
@@ -814,7 +819,8 @@ Ext.extend(Ext.ux.RapidApp.Plugin.GridQuickSearch, Ext.util.Observable, {
 		}
 		else {
 			if(0 < tb.items.getCount()) {
-				tb.addSeparator();
+				// The separator is ugly, removed (2012-04-11 by HV)
+				//tb.addSeparator();
 			}
 		}
 
@@ -1063,7 +1069,7 @@ Ext.extend(Ext.ux.RapidApp.Plugin.GridQuickSearch, Ext.util.Observable, {
 		// {{{
 		// add new items
 		//var cm = this.grid.colModel;
-		var columns = this.grid.initialConfig.columns;
+		var columns = this.getQuickSearchColumns();
 		
 		var group = undefined;
 		if('radio' === this.menuStyle) {
@@ -1072,19 +1078,17 @@ Ext.extend(Ext.ux.RapidApp.Plugin.GridQuickSearch, Ext.util.Observable, {
 		//Ext.each(cm.config, function(config) {
 		Ext.each(columns, function(config) {
 			var disable = false;
-			if(config.header && config.dataIndex && !config.no_quick_search) {
-				Ext.each(this.disableIndexes, function(item) {
-					disable = disable ? disable : item === config.dataIndex;
-				});
-				if(!disable) {
-					menu.add(new Ext.menu.CheckItem({
-						 text:config.header
-						,hideOnClick:false
-						,group:group
-						,checked:'all' === this.checkIndexes
-						,dataIndex:config.dataIndex
-					}));
-				}
+			Ext.each(this.disableIndexes, function(item) {
+				disable = disable ? disable : item === config.dataIndex;
+			});
+			if(!disable) {
+				menu.add(new Ext.menu.CheckItem({
+					 text:config.header
+					,hideOnClick:false
+					,group:group
+					,checked:'all' === this.checkIndexes
+					,dataIndex:config.dataIndex
+				}));
 			}
 		}, this);
 		// }}}
@@ -1115,8 +1119,22 @@ Ext.extend(Ext.ux.RapidApp.Plugin.GridQuickSearch, Ext.util.Observable, {
 		}
 		// }}}
 
-	} // eo function reconfigure
-	// }}}
+	}, 
+	
+	getQuickSearchColumns: function() {
+		if(!this.QuickSearchColumns) {
+			var columns = this.grid.initialConfig.columns;
+			var quick_search_columns = [];
+			Ext.each(columns, function(config) {
+				var disable = false;
+				if(config.header && config.dataIndex && !config.no_quick_search) {
+					quick_search_columns.push(config);
+				}
+			},this);
+			this.QuickSearchColumns = quick_search_columns;
+		}
+		return this.QuickSearchColumns;
+	}
 
 }); 
 

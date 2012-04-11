@@ -394,7 +394,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		// ------------------------- //
 		
 		
-		// ------ Grid Search --------- //
+		// ------ Grid Quick Search --------- //
 		if (this.gridsearch && this.tbar) {
 
 			var grid_search_cnf = {
