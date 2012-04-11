@@ -29,13 +29,14 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		*/
 		
 		this.store.on('beforeload',function(store,options) {
+			delete store.baseParams.multifilter;
+			delete store.lastOptions.params.multifilter;
 			if(store.filterdata) {
-				Ext.apply(store.baseParams, {
-					'multifilter': this.getMultiFilterParam() 
-				});
-			}
-			else {
-				delete store.baseParams.multifilter;
+				var multifilter = this.getMultiFilterParam();
+				// Forcefully set both baseParams and lastOptions so make sure
+				// no param caching is happening in the Ext.data.Store
+				store.baseParams.multifilter = multifilter;
+				store.lastOptions.params.multifilter = multifilter;
 			}
 			return true;
 		},this);
