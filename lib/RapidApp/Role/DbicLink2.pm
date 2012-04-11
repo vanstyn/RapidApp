@@ -325,9 +325,16 @@ sub read_records {
 	# don't use Row objects
 	my $Rs2 = $Rs->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
 	
-	# pull in our rows
-	my $rows = [ $self->rs_all($Rs2) ];
-		
+	my $rows;
+	
+	try {
+		$rows = [ $self->rs_all($Rs2) ];
+	}
+	catch {
+		my $err = shift;
+		$self->handle_dbic_exception($err);
+	};
+	
 	#Hard coded munger for record_pk:
 	foreach my $row (@$rows) {
 		$row->{$self->record_pk} = $self->generate_record_pk_value($row);
