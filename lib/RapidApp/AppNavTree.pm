@@ -67,7 +67,7 @@ sub apply_node_navopts {
 	$loadCnf->{itemId} = $item->{itemId};
 	$loadCnf->{itemId} = $item->{id} unless ($loadCnf->{itemId});
 	
-	$loadCnf->{title} = $item->{text};
+	$loadCnf->{title} = $item->{title} || $item->{text};
 	$loadCnf->{iconCls} = $item->{iconCls};
 	
 	$loadCnf->{autoLoad} = $autoLoad;
