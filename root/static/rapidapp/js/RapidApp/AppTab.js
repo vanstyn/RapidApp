@@ -327,17 +327,14 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		this.plugins.push('appgrid-toggle-all-cols');
 		this.plugins.push('appgrid-filter-cols');
 		
-		
-		
 		this.plugins.push('appgrid-batch-edit'); 
 		
-		
-		
-		
 		// remove columns with 'no_column' set to true:
-		var new_columns = []
+		var new_columns = [];
+		var num_not_hidden_cols = 0;
 		Ext.each(this.columns,function(column,index,arr) {
 			if(!column.no_column) {
+				if(!column.hidden) { num_not_hidden_cols++; }
 				
 				// check for special 'allow_edit' attribute:
 				if(typeof column.allow_edit != "undefined" && !column.allow_edit) { 
@@ -359,7 +356,12 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		},this);
 		this.columns = new_columns;
 		
-		
+		// -- If every single column is hidden, the the hmenu won't be available. Override
+		// the hidden setting on only the very first column in this case:
+		if(num_not_hidden_cols == 0 && this.columns.length > 0) {
+			this.columns[0].hidden = false;
+		}
+		// --
 		
 		var bbar_items = [];
 		if(Ext.isArray(this.bbar)) { bbar_items = this.bbar; }
