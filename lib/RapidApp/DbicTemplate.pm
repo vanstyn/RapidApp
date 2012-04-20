@@ -7,8 +7,13 @@ with 'RapidApp::Role::DbicLink2';
 
 use RapidApp::Include qw(sugar perlutil);
 
+use RapidApp::DbicAppPropertyPage;
+
 has 'tt_include_path', is => 'ro', lazy => 1, default => sub { (shift)->app->config->{root}->stringify . '/templates' };
 has 'tt_file', is => 'ro', isa => 'Str', required => 1;
+
+# if true, page will be wrapped into a tab panel with an extra "Data" tab (RapidApp::DbicAppPropertyPage)
+has 'tabify_data', is => 'ro', isa => 'Bool', default => 0;
 
 sub BUILD {
 	my $self = shift;
@@ -20,6 +25,18 @@ sub BUILD {
 		#frame => \1,
 	);
 	
+	if($self->tabify_data) {
+		$self->apply_init_modules( data_tab => {
+			class => 'RapidApp::DbicAppPropertyPage',
+			params => {
+				ResultSource => $self->ResultSource,
+				get_ResultSet => $self->get_ResultSet, 
+				TableSpec => $self->TableSpec,
+				include_colspec => $self->include_colspec,
+			}
+		});
+	}
+	
 	$self->add_ONCONTENT_calls('apply_template');
 }
 
@@ -27,7 +44,6 @@ sub apply_template {
 	my $self = shift;
 	$self->apply_extconfig( html => $self->render_template );
 }
-
 
 sub get_TemplateData {
 	my $self = shift;
@@ -58,8 +74,6 @@ has 'req_Row', is => 'ro', lazy => 1, traits => [ 'RapidApp::Role::PerRequestBui
 	return $self->_ResultSet->first;
 };
 
-
-
 sub render_template {
 	my $self = shift;
 	
@@ -74,6 +88,56 @@ sub render_template {
 	return $html_out;
 }
 
+# Wrap with a tabpanel with the Data tab if "tabify_data" is true:
+around 'content' => sub {
+	my $orig = shift;
+	my $self = shift;
+	
+	my $content = $self->$orig(@_);
+	
+	return $content unless ($self->tabify_data);
+	
+	my $tp = { 
+		xtype => 'tabpanel',
+		deferredRender => \0, # <-- If this it true (default) it screws up grids in non-active tabs
+		activeTab => 0,
+		autoHeight => \1,
+		autoWidth		=> \1,
+		items => [
+			{
+				title => $content->{title} || $content->{tabTitle} || 'Main',
+				iconCls => $content->{iconCls} || $content->{tabIconCls} || 'icon-application-view-detail',
+				layout => 'anchor',
+				autoHeight => \1,
+				autoWidth => \1,
+				closable => 0,
+				items => $content,
+			},
+			{
+				%{ $self->Module('data_tab')->content },
+				title => 'Data',
+				iconCls => 'icon-database_table',
+				layout => 'anchor',
+				border => \0,
+				autoHeight => \1,
+				autoWidth => \1,
+				closable => 0,
+			},
+		]
+	};
+	
+	my $wrap = {
+		frame => \0,
+		bodyCssClass => 'x-panel-mc', #<-- same class as frame => \1
+		bodyStyle => 'padding: 0;overflow-y:scroll;', #<-- override the 6px padding of x-panel-mc
+		items => $tp
+	};
+	
+	$wrap->{tabTitle} = $content->{tabTitle} if ($content->{tabTitle});
+	$wrap->{tabIconCls} = $content->{tabIconCls} if ($content->{tabIconCls});
+	
+	return $wrap;
+};
 
 
 no Moose;
