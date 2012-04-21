@@ -4648,7 +4648,7 @@ Ext.ux.RapidApp.inlineLink = function(href,text,css,style,title) {
 		'<a href="' + href + '"' +
 		(css ? ' class="' + css + '"' : '') +
 		(style ? ' style="' + style + '"' : '') +
-		(title ? ' title="' + title + '"' : '') +
+		(title ? " title='" + title + "'" : '') +
 		' onclick="return Ext.ux.RapidApp.InlineLinkHandler.apply(this,arguments);"' +
 		' ondblclick="return Ext.ux.RapidApp.InlineLinkHandler.apply(this,arguments);"' +
 		'>' + text + '</a>';
@@ -4659,10 +4659,10 @@ Ext.ux.RapidApp.InlineLinkHandler = function(e) {
 	e.cancelBubble = true;
 	if (e.stopPropagation) e.stopPropagation();
 	if(e.type == 'click' && this.hash) {
-		var parts = this.hash.split('#loadcfg:');
+		
+		var parts = this.hash.split('#loadcfg:data=');
 		if(parts.length == 2) {
-			var obj = Ext.urlDecode(parts[1]);
-			var loadCfg = Ext.decode(obj.data);
+			var loadCfg = Ext.decode(parts[1]);
 			var loadTarget = Ext.getCmp("explorer-id").getComponent("load-target");
 			loadTarget.loadContent(loadCfg);
 		}
@@ -5073,6 +5073,6 @@ Ext.ux.RapidApp.DbicSingleRelationshipColumnRender = function(c) {
 		"<span>open</span>",
 		"magnify-link-tiny",
 		null,
-		"Open/view '" + disp + "'"
+		"Open/view: " + disp
 	);
 }
