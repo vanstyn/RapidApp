@@ -269,20 +269,27 @@ a.magnify-link-tiny {
   background-position: 0% 90%;
   padding-left: 10px;
   margin-left: 2px;
-  margin-bottom: 1px;
+  margin-bottom: 2px;
   font-size: 9px;
   font-family: "Helvetica Narrow","Arial Narrow",Tahoma,Arial,Helvetica,sans-serif;
   text-decoration: none;
-  border-bottom: 1px transparent;
+  border-bottom: 0px transparent;
   color: transparent;
   opacity:0.4;
   filter:alpha(opacity=40); /* For IE8 and earlier */
 }
 a.magnify-link-tiny:hover {
+  margin-bottom: 1px;
   border-bottom: 1px dotted;
   color: blue;
   opacity:1.0;
   filter:alpha(opacity=100); /* For IE8 and earlier */
+}
+a.magnify-link-tiny span {
+	visibility: hidden;
+}
+a.magnify-link-tiny:hover span {
+	visibility: visible;
 }
 
 .superscript-navy {

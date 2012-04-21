@@ -5070,7 +5070,7 @@ Ext.ux.RapidApp.DbicSingleRelationshipColumnRender = function(c) {
 	
 	return disp + "&nbsp;" + Ext.ux.RapidApp.inlineLink(
 		"#loadcfg:" + Ext.urlEncode({data: Ext.encode(loadCfg)}),
-		"open",
+		"<span>open</span>",
 		"magnify-link-tiny",
 		null,
 		"Open/view '" + disp + "'"
