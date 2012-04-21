@@ -264,6 +264,13 @@ pre {
 
 
 a.magnify-link-tiny {
+  /* -- for IE, magic!! Without this, the "filter/opacity" is ignored and other misc problems,
+   this magically makes the element have a "Layout"
+   see: http://www.satzansatz.de/cssd/onhavinglayout.html,
+    http://www.bennadel.com/blog/1354-The-Power-Of-ZOOM-Fixing-CSS-Issues-In-Internet-Explorer.htm   */
+  zoom: 1; 
+  /* -- */
+  
   background-image: url(/static/rapidapp/images/magnify.gif) !important;
   background-repeat:no-repeat;
   background-position: 0% 90%;

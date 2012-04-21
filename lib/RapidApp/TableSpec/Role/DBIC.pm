@@ -1559,7 +1559,7 @@ sub get_multi_relationship_column_cnf {
 						
 						'var href = "#loadcfg:" + Ext.urlEncode({data: Ext.encode(loadCfg)});' .
 						'disp += "&nbsp;" + Ext.ux.RapidApp.inlineLink(' .
-							'href,"open","magnify-link-tiny",null,"Open/view \'" + loadCfg.title + "\'"' .
+							'href,"<span>open</span>","magnify-link-tiny",null,"Open/view \'" + loadCfg.title + "\'"' .
 						');' .
 					'}'
 				:
