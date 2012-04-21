@@ -1371,25 +1371,15 @@ sub get_relationship_column_cnf {
 		
 		renderer => jsfunc(
 			'function(value, metaData, record, rowIndex, colIndex, store) {' .
-				'var disp = record.data["' . $render_col . '"];' .
-				'if(!value) { value = record.data["' . $key_col . '"]; }' .
-				'if(!value) { return disp; }' .
-				'if(!disp) { return value; }' .
-				
-				( # TODO: needs to be generalized better
-					$conf->{open_url} ?
-						qq~var loadCfg = { title: disp, autoLoad: { url: "~ . 
-							$conf->{open_url} . q~", params: { ___record_pk: "'" + value + "'" } }};~ .
-						'var href = "#loadcfg:" + Ext.urlEncode({data: Ext.encode(loadCfg)});'				.
-						'return disp + "&nbsp;" + ' .
-							'Ext.ux.RapidApp.inlineLink(href,"open","magnify-link-tiny",null,"Open/view \'" + disp + "\'");' 
-					:
-						'return disp;'
-				)
-				.
-				
+				'return Ext.ux.RapidApp.DbicSingleRelationshipColumnRender({' .
+					'value:value,metaData:metaData,record:record,rowIndex:rowIndex,colIndex:colIndex,store:store,' .
+					'render_col: "' . $render_col . '",' .
+					'key_col: "' . $key_col . '",' .
+					'upd_key_col: "' . $upd_key_col . '"' .
+					( $conf->{open_url} ? ",open_url: '" . $conf->{open_url} . "'" : '' ) .
+				'});' .
 			'}', $conf->{renderer}
-		),
+		)
 	};
 	
 	

@@ -2690,7 +2690,7 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 					this.getComboField(),
 					this.getFunctionsField(),
 					this.getTitleField()
-				],
+				]
 			}); 
 			this.menu = hmenu.add({
 				hideOnClick: false,

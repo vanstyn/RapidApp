@@ -408,7 +408,7 @@ Ext.ux.RapidApp.ClickMenuField = Ext.extend(Ext.ux.RapidApp.ClickCycleField,{
 						iconCls : 'icon-bullet-arrow-down',
 						style: 'font-weight:bold;color:#333333;cursor:auto;padding-right:5px;',
 						text: this.header + ':',
-						hideOnClick: true,
+						hideOnClick: true
 					},
 					{ xtype: 'menuseparator' }
 				];
@@ -424,8 +424,7 @@ Ext.ux.RapidApp.ClickMenuField = Ext.extend(Ext.ux.RapidApp.ClickCycleField,{
 						//call selectValue, which will get the new value we're setting here
 						this.setValue(itm.value);
 					},
-					scope:this,
-					
+					scope:this
 				}
 				
 				if(itm.cls) { menu_item.iconCls = 'with-icon ' + itm.cls; }
@@ -698,7 +697,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 				cmpConfig: {
 					// Obviously this is for grids... not sure if this will cause problems
 					// in the case of AppDVs
-					sm: new Ext.grid.RowSelectionModel({singleSelect:true}),
+					sm: new Ext.grid.RowSelectionModel({singleSelect:true})
 				}
 			},
 			buttons: [

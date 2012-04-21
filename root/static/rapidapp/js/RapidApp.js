@@ -5044,3 +5044,35 @@ Ext.ux.RapidApp.num2pct = function(num) {
 	if(num == 0) { num = '0%'; }
 	return num;
 }
+
+
+Ext.ux.RapidApp.DbicSingleRelationshipColumnRender = function(c) {
+	var disp = c.record.data[c.render_col];
+	if(!c.value) { c.value = c.record.data[c.key_col]; }
+	
+	if(c.value == null && disp == null) {
+		return '<span style="font-size:.90em;color:darkgrey;">' +
+			'&times&nbsp;unavailable&nbsp;&times;' +
+		'</span>';
+	}
+	
+	if(!c.value)		{ return disp; }
+	if(!disp) 			{ return c.value; }
+	if(!c.open_url)	{ return disp; }
+	
+	var loadCfg = { 
+		title: disp, 
+		autoLoad: { 
+			url: c.open_url, 
+			params: { ___record_pk: "'" + c.value + "'" } 
+		}
+	};
+	
+	return disp + "&nbsp;" + Ext.ux.RapidApp.inlineLink(
+		"#loadcfg:" + Ext.urlEncode({data: Ext.encode(loadCfg)}),
+		"open",
+		"magnify-link-tiny",
+		null,
+		"Open/view '" + disp + "'"
+	);
+}
