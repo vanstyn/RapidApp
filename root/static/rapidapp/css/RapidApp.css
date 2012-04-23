@@ -1283,16 +1283,45 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
   font-weight: bold;
 }
 
+.ra-relative-date table {
+  padding-left:5px;
+}
+
 .ra-relative-date ul {
   padding-top: 4px;
   padding-left: 12px;
-  padding-bottom: 8px;
+  padding-bottom: 6px;
 }
 
 .ra-relative-date li {
   padding: 1px;
+  white-space: nowrap;
   font-family: Consolas,Menlo,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New,monospace,serif;
   color: gray;
 }
 
+.ra-relative-date-renderval {
+  display: block;
+  padding-top: 5px;
+  font-size: 11px;
+  font-family: arial,tahoma,verdana,helvetica;
+  font-style: italic;
+  text-align: center;
+  vertical-align:middle;
+  width:100%;
+  color: gray;
+}
+
+.ra-relative-date-renderval sup {
+  vertical-align: baseline;
+	font-size: 0.7em;
+	position: relative;
+	top: -0.3em;
+}
+
+.ra-relative-date-renderval span {
+  font-style: normal;
+  font-weight: bold;
+  font-variant: small-caps;
+}
 

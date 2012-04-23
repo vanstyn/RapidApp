@@ -3796,7 +3796,7 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 		// starting with '-' or '+', otherwise, use native behavior
 		var native_parseDate = cmp.parseDate;
 		cmp.parseDate = function(value) {
-			if(plugin.isDurationString(value)) {
+			if(plugin.isDurationString.call(plugin,value)) {
 				var ret = plugin.parseRelativeDate.apply(plugin,arguments);
 				if(ret) { return ret; }
 			}
@@ -3880,26 +3880,79 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 		}
 		
 	},
-
+	
+	startDateKeywords: {
+		
+		now: function() {
+			return new Date();
+		},
+		
+		today: function() {
+			var dt = new Date();
+			return dt.clearTime();
+		},
+		
+		thisweek: function() {
+			var dt = new Date();
+			var day = parseInt(dt.format('N'));
+			//day++; if(day > 7) { day = 1; } //<-- shift day 1 from Monday to Sunday
+			var subtract = 1 - day;
+			return dt.add(Date.DAY,subtract).clearTime();
+		},
+		
+		thismonth: function() {
+			var dt = new Date();
+			return dt.getFirstDateOfMonth();
+		},
+		
+		thisyear: function() {
+			var dt = new Date();
+			var date_string = '1/01/' + dt.format('Y') + ' 00:00:00';
+			return new Date(date_string);
+		}
+	},
+	
+	getKeywordStartDt: function(keyword) {
+		keyword = keyword.replace(/\s*/g,''); // <-- strip whitespace
+		keyword = keyword.toLowerCase();
+		var fn = this.startDateKeywords[keyword] || function(){ return null; };
+		return fn();
+	},
+	
 	isDurationString: function(str) {
 		if(str && Ext.isString(str)) {
-			var f = str.charAt(0); // <-- first character
-			if(f == '+' || f == '-'){ return true; }
+			if(str.search(/[\+\-]/) != -1){ return true; };
+			if(this.getKeywordStartDt(str)){ return true; };
 		}
 		return false;
 	},
 	
 	parseRelativeDate: function(value) {
-		var sign = value.substr(0,1);
+		var dt = this.getKeywordStartDt(value);
+		if(dt) { return dt; } //<-- if the supplied value is a start keyword alone
 		
+		// find the offset of the sign char (the first + or -):
+		var pos = value.search(/[\+\-]/);
+		if(pos == -1) { return null; }
+		if(pos > 0) {
+			// If we are here then it means a custom start keyword was specified:
+			var keyword = value.substr(0,pos);
+			dt = this.getKeywordStartDt(keyword);
+		}
+		else {
+			// Default start date/keyword "now":
+			dt = this.getKeywordStartDt('now');
+		}
+		
+		if(!dt) { return null; }
+		
+		var sign = value.substr(pos,1);
 		if(sign != '+' && sign != '-') { return null; }
-		
-		var str = value.substr(1);
-		
+		var str = value.substr(pos+1);
+
 		var parts = this.extractDurationParts(str);
 		if(!parts) { return null; }
 		
-		var dt = new Date();
 		var invalid = false;
 		Ext.each(parts,function(part){
 			if(invalid) { return; }
@@ -4011,6 +4064,12 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 		
 		unit = unit.toLowerCase();
 		
+		// custom support for "weeks":
+		if(unit == 'w' || unit == 'week' || unit == 'weeks' || unit == 'wk' || unit == 'wks') {
+			unit = 'days';
+			num = num*7;
+		}
+		
 		var interval = this.unitMap[unit];
 		if(!interval) { return null; }
 		
@@ -4061,7 +4120,7 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 		if(!this.relativeDateMenu) {
 			var menu = new Ext.menu.Menu({
 				style: 'padding-top:5px;padding-left:5px;padding-right:5px;',
-				width: 225,
+				width: 330,
 				layout: 'anchor',
 				showSeparator: false,
 				items: [
@@ -4074,14 +4133,36 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 								'Prefix with a minus <span class="mono">(-)</span> for a date in the past or a plus ' + 
 								'<span class="mono">(+)</span> for a date in the future.  ' +
 							'</div>' +
-							'<div class="examples">Examples:</div>' + 
+							'<div class="sub">' + 
+								'You may optionally prepend a referece date keyword &ndash; <span class="mono">today</span>, <span class="mono">this week</span>, <span class="mono">this month</span> or <span class="mono">this year</span> &ndash; for an even date/threshold to use instead of the current date and time.' +
+							'</div>' +
+							'<div class="sub">' + 
+								'The date calculation of your input is shown as you type.' +
+							'</div>' +
+							'<div class="examples">Example inputs:</div>' + 
+							
+							'<table width="85%"><tr>' +
+						
+							'<td>' +
 							'<ul>' +
 								'<li>-1 day</li>' +
 								'<li>+20 hours, 30 minutes</li>' +
-								'<li>-3d4h18mins</li>' +
+								'<li>today -3d4h18mins</li>' +
 								'<li>+2m3d5h</li>' +
-								'<li>-2 years</li>' +
 							'</ul>' + 
+							'</td>' +
+							
+							'<td>' +
+							'<ul>' +
+								'<li>this year+1m</li>' +
+								'<li>-2 years</li>' +
+								'<li>this week</li>' +
+								'<li>this year - 2 years</li>' +
+							'</ul>' + 
+							'</td>' +
+							
+							'</tr></table>' +
+							
 						'</div>' 
 					}
 				]
@@ -4094,16 +4175,31 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 				disabled: true
 			});
 			
+			menu.renderValLabel = new Ext.form.Label({
+				html: '&uarr;&nbsp;enter',
+				cls: 'ra-relative-date-renderval'
+			});
+			
 			menu.field = new Ext.form.TextField({
 				anchor: '100%',
 				fieldClass: 'blue-text-code',
 				validator: function(v) {
 					if(!v) { 
-						menu.okbtn.setDisabled(true); 
+						menu.okbtn.setDisabled(true);
+						menu.renderValLabel.setText(
+							'<sup>&uarr;</sup>&nbsp;&nbsp;&nbsp;&nbsp;input relative date above&nbsp;&nbsp;&nbsp;&nbsp;<sup>&uarr;</sup>',
+						false);
 						return true; 
 					}
-					var test = plugin.parseRelativeDate.call(plugin,v) ? true : false;
+					var dt = plugin.parseRelativeDate.call(plugin,v);
+					var test = dt ? true : false;
 					menu.okbtn.setDisabled(!test); 
+					
+					var renderVal = test ? '=&nbsp;&nbsp;' +
+						dt.format('D, F j, Y (g:i a)') : 
+						'<span>invalid relative date</span>';
+					menu.renderValLabel.setText(renderVal,false);
+					
 					return test;
 				},
 				enableKeyEvents:true,
@@ -4119,7 +4215,8 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 					}
 				}
 			});
-			menu.add(menu.field);
+			
+			menu.add(menu.field,menu.renderValLabel);
 			
 			menu.add({
 				xtype: 'panel',

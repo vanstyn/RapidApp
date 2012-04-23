@@ -809,6 +809,68 @@ sub multifilter_translate_cond {
 }
 
 
+sub multifilter_date_getKeywordDt {
+	my $self = shift;
+	my $keyword = shift;
+	
+	$keyword =~ s/\s*//g; #<-- stip whitespace from the keyword
+	$keyword = lc($keyword); #<-- lowercase it
+	
+	my $dt = DateTime->now( time_zone => 'local' );
+	
+	switch($keyword) {
+		
+		case 'now' { return $dt }
+		
+		case 'today' { return DateTime->new(
+			year	=> $dt->year,
+			month	=> $dt->month,
+			day		=> $dt->day,
+			hour	=> 0,
+			minute	=> 0,
+			second	=> 0,
+			time_zone => 'local'
+		)}
+		
+		case 'thisweek' { 
+			my $day = $dt->day_of_week;
+			#$day++; $day = 1 if ($day > 7); #<-- shift day 1 from Monday to Sunday
+			$dt = $dt->subtract( days => ($day - 1) );
+			return DateTime->new(
+				year	=> $dt->year,
+				month	=> $dt->month,
+				day		=> $dt->day,
+				hour	=> 0,
+				minute	=> 0,
+				second	=> 0,
+				time_zone => 'local'
+			);
+		}
+		
+		case 'thismonth' { return DateTime->new(
+			year	=> $dt->year,
+			month	=> $dt->month,
+			day		=> 1,
+			hour	=> 0,
+			minute	=> 0,
+			second	=> 0,
+			time_zone => 'local'
+		)}
+		
+		case 'thisyear' { return DateTime->new(
+			year	=> $dt->year,
+			month	=> 1,
+			day		=> 1,
+			hour	=> 0,
+			minute	=> 0,
+			second	=> 0,
+			time_zone => 'local'
+		)}
+		
+		return undef;
+	}
+}
+
 # This is a clone of the JavaScript logic in the function parseRelativeDate() in the plugin
 # class Ext.ux.RapidApp.Plugin.RelativeDateTime. While it is not ideal to have to reproduce
 # this and have to maintain in both Perl and JavaScript simultaneously, this is the most
@@ -820,8 +882,27 @@ sub inflate_multifilter_date {
 	my $self = shift;
 	my $v = shift;
 	
+	my $dt = $self->multifilter_date_getKeywordDt($v);
+	return $dt->ymd . ' ' . $dt->hms if ($dt);
+	
+	my $orig_v = $v;
+
+	my @parts = split(/[\-\+]/,$v);
+	if(scalar @parts > 1 && length $parts[0] > 0) {
+		#If we are here then it means a custom start keyword was specified:
+		my $keyword = $parts[0];
+		$v =~ s/^${keyword}//; #<-- strip out the keyword from the string value
+		$keyword =~ s/\s*//g; #<-- stip whitespace from the keyword
+		$keyword = lc($keyword); #<-- lowercase it
+		
+		$dt = $self->multifilter_date_getKeywordDt($keyword);
+	}
+	else {
+		$dt = $self->multifilter_date_getKeywordDt('now');
+	}
+	
 	my $sign = substr($v,0,1);
-	return $v unless ($sign eq '-' || $sign eq '+');
+	return $orig_v unless ($dt && ($sign eq '-' || $sign eq '+'));
 	
 	my $str = substr($v,1);
 	
@@ -830,17 +911,23 @@ sub inflate_multifilter_date {
 	
 	$str = lc($str);
 	
-	my @parts = ();
+	@parts = ();
 	while(length $str) {
 		my ($num,$unit);
 		$str =~ s/^(\d+)//; $num = $1;
 		$str =~ s/^(\D+)//; $unit = $1;
+		
+		#custom support for "weeks":
+		if($unit eq 'w' || $unit eq 'week' || $unit eq 'weeks' || $unit eq 'wk' || $unit eq 'wks') {
+			$unit = 'days';
+			$num = $num * 7;
+		}
+		
 		push @parts, { num => $num, unit => $unit } if ($num && $unit);
 	}
 	
 	return $v unless (@parts > 0);
 	
-	my $dt = DateTime->now( time_zone => 'local' );
 	my $method = ($sign eq '-') ? 'subtract' : 'add';
 	
 	my $map = $self->inflate_multifilter_date_unit_map;
@@ -852,7 +939,7 @@ sub inflate_multifilter_date {
 		$dt = $newDt;
 	}
 	
-	return $v unless ($count);
+	return $orig_v unless ($count);
 	
 	return $dt->ymd . ' ' . $dt->hms;
 }
