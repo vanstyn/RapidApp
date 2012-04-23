@@ -3887,6 +3887,26 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 			return new Date();
 		},
 		
+		thisminute: function() {
+			var dt = new Date();
+			dt.setSeconds(0);
+			dt.setMilliseconds(0);
+			return dt;
+		},
+		
+		thishour: function() {
+			var dt = new Date();
+			dt.setMinutes(0);
+			dt.setSeconds(0);
+			dt.setMilliseconds(0);
+			return dt;
+		},
+		
+		thisday: function() {
+			var dt = new Date();
+			return dt.clearTime();
+		},
+		
 		today: function() {
 			var dt = new Date();
 			return dt.clearTime();
@@ -3903,6 +3923,26 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 		thismonth: function() {
 			var dt = new Date();
 			return dt.getFirstDateOfMonth();
+		},
+		
+		thisquarter: function() {
+			var dt = new Date();
+			dt = dt.getFirstDateOfMonth();
+			var month = parseInt(dt.format('n'));
+			var subtract = 0;
+			if(month > 0 && month <= 3) {
+				subtract = month - 1;
+			}
+			else if(month > 3 && month <= 6) {
+				subtract = month - 4;
+			}
+			else if(month > 6 && month <= 9) {
+				subtract = month - 7;
+			}
+			else {
+				subtract = month - 10;
+			}
+			return dt.add(Date.MONTH,0 - subtract).clearTime();
 		},
 		
 		thisyear: function() {
@@ -4070,6 +4110,12 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 			num = num*7;
 		}
 		
+		// custom support for "quarters":
+		if(unit == 'q' || unit == 'quarter' || unit == 'quarters' || unit == 'qtr' || unit == 'qtrs') {
+			unit = 'months';
+			num = num*3;
+		}
+		
 		var interval = this.unitMap[unit];
 		if(!interval) { return null; }
 		
@@ -4134,7 +4180,7 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 								'<span class="mono">(+)</span> for a date in the future.  ' +
 							'</div>' +
 							'<div class="sub">' + 
-								'You may optionally prepend a referece date keyword &ndash; <span class="mono">today</span>, <span class="mono">this week</span>, <span class="mono">this month</span> or <span class="mono">this year</span> &ndash; for an even date/threshold to use instead of the current date and time.' +
+								'You may optionally prepend a referece date keyword &ndash; <span class="mono">today</span>, <span class="mono">this minute</span>, <span class="mono">this hour</span>, <span class="mono">this week</span>, <span class="mono">this month</span>, <span class="mono">this quarter</span> or <span class="mono">this year</span> &ndash; for an even date/threshold to use instead of the current date and time.' +
 							'</div>' +
 							'<div class="sub">' + 
 								'The date calculation of your input is shown as you type.' +
@@ -4149,15 +4195,17 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 								'<li>+20 hours, 30 minutes</li>' +
 								'<li>today -3d4h18mins</li>' +
 								'<li>+2m3d5h</li>' +
+								'<li>this hour - 2 hours</li>' +
 							'</ul>' + 
 							'</td>' +
 							
 							'<td>' +
 							'<ul>' +
-								'<li>this year+1m</li>' +
+								'<li>this quarter+1wks</li>' +
 								'<li>-2 years</li>' +
 								'<li>this week</li>' +
 								'<li>this year - 2 years</li>' +
+								'<li>this minute - 30 mins</li>' +
 							'</ul>' + 
 							'</td>' +
 							

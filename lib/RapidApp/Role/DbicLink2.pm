@@ -822,6 +822,37 @@ sub multifilter_date_getKeywordDt {
 		
 		case 'now' { return $dt }
 		
+		case 'thisminute' { return DateTime->new(
+			year	=> $dt->year,
+			month	=> $dt->month,
+			day		=> $dt->day,
+			hour	=> $dt->hour,
+			minute	=> $dt->minute,
+			second	=> 0,
+			time_zone => 'local'
+		)}
+		
+		case 'thishour' { return DateTime->new(
+			year	=> $dt->year,
+			month	=> $dt->month,
+			day		=> $dt->day,
+			hour	=> $dt->hour,
+			minute	=> 0,
+			second	=> 0,
+			time_zone => 'local'
+		)}
+		
+		case 'thisday' { return DateTime->new(
+			year	=> $dt->year,
+			month	=> $dt->month,
+			day		=> $dt->day,
+			hour	=> 0,
+			minute	=> 0,
+			second	=> 0,
+			time_zone => 'local'
+		)}
+		
+		# same as thisday:
 		case 'today' { return DateTime->new(
 			year	=> $dt->year,
 			month	=> $dt->month,
@@ -856,6 +887,34 @@ sub multifilter_date_getKeywordDt {
 			second	=> 0,
 			time_zone => 'local'
 		)}
+		
+		case 'thisquarter' {
+			my $month = $dt->month;
+			my $subtract = 0;
+			if($month > 0 && $month <= 3) {
+				$subtract = $month - 1;
+			}
+			elsif($month > 3 && $month <= 6) {
+				$subtract = $month - 4;
+			}
+			elsif($month > 6 && $month <= 9) {
+				$subtract = $month - 7;
+			}
+			else {
+				$subtract = $month - 10;
+			}
+			
+			$dt = $dt->subtract( months => $subtract );
+			return DateTime->new(
+				year	=> $dt->year,
+				month	=> $dt->month,
+				day		=> 1,
+				hour	=> 0,
+				minute	=> 0,
+				second	=> 0,
+				time_zone => 'local'
+			);
+		}
 		
 		case 'thisyear' { return DateTime->new(
 			year	=> $dt->year,
@@ -921,6 +980,12 @@ sub inflate_multifilter_date {
 		if($unit eq 'w' || $unit eq 'week' || $unit eq 'weeks' || $unit eq 'wk' || $unit eq 'wks') {
 			$unit = 'days';
 			$num = $num * 7;
+		}
+		
+		#custom support for "quarters":
+		if($unit eq 'q' || $unit eq 'quarter' || $unit eq 'quarters' || $unit eq 'qtr' || $unit eq 'qtrs') {
+			$unit = 'months';
+			$num = $num * 3;
 		}
 		
 		push @parts, { num => $num, unit => $unit } if ($num && $unit);
