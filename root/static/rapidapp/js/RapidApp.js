@@ -4662,11 +4662,16 @@ Ext.ux.RapidApp.InlineLinkHandler = function(e) {
 		
 		var parts = this.hash.split('#loadcfg:data=');
 		if(parts.length == 2) {
-			var loadCfg = Ext.decode(parts[1]);
+			var str = parts[1];
+			
+			// FireFox has automatically already decoded from URI, but Chrome hasn't,
+			// making this required:
+			str = decodeURIComponent(str);
+
+			var loadCfg = Ext.decode(str);
 			var loadTarget = Ext.getCmp("explorer-id").getComponent("load-target");
 			loadTarget.loadContent(loadCfg);
 		}
-		
 	}
 	return false;
 }
