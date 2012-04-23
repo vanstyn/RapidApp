@@ -2334,33 +2334,6 @@ Ext.ux.RapidApp.Plugin.gridAutoHeight = Ext.extend(Ext.util.Observable,{
 Ext.preg('grid-autoheight',Ext.ux.RapidApp.Plugin.gridAutoHeight);
 
 
-Ext.ux.RapidApp.Plugin.tabpanelCloseAllBtn = Ext.extend(Ext.util.Observable,{
-	init: function(cmp) {
-		this.cmp = cmp;
-		this.cmp.on('render',this.onRender,this);
-	},
-	onRender:function() {
-		
-		
-		//TODO!!!
-		
-		
-		//var stripEl = this.cmp.header;
-		
-		//console.dir(stripEl);
-		
-	},
-	closeAll: function() {
-		var tabpanel = this.cmp;
-		tabpanel.items.each(function(item) {
-			if (item.closable) {
-				tabpanel.remove(item);
-			}
-		});
-	}
-});
-Ext.preg('tabpanel-closeall',Ext.ux.RapidApp.Plugin.tabpanelCloseAllBtn);
-
 
 
 // Plugin for ManagedIframe
@@ -4337,4 +4310,50 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 	
 });
 Ext.preg('form-relative-datetime',Ext.ux.RapidApp.Plugin.RelativeDateTime);
+
+
+Ext.ux.RapidApp.Plugin.tabpanelCloseAllRightClick = Ext.extend(Ext.util.Observable,{
+	init: function(cmp) {
+		this.cmp = cmp;
+		this.cmp.on('contextmenu',this.onContextmenu,this);
+	},
+
+	onContextmenu: function(tp,tab,e) {
+		
+		if(tp.items.getCount() < 2){ return; }
+		
+		//stop browser menu:
+		e.stopEvent();
+		
+		var menuItems = [{
+			text: 'Close All Tabs',
+			iconCls: 'icon-tool-close',
+			scope: this,
+			handler: this.closeAll
+		},{
+			text: 'Close All BUT This',
+			iconCls: 'icon-tool-close',
+			scope: this,
+			handler: this.closeAll.createDelegate(this,[tab])
+		}];
+
+		var menu = new Ext.menu.Menu({ items: menuItems });
+		var pos = e.getXY();
+		pos[0] = pos[0] + 10;
+		pos[1] = pos[1] + 5;
+		menu.showAt(pos);
+	},
+	
+	closeAll: function(keeptab) {
+		var tabpanel = this.cmp;
+		tabpanel.items.each(function(item) {
+			if (item.closable && item != keeptab) {
+				tabpanel.remove(item);
+			}
+		});
+	}
+});
+Ext.preg('tabpanel-closeall',Ext.ux.RapidApp.Plugin.tabpanelCloseAllRightClick);
+
+
 

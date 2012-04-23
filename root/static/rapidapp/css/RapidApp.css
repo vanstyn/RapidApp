@@ -230,6 +230,7 @@ pre {
 .icon-table-edit-row { background-image: url(/static/rapidapp/images/table_edit_row.png) !important; }
 .icon-table-sql-edit { background-image: url(/static/rapidapp/images/table_sql_edit.png) !important; }
 .icon-clock-run { background-image: url(/static/rapidapp/images/clock_run.png) !important; }
+.icon-tool-close { background-image: url(/static/rapidapp/images/tool_close.png) !important; }
 
 .tbar-title-medium {
 	font-size:175% !important;
