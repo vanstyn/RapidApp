@@ -56,11 +56,16 @@ sub apply_node_navopts {
 	
 	my $autoLoad = {};
 	$autoLoad->{params} = $item->{params} if ($item->{params});
+	$autoLoad->{url} = $item->{url} if ($item->{params});
 	
-	my $module = $item->{module} or return; # <-- Don't build a loadContentCnf if there is no module
+	my $module = $item->{module}; 
 	if ($module) {
 		$module = $self->module_scope->Module($item->{module}) unless(ref($module));
 		$autoLoad->{url} = $module->base_url;
+	}
+	else {
+		# Don't build a loadContentCnf if there is no module or url
+		return unless ($autoLoad->{url});
 	}
 	
 	my $loadCnf = {};
