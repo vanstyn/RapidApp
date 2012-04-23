@@ -1325,3 +1325,36 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
   font-variant: small-caps;
 }
 
+.ra-footer {
+  font-size: 11px;
+  font-family: arial,tahoma,verdana,helvetica;
+  background-color: #EAEAEA;
+  color: #666666;
+  vertical-align: middle;
+}
+
+.ra-footer .wrap {
+  height: 18px;
+  border-style: solid;
+  border-color: #D0D0D0;
+  border-top-width: 0px;
+  border-left-width: 1px;
+  border-right-width: 1px;
+  border-bottom-width: 1px;
+}
+
+.ra-footer td {
+  vertical-align:middle;
+  padding-left:5px;
+  padding-right:5px;
+  white-space: nowrap;
+}
+
+.ra-footer td.center {
+  text-align:center;
+}
+
+.ra-footer td.right {
+  text-align:right;
+}
+
