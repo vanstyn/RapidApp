@@ -1327,7 +1327,7 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 }
 
 .ra-footer {
-  font-size: 11px;
+  font-size: 10.5px;
   font-family: arial,tahoma,verdana,helvetica;
   background-color: #EAEAEA;
   color: #666666;
@@ -1335,7 +1335,7 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 }
 
 .ra-footer .wrap {
-  height: 18px;
+  height: 17px;
   border-style: solid;
   border-color: #D0D0D0;
   border-top-width: 0px;
