@@ -33,10 +33,15 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			delete store.lastOptions.params.multifilter;
 			if(store.filterdata) {
 				var multifilter = this.getMultiFilterParam();
+				
 				// Forcefully set both baseParams and lastOptions so make sure
 				// no param caching is happening in the Ext.data.Store
 				store.baseParams.multifilter = multifilter;
 				store.lastOptions.params.multifilter = multifilter;
+				
+				// this is required for very first load to see changes 
+				// (not sure why this is needed beyond the above lines)
+				Ext.apply(options.params, {multifilter: multifilter});
 			}
 			return true;
 		},this);
@@ -592,10 +597,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 				xtype	: 'datefield',
 				plugins: ['form-relative-datetime'],
 				noReplaceDurations: true, //<-- option of the form-relative-datetime plugin
-				//format: 'M d, Y',
-				format: 'Y-m-d',
-				width: 100,
-				flex: 0
+				format: 'Y-m-d'
 			});
 		}
 		else if (this.condType == 'datetime') {
@@ -603,11 +605,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 				xtype	: 'datefield',
 				plugins: ['form-relative-datetime'],
 				noReplaceDurations: true, //<-- option of the form-relative-datetime plugin
-				//format: 'M d, Y g:i A',
-				//format: 'Y-m-d H:i:s',
-				format: 'Y-m-d H:i',
-				width: 130,
-				flex: 0
+				format: 'Y-m-d H:i'
 			});
 		}
 		else if(this.condType == 'number') {
