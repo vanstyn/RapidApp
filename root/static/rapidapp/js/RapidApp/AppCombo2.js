@@ -203,6 +203,8 @@ Ext.ux.RapidApp.StaticCombo = Ext.extend(Ext.ux.RapidApp.AppCombo2.CssCombo,{
 					combo.initMenuList.call(combo);
 				}
 			};
+			// pre-init menu for performance:
+			this.getMenuList();
 		}
 	},
 	
@@ -242,10 +244,17 @@ Ext.ux.RapidApp.StaticCombo = Ext.extend(Ext.ux.RapidApp.AppCombo2.CssCombo,{
 				});
 			},this);
 			
-			this.menuList = new Ext.menu.Menu({
+			var menuCfg = {
 				items: items,
-				maxHeight: this.maxHeight
-			});
+				maxHeight: this.maxHeight,
+				plugins: ['menu-filter'],
+				autoFocusFilter: true
+			};
+			
+			// Skip the filter if there are fewer than 5 items:
+			if(items.length < 5) { delete menuCfg.plugins; }
+			
+			this.menuList = new Ext.menu.Menu(menuCfg);
 			
 			this.menuList.on('show',function(menu){
 				menu.setPosition(this.list.getXY());

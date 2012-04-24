@@ -3269,7 +3269,13 @@ Ext.ux.RapidApp.Plugin.AppGridFilterCols = Ext.extend(Ext.ux.RapidApp.Plugin.App
 			}
 		},this);
 		
-		if(remove) { this.colMenu.remove(remove,true); }
+		//if(remove) { this.colMenu.remove(remove,true); }
+		if(remove) { 
+			var liEl = remove.el.parent('li');
+			this.colMenu.remove(remove,true);
+			// this appears to be an Ext bug:
+			if(liEl && liEl.dom) { Ext.removeNode(liEl.dom); }
+		}
 		
 		if(add_at) {
 			this.colMenu.insert(add_at,{
@@ -4354,6 +4360,186 @@ Ext.ux.RapidApp.Plugin.tabpanelCloseAllRightClick = Ext.extend(Ext.util.Observab
 	}
 });
 Ext.preg('tabpanel-closeall',Ext.ux.RapidApp.Plugin.tabpanelCloseAllRightClick);
+
+
+// This is basically a clone of the logic in grid col filters plugin, reproduced for
+// general purpose menus. There are a few special issues with the col menu that it needs
+// to still be separate, for now, but this duplicate logic needs to be consolidated
+// at some point:
+Ext.ux.RapidApp.Plugin.MenuFilter = Ext.extend(Ext.util.Observable,{
+	
+	maxSeparatorPosition: 4,
+	
+	init: function(menu) {
+		this.menu = menu;
+		menu.on('beforeshow',this.onBeforeshow,this);
+		menu.on('show',this.onShow,this);
+	},
+	
+	onBeforeshow: function() {
+
+		//Disable the menu keyNav to allow arrow keys to work in fields within the menu:
+		if(this.menu.keyNav){ this.menu.keyNav.disable(); }
+		
+		if(!this.menu.getComponent('filteritem')) {
+			var filteritem = this.getColItem();
+			if(!filteritem) { return; }
+			//var pos = this.getInsertPosition();
+			//this.menu.insert(pos,filteritem);
+			this.menu.insert(0,filteritem,'-');
+		}
+	},
+	
+	onShow: function() {
+		this.autoSizeField.defer(20,this);
+		
+		if(this.menu.autoFocusFilter) { 
+			this.focusFilter();
+		}
+	},
+	
+	autoSizeField: function() {
+		var field = this.menu.getComponent('filteritem');
+		if(field) {
+			field.setWidth(this.menu.getWidth() - 25);
+		}
+	},
+	
+	focusFilter: function() {
+		var field = this.menu.getComponent('filteritem');
+		if(field) { 
+			field.focus(false,50);
+			field.focus(false,200);
+		}
+	},
+	
+	getColCount: function() {
+		return this.menu.items.getCount();
+	},
+	
+	isSeparator: function(item) {
+		if((Ext.isObject(item) && item.itemCls == 'x-menu-sep') || item == '-') {
+			return true;
+		}
+		return false;
+	},
+	
+	/*
+	getExistingSeparatorIndex: function() {
+		var items = this.menu.items.items;
+		for (ndx in items) {
+			if(ndx > this.maxSeparatorPosition) { return -1; }
+			if(this.isSeparator(items[ndx])) { return ndx; }
+		}
+		return -1;
+	},
+	
+	getInsertPosition: function() {
+		var pos = this.getExistingSeparatorIndex();
+		if(pos == -1) { 
+			this.menu.insert(0,'-');
+			return 0;
+		}
+		return pos;
+	},
+	*/
+	
+	testMatch: function(item,str) {
+		// If the string is not set, match is true per default:
+		if(!str || str == '' || !item.text) { return true; }
+		
+		str = str.toLowerCase();
+		var text = item.text.toLowerCase();
+		
+		// Test menu item text
+		if(text.indexOf(str) != -1) { return true; }
+		
+		return false;
+	},
+	
+	filterByString: function(str) {
+		if(str == '') { str = null; }
+		if(!this.menu.isVisible()) { return; }
+		
+		var past_sep,past_label,add_at,remove,match_count = 0;
+		this.menu.items.each(function(item,ndx){
+			if(!past_sep) {
+				if(this.isSeparator(item)){ past_sep = true; }
+				return;
+			}
+			else if (!past_label) {
+				if(str) { add_at = ndx; }
+				past_label = true;
+				if(item.isFilterLabel) {
+					remove = item;
+					return;
+				}
+			}
+			
+			var match = this.testMatch(item,str);
+			if(match) { match_count++; }
+			
+			if(!item.hidden) {
+				if(!match) {
+					item.setVisible(false);
+					item.isFiltered = true;
+				}
+			}
+			else {
+				if(match && item.isFiltered) {
+					delete item.isFiltered;
+					item.setVisible(true);
+				}
+			}
+		},this);
+		
+		if(remove) { 
+			var liEl = remove.el.parent('li');
+			this.menu.remove(remove,true);
+			// this appears to be an Ext bug:
+			if(liEl && liEl.dom) { Ext.removeNode(liEl.dom); }
+		}
+		
+		if(add_at) {
+			this.menu.insert(add_at,{
+				isFilterLabel: true,
+				xtype: 'label',
+				html: '<b><i><center>Filtered (' + match_count + ' items)</center></i></b>'
+			});
+		}
+		
+		this.menu.doLayout();
+	},
+	
+	getColItem: function() {
+		return {
+			xtype:'textfield',
+			itemId: 'filteritem',
+			emptyText: 'Type to Filter List',
+			emptyClass: 'field-empty-text',
+			width: 100, //<-- should be less than the minWidth of menu for proper auto-sizing
+			enableKeyEvents:true,
+			listeners: {
+				render: {
+					scope: this,
+					fn: function(field) {
+						field.filterTask = new Ext.util.DelayedTask(function(f){
+							this.filterByString(f.getValue());
+						},this,[field]);
+					}
+				},
+				keyup: {
+					scope: this,
+					buffer: 150,
+					fn: function(field, e) {
+						if(field.filterTask) { field.filterTask.delay(500); }
+					}
+				}
+			}
+		};
+	}
+});
+Ext.preg('menu-filter',Ext.ux.RapidApp.Plugin.MenuFilter);
 
 
 
