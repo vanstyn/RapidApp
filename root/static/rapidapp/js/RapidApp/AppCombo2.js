@@ -155,6 +155,7 @@ Ext.ux.RapidApp.StaticCombo = Ext.extend(Ext.ux.RapidApp.AppCombo2.CssCombo,{
 	displayField: 'displayField',
 	valueCssField: 'valueCssField',
 	itemStyleField: 'itemStyleField',
+	useMenuList: false,
 	initComponent: function() {
 		if (this.value_list || this.storedata) {
 			if(!this.storedata) {
@@ -188,7 +189,90 @@ Ext.ux.RapidApp.StaticCombo = Ext.extend(Ext.ux.RapidApp.AppCombo2.CssCombo,{
 				'</tpl>';
 		}
 		Ext.ux.RapidApp.StaticCombo.superclass.initComponent.apply(this,arguments);
+		
+		// New custom funtionality replaces the normal dropdown with a menu.
+		// TODO: make this a general plugin. The reason this hasn't been done yet
+		// is because there is no functionality to handle store event/changes, so
+		// this only works with static value (i.e. StaticCombo)
+		if(this.useMenuList) {
+			var combo = this;
+			var orig_initList = this.initList;
+			this.initList = function() {
+				if(!combo.list) {
+					orig_initList.call(combo);
+					combo.initMenuList.call(combo);
+				}
+			};
+		}
+	},
+	
+	initMenuList: function () {
+		
+		this.expand = function() {
+			var menu = this.getMenuList();
+			
+			// Have to track expand status manually so clicking the combo shows
+			// and then hides the menu (vs show it over and over since menus auto
+			// hide themselves)
+			if(this.expandFlag) {
+				this.expandFlag = false;
+				return;
+			}
+			
+			this.list.alignTo.apply(this.list, [this.el].concat(this.listAlign));
+			menu.showAt(this.list.getXY());
+			this.expandFlag = true;
+		};
+		
+		// Reset the expand flag when the field blurs:
+		this.on('blur',function(){ this.expandFlag = false; },this);
+		
+	},
+	
+	getMenuList: function() {
+		if(!this.menuList) {
+			
+			var items = [];
+			this.store.each(function(record,i){
+				items.push({
+					text: record.data[this.displayField],
+					value: record.data[this.displayField],
+					scope: this,
+					handler: this.onSelect.createDelegate(this,[record,i])
+				});
+			},this);
+			
+			this.menuList = new Ext.menu.Menu({
+				items: items,
+				maxHeight: this.maxHeight
+			});
+			
+			this.menuList.on('show',function(menu){
+				menu.setPosition(this.list.getXY());
+				this.updateItemsStyles();
+			},this);
+			
+		}
+		return this.menuList;
+	},
+	
+	updateItemsStyles: function(){
+		var Menu = this.menuList;
+		var cur_val = this.getValue();
+		Menu.items.each(function(mitem) {
+			if(typeof mitem.value == "undefined") { return; }
+			var el = mitem.getEl();
+			if(mitem.value == cur_val) {
+				el.setStyle('font-weight','bold');
+				mitem.setIconClass('icon-checkbox-yes');
+			}
+			else {
+				el.setStyle('font-weight','normal');
+				mitem.setIconClass('');
+			}
+		},this);
 	}
+	
 });
 Ext.reg('static-combo',Ext.ux.RapidApp.StaticCombo);
 

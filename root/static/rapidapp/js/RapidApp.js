@@ -158,7 +158,7 @@ Ext.override(Ext.menu.Menu, {
         // Start of extra logic to what is in Ext source code...
         // See http://www.extjs.com/deploy/ext/docs/output/Menu.jss.html
         // get max height from body height minus y cordinate from this.el
-        var maxHeight = Ext.getBody().getHeight() - xy[1];
+        var maxHeight = this.maxHeight || Ext.getBody().getHeight() - xy[1];
         if (this.el.getHeight() > maxHeight) {
             // set element with max height and apply vertical scrollbar
             this.el.setHeight(maxHeight);

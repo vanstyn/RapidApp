@@ -376,8 +376,10 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			//value_list: this.fieldList
 			value_list: val_list
 		});
-		//return new Ext.ux.MultiFilter.StaticCombo(this.field_combo_cnf);
+		
+		this.field_combo_cnf.useMenuList = true;
 		return Ext.ComponentMgr.create(this.field_combo_cnf,'static-combo');
+		//return Ext.ComponentMgr.create(this.field_combo_cnf,'menu-field');
 	},
 	
 	condType: 'default',
