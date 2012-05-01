@@ -756,13 +756,23 @@ sub multifilter_to_dbf {
 	# cond (WHERE) and then return an empty ({}) condition after chaining onto the 
 	# ResultSet (now localized in '$LocalRs', for this purpose, by our calling func,
 	# chain_Rs_req_multifilter() )
-	if(ref $dbfName eq 'HASH' and exists $dbfName->{-as}) {
+	if(ref $dbfName eq 'HASH' and exists $dbfName->{-as} and exists $dbfName->{''}) {
 		my ($cond_part) = values %$condi;
 		my $having = { $dbfName->{-as} => $cond_part };
 		$LocalRs = $LocalRs->search_rs({},{
 			join 	=> $join,
 			having 	=> $having
 		});
+		
+		# Add to the select if its not already:
+		unless(grep { $_ eq $f } @{ $LocalRs->{attrs}->{as} || [] }) {
+			my $attrs = { %{$LocalRs->{attrs}} };
+			$attrs->{select} = $attrs->{select} || [];
+			$attrs->{as} = $attrs->{as} || [];
+			push @{$attrs->{select}}, $dbfName;
+			push @{$attrs->{as}}, $f;
+			$LocalRs = $LocalRs->search_rs({},$attrs);
+		}
 		return {};
 	}
 	# ^^ --	
