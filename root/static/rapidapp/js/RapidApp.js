@@ -4982,6 +4982,7 @@ Ext.override(Ext.form.Field, {
 
     setCursorPosition: function(pos) {
        var el = this.getEl().dom;
+		 if(!el) { return; } // <-- rare cases this is undef and throws error
        if (el.createTextRange) {
           var range = el.createTextRange();
           range.move("character", pos);
