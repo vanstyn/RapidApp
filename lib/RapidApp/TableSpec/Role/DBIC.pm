@@ -1470,7 +1470,9 @@ sub get_multi_relationship_column_cnf {
 	
 	my $conf = \%opt;
 	
-	$conf->{no_multifilter} = \1;
+	#$conf->{no_multifilter} = \1;
+	$conf->{multifilter_type} = 'number';
+	
 	$conf->{no_quick_search} = \1;
 	$conf->{no_summary} = \1;
 	

@@ -324,9 +324,8 @@ sub read_records {
 	
 	# don't use Row objects
 	my $Rs2 = $Rs->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
-	
+		
 	my $rows;
-	
 	try {
 		$rows = [ $self->rs_all($Rs2) ];
 	}
@@ -341,7 +340,31 @@ sub read_records {
 	}
 	
 	# Now calculate a total, for the grid to display the number of available pages
-	my $total = $self->single_record_fetch ? 1 : $Rs2->pager->total_entries;
+	my $total;
+	try {
+		# --- This is a hack/workaround for what is probably a DBIC bug. 
+		# If there is a 'having' without a 'group_by', we add a dummy 'group_by' 
+		# because the existence of this attr makes DBIC use a subquery for count,
+		# which we want if there is a having clause because it probably references
+		# a calculated/virtual column that won't exist with a normal count, because
+		# it gets excluded along with the other columns from the original select.
+		#
+		# This feature was added specifically for the added multifilter support for
+		# multi relationship columns which now get setup in a HAVING clause.
+		#
+		# Note that we've already fetched the actual rows from $Rs2 above; this is 
+		# *just* for getting the total count:
+		if (exists $Rs2->{attrs}->{having} and !$Rs2->{attrs}->{group_by}) {
+			my ($pri) = @{$self->primary_columns};#<-- this is just a safe group_by value
+			$Rs2 = $Rs2->search_rs({},{ group_by => $pri });
+		}
+		# ---
+		$total = $self->single_record_fetch ? 1 : $Rs2->pager->total_entries;
+	}
+	catch {
+		my $err = shift;
+		$self->handle_dbic_exception($err);
+	};
 
 	my $ret = {
 		rows    => $rows,
@@ -674,6 +697,8 @@ sub chain_Rs_req_quicksearch {
 }
 
 
+our $LocalRs;
+
 # Applies multifilter search to ResultSet:
 sub chain_Rs_req_multifilter {
 	my $self = shift;
@@ -682,8 +707,15 @@ sub chain_Rs_req_multifilter {
 	
 	my $multifilter = $self->param_decodeIf($params->{multifilter}) or return $Rs;
 	
+	# add-on (hackish) functionality. Localize '$LocalRs' to provide access to the ResultSet
+	# object for optional manipulation of it. Added to support using HAVING instead
+	# of WHERE for virtual columns:
+	local $LocalRs = $Rs;
+	
 	my $attr = { join => {} };
 	my $cond = $self->multifilter_to_dbf($multifilter,$attr->{join});
+	
+	$Rs = $LocalRs;
 
 	return $Rs->search_rs($cond,$attr);
 }
@@ -715,8 +747,28 @@ sub multifilter_to_dbf {
 	
 	my $dbfName = $self->TableSpec->resolve_dbic_colname($f,$join)
 		or die "Client supplied Unknown multifilter-field '$f' in Ext Query!";
+	
+	my $condi = $self->multifilter_translate_cond($cond,$dbfName,$f);
+	
+	
+	# vv -- Special-case: if the dbfName is a ref we assume this is a *virtual* column 
+	# (such as a multi-rel column) and so we stick it in HAVING instead of the normal
+	# cond (WHERE) and then return an empty ({}) condition after chaining onto the 
+	# ResultSet (now localized in '$LocalRs', for this purpose, by our calling func,
+	# chain_Rs_req_multifilter() )
+	if(ref $dbfName eq 'HASH' and exists $dbfName->{-as}) {
+		my ($cond_part) = values %$condi;
+		my $having = { $dbfName->{-as} => $cond_part };
+		$LocalRs = $LocalRs->search_rs({},{
+			join 	=> $join,
+			having 	=> $having
+		});
+		return {};
+	}
+	# ^^ --	
 		
-	return $self->multifilter_translate_cond($cond,$dbfName,$f);
+		
+	return $condi;
 }
 
 # Dynamic map to convert supplied multifilter key names into proper
