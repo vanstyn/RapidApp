@@ -1402,7 +1402,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			'add_form_window_cnf',
 			'autoload_added_record',
 			'add_records_first',
-			'store_exclude_api'
+			'store_exclude_api',
+			'store_write_mask'
 		]);
 		
 		this.exclude_btn_map = {};
@@ -1556,7 +1557,19 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				}
 			});
 		}
-
+		
+		// -- Display a page-wide mask during save
+		if(this.store_write_mask) {
+			var myMask = new Ext.LoadMask(Ext.getBody(), {msg:"Saving Changes..."});
+			var show_mask = function() { myMask.show(); }
+			var hide_mask = function() { myMask.hide(); }
+			
+			cmp.store.on('beforewrite',show_mask,this);
+			cmp.store.on('write',hide_mask,this);
+			cmp.store.on('exception',hide_mask,this);
+		}
+		// --
+		
 	},
 	
 	store_add_initData: {},
@@ -1572,6 +1585,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	autoload_added_record: false,
 	add_records_first: false,
 	store_exclude_api: [],
+	store_write_mask: true,
 		
 	initAdditionalStoreMethods: function(store,plugin) {
 		
