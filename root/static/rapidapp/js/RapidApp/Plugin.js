@@ -3793,7 +3793,7 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 				var ret = plugin.parseRelativeDate.apply(plugin,arguments);
 				if(ret) { return ret; }
 			}
-			return native_parseDate.apply(cmp,arguments);
+			if(native_parseDate) { return native_parseDate.apply(cmp,arguments); }
 		}
 		
 		if(cmp.noReplaceDurations) {

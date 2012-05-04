@@ -321,12 +321,23 @@ Ext.ux.RapidApp.ClickActionField = Ext.extend(Ext.form.DisplayField,{
 	},
 	
 	isInForm: function() {
-		if(this.ownerCt && this.ownerCt.getForm) { return true; }
+		if(this.ownerCt) {
+			var xtype = this.ownerCt.getXType();
+			if(xtype == 'container' && this.ownerCt.initialConfig.ownerCt) {
+				// special case for compositfield, shows wrong xtype
+				xtype = this.ownerCt.initialConfig.ownerCt.getXType();
+			}
+			if(!xtype) { return false; }
+			// any xtype that contains the string 'form' or 'field':
+			if(xtype.search('form') != -1 || xtype.search('field') != -1) {
+				return true;
+			}
+		}
 		return false;
 	},
 	
 	callActionFn: function() {
-		if(this.actionRunning) { return; }
+		if(this.actionRunning || this.disabled) { return; }
 		this.actionRunning = true;
 		this.actionFn.apply(this,arguments);
 	},
@@ -445,7 +456,7 @@ Ext.ux.RapidApp.ClickCycleField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 	
 	selectValue: function(v) {
 		var itm = this.valueMap[v];
-		if(typeof itm == "undefined") { return; }
+		if(typeof itm == "undefined" || !this.el.dom) { return; }
 
 		var ret = this.setValue(itm.value);
 
@@ -550,7 +561,8 @@ Ext.ux.RapidApp.ClickMenuField = Ext.extend(Ext.ux.RapidApp.ClickCycleField,{
 			},this);
 			
 			this.clickMenu.on('hide',function(){
-				if(!this.isVisible()){ return; }
+				if(this.hidden){ return; }
+				//if(!this.isVisible()){ return; }
 				this.selectValue(this.getValue());
 			},this);
 			/*************************************************/
