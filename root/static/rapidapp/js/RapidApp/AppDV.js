@@ -512,6 +512,13 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 		var editEl = clickableEl.child('div.editable-value');
 		if(editEl) {
+			
+			// Need this to prevent possible race condition in IE that could
+			// cause the click to get processed and then redirect/navigate the 
+			// page URL.
+			//http://www.sencha.com/forum/showthread.php?81996-Menu-sometimes-redirects-to-a-new-page.&p=393811&viewfull=1#post393811
+			event.stopEvent();
+			
 			// abort if the Store doesn't have update in its API:
 			if(!Store.api.update) { return; } 
 			return this.handle_edit_field(target,editEl,Record,index,domEl);
