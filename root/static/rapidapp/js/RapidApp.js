@@ -282,6 +282,18 @@ Ext.ux.RapidApp.checkLocalTimezone = function(conn,options) {
 Ext.Ajax.on('beforerequest',Ext.ux.RapidApp.checkLocalTimezone);
 
 
+Ext.Ajax.on('requestexception',function(conn,request,options){
+	if(request && request.isTimeout){
+		Ext.Msg.show({
+			title:'Timeout',
+			msg: 'Request Timed Out.',
+			icon: Ext.Msg.WARNING,
+			buttons: Ext.Msg.OK
+		});
+	}
+});
+
+
 /* -------------------------------------------------------------------------------------
 /* ------------------------------------------------------------------------------------- 
  This should be used instead of 'new Ext.data.Connection()' whenever creating a
@@ -292,19 +304,24 @@ Ext.Ajax.on('beforerequest',Ext.ux.RapidApp.checkLocalTimezone);
 Ext.ux.RapidApp.newConn = function(config) {
 	
 	config = config || {};
-	config.timeout = config.timeout || Ext.Ajax.timeout;
-		
-	var Conn = new Ext.data.Connection(config);
 	
-	Conn.on('requestcomplete',Ext.ux.RapidApp.ajaxCheckException);
-	Conn.on('requestexception',Ext.ux.RapidApp.ajaxCheckException);
-	Conn.on('beforerequest',Ext.ux.RapidApp.ajaxRequestContentType);
+	// Copy default properties from Ext.Ajax
+	var props = Ext.copyTo({},Ext.Ajax,[
+		'autoAbort',
+		'disableCaching',
+		'disableCachingParam',
+		'timeout'
+	]);
+	Ext.apply(props,config);
 	
-	Conn.on('beforerequest',Ext.ux.RapidApp.ajaxShowGlobalMask,this);
-	Conn.on('requestcomplete',Ext.ux.RapidApp.ajaxHideGlobalMask,this);
-	Conn.on('requestexception',Ext.ux.RapidApp.ajaxHideGlobalMask,this);
-		
-	Conn.on('beforerequest',Ext.ux.RapidApp.checkLocalTimezone);
+	var Conn = new Ext.data.Connection(props);
+	
+	// Relay all the events of Ext.Ajax:
+	Ext.Ajax.relayEvents(Conn,[
+		'beforerequest',
+		'requestexception',
+		'requestcomplete'
+	]);
 	
 	return Conn;
 };
@@ -1700,7 +1717,7 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 		this.renderer = {
 			disableCaching: true,
 			render: function(el, response, updater, callback) {
-				if (!updater.isUpdating()) {
+				if (!updater.isUpdating() && el.dom) {
 					
 					var conf = Ext.decode(response.responseText);
 					Ext.apply(conf,container.cmpConfig);
