@@ -600,6 +600,9 @@ Ext.ux.RapidApp.handleServerCallBack = function(headerdata) {
 	return func();
 }
 
+// Window Group for Custom Prompts to make them higher than other windows and load masks
+Ext.ux.RapidApp.CustomPromptWindowGroup = new Ext.WindowGroup();
+Ext.ux.RapidApp.CustomPromptWindowGroup.zseed = 20050;
 
 Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 
@@ -738,6 +741,7 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 	Ext.apply(formpanel,data.formpanel_cnf);
 	
 	var window_cnf = {
+		manager: Ext.ux.RapidApp.CustomPromptWindowGroup,
 		title: data.title,
 		layout: 'fit',
 		width: data.width,
