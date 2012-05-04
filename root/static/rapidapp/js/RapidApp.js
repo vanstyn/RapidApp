@@ -282,11 +282,17 @@ Ext.ux.RapidApp.checkLocalTimezone = function(conn,options) {
 Ext.Ajax.on('beforerequest',Ext.ux.RapidApp.checkLocalTimezone);
 
 
-Ext.Ajax.on('requestexception',function(conn,request,options){
-	if(request && request.isTimeout){
+Ext.Ajax.on('requestexception',function(conn,response,options){
+	
+	if(response && response.isTimeout){
+		
+		var timeout = options.timeout ? (options.timeout/1000) : null;
+		timeout = timeout ? timeout : conn.timeout ? (conn.timeout/1000) : null;
+		var msg = timeout ? 'Request Timed Out (' + timeout + ' secs).' : 'Request Timed Out.';
+		
 		Ext.Msg.show({
 			title:'Timeout',
-			msg: 'Request Timed Out.',
+			msg: msg,
 			icon: Ext.Msg.WARNING,
 			buttons: Ext.Msg.OK
 		});
