@@ -240,7 +240,8 @@ has 'exclude_attr_property_names' => (
 		my @list = (
 			'exclude_property_names',
 			'properties_underlay',
-			'_other_properties'
+			'_other_properties',
+			'extra_properties'
 		);
 		return { map {$_ => 1} @list };
 });
@@ -285,6 +286,7 @@ sub set_properties_If {
 	return $self->set_properties(%new);
 }
 
+has 'extra_properties', is => 'ro', isa => 'HashRef', default => sub {{}};
 sub all_properties_hash {
 	my $self = shift;
 	
@@ -296,7 +298,12 @@ sub all_properties_hash {
 		$hash{$attr->name} = $attr->get_value($self);
 	}
 	
-	return { %{$self->properties_underlay},%hash };
+	my $props = { %{$self->properties_underlay},%hash };
+	
+	# added 'extra_properties' for extra properties that can be merged (past the first
+	# level), specifically, for 'editor'. Notice above that the merge with 'properties_underlay'
+	# is one-layer. This has gotten complicated and ugly and needs refactoring...
+	return merge($self->extra_properties,$props); 
 }
 
 # Returns a hashref of properties that match the list/hash supplied:
