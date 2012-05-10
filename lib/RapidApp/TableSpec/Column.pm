@@ -55,11 +55,11 @@ sub DEFAULT_PROFILES {{
 		},
 		
 		nullable => {
-			editor => { xtype => 'textfield', allowBlank => \1, plugins => [ 'emptytonull' ] }
+			editor => { allowBlank => \1, plugins => [ 'emptytonull' ] }
 		},
 		
 		notnull => {
-			editor => { xtype => 'textfield', allowBlank => \0, plugins => [ 'nulltoempty' ] }
+			editor => { allowBlank => \0, plugins => [ 'nulltoempty' ] }
 		},
 		
 		number => {
@@ -68,7 +68,7 @@ sub DEFAULT_PROFILES {{
 			summary_functions => \@number_summary_funcs
 		},
 		int => {
-		
+			editor => { xtype => 'numberfield', style => 'text-align:left;', allowDecimals => \0 },
 		},
 		
 		bool => {
@@ -133,11 +133,12 @@ sub DEFAULT_PROFILES {{
 			summary_functions => \@date_summary_funcs
 		},
 		money => {
-			editor => { xtype => 'textfield' },
+			editor => { xtype => 'numberfield', style => 'text-align:left;', decimalPrecision => 2 },
 			renderer => 'Ext.ux.showNullusMoney',
 			summary_functions => \@number_summary_funcs
 		},
 		percent => {
+			 editor => { xtype => 'numberfield', style => 'text-align:left;' },
 			 renderer => ['Ext.ux.RapidApp.num2pct'],
 			 summary_functions => \@number_summary_funcs
 		},
