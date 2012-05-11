@@ -9,26 +9,13 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		this.grid = grid;
 		grid.multifilter = this;
 		
-		//tmp:
-		grid.allow_edit_frozen = true;
+		grid.allow_edit_frozen = grid.allow_edit_frozen || false;
 		
-
 		this.store = grid.getStore();
 		
 		if(grid.init_state && grid.init_state.multifilters) {
 			this.store.filterdata = grid.init_state.multifilters;
 		}
-		
-		/*
-		this.store.on('beforeload',function(store,options) {
-			if(store.filterdata) {
-				Ext.apply(options.params, {
-					'multifilter': this.getMultiFilterParam() 
-				});
-			}
-			return true;
-		},this);
-		*/
 		
 		this.store.on('beforeload',function(store,options) {
 			delete store.baseParams.multifilter;
@@ -171,8 +158,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			hlabel.setText(get_header_html(fcount),false);
 			frozen_header.setVisible(fcount);
 			
-			freeze_btn.setDisabled(!count);
-			
+			if(freeze_btn) { freeze_btn.setDisabled(!count); }
 		};
 
 		var get_header_html = function(size){

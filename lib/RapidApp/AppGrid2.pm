@@ -69,6 +69,7 @@ has '+max_pagesize' => ( default => 500 );
 has 'use_column_summaries', is => 'ro', isa => 'Bool', default => 0;
 has 'use_autosize_columns', is => 'ro', isa => 'Bool', default => 0;
 has 'auto_autosize_columns', is => 'ro', isa => 'Bool', default => 0;
+has 'allow_edit_frozen', is => 'ro', isa => 'Bool', default => 1;
 
 sub BUILD {
 	my $self = shift;
@@ -85,7 +86,8 @@ sub BUILD {
 		column_allow_save_properties => [ 'width','hidden' ], #<-- is this still doing anything?
 		use_column_summaries => $self->use_column_summaries ? \1 : \0,
 		use_autosize_columns => $self->use_autosize_columns ? \1 : \0,
-		auto_autosize_columns => $self->auto_autosize_columns ? \1 : \0
+		auto_autosize_columns => $self->auto_autosize_columns ? \1 : \0,
+		allow_edit_frozen => $self->allow_edit_frozen ? \1 : \0
 	);
 	
 	# The record_pk is forced to be added/included as a column:
