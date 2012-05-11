@@ -116,20 +116,26 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 	
 	updateFilterBtn: function() {
 		var text = 'Filters';
-		var iconCls = 'icon-funnel';
+		var iconCls = 'icon-funnel'; //<-- no filters
 		var count = this.filterCount();
+		var fcount = this.filterCount(true);
 		if(count) {
 			text = 'Filters (' + count + ')';
-			iconCls = 'icon-funnel-edit';
+			iconCls = 'icon-funnel-edit'; //<-- only normal filters
+			if(fcount) { iconCls = 'icon-funnel-new-edit'; } //<-- both normal + frozen
+		}
+		else if(fcount) {
+			iconCls = 'icon-funnel-new'; //<-- only frozen filters
 		}
 		
 		this.filtersBtn.setIconClass(iconCls);
 		this.filtersBtn.setText(text);
 	},
 	
-	filterCount: function(frozen) {
+	filterCount: function(frozen,cust) {
 		
 		var filterdata = frozen ? this.store.filterdata_frozen : this.store.filterdata;
+		filterdata = cust ? cust : filterdata;
 		
 		var recurseCount = function(item) {
 			if(Ext.isObject(item)) {
@@ -155,20 +161,44 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		
 		this.setFields();
 		
-		var buttons = [];
+		var plugin = this,frozen_header,freeze_btn,hlabel;
+		
+		var update_selections = function(set){
+			set.filterdata_frozen = set.filterdata_frozen || [];
+			var fcount = plugin.filterCount(true,set.filterdata_frozen);
+			var count = plugin.filterCount(false,set.getData()) || set.items.length - 1;
+			
+			hlabel.setText(get_header_html(fcount),false);
+			frozen_header.setVisible(fcount);
+			
+			freeze_btn.setDisabled(!count);
+			
+		};
+
+		var get_header_html = function(size){
+			return '<img src="/static/rapidapp/images/simple_new.png" style="padding-bottom:3px;">&nbsp;&nbsp;' +
+				size + '&nbsp; Frozen (hidden) Filter Conditions Applied';
+		};
+		
+		var hbuttons = [
+			hlabel = new Ext.form.Label({
+				itemId: 'heading',
+				html: get_header_html(0),
+				style: 'color:gray;font-size:1.2em;font-weight:bold;'
+			})
+		];
 		
 		var button_Align = 'right'; //<-- default
+		var buttons = [];
 		
 		if(this.grid.allow_edit_frozen) {
-			buttons.push({
-				xtype: 'button',
-				//style: 'padding-right:30px;',
+			buttons.push( freeze_btn = new Ext.Button({
 				text: 'Freeze Conditions',
 				iconCls: 'icon-arrow-up',
 				handler: function(btn) {
-					var win = btn.ownerCt.ownerCt;
-					var set = win.getComponent('filSet');
-					var store = btn.ownerCt.ownerCt.multifilter.store;
+					var win = btn.ownerCt.ownerCt,
+						set = win.getComponent('filSet'),
+						store = btn.ownerCt.ownerCt.multifilter.store;
 					
 					set.filterdata_frozen = set.filterdata_frozen || [];
 					set.filterdata_frozen = set.filterdata_frozen.concat(set.getData());
@@ -177,10 +207,33 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 						if(item.isFilterItem){ set.remove(item); }
 					},this);
 					
+					update_selections(set);
+					
 				}
-			},'->');
+			}),'->');
 			
 			button_Align = 'left';
+
+			hbuttons.push({
+				xtype: 'button',
+				style: 'padding-left:5px;',
+				text: 'Un-Freeze Conditions',
+				iconCls: 'icon-arrow-down',
+				handler: function(btn) {
+					var win = btn.ownerCt.ownerCt.ownerCt,
+						set = win.getComponent('filSet');
+					
+					var curdata = set.getData() || [];
+					set.items.each(function(item){
+						if(item.isFilterItem){ set.remove(item); }
+					},this);
+					
+					set.loadData(set.filterdata_frozen.concat(curdata));
+					set.filterdata_frozen = [];
+					
+					update_selections(set);
+				}
+			});
 		}
 		
 		
@@ -192,16 +245,9 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 				var win = btn.ownerCt.ownerCt;
 				var set = win.getComponent('filSet');
 				var store = btn.ownerCt.ownerCt.multifilter.store;
+				
 				store.filterdata = set.getData();
-				
-				if(set.resetSavedFrozenData) { 
-					store.filterdata_frozen = []; 
-				}
-				
-				store.filterdata_frozen = store.filterdata_frozen || [];
-				store.filterdata_frozen = store.filterdata_frozen.concat(
-					set.filterdata_frozen || []
-				);
+				store.filterdata_frozen = set.filterdata_frozen;
 				
 				win.multifilter.updateFilterBtn();
 				
@@ -219,6 +265,14 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			}
 		});
 		
+		frozen_header = new Ext.Panel({
+			frame: true,
+			anchor: '-0',
+			style: 'padding:2px;',
+			buttonAlign: 'center',
+			buttons: hbuttons
+		});
+		
 		var win = new Ext.Window({
 		
 			//id: 'mywin',
@@ -232,12 +286,13 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			
 			autoScroll: true,
 			items: [
+				frozen_header,
 				new Ext.ux.MultiFilter.FilterSetPanel({
 					FilterParams: {
 						criteriaClass: this.Criteria
 					},
 					cls: 'x-toolbar x-small-editor',
-					anchor: '-26', 
+					anchor: '-0', 
 					frame: true,
 					itemId: 'filSet'
 				})
@@ -253,6 +308,12 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			set.loadData(this.store.filterdata);
 		}
 		
+		set.filterdata_frozen = this.store.filterdata_frozen || [];
+		
+		update_selections(set);
+		set.on('remove',update_selections.createDelegate(this,[set]),this);
+		set.on('add',update_selections.createDelegate(this,[set]),this,{ buffer: 20 });
+
 		return win;
 	}
 });
@@ -675,12 +736,18 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 	},
 	
 	getData: function() {
-		var field = this.getComponent('field_combo').getRawValue();
-		var cond = this.getComponent('cond_combo').getRawValue();
-		var val = this.getComponent('datafield').getRawValue();
+		var field_combo = this.getComponent('field_combo'),
+			cond_combo = this.getComponent('cond_combo'),
+			datafield = this.getComponent('datafield');
+		
+		var field = field_combo ? field_combo.getRawValue() : null,
+			cond = cond_combo ? cond_combo.getRawValue() : null,
+			val = datafield ? datafield.getRawValue() : null;
+		
+		if(!field || !cond) { return null; }
 		
 		//field combo
-		if(this.fieldNameMap[field]) {
+		if(field && this.fieldNameMap[field]) {
 			field = this.fieldNameMap[field];
 		}
 		
@@ -699,7 +766,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		// --- ---
 		*/
 		
-		if(this.conditionMap[cond]) {
+		if(cond && this.conditionMap[cond]) {
 			cond = this.conditionMap[cond];
 		}
 		
@@ -935,18 +1002,22 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 			xtype: 'button',
 			text: 'Add',
 			iconCls: 'icon-add',
-			handler: function(btn) {
-				btn.ownerCt.ownerCt.addFilter();
-			}
+			//handler: function(btn) {
+			//	btn.ownerCt.ownerCt.addFilter();
+			//},
+			handler: this.addFilter,
+			scope: this
 		};
 		
 		var add_set = {
 			xtype: 'button',
 			text: 'Add Set',
 			iconCls: 'icon-add',
-			handler: function(btn) {
-				btn.ownerCt.ownerCt.addFilterSet();
-			}
+			//handler: function(btn) {
+			//	btn.ownerCt.ownerCt.addFilterSet();
+			//},
+			handler: this.addFilterSet,
+			scope: this
 		};
 		
 		this.items = {
@@ -965,11 +1036,11 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 			set.items.each(function(item,indx,length) {
 				if(item.getXType() !== 'filteritem') { return; }
 				item.checkPosition();
-			});
+			},this);
 		};
 		
-		this.on('add',checkPositions);
-		this.on('remove',checkPositions);
+		this.on('add',checkPositions,this);
+		this.on('remove',checkPositions,this);
 	
 		Ext.ux.MultiFilter.FilterSetPanel.superclass.initComponent.call(this);
 	},
@@ -1052,7 +1123,8 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 		this.items.each(function(item,indx,length) {
 			if(item.getXType() !== 'filteritem') { return; }
 			
-			var itemdata = item.getData();
+			var itemdata = item.getData.call(item);
+			if(!itemdata) { return; }
 			
 			if (item.isOr()) {
 				or_sequence = true;
@@ -1075,7 +1147,7 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 			
 			curdata.push(itemdata);
 			
-		});
+		},this);
 		
 		return data;
 	},

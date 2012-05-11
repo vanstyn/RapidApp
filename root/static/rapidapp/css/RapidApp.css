@@ -158,6 +158,8 @@ pre {
 
 .icon-funnel { background-image: url(/static/rapidapp/images/funnel.png) !important; }
 .icon-funnel-edit { background-image: url(/static/rapidapp/images/funnel_edit.png) !important; }
+.icon-funnel-new { background-image: url(/static/rapidapp/images/funnel_new.png) !important; }
+.icon-funnel-new-edit { background-image: url(/static/rapidapp/images/funnel_new_edit.png) !important; }
 
 .icon-expand-all { background-image: url(/static/rapidapp/images/expand-all.gif) !important; }
 .icon-collapse-all { background-image: url(/static/rapidapp/images/collapse-all.gif) !important; }
