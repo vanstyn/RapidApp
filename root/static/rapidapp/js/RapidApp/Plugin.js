@@ -2448,6 +2448,7 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 			this.store.column_summaries = grid.init_state.column_summaries;
 		}
 		
+		/*
 		var plugin = this, store = this.store;
 		grid.applyColumnSummaryParams = function(){
 			if(store.column_summaries) {
@@ -2458,9 +2459,29 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 			}
 			return true;
 		}
-		
 		this.store.on('beforeload',grid.applyColumnSummaryParams);
+		*/
 		
+		
+		this.store.on('beforeload',function(store,options) {
+			delete store.baseParams.column_summaries;
+			delete store.lastOptions.params.column_summaries;
+			if(store.filterdata) {
+				var column_summaries = this.getEncodedParamVal();
+				
+				// Forcefully set both baseParams and lastOptions so make sure
+				// no param caching is happening in the Ext.data.Store
+				store.baseParams.column_summaries = column_summaries;
+				store.lastOptions.params.column_summaries = column_summaries;
+				
+				// this is required for very first load to see changes 
+				// (not sure why this is needed beyond the above lines)
+				Ext.apply(options.params, {column_summaries: column_summaries});
+			}
+			return true;
+		},this);
+		
+
 		grid.on('reconfigure',this.updateColumnHeadings,this);
 		
 		this.cm.on('hiddenchange',this.autoToggle,this);
