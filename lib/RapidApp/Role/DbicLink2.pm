@@ -713,7 +713,11 @@ sub chain_Rs_req_multifilter {
 	my $Rs = shift || $self->_ResultSet;
 	my $params = shift || $self->c->req->params;
 	
-	my $multifilter = $self->param_decodeIf($params->{multifilter}) or return $Rs;
+	my $multifilter = $self->param_decodeIf($params->{multifilter},[]);
+	my $multifilter_frozen = $self->param_decodeIf($params->{multifilter_frozen},[]);
+	@$multifilter = (@$multifilter_frozen,@$multifilter);
+	
+	return $Rs unless (scalar @$multifilter > 0);
 	
 	# add-on (hackish) functionality. Localize '$LocalRs' to provide access to the ResultSet
 	# object for optional manipulation of it. Added to support using HAVING instead

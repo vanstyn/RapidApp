@@ -2466,7 +2466,7 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		this.store.on('beforeload',function(store,options) {
 			delete store.baseParams.column_summaries;
 			delete store.lastOptions.params.column_summaries;
-			if(store.filterdata) {
+			if(store.column_summaries) {
 				var column_summaries = this.getEncodedParamVal();
 				
 				// Forcefully set both baseParams and lastOptions so make sure

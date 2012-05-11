@@ -9,6 +9,8 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		this.grid = grid;
 		grid.multifilter = this;
 		
+		//tmp:
+		grid.allow_edit_frozen = true;
 		
 
 		this.store = grid.getStore();
@@ -31,22 +33,27 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		this.store.on('beforeload',function(store,options) {
 			delete store.baseParams.multifilter;
 			delete store.lastOptions.params.multifilter;
-			if(store.filterdata) {
+			if(store.filterdata || store.filterdata_frozen) {
 				var multifilter = this.getMultiFilterParam();
+				var multifilter_frozen = this.getMultiFilterParam(true);
 				
 				// Forcefully set both baseParams and lastOptions so make sure
 				// no param caching is happening in the Ext.data.Store
 				store.baseParams.multifilter = multifilter;
 				store.lastOptions.params.multifilter = multifilter;
+				store.baseParams.multifilter_frozen = multifilter_frozen;
+				store.lastOptions.params.multifilter_frozen = multifilter_frozen;
 				
 				// this is required for very first load to see changes 
 				// (not sure why this is needed beyond the above lines)
-				Ext.apply(options.params, {multifilter: multifilter});
+				Ext.apply(options.params, {
+					multifilter: multifilter,
+					multifilter_frozen: multifilter_frozen
+				});
 			}
 			return true;
 		},this);
 		
-	
 		if (grid.rendered) {
 			this.onRender();
 		} else {
@@ -58,12 +65,9 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		}
 	},
 	
-	getMultiFilterParam: function() {
-		
-		var data = this.store.filterdata;
-		
-		//console.dir(data);
-		
+	getMultiFilterParam: function(frozen) {
+		var data = frozen ? this.store.filterdata_frozen : this.store.filterdata;
+		data = data || [];
 		return Ext.encode(data);
 	},
 	
@@ -123,7 +127,9 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		this.filtersBtn.setText(text);
 	},
 	
-	filterCount: function() {
+	filterCount: function(frozen) {
+		
+		var filterdata = frozen ? this.store.filterdata_frozen : this.store.filterdata;
 		
 		var recurseCount = function(item) {
 			if(Ext.isObject(item)) {
@@ -141,14 +147,78 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			return 0;
 		}
 	
-		if (!this.store.filterdata) { return 0; }
-		return recurseCount(this.store.filterdata);
+		if (!filterdata) { return 0; }
+		return recurseCount(filterdata);
 	},
 	
 	showFilterWindow: function() {
 		
 		this.setFields();
-	
+		
+		var buttons = [];
+		
+		var button_Align = 'right'; //<-- default
+		
+		if(this.grid.allow_edit_frozen) {
+			buttons.push({
+				xtype: 'button',
+				//style: 'padding-right:30px;',
+				text: 'Freeze Conditions',
+				iconCls: 'icon-arrow-up',
+				handler: function(btn) {
+					var win = btn.ownerCt.ownerCt;
+					var set = win.getComponent('filSet');
+					var store = btn.ownerCt.ownerCt.multifilter.store;
+					
+					set.filterdata_frozen = set.filterdata_frozen || [];
+					set.filterdata_frozen = set.filterdata_frozen.concat(set.getData());
+					
+					set.items.each(function(item){
+						if(item.isFilterItem){ set.remove(item); }
+					},this);
+					
+				}
+			},'->');
+			
+			button_Align = 'left';
+		}
+		
+		
+		buttons.push({
+			xtype: 'button',
+			text: 'Save and Close',
+			iconCls: 'icon-save',
+			handler: function(btn) {
+				var win = btn.ownerCt.ownerCt;
+				var set = win.getComponent('filSet');
+				var store = btn.ownerCt.ownerCt.multifilter.store;
+				store.filterdata = set.getData();
+				
+				if(set.resetSavedFrozenData) { 
+					store.filterdata_frozen = []; 
+				}
+				
+				store.filterdata_frozen = store.filterdata_frozen || [];
+				store.filterdata_frozen = store.filterdata_frozen.concat(
+					set.filterdata_frozen || []
+				);
+				
+				win.multifilter.updateFilterBtn();
+				
+				win.close();
+				store.reload();
+			}
+		},
+		
+		{
+			xtype: 'button',
+			text: 'Cancel',
+			//iconCls: 'icon-close',
+			handler: function(btn) {
+				btn.ownerCt.ownerCt.close();
+			}
+		});
+		
 		var win = new Ext.Window({
 		
 			//id: 'mywin',
@@ -172,40 +242,8 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 					itemId: 'filSet'
 				})
 			],
-			buttons: [
-				
-				{
-					xtype: 'button',
-					text: 'Save and Close',
-					iconCls: 'icon-save',
-					handler: function(btn) {
-						var win = btn.ownerCt.ownerCt;
-						var set = win.getComponent('filSet');
-						var store = btn.ownerCt.ownerCt.multifilter.store;
-						store.filterdata = set.getData();
-						
-						win.multifilter.updateFilterBtn();
-						
-						//TODO: set the text to bold and count of the active filters
-						
-						//var filtersBtn = win.multifilter.filtersBtn;
-						//var text = win.multifilter.filterCountText();
-						//filtersBtn.setText(text);
-						
-						win.close();
-						store.reload();
-					}
-				},
-				
-				{
-					xtype: 'button',
-					text: 'Cancel',
-					//iconCls: 'icon-close',
-					handler: function(btn) {
-						btn.ownerCt.ownerCt.close();
-					}
-				}
-			]
+			buttons: buttons,
+			buttonAlign: button_Align
 		});
 		
 		win.show();
@@ -704,7 +742,7 @@ Ext.ux.MultiFilter.Filter = Ext.extend(Ext.Container,{
 
 	layout: 'hbox',
 	
-	
+	isFilterItem: true,
 	
 	cls: 'x-toolbar x-small-editor', // < --- this makes the container look like a toolbar
 	//cls: 'x-toolbar', // < --- this makes the container look like a toolbar

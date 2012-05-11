@@ -222,6 +222,12 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		return Ext.copyTo({},data,this.primary_columns);
 	},
 	
+	saveStateProperties: [
+		'filterdata', 				// MultiFilters
+		'filterdata_frozen', 	// Frozen MultiFilters
+		'column_summaries'		// Column Summaries
+	],
+	
 	// Function to get the current grid state needed to save a search
 	// TODO: factor to use Built-in ExtJS "state machine"
 	getCurSearchData: function () {
@@ -237,6 +243,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			}
 		},this);
 		
+		// view_config gets saved into 'saved_state' when a search is saved:
 		var view_config = {
 			columns: columns,
 			column_order: column_order
@@ -245,14 +252,25 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		if(sort) { view_config.sort = sort; }
 		
 		var store = grid.getStore();
-	
+		
+		
+		
+		/*
 		//MultiFilter data:
 		if(store.filterdata) { view_config.filterdata = store.filterdata; }
+		if(store.filterdata_frozen) { view_config.filterdata = store.filterdata; }
 		
 		//GridSummary data
 		if(store.column_summaries) { view_config.column_summaries = store.column_summaries; }
+		*/
 		
 		view_config.pageSize = grid.getBottomToolbar().pageSize;
+		
+		// Copy designated extra properties to be saved into view_config (saved_state):
+		Ext.copyTo(
+			view_config, store,
+			grid.saveStateProperties
+		);
 		
 		return view_config;
 	},
