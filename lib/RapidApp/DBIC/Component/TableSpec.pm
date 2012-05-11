@@ -30,7 +30,7 @@ my $default_data_type_profiles = {
 	tinyint		=> [ 'number', 'int' ],
 	mediumint	=> [ 'number', 'int' ],
 	bigint		=> [ 'number', 'int' ],
-	decimal		=> [ 'number' ],
+	decimal		=> [ 'number', 'int' ],
 	datetime	=> [ 'datetime' ],
 	timestamp	=> [ 'datetime' ],
 	date		=> [ 'date' ],
@@ -282,13 +282,42 @@ sub default_TableSpec_cnf_columns {
 		
 		$cols->{$col}->{profiles} = \@profiles;
 		
-		## -- This sets the max-length of editor according to the size of the column. The
-		## API with "profiles" didn't anticipate this fine-grained need, so 'extra_properties'
-		## was added specifically to accomidate this (see special logic in TableSpec::Column):
+		## -- This sets additional properties of the editor for numeric type columns according
+		## to the DBIC schema (max-length, signed/unsigned, float vs int). The API with "profiles" 
+		## didn't anticipate this fine-grained need, so 'extra_properties' was added specifically 
+		## to accomidate this (see special logic in TableSpec::Column):
+		## note: these properties only apply if the editor xtype is 'numberfield' which we assume,
+		## and is already set from the profiles of 'decimal', 'float', etc
+		my $editor = {};
+		my $unsigned = ($info->{extra} && $info->{extra}->{unsigned}) ? 1 : 0;
+		$editor->{allowNegative} = \0 if ($unsigned);
+		
 		if($info->{size}) {
+			my $size = $info->{size};
+			
+			# Special case for 'float'/'decimal' with a specified precision (where 0 is the same as int):
+			if(ref $size eq 'ARRAY' ) {
+				my ($s,$p) = @$size;
+				$size = $s;
+				$editor->{maxValue} = ('9' x $s);
+				$size += 1 unless ($unsigned); #<-- room for a '-'
+				if ($p && $p > 0) {
+					$editor->{maxValue} .= '.' . ('9' x $p);
+					$size += $p + 1 ; #<-- precision plus a spot for '.' in the max field length	
+					$editor->{decimalPrecision} = $p;
+				}
+				else {
+					$editor->{allowDecimals} = \0;
+				}
+				$edit
+			}
+			$editor->{maxLength} = $size;
+		}
+		
+		if(keys %$editor > 0) {
 			$cols->{$col}->{extra_properties} = $cols->{$col}->{extra_properties} || {};
 			$cols->{$col}->{extra_properties} = merge($cols->{$col}->{extra_properties},{
-				editor => { maxLength => $info->{size} }
+				editor => $editor
 			});
 		}
 		## -- 
