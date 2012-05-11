@@ -3757,6 +3757,10 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 		if(this.allowChangePageSize) {
 
 			var paging = this;
+			
+			var suffix_str = '/<span style="font-size:.9em;vertical-align:top;">' +
+				'page' +
+			'</span>';
 
 			this.pageSizeField = new Ext.form.NumberField({
 				itemCls: 'rapp-margin-bottom-0',
@@ -3775,6 +3779,8 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 									var size = field.getValue();
 									if (size != paging.pageSize) {
 										paging.pageSize = size;
+										var btn = field.ownerCt.ownerCt;
+										btn.setText(size + suffix_str);
 										paging.doLoad();
 									}
 									field.ownerCt.hide();
@@ -3789,9 +3795,13 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 			});
 
 			var orig_text = this.beforePageText;
-			this.beforePageText = {
+			if(paging.pageSize) { orig_text = paging.pageSize + suffix_str; }
+			
+			//this.beforePageText = {
+			var page_btn = {
 				xtype: 'button',
 				text: orig_text,
+				style: 'font-size:.9em;',
 				menu: {
 					layout: 'form',
 					showSeparator: false,
@@ -3811,8 +3821,41 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 				}
 			};
 		}
-
+		
+		
+		this.beforePageText = '';
+		this.displayMsg = '{0} - {1} of <span style="font-size:1.1em;color:#083772;">{2}</span>';
+		
+		// place the query time label immediately after 'refresh'
+		this.prependButtons = false;
+		this.items = this.items || [];
+		paging.queryTimeLabel = new Ext.form.Label({
+			html: '',
+			style: 'color:#b3b3b3;font-size:0.85em;padding-left:10px;' // light gray
+		});
+		this.items.unshift(paging.queryTimeLabel);
+		
 		Ext.ux.RapidApp.PagingToolbar.superclass.initComponent.call(this);
+		
+		this.insert(this.items.getCount() - 1,page_btn,' ');
+		
+		this.store.on('load',function(store) {
+			if(store.reader && store.reader.jsonData) {
+				//'query_time' is returned from the server, see DbicLink2
+				var query_time = store.reader.jsonData.query_time;
+				if(query_time) {
+					paging.queryTimeLabel.setText('query time ' + query_time);
+				}
+				else {
+					paging.queryTimeLabel.setText('');
+				}
+			}
+		},this);
+		
+		this.store.on('exception',function(store) {
+			paging.queryTimeLabel.setText('--');
+		},this);
+
 	}
 });
 Ext.reg('rapidapp-paging',Ext.ux.RapidApp.PagingToolbar);
