@@ -50,6 +50,10 @@ has 'always_fetch_colspec' => ( is => 'ro', isa => 'Maybe[ArrayRef[Str]]', defau
 # TODO: add 'phrases' mode to act like google searches with +/- and quotes around phrases
 has 'quicksearch_mode', is => 'ro', isa => 'Str', default => 'like';
 
+# If natural_column_order is true (default) columns will be ordered according to the real
+# database/schema order, otherwise, order is based on the include_colspec
+has 'natural_column_order', is => 'ro', isa => 'Bool', default => 1;
+
 has 'ResultSource' => (
 	is => 'ro',
 	isa => 'DBIx::Class::ResultSource',
@@ -120,7 +124,11 @@ sub _build_TableSpec {
 	$opt{creatable_colspec} = $self->creatable_colspec if (defined $self->creatable_colspec);
 	$opt{always_fetch_colspec} = $self->always_fetch_colspec if (defined $self->always_fetch_colspec);
 	
-	return RapidApp::TableSpec::DbicTableSpec->new(%opt);
+	my $TableSpec = RapidApp::TableSpec::DbicTableSpec->new(%opt);
+	
+	$TableSpec->apply_natural_column_order if ($self->natural_column_order);
+	
+	return $TableSpec;
 	#return RapidApp::TableSpec->with_traits('RapidApp::TableSpec::Role::DBIC')->new(%opt);
 }
 

@@ -134,12 +134,7 @@ sub init_relspecs {
 		}
 	}
 	
-	# turned off by HV 2012-04-03: this is causing relationship columns to get moved to the
-	# end of the list (out of their natural order) and I don't think is doing anything
-	# useful
-	#$self->reorder_by_colspec_list($self->include_colspec->colspecs);
 }
-
 
 
 hashash 'column_data_alias';
@@ -724,6 +719,16 @@ sub colspec_select_columns {
 	return uniq(grep { $match{$_} > 0 } @order);
 }
 
+# Applies the original column order defined in the table Schema:
+sub apply_natural_column_order {
+	my $self = shift;
+	my $class = $self->ResultClass;
+	$self->reorder_by_colspec_list(
+		$class->columns,
+		$class->relationships,
+		@{ $self->include_colspec->colspecs || [] }
+	);
+}
 
 # reorders the entire column list according to a list of colspecs. This is called
 # by DbicLink2 to use the same include_colspec to also define the column order
