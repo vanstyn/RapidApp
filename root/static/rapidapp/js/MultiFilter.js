@@ -294,11 +294,12 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			set.loadData(this.store.filterdata);
 		}
 		
-		set.filterdata_frozen = this.store.filterdata_frozen || [];
-		
-		update_selections(set);
-		set.on('remove',update_selections.createDelegate(this,[set]),this);
-		set.on('add',update_selections.createDelegate(this,[set]),this,{ buffer: 20 });
+		if(set) {
+			set.filterdata_frozen = this.store.filterdata_frozen || [];
+			update_selections(set);
+			set.on('remove',update_selections.createDelegate(this,[set]),this);
+			set.on('add',update_selections.createDelegate(this,[set]),this,{ buffer: 20 });
+		}
 
 		return win;
 	}
@@ -373,9 +374,11 @@ Ext.ux.MultiFilter.defaultTypeToConditionMap = {
 		'is equal to'			: '=',
 		'is not equal to'		: '!=',
 		'contains'				: 'contains',
+		"doesn't contain"		: 'not_contain',
 		'starts with'			: 'starts_with',
 		'ends with'				: 'ends_with',
-		"doesn't contain"		: 'not_contain'
+		'less than'				: '<',
+		'greater than'			: '>'
 	},
 	
 	date: {
