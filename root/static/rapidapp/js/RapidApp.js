@@ -1723,6 +1723,15 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 	
 	initComponent: function() {
 		
+		// -- Make sure no highlighting can happen during load (this prevents highlight
+		//    bugs that can happen if we double-clicked something to spawn this panel)
+		var thisEl;
+		this.on('render',function(){
+			thisEl = this.getEl();
+			thisEl.addClass('no-text-select');
+		},this);
+		// --
+
 		var container = this;
 		this.renderer = {
 			disableCaching: true,
@@ -1747,6 +1756,9 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 					
 					// This is legacy and should probably be removed:
 					if (conf.rendered_eval) { eval(conf.rendered_eval); }
+
+					// Allowing highlighting within the panel once loading is complete:
+					thisEl.removeClass('no-text-select');
 				}
 			}
 		};
