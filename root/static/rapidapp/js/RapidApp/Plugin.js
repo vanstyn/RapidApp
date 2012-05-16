@@ -1581,7 +1581,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			// count except for these params:
 			var excl_params = [
 				'cached_total_count',
-				//'columns',
+				'columns',
 				'start',
 				'limit',
 				'sort',
@@ -1593,36 +1593,52 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				var params = params || {};
 				var p = Ext.apply({},params);
 				for (i in excl_params) { delete p[excl_params[i]]; }
-				return Ext.encode(p);
+				
+				// Going through this just to make sure we don't get thrown off by the same
+				// values but in different orders:
+				var keys = [],flat = [];
+				for (k in p) { keys.push(k); }
+				keys.sort();
+				var len = keys.length;
+				for (i = 0; i < len; i++) { flat.push(keys[i],p[keys[i]]); }
+				return flat.join(',');
 			};
 		
-			cmp.store.on('load',function(store) {
-				delete store.cached_total_count;
-				delete store.cached_total_count_params;
-				if(store.reader && store.reader.jsonData) {
-					var total_count = store.reader.jsonData.results;
-					if(total_count) { 
-						store.cached_total_count = total_count; 
-						store.cached_total_count_params = get_params_str(
-							store.lastOptions.params
-						);
+			cmp.on('afterrender',function(){
+				cmp.store.on('load',function(store) {
+					delete store.cached_total_count;
+					if(store.reader && store.reader.jsonData) {
+						store.cached_total_count = store.reader.jsonData.results;
+						store.cached_total_count_params = {};
+						Ext.apply(store.cached_total_count_params,store.baseParams);
+						Ext.apply(store.cached_total_count_params,store.lastOptions.params);
 					}
-				}
-			},this);
-		
-			cmp.store.on('beforeload',function(store,options) {
-				delete store.baseParams.cached_total_count;
-				delete store.lastOptions.params.cached_total_count;
-				if(
-					store.cached_total_count && 
-					get_params_str(store.cached_total_count_params) ==
-					get_params_str(store.lastOptions.params)
-				){
-					var cached_total_count = store.cached_total_count;
-					store.lastOptions.params.cached_total_count = cached_total_count;
-					Ext.apply(options.params, {cached_total_count: cached_total_count});
-				}
-				return true;
+				},this);
+			
+				cmp.store.on('beforeload',function(store,options) {
+					var next_opts = {};
+					Ext.apply(next_opts,store.baseParams || {});
+					Ext.apply(next_opts,store.lastOptions.params || {});
+					Ext.apply(next_opts,options.params);
+					var cur = get_params_str(next_opts);
+
+					delete store.baseParams.cached_total_count;
+					delete store.lastOptions.params.cached_total_count;
+					delete options.params.cached_total_count;
+					
+					if(store.cached_total_count) {
+						store.cached_total_count_params = store.cached_total_count_params || {};
+						var prev = get_params_str(store.cached_total_count_params);
+						store.cached_total_count_params = next_opts;
+
+						if(prev == cur) {
+							options.params.cached_total_count = store.cached_total_count;
+							store.lastOptions.params.cached_total_count = store.cached_total_count;
+							store.baseParams.cached_total_count = store.cached_total_count;
+						}
+					}
+					return true;
+				},this);
 			},this);
 		}
 		// ---
