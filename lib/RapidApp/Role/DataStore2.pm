@@ -32,6 +32,12 @@ has 'batch_update_max_rows', is => 'ro', isa => 'Int', default => 500;
 # not implimented yet:
 #has 'batch_update_warn_rows', is => 'ro', isa => 'Int', default => 100;
 
+# If cache_total_count is true the total count query will be skipped and the value supplied
+# by the client (if defined) will be returned instead. The code and logic to do the actual
+# caching is in JavaScript, and utilization of this feature currently is only implemented
+# within DbicLink2:
+has 'cache_total_count', is => 'ro', isa => 'Bool', default => 1;
+
 has 'DataStore' => (
 	is			=> 'rw',
 	isa		=> 'RapidApp::DataStore2',
@@ -152,6 +158,7 @@ after 'BUILD' => sub {
 	$self->apply_extconfig(
 		persist_all_immediately => \scalar($self->persist_all_immediately),
 		persist_immediately => $self->persist_immediately,
+		cache_total_count => $self->cache_total_count ? \1 : \0
 	);
 	
 	## Apply the TableSpec if its defined ##

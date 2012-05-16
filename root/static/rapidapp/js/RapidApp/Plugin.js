@@ -1570,6 +1570,63 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		}
 		// --
 		
+		
+		// --- Cache the last total count, and supply it back to the server. If the
+		// server module supports cache_total_count it will return the cached total back
+		// instead of calculating it, increasing performance. When changing pages, sorts, 
+		// or other options that don't change the number of rows in the set, there is no
+		// reason to calculate the total count over and over
+		if(cmp.cache_total_count) {
+			// Changes in any request params between requests will clear the cached total 
+			// count except for these params:
+			var excl_params = [
+				'cached_total_count',
+				'columns',
+				'start',
+				'limit',
+				'sort',
+				'dir',
+				'column_summaries'
+			];
+		
+			var get_params_str = function(params) {
+				var params = params || {};
+				var p = Ext.apply({},params);
+				for (i in excl_params) { delete p[excl_params[i]]; }
+				return Ext.encode(p);
+			};
+		
+			cmp.store.on('load',function(store) {
+				delete store.cached_total_count;
+				delete store.cached_total_count_params;
+				if(store.reader && store.reader.jsonData) {
+					var total_count = store.reader.jsonData.results;
+					if(total_count) { 
+						store.cached_total_count = total_count; 
+						store.cached_total_count_params = get_params_str(
+							store.lastOptions.params
+						);
+					}
+				}
+			},this);
+		
+			cmp.store.on('beforeload',function(store,options) {
+				delete store.baseParams.cached_total_count;
+				delete store.lastOptions.params.cached_total_count;
+				if(
+					store.cached_total_count && 
+					get_params_str(store.cached_total_count_params) ==
+					get_params_str(store.lastOptions.params)
+				){
+					var cached_total_count = store.cached_total_count;
+					store.lastOptions.params.cached_total_count = cached_total_count;
+					Ext.apply(options.params, {cached_total_count: cached_total_count});
+				}
+				return true;
+			},this);
+		}
+		// ---
+		
 	},
 	
 	store_add_initData: {},

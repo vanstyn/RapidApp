@@ -54,6 +54,7 @@ has 'quicksearch_mode', is => 'ro', isa => 'Str', default => 'like';
 # database/schema order, otherwise, order is based on the include_colspec
 has 'natural_column_order', is => 'ro', isa => 'Bool', default => 1;
 
+
 has 'ResultSource' => (
 	is => 'ro',
 	isa => 'DBIx::Class::ResultSource',
@@ -350,7 +351,7 @@ sub read_records {
 	# Now calculate a total, for the grid to display the number of available pages
 	my $total;
 	try {
-		$total = $self->rs_count($Rs2);
+		$total = $self->rs_count($Rs2,$params);
 	}
 	catch {
 		my $err = shift;
@@ -385,8 +386,13 @@ after rs_all => sub {
 sub rs_count { 
 	my $self = shift;
 	my $Rs2 = shift;
+	my $params = shift || {};
 	
 	return 1 if ($self->single_record_fetch);
+	
+	# Optionally return the client supplied cached total:
+	return $params->{cached_total_count}
+		if($self->cache_total_count && exists $params->{cached_total_count});
 	
 	$self->c->stash->{query_count_start} = [gettimeofday]; 
 	
