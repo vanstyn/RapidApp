@@ -737,7 +737,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		
 		var field = field_combo ? field_combo.getRawValue() : null,
 			cond = cond_combo ? cond_combo.getRawValue() : null,
-			val = datafield ? datafield.getRawValue() : null;
+			val = datafield ? datafield.getValue() : null;
 		
 		if(!field || !cond) { return null; }
 		
