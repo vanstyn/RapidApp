@@ -350,24 +350,7 @@ sub read_records {
 	# Now calculate a total, for the grid to display the number of available pages
 	my $total;
 	try {
-		# --- This is a hack/workaround for what is probably a DBIC bug. 
-		# If there is a 'having' without a 'group_by', we add a dummy 'group_by' 
-		# because the existence of this attr makes DBIC use a subquery for count,
-		# which we want if there is a having clause because it probably references
-		# a calculated/virtual column that won't exist with a normal count, because
-		# it gets excluded along with the other columns from the original select.
-		#
-		# This feature was added specifically for the added multifilter support for
-		# multi relationship columns which now get setup in a HAVING clause.
-		#
-		# Note that we've already fetched the actual rows from $Rs2 above; this is 
-		# *just* for getting the total count:
-		if (exists $Rs2->{attrs}->{having} and !$Rs2->{attrs}->{group_by}) {
-			my ($pri) = @{$self->primary_columns};#<-- this is just a safe group_by value
-			$Rs2 = $Rs2->search_rs({},{ group_by => $pri });
-		}
-		# ---
-		$total = $self->single_record_fetch ? 1 : $Rs2->pager->total_entries;
+		$total = $self->rs_count($Rs2);
 	}
 	catch {
 		my $err = shift;
@@ -384,6 +367,64 @@ sub read_records {
 	
 	return $ret;
 }
+
+
+sub rs_all { 
+	my $self = shift;
+	$self->c->stash->{query_start} = [gettimeofday]; 
+	return (shift)->all;
+}
+
+after rs_all => sub { 
+	my $self = shift;
+	my $start = $self->c->stash->{query_start} || return undef;
+	my $elapsed = tv_interval($start);
+	$self->c->stash->{query_time} = sprintf('%.2f',$elapsed) . 's';
+};
+
+sub rs_count { 
+	my $self = shift;
+	my $Rs2 = shift;
+	
+	return 1 if ($self->single_record_fetch);
+	
+	$self->c->stash->{query_count_start} = [gettimeofday]; 
+	
+	# --- This is a hack/workaround for what is probably a DBIC bug. 
+	# If there is a 'having' without a 'group_by', we add a dummy 'group_by' 
+	# because the existence of this attr makes DBIC use a subquery for count,
+	# which we want if there is a having clause because it probably references
+	# a calculated/virtual column that won't exist with a normal count, because
+	# it gets excluded along with the other columns from the original select.
+	#
+	# This feature was added specifically for the added multifilter support for
+	# multi relationship columns which now get setup in a HAVING clause.
+	#
+	# Note that we've already fetched the actual rows from $Rs2 above; this is 
+	# *just* for getting the total count:
+	if (exists $Rs2->{attrs}->{having} and !$Rs2->{attrs}->{group_by}) {
+		my ($pri) = @{$self->primary_columns};#<-- this is just a safe group_by value
+		$Rs2 = $Rs2->search_rs({},{ group_by => $pri });
+	}
+	# ---
+	return $Rs2->pager->total_entries;
+}
+
+after rs_count => sub { 
+	my $self = shift;
+	my $start = $self->c->stash->{query_count_start} || return undef;
+	my $elapsed = tv_interval($start);
+	$self->c->stash->{query_count_time} = sprintf('%.2f',$elapsed) . 's';
+};
+
+
+sub query_time {
+	my $self = shift;
+	my $qt = $self->c->stash->{query_time} || return undef;
+	$qt .= '/' . $self->c->stash->{query_count_time} if ($self->c->stash->{query_count_time});
+	return $qt;
+}
+
 
 sub calculate_column_summaries {
 	my ($self,$ret,$Rs,$params) = @_;
@@ -455,24 +496,7 @@ sub get_col_summary_select {
 	return undef;
 }
 
-before rs_all => sub { 
-	my $self = shift;
-	$self->c->stash->{query_start} = [gettimeofday]; 
-};
 
-sub rs_all { 
-	my $self = shift;
-	return (shift)->all;
-}
-
-after rs_all => sub { 
-	my $self = shift;
-	my $start = $self->c->stash->{query_start} || return undef;
-	my $elapsed = tv_interval($start);
-	$self->c->stash->{query_time} = sprintf('%.3f',$elapsed) . 's';
-};
-
-sub query_time { (shift)->c->stash->{query_time} }
 
 # Applies base request attrs to ResultSet:
 sub chain_Rs_req_base_Attr {
