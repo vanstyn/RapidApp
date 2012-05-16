@@ -155,7 +155,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			if(set) {
 				set.filterdata_frozen = set.filterdata_frozen || [];
 				fcount = plugin.filterCount(true,set.filterdata_frozen);
-				count = plugin.filterCount(false,set.getData()) || set.items.length - 1;
+				count = set.items.length - 1;
 			}
 			
 			hlabel.setText(get_header_html(fcount),false);
@@ -292,21 +292,14 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		
 		win.show();
 		
-		if (this.store.filterdata) {
-			var set = win.getComponent('filSet');
-			set.loadData(this.store.filterdata);
-		}
-		
-		if(set) {
-			set.filterdata_frozen = this.store.filterdata_frozen || [];
-			update_selections(set);
-			set.on('remove',update_selections.createDelegate(this,[set]),this);
-			set.on('add',update_selections.createDelegate(this,[set]),this,{ buffer: 20 });
-		}
-		else {
-			update_selections();
-		}
+		var set = win.getComponent('filSet');
+		set.loadData(this.store.filterdata || []);
+		set.filterdata_frozen = this.store.filterdata_frozen || [];
+		set.on('remove',update_selections.createDelegate(this,[set]),this);
+		set.on('add',update_selections.createDelegate(this,[set]),this,{ buffer: 20 });
 
+		update_selections(set);
+		
 		return win;
 	}
 });
