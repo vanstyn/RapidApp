@@ -322,6 +322,12 @@ Ext.ux.RapidApp.ClickActionField = Ext.extend(Ext.form.DisplayField,{
 	
 	isInForm: function() {
 		if(this.ownerCt) {
+			
+			// Special, if in MultiFilter (TODO: clean this up and find a more generaalized
+			// way to detect this stuff without having to create custom tests for each different
+			// scenario/context!
+			if(Ext.isObject(this.ownerCt.datafield_cnf)) { return true; }
+			
 			var xtype = this.ownerCt.getXType();
 			if(xtype == 'container' && this.ownerCt.initialConfig.ownerCt) {
 				// special case for compositfield, shows wrong xtype

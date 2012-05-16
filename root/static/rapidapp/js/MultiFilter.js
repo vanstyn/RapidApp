@@ -681,6 +681,12 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		if(this.datafield_cnf.width) { delete this.datafield_cnf.width; }
 
 		if(cust_dfield_cnf) {
+			// Make sure we preserve the existing value of 'value'
+			// (this is an issue with 'menu-field' setup by RapidApp::Column)
+			if(typeof this.datafield_cnf.value != 'undefined') {
+				cust_dfield_cnf.value = this.datafield_cnf.value;
+			}
+			
 			Ext.apply(this.datafield_cnf,cust_dfield_cnf);
 			
 			// Make sure itemId is 'datafield'
