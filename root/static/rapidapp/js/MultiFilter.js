@@ -151,9 +151,12 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		var plugin = this,frozen_header,freeze_btn,hlabel;
 		
 		var update_selections = function(set){
-			set.filterdata_frozen = set.filterdata_frozen || [];
-			var fcount = plugin.filterCount(true,set.filterdata_frozen);
-			var count = plugin.filterCount(false,set.getData()) || set.items.length - 1;
+			var count = 0,fcount = 0;
+			if(set) {
+				set.filterdata_frozen = set.filterdata_frozen || [];
+				fcount = plugin.filterCount(true,set.filterdata_frozen);
+				count = plugin.filterCount(false,set.getData()) || set.items.length - 1;
+			}
 			
 			hlabel.setText(get_header_html(fcount),false);
 			frozen_header.setVisible(fcount);
@@ -299,6 +302,9 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			update_selections(set);
 			set.on('remove',update_selections.createDelegate(this,[set]),this);
 			set.on('add',update_selections.createDelegate(this,[set]),this,{ buffer: 20 });
+		}
+		else {
+			update_selections();
 		}
 
 		return win;
