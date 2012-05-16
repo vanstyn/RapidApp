@@ -423,7 +423,7 @@ column_order_overrides
 sub TableSpec_set_conf {
 	my $self = shift;
 	my $param = shift || return undef;
-	my $value = shift || die "TableSpec_set_conf(): missing value for param '$param'";
+	my $value = shift;# || die "TableSpec_set_conf(): missing value for param '$param'";
 	
 	$self->TableSpec_built_cnf(undef);
 	

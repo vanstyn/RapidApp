@@ -1581,7 +1581,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			// count except for these params:
 			var excl_params = [
 				'cached_total_count',
-				'columns',
+				//'columns',
 				'start',
 				'limit',
 				'sort',
