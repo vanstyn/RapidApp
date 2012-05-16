@@ -1603,18 +1603,23 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				for (i = 0; i < len; i++) { flat.push(keys[i],p[keys[i]]); }
 				return flat.join(',');
 			};
-		
-			cmp.on('afterrender',function(){
-				cmp.store.on('load',function(store) {
-					delete store.cached_total_count;
-					if(store.reader && store.reader.jsonData) {
-						store.cached_total_count = store.reader.jsonData.results;
-						store.cached_total_count_params = {};
-						Ext.apply(store.cached_total_count_params,store.baseParams);
-						Ext.apply(store.cached_total_count_params,store.lastOptions.params);
-					}
-				},this);
 			
+			cmp.store.on('load',function(store) {
+				delete store.cached_total_count;
+				if(store.reader && store.reader.jsonData) {
+					store.cached_total_count = store.reader.jsonData.results;
+					store.cached_total_count_params = {};
+					Ext.apply(store.cached_total_count_params,store.baseParams);
+					Ext.apply(store.cached_total_count_params,store.lastOptions.params);
+				}
+			},this);
+			
+			// Wraping in an afterrender to try to make sure this is the last 'beforeload'
+			// handler so we can see any changes made by other components that also hook
+			// beforeload, such as MultiFilters. Note: Still seem to have to set all 3 of
+			// options.params, store.baseParams, and store.lastOptions.params to be safe...
+			cmp.on('afterrender',function(){
+
 				cmp.store.on('beforeload',function(store,options) {
 					var next_opts = {};
 					Ext.apply(next_opts,store.baseParams || {});
