@@ -372,8 +372,9 @@ sub read_records {
 
 sub rs_all { 
 	my $self = shift;
+	my $Rs = shift;
 	$self->c->stash->{query_start} = [gettimeofday]; 
-	return (shift)->all;
+	return $Rs->all;
 }
 
 after rs_all => sub { 
@@ -781,10 +782,16 @@ sub multifilter_to_dbf {
 		return { $f => \@list };
 	}
 	
+	
 	# -- relationship column:
+	my $is_cond = (
+		ref($cond) eq 'HASH' and
+		exists $cond->{is}
+	) ? 1 : 0;
+	
 	my $column = $self->get_column($f) || {};
 	$f = $column->{query_search_use_column} || $f;
-	$f = $column->{query_id_use_column} || $f if ($f eq 'is');
+	$f = $column->{query_id_use_column} || $f if ($is_cond);
 	# --
 	
 	my $dbfName = $self->TableSpec->resolve_dbic_colname($f,$join)

@@ -737,7 +737,19 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 		
 		var field = field_combo ? field_combo.getRawValue() : null,
 			cond = cond_combo ? cond_combo.getRawValue() : null,
-			val = datafield ? datafield.getValue() : null;
+			val = null;
+		
+		if(datafield) {
+			val = datafield.xtype == 'datefield' ? 
+				// Special case for datefield ONLY: use getRawValue to optionally preserve
+				// the relative date string which has special handling to convert on the 
+				// server side
+				datafield.getRawValue() : 
+				
+				// ALL other kinds of fields should use the normal getValue function:
+				datafield.getValue();
+		}
+		
 		
 		if(!field || !cond) { return null; }
 		
@@ -759,7 +771,9 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 			}
 		}
 		// --- ---
+		
 		*/
+
 		
 		if(cond && this.conditionMap[cond]) {
 			cond = this.conditionMap[cond];
@@ -789,7 +803,7 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 				}
 				this.cond_combo_cnf.value = cond;
 				this.datafield_cnf.value = v2;
-				
+
 				this.last_cond_value = cond;
 			},this);
 		},this);
