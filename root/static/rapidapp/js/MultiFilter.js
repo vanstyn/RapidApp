@@ -376,6 +376,8 @@ Ext.ux.MultiFilter.defaultTypeToConditionMap = {
 		"doesn't contain"		: 'not_contain',
 		'starts with'			: 'starts_with',
 		'ends with'				: 'ends_with',
+		"doesn't start with"	: 'not_starts_with',
+		"doesn't end with"	: 'not_ends_with',
 		'less than'				: '<',
 		'greater than'			: '>'
 	},
