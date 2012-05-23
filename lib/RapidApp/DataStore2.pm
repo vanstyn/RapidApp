@@ -852,7 +852,7 @@ has 'store_writer' => ( is => 'ro', lazy => 1, default => sub {
 		func => 'new Ext.data.JsonWriter',
 		parm => {
 			encode => \1,
-			writeAllFields => \1
+			#writeAllFields => \1
 	});
 	
 	return $writer;
