@@ -1614,6 +1614,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				}
 			},this);
 			
+			
 			// Wraping in an afterrender to try to make sure this is the last 'beforeload'
 			// handler so we can see any changes made by other components that also hook
 			// beforeload, such as MultiFilters. Note: Still seem to have to set all 3 of
@@ -1644,6 +1645,13 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					}
 					return true;
 				},this);
+			},this);
+			
+			// Invalidate the total cache on write operations: 
+			cmp.store.on('beforewrite',function(store) { 
+				delete store.cached_total_count;
+				delete store.baseParams.cached_total_count;
+				delete store.lastOptions.params.cached_total_count;
 			},this);
 		}
 		// ---
