@@ -1628,9 +1628,17 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					Ext.apply(next_opts,options.params);
 					var cur = get_params_str(next_opts);
 
-					delete store.baseParams.cached_total_count;
-					delete store.lastOptions.params.cached_total_count;
-					delete options.params.cached_total_count;
+					if(store.baseParams) {
+						delete store.baseParams.cached_total_count;
+					}
+					
+					if(store.lastOptions && store.lastOptions.params) {
+						delete store.lastOptions.params.cached_total_count;
+					}
+					
+					if(options && options.params) {
+						delete options.params.cached_total_count;
+					}
 					
 					if(store.cached_total_count) {
 						store.cached_total_count_params = store.cached_total_count_params || {};
@@ -1650,8 +1658,14 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			// Invalidate the total cache on write operations: 
 			cmp.store.on('beforewrite',function(store) { 
 				delete store.cached_total_count;
-				delete store.baseParams.cached_total_count;
-				delete store.lastOptions.params.cached_total_count;
+				
+				if(store.baseParams) {
+					delete store.baseParams.cached_total_count;
+				}
+				
+				if(store.lastOptions && store.lastOptions.params) {
+					delete store.lastOptions.params.cached_total_count;
+				}
 			},this);
 		}
 		// ---
