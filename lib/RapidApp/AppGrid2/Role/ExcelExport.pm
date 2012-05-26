@@ -43,6 +43,10 @@ sub excel_read {
 	my $self = shift;
 	my $params = $self->c->req->params;
 	
+	my $export_filename = $params->{export_filename} || 'export.xls';
+	$export_filename .= '.xls' unless ($export_filename =~ /\.xls$/);
+	delete $params->{export_filename};
+	
 	# Get the list of desired columns from the query parameters.
 	# If not specified, we use all defined columns.
 	my $columns= ($params->{columns})
@@ -136,14 +140,13 @@ sub excel_read {
 	$tw->autosizeColumns();
 	$xls->close();
 	
-		
 	$self->render_as_json(0);
-
+	
 	my $h= $self->c->res->headers;
 	$h->content_type('application/x-download');
 	$h->content_length(do { use bytes; length($dlData) });
 	$h->last_modified(time);
-	$h->header('Content-disposition' => "attachment; filename=\"export.xls\"");
+	$h->header('Content-disposition' => "attachment; filename=\"$export_filename\"");
 	$h->expires(time());
 	$h->header('Pragma' => 'no-cache');
 	$h->header('Cache-Control' => 'no-cache');

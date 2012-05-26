@@ -663,6 +663,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler = function(cmp,url,all_pages,
 	var btn = Ext.getCmp(cmp.buttonId);
 	var grid = btn.findParentByType("appgrid2") || btn.findParentByType("appgrid2ed");
 	
+	var export_filename = grid.title || grid.ownerCt.title || 'export';
+	
 	Ext.Msg.show({
 		title: "Excel Export",
 		msg: "Export current view to Excel File? <br><br>(This might take up to a few minutes depending on the number of rows)",
@@ -702,6 +704,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler = function(cmp,url,all_pages,
 			if(all_columns && options.params.columns) { delete options.params.columns; }
 			
 			//return Ext.ux.postwith(url,options.params);
+			
+			options.params.export_filename = export_filename;
 
 			if(Ext.isGecko) { // FireFox
 				// Interactive window download:
