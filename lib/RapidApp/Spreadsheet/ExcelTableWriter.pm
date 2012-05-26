@@ -43,7 +43,7 @@ Convenience object for writing a table into an Excel worksheet.
 ExcelTableWriter does not manage the excel file, and instead takes parameters of the
 workbook and worksheet objects to use.  This allows quite a bit of flexibility.
 
-  my $xls= Spreadsheet::WriteExcel->new($fh);
+  my $xls= Excel::Writer::XLSX->new($fh);
   
   my $tw= RapidApp::Spreadsheet::ExcelTableWriter->new(
     wbook => $xls,
@@ -81,7 +81,7 @@ use Moose;
 use Spreadsheet::ParseExcel;
 use RapidApp::Spreadsheet::ParseExcelExt;
 
-has 'wbook'    => ( is => 'ro', isa => 'Spreadsheet::WriteExcel::Workbook', required => 1 );
+has 'wbook'    => ( is => 'ro', isa => 'Excel::Writer::XLSX::Workbook', required => 1 );
 has 'wsheets'  => ( is => 'ro', isa => 'ArrayRef', required => 1 );
 has 'columns'  => ( is => 'rw', isa => 'ArrayRef', required => 1 );
 has 'rowStart' => ( is => 'rw', isa => 'Int', required => 1, default => 0 );
@@ -263,7 +263,7 @@ Alternatively, a hash can be used, with the name of the columns as keys.
 If the first parameter is not a array/hash reference, the argument array is treated as the data array.
 
 =cut
-our $writeRowFormat; #<-- quick/dirty global var for 'format' (see $workbook->add_format in Spreadsheet::WriteExcel)
+our $writeRowFormat; #<-- quick/dirty global var for 'format' (see $workbook->add_format in Excel::Writer::XLSX)
 sub writeRow {
 	my $self= shift;
 	my $rowData;
@@ -279,13 +279,21 @@ sub writeRow {
 	
 	for (my $i=0; $i < $self->colCount; $i++) {
 		my ($ws, $wsCol)= $self->sheetForCol($i);
+		
 		my @args = ($self->curRow, $wsCol, $rowData->[$i]);
 		push @args, $writeRowFormat if ($writeRowFormat);
-		if ($self->columns->[$i]->isString) {
-			$ws->write_string(@args);
-		} else {
-			$ws->write(@args);
-		}
+		
+		$ws->write(@args);
+		
+		# -- this logic is dumb and doesn't work right. 'write' already does smart setting of the
+		# type. (commented out by HV on 2012-05-26)
+		#if ($self->columns->[$i]->isString) {
+		#	$ws->write_string(@args);
+		#} else {
+		#	$ws->write(@args);
+		#}
+		# --
+		
 		$self->columns->[$i]->updateWidest(length $rowData->[$i]) if (defined $rowData->[$i]);
 	}
 	$self->{_curRow}++;

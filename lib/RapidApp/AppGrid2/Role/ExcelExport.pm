@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Moose::Role;
 
-use Spreadsheet::WriteExcel;
+use Excel::Writer::XLSX;
 use RapidApp::Spreadsheet::ExcelTableWriter;
 use RapidApp::Include qw(perlutil sugar);
 
@@ -43,8 +43,8 @@ sub excel_read {
 	my $self = shift;
 	my $params = $self->c->req->params;
 	
-	my $export_filename = $params->{export_filename} || 'export.xls';
-	$export_filename .= '.xls' unless ($export_filename =~ /\.xls$/);
+	my $export_filename = $params->{export_filename} || 'export';
+	$export_filename .= '.xlsx' unless ($export_filename =~ /\.xlsx$/);
 	delete $params->{export_filename};
 	
 	# Get the list of desired columns from the query parameters.
@@ -81,7 +81,12 @@ sub excel_read {
 	my $dlData = '';
 	open my $fd, '>', \$dlData;
 	
-	my $xls = Spreadsheet::WriteExcel->new($fd);
+	my $xls = Excel::Writer::XLSX->new($fd);
+	
+	# -- Excel/Writer/XLSX-specific: (slashes used instead of :: to protect from find/replace)
+	$xls->set_optimization();
+	# --
+	
 	$xls->set_properties(
 		title    => 'Exported RapidApp AppGrid Module: ' . ref($self),
 		#company  => 'Clippard Instrument Laboratory',
@@ -143,10 +148,23 @@ sub excel_read {
 	$self->render_as_json(0);
 	
 	my $h= $self->c->res->headers;
-	$h->content_type('application/x-download');
+	
+	#$h->content_type('application/x-download');
+	
+	# Excel 97-2003 format (XLS)
+	#$h->content_type('application/vnd.ms-excel');
+	
+	# Generic Spreadsheet format
+	#$h->content_type('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+	
+	# Excel XLSX format
+	$h->content_type('application/vnd.ms-excel.12');
+	
+	# Make it a file download:
+	$h->header('Content-disposition' => "attachment; filename=\"$export_filename\"");
+
 	$h->content_length(do { use bytes; length($dlData) });
 	$h->last_modified(time);
-	$h->header('Content-disposition' => "attachment; filename=\"$export_filename\"");
 	$h->expires(time());
 	$h->header('Pragma' => 'no-cache');
 	$h->header('Cache-Control' => 'no-cache');

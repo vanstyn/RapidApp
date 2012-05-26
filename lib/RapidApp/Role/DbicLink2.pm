@@ -513,7 +513,7 @@ sub chain_Rs_req_base_Attr {
 	
 	$params = {
 		start => 0,
-		limit => 100000,
+		limit => 10000000,
 		dir => 'asc',
 		%$params
 	};

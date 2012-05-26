@@ -706,17 +706,19 @@ Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler = function(cmp,url,all_pages,
 			//return Ext.ux.postwith(url,options.params);
 			
 			options.params.export_filename = export_filename;
+			
+			var timeout = 900000; // 15-minutes
 
 			if(Ext.isGecko) { // FireFox
 				// Interactive window download:
 				return Ext.ux.RapidApp.winDownload(
-					url,options.params,"Exporting data to Excel..."
+					url,options.params,"Exporting data to Excel...",timeout
 				);
 			}
 			else {
 				// Background download, since non-FF browsers can't detect download complete and
 				// close the window:
-				return Ext.ux.iframeBgDownload(url,options.params);
+				return Ext.ux.iframeBgDownload(url,options.params,timeout);
 			}
 			
 		},
