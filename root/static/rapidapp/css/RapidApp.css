@@ -9,6 +9,14 @@ pre {
 	word-wrap: break-word; /* Internet Explorer 5.5+ */
 }
 
+
+.loading-background {
+	background-repeat: no-repeat;
+	background-position: center center;
+	background-color: white;
+	background-image: url(/static/rapidapp/images/indicator.gif) !important;
+}
+
 .rapp-margin-bottom-0 {
 	margin-bottom: 0px;
 }

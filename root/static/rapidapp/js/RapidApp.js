@@ -1030,6 +1030,150 @@ Ext.ux.postwith = function (to,p) {
 }
 
 
+/* ####################################################### */
+/* ####################################################### */
+
+/*
+ --- http://encosia.com/ajax-file-downloads-and-iframes/ ---
+ This assumes that the content returned from 'url' will be "Content-disposition: attachment;"
+ The purpose is to allow a background download operation that won't be
+ cancelled if the user clicks around the app before the response comes back, (which 
+ happens with Ext.ux.postwith) and also won't navigate the page if an error occurs during 
+ the download. The downside of this is that nothing will be shown to the user if an error or 
+ exception occurs, the download will just never happen. To address this limitation, see the 
+ alternate method 'Ext.ux.RapidApp.winDownload' below (which has its own, different limitations)
+*/
+Ext.ns('Ext.ux.iframeBgDownload');
+Ext.ux.iframeBgDownload = function (url,params,timeout) {
+	var timer, timeout = timeout || Ext.Ajax.timeout;
+	
+	if(params) { url += '?' + Ext.urlEncode(params); }
+	
+	var iframe = document.createElement("iframe");
+	
+	var cleanup = function() {
+		if(timer) { timer.cancel(); } //<-- turn off the timeout timer
+		var task = new Ext.util.DelayedTask(function(){
+			document.body.removeChild(iframe);
+		});
+		// give the download dialog plenty of time to be displayed before we
+		// remove the iframe:
+		task.delay(2000); 
+	};
+	
+	// Start the fail-safe timeout timer:
+	// (we need this because we have no way of detecting an exception in the 
+	// iframe load)
+	timer = new Ext.util.DelayedTask(cleanup);
+	timer.delay(timeout);
+	
+	// This event only gets fired in FireFox (12) for file downloads. IE and 
+	// Chrome have to wait for the timeout, which is lame and sucks.
+	iframe.onload = cleanup; //<-- cleanup as soon as the iframe load completes
+	
+	iframe.style.display = "none";
+	iframe.src = url;
+	document.body.appendChild(iframe); 
+}
+
+/*
+ This is an alternative to Ext.ux.iframeBgDownload above that displays the download
+ interactively in an Ext Window containing an iframe performing the download,
+ with a nice loading indicator. In the event of an error or exception from the
+ server side, the error output is displayed inline in the iframe.
+
+ This function would be great if only it worked properly in IE and Chrome. It
+ works great in FireFox (12), but in other browsers the iframe onload event isn't
+ fired if the src is a file download. In those cases, the user has to close the
+ download box manually after they receive the file. This is the tradeoff for having
+ feedback on processing and errors. If that isn't worth it, and you are OK doing the
+ download in the background and discard errors, use Ext.ux.iframeBgDownload instead.
+*/
+Ext.ns('Ext.ux.RapidApp');
+Ext.ux.RapidApp.winDownload = function (url,params,msg,timeout) {
+	var timer, timeout = timeout || Ext.Ajax.timeout;
+	msg = msg || 'Downloading File...';
+	
+	if(params) { url += '?' + Ext.urlEncode(params); }
+	
+	var win;
+	
+	var iframe = document.createElement("iframe");
+	iframe.height = '100%';
+	iframe.width = '100%';
+	iframe.setAttribute("frameborder", '0');
+	iframe.setAttribute("allowtransparency", 'true');
+	iframe.src = url;
+	
+	var cleanup = function(){
+		if(timer) { timer.cancel(); } //<-- turn off the timeout timer
+		if(!win) { return; }
+		win.hide(); // <-- hide immediately
+		
+		var task = new Ext.util.DelayedTask(function(){
+			win.close()
+		});
+		// give the download dialog plenty of time to be displayed before we
+		// actually close/destroy the window and iframe:
+		task.delay(2000); 
+	};
+	
+	// Unfortunately, this event is only fired in FireFox if it is a
+	// file download. In IE and Chrome, it never gets fired and so the
+	// window never gets hidden. The user has to close the dialog box
+	// themselves.
+	iframe.onload = cleanup;
+	
+	// Silently close the window after timeout. TODO: add an option to
+	// update the window/iframe contents with a message instead. That would
+	// only be useful in FireFox, since in other browsers we have no way of
+	// knowing if the download was successful once the timeout is reached.
+	timer = new Ext.util.DelayedTask(cleanup);
+	timer.delay(timeout);
+	
+	win = new Ext.Window({
+		title: msg,
+		modal: true,
+		closable: false,
+		width: 400,
+		height: 225,
+		bodyCssClass: 'loading-background',
+		buttonAlign: 'center',
+		buttons:[{
+			width: 150,
+			text: 'Close',
+			iconCls: 'icon-cross',
+			handler: function(){ win.hide(); win.close(); }
+		}],
+		listeners: {
+			beforeclose: function(){
+				if(timer) { timer.cancel(); } //<-- turn off the timeout timer
+			}
+		},
+		contentEl: iframe
+	});
+
+	win.show();
+}
+
+/*
+ Another, simple download function but uses a self-closing (browser) window. 
+ Again, assumes url is a file download. This is just left in for reference, 
+ because it is rough looking. See Ext.ux.RapidApp.winDownload above which uses 
+ an Ext Window and has better error handling and control
+*/
+Ext.ns('Ext.ux.winIframeDownload');
+Ext.ux.winPostwith = function (url,params) {
+	if(params) { url += '?' + Ext.urlEncode(params); }
+	return window.open(
+		url,"winDownload", 
+		"height=100,width=200," +
+		"menubar=no,status=no,location=no,toolbar=no,resizable=no"
+	);
+}
+/* ####################################################### */
+/* ####################################################### */
+
 
 Ext.ns('Ext.ux.iconFromFileName');
 Ext.ux.iconFromFileName = function(name) {

@@ -701,7 +701,20 @@ Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler = function(cmp,url,all_pages,
 			
 			if(all_columns && options.params.columns) { delete options.params.columns; }
 			
-			return Ext.ux.postwith(url,options.params);
+			//return Ext.ux.postwith(url,options.params);
+
+			if(Ext.isGecko) { // FireFox
+				// Interactive window download:
+				return Ext.ux.RapidApp.winDownload(
+					url,options.params,"Exporting data to Excel..."
+				);
+			}
+			else {
+				// Background download, since non-FF browsers can't detect download complete and
+				// close the window:
+				return Ext.ux.iframeBgDownload(url,options.params);
+			}
+			
 		},
 		scope: cmp
 	});
