@@ -78,6 +78,20 @@ table.property-table td div.cell {
                   <td class="value" colspan="2">
                     <div [% value_attrs %]>[% col.value %]</div>
                   </td>
+
+                [% ELSIF col.label_top %]
+               
+                  <td class="name" colspan="2">
+                    <div [% name_attrs %]>[% col.name %]</div>
+                  </td>
+                  
+                  </tr><tr>
+                  
+                  <td class="value" colspan="2">
+                    <div style="padding-left:3px;">
+                      <div [% value_attrs %]>[% col.value %]</div>
+                    </div>
+                  </td>
                 
                 [% ELSE %]
               
