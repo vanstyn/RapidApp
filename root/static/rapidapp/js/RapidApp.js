@@ -1208,8 +1208,8 @@ Ext.ux.Bool2yesno = function(val) {
 
 Ext.ns('Ext.ux.showNull');
 Ext.ux.showNull = function(val) {
-	if (val == null) { return '<span style="color:darkgrey;">(not set)</span>'; }
-	if (val === "") { return '<span style="color:darkgrey;">(empty string)</span>'; }
+	if (val == null) { return '<span style="color:darkgrey;">(not&nbsp;set)</span>'; }
+	if (val === "") { return '<span style="color:darkgrey;">(empty&nbsp;string)</span>'; }
 	return val;
 }
 
