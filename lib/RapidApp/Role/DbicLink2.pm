@@ -1260,6 +1260,7 @@ sub _dbiclink_update_records {
 	my $Rs = $self->baseResultSet;
 	
 	my @updated_keyvals = ();
+	my %keyval_changes = ();
 	
 	# FIXME!!
 	# There is a logic problem with update. The comparisons are done iteratively, and so when
@@ -1307,7 +1308,9 @@ sub _dbiclink_update_records {
 				$_->{row}->update($_->{change}) for (@update_queue);
 				
 				# Get the new record_pk for the row (it probably hasn't changed, but it could have):
-				push @updated_keyvals, $self->generate_record_pk_value({ $BaseRow->get_columns });
+				my $newPkVal = $self->generate_record_pk_value({ $BaseRow->get_columns });
+				push @updated_keyvals, $newPkVal;
+				$keyval_changes{$newPkVal} = $pkVal unless ("$pkVal" eq "$newPkVal");
 			}
 		});
 	}
@@ -1319,6 +1322,19 @@ sub _dbiclink_update_records {
 	
 	# Perform a fresh lookup of all the records we just updated and send them back to the client:
 	my $newdata = $self->DataStore->read({ columns => [ keys %{ $arr->[0] } ], id_in => \@updated_keyvals });
+	
+	# -- Restore the original record_pk, if it changed, and put the new value in another key.
+	# This is needed to make sure the client can keep track of which row is which. Code in datastore-plus
+	# then detects this and updates the idProperty in the record to the new value so it will be used
+	# in subsequent requests. THIS APPLIES ONLY IF THE PRIMARY KEYS ARE EDITABLE, WHICH ONLY HAPPENS
+	# IN RARE SITUATIONS:
+	foreach my $row (@{$newdata->{rows}}) {
+		my $newPkVal = $row->{$self->record_pk};
+		my $oldPkVal = $keyval_changes{$newPkVal} or next;
+		$row->{$self->record_pk . '_new'} = $row->{$self->record_pk};
+		$row->{$self->record_pk} = $oldPkVal;
+	}
+	# --
 	
 	return {
 		%$newdata,

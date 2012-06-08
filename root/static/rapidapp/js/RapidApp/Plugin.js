@@ -1943,6 +1943,37 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		store.on('remove',store.fireButtonToggleEvent,store);
 		store.on('add',store.fireButtonToggleEvent,store);
 		
+		// ------
+		// NEW: Manually update record.id after an update if the idProperty (typically '___record_pk'
+		// in RapidApp) has changed. This is needed to be able to edit the primary column, save it,
+		// and then edit the record again. If the record's id isn't updated, the subsequent update
+		// will fail because the lookup (DbicLink2) will use the old value, which it won't find anymore
+		// This code not only updates the record, but updates its entry in the store (MixedCollection)
+		// with the new id/key so that 'getById' and other functions will still operate correctly.
+		store.on('write',function(ds,action,result,res,rs){
+			if(action != 'update') { return; }
+			Ext.each(res.raw.rows,function(row){
+				// See update_records in DbicLink2 for where the new key is stored. So this code only
+				// fires when working with DbicLink2 on the backend and the pk has changed, otherwise
+				// this has no effect
+				var idPropertyNew = ds.idProperty + '_new';
+				var new_pk = row[idPropertyNew];
+				if(!new_pk) { return; }
+				
+				var ndx = ds.data.indexOfKey(row[ds.idProperty]);
+				var record = ds.data.itemAt(ndx);
+				if(!record) { return; }
+				record.data[ds.idProperty] = new_pk;
+				record.id = new_pk;
+				
+				ds.data.removeAt(ndx);
+				ds.data.insert(ndx,record.id,record);
+				
+			},this);
+		},store);
+		// ------
+		
+		
 		store.addTrackedToggleFunc = function(func) {
 			store.on('buttontoggle',func,store);
 		};
