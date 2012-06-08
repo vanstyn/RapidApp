@@ -1362,7 +1362,7 @@ sub prepare_record_updates {
 		
 		# --- Need to do a map and a grep here; map to remap the values, and grep to prevent
 		# the new values from being clobbered by identical key names from the original data:
-		my $alias = $TableSpec->column_data_alias;
+		my $alias = { %{ $TableSpec->column_data_alias } };
 		# -- strip out aliases that are identical to the original value. This will happen in the special
 		# case of an update to a rel col that is ALSO a local col when 'priority_rel_columns' is on.
 		# It shouldn't happen other times, but if it does, this is the right way to handle it, regardless:
