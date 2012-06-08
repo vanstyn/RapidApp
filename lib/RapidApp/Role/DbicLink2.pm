@@ -612,12 +612,15 @@ sub get_req_columns {
 	# TODO: move column request logic that's currently only in AppGrid2 to a 
 	# plugin/store where it can be used by other js modules like dataview
 	unless(@$columns > 0) {
-		push @$columns, $self->TableSpec->get_colspec_column_names(
-			$self->TableSpec->include_colspec->colspecs
-		);
-		# Limit to current real/valid columns according to DataStore2:
-		my %cols_indx = map {$_=>1} $self->column_name_list;
-		@$columns = grep { $cols_indx{$_} } @$columns;
+		# new/simple way:
+		@$columns = grep { $_ ne $self->record_pk } $self->column_name_list;
+		# old, more complex (and slow) approach:
+		#push @$columns, $self->TableSpec->get_colspec_column_names(
+		#	$self->TableSpec->include_colspec->colspecs
+		#);
+		## Limit to current real/valid columns according to DataStore2:
+		#my %cols_indx = map {$_=>1} $self->column_name_list;
+		#@$columns = grep { $cols_indx{$_} } @$columns;
 	}
 	# ---
 	
@@ -1293,7 +1296,7 @@ sub _dbiclink_update_records {
 				my @columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } keys %$data;
 				
 				@columns = $self->TableSpec->filter_updatable_columns(@columns);
-				
+
 				# -- Limit to current real/valid columns according to DataStore2:
 				@columns = grep { $cols_indx{$_} } @columns;
 				# --
@@ -1357,12 +1360,17 @@ sub prepare_record_updates {
 		
 		my %update = map { $_ => $data->{ $_{name_map}->{$_} } } keys %{$_{name_map}};
 		
-		# -- Need to do a map and a grep here; map to remap the values, and grep to prevent
+		# --- Need to do a map and a grep here; map to remap the values, and grep to prevent
 		# the new values from being clobbered by identical key names from the original data:
 		my $alias = $TableSpec->column_data_alias;
+		# -- strip out aliases that are identical to the original value. This will happen in the special
+		# case of an update to a rel col that is ALSO a local col when 'priority_rel_columns' is on.
+		# It shouldn't happen other times, but if it does, this is the right way to handle it, regardless:
+		$_ eq $alias->{$_} and delete $alias->{$_} for (keys %$alias);
+		# --
 		my %revalias = map {$_=>1} values %$alias;
 		%update = map { $alias->{$_} ? $alias->{$_} : $_ => $update{$_} } grep { !$revalias{$_} } keys %update;
-		# --
+		# ---
 		
 		my $change = \%update;
 		

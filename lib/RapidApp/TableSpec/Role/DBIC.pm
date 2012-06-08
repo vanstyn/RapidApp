@@ -1357,9 +1357,14 @@ sub get_relationship_column_cnf {
 	
 	$conf->{renderer} = 'Ext.ux.showNull' unless ($conf->{renderer});
 	
-	$conf = { %$conf, 
+	# ---
+	# We need to set 'no_fetch' to prevent DbicLink2 trying to fetch the rel name
+	# as a column -- EXCEPT if the rel name is ALSO a column name:
+	my $is_also_local_col = $self->ResultSource->has_column($rel) ? 1 : 0;
+	$conf->{no_fetch} = 1 unless ($is_also_local_col);
+	# ---
 	
-		no_fetch => 1,
+	$conf = { %$conf, 
 		
 		#no_quick_search => \1,
 		#no_multifilter => \1,
