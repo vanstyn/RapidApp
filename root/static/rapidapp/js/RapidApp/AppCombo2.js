@@ -722,13 +722,16 @@ Ext.WindowMgr.zseed = 12000;
 
 Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 	
+	fieldClass: 'ra-datastore-app-field',
+	
 	actionOnShow: true,
 	
 	win_title: 'Select',
-	win_width: 400,
-	win_height: 350,
+	win_width: 500,
+	win_height: 450,
 	
-	value: '<div style="color:darkgray;">(select)</div>',
+	//value: '<div style="color:darkgray;">(select)</div>',
+	value: null,
 	
 	onActionComplete: function() {
 		this.fireEvent.defer(50,this,['select']);
@@ -755,24 +758,37 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 		var autoLoad = this.autoLoad || { url: this.load_url };
 		
 		var select_btn = new Ext.Button({
-			text: 'Select', 
+			text: '&nbsp;Select',
+			width: 90,
+			iconCls: 'icon-selection-up-blue',
 			handler: function(){ select_fn(null); },
 			disabled: true
 		});
 		
 		var add_btn = new Ext.Button({
-			text: '<b>Add/Select New</b>',
-			iconCls: 'icon-add',
+			text: '<span style="font-weight:bold;font-size:1.1em;">Add New</span>',
+			iconCls: 'icon-selection-add',
 			handler: Ext.emptyFn,
 			hidden: true
 		});
 		
 		var buttons = [
-			//add_btn,
 			'->',
 			select_btn,
 			{ text: 'Cancel', handler: function(){ win.close(); } }
 		];
+			
+		if(this.allowBlank){
+			buttons.unshift(new Ext.Button({
+				text: 'Select None (empty)',
+				iconCls: 'icon-selection',
+				handler: function(){
+					field.setValue(null);
+					field.dataValue = null;
+					win.close();
+				}
+			}));
+		}
 		
 		var cmpConfig = {
 			// Obviously this is for grids... not sure if this will cause problems
@@ -784,6 +800,12 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 			
 			// If add is allowed, we need to make sure it uses a window and NOT a tab
 			use_add_form: 'window',
+			
+			// Default the add form, (if add is allowed) to match the window size
+			add_form_window_cnf: {
+				height: this.win_height,
+				width: this.win_width
+			},
 			
 			// Make sure this is off to prevent trying to open a new record after being created
 			// for this context we select the record after it is created
@@ -829,7 +851,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 		
 		
 		win = new Ext.Window({
-			//buttonAlign: 'left',
+			buttonAlign: 'left',
 			title: this.win_title,
 			layout: 'fit',
 			width: this.win_width,

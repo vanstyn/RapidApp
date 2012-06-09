@@ -241,6 +241,16 @@ pre {
 .icon-table-sql-edit { background-image: url(/static/rapidapp/images/table_sql_edit.png) !important; }
 .icon-clock-run { background-image: url(/static/rapidapp/images/clock_run.png) !important; }
 .icon-tool-close { background-image: url(/static/rapidapp/images/tool_close.png) !important; }
+.icon-selection { background-image: url(/static/rapidapp/images/selection.png) !important; }
+.icon-selection-up { background-image: url(/static/rapidapp/images/selection_up.png) !important; }
+.icon-selection-up-blue { background-image: url(/static/rapidapp/images/selection_up_blue.png) !important; }
+.icon-selection-add { background-image: url(/static/rapidapp/images/selection_add.png) !important; }
+
+
+
+
+
+
 
 .tbar-title-medium {
 	font-size:175% !important;
@@ -1367,5 +1377,23 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 
 .ra-footer td.right {
   text-align:right;
+}
+
+
+.ra-datastore-app-field {
+  display: block;
+  padding: 2px 2px 2px 21px;
+  position: relative;
+  z-index: 2;
+  cursor: pointer;
+  background-color: #FFFFFF;
+  /*background-image: url("../images/default/form/text-bg.gif");*/
+  border: 1px solid;
+  border-color: #C1C1C1;
+  min-height: 16px;
+  background-image: url(/static/rapidapp/images/bullet_arrow_down.png);
+  background-repeat: no-repeat;
+  background-position: 2px center;
+  color: #333333;
 }
 
