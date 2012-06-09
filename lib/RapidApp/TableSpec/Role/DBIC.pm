@@ -1462,7 +1462,6 @@ sub get_relationship_column_cnf {
 				win_height		=> 450,
 				win_width		=> 650,
 				
-				%{$conf->{auto_editor_win_params}},
 				%{$conf->{editor}},
 				
 				# These can't be overridden
@@ -1473,6 +1472,25 @@ sub get_relationship_column_cnf {
 				load_url	=> $GridModule->base_url,
 				
 			};
+		}
+		
+		case 'custom' {
+			
+			# Use whatever is already in 'editor' with same sane defaults
+			$conf->{editor} = { 
+
+				# These can be overridden
+				win_title		=> 'Select ' . $conf->{header},
+				win_height		=> 450,
+				win_width		=> 650,
+				valueField		=> $conf->{valueField},
+				displayField	=> $conf->{displayField},
+				name			=> $colname,
+				%{ $conf->{auto_editor_params} || {} },
+				%{ $conf->{editor} || {} },
+			};
+		
+		
 		}
 		
 		

@@ -2404,7 +2404,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			}
 		};
 		
-		var myMask = new Ext.LoadMask(Ext.getBody(), {msg:"Loading Form..."});
+		//var myMask = new Ext.LoadMask(Ext.getBody(), {msg:"Loading Form..."});
+		var myMask = new Ext.LoadMask(plugin.cmp.getEl(), {msg:"Loading Add Form..."});
 		var show_mask = function() { myMask.show(); }
 		var hide_mask = function() { myMask.hide(); }
 		

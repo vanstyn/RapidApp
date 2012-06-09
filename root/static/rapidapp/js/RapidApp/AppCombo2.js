@@ -751,8 +751,57 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 	},
 	
 	displayWindow: function() {
-		var field = this;
-		var win;
+		var win, field = this;
+		var autoLoad = this.autoLoad || { url: this.load_url };
+		
+		var select_btn = new Ext.Button({
+			text: 'Select', 
+			handler: function(){ select_fn(null); },
+			disabled: true
+		});
+		
+		var add_btn = new Ext.Button({
+			text: '<b>Add/Select New</b>',
+			iconCls: 'icon-add',
+			handler: Ext.emptyFn,
+			hidden: true
+		});
+		
+		var buttons = [
+			//add_btn,
+			'->',
+			select_btn,
+			{ text: 'Cancel', handler: function(){ win.close(); } }
+		];
+		
+		var cmpConfig = {
+			// Obviously this is for grids... not sure if this will cause problems
+			// in the case of AppDVs
+			sm: new Ext.grid.RowSelectionModel({singleSelect:true}),
+			
+			// Don't allow delete per default
+			store_exclude_buttons: [ 'delete' ],
+			
+			// If add is allowed, we need to make sure it uses a window and NOT a tab
+			use_add_form: 'window',
+			
+			// Make sure this is off to prevent trying to open a new record after being created
+			// for this context we select the record after it is created
+			autoload_added_record: false,
+			
+			// Put the add_btn in the tbar (which we override):
+			tbar:[add_btn,'->'],
+			
+			//bodyStyle: 'border: none',
+			
+			//bodyStyle: 'border-left: 0px;border-top:0px;border-right:0px;',
+			
+			//buttonAlign: 'left',
+			//buttons: buttons
+			
+			
+		};
+		Ext.apply(cmpConfig,this.cmpConfig || {});
 		
 		var select_fn = function(Record) {
 			if(!Record) {
@@ -775,39 +824,25 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 			}
 		};
 		
-		var select_btn = new Ext.Button({
-			text: 'Select', 
-			handler: function(){ select_fn(null); },
-			disabled: true
-		});
 		
-		var add_btn = new Ext.Button({
-			text: '<b>Add/Select New</b>',
-			width: 175,
-			iconCls: 'icon-add',
-			handler: Ext.emptyFn,
-			hidden: true
-		});
 		
-		var buttons = [
-			add_btn,
-			'->',
-			select_btn,
-			{ text: 'Cancel', handler: function(){ win.close(); } }
-		];
+		
 		
 		win = new Ext.Window({
-			buttonAlign: 'left',
+			//buttonAlign: 'left',
 			title: this.win_title,
 			layout: 'fit',
 			width: this.win_width,
 			height: this.win_height,
 			closable: true,
 			modal: true,
+			hideBorders: true,
 			items: {
 				xtype: 'autopanel',
+				bodyStyle: 'border: none',
+				hideBorders: true,
 				itemId: 'app',
-				autoLoad: { url: this.load_url },
+				autoLoad: autoLoad,
 				layout: 'fit',
 				cmpListeners: {
 					afterrender: function(){
@@ -835,14 +870,15 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 							add_btn.setVisible(true);
 							store_add_btn.setVisible(false);
 						}
+						
+						// Disable any loadTarget that is defined. This is a hackish way to disable
+						// any existing double-click open setting. TODO: do this properly
+						this.loadTargetObj = null;
+						
 					},
 					rowdblclick: function(){ select_fn(null); }
 				},
-				cmpConfig: {
-					// Obviously this is for grids... not sure if this will cause problems
-					// in the case of AppDVs
-					sm: new Ext.grid.RowSelectionModel({singleSelect:true})
-				}
+				cmpConfig: cmpConfig
 			},
 			buttons: buttons,
 			listeners: {

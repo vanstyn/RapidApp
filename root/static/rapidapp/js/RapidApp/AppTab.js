@@ -171,6 +171,7 @@ Ext.ux.RapidApp.AppTab.gridrow_nav = function(grid,index,e) {
 }
 
 Ext.ux.RapidApp.AppTab.tryLoadTargetRecord = function(loadTarget,Record,cmp) {
+	if(!loadTarget) { return; }
 	var orig_params = Ext.apply({},Record.data);
 	if(orig_params.loadContentCnf) {
 		var loadCfg = Ext.decode(orig_params.loadContentCnf);	

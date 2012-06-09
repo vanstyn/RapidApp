@@ -226,11 +226,6 @@ sub default_TableSpec_cnf_columns {
 						%$auto_editor_params, 
 						%{$cols->{$col}->{auto_editor_params}} 
 					};
-					$cols->{$col}->{auto_editor_win_params} = $cols->{$col}->{auto_editor_win_params} || {};
-					$cols->{$col}->{auto_editor_win_params} = { 
-						%$auto_editor_win_params, 
-						%{$cols->{$col}->{auto_editor_win_params}} 
-					};
 					# --
 					
 					$display_column = $display_columns->[0] if (
