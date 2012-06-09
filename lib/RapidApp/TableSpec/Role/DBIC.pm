@@ -1460,8 +1460,9 @@ sub get_relationship_column_cnf {
 				# These can be overridden
 				win_title		=> 'Select ' . $conf->{header},
 				win_height		=> 450,
-				win_width		=> 700,
+				win_width		=> 650,
 				
+				%{$conf->{auto_editor_win_params}},
 				%{$conf->{editor}},
 				
 				# These can't be overridden

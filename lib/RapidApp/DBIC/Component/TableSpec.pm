@@ -219,11 +219,17 @@ sub default_TableSpec_cnf_columns {
 					# properties, or the remote TableSpec conf
 					my $auto_editor_type = $self->TableSpec_related_get_set_conf($col,'auto_editor_type') || 'combo';
 					my $auto_editor_params = $self->TableSpec_related_get_set_conf($col,'auto_editor_params') || {};
+					my $auto_editor_win_params = $self->TableSpec_related_get_set_conf($col,'auto_editor_win_params') || {};
 					$cols->{$col}->{auto_editor_type} = $cols->{$col}->{auto_editor_type} || $auto_editor_type;
 					$cols->{$col}->{auto_editor_params} = $cols->{$col}->{auto_editor_params} || {};
 					$cols->{$col}->{auto_editor_params} = { 
 						%$auto_editor_params, 
 						%{$cols->{$col}->{auto_editor_params}} 
+					};
+					$cols->{$col}->{auto_editor_win_params} = $cols->{$col}->{auto_editor_win_params} || {};
+					$cols->{$col}->{auto_editor_win_params} = { 
+						%$auto_editor_win_params, 
+						%{$cols->{$col}->{auto_editor_win_params}} 
 					};
 					# --
 					
