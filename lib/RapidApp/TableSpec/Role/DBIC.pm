@@ -1435,11 +1435,12 @@ sub get_relationship_column_cnf {
 				class	=> 'RapidApp::DbicAppGrid3',
 				params	=> {
 					ResultSource => $Source,
-					include_colspec => [ '{?:single}*.*' ],
+					include_colspec => [ '*', '{?:single}*.*' ],
 					#include_colspec => [ ($conf->{valueField},$conf->{displayField},@{$conf->{display_columns}}) ],
 					title => '',
 					onBUILD => sub {
 						my $self = shift;
+						
 						$self->apply_to_all_columns( hidden => \1 );
 						$self->apply_columns_list($conf->{display_columns},{ hidden => \0 });
 					}
