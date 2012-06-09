@@ -286,7 +286,67 @@ Ext.ux.RapidApp.StaticCombo = Ext.extend(Ext.ux.RapidApp.AppCombo2.CssCombo,{
 Ext.reg('static-combo',Ext.ux.RapidApp.StaticCombo);
 
 
-Ext.ux.RapidApp.ClickActionField = Ext.extend(Ext.form.DisplayField,{
+// Like Ext.form.DisplayField but doesn't disable validation stuff:
+Ext.ux.RapidApp.UtilField = Ext.extend(Ext.form.TextField,{
+	//validationEvent : false,
+	//validateOnBlur : false,
+	defaultAutoCreate : {tag: "div"},
+	/**
+	* @cfg {String} fieldClass The default CSS class for the field (defaults to <tt>"x-form-display-field"</tt>)
+	*/
+	fieldClass : "x-form-display-field",
+	/**
+	* @cfg {Boolean} htmlEncode <tt>false</tt> to skip HTML-encoding the text when rendering it (defaults to
+	* <tt>false</tt>). This might be useful if you want to include tags in the field's innerHTML rather than
+	* rendering them as string literals per the default logic.
+	*/
+	htmlEncode: false,
+
+	// private
+	//initEvents : Ext.emptyFn,
+
+	//isValid : function(){
+	//	return true;
+	//},
+
+	//validate : function(){
+	//	return true;
+	//},
+
+	getRawValue : function(){
+		var v = this.rendered ? this.el.dom.innerHTML : Ext.value(this.value, '');
+		if(v === this.emptyText){
+			v = '';
+		}
+		if(this.htmlEncode){
+			v = Ext.util.Format.htmlDecode(v);
+		}
+		return v;
+	},
+
+	getValue : function(){
+		return this.getRawValue();
+	},
+
+	getName: function() {
+		return this.name;
+	},
+
+	setRawValue : function(v){
+		if(this.htmlEncode){
+			v = Ext.util.Format.htmlEncode(v);
+		}
+		return this.rendered ? (this.el.dom.innerHTML = (Ext.isEmpty(v) ? '' : v)) : (this.value = v);
+	},
+
+	setValue : function(v){
+		this.setRawValue(v);
+		return this;
+	}
+});
+
+//Ext.ux.RapidApp.ClickActionField = Ext.extend(Ext.form.DisplayField,{
+Ext.ux.RapidApp.ClickActionField = Ext.extend(Ext.ux.RapidApp.UtilField,{
 	
 	actionOnShow: false,
 	
@@ -724,13 +784,14 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 	
 	fieldClass: 'ra-datastore-app-field',
 	
+	invalidClass: 'ra-datastore-app-field-invalid',
+	
 	actionOnShow: true,
 	
 	win_title: 'Select',
 	win_width: 500,
 	win_height: 450,
-	
-	//value: '<div style="color:darkgray;">(select)</div>',
+
 	value: null,
 	
 	onActionComplete: function() {
@@ -746,6 +807,11 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 		return this.nativeSetValue.apply(this,arguments);
 	},
 	
+	setValue: function() {
+		delete this.dataValue;
+		return this.nativeSetValue.apply(this,arguments);
+	},
+	
 	getValue: function() {
 		if(typeof this.dataValue !== "undefined") {
 			return this.dataValue;
@@ -754,6 +820,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 	},
 	
 	displayWindow: function() {
+		
 		var win, field = this;
 		var autoLoad = this.autoLoad || { url: this.load_url };
 		
@@ -814,14 +881,6 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 			// Put the add_btn in the tbar (which we override):
 			tbar:[add_btn,'->'],
 			
-			//bodyStyle: 'border: none',
-			
-			//bodyStyle: 'border-left: 0px;border-top:0px;border-right:0px;',
-			
-			//buttonAlign: 'left',
-			//buttons: buttons
-			
-			
 		};
 		Ext.apply(cmpConfig,this.cmpConfig || {});
 		
@@ -845,10 +904,6 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 				win.close();
 			}
 		};
-		
-		
-		
-		
 		
 		win = new Ext.Window({
 			buttonAlign: 'left',
@@ -904,7 +959,10 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 			},
 			buttons: buttons,
 			listeners: {
-				close: function(){ field.onActionComplete.call(field); }
+				close: function(){ 
+					field.onActionComplete.call(field);
+					field.validate.call(field);
+				}
 			}
 		});
 		

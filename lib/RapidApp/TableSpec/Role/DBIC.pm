@@ -1393,8 +1393,19 @@ sub get_relationship_column_cnf {
 	};
 	
 	
-	
+	############# ---
 	switch ($conf->{auto_editor_type}) {
+	
+		$conf->{editor} = $conf->{editor} || {};
+		$conf->{auto_editor_params} = $conf->{auto_editor_params} || {};
+		
+		# Set allowBlank according to the db schema of the key column. This is handled
+		# automatically in normal columns in the profile stuff, but has to be done special
+		# for relationship columns:
+		unless(exists $conf->{editor}->{allowBlank}) {
+			my $cinfo = $self->ResultSource->column_info($conf->{keyField});
+			$conf->{editor}->{allowBlank} = \0 if($cinfo && $cinfo->{is_nullable} == 0);
+		}
 	
 		$conf->{auto_editor_params} = $conf->{auto_editor_params} || {};
 	
@@ -1427,7 +1438,6 @@ sub get_relationship_column_cnf {
 			$conf->{editor} =  $Module->content;
 		}
 		
-		
 		case 'grid' {
 			
 			die "display_columns is required with 'grid' auto_editor_type" 
@@ -1454,7 +1464,7 @@ sub get_relationship_column_cnf {
 				}
 			);
 			
-			$conf->{editor} = $conf->{editor} || {};
+			
 			$conf->{editor} = { 
 
 				# These can be overridden
@@ -1476,7 +1486,7 @@ sub get_relationship_column_cnf {
 		
 		case 'custom' {
 			
-			# Use whatever is already in 'editor' with same sane defaults
+			# Use whatever is already in 'editor' plus some sane defaults
 			$conf->{editor} = { 
 
 				# These can be overridden
@@ -1486,15 +1496,13 @@ sub get_relationship_column_cnf {
 				valueField		=> $conf->{valueField},
 				displayField	=> $conf->{displayField},
 				name			=> $colname,
-				%{ $conf->{auto_editor_params} || {} },
-				%{ $conf->{editor} || {} },
+				
+				%{$conf->{auto_editor_params}},
+				%{$conf->{editor}},
 			};
-		
-		
 		}
-		
-		
 	}
+	############# ---
 	
 	return (name => $colname, %$conf);
 }

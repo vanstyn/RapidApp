@@ -5217,7 +5217,8 @@ Ext.override(Ext.form.Field, {
           el.focus(); 
           el.setSelectionRange(pos, pos); 
        } else {
-         alert('Method not supported');
+         //alert('Method not supported');
+         return;
        }
     },
 
