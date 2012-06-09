@@ -1396,6 +1396,8 @@ sub get_relationship_column_cnf {
 	
 	switch ($conf->{auto_editor_type}) {
 	
+		$conf->{auto_editor_params} = $conf->{auto_editor_params} || {};
+	
 		case 'combo' {
 		
 			my $module_name = 'combo_' . $self->ResultClass->table . '_' . $colname;
@@ -1409,7 +1411,8 @@ sub get_relationship_column_cnf {
 					record_pk		=> $conf->{valueField},
 					# Optional custom ResultSet params applied to the dropdown query
 					RS_condition	=> $conf->{RS_condition} ? $conf->{RS_condition} : {},
-					RS_attr			=> $conf->{RS_attr} ? $conf->{RS_attr} : {}
+					RS_attr			=> $conf->{RS_attr} ? $conf->{RS_attr} : {},
+					%{ $conf->{auto_editor_params} },
 				}
 			);
 			
@@ -1430,6 +1433,15 @@ sub get_relationship_column_cnf {
 			die "display_columns is required with 'grid' auto_editor_type" 
 				unless (defined $conf->{display_columns});
 			
+			my $custOnBUILD = $conf->{auto_editor_params}->{onBUILD} || sub{};
+			my $onBUILD = sub {
+				my $self = shift;		
+				$self->apply_to_all_columns( hidden => \1 );
+				$self->apply_columns_list($conf->{display_columns},{ hidden => \0 });
+				return $custOnBUILD->($self);
+			};
+			$conf->{auto_editor_params}->{onBUILD} = $onBUILD;
+			
 			my $grid_module_name = 'grid_' . $self->ResultClass->table . '_' . $colname;
 			my $GridModule = $self->get_or_create_rapidapp_module( $grid_module_name,
 				class	=> 'RapidApp::DbicAppGrid3',
@@ -1438,12 +1450,7 @@ sub get_relationship_column_cnf {
 					include_colspec => [ '*', '{?:single}*.*' ],
 					#include_colspec => [ ($conf->{valueField},$conf->{displayField},@{$conf->{display_columns}}) ],
 					title => '',
-					onBUILD => sub {
-						my $self = shift;
-						
-						$self->apply_to_all_columns( hidden => \1 );
-						$self->apply_columns_list($conf->{display_columns},{ hidden => \0 });
-					}
+					%{ $conf->{auto_editor_params} }
 				}
 			);
 			
@@ -1453,7 +1460,7 @@ sub get_relationship_column_cnf {
 				# These can be overridden
 				win_title		=> 'Select ' . $conf->{header},
 				win_height		=> 450,
-				win_width		=> 650,
+				win_width		=> 700,
 				
 				%{$conf->{editor}},
 				

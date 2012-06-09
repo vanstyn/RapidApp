@@ -215,13 +215,17 @@ sub default_TableSpec_cnf_columns {
 					my $display_column = $self->TableSpec_related_get_set_conf($col,'display_column');
 					my $display_columns = $self->TableSpec_related_get_set_conf($col,'display_columns');
 					
-					# Can't do this yet because it causes a deep recursion issue:
-					#unless ($cols->{$col}->{auto_editor_type}) {
-					#	$cols->{$col}->{auto_editor_type} = 'combo' if ($display_column);
-					#	$cols->{$col}->{auto_editor_type} = 'grid' if ($display_columns);
-					#}
-					
-					$cols->{$col}->{auto_editor_type} = $cols->{$col}->{auto_editor_type} || 'combo';
+					# -- auto_editor_params/auto_editor_type can be defined in either the local column 
+					# properties, or the remote TableSpec conf
+					my $auto_editor_type = $self->TableSpec_related_get_set_conf($col,'auto_editor_type') || 'combo';
+					my $auto_editor_params = $self->TableSpec_related_get_set_conf($col,'auto_editor_params') || {};
+					$cols->{$col}->{auto_editor_type} = $cols->{$col}->{auto_editor_type} || $auto_editor_type;
+					$cols->{$col}->{auto_editor_params} = $cols->{$col}->{auto_editor_params} || {};
+					$cols->{$col}->{auto_editor_params} = { 
+						%$auto_editor_params, 
+						%{$cols->{$col}->{auto_editor_params}} 
+					};
+					# --
 					
 					$display_column = $display_columns->[0] if (
 						! defined $display_column and
