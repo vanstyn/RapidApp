@@ -754,11 +754,14 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 		var field = this;
 		var win;
 		
-		var select_fn = function() {
-			var app = win.getComponent('app').items.first();
+		var select_fn = function(Record) {
+			if(!Record) {
+				var app = win.getComponent('app').items.first();
+				var records = app.getSelectedRecords();
+				Record = records[0];
+			}
 			
-			var records = app.getSelectedRecords();
-			var Record = records[0];
+			if(!Record) { return; }
 			
 			var value = Record.data[field.valueField];
 			var disp = Record.data[field.displayField];
@@ -774,12 +777,27 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 		
 		var select_btn = new Ext.Button({
 			text: 'Select', 
-			handler: select_fn,
+			handler: function(){ select_fn(null); },
 			disabled: true
 		});
 		
+		var add_btn = new Ext.Button({
+			text: '<b>Add/Select New</b>',
+			width: 175,
+			iconCls: 'icon-add',
+			handler: Ext.emptyFn,
+			hidden: true
+		});
+		
+		var buttons = [
+			add_btn,
+			'->',
+			select_btn,
+			{ text: 'Cancel', handler: function(){ win.close(); } }
+		];
+		
 		win = new Ext.Window({
-			buttonAlign: 'right',
+			buttonAlign: 'left',
 			title: this.win_title,
 			layout: 'fit',
 			width: this.win_width,
@@ -802,8 +820,23 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 							}
 						};
 						this.on('selectionchange',toggleBtn,this);
+						
+						this.store.on('write',function(ds,action,result,res,record){
+							// Only auto-select new record if exactly 1 record was added and is not a phantom:
+							if(action == "create" && record && typeof record.phantom != 'undefined' && !record.phantom) { 
+								return select_fn(record); 
+							}
+						},this);
+						
+						// "Move" the store add button to the outer window button toolbar:
+						if(this.loadedStoreButtons && this.loadedStoreButtons.add) {
+							var store_add_btn = this.loadedStoreButtons.add;
+							add_btn.setHandler(store_add_btn.handler);
+							add_btn.setVisible(true);
+							store_add_btn.setVisible(false);
+						}
 					},
-					rowdblclick: select_fn
+					rowdblclick: function(){ select_fn(null); }
 				},
 				cmpConfig: {
 					// Obviously this is for grids... not sure if this will cause problems
@@ -811,10 +844,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 					sm: new Ext.grid.RowSelectionModel({singleSelect:true})
 				}
 			},
-			buttons: [
-				select_btn,
-				{ text: 'Cancel', handler: function(){ win.close(); } }
-			],
+			buttons: buttons,
 			listeners: {
 				close: function(){ field.onActionComplete.call(field); }
 			}
