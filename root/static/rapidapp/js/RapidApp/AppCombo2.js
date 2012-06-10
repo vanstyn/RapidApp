@@ -1053,20 +1053,29 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 							
 							// Save references in the window and field:
 							win.app = this, field.appStore = this.store;
-							
+								
+							// Add the 'first_records_cond' (new DbicLink2 feature) which will
+							// move matching records, in our case, the current value, to the top.
+							// this should make the currently selected row ALWAYS be the first item
+							// in the list (on every page, under every sort, etc):
+							this.store.on('beforeload',function(store,options) {
+								var cond = this.get_first_records_cond_param();
+								options.params.first_records_cond = cond;
+							},field);
 							
 							// Safe function to call to load/reload the store:
-							var load_fn = function(){
-								this.store.lastOptions ? this.store.reload() : 
-									this.store.store_autoLoad ? this.store.load(this.store.store_autoLoad) :
-										this.store.load();
+							var fresh_load_fn = function(){
+
+								
+								this.store.store_autoLoad ? this.store.load(this.store.store_autoLoad) :
+									this.store.load();
 							};
 							
 							// one-off load call if the window is already visible:
-							win.isVisible() ? load_fn.call(this) : false;
+							win.isVisible() ? fresh_load_fn.call(this) : false;
 							
 							// Reload the store every time the window is shown:
-							win.on('beforeshow',load_fn,this);
+							win.on('beforeshow',fresh_load_fn,this);
 							
 							
 							var toggleBtn = function() {
@@ -1178,6 +1187,13 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 		return this.appWindow;
 	},
 	
+	get_first_records_cond_param: function() {
+		var value = this.getValue();
+		var rs_cond = {};
+		if (value) { rs_cond[this.valueField] = value; }
+		return Ext.encode(rs_cond);
+	},
+	
 	// This task sets up a custom Ajax query task to the server to lookup the display value
 	// of a given value (id) value. For simplicity the store API is not used; a custom
 	// read operation is simulated. This lookup is designed to work with a DbicApp2
@@ -1198,15 +1214,12 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 		
 		this.queryTask = new Ext.util.DelayedTask(function(){
 
-			if(!this.valueDirty) { return; }
+			if(!this.valueDirty || !this.getValue()) { return; }
 			
 			var store = this.appStore;
 			if(!this.rendered || !store || this.loadPending) { 
 				return this.queryTask.delay(delay);
 			}
-			
-			var rs_cond = {};
-			rs_cond[valueField] = this.getValue();
 			
 			Ext.Ajax.request({
 				url: store.api.read.url,
@@ -1217,7 +1230,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 					start: 0,
 					limit: 1,
 					no_total_count: 1,
-					resultset_condition: Ext.encode(rs_cond)
+					resultset_condition: this.get_first_records_cond_param()
 				},
 				success: function(response,options) {
 					

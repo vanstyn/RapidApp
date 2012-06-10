@@ -336,17 +336,22 @@ sub read_records {
 		
 	my $rows;
 	try {
+		my $start = [gettimeofday];
+		
+		# -----
 		$rows = [ $self->rs_all($Rs2) ];
+		#Hard coded munger for record_pk:
+		foreach my $row (@$rows) { $row->{$self->record_pk} = $self->generate_record_pk_value($row); }
+		$self->apply_first_records($Rs2,$rows,$params);
+		# -----
+		
+		my $elapsed = tv_interval($start);
+		$self->c->stash->{query_time} = sprintf('%.2f',$elapsed) . 's';
 	}
 	catch {
 		my $err = shift;
 		$self->handle_dbic_exception($err);
 	};
-	
-	#Hard coded munger for record_pk:
-	foreach my $row (@$rows) {
-		$row->{$self->record_pk} = $self->generate_record_pk_value($row);
-	}
 	
 	# Now calculate a total, for the grid to display the number of available pages
 	my $total;
@@ -370,19 +375,48 @@ sub read_records {
 }
 
 
+# If optional param 'first_records_cond' was supplied, a second query (sub-set of the original)
+# is ran and matching rows are moved to the top of the list of rows
+sub apply_first_records {
+	my ($self,$Rs,$rows,$params) = @_;
+	return unless ($params && $params->{first_records_cond});
+	
+	my $cond = $self->param_decodeIf($params->{first_records_cond},{});
+	return undef unless (keys %$cond > 0);
+	
+	my $first_rows = [ $Rs->search_rs($cond)->all ];
+	
+	#Hard coded munger for record_pk:
+	foreach my $row (@$first_rows) {
+		$row->{$self->record_pk} = $self->generate_record_pk_value($row);
+	}
+	
+	# concat both sets of rows together, with first_rows first:
+	push @$first_rows, @$rows;
+	
+	# Remove duplicates:
+	my %seen = ();
+	@$first_rows = grep { !$seen{$_->{$self->record_pk}}++ } @$first_rows;
+	
+	# Shorten (truncate) to original length and replace original list with new list:
+	@$rows = splice(@$first_rows, 0,@$rows);
+}
+
+
+
 sub rs_all { 
 	my $self = shift;
 	my $Rs = shift;
-	$self->c->stash->{query_start} = [gettimeofday]; 
+	#$self->c->stash->{query_start} = [gettimeofday]; 
 	return $Rs->all;
 }
 
-after rs_all => sub { 
-	my $self = shift;
-	my $start = $self->c->stash->{query_start} || return undef;
-	my $elapsed = tv_interval($start);
-	$self->c->stash->{query_time} = sprintf('%.2f',$elapsed) . 's';
-};
+#after rs_all => sub { 
+#	my $self = shift;
+#	my $start = $self->c->stash->{query_start} || return undef;
+#	my $elapsed = tv_interval($start);
+#	$self->c->stash->{query_time} = sprintf('%.2f',$elapsed) . 's';
+#};
 
 sub rs_count { 
 	my $self = shift;
