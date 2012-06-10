@@ -389,7 +389,7 @@ sub rs_count {
 	my $Rs2 = shift;
 	my $params = shift || {};
 	
-	return 1 if ($self->single_record_fetch);
+	return 1 if ($self->single_record_fetch || $params->{no_total_count});
 	
 	# Optionally return the client supplied cached total:
 	return $params->{cached_total_count}

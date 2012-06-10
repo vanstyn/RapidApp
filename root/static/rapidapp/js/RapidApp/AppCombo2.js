@@ -792,6 +792,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 	value: null,
 	preloadAppWindow: true,
 	displayCache: {},
+	queryResolveInterval: 50,
 	
 	initComponent: function() {
 		Ext.ux.RapidApp.DataStoreAppField.superclass.initComponent.call(this);
@@ -811,6 +812,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 		// Destroy the window only when we get destroyed:
 		this.on('beforedestroy',function(){
 			if(this.appWindow){ this.appWindow.close(); }
+			if(this.queryTask) { this.queryTask.cancel(); }
 		},this);
 		
 		
@@ -839,23 +841,6 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 		}
 	},
 	
-	setData: function(value,disp,dirty) {
-		if(!dirty) {
-			this.valueDirty = false;
-			this.clearUpdatingClass();
-		}
-		
-		this.dataValue = value;
-		return this.nativeSetValue(disp);
-	},
-	
-	/*
-	setValue: function(value) {
-		delete this.dataValue;
-		return this.nativeSetValue(value);
-	},
-	*/
-	
 	
 	// setValue should only be called from the outside (not us, we call setData) so
 	// it always will be a record id and NOT a display value which we need to lookup:
@@ -863,13 +848,18 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 		this.setUpdatingClass();
 		delete this.dataValue;
 		var disp = this.lookupDisplayValue(value);
-		if(this.valueDirty) {
-			// If the value is 'dirty' we defer calling setData and set the
-			// raw value that was supplied
-			return this.nativeSetValue(value);
+		return this.setData(value,disp,this.valueDirty);
+	},
+	
+	// private
+	setData: function(value,disp,dirty) {
+		if(!dirty) {
+			this.valueDirty = false;
+			this.clearUpdatingClass();
+			this.displayCache[value] = disp;
 		}
-		
-		return this.setData(value,disp);
+		this.dataValue = value;
+		return this.nativeSetValue(disp);
 	},
 	
 	lookupDisplayValue: function(value) {
@@ -878,10 +868,19 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 			return value;
 		}
 		
+		// If the value is not already dirty and we already have it in our cache,
+		// return the cached value:
+		if(!this.valueDirty && this.displayCache[value]) {
+			return this.displayCache[value];
+		}
+		
 		var store = this.appStore;
 		
 		var handle_dirty = function(){
-			this.valueDirty = true; return value; 
+			this.valueDirty = true; 
+			// If the value is 'dirty' we start the query resolver task:
+			this.queryResolveDisplayValue();
+			return value; 
 		};
 		
 		if(!store) { return handle_dirty.call(this); }
@@ -895,7 +894,6 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 		}
 		
 		var disp = Record.data[this.displayField];
-		this.displayCache[value] = disp;
 		
 		this.valueDirty = false;
 		return disp;
@@ -1035,6 +1033,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 							// Save references in the window and field:
 							win.app = this, field.appStore = this.store;
 							
+							
 							// Safe function to call to load/reload the store:
 							var load_fn = function(){
 								this.store.lastOptions ? this.store.reload() : 
@@ -1067,8 +1066,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 							},this);
 							
 							this.store.on('load',function(){
-								this.loadPending = false;
-								
+
 								// If the value is dirty, check if this load has the Record of the current
 								// value, and if it does, opportunistically update the display:
 								if(this.valueDirty) {
@@ -1090,6 +1088,8 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 										this.setData(value,disp);
 									}
 								}
+								
+								this.loadPending = false;
 							},field);
 							
 							// "Move" the store add button to the outer window button toolbar:
@@ -1131,6 +1131,69 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 		}
 		
 		return this.appWindow;
+	},
+	
+	// This task sets up a custom Ajax query task to the server to lookup the display value
+	// of a given value (id) value. For simplicity the store API is not used; a custom
+	// read operation is simulated. This lookup is designed to work with a DbicApp2
+	// backend. The process uses Ext.util.DelayedTask to wait until the store is ready,
+	// and also to wait and see if a normal read is in progress if that might be able
+	// to opportunistically resolve the display value, in which case the task is cancelled.
+	// Also, since this is asynchronous, it checks at the various stages of processing to
+	// see if the 'dirty' status (meaning the display value isn't available yet) has been
+	// resolved, in which case this task aborts at whatever stage it is at. this is very 
+	// efficient....
+	queryResolveDisplayValue: function(value) {
+		
+		var delay = this.queryResolveInterval,
+			valueField = this.valueField,
+			displayField = this.displayField;
+		
+		if(this.queryTask) { this.queryTask.cancel(); }
+		
+		this.queryTask = new Ext.util.DelayedTask(function(){
+
+			if(!this.valueDirty) { return; }
+			
+			var store = this.appStore;
+			if(!this.rendered || !store || this.loadPending) { 
+				return this.queryTask.delay(delay);
+			}
+			
+			var rs_cond = {};
+			rs_cond[valueField] = this.getValue();
+			
+			Ext.Ajax.request({
+				url: store.api.read.url,
+				method: 'POST',
+				params: {
+					columns: Ext.encode([this.displayField,this.valueField]),
+					dir: 'ASC',
+					start: 0,
+					limit: 1,
+					no_total_count: 1,
+					resultset_condition: Ext.encode(rs_cond)
+				},
+				success: function(response,options) {
+					
+					if(!this.valueDirty) { return; }
+					
+					var res = Ext.decode(response.responseText);
+					if(res.rows) {
+						var row = res.rows[0];
+						var val = row[valueField], disp = row[displayField];
+						
+						if(val == this.getValue()) {
+							this.setData(val,disp);
+						}
+					}
+				},
+				scope: this
+			});
+			
+		},this);
+		
+		this.queryTask.delay(delay);
 	}
 	
 });
