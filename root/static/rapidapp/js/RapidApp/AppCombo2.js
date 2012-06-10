@@ -1065,7 +1065,19 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 							
 							// Safe function to call to load/reload the store:
 							var fresh_load_fn = function(){
-
+								
+								// manually clear the quicksearch:
+								if(this.quicksearch_plugin) {
+									this.quicksearch_plugin.field.setValue('');
+									this.store.purgeParams(['fields','query']);
+								}
+								
+								// manually clear any multifilters:
+								if(this.multifilter) {
+									delete this.store.filterdata;
+									delete this.store.filterdata_frozen;
+									this.multifilter.updateFilterBtn.call(this.multifilter);
+								}
 								
 								this.store.store_autoLoad ? this.store.load(this.store.store_autoLoad) :
 									this.store.load();
@@ -1190,7 +1202,13 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 	get_first_records_cond_param: function() {
 		var value = this.getValue();
 		var rs_cond = {};
-		if (value) { rs_cond[this.valueField] = value; }
+		var colname = this.valueField;
+		if(colname.search(/__/) == -1) {
+			// hackish, fixme. If there is no double-underscore (aka join) we add
+			// 'me.' to prevent ambiguous column error. This is very specific to DbicLink2
+			colname = 'me.' + colname;
+		}
+		if (value) { rs_cond[colname] = value; }
 		return Ext.encode(rs_cond);
 	},
 	

@@ -779,6 +779,8 @@ Ext.extend(Ext.ux.RapidApp.Plugin.GridQuickSearch, Ext.util.Observable, {
 	init:function(grid) {
 		this.grid = grid;
 		
+		grid.quicksearch_plugin = this;
+		
 		// -- New: disable plugin if there are no quick_search columns (2012-04-11 by HV)
 		if(!this.getQuickSearchColumns().length > 0) { return; }
 		// --
@@ -2019,6 +2021,24 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				}
 			}
 		};
+		
+		
+		// -- This function purges out a list of param names from lastOptions 
+		// and baseParams. This is still a major problem with the way stores
+		// and various plugins operate:
+		store.purgeParams = function(names) {
+			Ext.each(names,function(name){
+				if(store.baseParams[name]) { 
+					delete store.baseParams[name]; 
+				}
+				if(store.lastOptions && store.lastOptions.params) {
+					if(store.lastOptions.params[name]) { 
+						delete store.lastOptions.params[name]; 
+					}
+				}
+			},this);
+		};
+		// --
 		
 		store.addEvents('saveall');
 		store.on('beforesave',function() {
