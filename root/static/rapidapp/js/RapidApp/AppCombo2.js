@@ -862,6 +862,39 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 		return this.nativeSetValue(disp);
 	},
 	
+	findRecordIndex: function(value) {
+		var store = this.appStore;
+		if(!store || !value) { return -1; }
+		return store.findExact(this.valueField,value);
+	},
+	
+	// Checks to see if the current record cache has a supplied id value (valueField)
+	// and returns the associated display value if it does
+	lookupDispInRecords: function(value) {
+		if(this.noDisplayLookups) { 
+			this.lastDispRecordsLookupsFound = true;
+			return value; 
+		}
+		
+		this.lastDispRecordsLookupsFound = false;
+		
+		var store = this.appStore;
+		if(!store || !value) { return null; }
+		
+		var index = this.findRecordIndex(value);
+		if(index == -1) { return null; }
+		
+		var Record = store.getAt(index);
+		if(!Record || typeof Record.data[this.displayField] == 'undefined') {
+			return null;
+		}
+		
+		// we set this global so we don't have to rely on a return value (since maybe the value
+		// should be null, should be false, etc)
+		this.lastDispRecordsLookupsFound = true;
+		return Record.data[this.displayField];
+	},
+	
 	lookupDisplayValue: function(value) {
 		if(!value || this.noDisplayLookups) { 
 			this.valueDirty = false;
@@ -874,26 +907,14 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 			return this.displayCache[value];
 		}
 		
-		var store = this.appStore;
-		
-		var handle_dirty = function(){
+		delete this.lastDispRecordsLookupsFound;
+		var disp = this.lookupDispInRecords(value);
+		if(!this.lastDispRecordsLookupsFound) {
 			this.valueDirty = true; 
 			// If the value is 'dirty' we start the query resolver task:
 			this.queryResolveDisplayValue();
-			return value; 
-		};
-		
-		if(!store) { return handle_dirty.call(this); }
-		
-		var index = store.findExact(this.valueField,value);
-		if(index == -1) { return handle_dirty.call(this); }
-
-		var Record = store.getAt(index);
-		if(!Record || typeof Record.data[this.displayField] == 'undefined') {
-			return handle_dirty.call(this);
+			return value;
 		}
-		
-		var disp = Record.data[this.displayField];
 		
 		this.valueDirty = false;
 		return disp;
@@ -1066,12 +1087,13 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 							},this);
 							
 							this.store.on('load',function(){
+								
+								var value = this.getValue(), disp;
 
 								// If the value is dirty, check if this load has the Record of the current
 								// value, and if it does, opportunistically update the display:
 								if(this.valueDirty) {
-									var value = this.getValue();
-									var disp = this.lookupDisplayValue(value);
+									disp = this.lookupDisplayValue(value);
 									if(this.valueDirty) {
 										// If the value is still dirty, but there is an entry in the cache,
 										// update the display with it, since it is still the last known/best
@@ -1088,8 +1110,31 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 										this.setData(value,disp);
 									}
 								}
+								else {
+									// If the value is not currently marked as dirty, still do a lookup in the
+									// store to opportunistically update it, in case the value has changed on
+									// the backend since the first time we fetched it:
+									delete this.lastDispRecordsLookupsFound;
+									disp = this.lookupDispInRecords(value);
+									if(this.lastDispRecordsLookupsFound) { 
+										this.setData(value,disp);
+									}
+								}
 								
 								this.loadPending = false;
+								
+								if(Ext.isFunction(win.app.getSelectionModel)) {
+									// If the current value is in the current Record cache, try to select the
+									// row in the grid
+									var sm = win.app.getSelectionModel();
+									var index = this.findRecordIndex(value);
+									if(index != -1) { 
+										sm.selectRow(index);
+									}
+									else {
+										sm.clearSelections();
+									}
+								}
 							},field);
 							
 							// "Move" the store add button to the outer window button toolbar:
