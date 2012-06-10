@@ -782,36 +782,42 @@ Ext.WindowMgr.zseed = 12000;
 
 Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 	
-	initComponent: function() {
-		Ext.ux.RapidApp.DataStoreAppField.superclass.initComponent.call(this);
-		
-		this.on('render',function(){
-			//console.log('render (' + this.id + ')');
-			
-			// init the window/app in the background immediately:
-			this.getAppWindow();
-		},this);
-		
-		this.on('beforedestroy',function(){
-			//console.log('beforedestroy (' + this.id + ')');
-			if(this.appWindow){ this.appWindow.close(); }
-		},this);
-		
-	},
-	
-	
-	
 	fieldClass: 'ra-datastore-app-field',
-	
 	invalidClass: 'ra-datastore-app-field-invalid',
-	
+	updatingClass: 'ra-datastore-app-field-updating',
 	actionOnShow: true,
-	
 	win_title: 'Select',
 	win_width: 500,
 	win_height: 450,
-
 	value: null,
+	preloadAppWindow: true,
+	displayCache: {},
+	
+	initComponent: function() {
+		Ext.ux.RapidApp.DataStoreAppField.superclass.initComponent.call(this);
+		
+		if(!this.valueField || !this.displayField || this.valueField == this.displayField) {
+			this.noDisplayLookups = true;
+		}
+		
+		if(this.preloadAppWindow){
+			// init the window/app in the background as soon as we're
+			// rendered (but before the user has clicked/triggered the 
+			// action to show the window. It will have a head start and
+			// load much faster):
+			this.on('render',this.getAppWindow,this);
+		}
+		
+		// Destroy the window only when we get destroyed:
+		this.on('beforedestroy',function(){
+			if(this.appWindow){ this.appWindow.close(); }
+		},this);
+		
+		
+		//this.on('destroy',function(){	console.log('destroy (' + this.id + ')'); },this);
+		//this.on('render',function(){	console.log('render (' + this.id + ')'); },this);
+		
+	},
 	
 	onActionComplete: function() {
 		this.fireEvent.defer(50,this,['select']);
@@ -821,14 +827,78 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 		this.displayWindow();
 	},
 	
-	setValue: function() {
-		delete this.dataValue;
-		return this.nativeSetValue.apply(this,arguments);
+	setUpdatingClass: function() {
+		if (this.rendered && !this.preventMark) {
+			this.el.addClass(this.updatingClass);
+		}
 	},
 	
-	setValue: function() {
+	clearUpdatingClass: function() {
+		if (this.rendered && !this.preventMark) {
+			this.el.removeClass(this.updatingClass);
+		}
+	},
+	
+	setData: function(value,disp,dirty) {
+		if(!dirty) {
+			this.valueDirty = false;
+			this.clearUpdatingClass();
+		}
+		
+		this.dataValue = value;
+		return this.nativeSetValue(disp);
+	},
+	
+	/*
+	setValue: function(value) {
 		delete this.dataValue;
-		return this.nativeSetValue.apply(this,arguments);
+		return this.nativeSetValue(value);
+	},
+	*/
+	
+	
+	// setValue should only be called from the outside (not us, we call setData) so
+	// it always will be a record id and NOT a display value which we need to lookup:
+	setValue: function(value) {
+		this.setUpdatingClass();
+		delete this.dataValue;
+		var disp = this.lookupDisplayValue(value);
+		if(this.valueDirty) {
+			// If the value is 'dirty' we defer calling setData and set the
+			// raw value that was supplied
+			return this.nativeSetValue(value);
+		}
+		
+		return this.setData(value,disp);
+	},
+	
+	lookupDisplayValue: function(value) {
+		if(!value || this.noDisplayLookups) { 
+			this.valueDirty = false;
+			return value;
+		}
+		
+		var store = this.appStore;
+		
+		var handle_dirty = function(){
+			this.valueDirty = true; return value; 
+		};
+		
+		if(!store) { return handle_dirty.call(this); }
+		
+		var index = store.findExact(this.valueField,value);
+		if(index == -1) { return handle_dirty.call(this); }
+
+		var Record = store.getAt(index);
+		if(!Record || typeof Record.data[this.displayField] == 'undefined') {
+			return handle_dirty.call(this);
+		}
+		
+		var disp = Record.data[this.displayField];
+		this.displayCache[value] = disp;
+		
+		this.valueDirty = false;
+		return disp;
 	},
 	
 	getValue: function() {
@@ -839,6 +909,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 	},
 	
 	displayWindow: function() {
+		this.loadPending = true;
 		this.getAppWindow().show();
 	},
 	
@@ -848,11 +919,36 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 			var win, field = this;
 			var autoLoad = this.autoLoad || { url: this.load_url };
 			
+			var select_fn = function(Record) {
+				if(!win || !win.app){ return; }
+				if(!Record) {
+					var records = win.app.getSelectedRecords();
+					Record = records[0];
+				}
+				
+				if(!Record) { return; }
+				
+				var value = Record.data[field.valueField], 
+					disp = Record.data[field.displayField];
+				
+				if(typeof value != 'undefined') {
+					if(typeof disp != 'undefined') {
+						field.setData(value,disp);
+					}
+					else {
+						field.setData(value,value);
+					}
+					
+					win.hide();
+				}
+			};
+			
 			var select_btn = new Ext.Button({
 				text: '&nbsp;Select',
 				width: 90,
 				iconCls: 'icon-selection-up-blue',
 				handler: function(){ select_fn(null); },
+				scope: this,
 				disabled: true
 			});
 			
@@ -874,10 +970,12 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 					text: 'Select None (empty)',
 					iconCls: 'icon-selection',
 					handler: function(){
-						field.setValue(null);
-						field.dataValue = null;
+						//field.dataValue = null;
+						//field.setValue(null);
+						field.setData(null,null);
 						win.hide();
-					}
+					},
+					scope: this
 				}));
 			}
 			
@@ -911,26 +1009,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 			};
 			Ext.apply(cmpConfig,this.cmpConfig || {});
 			
-			var select_fn = function(Record) {
-				if(!Record) {
-					var app = win.getComponent('app').items.first();
-					var records = app.getSelectedRecords();
-					Record = records[0];
-				}
-				
-				if(!Record) { return; }
-				
-				var value = Record.data[field.valueField];
-				var disp = Record.data[field.displayField];
-				if(typeof value != 'undefined') {
-					field.setValue(value);
-					if(typeof disp != 'undefined') {
-						field.setValue(disp);
-						field.dataValue = value;
-					}
-					win.hide();
-				}
-			};
+			
 			
 			win = new Ext.Window({
 				buttonAlign: 'left',
@@ -952,6 +1031,9 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 					layout: 'fit',
 					cmpListeners: {
 						afterrender: function(){
+							
+							// Save references in the window and field:
+							win.app = this, field.appStore = this.store;
 							
 							// Safe function to call to load/reload the store:
 							var load_fn = function(){
@@ -983,6 +1065,32 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 									return select_fn(record); 
 								}
 							},this);
+							
+							this.store.on('load',function(){
+								this.loadPending = false;
+								
+								// If the value is dirty, check if this load has the Record of the current
+								// value, and if it does, opportunistically update the display:
+								if(this.valueDirty) {
+									var value = this.getValue();
+									var disp = this.lookupDisplayValue(value);
+									if(this.valueDirty) {
+										// If the value is still dirty, but there is an entry in the cache,
+										// update the display with it, since it is still the last known/best
+										// value
+										var disp_cache = this.displayCache[value];
+										if(disp_cache) {
+											// Call setData with the 'dirty' flag on:
+											this.setData(value,disp_cache,true);
+										}
+									}
+									else {
+										// If the value is no longer dirty, disp must contain the needed 
+										// display value, set it:
+										this.setData(value,disp);
+									}
+								}
+							},field);
 							
 							// "Move" the store add button to the outer window button toolbar:
 							if(this.loadedStoreButtons && this.loadedStoreButtons.add) {

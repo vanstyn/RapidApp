@@ -245,7 +245,7 @@ pre {
 .icon-selection-up { background-image: url(/static/rapidapp/images/selection_up.png) !important; }
 .icon-selection-up-blue { background-image: url(/static/rapidapp/images/selection_up_blue.png) !important; }
 .icon-selection-add { background-image: url(/static/rapidapp/images/selection_add.png) !important; }
-
+.icon-progress-green-blocks { background-image: url(/static/rapidapp/images/progress_green_blocks.gif) !important; }
 
 
 
@@ -1382,7 +1382,10 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 
 .ra-datastore-app-field {
   display: block;
-  padding: 2px 2px 1px 20px;
+  padding-top: 2px;
+  padding-right: 12px;
+  padding-bottom: 1px;
+  padding-left: 20px;
   position: relative;
   z-index: 2;
   cursor: pointer;
@@ -1403,3 +1406,12 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
   background-color: #FFCCCC !important;
 }
 
+.ra-datastore-app-field-updating {
+  background-image: url(/static/rapidapp/images/progress_green_blocks.gif) !important;
+  background-position: 4px center;
+  padding-right: 2px !important;
+  padding-left: 30px !important;
+  color: #B3B3B3 !important;
+  font-style:italic !important;
+  font: 10px tahoma,arial,helvetica,sans-serif !important;
+}
