@@ -1464,12 +1464,12 @@ sub get_relationship_column_cnf {
 				}
 			);
 			
-			
+			my $title = $conf->{header} ? 'Select Record' : 'Select ' . $conf->{header};
 			$conf->{editor} = { 
 
 				# These can be overridden
 				header			=> $conf->{header},
-				win_title		=> 'Select ' . $conf->{header},
+				win_title		=> $title,
 				win_height		=> 450,
 				win_width		=> 650,
 				
@@ -1488,11 +1488,12 @@ sub get_relationship_column_cnf {
 		case 'custom' {
 			
 			# Use whatever is already in 'editor' plus some sane defaults
+			my $title = $conf->{header} ? 'Select Record' : 'Select ' . $conf->{header};
 			$conf->{editor} = { 
 
 				# These can be overridden
 				header			=> $conf->{header},
-				win_title		=> 'Select ' . $conf->{header},
+				win_title		=> $title,
 				win_height		=> 450,
 				win_width		=> 650,
 				valueField		=> $conf->{valueField},
