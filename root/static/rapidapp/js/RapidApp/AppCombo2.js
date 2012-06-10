@@ -815,6 +815,19 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 			if(this.queryTask) { this.queryTask.cancel(); }
 		},this);
 		
+		// -- Automatically hide the window if it is visible and a nav/load target
+		// event happens in the main loadTarget. This can happen if, for example,
+		// the user clicks an 'open' link within the grid combo to a related object
+		var loadTarget = Ext.getCmp("explorer-id").getComponent("load-target");
+		if(loadTarget){
+			loadTarget.on('navload',function(){
+				if(this.appWindow && this.appWindow.isVisible()){
+					this.appWindow.hide();
+				}
+			},this);
+		}
+		// --
+		
 		
 		//this.on('destroy',function(){	console.log('destroy (' + this.id + ')'); },this);
 		//this.on('render',function(){	console.log('render (' + this.id + ')'); },this);

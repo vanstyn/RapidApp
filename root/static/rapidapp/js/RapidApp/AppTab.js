@@ -12,6 +12,8 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 			},this);
 		}
 		
+		this.addEvents( 'navload' );
+		
 		if(!this.plugins) { this.plugins = []; };
 		this.plugins.push('tabpanel-closeall');
 		
@@ -35,6 +37,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 	},
 	
 	loadContent: function() {
+		this.fireEvent( 'navload' );
 		this.loadTab.apply(this,arguments);
 	},
 
