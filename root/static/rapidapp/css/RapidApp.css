@@ -1418,3 +1418,11 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
   font-style:italic !important;
   font: 10px tahoma,arial,helvetica,sans-serif !important;
 }
+
+.ra-bold-grid-row .x-grid3-cell-inner {
+  font-weight: bold;
+  font-size: 1.1em;
+  color: #800080;
+  text-shadow:1px 1px 2px #989898;
+}
+

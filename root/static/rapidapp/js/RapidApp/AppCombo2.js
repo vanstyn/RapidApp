@@ -1066,6 +1066,8 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 							// Safe function to call to load/reload the store:
 							var fresh_load_fn = function(){
 								
+								if(win.app.view) { win.app.view.scrollToTop(); }
+								
 								// manually clear the quicksearch:
 								if(this.quicksearch_plugin) {
 									this.quicksearch_plugin.field.setValue('');
@@ -1151,6 +1153,10 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 									var index = this.findRecordIndex(value);
 									if(index != -1) { 
 										sm.selectRow(index);
+										if(win.app.view){
+											var rowEl = new Ext.Element(win.app.view.getRow(index));
+											if(rowEl) { rowEl.addClass('ra-bold-grid-row'); }
+										}
 									}
 									else {
 										sm.clearSelections();
