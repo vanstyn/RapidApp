@@ -2368,13 +2368,26 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		};
 		
 		var save_handler = function(btn) {
-			var form = btn.ownerCt.ownerCt.getForm();
+			var fp = btn.ownerCt.ownerCt, form = fp.getForm();
+			
+			// Disable the form panel to prevent user interaction during the save.
+			// Tthere is also a global load mask set on updates, but it is possible 
+			// that the form could be above it if this is a chained sequences of
+			// created records, so this is an extra safety measure in that case:
+			fp.setDisabled(true);
+			
+			// Re-enable the form panel if an exception occurs so the user can
+			// try again. We don't need to do this on success because we close
+			// the form/window:
+			var fp_enable_handler = function(){ fp.setDisabled(false); }
+			store.on('exception',fp_enable_handler,this);
 			
 			// Use a copy of the new record in case the save fails and we need to try again:
 			var newRecord = newRec.copy();
 			newRecord.phantom = true; //<-- the copy doesn't have this set like the original... why?
 			
 			form.updateRecord(newRecord);
+			
 			store.add(newRecord);
 			
 			if(plugin.persist_immediately.create) {
@@ -2386,12 +2399,15 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					store.un('write',after_write_fn);
 					// Remove ourselves as we are also a single-use handler:
 					store.un('exception',remove_handler);
+					// remove the enable handler:
+					store.un('exception',fp_enable_handler);
 				}
 				
 				after_write_fn = function(store,action) {
 					if(action == 'create') {
 						// Remove ourselves as we are a single-use handler:
 						remove_handler();
+						
 						// close the add form only after successful create on the server:
 						close_handler(btn);
 					}
