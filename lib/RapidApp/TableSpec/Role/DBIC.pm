@@ -1464,7 +1464,7 @@ sub get_relationship_column_cnf {
 				}
 			);
 			
-			my $title = $conf->{header} ? 'Select Record' : 'Select ' . $conf->{header};
+			my $title = $conf->{header} ? 'Select ' . $conf->{header} : 'Select Record';
 			$conf->{editor} = { 
 
 				# These can be overridden
@@ -1488,7 +1488,7 @@ sub get_relationship_column_cnf {
 		case 'custom' {
 			
 			# Use whatever is already in 'editor' plus some sane defaults
-			my $title = $conf->{header} ? 'Select Record' : 'Select ' . $conf->{header};
+			my $title = $conf->{header} ? 'Select ' . $conf->{header} : 'Select Record';
 			$conf->{editor} = { 
 
 				# These can be overridden
