@@ -300,12 +300,20 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		}
 		// --
 		
+		// Check to make sure store_autoLoad has not been set to a false value in
+		// either the store or the grid config (which is now allowed to override the
+		// store setting, see datastore-plus code)
+		var store_autoLoad_disabled = (
+			(typeof this.store_autoLoad != 'undefined' && !this.store_autoLoad) || 
+			!this.store.store_autoLoad
+		) ? true : false;
+		
 		// -- Workaround - manual single-use loadMask for the very first load
 		// Need to investigate more why this is needed, and why the 'loadMask' grid
 		// setting doesn't work on the first store load. I think it is related to
 		// load order and possibly autoPanel. 
 		// TODO: generalize/move this into datastore-plus
-		if(!this.collapsed) {
+		if(!this.collapsed && !store_autoLoad_disabled) {
 			this.on('afterrender',function() {
 				var lMask = new Ext.LoadMask(this.getEl(),{ msg: "Loading Data Set" });
 				lMask.show();

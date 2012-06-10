@@ -782,6 +782,25 @@ Ext.WindowMgr.zseed = 12000;
 
 Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 	
+	initComponent: function() {
+		Ext.ux.RapidApp.DataStoreAppField.superclass.initComponent.call(this);
+		
+		this.on('render',function(){
+			//console.log('render (' + this.id + ')');
+			
+			// init the window/app in the background immediately:
+			this.getAppWindow();
+		},this);
+		
+		this.on('beforedestroy',function(){
+			//console.log('beforedestroy (' + this.id + ')');
+			if(this.appWindow){ this.appWindow.close(); }
+		},this);
+		
+	},
+	
+	
+	
 	fieldClass: 'ra-datastore-app-field',
 	
 	invalidClass: 'ra-datastore-app-field-invalid',
@@ -820,153 +839,190 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 	},
 	
 	displayWindow: function() {
+		this.getAppWindow().show();
+	},
+	
+	getAppWindow: function() {
+		if(!this.appWindow) {
 		
-		var win, field = this;
-		var autoLoad = this.autoLoad || { url: this.load_url };
-		
-		var select_btn = new Ext.Button({
-			text: '&nbsp;Select',
-			width: 90,
-			iconCls: 'icon-selection-up-blue',
-			handler: function(){ select_fn(null); },
-			disabled: true
-		});
-		
-		var add_btn = new Ext.Button({
-			text: '<span style="font-weight:bold;font-size:1.1em;">Add New</span>',
-			iconCls: 'icon-selection-add',
-			handler: Ext.emptyFn,
-			hidden: true
-		});
-		
-		var buttons = [
-			'->',
-			select_btn,
-			{ text: 'Cancel', handler: function(){ win.close(); } }
-		];
+			var win, field = this;
+			var autoLoad = this.autoLoad || { url: this.load_url };
 			
-		if(this.allowBlank){
-			buttons.unshift(new Ext.Button({
-				text: 'Select None (empty)',
-				iconCls: 'icon-selection',
-				handler: function(){
-					field.setValue(null);
-					field.dataValue = null;
-					win.close();
+			var select_btn = new Ext.Button({
+				text: '&nbsp;Select',
+				width: 90,
+				iconCls: 'icon-selection-up-blue',
+				handler: function(){ select_fn(null); },
+				disabled: true
+			});
+			
+			var add_btn = new Ext.Button({
+				text: '<span style="font-weight:bold;font-size:1.1em;">Add New</span>',
+				iconCls: 'icon-selection-add',
+				handler: Ext.emptyFn,
+				hidden: true
+			});
+			
+			var buttons = [
+				'->',
+				select_btn,
+				{ text: 'Cancel', handler: function(){ win.hide(); } }
+			];
+				
+			if(this.allowBlank){
+				buttons.unshift(new Ext.Button({
+					text: 'Select None (empty)',
+					iconCls: 'icon-selection',
+					handler: function(){
+						field.setValue(null);
+						field.dataValue = null;
+						win.hide();
+					}
+				}));
+			}
+			
+			var cmpConfig = {
+				// Obviously this is for grids... not sure if this will cause problems
+				// in the case of AppDVs
+				sm: new Ext.grid.RowSelectionModel({singleSelect:true}),
+				
+				// Turn off store_autoLoad (we'll be loading on show and special actions):
+				store_autoLoad: false,
+				
+				// Don't allow delete per default
+				store_exclude_buttons: [ 'delete' ],
+				
+				// If add is allowed, we need to make sure it uses a window and NOT a tab
+				use_add_form: 'window',
+				
+				// Default the add form, (if add is allowed) to match the window size
+				add_form_window_cnf: {
+					height: this.win_height,
+					width: this.win_width
+				},
+				
+				// Make sure this is off to prevent trying to open a new record after being created
+				// for this context we select the record after it is created
+				autoload_added_record: false,
+				
+				// Put the add_btn in the tbar (which we override):
+				tbar:[add_btn,'->'],
+				
+			};
+			Ext.apply(cmpConfig,this.cmpConfig || {});
+			
+			var select_fn = function(Record) {
+				if(!Record) {
+					var app = win.getComponent('app').items.first();
+					var records = app.getSelectedRecords();
+					Record = records[0];
 				}
-			}));
+				
+				if(!Record) { return; }
+				
+				var value = Record.data[field.valueField];
+				var disp = Record.data[field.displayField];
+				if(typeof value != 'undefined') {
+					field.setValue(value);
+					if(typeof disp != 'undefined') {
+						field.setValue(disp);
+						field.dataValue = value;
+					}
+					win.hide();
+				}
+			};
+			
+			win = new Ext.Window({
+				buttonAlign: 'left',
+				hidden: true,
+				title: this.win_title,
+				layout: 'fit',
+				width: this.win_width,
+				height: this.win_height,
+				closable: true,
+				closeAction: 'hide',
+				modal: true,
+				hideBorders: true,
+				items: {
+					xtype: 'autopanel',
+					bodyStyle: 'border: none',
+					hideBorders: true,
+					itemId: 'app',
+					autoLoad: autoLoad,
+					layout: 'fit',
+					cmpListeners: {
+						afterrender: function(){
+							
+							// Safe function to call to load/reload the store:
+							var load_fn = function(){
+								this.store.lastOptions ? this.store.reload() : 
+									this.store.store_autoLoad ? this.store.load(this.store.store_autoLoad) :
+										this.store.load();
+							};
+							
+							// one-off load call if the window is already visible:
+							win.isVisible() ? load_fn.call(this) : false;
+							
+							// Reload the store every time the window is shown:
+							win.on('beforeshow',load_fn,this);
+							
+							
+							var toggleBtn = function() {
+								if (this.getSelectedRecords.call(this).length > 0) {
+									select_btn.setDisabled(false);
+								}
+								else {
+									select_btn.setDisabled(true);
+								}
+							};
+							this.on('selectionchange',toggleBtn,this);
+							
+							this.store.on('write',function(ds,action,result,res,record){
+								// Only auto-select new record if exactly 1 record was added and is not a phantom:
+								if(action == "create" && record && typeof record.phantom != 'undefined' && !record.phantom) { 
+									return select_fn(record); 
+								}
+							},this);
+							
+							// "Move" the store add button to the outer window button toolbar:
+							if(this.loadedStoreButtons && this.loadedStoreButtons.add) {
+								var store_add_btn = this.loadedStoreButtons.add;
+								add_btn.setHandler(store_add_btn.handler);
+								add_btn.setVisible(true);
+								store_add_btn.setVisible(false);
+							}
+							
+							// Disable any loadTarget that is defined. This is a hackish way to disable
+							// any existing double-click open setting. TODO: do this properly
+							this.loadTargetObj = null;
+							
+						},
+						rowdblclick: function(){ select_fn(null); }
+					},
+					cmpConfig: cmpConfig
+				},
+				buttons: buttons,
+				listeners: {
+					hide: function(){
+						field.onActionComplete.call(field);
+						field.validate.call(field);
+						//console.log('  win: hide (' + field.id + '/' + win.id + ')');
+					},
+					render: function(){
+						//console.log('  win: render (' + field.id + '/' + win.id + ')');
+					},
+					beforedestroy: function(){
+						//console.log('  win: beforedestroy (' + field.id + '/' + win.id + ')');
+					}
+				}
+			});
+			
+			win.render(Ext.getBody());
+			
+			this.appWindow = win;
 		}
 		
-		var cmpConfig = {
-			// Obviously this is for grids... not sure if this will cause problems
-			// in the case of AppDVs
-			sm: new Ext.grid.RowSelectionModel({singleSelect:true}),
-			
-			// Don't allow delete per default
-			store_exclude_buttons: [ 'delete' ],
-			
-			// If add is allowed, we need to make sure it uses a window and NOT a tab
-			use_add_form: 'window',
-			
-			// Default the add form, (if add is allowed) to match the window size
-			add_form_window_cnf: {
-				height: this.win_height,
-				width: this.win_width
-			},
-			
-			// Make sure this is off to prevent trying to open a new record after being created
-			// for this context we select the record after it is created
-			autoload_added_record: false,
-			
-			// Put the add_btn in the tbar (which we override):
-			tbar:[add_btn,'->'],
-			
-		};
-		Ext.apply(cmpConfig,this.cmpConfig || {});
-		
-		var select_fn = function(Record) {
-			if(!Record) {
-				var app = win.getComponent('app').items.first();
-				var records = app.getSelectedRecords();
-				Record = records[0];
-			}
-			
-			if(!Record) { return; }
-			
-			var value = Record.data[field.valueField];
-			var disp = Record.data[field.displayField];
-			if(typeof value != 'undefined') {
-				field.setValue(value);
-				if(typeof disp != 'undefined') {
-					field.setValue(disp);
-					field.dataValue = value;
-				}
-				win.close();
-			}
-		};
-		
-		win = new Ext.Window({
-			buttonAlign: 'left',
-			title: this.win_title,
-			layout: 'fit',
-			width: this.win_width,
-			height: this.win_height,
-			closable: true,
-			modal: true,
-			hideBorders: true,
-			items: {
-				xtype: 'autopanel',
-				bodyStyle: 'border: none',
-				hideBorders: true,
-				itemId: 'app',
-				autoLoad: autoLoad,
-				layout: 'fit',
-				cmpListeners: {
-					afterrender: function(){
-						var toggleBtn = function() {
-							if (this.getSelectedRecords.call(this).length > 0) {
-								select_btn.setDisabled(false);
-							}
-							else {
-								select_btn.setDisabled(true);
-							}
-						};
-						this.on('selectionchange',toggleBtn,this);
-						
-						this.store.on('write',function(ds,action,result,res,record){
-							// Only auto-select new record if exactly 1 record was added and is not a phantom:
-							if(action == "create" && record && typeof record.phantom != 'undefined' && !record.phantom) { 
-								return select_fn(record); 
-							}
-						},this);
-						
-						// "Move" the store add button to the outer window button toolbar:
-						if(this.loadedStoreButtons && this.loadedStoreButtons.add) {
-							var store_add_btn = this.loadedStoreButtons.add;
-							add_btn.setHandler(store_add_btn.handler);
-							add_btn.setVisible(true);
-							store_add_btn.setVisible(false);
-						}
-						
-						// Disable any loadTarget that is defined. This is a hackish way to disable
-						// any existing double-click open setting. TODO: do this properly
-						this.loadTargetObj = null;
-						
-					},
-					rowdblclick: function(){ select_fn(null); }
-				},
-				cmpConfig: cmpConfig
-			},
-			buttons: buttons,
-			listeners: {
-				close: function(){ 
-					field.onActionComplete.call(field);
-					field.validate.call(field);
-				}
-			}
-		});
-		
-		win.show();
+		return this.appWindow;
 	}
 	
 });

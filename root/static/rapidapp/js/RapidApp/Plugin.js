@@ -1359,12 +1359,17 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		// on 'render' in order to be delayed, in the case of the component being
 		// within a collapsed panel, etc. This is partnered with the setting set
 		// within DataStore2
-		if(cmp.store.store_autoLoad) {
+		if(typeof cmp.store_autoLoad == 'undefined'){
+			// Optionally override value from the cmp, if it exists:
+			cmp.store_autoLoad = cmp.store.store_autoLoad;
+		}
+		if(cmp.store_autoLoad) {
 			var onFirstShow;
 			onFirstShow = function(){
 				// only load if its the first load and not collapsed:
 				if(!cmp.store.lastOptions && !cmp.collapsed){
-					cmp.store.load(cmp.store.store_autoLoad);
+					var params = Ext.isObject(cmp.store_autoLoad) ? cmp.store_autoLoad : {};
+					cmp.store.load(params);
 				}
 			}
 			cmp.on('render',onFirstShow,this);
@@ -2594,6 +2599,11 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		this.store.on('beforeload',grid.applyColumnSummaryParams);
 		*/
 		
+		// -- Make sure these exist to prevent possible undef errors later on:
+		//this.store.baseParams = this.store.baseParams || {};
+		//this.store.lastOptions = this.store.lastOptions || {};
+		//this.store.lastOptions.params = this.store.lastOptions.params || {};
+		// --
 		
 		this.store.on('beforeload',function(store,options) {
 			delete store.baseParams.column_summaries;
