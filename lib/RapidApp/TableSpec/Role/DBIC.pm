@@ -1468,6 +1468,7 @@ sub get_relationship_column_cnf {
 			$conf->{editor} = { 
 
 				# These can be overridden
+				header			=> $conf->{header},
 				win_title		=> 'Select ' . $conf->{header},
 				win_height		=> 450,
 				win_width		=> 650,
@@ -1490,6 +1491,7 @@ sub get_relationship_column_cnf {
 			$conf->{editor} = { 
 
 				# These can be overridden
+				header			=> $conf->{header},
 				win_title		=> 'Select ' . $conf->{header},
 				win_height		=> 450,
 				win_width		=> 650,

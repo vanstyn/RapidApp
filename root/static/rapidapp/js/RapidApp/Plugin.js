@@ -1856,7 +1856,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				delete formpanel.width;
 				delete formpanel.title;
 				
-				win = new Ext.Window(Ext.apply({
+				var win_cfg = Ext.apply({
 					title: title,
 					layout: 'fit',
 					width: width,
@@ -1864,8 +1864,13 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					closable: true,
 					modal: true,
 					items: formpanel
-				},plugin.add_form_window_cnf));
+				},plugin.add_form_window_cnf);
 				
+				if(Ext.isFunction(plugin.cmp.add_form_onPrepare)) {
+					plugin.cmp.add_form_onPrepare(win_cfg);
+				}
+				
+				win = new Ext.Window(win_cfg);
 				return win.show();
 			});
 		};
@@ -1903,14 +1908,19 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				delete formpanel.title;
 				delete formpanel.iconCls;
 				
-				tab = loadTarget.add({
+				var tab_cfg = {
 					title: title,
 					iconCls: iconCls,
 					layout: 'fit',
 					closable: true,
 					items: formpanel
-				});
+				};
 				
+				if(Ext.isFunction(plugin.cmp.add_form_onPrepare)) {
+					plugin.cmp.add_form_onPrepare(tab_cfg);
+				}
+				
+				tab = loadTarget.add(tab_cfg);
 				loadTarget.activate(tab);
 			});
 		};
