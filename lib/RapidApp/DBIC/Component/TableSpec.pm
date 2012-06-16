@@ -294,6 +294,11 @@ sub default_TableSpec_cnf_columns {
 		## note: these properties only apply if the editor xtype is 'numberfield' which we assume,
 		## and is already set from the profiles of 'decimal', 'float', etc
 		my $editor = {};
+		
+		# -- TODO - figure out why this doesn't work:
+		#$editor->{value} = $info->{default_value} if (exists $info->{default_value});
+		# --
+		
 		my $unsigned = ($info->{extra} && $info->{extra}->{unsigned}) ? 1 : 0;
 		$editor->{allowNegative} = \0 if ($unsigned);
 		
