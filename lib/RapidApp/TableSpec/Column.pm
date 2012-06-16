@@ -156,6 +156,9 @@ sub DEFAULT_PROFILES {{
 			editor => '',
 			allow_edit => \0,
 			allow_batchedit => \0
+		},
+		zipcode => {
+			editor => { vtype => 'zipcode' }
 		}
 
 }};

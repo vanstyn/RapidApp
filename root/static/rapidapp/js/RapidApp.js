@@ -5309,3 +5309,11 @@ Ext.ux.RapidApp.DbicSingleRelationshipColumnRender = function(c) {
 		"Open/view: " + disp
 	);
 }
+
+/************** CUSTOM VTYPES **************/
+Ext.apply(Ext.form.VTypes,{
+	zipcode: function(v) { return /^\d{5}(-\d{4})?$/.test(v); },
+	zipcodeMask: /[0-9\-]+/,
+	zipcodeText: 'Zipcode must be 5-digits (e.g. 12345) or 5-digits + 4 (e.g. 12345-6789)'
+});
+/*******************************************/
