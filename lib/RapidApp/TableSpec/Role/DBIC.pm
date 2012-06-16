@@ -1399,13 +1399,19 @@ sub get_relationship_column_cnf {
 		$conf->{editor} = $conf->{editor} || {};
 		$conf->{auto_editor_params} = $conf->{auto_editor_params} || {};
 		
-		# Set allowBlank according to the db schema of the key column. This is handled
-		# automatically in normal columns in the profile stuff, but has to be done special
-		# for relationship columns:
+		# ----
+		#  Set allowBlank according to the db schema of the key column. This is handled
+		#  automatically in normal columns in the profile stuff, but has to be done special
+		#  for relationship columns:
+		my $cinfo = exists $conf->{keyField} ? $self->ResultSource->column_info($conf->{keyField}) : undef;
 		unless(exists $conf->{editor}->{allowBlank}) {
-			my $cinfo = $self->ResultSource->column_info($conf->{keyField});
 			$conf->{editor}->{allowBlank} = \0 if($cinfo && $cinfo->{is_nullable} == 0);
 		}
+		#  same for 'default_value', if defined (again, this logic already happens for normal columns):
+		$conf->{editor}->{value} = $cinfo->{default_value} if ($cinfo && exists $cinfo->{default_value});
+		#  TODO: refactor so the 'normal' column logic from 'profiles' etc gets applied here so this
+		#  duplicate logic isn't needed
+		# ----
 	
 		$conf->{auto_editor_params} = $conf->{auto_editor_params} || {};
 	

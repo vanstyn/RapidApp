@@ -287,18 +287,18 @@ sub default_TableSpec_cnf_columns {
 		
 		$cols->{$col}->{profiles} = \@profiles;
 		
-		## -- This sets additional properties of the editor for numeric type columns according
+		## --
+		my $editor = {};
+	
+		## Set the 'default' field value to match the default from the db (if exists) for this column:
+		$editor->{value} = $info->{default_value} if (exists $info->{default_value});
+		
+		## This sets additional properties of the editor for numeric type columns according
 		## to the DBIC schema (max-length, signed/unsigned, float vs int). The API with "profiles" 
 		## didn't anticipate this fine-grained need, so 'extra_properties' was added specifically 
 		## to accomidate this (see special logic in TableSpec::Column):
 		## note: these properties only apply if the editor xtype is 'numberfield' which we assume,
 		## and is already set from the profiles of 'decimal', 'float', etc
-		my $editor = {};
-		
-		# -- TODO - figure out why this doesn't work:
-		#$editor->{value} = $info->{default_value} if (exists $info->{default_value});
-		# --
-		
 		my $unsigned = ($info->{extra} && $info->{extra}->{unsigned}) ? 1 : 0;
 		$editor->{allowNegative} = \0 if ($unsigned);
 		

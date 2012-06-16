@@ -108,6 +108,9 @@ sub _set_menu_select_editor {
 	
 	$self->{renderer} = jsfunc($js,$self->{renderer});
 	
+	# If there is already a 'value' property set in editor save it to preserve it (see below):
+	my $orig_value = ref($self->{editor}) eq 'HASH' ? $self->{editor}->{value} : undef;
+	
 	unless (defined $self->{allow_edit} and !jstrue($self->{allow_edit})) {
 	
 		my $mode = $new->{mode} || 'combo';
@@ -152,6 +155,9 @@ sub _set_menu_select_editor {
 		else {
 			die "menu_select_editor: Invalid mode '$mode' - must be 'combo', 'menu' or 'cycle'"
 		}
+		
+		# restore the original 'value' if it was already defined (see above)
+		$self->{editor}->{value} = $orig_value if (defined $orig_value);
 		
 		$self->{editor}->{width} = $new->{width} if ($new->{width});
 	}
