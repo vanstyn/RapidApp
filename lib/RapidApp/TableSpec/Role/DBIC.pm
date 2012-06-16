@@ -1408,7 +1408,11 @@ sub get_relationship_column_cnf {
 			# This logic is specific instead of being a blanket boolean choice. If there is some other,
 			# different, unexpected value for 'is_nullable', don't set allowBlank one way or the other
 			$conf->{editor}->{allowBlank} = \0 if($cinfo->{is_nullable} == 0);
-			$conf->{editor}->{allowBlank} = \1 if($cinfo->{is_nullable} == 1);
+			if($cinfo->{is_nullable} == 1) {
+				$conf->{editor}->{allowBlank} = \1;
+				# This setting will only have an effect if the editor is AppCombo2 based:
+				$conf->{editor}->{allowSelectNone} = \1;
+			}
 		}
 		#  same for 'default_value', if defined (again, this logic already happens for normal columns):
 		$conf->{editor}->{value} = $cinfo->{default_value} if ($cinfo && exists $cinfo->{default_value});

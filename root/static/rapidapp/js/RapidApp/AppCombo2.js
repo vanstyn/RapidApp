@@ -6,12 +6,17 @@
 Ext.ns('Ext.ux.RapidApp.AppCombo2');
 Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
 	
-	initComponent: function() {
-    Ext.ux.RapidApp.AppCombo2.ComboBox.superclass.initComponent.call(this);
-    if (this.baseParams) {
-      Ext.apply(this.getStore().baseParams,this.baseParams);
-    }
+	allowSelectNone: false,
+	selectNoneLabel: '(None)',
+	selectNoneCls: 'ra-combo-select-none',
+	selectNoneValue: null,
 	
+	initComponent: function() {
+		Ext.ux.RapidApp.AppCombo2.ComboBox.superclass.initComponent.call(this);
+		
+		if (this.baseParams) {
+			Ext.apply(this.getStore().baseParams,this.baseParams);
+		}
 	},
 	
 	lastValueClass: '',
@@ -61,6 +66,60 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
 		if (this.value_addClass) {
 			this.el.addClass(this.value_addClass);
 		}
+	},
+	
+	onLoad: function() {
+		if(this.allowSelectNone && !this.hasNoneRecord()) {
+			this.insertNoneRecord();
+		}
+		return Ext.ux.RapidApp.AppCombo2.ComboBox.superclass.onLoad.apply(this,arguments);
+	},
+	
+	hasNoneRecord: function() {
+		var store = this.getStore();
+		var Record = store.getAt(0);
+		return (Record && Record.isNoneRecord);
+	},
+	
+	getSelectNoneLabel: function() {
+		return ! this.selectNoneCls
+			? this.selectNoneLabel
+				: '<span class="' + this.selectNoneCls + '">' + 
+					this.selectNoneLabel + 
+				'</span>';
+	},
+	
+	insertNoneRecord: function(){
+		var store = this.getStore();
+		var data = {};
+		data[this.valueField] = this.selectNoneValue;
+		data[this.displayField] = this.getSelectNoneLabel();
+		var noneRec = new store.recordType(data);
+		noneRec.isNoneRecord = true;
+		store.insert(0,noneRec);
+	},
+	
+	// Record used as the target record for the select operation *after* '(None)' has
+	// been selected from the dropdown list. This is needed because we don't want "(None)"
+	// shown in the field (we want it to be empty). This record is never actually added 
+	// to the store
+	getEmptyValueRecord: function() {
+		if(!this.emptyValueRecord) {
+			var store = this.getStore();
+			var data = {};
+			data[this.valueField] = this.selectNoneValue;
+			data[this.displayField] = this.selectNoneValue; //<-- this is where we differ from None Record
+			this.emptyValueRecord = new store.recordType(data);
+		}
+		return this.emptyValueRecord;
+	},
+	
+	onSelect: function(Record,index) {
+		if(this.allowSelectNone && Record.isNoneRecord) {
+			var emptyRec = this.getEmptyValueRecord();
+			return Ext.ux.RapidApp.AppCombo2.ComboBox.superclass.onSelect.call(this,emptyRec,index);
+		}
+		return Ext.ux.RapidApp.AppCombo2.ComboBox.superclass.onSelect.apply(this,arguments);
 	}
 
 });
