@@ -364,7 +364,7 @@ sub TableSpec_valid_db_columns {
 			push @single_rels, $rel;
 			
 			my ($fk) = keys %{$info->{attrs}->{fk_columns}};
-			$fk_cols{$fk} = $rel;
+			$fk_cols{$fk} = $rel if($fk);
 		}
 		elsif($accessor eq 'multi') {
 			push @multi_rels, $rel;
