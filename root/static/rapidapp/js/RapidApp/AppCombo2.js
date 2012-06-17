@@ -1347,10 +1347,12 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 					var res = Ext.decode(response.responseText);
 					if(res.rows) {
 						var row = res.rows[0];
-						var val = row[valueField], disp = row[displayField];
-						
-						if(val == this.getValue()) {
-							this.setData(val,disp);
+						if(row) {
+							var val = row[valueField], disp = row[displayField];
+							
+							if(val == this.getValue()) {
+								this.setData(val,disp);
+							}
 						}
 					}
 				},

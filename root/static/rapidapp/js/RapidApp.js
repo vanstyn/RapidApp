@@ -5281,9 +5281,34 @@ Ext.ux.RapidApp.num2pct = function(num) {
 
 Ext.ux.RapidApp.DbicSingleRelationshipColumnRender = function(c) {
 	var disp = c.record.data[c.render_col];
-	if(!c.value) { c.value = c.record.data[c.key_col]; }
+	var key_value = c.record.data[c.key_col];
+
+	if(!c.value) { 
+		if(!disp && !key_value) {
+			// If everything is unset, including the key_col value itself,
+			// we render like a normal empty value. It is only when the 
+			// key_col is set but the value/disp is not (indicating a broken
+			// or missing link/relationship) that we want to render the special 
+			// "unavailable" string (see the following code block) -- SEE UPDATED
+			// NOTE BELOW
+			return Ext.ux.showNull(key_value);
+		}
+		c.value = key_value; 
+	}
 	
 	if(c.value == null && disp == null) {
+		// UPDATE: this code path will actually never occur now (after adding the
+		// above call to 'showNull'). It will either display the normal null/empty
+		// output or the value of the key, so this never happens!! But, after some
+		// other improvements to relationship column handling, they now work correctly
+		// (I think) with unset values/broken links, which they didn't before, and
+		// this alternate display was actually added as a workaround for that problem
+		// and is now not even needed/helpful. TODO: after verifying this is in fact true,
+		// clean up the logic in this function and remove this and other not-needed
+		// code and logic... Also see about applying a special style when the link
+		// *is* broken and the key value is being displayed instead of the related
+		// render value (I tried to do this already but it wasn't working immediately
+		// and I had other, more important things to do at the time)...
 		return '<span style="font-size:.90em;color:darkgrey;">' +
 			'&times&nbsp;unavailable&nbsp;&times;' +
 		'</span>';
