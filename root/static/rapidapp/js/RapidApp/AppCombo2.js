@@ -1373,6 +1373,7 @@ Ext.ux.RapidApp.ListEditField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 	
 	fieldClass: 'ra-datastore-app-field wrap-on',
 	invalidClass: 'ra-datastore-app-field-invalid',
+	actionOnShow: true,
 	
 	delimiter: ',',
 	padDelimiter: true, //<-- set ', ' instead of ','
@@ -1383,6 +1384,8 @@ Ext.ux.RapidApp.ListEditField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 	initComponent: function() {
 		Ext.ux.RapidApp.ListEditField.superclass.initComponent.call(this);
 		
+		// init
+		this.getMenu();
 	},
 	
 	onActionComplete: function() {
