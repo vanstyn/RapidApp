@@ -121,8 +121,8 @@ sub default_TableSpec_cnf  {
 
 	my %defaults = ();
 	$defaults{iconCls} = $data->{singleIconCls} if ($data->{singleIconCls} and ! $data->{iconCls});
-	$defaults{iconCls} = $defaults{iconCls} || $data->{iconCls} || 'icon-application-view-detail';
-	$defaults{multiIconCls} = $data->{multiIconCls} || 'icon-database_table';
+	$defaults{iconCls} = $defaults{iconCls} || $data->{iconCls} || 'icon-pg';
+	$defaults{multiIconCls} = $data->{multiIconCls} || 'icon-pg-multi';
 	$defaults{singleIconCls} = $data->{singleIconCls} || $defaults{iconCls};
 	$defaults{title} = $data->{title} || $self->table;
 	$defaults{title_multi} = $data->{title_multi} || $defaults{title};
