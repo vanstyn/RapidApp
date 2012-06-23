@@ -1405,6 +1405,10 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
   overflow:hidden;
 }
 
+.wrap-on {
+  white-space: normal;
+}
+
 .ra-datastore-app-field-invalid {
   border-color: #CC3300 !important;
   background-color: #FFCCCC !important;
