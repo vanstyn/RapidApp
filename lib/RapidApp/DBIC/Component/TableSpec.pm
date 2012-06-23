@@ -234,6 +234,9 @@ sub default_TableSpec_cnf_columns {
 						@$display_columns > 0
 					);
 					
+					## fall-back set the display_column to the first key
+					($display_column) = $self->primary_columns unless ($display_column);
+					
 					$display_columns = [ $display_column ] if (
 						! defined $display_columns and
 						defined $display_column
