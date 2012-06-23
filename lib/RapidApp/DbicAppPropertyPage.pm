@@ -70,9 +70,18 @@ sub BUILD {
 		frame => \1,
 	);
 	
+	$self->set_default_tab_icon;
+	
 	$self->init_multi_rel_modules;
 	
 	$self->add_ONCONTENT_calls('apply_items_config');
+}
+
+sub set_default_tab_icon {
+	my $self = shift;
+	my $class = $self->ResultClass or return;
+	my $iconCls = $class->TableSpec_get_conf('iconCls') or return;
+	$self->apply_extconfig( tabIconCls => $iconCls );
 }
 
 
