@@ -1366,3 +1366,142 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 	
 });
 Ext.reg('datastore-app-field',Ext.ux.RapidApp.DataStoreAppField);
+
+
+
+Ext.ux.RapidApp.ListEditField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
+	
+	fieldClass: 'ra-datastore-app-field',
+	invalidClass: 'ra-datastore-app-field-invalid',
+	
+	delimiter: ',',
+	padDelimiter: true, //<-- set ', ' instead of ','
+	trimWhitespace: true, //<-- must be true if padDelimiter is true
+	showSelectAll: true,
+	value_list: [], //<-- the values that can be set/selected
+	
+	initComponent: function() {
+		Ext.ux.RapidApp.ListEditField.superclass.initComponent.call(this);
+		
+	},
+	
+	onActionComplete: function() {
+		this.fireEvent.defer(50,this,['select']);
+	},
+	
+	actionFn: function(e) {
+		var el = this.getEl();
+		var pos = [0,0];
+		if(el){ 
+			pos = el.getXY();
+		}
+		else if(e && e.getXY) { pos = e.getXY(); }
+		
+		// TODO: sometimes it just fails to get the position! why?!
+		if(pos[0] <= 0) {
+			pos = this.getPosition(true);
+			//console.dir(this);
+		}
+		
+		var menu = this.getMenu();
+		menu.showAt(pos);
+	},
+	
+	setActiveList: function(list) {
+		var delim = this.delimiter;
+		if(this.padDelimiter) { delim += ' '; }
+		return this.setValue(list.join(delim));
+	},
+	
+	getActiveKeys: function(){
+		var str = this.getValue();
+		var map = {};
+		var list = str.split(this.delimiter);
+		Ext.each(list,function(item){
+			if(this.trimWhitespace){ item = item.replace(/^\s+|\s+$/g,""); }
+			map[item] = true;
+		},this);
+		
+		this.activeKeys = map;
+		return this.activeKeys
+	},
+	
+	applyMenuSelections: function(){
+		if(this.menu && this.menu.isVisible()){
+			var selected = [];
+			this.menu.items.each(function(item){
+				if(item.checked && item.value) { 
+					selected.push(item.value); 
+				}
+			},this);
+			this.setActiveList(selected);
+			this.menu.hide();
+		}
+	},
+	
+	updateMenu: function(){
+		if(this.menu) {
+			var keys = this.getActiveKeys();
+			this.menu.items.each(function(item){
+				if(item.value) { item.setChecked(keys[item.value]); }
+			},this);
+		}
+	},
+	
+	getSelectAllItem: function(){
+		return {
+			xtype: 'menucheckitem',
+			text: 'Select All',
+			hideOnClick: false,
+			listeners: {
+				checkchange: {
+					scope: this,
+					fn: function(itm,state) {
+						this.menu.items.each(function(item){
+							if(item.value) { item.setChecked(state); }
+						},this);
+					}
+				}
+			}
+		}
+	},
+	
+	getMenu: function(){
+		if(!this.menu) {
+			var items = [];
+			if(this.showSelectAll){ 
+				items.push(this.getSelectAllItem(),'-'); 
+			}
+			
+			Ext.each(this.value_list,function(val){
+				items.push({
+					xtype: 'menucheckitem',
+					text: val,
+					value: val,
+					hideOnClick: false
+				});
+			},this);
+			
+			items.push('-',{
+				style: 'font-weight:bold;color:#333333;',
+				text: '&nbsp;OK',
+				iconCls: 'icon-accept',
+				hideOnClick: false,
+				handler: this.applyMenuSelections,
+				scope: this
+			});
+			
+			this.menu = new Ext.menu.Menu({
+				items: items
+			});
+			
+			this.menu.on('beforeshow',this.updateMenu,this);
+			this.menu.on('hide',this.onActionComplete,this);
+		}
+		return this.menu;
+	}
+	
+});
+Ext.reg('list-edit-field',Ext.ux.RapidApp.ListEditField);
+
+
