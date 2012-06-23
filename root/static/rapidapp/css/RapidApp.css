@@ -247,8 +247,8 @@ pre {
 .icon-selection-add { background-image: url(/static/rapidapp/images/selection_add.png) !important; }
 .icon-selection-new { background-image: url(/static/rapidapp/images/selection_new.png) !important; }
 .icon-progress-green-blocks { background-image: url(/static/rapidapp/images/progress_green_blocks.gif) !important; }
-
-
+.icon-pg { background-image: url(/static/rapidapp/images/pg.png) !important; }
+.icon-pg-multi { background-image: url(/static/rapidapp/images/pg_multi.png) !important; }
 
 
 
