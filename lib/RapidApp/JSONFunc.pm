@@ -32,7 +32,10 @@ BEGIN {
 		
 		my $type = ref($obj);
 		
-		return $orig->(@_) unless (
+		# Convert \'NULL' into undef (this came up after switing from MySQL to SQLite??)
+		$obj = undef if ($type eq 'SCALAR' && $$obj eq 'NULL');
+		
+		return $orig->($self,$obj) unless (
 			$type and
 			$type eq __PACKAGE__ and
 			$obj->can('TO_JSON')
