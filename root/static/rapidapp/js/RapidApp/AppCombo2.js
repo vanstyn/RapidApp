@@ -1536,16 +1536,47 @@ Ext.reg('list-edit-field',Ext.ux.RapidApp.ListEditField);
 
 
 
-// in progress ...
+// Extends ListEditField to use a configured store to get the value list
 Ext.ux.RapidApp.MultiCheckCombo = Ext.extend(Ext.ux.RapidApp.ListEditField,{
 	
 	initComponent: function() {
 		Ext.ux.RapidApp.MultiCheckCombo.superclass.initComponent.call(this);
-		
-		
+		this.store.on('load',this.onStoreLoad,this);
+	},
+	
+	getMenu: function() {
+		if(!this.storeLoaded) {
+			// Don't allow the menu to be created before the store is loaded
+			return null;
+		}
+		return Ext.ux.RapidApp.MultiCheckCombo.superclass.getMenu.apply(this,arguments);
+	},
+	
+	onStoreLoad: function() {
+		this.updateValueList();
+		this.storeLoaded = true;
+		if(this.pendingShowAt) {
+			this.showMenuAt(this.pendingShowAt);
+			delete this.pendingShowAt;
+		}
+	},
+	
+	updateValueList: function() {
+		var value_list = [];
+		this.store.each(function(Record){
+			value_list.push(Record.data[this.valueField]);
+		},this);
+		this.value_list = value_list;
+	},
+	
+	showMenuAt: function(pos) {
+		if(!this.storeLoaded) {
+			this.pendingShowAt = pos;
+			return this.store.load();
+		}
+		return Ext.ux.RapidApp.MultiCheckCombo.superclass.showMenuAt.apply(this,arguments);
 	}
 	
-
 });
 Ext.reg('multi-check-combo',Ext.ux.RapidApp.MultiCheckCombo);
 

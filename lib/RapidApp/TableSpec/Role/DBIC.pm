@@ -505,7 +505,7 @@ sub filter_updatable_columns {
 	my @columns = @_;
 	
 	#exclude all multi relationship columns
-	@columns = grep {!$self->multi_rel_columns_indx->{$self->column_prefix . $_}} @columns;
+	#@columns = grep {!$self->multi_rel_columns_indx->{$self->column_prefix . $_}} @columns;
 	
 	return $self->colspec_select_columns({
 		colspecs => $self->updatable_colspec->colspecs,
@@ -1529,8 +1529,12 @@ sub get_multi_relationship_column_cnf {
 	my $rel = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
+	return $self->get_m2m_multi_relationship_column_cnf($rel,\%opt) 
+		if ($opt{relationship_cond_data}->{attrs}->{m2m_attrs});
+	
 	my $conf = \%opt;
 	
+
 	#$conf->{no_multifilter} = \1;
 	$conf->{multifilter_type} = 'number';
 	
@@ -1640,6 +1644,102 @@ sub get_multi_relationship_column_cnf {
 	return %$conf;
 }
 
+
+sub get_m2m_multi_relationship_column_cnf {
+	my $self = shift;
+	my $rel = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	my $conf = \%opt;
+	
+	my $m2m_attrs = $conf->{relationship_cond_data}->{attrs}->{m2m_attrs};
+	my $rinfo = $m2m_attrs->{rinfo};
+	my $rrinfo = $m2m_attrs->{rrinfo};
+
+	$conf->{function} = $conf->{function} || sub {
+		my ($self,$rel,$col,$join,$cond_data) = @_;
+		
+		# initial hard-coded example the dynamic logic was based on:
+		#my $sql = '(' .
+		#	# SQLite Specific:
+		#	#'SELECT(GROUP_CONCAT(flags.flag,", "))' .
+		#	
+		#	# MySQL Sepcific:
+		#	#'SELECT(GROUP_CONCAT(flags.flag SEPARATOR ", "))' .
+		#	
+		#	# Generic (MySQL & SQLite):
+		#	'SELECT(GROUP_CONCAT(flags.flag))' .
+		#	
+		#	' FROM ' . $source->from . 
+		#	' JOIN `flags` `flags` ON customers_to_flags.flag = flags.flag' .
+		#	' WHERE ' . $cond_data->{foreign} . ' = ' . $rel . '.' . $cond_data->{self} . 
+		#')';
+		
+		my $sql = '(' .
+			# SQLite Specific:
+			#'SELECT(GROUP_CONCAT(flags.flag,", "))' .
+			
+			# MySQL Sepcific:
+			#'SELECT(GROUP_CONCAT(flags.flag SEPARATOR ", "))' .
+			
+			# Generic (MySQL & SQLite):
+			'SELECT(GROUP_CONCAT(`' . $rrinfo->{table} . '`.`' . $rrinfo->{cond_info}->{foreign} . '`))' .
+			
+			' FROM `' . $rinfo->{table} . '`' . 
+			' JOIN `' . $rrinfo->{table} . '` `' . $rrinfo->{table} . '`' .
+			'  ON `' . $rinfo->{table} . '`.`' . $rrinfo->{cond_info}->{self} . '`' .
+			'   = `' . $rrinfo->{table} . '`.`' . $rrinfo->{cond_info}->{foreign} . '`' .
+			#' ON customers_to_flags.flag = flags.flag' .
+			' WHERE `' . $rinfo->{cond_info}->{foreign} . '` = `' . $rel . '`.`' . $cond_data->{self} . '`' . 
+		')';
+		
+		return \[ $sql ];
+	};
+
+	my $colname = $self->column_prefix . $rel;
+	$conf->{name} = $colname;
+	
+	# This is wicked ugly, needs refactored!!!
+	$self->multi_rel_columns_indx->{$conf->{name}}->{function} = $conf->{function};
+	
+	
+	##### Now, setup the special m2m editor:
+	
+	my $schema = $self->ResultSource->schema;
+	my $Source = $schema->source($rrinfo->{source});
+	
+	my $module_name = 'm2mcombo_' . $self->ResultClass->table . '_' . $colname;
+	my $Module = $self->get_or_create_rapidapp_module( $module_name,
+		class	=> 'RapidApp::DbicAppCombo2',
+		params	=> {
+			valueField		=> $rrinfo->{cond_info}->{foreign},
+			displayField	=> $rrinfo->{cond_info}->{foreign},
+			name			=> $colname,
+			ResultSet		=> $Source->resultset,
+			record_pk		=> $rrinfo->{cond_info}->{foreign},
+			# Optional custom ResultSet params applied to the dropdown query
+			RS_condition	=> $conf->{RS_condition} ? $conf->{RS_condition} : {},
+			RS_attr			=> $conf->{RS_attr} ? $conf->{RS_attr} : {},
+			#%{ $conf->{auto_editor_params} },
+		}
+	);
+	$Module->apply_extconfig( xtype => 'multi-check-combo' );
+	
+	if($conf->{editor}) {
+		if($conf->{editor}->{listeners}) {
+			my $listeners = delete $conf->{editor}->{listeners};
+			$Module->add_listener( $_ => $listeners->{$_} ) for (keys %$listeners);
+		}
+		$Module->apply_extconfig(%{$conf->{editor}}) if (keys %{$conf->{editor}} > 0);
+	}
+	
+	$conf->{editor} =  $Module->content;
+	
+	scream($conf->{editor});
+	
+
+	return %$conf;
+}
 
 sub get_or_create_rapidapp_module {
 	my $self = shift;

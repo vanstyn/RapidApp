@@ -13,6 +13,8 @@ use RapidApp::Include qw(sugar perlutil);
 use RapidApp::TableSpec;
 use RapidApp::DbicAppCombo2;
 
+#__PACKAGE__->load_components(qw/IntrospectableM2M/);
+
 __PACKAGE__->mk_classdata( 'TableSpec' );
 __PACKAGE__->mk_classdata( 'TableSpec_rel_columns' );
 
@@ -39,17 +41,89 @@ __PACKAGE__->mk_classdata( 'TableSpec_data_type_profiles' );
 __PACKAGE__->TableSpec_data_type_profiles({ %$default_data_type_profiles }); 
 
 
+## Sets up many_to_many along with TableSpec m2m multi-relationship column
+sub TableSpec_m2m {
+	my ($self,$m2m,$local_rel,$remote_rel) = @_;
+	
+	$self->is_TableSpec_applied and 
+		die "TableSpec_m2m must be called before apply_TableSpec!";
+		
+	$self->has_column($m2m) and die "'$m2m' is already defined as a column.";
+	$self->has_relationship($m2m) and die "'$m2m' is already defined as a relationship.";
+
+	my $rinfo = $self->relationship_info($local_rel) or die "'$local_rel' relationship not found";
+	eval('require ' . $rinfo->{class});
+	
+	die "m2m bridge relationship '$local_rel' is not a multi relationship"
+		unless ($rinfo->{attrs}->{accessor} eq 'multi');
+		
+	my $rrinfo = $rinfo->{class}->relationship_info($remote_rel);
+	eval('require ' . $rrinfo->{class});
+	
+	$rinfo->{table} = $rinfo->{class}->table;
+	$rrinfo->{table} = $rrinfo->{class}->table;
+	
+	$rinfo->{cond_info} = $self->parse_relationship_cond($rinfo->{cond});
+	$rrinfo->{cond_info} = $self->parse_relationship_cond($rrinfo->{cond});
+	
+
+	my $sql = '(' .
+		# SQLite Specific:
+		#'SELECT(GROUP_CONCAT(flags.flag,", "))' .
+		
+		# MySQL Sepcific:
+		#'SELECT(GROUP_CONCAT(flags.flag SEPARATOR ", "))' .
+		
+		# Generic (MySQL & SQLite):
+		'SELECT(GROUP_CONCAT(`' . $rrinfo->{table} . '`.`' . $rrinfo->{cond_info}->{foreign} . '`))' .
+		
+		' FROM `' . $rinfo->{table} . '`' . 
+		' JOIN `' . $rrinfo->{table} . '` `' . $rrinfo->{table} . '`' .
+		'  ON `' . $rinfo->{table} . '`.`' . $rrinfo->{cond_info}->{self} . '`' .
+		'   = `' . $rrinfo->{table} . '`.`' . $rrinfo->{cond_info}->{foreign} . '`' .
+		#' ON customers_to_flags.flag = flags.flag' .
+		' WHERE `' . $rinfo->{cond_info}->{foreign} . '` = ' . $rel . '.' . $cond_data->{self} . 
+	')';
+
+	
+	#scream([$rinfo,$rrinfo]);
+	
+	# Create a relationship exactly like the the local bridge relationship, adding
+	# the 'm2m_attrs' attribute which will be used later on to setup the special, 
+	# m2m-specific multi-relationship column properties (renderer, editor, and to 
+	# trigger proxy m2m updates in DbicLink2):
+	$self->add_relationship(
+		$m2m,
+		$rinfo->{class},
+		$rinfo->{cond},
+		{%{$rinfo->{attrs}}, m2m_attrs => {
+			remote_rel => $remote_rel,
+			rinfo => $rinfo,
+			rrinfo => $rrinfo
+		}}
+	);
+	
+	# Add a normal many_to_many bridge so we have the many_to_many sugar later on:
+	#$self->many_to_many( $m2m => $local_rel, $remote_rel );
+}
+
+
+
+sub is_TableSpec_applied {
+	my $self = shift;
+	return (
+		defined $self->TableSpec_cnf and
+		defined $self->TableSpec_cnf->{data} and
+		defined $self->TableSpec_cnf->{data}->{apply_TableSpec_timestamp}
+	);
+}
 
 sub apply_TableSpec {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	# ignore/return if apply_TableSpec has already been called:
-	return if (
-		defined $self->TableSpec_cnf and
-		defined $self->TableSpec_cnf->{data} and
-		defined $self->TableSpec_cnf->{data}->{apply_TableSpec_timestamp}
-	);
+	return if $self->is_TableSpec_applied;
 	
 	$self->TableSpec_data_type_profiles(
 		%{ $self->TableSpec_data_type_profiles || {} },
