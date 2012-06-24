@@ -431,7 +431,7 @@ sub rs_count {
 	
 	$self->c->stash->{query_count_start} = [gettimeofday]; 
 	
-	# --- This is a hack/workaround for what is probably a DBIC bug. 
+	# --- This is a hack/workaround for what may be a DBIC bug/limitation. 
 	# If there is a 'having' without a 'group_by', we add a dummy 'group_by' 
 	# because the existence of this attr makes DBIC use a subquery for count,
 	# which we want if there is a having clause because it probably references
@@ -443,10 +443,8 @@ sub rs_count {
 	#
 	# Note that we've already fetched the actual rows from $Rs2 above; this is 
 	# *just* for getting the total count:
-	if (exists $Rs2->{attrs}->{having} and !$Rs2->{attrs}->{group_by}) {
-		my ($pri) = @{$self->primary_columns};#<-- this is just a safe group_by value
-		$Rs2 = $Rs2->search_rs({},{ group_by => $pri });
-	}
+	$Rs2 = $Rs2->search_rs({},{ group_by => $self->primary_columns }) #<-- this is just a safe group_by value
+		if (exists $Rs2->{attrs}->{having} and !$Rs2->{attrs}->{group_by});
 	# ---
 	return $Rs2->pager->total_entries;
 }
@@ -849,6 +847,9 @@ sub multifilter_to_dbf {
 			join 	=> $join,
 			having 	=> $having
 		});
+		$LocalRs = $LocalRs->search_rs({},{ group_by => $self->primary_columns }) #<-- safe group_by
+			unless ($LocalRs->{attrs}->{group_by});
+		
 		
 		# Add to the select if its not already:
 		unless(grep { $_ eq $f } @{ $LocalRs->{attrs}->{as} || [] }) {
