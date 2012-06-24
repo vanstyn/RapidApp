@@ -1376,8 +1376,8 @@ Ext.ux.RapidApp.ListEditField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 	actionOnShow: true,
 	
 	delimiter: ',',
-	padDelimiter: true, //<-- set ', ' instead of ','
-	trimWhitespace: true, //<-- must be true if padDelimiter is true
+	padDelimiter: false, //<-- set ', ' instead of ','
+	trimWhitespace: false, //<-- must be true if padDelimiter is true
 	showSelectAll: true,
 	value_list: [], //<-- the values that can be set/selected
 	
@@ -1494,6 +1494,25 @@ Ext.ux.RapidApp.ListEditField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 		return this.value_list;
 	},
 	
+	// Stops the last item from being unchecked (is only set as the
+	// beforecheckchange item listeners if allowBlank is false)
+	itemBeforeCheckHandler: function(item,checked) {
+		var count = this.getCheckedCount();
+		if(!checked && count == 1) { return false; }
+	},
+	
+	getCheckedCount: function() {
+		if(!this.menu && this.menu.isVisible()) { 
+			return 0;
+		};
+		var count = 0;
+		this.menu.items.each(function(item){
+			if(item.value && item.checked) { count++; }
+		},this);
+		
+		return count;
+	},
+	
 	getMenu: function(){
 		if(!this.menu) {
 			var items = [];
@@ -1502,12 +1521,23 @@ Ext.ux.RapidApp.ListEditField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 			}
 			
 			Ext.each(this.getValueList(),function(val){
-				items.push({
+				var cnf = {
 					xtype: 'menucheckitem',
 					text: val,
 					value: val,
 					hideOnClick: false
-				});
+				};
+				// add listener to prevent last item from being unchecked if this
+				// field is not nullable (allowBlank false):
+				if(typeof this.allowBlank != 'undefined' && !this.allowBlank) {
+					cnf.listeners = {
+						beforecheckchange: {
+							scope: this,
+							fn: this.itemBeforeCheckHandler
+						}
+					};
+				}
+				items.push(cnf);
 			},this);
 			
 			items.push('-',{
