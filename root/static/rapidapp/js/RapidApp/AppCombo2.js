@@ -1406,6 +1406,10 @@ Ext.ux.RapidApp.ListEditField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 			//console.dir(this);
 		}
 		
+		this.showMenuAt(pos);
+	},
+	
+	showMenuAt: function(pos) {
 		var menu = this.getMenu();
 		menu.showAt(pos);
 	},
@@ -1444,18 +1448,35 @@ Ext.ux.RapidApp.ListEditField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 	
 	updateMenu: function(){
 		if(this.menu) {
+			var selectall_item = this.menu.getComponent('select-all');
+			if(selectall_item){ 
+				// Reset select all to unchecked:
+				selectall_item.setChecked(false); 
+			}
 			var keys = this.getActiveKeys();
+			var all_checked = true;
 			this.menu.items.each(function(item){
-				if(item.value) { item.setChecked(keys[item.value]); }
+				if(item.value) {
+					item.setChecked(keys[item.value]);
+					if(!keys[item.value]) { all_checked = false; }
+				}
 			},this);
+			
+			if(selectall_item && all_checked){
+				// Set the select all checkbox to true only if all items are
+				// already checked:
+				selectall_item.setChecked(true,false);
+			}
 		}
 	},
 	
 	getSelectAllItem: function(){
 		return {
+			itemId: 'select-all',
 			xtype: 'menucheckitem',
 			text: 'Select All',
 			hideOnClick: false,
+			checked: false,
 			listeners: {
 				checkchange: {
 					scope: this,
@@ -1469,6 +1490,10 @@ Ext.ux.RapidApp.ListEditField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 		}
 	},
 	
+	getValueList: function() {
+		return this.value_list;
+	},
+	
 	getMenu: function(){
 		if(!this.menu) {
 			var items = [];
@@ -1476,7 +1501,7 @@ Ext.ux.RapidApp.ListEditField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 				items.push(this.getSelectAllItem(),'-'); 
 			}
 			
-			Ext.each(this.value_list,function(val){
+			Ext.each(this.getValueList(),function(val){
 				items.push({
 					xtype: 'menucheckitem',
 					text: val,
@@ -1506,5 +1531,26 @@ Ext.ux.RapidApp.ListEditField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 	
 });
 Ext.reg('list-edit-field',Ext.ux.RapidApp.ListEditField);
+
+
+
+
+
+// in progress ...
+Ext.ux.RapidApp.MultiCheckCombo = Ext.extend(Ext.ux.RapidApp.ListEditField,{
+	
+	initComponent: function() {
+		Ext.ux.RapidApp.MultiCheckCombo.superclass.initComponent.call(this);
+		
+		
+	}
+	
+
+});
+Ext.reg('multi-check-combo',Ext.ux.RapidApp.MultiCheckCombo);
+
+
+
+
 
 
