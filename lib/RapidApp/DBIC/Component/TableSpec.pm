@@ -43,7 +43,13 @@ __PACKAGE__->TableSpec_data_type_profiles({ %$default_data_type_profiles });
 
 ## Sets up many_to_many along with TableSpec m2m multi-relationship column
 sub TableSpec_m2m {
-	my ($self,$m2m,$local_rel,$remote_rel) = @_;
+	my $self = shift;
+	my ($m2m,$local_rel,$remote_rel) = @_;
+	
+	# -- Add a normal many_to_many bridge so we have the many_to_many sugar later on:
+	# (we use 'set_$rel' in update_records in DbicLink2)
+	$self->many_to_many(@_);
+	# --
 	
 	$self->is_TableSpec_applied and 
 		die "TableSpec_m2m must be called before apply_TableSpec!";
@@ -66,28 +72,25 @@ sub TableSpec_m2m {
 	$rinfo->{cond_info} = $self->parse_relationship_cond($rinfo->{cond});
 	$rrinfo->{cond_info} = $self->parse_relationship_cond($rrinfo->{cond});
 	
+	# 
+	#my $sql = '(' .
+	#	# SQLite Specific:
+	#	#'SELECT(GROUP_CONCAT(flags.flag,", "))' .
+	#	
+	#	# MySQL Sepcific:
+	#	#'SELECT(GROUP_CONCAT(flags.flag SEPARATOR ", "))' .
+	#	
+	#	# Generic (MySQL & SQLite):
+	#	'SELECT(GROUP_CONCAT(`' . $rrinfo->{table} . '`.`' . $rrinfo->{cond_info}->{foreign} . '`))' .
+	#	
+	#	' FROM `' . $rinfo->{table} . '`' . 
+	#	' JOIN `' . $rrinfo->{table} . '` `' . $rrinfo->{table} . '`' .
+	#	'  ON `' . $rinfo->{table} . '`.`' . $rrinfo->{cond_info}->{self} . '`' .
+	#	'   = `' . $rrinfo->{table} . '`.`' . $rrinfo->{cond_info}->{foreign} . '`' .
+	#	#' ON customers_to_flags.flag = flags.flag' .
+	#	' WHERE `' . $rinfo->{cond_info}->{foreign} . '` = ' . $rel . '.' . $cond_data->{self} . 
+	#')';
 
-	my $sql = '(' .
-		# SQLite Specific:
-		#'SELECT(GROUP_CONCAT(flags.flag,", "))' .
-		
-		# MySQL Sepcific:
-		#'SELECT(GROUP_CONCAT(flags.flag SEPARATOR ", "))' .
-		
-		# Generic (MySQL & SQLite):
-		'SELECT(GROUP_CONCAT(`' . $rrinfo->{table} . '`.`' . $rrinfo->{cond_info}->{foreign} . '`))' .
-		
-		' FROM `' . $rinfo->{table} . '`' . 
-		' JOIN `' . $rrinfo->{table} . '` `' . $rrinfo->{table} . '`' .
-		'  ON `' . $rinfo->{table} . '`.`' . $rrinfo->{cond_info}->{self} . '`' .
-		'   = `' . $rrinfo->{table} . '`.`' . $rrinfo->{cond_info}->{foreign} . '`' .
-		#' ON customers_to_flags.flag = flags.flag' .
-		' WHERE `' . $rinfo->{cond_info}->{foreign} . '` = ' . $rel . '.' . $cond_data->{self} . 
-	')';
-
-	
-	#scream([$rinfo,$rrinfo]);
-	
 	# Create a relationship exactly like the the local bridge relationship, adding
 	# the 'm2m_attrs' attribute which will be used later on to setup the special, 
 	# m2m-specific multi-relationship column properties (renderer, editor, and to 
@@ -102,9 +105,6 @@ sub TableSpec_m2m {
 			rrinfo => $rrinfo
 		}}
 	);
-	
-	# Add a normal many_to_many bridge so we have the many_to_many sugar later on:
-	$self->many_to_many( $m2m => $local_rel, $remote_rel );
 }
 
 
