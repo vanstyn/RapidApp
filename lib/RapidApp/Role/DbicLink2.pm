@@ -1531,6 +1531,22 @@ sub hashtree_col_alias_map_deep {
 	%$hash = map { $alias->{$_} ? $alias->{$_} : $_ => $hash->{$_} } grep { !$revalias{$_} } keys %$hash;
 	# --
 	
+	# --- remap special m2m relationship column values:
+	# see apply_virtual_rel_col_update() above for the 'update' version
+	my $Source = $TableSpec->ResultSource;
+	foreach my $col (keys %$hash) {
+		next if ($Source->has_column($col));
+		my $info = $Source->relationship_info($col) or next;
+		my $m2m_attrs = $info->{attrs}->{m2m_attrs} or next;
+		my $keycol = $m2m_attrs->{rrinfo}->{cond_info}->{foreign};
+		
+		my @ids = split(/\s*,\s*/,$hash->{$col});
+		
+		# Convert the value into a valid "has_many" create packet:
+		$hash->{$col} = [ map { { $keycol => $_ } } @ids ]; 
+	}
+	# ---
+	
 	return $hash;
 }
 
@@ -1557,7 +1573,7 @@ sub _dbiclink_create_records {
 	try {
 		$self->ResultSource->schema->txn_do(sub {
 			foreach my $data (@$arr) {
-				
+
 				# Apply optional base/hard coded data:
 				%$data = ( %$data, %{$self->_CreateData} );
 				my @columns = uniq(keys %$data,@req_columns);
