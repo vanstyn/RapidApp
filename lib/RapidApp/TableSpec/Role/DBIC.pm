@@ -1685,13 +1685,14 @@ sub get_m2m_multi_relationship_column_cnf {
 		#	' WHERE ' . $cond_data->{foreign} . ' = ' . $rel . '.' . $cond_data->{self} . 
 		#')';
 		
+		
+		### TODO: build this using DBIC (subselect_rs ? resultset_column ?)
+		### This is unfortunately database specific. It works in MySQL and SQLite, and
+		### should work in any database with the GROUP_CONCAT function. It doesn't work
+		### in PostgrSQL because it doesn't have GROUP_CONCAT. This will have to be implemented
+		### separately first each db. TODO: ask the storage engine for the db type and apply
+		### a correct version of the function:
 		my $sql = '(' .
-			# SQLite Specific:
-			#'SELECT(GROUP_CONCAT(flags.flag,", "))' .
-			
-			# MySQL Sepcific:
-			#'SELECT(GROUP_CONCAT(flags.flag SEPARATOR ", "))' .
-			
 			# Generic (MySQL & SQLite):
 			'SELECT(GROUP_CONCAT(`' . $rrinfo->{table} . '`.`' . $rrinfo->{cond_info}->{foreign} . '`))' .
 			
@@ -1717,6 +1718,18 @@ sub get_m2m_multi_relationship_column_cnf {
 	
 	##### Now, setup the special m2m editor:
 	
+	### This is the initial editor type 'multi-check-combo' which is only suitable if
+	### there are a relatively limited number of remote linkable rows (such as roles)
+	### TODO: add more types (like combo vs grid in single relationship combos) such
+	### as one that is paged and can support lots of rows to select from
+	
+	### Also, TODO: add support for different diplayField and valueField. This will
+	### require setting up a whole additional relationship for rendering. Also, need
+	### to add the ability to customize the render mode. Currently it is hard coded to
+	### csv list of key/link values. It will always have to be something like this, but
+	### it could render differently. If there are many values, there might be a better way
+	### to render/display, such as a count like the default regular multi rel column
+	
 	my $schema = $self->ResultSource->schema;
 	my $Source = $schema->source($rrinfo->{source});
 	
@@ -1737,13 +1750,17 @@ sub get_m2m_multi_relationship_column_cnf {
 	);
 	$Module->apply_extconfig( xtype => 'multi-check-combo' );
 	
-	if($conf->{editor}) {
-		if($conf->{editor}->{listeners}) {
-			my $listeners = delete $conf->{editor}->{listeners};
-			$Module->add_listener( $_ => $listeners->{$_} ) for (keys %$listeners);
-		}
-		$Module->apply_extconfig(%{$conf->{editor}}) if (keys %{$conf->{editor}} > 0);
+	$conf->{editor} = $conf->{editor} || {};
+	
+	# allowBlank per-default. There are no database-level rules for "nullable" since the
+	# column is virtual and has no schema/properties
+	$conf->{editor}->{allowBlank} = \1 unless (exists $conf->{editor}->{allowBlank});
+	
+	if($conf->{editor}->{listeners}) {
+		my $listeners = delete $conf->{editor}->{listeners};
+		$Module->add_listener( $_ => $listeners->{$_} ) for (keys %$listeners);
 	}
+	$Module->apply_extconfig(%{$conf->{editor}}) if (keys %{$conf->{editor}} > 0);
 	
 	$conf->{editor} =  $Module->content;
 	
