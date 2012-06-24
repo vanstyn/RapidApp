@@ -205,8 +205,8 @@ Ext.override(Ext.ux.form.SuperBoxSelect,{
 });
 
 
+/*
 Ext.ux.RapidApp.errMsgHandler = function(title,msg) {
-	//Ext.Msg.alert(title,Ext.util.Format.nl2br(msg));
 	Ext.Msg.show({
 		title: title,
 		msg: Ext.util.Format.nl2br(msg),
@@ -215,6 +215,40 @@ Ext.ux.RapidApp.errMsgHandler = function(title,msg) {
 		minWidth: 275
 	});
 }
+*/
+
+
+Ext.ux.RapidApp.errMsgHandler = function(title,msg) {
+	var win;
+	win = new Ext.Window({
+		title: 'Exception',
+		width: 600,
+		height: 400,
+		modal: true,
+		closable: true,
+		layout: 'fit',
+		items: {
+			xtype: 'panel',
+			frame: true,
+			headerCfg: {
+				tag: 'div',
+				cls: 'ra-exception-heading',
+				html: title
+			},
+			autoScroll: true,
+			html: '<pre>' + Ext.util.Format.nl2br(msg) + '</pre>',
+			bodyStyle: 'padding:5px;',
+		},
+		buttonAlign: 'center',
+		buttons: [{
+			text: 'Ok',
+			handler: function() { win.close(); }
+		}],
+	});
+	win.show();
+}
+
+
 
 Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
 	if (!response || !response.getResponseHeader) return;
