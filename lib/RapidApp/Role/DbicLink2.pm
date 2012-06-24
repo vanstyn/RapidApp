@@ -1340,7 +1340,16 @@ sub _dbiclink_update_records {
 				my @update_queue = $self->prepare_record_updates($BaseRow,\@columns,$data);
 			
 				# Update all the rows at the end:
-				$_->{row}->update($_->{change}) for (@update_queue);
+				foreach my $upd (@update_queue) {
+					if($upd->{change}) {
+						$upd->{row}->update($upd->{change});
+					}
+					elsif($upd->{rel_update}) {
+						# Special handling for updates to relationship columns 
+						#(which aren't real columns):
+						$self->apply_virtual_rel_col_update($upd->{row},$upd->{rel_update});
+					}
+				}
 				
 				# Get the new record_pk for the row (it probably hasn't changed, but it could have):
 				my $newPkVal = $self->generate_record_pk_value({ $BaseRow->get_columns });
@@ -1377,6 +1386,41 @@ sub _dbiclink_update_records {
 		msg => 'Update Succeeded'
 	};
 }
+
+# currently this just handles updates to m2m relationship columns, but, this is
+# also where other arbitrary update logic could go for other kinds of virtual
+# columns that may be added in the future
+sub apply_virtual_rel_col_update {
+	my $self = shift;
+	my $UpdRow = shift;
+	my $update = shift;
+	
+	my $Source = $UpdRow->result_source;
+	
+	foreach my $colname (keys %$update) {
+		## currently ignore everything but m2m relationship columns:
+		my $info = $Source->relationship_info($colname) or next;
+		my $m2m_attrs = $info->{attrs}->{m2m_attrs} or next;
+		
+		# This method should have been setup by the call to "many_to_many":
+		my $method = 'set_' . $colname;
+		$UpdRow->can($method) or die "Row '" . ref($UpdRow) . 
+			"' missing expected many_to_many method '$method' - cannot update m2m data for '$colname'!";
+		
+		my @ids = split(/\s*,\s*/,$update->{$colname});
+		
+		my $Rs = $Source->schema->source($m2m_attrs->{rrinfo}->{source})->resultset;
+		my $keycol = $m2m_attrs->{rrinfo}->{cond_info}->{foreign};
+		
+		my @rrows = $Rs->search_rs({ $keycol => { '-in' => \@ids }})->all;
+		my $count = scalar @rrows;
+		
+		scream_color(WHITE.ON_BLUE.BOLD,"  --> Setting '$colname' m2m links (count: $count)");
+		
+		$UpdRow->$method(\@rrows);
+	}
+}
+
 
 # moved/generalized out of _dbiclink_update_records to also be used by batch_update:
 sub prepare_record_updates {
@@ -1421,6 +1465,16 @@ sub prepare_record_updates {
 		# --
 		my %revalias = map {$_=>1} values %$alias;
 		%update = map { $alias->{$_} ? $alias->{$_} : $_ => $update{$_} } grep { !$revalias{$_} } keys %update;
+		# ---
+		
+		# --- pull out updates to virtual relationship columns
+		my $Source = $UpdRow->result_source;
+		my $relcol_updates = {};
+		(!$Source->has_column($_) && $Source->has_relationship($_)) and
+			$relcol_updates->{$_} = delete $update{$_} for (keys %update);
+		# add to the update queue with a special attr 'rel_update' instead of 'change'
+		push @update_queue,{ row => $UpdRow, rel_update => $relcol_updates } 
+			if (keys %$relcol_updates > 0);
 		# ---
 		
 		my $change = \%update;

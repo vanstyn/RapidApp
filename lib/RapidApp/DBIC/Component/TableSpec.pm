@@ -104,7 +104,7 @@ sub TableSpec_m2m {
 	);
 	
 	# Add a normal many_to_many bridge so we have the many_to_many sugar later on:
-	#$self->many_to_many( $m2m => $local_rel, $remote_rel );
+	$self->many_to_many( $m2m => $local_rel, $remote_rel );
 }
 
 

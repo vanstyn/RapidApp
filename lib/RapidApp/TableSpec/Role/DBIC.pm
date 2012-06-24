@@ -504,8 +504,11 @@ sub filter_updatable_columns {
 	my $self = shift;
 	my @columns = @_;
 	
-	#exclude all multi relationship columns
-	#@columns = grep {!$self->multi_rel_columns_indx->{$self->column_prefix . $_}} @columns;
+	#exclude all multi relationship columns (except new m2m multi rel columns)
+	@columns = grep {
+		$self->m2m_rel_columns_indx->{$self->column_prefix . $_} ||
+		!$self->multi_rel_columns_indx->{$self->column_prefix . $_}
+	} @columns;
 	
 	return $self->colspec_select_columns({
 		colspecs => $self->updatable_colspec->colspecs,
@@ -521,7 +524,13 @@ sub filter_creatable_columns {
 	my @columns = @_;
 	
 	#exclude all multi relationship columns
-	@columns = grep {!$self->multi_rel_columns_indx->{$_}} @columns;
+	#@columns = grep {!$self->multi_rel_columns_indx->{$_}} @columns;
+	
+	#exclude all multi relationship columns (except new m2m multi rel columns)
+	@columns = grep {
+		$self->m2m_rel_columns_indx->{$self->column_prefix . $_} ||
+		!$self->multi_rel_columns_indx->{$self->column_prefix . $_}
+	} @columns;
 
 	# First filter by include_colspec:
 	@columns = $self->filter_include_columns(@columns);
@@ -1644,6 +1653,7 @@ sub get_multi_relationship_column_cnf {
 	return %$conf;
 }
 
+hashash 'm2m_rel_columns_indx';
 
 sub get_m2m_multi_relationship_column_cnf {
 	my $self = shift;
@@ -1700,7 +1710,9 @@ sub get_m2m_multi_relationship_column_cnf {
 	$conf->{name} = $colname;
 	
 	# This is wicked ugly, needs refactored!!!
-	$self->multi_rel_columns_indx->{$conf->{name}}->{function} = $conf->{function};
+	$self->multi_rel_columns_indx->{$colname}->{function} = $conf->{function};
+	
+	$self->m2m_rel_columns_indx->{$colname} = 1;
 	
 	
 	##### Now, setup the special m2m editor:
@@ -1735,9 +1747,6 @@ sub get_m2m_multi_relationship_column_cnf {
 	
 	$conf->{editor} =  $Module->content;
 	
-	scream($conf->{editor});
-	
-
 	return %$conf;
 }
 
