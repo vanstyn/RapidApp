@@ -1340,19 +1340,10 @@ sub _dbiclink_update_records {
 				# --
 				
 				my @update_queue = $self->prepare_record_updates($BaseRow,\@columns,$data);
-			
-				# Update all the rows at the end:
-				foreach my $upd (@update_queue) {
-					if($upd->{change}) {
-						$upd->{row}->update($upd->{change});
-					}
-					elsif($upd->{rel_update}) {
-						# Special handling for updates to relationship columns 
-						#(which aren't real columns):
-						$self->apply_virtual_rel_col_update($upd->{row},$upd->{rel_update});
-					}
-				}
 				
+				# Update all the rows at the end:
+				$self->process_update_queue(@update_queue);
+		
 				# Get the new record_pk for the row (it probably hasn't changed, but it could have):
 				my $newPkVal = $self->generate_record_pk_value({ $BaseRow->get_columns });
 				push @updated_keyvals, $newPkVal;
@@ -1387,6 +1378,22 @@ sub _dbiclink_update_records {
 		success => \1,
 		msg => 'Update Succeeded'
 	};
+}
+
+sub process_update_queue {
+	my $self = shift;
+	my @update_queue = @_;
+	
+	foreach my $upd (@update_queue) {
+		if($upd->{change}) {
+			$upd->{row}->update($upd->{change});
+		}
+		elsif($upd->{rel_update}) {
+			# Special handling for updates to relationship columns 
+			#(which aren't real columns):
+			$self->apply_virtual_rel_col_update($upd->{row},$upd->{rel_update});
+		}
+	}
 }
 
 # currently this just handles updates to m2m relationship columns, but, this is
@@ -1765,8 +1772,6 @@ sub batch_update {
 	my @columns = grep { $_ ne $self->record_pk && $_ ne 'loadContentCnf' } keys %$update;
 	@columns = $self->TableSpec->filter_updatable_columns(@columns);
 	
-	
-	
 	try {
 		$self->ResultSource->schema->txn_do(sub {
 		
@@ -1776,7 +1781,7 @@ sub batch_update {
 				for ($Rs->all);
 			
 			# Update all the rows at the end:
-			$_->{row}->update($_->{change}) for (@update_queue);
+			$self->process_update_queue(@update_queue);
 		});
 	}
 	catch {
