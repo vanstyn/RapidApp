@@ -1628,6 +1628,9 @@ sub _dbiclink_create_records {
 	# Perform a fresh lookup of all the records we just updated and send them back to the client:
 	my $newdata = $self->DataStore->read({ columns => \@req_columns, id_in => \@updated_keyvals });
 	
+	die usererr rawhtml "Unknown error; no records were created", 
+		title => 'Create Failed' unless ($newdata && $newdata->{results});
+	
 	return {
 		%$newdata,
 		success => \1,
