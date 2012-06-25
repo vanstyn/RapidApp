@@ -5369,6 +5369,17 @@ Ext.ux.RapidApp.DbicSingleRelationshipColumnRender = function(c) {
 	);
 }
 
+Ext.ux.RapidApp.prettyCsvRenderer = function(v) {
+	if(!v) { return Ext.ux.showNull(v); }
+	var sep = '<span style="color: navy;font-size:1.2em;font-weight:bold;">,</span> ';
+	var list = v.split(',');
+	Ext.each(list,function(item){
+		// strip whitespace:
+		item = item.replace(/^\s+|\s+$/g,"");
+	},this);
+	return list.join(sep);
+}
+
 /************** CUSTOM VTYPES **************/
 Ext.apply(Ext.form.VTypes,{
 	zipcode: function(v) { return /^\d{5}(-\d{4})?$/.test(v); },
@@ -5376,3 +5387,6 @@ Ext.apply(Ext.form.VTypes,{
 	zipcodeText: 'Zipcode must be 5-digits (e.g. 12345) or 5-digits + 4 (e.g. 12345-6789)'
 });
 /*******************************************/
+
+
+

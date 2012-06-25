@@ -1252,7 +1252,7 @@ sub resolve_dbic_colname {
 				#')';
 				
 				
-				### TODO: build this using DBIC (subselect_rs ? resultset_column ?)
+				### TODO: build this using DBIC (subselect_rs as_query? resultset_column ?)
 				### This is unfortunately database specific. It works in MySQL and SQLite, and
 				### should work in any database with the GROUP_CONCAT function. It doesn't work
 				### in PostgrSQL because it doesn't have GROUP_CONCAT. This will have to be implemented
@@ -1270,13 +1270,9 @@ sub resolve_dbic_colname {
 					' WHERE `' . $rinfo->{cond_info}->{foreign} . '` = `' . $rel . '`.`' . $cond_data->{self} . '`' . 
 				')';
 				
-				return { '' => \$sql, -as => $name };
-				
-				#return \[ $sql ];
-			
+				return { '' => \$sql, -as => $name };		
 			}
 			else {
-		
 		
 				# If not customized, we return a sub-query which counts the related items
 				my $source = $self->schema->source($cond_data->{info}{source});
@@ -1713,6 +1709,8 @@ sub get_m2m_multi_relationship_column_cnf {
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	my $conf = \%opt;
+	
+	$conf->{renderer} = jsfunc 'Ext.ux.RapidApp.prettyCsvRenderer';
 	
 	my $m2m_attrs = $conf->{relationship_cond_data}->{attrs}->{m2m_attrs};
 	my $rinfo = $m2m_attrs->{rinfo};
