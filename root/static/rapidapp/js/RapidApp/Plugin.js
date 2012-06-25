@@ -1611,6 +1611,13 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				return flat.join(',');
 			};
 			
+			// Task to clear the cache:
+			cmp.store.clearCachedTotalTask = new Ext.util.DelayedTask(function(){
+				if(this.cached_total_count) {
+					delete this.cached_total_count;
+				}
+			},cmp.store);
+			
 			cmp.store.on('load',function(store) {
 				delete store.cached_total_count;
 				if(store.reader && store.reader.jsonData) {
@@ -1619,6 +1626,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					Ext.apply(store.cached_total_count_params,store.baseParams);
 					Ext.apply(store.cached_total_count_params,store.lastOptions.params);
 				}
+				// Start a timer to clear the cache after 1 minute of inactivity (loads):
+				store.clearCachedTotalTask.delay(60000);
 			},this);
 			
 			
