@@ -1270,7 +1270,9 @@ sub resolve_dbic_colname {
 					' WHERE `' . $rinfo->{cond_info}->{foreign} . '` = `' . $rel . '`.`' . $cond_data->{self} . '`' . 
 				')';
 				
-				return \[ $sql ];
+				return { '' => \$sql, -as => $name };
+				
+				#return \[ $sql ];
 			
 			}
 			else {
