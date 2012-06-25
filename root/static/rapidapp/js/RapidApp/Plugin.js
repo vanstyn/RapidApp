@@ -1654,8 +1654,14 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 
 						if(prev == cur) {
 							options.params.cached_total_count = store.cached_total_count;
-							store.lastOptions.params.cached_total_count = store.cached_total_count;
-							store.baseParams.cached_total_count = store.cached_total_count;
+							
+							if(store.lastOptions && store.lastOptions.params) {
+								store.lastOptions.params.cached_total_count = store.cached_total_count;
+							}
+							
+							if(store.baseParams) {
+								store.baseParams.cached_total_count = store.cached_total_count;
+							}
 						}
 					}
 					return true;
