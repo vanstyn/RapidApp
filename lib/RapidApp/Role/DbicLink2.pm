@@ -443,7 +443,8 @@ sub rs_count {
 	#
 	# Note that we've already fetched the actual rows from $Rs2 above; this is 
 	# *just* for getting the total count:
-	$Rs2 = $Rs2->search_rs({},{ group_by => $self->primary_columns }) #<-- this is just a safe group_by value
+	my $group_by = [ map { 'me.' . $_ } @{$self->primary_columns} ];
+	$Rs2 = $Rs2->search_rs({},{ group_by => $group_by }) #<-- this is just a safe group_by value
 		if (exists $Rs2->{attrs}->{having} and !$Rs2->{attrs}->{group_by});
 	# ---
 	return $Rs2->pager->total_entries;
@@ -847,7 +848,8 @@ sub multifilter_to_dbf {
 			join 	=> $join,
 			having 	=> $having
 		});
-		$LocalRs = $LocalRs->search_rs({},{ group_by => $self->primary_columns }) #<-- safe group_by
+		my $group_by = [ map { 'me.' . $_ } @{$self->primary_columns} ];
+		$LocalRs = $LocalRs->search_rs({},{ group_by => $group_by }) #<-- safe group_by
 			unless ($LocalRs->{attrs}->{group_by});
 		
 		
