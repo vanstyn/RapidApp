@@ -4345,6 +4345,9 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 				
 				if(existBtn) {
 					existBtn.setStyle('float','left');
+					
+					if(this.cmp.allowBlank) { this.addSelectNoneBtn(existBtn); }
+					
 					newEl = existBtn.insertSibling({ tag: 'div', style: 'float:right;' },'after');
 					var relBtn = new Ext.Button({
 						iconCls: 'icon-clock-run',
@@ -4361,6 +4364,23 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 		}
 		
 		return this.cmp.menu;
+	},
+	
+	addSelectNoneBtn: function(existBtn) {
+		
+		var newEl = existBtn.insertSibling({ tag: 'div', style: 'float:left;' },'after');
+		var noneBtn = new Ext.Button({
+			text: '<span style="font-size:.9em;color:grey;">(None)</span>',
+			handler: function(){ 
+				this.cmp.setValue(null); 
+				this.cmp.resumeEvents();
+				this.cmp.fireEvent('blur');
+				this.cmp.menu.hide();
+			},
+			scope: this
+		});
+		noneBtn.render(newEl);
+		
 	},
 	
 	showRelativeDateMenu: function(btn,e) {
