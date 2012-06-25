@@ -1220,6 +1220,7 @@ sub resolve_dbic_colname {
 		#  breaks COUNT() (because the number of joined rows gets multiplied) so by default
 		#  we only use sub-queries.  In fact, join and group-by has a lot of problems on
 		#  MySQL and we should probably never use it.
+		$cond_data->{function} = $cond_data->{function} || $self->multi_rel_columns_indx->{$name};
 		
 		# Support for a custom aggregate function
 		if (ref($cond_data->{function}) eq 'CODE') {
@@ -1227,13 +1228,62 @@ sub resolve_dbic_colname {
 			return $cond_data->{function}->($self,$rel,$col,$join,$cond_data,$name);
 		}
 		else {
-			# If not customized, we return a sub-query which counts the related items
-			my $source = $self->schema->source($cond_data->{info}{source});
-			my $rel_rs= $source->resultset_class->new($source, { alias => 'inner' })->search_rs(
-				{ "inner.$cond_data->{foreign}" => \[" = $rel.$cond_data->{self}"] },
-				{ %{$cond_data->{info}{attrs} || {}} }
-			);
-			return { '' => $rel_rs->count_rs->as_query, -as => $name };
+			# Setup the special GROUP_CONCAT render/function
+			my $m2m_attrs = $cond_data->{info}->{attrs}->{m2m_attrs};
+			if($m2m_attrs) {
+			
+				my $rinfo = $m2m_attrs->{rinfo};
+				my $rrinfo = $m2m_attrs->{rrinfo};
+			
+				# initial hard-coded example the dynamic logic was based on:
+				#my $sql = '(' .
+				#	# SQLite Specific:
+				#	#'SELECT(GROUP_CONCAT(flags.flag,", "))' .
+				#	
+				#	# MySQL Sepcific:
+				#	#'SELECT(GROUP_CONCAT(flags.flag SEPARATOR ", "))' .
+				#	
+				#	# Generic (MySQL & SQLite):
+				#	'SELECT(GROUP_CONCAT(flags.flag))' .
+				#	
+				#	' FROM ' . $source->from . 
+				#	' JOIN `flags` `flags` ON customers_to_flags.flag = flags.flag' .
+				#	' WHERE ' . $cond_data->{foreign} . ' = ' . $rel . '.' . $cond_data->{self} . 
+				#')';
+				
+				
+				### TODO: build this using DBIC (subselect_rs ? resultset_column ?)
+				### This is unfortunately database specific. It works in MySQL and SQLite, and
+				### should work in any database with the GROUP_CONCAT function. It doesn't work
+				### in PostgrSQL because it doesn't have GROUP_CONCAT. This will have to be implemented
+				### separately first each db. TODO: ask the storage engine for the db type and apply
+				### a correct version of the function:
+				my $sql = '(' .
+					# Generic (MySQL & SQLite):
+					'SELECT(GROUP_CONCAT(`' . $rrinfo->{table} . '`.`' . $rrinfo->{cond_info}->{foreign} . '`))' .
+					
+					' FROM `' . $rinfo->{table} . '`' . 
+					' JOIN `' . $rrinfo->{table} . '` `' . $rrinfo->{table} . '`' .
+					'  ON `' . $rinfo->{table} . '`.`' . $rrinfo->{cond_info}->{self} . '`' .
+					'   = `' . $rrinfo->{table} . '`.`' . $rrinfo->{cond_info}->{foreign} . '`' .
+					#' ON customers_to_flags.flag = flags.flag' .
+					' WHERE `' . $rinfo->{cond_info}->{foreign} . '` = `' . $rel . '`.`' . $cond_data->{self} . '`' . 
+				')';
+				
+				return \[ $sql ];
+			
+			}
+			else {
+		
+		
+				# If not customized, we return a sub-query which counts the related items
+				my $source = $self->schema->source($cond_data->{info}{source});
+				my $rel_rs= $source->resultset_class->new($source, { alias => 'inner' })->search_rs(
+					{ "inner.$cond_data->{foreign}" => \[" = $rel.$cond_data->{self}"] },
+					{ %{$cond_data->{info}{attrs} || {}} }
+				);
+				return { '' => $rel_rs->count_rs->as_query, -as => $name };
+			}
 		}
 	}
 }
@@ -1665,58 +1715,11 @@ sub get_m2m_multi_relationship_column_cnf {
 	my $m2m_attrs = $conf->{relationship_cond_data}->{attrs}->{m2m_attrs};
 	my $rinfo = $m2m_attrs->{rinfo};
 	my $rrinfo = $m2m_attrs->{rrinfo};
-
-	$conf->{function} = $conf->{function} || sub {
-		my ($self,$rel,$col,$join,$cond_data) = @_;
-		
-		# initial hard-coded example the dynamic logic was based on:
-		#my $sql = '(' .
-		#	# SQLite Specific:
-		#	#'SELECT(GROUP_CONCAT(flags.flag,", "))' .
-		#	
-		#	# MySQL Sepcific:
-		#	#'SELECT(GROUP_CONCAT(flags.flag SEPARATOR ", "))' .
-		#	
-		#	# Generic (MySQL & SQLite):
-		#	'SELECT(GROUP_CONCAT(flags.flag))' .
-		#	
-		#	' FROM ' . $source->from . 
-		#	' JOIN `flags` `flags` ON customers_to_flags.flag = flags.flag' .
-		#	' WHERE ' . $cond_data->{foreign} . ' = ' . $rel . '.' . $cond_data->{self} . 
-		#')';
-		
-		
-		### TODO: build this using DBIC (subselect_rs ? resultset_column ?)
-		### This is unfortunately database specific. It works in MySQL and SQLite, and
-		### should work in any database with the GROUP_CONCAT function. It doesn't work
-		### in PostgrSQL because it doesn't have GROUP_CONCAT. This will have to be implemented
-		### separately first each db. TODO: ask the storage engine for the db type and apply
-		### a correct version of the function:
-		my $sql = '(' .
-			# Generic (MySQL & SQLite):
-			'SELECT(GROUP_CONCAT(`' . $rrinfo->{table} . '`.`' . $rrinfo->{cond_info}->{foreign} . '`))' .
-			
-			' FROM `' . $rinfo->{table} . '`' . 
-			' JOIN `' . $rrinfo->{table} . '` `' . $rrinfo->{table} . '`' .
-			'  ON `' . $rinfo->{table} . '`.`' . $rrinfo->{cond_info}->{self} . '`' .
-			'   = `' . $rrinfo->{table} . '`.`' . $rrinfo->{cond_info}->{foreign} . '`' .
-			#' ON customers_to_flags.flag = flags.flag' .
-			' WHERE `' . $rinfo->{cond_info}->{foreign} . '` = `' . $rel . '`.`' . $cond_data->{self} . '`' . 
-		')';
-		
-		return \[ $sql ];
-	};
-
+	
 	my $colname = $self->column_prefix . $rel;
 	$conf->{name} = $colname;
 	
-	# This is wicked ugly, needs refactored!!!
-	$self->multi_rel_columns_indx->{$colname}->{function} = $conf->{function};
-	
 	$self->m2m_rel_columns_indx->{$colname} = 1;
-	
-	
-	##### Now, setup the special m2m editor:
 	
 	### This is the initial editor type 'multi-check-combo' which is only suitable if
 	### there are a relatively limited number of remote linkable rows (such as roles)

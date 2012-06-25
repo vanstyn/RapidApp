@@ -3,6 +3,7 @@ package RapidApp::DBIC::Component::TableSpec;
 # this is for Attribute::Handlers:
 require base; base->import('DBIx::Class');
 
+use Sub::Name qw/subname/;
 
 # DBIx::Class Component: ties a RapidApp::TableSpec object to
 # a Result class for use in configuring various modules that
@@ -45,11 +46,6 @@ __PACKAGE__->TableSpec_data_type_profiles({ %$default_data_type_profiles });
 sub TableSpec_m2m {
 	my $self = shift;
 	my ($m2m,$local_rel,$remote_rel) = @_;
-	
-	# -- Add a normal many_to_many bridge so we have the many_to_many sugar later on:
-	# (we use 'set_$rel' in update_records in DbicLink2)
-	$self->many_to_many(@_);
-	# --
 	
 	$self->is_TableSpec_applied and 
 		die "TableSpec_m2m must be called before apply_TableSpec!";
@@ -105,9 +101,78 @@ sub TableSpec_m2m {
 			rrinfo => $rrinfo
 		}}
 	);
+	
+	# -- Add a normal many_to_many bridge so we have the many_to_many sugar later on:
+	# (we use 'set_$rel' in update_records in DbicLink2)
+	#$self->many_to_many(@_);
+	$self->apply_m2m_sugar(@_);
+	# --
 }
 
+# sugar copied from many_to_many (DBIx::Class::Relationship::ManyToMany), 
+# but only sets up add_$rel and set_$rel and won't overwrite existing subs (safer)
+sub apply_m2m_sugar {
+	my ($class, $meth, $rel, $f_rel, $rel_attrs) = @_;
 
+	my $set_meth = "set_${meth}";
+	my $add_meth = "add_${meth}";
+	
+	$class->can($set_meth) and 
+		die "m2m: set method '$set_meth' is already defined in (" . ref($class) . ")";
+		
+	$class->can($add_meth) and 
+		die "m2m: add method '$add_meth' is already defined in (" . ref($class) . ")";
+	
+    my $add_meth_name = join '::', $class, $add_meth;
+    *$add_meth_name = subname $add_meth_name, sub {
+      my $self = shift;
+      @_ > 0 or $self->throw_exception(
+        "${add_meth} needs an object or hashref"
+      );
+      my $source = $self->result_source;
+      my $schema = $source->schema;
+      my $rel_source_name = $source->relationship_info($rel)->{source};
+      my $rel_source = $schema->resultset($rel_source_name)->result_source;
+      my $f_rel_source_name = $rel_source->relationship_info($f_rel)->{source};
+      my $f_rel_rs = $schema->resultset($f_rel_source_name)->search({}, $rel_attrs||{});
+
+      my $obj;
+      if (ref $_[0]) {
+        if (ref $_[0] eq 'HASH') {
+          $obj = $f_rel_rs->find_or_create($_[0]);
+        } else {
+          $obj = $_[0];
+        }
+      } else {
+        $obj = $f_rel_rs->find_or_create({@_});
+      }
+
+      my $link_vals = @_ > 1 && ref $_[$#_] eq 'HASH' ? pop(@_) : {};
+      my $link = $self->search_related($rel)->new_result($link_vals);
+      $link->set_from_related($f_rel, $obj);
+      $link->insert();
+      return $obj;
+    };
+	
+	my $set_meth_name = join '::', $class, $set_meth;
+    *$set_meth_name = subname $set_meth_name, sub {
+		my $self = shift;
+		@_ > 0 or $self->throw_exception(
+			"{$set_meth} needs a list of objects or hashrefs"
+		);
+		my @to_set = (ref($_[0]) eq 'ARRAY' ? @{ $_[0] } : @_);
+		# if there is a where clause in the attributes, ensure we only delete
+		# rows that are within the where restriction
+		if ($rel_attrs && $rel_attrs->{where}) {
+			$self->search_related( $rel, $rel_attrs->{where},{join => $f_rel})->delete;
+		} else {
+			$self->search_related( $rel, {} )->delete;
+		}
+		# add in the set rel objects
+		$self->$add_meth($_, ref($_[1]) ? $_[1] : {}) for (@to_set);
+	};
+}
+# --
 
 sub is_TableSpec_applied {
 	my $self = shift;
