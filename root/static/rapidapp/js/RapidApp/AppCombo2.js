@@ -1070,6 +1070,13 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 				}));
 			}
 			
+			// If this is an editable appgrid, convert it to a non-editable appgrid:
+			var update_cmpConfig = function(conf) {
+				if(conf && conf.xtype == 'appgrid2ed') {
+					conf.xtype = 'appgrid2';
+				}
+			};
+			
 			var cmpConfig = {
 				// Obviously this is for grids... not sure if this will cause problems
 				// in the case of AppDVs
@@ -1263,7 +1270,8 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 						},
 						rowdblclick: function(){ select_fn(null); }
 					},
-					cmpConfig: cmpConfig
+					cmpConfig: cmpConfig,
+					update_cmpConfig: update_cmpConfig
 				},
 				buttons: buttons,
 				listeners: {
