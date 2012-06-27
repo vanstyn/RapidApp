@@ -1710,6 +1710,9 @@ sub get_m2m_multi_relationship_column_cnf {
 	
 	my $conf = \%opt;
 	
+	$conf->{no_quick_search} = \1;
+	$conf->{no_summary} = \1;
+	
 	$conf->{renderer} = jsfunc 'Ext.ux.RapidApp.prettyCsvRenderer';
 	
 	my $m2m_attrs = $conf->{relationship_cond_data}->{attrs}->{m2m_attrs};
