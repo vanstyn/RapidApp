@@ -1273,12 +1273,14 @@ sub resolve_dbic_colname {
 				return { '' => \$sql, -as => $name };		
 			}
 			else {
-		
+				
+				#TODO: follow the native has_many accessor so we don't have to reproduce the attrs, etc!!!!
+				
 				# If not customized, we return a sub-query which counts the related items
 				my $source = $self->schema->source($cond_data->{info}{source});
 				my $rel_rs= $source->resultset_class->new($source, { alias => 'inner' })->search_rs(
 					{ "inner.$cond_data->{foreign}" => \[" = $rel.$cond_data->{self}"] },
-					{ %{$cond_data->{info}{attrs} || {}} }
+					{ %{$source->resultset_attributes || {}}, %{$cond_data->{info}{attrs} || {}} }
 				);
 				return { '' => $rel_rs->count_rs->as_query, -as => $name };
 			}
