@@ -625,12 +625,17 @@ if('function' !== typeof RegExp.escape) {
  * @constructor
  * @param {Object} A config object
  */
-Ext.ux.RapidApp.Plugin.GridQuickSearch = function(config) {
-	Ext.apply(this, config);
-	Ext.ux.RapidApp.Plugin.GridQuickSearch.superclass.constructor.call(this);
-}; // eo constructor
+//Ext.ux.RapidApp.Plugin.GridQuickSearch = function(config) {
+//	Ext.apply(this, config);
+//	Ext.ux.RapidApp.Plugin.GridQuickSearch.superclass.constructor.call(this);
+//}; // eo constructor
 
-Ext.extend(Ext.ux.RapidApp.Plugin.GridQuickSearch, Ext.util.Observable, {
+Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
+	
+	constructor: function(cnf) {
+		Ext.apply(this,cnf);
+	},
+	
 	/**
 	 * @cfg {Boolean} autoFocus Try to focus the input field on each store load if set to true (defaults to undefined)
 	 */
@@ -774,16 +779,20 @@ Ext.extend(Ext.ux.RapidApp.Plugin.GridQuickSearch, Ext.util.Observable, {
 	 * @private
 	 * @param {Ext.grid.GridPanel/Ext.grid.EditorGrid} grid reference to grid this plugin is used for
 	 */
-	 ,fieldNameMap: {},
+	// ,fieldNameMap: {},
 	
-	init:function(grid) {
+	,init:function(grid) {
 		this.grid = grid;
+		
+		Ext.apply(this,grid.grid_search_cnf || {});
 		
 		grid.quicksearch_plugin = this;
 		
 		// -- New: disable plugin if there are no quick_search columns (2012-04-11 by HV)
 		if(!this.getQuickSearchColumns().length > 0) { return; }
 		// --
+		
+		this.fieldNameMap = {};
 		
 		// -- query_search_use_column support, added by HV 2011-12-26
 		var columns = this.grid.initialConfig.columns;
