@@ -1144,6 +1144,14 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 							
 							// Save references in the window and field:
 							win.app = this, field.appStore = this.store;
+							
+							// -- New feature added to AppGrid2. Make sure that our value field
+							// is requested in the 'columns' param
+							if(win.app.alwaysRequestColumns) {
+								win.app.alwaysRequestColumns[field.displayField] = true;
+								win.app.alwaysRequestColumns[field.valueField] = true;
+							}
+							// --
 								
 							// Add the 'first_records_cond' (new DbicLink2 feature) which will
 							// move matching records, in our case, the current value, to the top.
