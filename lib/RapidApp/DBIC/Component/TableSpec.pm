@@ -16,6 +16,8 @@ use RapidApp::DbicAppCombo2;
 
 #__PACKAGE__->load_components(qw/IntrospectableM2M/);
 
+__PACKAGE__->load_components('+RapidApp::DBIC::Component::VirtualColumnsExt');
+
 __PACKAGE__->mk_classdata( 'TableSpec' );
 __PACKAGE__->mk_classdata( 'TableSpec_rel_columns' );
 
@@ -189,6 +191,10 @@ sub apply_TableSpec {
 	
 	# ignore/return if apply_TableSpec has already been called:
 	return if $self->is_TableSpec_applied;
+	
+	# make sure _virtual_columns and _virtual_columns_order get initialized
+	$self->add_virtual_columns();
+
 	
 	$self->TableSpec_data_type_profiles(
 		%{ $self->TableSpec_data_type_profiles || {} },

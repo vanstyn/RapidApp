@@ -248,6 +248,13 @@ sub add_db_column($@) {
 	my $editable = $self->filter_updatable_columns($name,$opt{name});
 	my $creatable = $self->filter_creatable_columns($name,$opt{name});
 	
+	# --  NEW: VIRTUAL COLUMNS SUPPORT - never editable:
+	if($self->ResultClass->has_virtual_column($name)) {
+		$editable = 0;
+		$creatable = 0;
+	}
+	# --
+	
 	$opt{allow_edit} = \0 unless ($editable);
 	$opt{allow_add} = \0 unless ($creatable);
 
@@ -1322,8 +1329,38 @@ sub resolve_dbic_rel_alias_by_column_name  {
 			$join = $self->chain_to_hash($self->relspec_prefix)
 				if length $self->relspec_prefix;
 			
-			return ('me',$name,$join,$cond_data)
+			return ('me',$name,$join,$cond_data);
 		}
+		
+		
+		## ----
+		## NEW: VIRTUAL COLUMNS SUPPORT (added 2012-07-06 by HV)
+		## Check if this column has been setup via 'add_virtual_columns' in the 
+		## Result class and look for special attributes 'function' (higher priority) 
+		## or 'sql' (lower priority) for virtualizing the column in the
+		## query. This is similar to a multi rel column, but is still a column
+		## and not a relationship (TODO: combine this logic with the older multi
+		## rel column logic)
+		if ($self->ResultClass->has_virtual_column($name)) {
+			my $info = $self->ResultClass->column_info($name) || {};
+			my $function = $info->{function} || sub {
+				my ($self,$rel,$col,$join,$cond_data2,$name2) = @_;
+				my $sql = $info->{sql} || 'SELECT(NULL)';
+				
+				# ** translate 'self.' into the relname of the current context. This
+				# should either be 'me.' or the join name. This logic is important
+				# to be able to have an sql snippet defined in a Result class that will
+				# work across different join/perspectives.
+				$sql =~ s/self\./${rel}\./g;
+				# **
+				
+				return { '' => \"($sql)", -as => $col };
+			};
+			$cond_data = { function => $function };
+			return ('me',$name,$join,$cond_data);
+		}
+		## ----
+		
 	
 		return ('me',$name,$join);
 	}
