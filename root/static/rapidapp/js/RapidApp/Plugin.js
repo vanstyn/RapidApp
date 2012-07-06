@@ -625,12 +625,17 @@ if('function' !== typeof RegExp.escape) {
  * @constructor
  * @param {Object} A config object
  */
-Ext.ux.RapidApp.Plugin.GridQuickSearch = function(config) {
-	Ext.apply(this, config);
-	Ext.ux.RapidApp.Plugin.GridQuickSearch.superclass.constructor.call(this);
-}; // eo constructor
+//Ext.ux.RapidApp.Plugin.GridQuickSearch = function(config) {
+//	Ext.apply(this, config);
+//	Ext.ux.RapidApp.Plugin.GridQuickSearch.superclass.constructor.call(this);
+//}; // eo constructor
 
-Ext.extend(Ext.ux.RapidApp.Plugin.GridQuickSearch, Ext.util.Observable, {
+Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
+	
+	constructor: function(cnf) {
+		Ext.apply(this,cnf);
+	},
+	
 	/**
 	 * @cfg {Boolean} autoFocus Try to focus the input field on each store load if set to true (defaults to undefined)
 	 */
@@ -774,16 +779,20 @@ Ext.extend(Ext.ux.RapidApp.Plugin.GridQuickSearch, Ext.util.Observable, {
 	 * @private
 	 * @param {Ext.grid.GridPanel/Ext.grid.EditorGrid} grid reference to grid this plugin is used for
 	 */
-	 ,fieldNameMap: {},
+	// ,fieldNameMap: {},
 	
-	init:function(grid) {
+	,init:function(grid) {
 		this.grid = grid;
+		
+		Ext.apply(this,grid.grid_search_cnf || {});
 		
 		grid.quicksearch_plugin = this;
 		
 		// -- New: disable plugin if there are no quick_search columns (2012-04-11 by HV)
 		if(!this.getQuickSearchColumns().length > 0) { return; }
 		// --
+		
+		this.fieldNameMap = {};
 		
 		// -- query_search_use_column support, added by HV 2011-12-26
 		var columns = this.grid.initialConfig.columns;
@@ -1611,6 +1620,13 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				return flat.join(',');
 			};
 			
+			// Task to clear the cache:
+			cmp.store.clearCachedTotalTask = new Ext.util.DelayedTask(function(){
+				if(this.cached_total_count) {
+					delete this.cached_total_count;
+				}
+			},cmp.store);
+			
 			cmp.store.on('load',function(store) {
 				delete store.cached_total_count;
 				if(store.reader && store.reader.jsonData) {
@@ -1619,6 +1635,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					Ext.apply(store.cached_total_count_params,store.baseParams);
 					Ext.apply(store.cached_total_count_params,store.lastOptions.params);
 				}
+				// Start a timer to clear the cache after 1 minute of inactivity (loads):
+				store.clearCachedTotalTask.delay(60000);
 			},this);
 			
 			

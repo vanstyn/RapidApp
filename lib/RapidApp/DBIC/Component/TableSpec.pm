@@ -339,6 +339,15 @@ sub default_TableSpec_cnf_columns {
 			$set->{data}->{'priority_rel_columns'}
 		);
 		
+		# -- If priority_rel_columns is on but we need to exclude a specific column:
+		$is_local = 1 if (
+			! $is_local and
+			$set->{data}->{no_priority_rel_column} and
+			$set->{data}->{no_priority_rel_column}->{$col} and
+			$self->has_column($col)
+		);
+		# --
+		
 		# Never allow a rel col to take over a primary key:
 		my %pri_cols = map {$_=>1} $self->primary_columns;
 		$is_local = 1 if ($pri_cols{$col});
@@ -505,6 +514,10 @@ sub TableSpec_valid_db_columns {
 		$accessor = 'single' if (
 			$accessor eq 'filter' and
 			$self->TableSpec_cnf->{data}->{'priority_rel_columns'} and
+			!(
+				$self->TableSpec_cnf->{data}->{'no_priority_rel_column'} and
+				$self->TableSpec_cnf->{data}->{'no_priority_rel_column'}->{$rel}
+			) and
 			! $pri_cols{$rel} #<-- exclude primary column names. TODO: this check is performed later, fix
 		);
 		

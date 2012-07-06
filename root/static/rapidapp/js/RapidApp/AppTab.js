@@ -563,6 +563,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.onRender.apply(this, arguments);
 	},
 	
+	alwaysRequestColumns: {},
+	
 	currentVisibleColnames: function() {
 		var cm = this.getColumnModel();
 		
@@ -570,6 +572,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		this.loadedColumnIndexes = {};
 		
 		var columns = cm.getColumnsBy(function(c){
+			if(this.alwaysRequestColumns[c.name]) { return true; }
 			if(c.hidden || c.dataIndex == "") { return false; }
 			return true;
 		},this);

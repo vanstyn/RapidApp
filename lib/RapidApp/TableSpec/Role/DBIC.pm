@@ -1280,12 +1280,14 @@ sub resolve_dbic_colname {
 				return { '' => \$sql, -as => $name };		
 			}
 			else {
-		
+				
+				#TODO: follow the native has_many accessor so we don't have to reproduce the attrs, etc!!!!
+				
 				# If not customized, we return a sub-query which counts the related items
 				my $source = $self->schema->source($cond_data->{info}{source});
 				my $rel_rs= $source->resultset_class->new($source, { alias => 'inner' })->search_rs(
 					{ "inner.$cond_data->{foreign}" => \[" = $rel.$cond_data->{self}"] },
-					{ %{$cond_data->{info}{attrs} || {}} }
+					{ %{$source->resultset_attributes || {}}, %{$cond_data->{info}{attrs} || {}} }
 				);
 				return { '' => $rel_rs->count_rs->as_query, -as => $name };
 			}
@@ -1746,6 +1748,9 @@ sub get_m2m_multi_relationship_column_cnf {
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
 	my $conf = \%opt;
+	
+	$conf->{no_quick_search} = \1;
+	$conf->{no_summary} = \1;
 	
 	$conf->{renderer} = jsfunc 'Ext.ux.RapidApp.prettyCsvRenderer';
 	

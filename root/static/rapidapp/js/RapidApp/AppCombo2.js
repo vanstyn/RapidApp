@@ -1070,6 +1070,13 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 				}));
 			}
 			
+			// If this is an editable appgrid, convert it to a non-editable appgrid:
+			var update_cmpConfig = function(conf) {
+				if(conf && conf.xtype == 'appgrid2ed') {
+					conf.xtype = 'appgrid2';
+				}
+			};
+			
 			var cmpConfig = {
 				// Obviously this is for grids... not sure if this will cause problems
 				// in the case of AppDVs
@@ -1137,6 +1144,14 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 							
 							// Save references in the window and field:
 							win.app = this, field.appStore = this.store;
+							
+							// -- New feature added to AppGrid2. Make sure that our value field
+							// is requested in the 'columns' param
+							if(win.app.alwaysRequestColumns) {
+								win.app.alwaysRequestColumns[field.displayField] = true;
+								win.app.alwaysRequestColumns[field.valueField] = true;
+							}
+							// --
 								
 							// Add the 'first_records_cond' (new DbicLink2 feature) which will
 							// move matching records, in our case, the current value, to the top.
@@ -1263,7 +1278,8 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 						},
 						rowdblclick: function(){ select_fn(null); }
 					},
-					cmpConfig: cmpConfig
+					cmpConfig: cmpConfig,
+					update_cmpConfig: update_cmpConfig
 				},
 				buttons: buttons,
 				listeners: {

@@ -1896,8 +1896,8 @@ Ext.override(Ext.Container, {
 Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 	
 	cmpListeners: null,
-	
 	cmpConfig: {},
+	update_cmpConfig: null,
 	
 	initComponent: function() {
 		
@@ -1918,6 +1918,13 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 					
 					var conf = Ext.decode(response.responseText);
 					Ext.apply(conf,container.cmpConfig);
+					
+					// new: 'update_cmpConfig' - same thing as cmpConfig except it is a
+					// function-based api which allows updating the config based on 
+					// the existing config instead of blindly like cmpConfig does
+					if(Ext.isFunction(container.update_cmpConfig)) {
+						container.update_cmpConfig(conf);
+					}
 					
 					if(container.cmpListeners) {
 						conf.initComponent = function() {
