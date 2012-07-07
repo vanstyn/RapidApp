@@ -4643,20 +4643,28 @@ Ext.ux.RapidApp.Plugin.tabpanelCloseAllRightClick = Ext.extend(Ext.util.Observab
 		
 		if(tp.items.getCount() < 2){ return; }
 		
-		//stop browser menu:
+		// stop browser menu event to prevent browser right-click context menu
+		// from opening:
 		e.stopEvent();
 		
-		var menuItems = [{
-			text: 'Close All Tabs',
-			iconCls: 'icon-tool-close',
-			scope: this,
-			handler: this.closeAll
-		},{
-			text: 'Close All BUT This',
-			iconCls: 'icon-tool-close',
-			scope: this,
-			handler: this.closeAll.createDelegate(this,[tab])
-		}];
+		// Make sure the tab is activated so it is clear which is the Tab that
+		// will *not* be closed
+		tp.activate(tab);
+		
+		var menuItems = [
+			//{
+			//	text: 'Close All Tabs',
+			//	iconCls: 'icon-tool-close',
+			//	scope: this,
+			//	handler: this.closeAll
+			//},
+			{
+				text: 'Close All Other Tabs',
+				iconCls: 'icon-tool-close',
+				scope: this,
+				handler: this.closeAll.createDelegate(this,[tab])
+			}
+		];
 
 		var menu = new Ext.menu.Menu({ items: menuItems });
 		var pos = e.getXY();
