@@ -237,13 +237,13 @@ Ext.ux.RapidApp.errMsgHandler = function(title,msg) {
 			},
 			autoScroll: true,
 			html: '<pre>' + Ext.util.Format.nl2br(msg) + '</pre>',
-			bodyStyle: 'padding:5px;',
+			bodyStyle: 'padding:5px;'
 		},
 		buttonAlign: 'center',
 		buttons: [{
 			text: 'Ok',
 			handler: function() { win.close(); }
-		}],
+		}]
 	});
 	win.show();
 }

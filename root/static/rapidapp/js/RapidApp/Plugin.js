@@ -3258,33 +3258,54 @@ Ext.override(Ext.CompositeElementLite, {
 
 Ext.ux.RapidApp.Plugin.AppGridAutoColWidth = Ext.extend(Ext.util.Observable,{
 	
-	maxColWidth: 1500,
-	
 	init: function(grid) {
 		grid.on('render',this.onRender,grid);
-		grid.maxColWidth = grid.maxColWidth || this.maxColWidth;
+		grid.autosize_maxwidth = grid.autosize_maxwidth || 500;
 		
 		Ext.apply(grid,{
 			// ------- http://extjs.com/forum/showthread.php?p=97676#post97676
-			autoSizeColumnsShallow: function() { 
-				return this.autoSizeColumns(true); 
+			autoSizeColumnHeaders: function(){
+				return this.doAutoSizeColumns(true);
 			},
-			autoSizeColumns: function(shallow) {
-				if (this.colModel) {
+			autoSizeColumns: function(){
+				// Not using Ext.LoadMask because it doesn't work right; I think because
+				// it listens to events that the resize causes to fire. All it really does
+				// is call El.mask and El.unmask anyway...
+				var El = this.getEl();
+				El.mask("Autosizing Columns...",'x-mask-loading');
 
-					this.colModel.suspendEvents();
-					for (var i = 0; i < this.colModel.getColumnCount(); i++) {
-						this.autoSizeColumn(i,shallow);
-					}
-					this.colModel.resumeEvents();
-					this.view.refresh(true);
-					this.store.removeListener('load',this.autoSizeColumns,this);
-
+				this.doAutoSizeColumns.defer(10,this,[false,El]);
+			},
+			doAutoSizeColumns: function(shallow,El) {
+				var cm = this.colModel;
+				if(!cm) { return; }
+				
+				// Shrink all columns to a floor value first because we can only "size-up"
+				if(!shallow) { this.setAllColumnsSize(10); }
+				
+				cm.suspendEvents();
+				var col_count = cm.getColumnCount();
+				for (var i = 0; i < col_count; i++) {
+					this.autoSizeColumn(i,shallow);
+				}
+				cm.resumeEvents();
+				this.view.refresh(true);
+				this.store.removeListener('load',this.autoSizeColumns,this);
+				this.store.removeListener('load',this.autoSizeColumnHeaders,this);
+				if(El) {
+					El.unmask();
 				}
 			},
 			autoSizeColumn: function(c,shallow) {
-				var colid = this.colModel.getColumnId(c);
-				var column = this.colModel.getColumnById(colid);
+				var cm = this.colModel;
+				var colid = cm.getColumnId(c);
+				var column = cm.getColumnById(colid);
+				
+				// Skip hidden columns unless autoSizeHidden is true:
+				if(!this.autosize_hidden && column.hidden) {
+					return;
+				}
+				
 				var col = this.view.el.select("td.x-grid3-td-" + colid + " div:first-child");
 				if (col) {
 
@@ -3297,13 +3318,24 @@ Ext.ux.RapidApp.Plugin.AppGridAutoColWidth = Ext.extend(Ext.util.Observable,{
 						w += col.getTextWidth();
 					}
 					w += Ext.get(col.elements[0]).getFrameWidth('lr');
+					
+					w = this.autosize_maxwidth < w ? this.autosize_maxwidth : w;
 
-					if (this.MaxColWidth && w > this.MaxColWidth) { w =  this.MaxColWidth; }
+					//if (w > this.autosize_maxwidth) { w = this.autosize_maxwidth; }
 					if (column.width && w < column.width) { w = column.width; }
 
-					this.colModel.setColumnWidth(c, w);
+					cm.setColumnWidth(c, w);
 					return w;
 				}
+			},
+			setAllColumnsSize: function(size) {
+				var cm = this.colModel;
+				cm.suspendEvents();
+				var col_count = cm.getColumnCount();
+				for (var i = 0; i < col_count; i++) {
+					cm.setColumnWidth(i, size);
+				}
+				cm.resumeEvents();
 			}
 			// ------------------------
 		});
@@ -3311,10 +3343,26 @@ Ext.ux.RapidApp.Plugin.AppGridAutoColWidth = Ext.extend(Ext.util.Observable,{
 	
 	onRender: function() {
 		
-		if(this.auto_autosize_columns) {
-			this.store.on('load',this.autoSizeColumnsShallow,this); //<-- this only does headers, faster...
+		if(typeof this.use_autosize_columns != 'undefined' && !this.use_autosize_columns) {
+			// if use_autosize_columns is defined and set to false, abort setup even if
+			// other params are set below:
+			return;
 		}
 		
+		if(typeof this.auto_autosize_columns != 'undefined' && !this.auto_autosize_columns) {
+			// if auto_autosize_columns is defined and set to false:
+			this.auto_autosize_columns_deep = false;
+		}
+			
+		if(this.auto_autosize_columns_deep) {
+			// This can be slow, but still provided as an option 'auto_autosize_columns_deep'
+			this.store.on('load',this.autoSizeColumns,this);
+		}
+		else if (this.auto_autosize_columns){
+			// this only does headers, faster:
+			this.store.on('load',this.autoSizeColumnHeaders,this); 
+		}
+			
 		if(this.use_autosize_columns) {
 			var menu = this.getOptionsMenu();
 			if(!menu) { return; }
