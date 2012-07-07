@@ -1328,8 +1328,13 @@ sub resolve_dbic_rel_alias_by_column_name  {
 			#$rel_pre .= $name;
 			#$join = $self->chain_to_hash(split(/\./,$rel_pre));
 			
-			$join = $self->chain_to_hash($self->relspec_prefix)
-				if length $self->relspec_prefix;
+			# ---
+			# What was the purpose of this? The above was commented out and this was added 
+			# in its place (Mike?) it doesn't seem to do anything but break multi-rel columns
+			# when joined via several intermediate single rels. Removed 2012-07-07 by HV.
+			#$join = $self->chain_to_hash($self->relspec_prefix)
+			#	if length $self->relspec_prefix;
+			# ---
 			
 			return ('me',$name,$join,$cond_data);
 		}
@@ -1354,6 +1359,7 @@ sub resolve_dbic_rel_alias_by_column_name  {
 				# to be able to have an sql snippet defined in a Result class that will
 				# work across different join/perspectives.
 				$sql =~ s/self\./${rel}\./g;
+				$sql =~ s/\`self\`\./\`${rel}\`\./g; #<-- also support backtic quoted form (quote_sep)
 				# **
 				
 				return { '' => \"($sql)", -as => $col };
