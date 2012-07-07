@@ -10,6 +10,7 @@ use Hash::Diff qw( diff );
 use Text::TabularDisplay;
 use Time::HiRes qw(gettimeofday tv_interval);
 use Switch qw( switch );
+use RapidApp::Data::Dmap qw(dmap);
 
 # This allows supplying custom BUILD code via a constructor:
 has 'onBUILD', is => 'ro', isa => 'Maybe[CodeRef]', default => undef;
@@ -431,24 +432,48 @@ sub rs_count {
 	
 	$self->c->stash->{query_count_start} = [gettimeofday]; 
 	
-	# --- This is a hack/workaround for what may be a DBIC bug/limitation. 
-	# If there is a 'having' without a 'group_by', we add a dummy 'group_by' 
-	# because the existence of this attr makes DBIC use a subquery for count,
-	# which we want if there is a having clause because it probably references
-	# a calculated/virtual column that won't exist with a normal count, because
-	# it gets excluded along with the other columns from the original select.
-	#
-	# This feature was added specifically for the added multifilter support for
-	# multi relationship columns which now get setup in a HAVING clause.
-	#
-	# Note that we've already fetched the actual rows from $Rs2 above; this is 
-	# *just* for getting the total count:
-	my $group_by = [ map { 'me.' . $_ } @{$self->primary_columns} ];
-	$Rs2 = $Rs2->search_rs({},{ group_by => $group_by }) #<-- this is just a safe group_by value
-		if (exists $Rs2->{attrs}->{having} and !$Rs2->{attrs}->{group_by});
-	# ---
+	#return $self->rs_count_via_pager($Rs2);
+	return $self->rs_count_manual($Rs2);
+}
+
+sub rs_count_via_pager {
+	my $self = shift;
+	my $Rs2 = shift;
 	return $Rs2->pager->total_entries;
 }
+
+# -- Alternate way to calculate the total count. The logic in 'pager->total_entries' just
+# isn't entirely reliable still. Have been going back and forth between these two
+# approaches, this time, I am leaving both in as separates functions (after writing this
+# same code for the 3rd time at least!). The latest problem with the pager breaks with multiple
+# having conditions on the same virtual column. The DBIC pager/total_entries code is 
+# putting in the same sub-select, with AS, for each condition into the select which throws a 
+# duplicate column db exception (MySQL).
+sub rs_count_manual {
+	my $self = shift;
+	my $Rs2 = shift;
+	
+	my $cur_select = $Rs2->{attrs}->{select};
+	my $cur_as = $Rs2->{attrs}->{as};
+	
+	# strip all columns except virtual columns (show as hashrefs)
+	my ($select,$as) = ([],[]);
+	for my $i (0..$#$cur_select) {
+		next unless (ref $cur_select->[$i]);
+		push @$select, $cur_select->[$i];
+		push @$as, $cur_as->[$i];
+	}
+	
+	$Rs2 = $Rs2->search_rs({},{ 
+		page => undef, 
+		rows => undef,
+		select => $select,
+		as => $as
+	});
+	
+	return $Rs2->as_subselect_rs->count;
+}
+# --
 
 after rs_count => sub { 
 	my $self = shift;
@@ -758,7 +783,7 @@ sub chain_Rs_req_quicksearch {
 	
 	my @search = ();
 	foreach my $f (@$fields) {
-		my $dbicname = $self->TableSpec->resolve_dbic_colname($f,$attr->{join});
+		my $dbicname = $self->resolve_dbic_colname($f,$attr->{join});
 		
 		if($self->quicksearch_mode eq 'exact') {
 			push @search, { $dbicname => $query };
@@ -772,7 +797,7 @@ sub chain_Rs_req_quicksearch {
 }
 
 
-our $LocalRs;
+our ($needs_having,$dbf_active_conditions);
 
 # Applies multifilter search to ResultSet:
 sub chain_Rs_req_multifilter {
@@ -786,17 +811,101 @@ sub chain_Rs_req_multifilter {
 	
 	return $Rs unless (scalar @$multifilter > 0);
 	
-	# add-on (hackish) functionality. Localize '$LocalRs' to provide access to the ResultSet
-	# object for optional manipulation of it. Added to support using HAVING instead
-	# of WHERE for virtual columns:
-	local $LocalRs = $Rs;
+	# Localize HAVING tracking global variables. These will be set within the call chain
+	# from 'multifilter_to_dbf' called next;
+	local $needs_having = 0;
+	local $dbf_active_conditions = [];
 	
 	my $attr = { join => {} };
-	my $cond = $self->multifilter_to_dbf($multifilter,$attr->{join});
+	my $cond = $self->multifilter_to_dbf($multifilter,$attr->{join}) || {};
 	
-	$Rs = $LocalRs;
+	return $Rs->search_rs($cond,$attr) unless ($needs_having);
 
-	return $Rs->search_rs($cond,$attr);
+	# If we're here, '$needs_having' was set to true and we need to convert the
+	# *entire* query to use HAVING instead of WHERE to be sure we correctly handle
+	# any possible interdependent hierachy of '-and'/'-or' conditions. This means that 
+	# one or more of our columns are virtual, and one or more of them are contained 
+	# within the multifilter search, which effects the entire multifilter query.
+	#
+	# To convert from WHERE to HAVING we need to convert ALL columns to act like
+	# virtual columns with '-as' and then transform the conditions to reference those 
+	# -as/alias names. Also, we need to make sure that each condition exists in the 
+	# SELECT clause of the query for it to be able to work as a HAVING condition, 
+	# because HAVING references the declared AS name from the SELECT, while WHERE is 
+	# based on real/existing column names of the schema. Note that we're doing this 
+	# because we have to; when there are no virtual columns in the condition we do
+	# a nomal WHERE which provides better performance. 
+	#
+	# TODO: investigate teasing out exactly which conditions really have to use HAVING 
+	# and which others could continue to use WHERE without harming the overall effective 
+	# result set. This could get very complicated because the condition data structure
+	# supports an arbitrary structure. It is doable, but it depends on the real-world
+	# performance differences to determine how important that extra layer of logic would
+	# really be.
+	
+	#
+	# Step 1/3 - add missing selects
+	#
+	
+	# sort virtual selects to the end for priority in name collisions 
+	# (can happen with multi-rels with the same name as a column):
+	@$dbf_active_conditions = sort { !(ref $b->{select}) cmp (ref $a->{select}) } @$dbf_active_conditions;
+
+	# Collapse uniq needed col/cond names into a Hash:
+	my %needed_selects = map { $_->{name} => $_ } @$dbf_active_conditions;
+	
+	my $cur_select = $Rs->{attrs}->{select};
+	my $cur_as = $Rs->{attrs}->{as};
+	
+	# prune out all columns that are already being selected:
+	exists $needed_selects{$_} and delete $needed_selects{$_} 
+		for (map { try{$_->{-as}} || $_ } @$cur_select);
+	
+	# Add all leftover needed selects. These are column/cond/select names that are being
+	# used in one or more conditions but are not already being selected. Unlike WHERE, all
+	# HAVING conditions must be contained in the SELECT clause:
+	push(@$cur_select,$needed_selects{$_}->{select}) 
+		and push(@$cur_as,$needed_selects{$_}->{field}) for (keys %needed_selects);
+	
+	#
+	# Step 2/3 - transform selects:
+	#
+	
+	my %map = ();
+	my ($select,$as) = ([],[]);
+	for my $i (0..$#$cur_select) {
+		delete $needed_selects{$cur_select->[$i]} if (exists $needed_selects{$cur_select->[$i]});
+		push @$as, $cur_as->[$i];
+		if (ref $cur_select->[$i]) {
+			# Already a virtual column, no changes:
+			push @$select, $cur_select->[$i];
+			next;
+		}
+		
+		push @$select, { '' => $cur_select->[$i], '-as' => $cur_as->[$i] };
+		
+		# Track the mapping so we can walk/replace the cond in the next step:
+		$map{$cur_select->[$i]} = $cur_as->[$i];
+	}
+	
+	#
+	# Step 3/3 - transform conditions:
+	#
+	
+	# Deep remap all condition values from WHERE type to HAVING (AS) type:
+	my ($having) = dmap { ref $_ eq 'HASH' ?
+		# wtf? dmap doesn't act on keys, so we have to do it ourselves.
+		# We only care about keys, anyway
+		{ map { defined $_ && exists $map{$_} ? $map{$_} : $_ } %$_ } :
+			$_
+	} $cond;
+	
+	return $Rs->search_rs({},{ %$attr,
+		group_by => [ map { 'me.' . $_ } @{$self->primary_columns} ], #<-- safe group_by
+		having => $having,
+		select => $select,
+		as => $as
+	});
 }
 
 sub multifilter_to_dbf {
@@ -818,7 +927,6 @@ sub multifilter_to_dbf {
 		return { $f => \@list };
 	}
 	
-	
 	# -- relationship column:
 	my $is_cond = (
 		ref($cond) eq 'HASH' and
@@ -830,44 +938,18 @@ sub multifilter_to_dbf {
 	$f = $column->{query_id_use_column} || $f if ($is_cond);
 	# --
 	
-	my $dbfName = $self->TableSpec->resolve_dbic_colname($f,$join)
+	my $dbfName = $self->resolve_dbic_colname($f,$join)
 		or die "Client supplied Unknown multifilter-field '$f' in Ext Query!";
 	
-	my $condi = $self->multifilter_translate_cond($cond,$dbfName,$f);
+	# Set the localized '$needs_having' flag to tell our caller to convert
+	# from WHERE to HAVING if this condition is based on a virtual column: 
+	$needs_having = 1 if(
+		ref $dbfName eq 'HASH' and 
+		exists $dbfName->{-as} and 
+		exists $dbfName->{''}
+	);
 	
-	
-	# vv -- Special-case: if the dbfName is a ref we assume this is a *virtual* column 
-	# (such as a multi-rel column) and so we stick it in HAVING instead of the normal
-	# cond (WHERE) and then return an empty ({}) condition after chaining onto the 
-	# ResultSet (now localized in '$LocalRs', for this purpose, by our calling func,
-	# chain_Rs_req_multifilter() )
-	if(ref $dbfName eq 'HASH' and exists $dbfName->{-as} and exists $dbfName->{''}) {
-		my ($cond_part) = values %$condi;
-		my $having = { $dbfName->{-as} => $cond_part };
-		$LocalRs = $LocalRs->search_rs({},{
-			join 	=> $join,
-			having 	=> $having
-		});
-		my $group_by = [ map { 'me.' . $_ } @{$self->primary_columns} ];
-		$LocalRs = $LocalRs->search_rs({},{ group_by => $group_by }) #<-- safe group_by
-			unless ($LocalRs->{attrs}->{group_by});
-		
-		
-		# Add to the select if its not already:
-		unless(grep { $_ eq $f } @{ $LocalRs->{attrs}->{as} || [] }) {
-			my $attrs = { %{$LocalRs->{attrs}} };
-			$attrs->{select} = $attrs->{select} || [];
-			$attrs->{as} = $attrs->{as} || [];
-			push @{$attrs->{select}}, $dbfName;
-			push @{$attrs->{as}}, $f;
-			$LocalRs = $LocalRs->search_rs({},$attrs);
-		}
-		return {};
-	}
-	# ^^ --	
-		
-		
-	return $condi;
+	return $self->multifilter_translate_cond($cond,$dbfName,$f);
 }
 
 # Dynamic map to convert supplied multifilter key names into proper
@@ -905,13 +987,20 @@ has 'multifilter_keymap', is => 'ro', default => sub {{
 	'null_empty'			=> 'null/empty status',
 	'null/empty status' => sub {
 		switch($_->{v}) {
-			case 'is null' 				{ return ('=',undef)	}
-			case 'is empty' 			{ return ('=','') 		}
-			case 'is not null' 			{ return ('!=',undef)	}
-			case 'is not empty' 		{ return ('!=','') 		}
-			case 'is null or empty'		{ return { '-or',[{ $_->{dbfName} => undef },{ $_->{dbfName} => '' }] } }
-			case 'is not null or empty'	{ return { '-and',[{ $_->{dbfName} => { '!=' => undef } },{ $_->{dbfName} => { '!=' =>  '' } }] } }
+			case 'is null' 				{ return ('=',undef)				}
+			case 'is empty' 			{ return ('=','') 					}
+			case 'is not null' 			{ return ('!=',undef)				}
+			case 'is not empty' 		{ return ('!=','') 					}
 			
+			# new, simple way to handle these without needing to inline dbfName
+			case 'is null or empty'		{ return [{'='=>undef},{'='=>''}]	} #<-- arrays automatically OR
+			case 'is not null or empty'	{ return {'!='=>undef,'!='=>''}		} #<-- hashes automatically AND
+			
+			## This complexity isn't needed, and, doesn't work properly when dbfName is a ref/virtual
+			## column. Replaced with a much more simple form above.
+			#case 'is null or empty' { return { '-or',[{ $_->{dbfName} => undef },{ $_->{dbfName} => '' }] } }
+			#case 'is not null or empty'     { return { '-and',[{ $_->{dbfName} => { '!=' => undef } },{ $_->{dbfName} => { '!=' =>  '' } }] } }
+
 			die "Invalid null/empty condition supplied:\n" . Dumper($_);
 		}
 	},
@@ -923,7 +1012,24 @@ sub multifilter_translate_cond {
 	my $cond = shift;
 	my $dbfName = shift;
 	my $field = shift;
-	my $column = $self->get_column($field) || {};
+	my $column = try{$self->get_column($field)} || {};
+	
+	# If we're a virtual column:
+	my $dbfNameStr = try{$dbfName->{-as}} || $dbfName;
+	
+	# Track in localized global:
+	push @$dbf_active_conditions, { 
+		name => $dbfNameStr, 
+		field => $field, 
+		select => clone($dbfName) 
+	};
+	
+	$dbfName = $dbfNameStr;
+	
+	# After changing the conditions for 'null or empty' to a simpler form, a lot of the
+	# logic in here isn't currently needed. But, leaving it in for now for reference and
+	# if more complex conditions need to be added later. Not worth the time to refactor
+	# to shrink the API (TODO: revisit this later)
 	
 	# There should be exactly 1 key/value:
 	die "invalid multifilter condition: must have exactly 1 key/value pair:\n" . Dumper($cond) 
@@ -934,7 +1040,7 @@ sub multifilter_translate_cond {
 	$v = $self->inflate_multifilter_date($v) if($column->{multifilter_type} =~ /^date/);
 	
 	my $map = $self->multifilter_keymap->{$k};
-	
+
 	if(ref($map) eq 'CODE') {
 		
 		local $_ = { 
@@ -948,8 +1054,7 @@ sub multifilter_translate_cond {
 		my @new = &$map;
 		($k) = @new;
 		
-		return $k if ref($k); #<-- if the coderef returns a ref, use verbatim
-		
+		return { $dbfName => $k } if ref($k);
 		($k,$v) = @new if (scalar @new > 1); #<-- if 2 args were returned (this approach allows $v of undef)
 	}
 	else {
@@ -1703,6 +1808,9 @@ sub handle_dbic_exception {
 sub make_dbic_exception_friendly {
 	my $self = shift;
 	my $exception = shift;
+	
+	warn $exception;
+	
 	my $msg = "" . $exception . "";
 	
 	
