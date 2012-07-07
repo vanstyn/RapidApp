@@ -1372,6 +1372,13 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
   white-space: nowrap;
 }
 
+.ra-footer td.left {
+  text-align:left;
+  background-image: url(/static/rapidapp/images/rapidapp_logo_tiny.png);
+  background-repeat: no-repeat;
+  background-position: left center;
+}
+
 .ra-footer td.center {
   text-align:center;
 }
