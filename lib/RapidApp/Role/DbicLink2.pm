@@ -13,7 +13,7 @@ use Switch qw( switch );
 use RapidApp::Data::Dmap qw(dmap);
 
 if($ENV{DBIC_TRACE}) {
-	debug_around 'DBIx::Class::Storage::DBI::_execute', newline => 1;
+	debug_around 'DBIx::Class::Storage::DBI::_execute', newline => 1, stack=>20;
 }
 
 our $append_exception_title = '';
