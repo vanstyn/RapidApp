@@ -4633,58 +4633,6 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 Ext.preg('form-relative-datetime',Ext.ux.RapidApp.Plugin.RelativeDateTime);
 
 
-Ext.ux.RapidApp.Plugin.tabpanelCloseAllRightClick = Ext.extend(Ext.util.Observable,{
-	init: function(cmp) {
-		this.cmp = cmp;
-		this.cmp.on('contextmenu',this.onContextmenu,this);
-	},
-
-	onContextmenu: function(tp,tab,e) {
-		
-		if(tp.items.getCount() < 2){ return; }
-		
-		// stop browser menu event to prevent browser right-click context menu
-		// from opening:
-		e.stopEvent();
-		
-		// Make sure the tab is activated so it is clear which is the Tab that
-		// will *not* be closed
-		tp.activate(tab);
-		
-		var menuItems = [
-			//{
-			//	text: 'Close All Tabs',
-			//	iconCls: 'icon-tool-close',
-			//	scope: this,
-			//	handler: this.closeAll
-			//},
-			{
-				text: 'Close All Other Tabs',
-				iconCls: 'icon-tool-close',
-				scope: this,
-				handler: this.closeAll.createDelegate(this,[tab])
-			}
-		];
-
-		var menu = new Ext.menu.Menu({ items: menuItems });
-		var pos = e.getXY();
-		pos[0] = pos[0] + 10;
-		pos[1] = pos[1] + 5;
-		menu.showAt(pos);
-	},
-	
-	closeAll: function(keeptab) {
-		var tabpanel = this.cmp;
-		tabpanel.items.each(function(item) {
-			if (item.closable && item != keeptab) {
-				tabpanel.remove(item);
-			}
-		});
-	}
-});
-Ext.preg('tabpanel-closeall',Ext.ux.RapidApp.Plugin.tabpanelCloseAllRightClick);
-
-
 // This is basically a clone of the logic in grid col filters plugin, reproduced for
 // general purpose menus. There are a few special issues with the col menu that it needs
 // to still be separate, for now, but this duplicate logic needs to be consolidated

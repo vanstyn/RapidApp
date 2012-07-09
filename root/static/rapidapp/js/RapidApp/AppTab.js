@@ -2,6 +2,12 @@ Ext.ns('Ext.ux.RapidApp.AppTab');
 
 
 Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
+	
+	itemId: 'load-target',
+
+	layoutOnTabChange: true,
+	enableTabScroll: true,
+	useContextMenu: true,
 
 	initComponent: function() {
 		if(this.initLoadTabs) {
@@ -14,16 +20,65 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		
 		this.addEvents( 'navload' );
 		
-		if(!this.plugins) { this.plugins = []; };
-		this.plugins.push('tabpanel-closeall');
+		if(this.useContextMenu) {
+			this.on('contextmenu',this.onContextmenu,this);
+		}
 		
 		Ext.ux.RapidApp.AppTab.TabPanel.superclass.initComponent.call(this);
 	},
+	
+	onContextmenu: function(tp,tab,e) {
+		// stop browser menu event to prevent browser right-click context menu
+		// from opening:
+		e.stopEvent();
+		
+		var close_item = tp.items.getCount() >= 2 ? {
+			text: 'Close Other Tabs',
+			iconCls: 'icon-tool-close',
+			scope: this,
+			handler: this.closeAll.createDelegate(this,[tab])
+		} : null;
 
-	itemId: 'load-target',
+		var open_item = tab.loadContentCnf ? {
+			text: 'Open Another <b>' + tab.title + '</b>',
+			iconCls: 'icon-arrow-divide',
+			scope: this,
+			handler: this.openAnother.createDelegate(this,[tab])
+		} : null;
+		
+		var menuItems = [];
+		if(close_item) 					{ menuItems.push(close_item); }
+		if(close_item && open_item)	{ menuItems.push('-'); }
+		if(open_item) 						{ menuItems.push(open_item); }
+		
+		if(menuItems.length == 0) { return; }
+		
+		// Make sure the tab is activated so it is clear which is the Tab that
+		// will *not* be closed
+		tp.activate(tab);
 
-	layoutOnTabChange: true,
-	enableTabScroll: true,
+		var menu = new Ext.menu.Menu({ items: menuItems });
+		var pos = e.getXY();
+		pos[0] = pos[0] + 10;
+		pos[1] = pos[1] + 5;
+		menu.showAt(pos);
+	},
+	
+	closeAll: function(tab) {
+		this.items.each(function(item) {
+			if (item.closable && item != tab) {
+				this.remove(item);
+			}
+		},this);
+	},
+	
+	openAnother: function(tab) {
+		var cnf = { newtab: true };
+		Ext.apply(cnf,tab.loadContentCnf);
+		this.loadTab(cnf);
+	},
+
+	
 	
 	// "navsource" property is meant to be used to store a reference to the navsource
 	// container (i.e. AppTree) that calls "loadContent". This needs to be set by the
@@ -42,47 +97,34 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 	},
 
 	loadTab: function(cnf) {
-		
+		var orig_cnf = Ext.decode(Ext.encode(cnf));
+			
 		Ext.applyIf(cnf,{
+			loadContentCnf: orig_cnf, //<-- save the cnf used
 			xtype: 'autopanel',
 			itemId: 'tab-' + Math.floor(Math.random()*100000),
 			layout: 'fit',
 			closable: true,
+			title: 'Loading',
+			iconCls: 'icon-loading',
 			autoLoad: {}
 		});
-		
-		var setTitle,setIconCls;
-		if(!cnf.title) {
-			cnf.title = 'Loading';
-			setTitle = 'Unnamed Tab';
-		}
-		if(!cnf.iconCls) {
-			cnf.iconCls = 'icon-loading';
-			setIconCls = 'icon-document';
-		}
-		
+
 		Ext.applyIf(cnf.autoLoad, {
 			text: 'Loading...',
 			nocache: true,
 			params: {}
 		});
 		
-		if (cnf.params) {
-			Ext.apply(cnf.autoLoad.params,cnf.params);
-		}
+		cnf.autoLoad.url = cnf.autoLoad.url || cnf.url;
+		Ext.apply(cnf.autoLoad.params,cnf.params||{});
 		
 		// Check if this Tab is already loaded, and set active and return if it is:
-		var existTab = this.getComponent(cnf.itemId);
+		// update: unless "newtab" option is set to true:
+		var existTab = cnf.newtab ? false : this.getComponent(cnf.itemId);
 		if (existTab) {
 			return this.activate(existTab);
 		}
-		
-		// --- Backwards compat with AppTreeExplorer/AppGrid:
-		if (!cnf.autoLoad.url) {
-			if (cnf.url) { cnf.autoLoad.url = cnf.url; }
-		}
-		// ---
-		
 		
 		if(!cnf.cmpListeners) { cnf.cmpListeners = {}; }
 		if(!cnf.cmpListeners.beforerender) { cnf.cmpListeners.beforerender = Ext.emptyFn; }
@@ -90,8 +132,12 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 			cnf.cmpListeners.beforerender,
 			function() {
 				var tab = this.ownerCt;
-				if(this.tabTitle) { setTitle = this.tabTitle; }
-				if(this.tabIconCls) { setIconCls = this.tabIconCls; }
+				//if(this.tabTitle) { setTitle = this.tabTitle; }
+				//if(this.tabIconCls) { setIconCls = this.tabIconCls; }
+				
+				// optional override if supplied in cnf:
+				var setTitle = cnf.tabTitle || this.tabTitle;
+				var setIconCls = cnf.tabIconCls || this.tabIconCls;
 				
 				if(setTitle) { tab.setTitle(setTitle); }
 				if(setIconCls) { tab.setIconClass(setIconCls); }
@@ -99,10 +145,6 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		);
 		
 		var new_tab = this.add(cnf);
-		
-		
-		//console.dir(new_tab)
-		
 		return this.activate(new_tab);
 	},
 	
