@@ -27,31 +27,51 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		Ext.ux.RapidApp.AppTab.TabPanel.superclass.initComponent.call(this);
 	},
 	
+	getContextMenuItems: function(tp,tab) {
+		var items = [];
+		
+		var close_item = {
+			itemId: 'close_item',
+			text: 'Close Other Tabs',
+			iconCls: 'icon-tabs-delete',
+			scope: tp,
+			handler: tp.closeAll.createDelegate(tp,[tab])
+		};
+
+		var open_item = tab.loadContentCnf ? {
+			itemId: 'open_item',
+			text: 'Open New Tab',
+			iconCls: 'icon-tab-go',
+			scope: tp,
+			handler: tp.openAnother.createDelegate(tp,[tab])
+		} : null;
+		
+		if(close_item)	{ items.push(close_item); }
+		if(open_item)	{ items.push(open_item); }
+		
+		return items;
+	},
+	
 	onContextmenu: function(tp,tab,e) {
 		// stop browser menu event to prevent browser right-click context menu
 		// from opening:
 		e.stopEvent();
 		
-		var close_item = tp.items.getCount() >= 2 ? {
-			text: 'Close Other Tabs',
-			iconCls: 'icon-tool-close',
-			scope: this,
-			handler: this.closeAll.createDelegate(this,[tab])
-		} : null;
-
-		var open_item = tab.loadContentCnf ? {
-			text: 'Open Another <b>' + tab.title + '</b>',
-			iconCls: 'icon-arrow-divide',
-			scope: this,
-			handler: this.openAnother.createDelegate(this,[tab])
-		} : null;
+		var items = this.getContextMenuItems(tp,tab);
+		if(items.length == 0) { return; }
 		
 		var menuItems = [];
-		if(close_item) 					{ menuItems.push(close_item); }
-		if(close_item && open_item)	{ menuItems.push('-'); }
-		if(open_item) 						{ menuItems.push(open_item); }
+		Ext.each(items,function(item){
+			if(tp.items.getCount() < 2 && item.itemId == 'close_item') {
+				return;
+			}
+			if(item.itemId == 'open_item') { 
+				item.text = 'Open Another <b>' + tab.title + '</b>';
+			}
+			menuItems.push(item);
+		},this);
 		
-		if(menuItems.length == 0) { return; }
+		menuItems = menuItems.length == 2 ? [menuItems[0],'-',menuItems[1]] : menuItems;
 		
 		// Make sure the tab is activated so it is clear which is the Tab that
 		// will *not* be closed
@@ -325,6 +345,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	titleCount: false,
 
 	initComponent: function() {
+		
+		this.on('afterrender',this.addExtraToOptionsMenu,this);
 		
 		this.store.on('beforeload',this.reloadColumns,this);
 
@@ -650,6 +672,28 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		Ext.apply(store.baseParams,params);
 		// Set lastOptions as well so reload() gets the new columns:
 		Ext.apply(store.lastOptions.params,params);
+	},
+	
+	// Pulls a copy of the Tab right-click context menu into the Grid Options menu
+	addExtraToOptionsMenu: function() {
+		if(this.addExtraToOptionsMenuCalled) { return; }
+		this.addExtraToOptionsMenuCalled = true;
+		
+		var optionsMenu = this.getOptionsMenu();
+		if(!optionsMenu) { return; }
+
+		var ourTab = this.ownerCt;
+		if(!ourTab || !ourTab.loadContentCnf) { return; }
+		
+		var ourTp = ourTab.ownerCt;
+		if(!ourTp || !Ext.isFunction(ourTp.getContextMenuItems)) { return; }
+		
+		var contextItems = ourTp.getContextMenuItems.call(ourTp,ourTp,ourTab);
+		if(!contextItems || contextItems.length == 0) { return; }
+		
+		optionsMenu.insert(0,'-');
+		Ext.each(contextItems.reverse(),function(itm){ optionsMenu.insert(0,itm); },this);
+
 	}
 };
 

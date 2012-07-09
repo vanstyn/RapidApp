@@ -250,7 +250,8 @@ pre {
 .icon-pg { background-image: url(/static/rapidapp/images/pg.png) !important; }
 .icon-pg-multi { background-image: url(/static/rapidapp/images/pg_multi.png) !important; }
 .icon-accept { background-image: url(/static/rapidapp/images/accept.png) !important; }
-
+.icon-tabs-delete { background-image: url(/static/rapidapp/images/tabs_delete.png) !important; }
+.icon-tab-go { background-image: url(/static/rapidapp/images/tab_go.png) !important; }
 
 
 .tbar-title-medium {
