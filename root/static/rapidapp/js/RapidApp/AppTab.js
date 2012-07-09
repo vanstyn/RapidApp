@@ -35,7 +35,15 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 			text: 'Close Other Tabs',
 			iconCls: 'icon-tabs-delete',
 			scope: tp,
-			handler: tp.closeAll.createDelegate(tp,[tab])
+			handler: tp.closeAll.createDelegate(tp,[tab]),
+			hideShow: function(){
+				if (this.itemId != 'close_item') {
+					// Whoever called us was supposed to set the scope to the
+					// close_item but didn't
+					return;
+				}
+				this.setVisible(tp.items.getCount() >= 2);
+			}
 		};
 
 		var open_item = tab.loadContentCnf ? {
@@ -693,7 +701,14 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		
 		optionsMenu.insert(0,'-');
 		Ext.each(contextItems.reverse(),function(itm){ optionsMenu.insert(0,itm); },this);
-
+		
+		// Optional hook into an items 'hideShow' function. Used by close to check if there
+		// are other tabs to close and hide itself
+		optionsMenu.items.each(function(item){
+			if(Ext.isFunction(item.hideShow)) {
+				optionsMenu.on('beforeshow',item.hideShow,item);
+			}
+		},this);
 	}
 };
 
