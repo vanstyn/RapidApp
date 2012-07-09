@@ -12,6 +12,10 @@ use Time::HiRes qw(gettimeofday tv_interval);
 use Switch qw( switch );
 use RapidApp::Data::Dmap qw(dmap);
 
+if($ENV{DBIC_TRACE}) {
+	debug_around 'DBIx::Class::Storage::DBI::_execute', newline => 1;
+}
+
 our $append_exception_title = '';
 
 # This allows supplying custom BUILD code via a constructor:

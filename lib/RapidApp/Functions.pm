@@ -232,17 +232,27 @@ sub debug_around($@) {
 	$pkg = $opt{pkg};
 	
 	foreach my $method (@methods) {
-		next if ($debug_arounds_set->{$pkg . '->' . $method}++); #<-- if its already set
-		my $around = func_debug_around($method, %opt);
+	
+		my $package = $pkg;
+		my @namespace = split(/::/,$method);
+		if(scalar @namespace > 1) {
+			$method = pop @namespace;
+			$package = join('::',@namespace);
+		}
+	
+		next if ($debug_arounds_set->{$package . '->' . $method}++); #<-- if its already set
+		
+		eval "require $package;";
+		my $around = func_debug_around($method, %opt, pkg => $package);
 		
 		# It's a Moose class or otherwise already has an 'around' class method:
-		if($pkg->can('around')) {
-			$pkg->can('around')->($method => $around);
+		if($package->can('around')) {
+			$package->can('around')->($method => $around);
 			next;
 		}
 		
 		# The class doesn't have an around method, so we'll setup manually with Class::MOP:
-		my $meta = Class::MOP::Class->initialize($pkg);
+		my $meta = Class::MOP::Class->initialize($package);
 		$meta->add_around_method_modifier($method => $around)
 	}
 }
@@ -255,27 +265,31 @@ sub func_debug_around {
 	
 	%opt = (
 		track_stats		=> 1,
-		time				=> 1,
+		time			=> 1,
 		verbose			=> 0,
 		verbose_in		=> undef,
 		verbose_out		=> undef,
+		newline			=> 0,
 		list_args		=> 0,
-		list_out			=> 0,
+		list_out		=> 0,
 		dump_maxdepth	=> 3,
-		use_json			=> 0,
-		stack				=> 0,
-		instance			=> 0,
-		color				=> GREEN,
+		use_json		=> 0,
+		stack			=> 0,
+		instance		=> 0,
+		color			=> GREEN,
 		ret_color		=> RED.BOLD,
 		arg_ignore		=> sub { 0 }, # <-- no debug output prited when this returns true
 		return_ignore	=> sub { 0 },# <-- no debug output prited when this returns true
-		around			=> sub { # around wrapper to allow the user to pass a different one to use:
-									my $orig = shift;
-									my $self = shift;
-									return $self->$orig(@_);
-								},
 		%opt
 	);
+	
+	# around wrapper in %opt to allow the user to pass a different one to use:
+	$opt{around} ||= sub { 
+		my $orig = shift;
+		my $self = shift;
+		print STDERR "\n" if ($opt{newline});
+		return $self->$orig(@_);
+	};
 	
 	$opt{verbose_in} = 1 if ($opt{verbose} and not defined $opt{verbose_in});
 	$opt{verbose_out} = 1 if ($opt{verbose} and not defined $opt{verbose_out});
