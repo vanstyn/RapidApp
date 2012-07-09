@@ -2696,6 +2696,13 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 
 		grid.on('reconfigure',this.updateColumnHeadings,this);
 		
+		// NEW: needed when using new "Open New Tab" feature to hook into toggling
+		// tabs (without this the old tab would have the heading icons stripped
+		// TODO: look into cleaning up the mechanism that sets the heading icons
+		if(grid.ownerCt) {
+			grid.ownerCt.on('show',this.updateColumnHeadings,this);
+		}
+		
 		this.cm.on('hiddenchange',this.autoToggle,this);
 		
 		if (grid.rendered) {

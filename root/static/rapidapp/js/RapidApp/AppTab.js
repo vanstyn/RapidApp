@@ -126,8 +126,13 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 
 	loadTab: function(cnf) {
 		var orig_cnf = Ext.decode(Ext.encode(cnf));
-			
-		Ext.applyIf(cnf,{
+		
+		// prune falsy properties (object version of Ext.clean)
+		Ext.iterate(cnf,function(k,v){
+			if(!v) { delete cnf[k]; }
+		},this);
+		
+		cnf = Ext.apply({
 			loadContentCnf: orig_cnf, //<-- save the cnf used
 			xtype: 'autopanel',
 			itemId: 'tab-' + Math.floor(Math.random()*100000),
@@ -136,8 +141,8 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 			title: 'Loading',
 			iconCls: 'icon-loading',
 			autoLoad: {}
-		});
-
+		},cnf);
+			
 		Ext.applyIf(cnf.autoLoad, {
 			text: 'Loading...',
 			nocache: true,
