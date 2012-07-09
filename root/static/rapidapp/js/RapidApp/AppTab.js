@@ -48,7 +48,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 
 		var open_item = tab.loadContentCnf ? {
 			itemId: 'open_item',
-			text: 'Open New Tab',
+			text: 'Open in a New Tab',
 			iconCls: 'icon-tab-go',
 			scope: tp,
 			handler: tp.openAnother.createDelegate(tp,[tab])
@@ -101,8 +101,9 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 	},
 	
 	openAnother: function(tab) {
-		var cnf = { newtab: true };
-		Ext.apply(cnf,tab.loadContentCnf);
+		var cnf = Ext.apply({},tab.loadContentCnf);
+		if(cnf.id) { delete cnf.id; }
+		if(cnf.itemId) { delete cnf.itemId; }
 		this.loadTab(cnf);
 	},
 
@@ -154,7 +155,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		
 		// Check if this Tab is already loaded, and set active and return if it is:
 		// update: unless "newtab" option is set to true:
-		var existTab = cnf.newtab ? false : this.getComponent(cnf.itemId);
+		var existTab = cnf.itemId ? false : this.getComponent(cnf.itemId);
 		if (existTab) {
 			return this.activate(existTab);
 		}
