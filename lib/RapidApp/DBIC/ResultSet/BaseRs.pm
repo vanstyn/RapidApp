@@ -42,50 +42,74 @@ our $DISABLED = 0;
 
 # Define base_rs in the consuming ResultSet class. Should return a chained
 # ResultSet object, i.e. return $self->search_rs( $SEARCH, $ATTR );
-sub base_rs { (shift) }
+sub base_rs { die "Virtual method!" }
 
 sub search_rs {
-	my $self = shift;
-	$self = $self->_get_apply_base_rs unless ($DISABLED);
-	return $self->SUPER::search_rs(@_);
+	my $self = (shift)->_get_apply_base_rs;
+	return $self->next::method(@_);
 }
 
-#-----------------------
-# Issue 13305: Fragile workaround for bug where DBIC's count
-# implementation called ->search_rs again in nested resultset, and BaseRs
-# puts on the where clause where it shouldn't.
-#
-# At the time 'count' is called, the base_rs is probably already applied to
-# our {attrs}, but we make sure, first.  We then set DISABLED so it won't
-# get applied to any newly created outer resultset.
-#
-# The actual mechanics of creating the outer resultset of the nested query
-# depends on the database driver.  See Dbic::Class::ResultSet->_count_subq_rs
-# for details.  This seems to be where our "_base_rs_applied" flag gets lost.
-#
-sub count_rs {
-	my $self= shift;
-	$self = $self->_get_apply_base_rs unless ($DISABLED);
+### UPDATE: This single updated method solves the real count problem in the below,
+### now removed "Issue 13305" workaround
+sub as_subselect_rs {
+	my $self = (shift)->_get_apply_base_rs;
 	
-	local $DISABLED= 1;
-	$self->SUPER::count_rs(@_);
-}
-#
-# also, count does not call count_rs, so we override this one too.
-#
-sub count {
-	my $self= shift;
-	$self = $self->_get_apply_base_rs unless ($DISABLED);
+	# Set DISABLED to prevent the base_rs from being applied during the native
+	# as_subselect_rs call which creates a new fresh object and calls search() 
+	local $DISABLED = 1;
+	my $subRs = $self->next::method(@_);
 	
-	local $DISABLED= 1;
-	$self->SUPER::count(@_);
+	# manually set the _base_rs_applied flag on the newly created rs object so it
+	# won't be applied again on any additional searches chained
+	return $subRs->search_rs({},{ _base_rs_applied => 1 });
 }
-# end workaround
-#------------------------
+
+###-----------------------
+### Issue 13305: Fragile workaround for bug where DBIC's count
+### implementation called ->search_rs again in nested resultset, and BaseRs
+### puts on the where clause where it shouldn't.
+###
+### At the time 'count' is called, the base_rs is probably already applied to
+### our {attrs}, but we make sure, first.  We then set DISABLED so it won't
+### get applied to any newly created outer resultset.
+###
+### The actual mechanics of creating the outer resultset of the nested query
+### depends on the database driver.  See Dbic::Class::ResultSet->_count_subq_rs
+### for details.  This seems to be where our "_base_rs_applied" flag gets lost.
+###
+##sub count_rs :Debug {
+##	my $self= shift;
+##	$self = $self->_get_apply_base_rs unless ($DISABLED);
+##	
+##	local $DISABLED= 1;
+##	$self->SUPER::count_rs(@_);
+##}
+###
+### also, count does not call count_rs, so we override this one too.
+###
+##sub count :Debug {
+##	my $self= shift;
+##	$self = $self->_get_apply_base_rs unless ($DISABLED);
+##	
+##	local $DISABLED= 1;
+##	$self->SUPER::count(@_);
+##}
+##
+##sub count_literal :Debug{
+##	my $self= shift;
+##	$self = $self->_get_apply_base_rs unless ($DISABLED);
+##	
+##	local $DISABLED= 1;
+##	$self->SUPER::count_literal(@_);
+##}
+##
+## end workaround
+##------------------------
 
 sub _get_apply_base_rs {
 	my $Rs = shift;
-	return $Rs if ($Rs->{attrs}->{_base_rs_applied});
+	return $Rs if ($Rs->{attrs}->{_base_rs_applied} || $DISABLED);
+	
 	$Rs = $Rs->SUPER::search_rs({},{ _base_rs_applied => 1 })->base_rs;
 	return $Rs->SUPER::search_rs({},{ _base_rs_condition_ref => $Rs->{attrs}->{where} })
 }
@@ -129,5 +153,17 @@ sub native_rs {
 	return $Rs;
 }
 
+# Useful debug function, not directly specific to this module, useful for any ResultSet. Dumps
+# what *would* be the SQL if the ResultSet were executed now. Uses the same mechanism as 
+# DBIC_TRACE=1 (which needs to be on for this to work) 
+sub dump_effective_sql {
+	my $self = shift;
+	my $debug_obj = $self->result_source->storage->debugobj;
+	my ($sql, $bindargs) = @${$self->as_query};
+	
+	print STDERR BOLD . "\n\ndump_effective_sql():\n" . CLEAR;
+	$debug_obj->print($sql, $bindargs);
+	print STDERR "\n\n\n";
+}
 
 1;

@@ -12,6 +12,8 @@ use Time::HiRes qw(gettimeofday tv_interval);
 use Switch qw( switch );
 use RapidApp::Data::Dmap qw(dmap);
 
+our $append_exception_title = '';
+
 # This allows supplying custom BUILD code via a constructor:
 has 'onBUILD', is => 'ro', isa => 'Maybe[CodeRef]', default => undef;
 
@@ -361,6 +363,7 @@ sub read_records {
 	}
 	catch {
 		my $err = shift;
+		local $append_exception_title = '(total count)';
 		$self->handle_dbic_exception($err);
 	};
 
@@ -403,21 +406,12 @@ sub apply_first_records {
 	@$rows = splice(@$first_rows, 0,@$rows);
 }
 
-
-
 sub rs_all { 
 	my $self = shift;
 	my $Rs = shift;
 	#$self->c->stash->{query_start} = [gettimeofday]; 
 	return $Rs->all;
 }
-
-#after rs_all => sub { 
-#	my $self = shift;
-#	my $start = $self->c->stash->{query_start} || return undef;
-#	my $elapsed = tv_interval($start);
-#	$self->c->stash->{query_time} = sprintf('%.2f',$elapsed) . 's';
-#};
 
 sub rs_count { 
 	my $self = shift;
@@ -430,10 +424,13 @@ sub rs_count {
 	return $params->{cached_total_count}
 		if($self->cache_total_count && exists $params->{cached_total_count});
 	
-	$self->c->stash->{query_count_start} = [gettimeofday]; 
+	$self->c->stash->{query_count_start} = [gettimeofday];
+	
+	return $self->rs_count_manual($Rs2);
 	
 	#return $self->rs_count_via_pager($Rs2);
-	return $self->rs_count_manual($Rs2);
+	#return $self->rs_count_manual($Rs2);
+	#return $self->rs_count_with_fallbacks($Rs2);
 }
 
 sub rs_count_via_pager {
@@ -449,30 +446,88 @@ sub rs_count_via_pager {
 # having conditions on the same virtual column. The DBIC pager/total_entries code is 
 # putting in the same sub-select, with AS, for each condition into the select which throws a 
 # duplicate column db exception (MySQL).
+# UPDATE: added options to fine-tune behaviors:
 sub rs_count_manual {
 	my $self = shift;
 	my $Rs2 = shift;
+	my %opts = @_;
 	
-	my $cur_select = $Rs2->{attrs}->{select};
-	my $cur_as = $Rs2->{attrs}->{as};
-	
-	# strip all columns except virtual columns (show as hashrefs)
-	my ($select,$as) = ([],[]);
-	for my $i (0..$#$cur_select) {
-		next unless (ref $cur_select->[$i]);
-		push @$select, $cur_select->[$i];
-		push @$as, $cur_as->[$i];
-	}
-	
-	$Rs2 = $Rs2->search_rs({},{ 
+	my $attr = {
 		page => undef, 
 		rows => undef,
-		select => $select,
-		as => $as
-	});
+	};
 	
-	return $Rs2->as_subselect_rs->count;
+	unless($opts{no_strip_colums}) {
+		my $cur_select = $Rs2->{attrs}->{select};
+		my $cur_as = $Rs2->{attrs}->{as};
+		
+		# strip all columns except virtual columns (show as hashrefs)
+		my ($select,$as) = ([],[]);
+		for my $i (0..$#$cur_select) {
+			next unless (ref $cur_select->[$i]);
+			push @$select, $cur_select->[$i];
+			push @$as, $cur_as->[$i];
+		}
+		
+		$attr = { %$attr,
+			select => $select,
+			as => $as
+		};
+	}
+	
+	$Rs2 = $Rs2->search_rs({},$attr);
+	$Rs2 = $Rs2->as_subselect_rs unless ($opts{no_subselect});
+	
+	return $Rs2->count_literal if ($opts{count_literal});
+	return $Rs2->count;
 }
+
+# 3rd alternative for getting the rs_count, tries several methods. This is not currently
+# active, even though it is arguably the more reliable approach, because we don't want
+# to hide problems by stopping the app from breaking. This is here mostly for future 
+# reference and for debugging
+sub rs_count_with_fallbacks {
+	my $self = shift;
+	my $Rs2 = shift;
+	
+	return try {
+		try { 
+			$Rs2->pager->total_entries
+		} catch {
+			warn RED . "\n\n" . $self->extract_db_error_from_exception($_) . CLEAR;
+			warn RED.BOLD . "\n\n" .
+				'COUNT VIA PAGER FAILED, FAILING BACK TO MANUAL COUNT' .
+			"\n\n" . CLEAR;
+			my $opt = {};
+			try {
+				$self->rs_count_manual($Rs2,%$opt)
+			} catch {
+				$opt->{no_strip_colums} = 1;
+				warn RED . "\n\n" . $self->extract_db_error_from_exception($_) . CLEAR;
+				warn RED.BOLD . "\n\n" .
+					'COUNT VIA MANUAL FAILED, TRYING AGAIN WITHOUT STRIPPING COLUMNS ' . Dumper($opt) .
+				"\n" . CLEAR;
+				try {
+					$self->rs_count_manual($Rs2,%$opt)
+				} catch {
+					$opt->{count_literal} = 1;
+					warn RED . "\n\n" . $self->extract_db_error_from_exception($_) . CLEAR;
+					warn RED.BOLD . "\n\n" .
+						'COUNT VIA MANUAL FAILED, TRYING AGAIN WITH COUNT_LITERAL ' . Dumper($opt) .
+					"\n" . CLEAR;
+					$self->rs_count_manual($Rs2,%$opt)
+				}
+			};
+		};
+	} catch {
+		warn RED . "\n\n" . $self->extract_db_error_from_exception($_) . CLEAR;
+		warn RED.BOLD . "\n\n" .
+			'FAILED TO GET TOTAL COUNT, GIVING UP' .
+		"\n\n" . CLEAR;
+		die $_;
+	};
+}
+
 # --
 
 after rs_count => sub { 
@@ -1796,12 +1851,39 @@ sub _dbiclink_destroy_records {
 }
 
 
+
+sub extract_db_error_from_exception {	
+	my $self = shift;
+	my $exception = shift;
+	die $exception if (ref($exception) =~ /^RapidApp\:\:Responder/);
+	
+	warn $exception;
+	
+	my $msg = "" . $exception . "";
+	
+	my @parts = split(/DBD\:\:.+\:\:st execute failed\:\s*/,$msg);
+	return undef unless (scalar @parts > 1);
+	
+	$msg = $parts[1];
+	@parts = split(/\s*\[/,$msg);
+	
+	return $parts[0];
+}
+
+
 sub handle_dbic_exception {
 	my $self = shift;
 	my $exception = shift;
 	
-	die $exception if (ref($exception) =~ /^RapidApp\:\:Responder/);
-	die usererr rawhtml $self->make_dbic_exception_friendly($exception), title => 'DbicLink2 Database Error';
+	my $msg = $self->extract_db_error_from_exception($exception);
+	$msg = $msg ? "$msg\n\n----------------\n" : '';
+
+	my $html = '<pre>' . $msg . $exception . "</pre>";
+	
+	die usererr rawhtml $html, title => "DbicLink2 Database Error $append_exception_title";
+	
+	#die $exception if (ref($exception) =~ /^RapidApp\:\:Responder/);
+	#die usererr rawhtml $self->make_dbic_exception_friendly($exception), title => 'DbicLink2 Database Error';
 }
 
 
