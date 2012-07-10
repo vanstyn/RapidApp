@@ -839,6 +839,7 @@ Ext.reg('cas-image-field',Ext.ux.RapidApp.CasImageField);
 // Keep under 15000 for menus...
 Ext.WindowMgr.zseed = 12000;
 
+
 Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 	
 	fieldClass: 'ra-datastore-app-field',
@@ -1006,6 +1007,30 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 	
 	getAppWindow: function() {
 		if(!this.appWindow) {
+			
+			// New feature: GLOBAL_add_form_onPrepare
+			// function can be supplied as either a config param, OR detected in
+			// the parent container. Once set, the value will be passed into the
+			// add form, which will in turn be picked up by any nested 
+			// DataStoreAppField components within that add form, which is then
+			// passed down the chain to any depth. This is essentially a "localized"
+			// global variable. This feature is needed to support an API by which
+			// the configuration of a hirearchy of nested grid combos can be accessed
+			// by applying a setting to the top/first in the chain. This was added
+			// specifically to allow changing which fields are required and which aren't
+			// via toggle in javascript in the top add form. GLOBAL_add_form_onPrepare
+			// is passed the config object of the add form in the same way as
+			// add_form_onPrepare.
+			//var oGLOBAL = (this.ownerCt && this.ownerCt.GLOBAL_add_form_onPrepare) ?
+			//	this.ownerCt.GLOBAL_add_form_onPrepare : null;
+			//
+			var oGLOBAL = this.findParentBy(function(parent){
+				return Ext.isFunction(parent.GLOBAL_add_form_onPrepare);
+			});
+			
+			if(oGLOBAL && !this.GLOBAL_add_form_onPrepare) {
+				this.GLOBAL_add_form_onPrepare = oGLOBAL;
+			}
 		
 			var win, field = this;
 			var autoLoad = this.autoLoad || { url: this.load_url };
@@ -1114,11 +1139,16 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 							});
 						}
 					},this);
+					
+					if(field.GLOBAL_add_form_onPrepare) {
+						cfg.GLOBAL_add_form_onPrepare = 
+							cfg.GLOBAL_add_form_onPrepare || field.GLOBAL_add_form_onPrepare;
+						field.GLOBAL_add_form_onPrepare.call(field,cfg);
+					}
 				}
 				
 			};
 			Ext.apply(cmpConfig,this.cmpConfig || {});
-			
 			
 			
 			win = new Ext.Window({
@@ -1133,6 +1163,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 				modal: true,
 				hideBorders: true,
 				items: {
+					GLOBAL_add_form_onPrepare: this.GLOBAL_add_form_onPrepare,
 					xtype: 'autopanel',
 					bodyStyle: 'border: none',
 					hideBorders: true,
@@ -1382,7 +1413,6 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 	
 });
 Ext.reg('datastore-app-field',Ext.ux.RapidApp.DataStoreAppField);
-
 
 
 Ext.ux.RapidApp.ListEditField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
