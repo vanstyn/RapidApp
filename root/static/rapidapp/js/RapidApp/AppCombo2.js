@@ -469,7 +469,7 @@ Ext.ux.RapidApp.ClickActionField = Ext.extend(Ext.ux.RapidApp.UtilField,{
 	
 	applyElOpts: function() {
 		var el = this.getEl();
-		if(!el.ElOptsApplied) {
+		if(el && !el.ElOptsApplied) {
 			el.applyStyles('cursor:pointer');
 			// Click on the Element:
 			el.on('click',this.onClickMe,this);
