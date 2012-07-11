@@ -159,6 +159,36 @@ sub DEFAULT_PROFILES {{
 		},
 		zipcode => {
 			editor => { vtype => 'zipcode' }
+		},
+		html => {
+			editor => {
+				xtype		=> 'htmleditor',
+				resizable => \1,
+				height => 200,
+				minHeight => 200,
+				minWidth	=> 400,
+				anchor => '-25',
+				plugins => [
+					RapidApp::JSONFunc->new( func => 'new Ext.ux.form.HtmlEditor.Break', parm => {}),
+					'htmleditor-loadhtml','htmleditor-insertfile',
+					{
+						ptype => 'htmleditor-casimage',
+						maxImageWidth => 800,
+						resizeWarn => \1
+					},
+					jsfunc('new Ext.ux.form.HtmlEditor.SpecialCharacters'),
+					jsfunc('new Ext.ux.form.HtmlEditor.UndoRedo'),
+					jsfunc('new Ext.ux.form.HtmlEditor.Divider'),
+					jsfunc('new Ext.ux.form.HtmlEditor.Table'),
+					jsfunc('new Ext.ux.form.HtmlEditor.IndentOutdent'),
+					jsfunc('new Ext.ux.form.HtmlEditor.SubSuperScript'),
+					'clickablelinks',
+					
+				],
+				#data_wrapper_style => 'min-height:200px;'
+				
+			},
+		
 		}
 
 }};
