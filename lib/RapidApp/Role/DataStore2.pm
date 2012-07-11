@@ -265,7 +265,7 @@ sub get_add_form {
 		xtype => 'form',
 		frame => \1,
 		labelAlign => 'right',
-		labelWidth => 70,
+		labelWidth => 100,
 		plugins => ['dynamic-label-width'],
 		bodyStyle => 'padding: 25px 10px 5px 5px;',
 		defaults => {

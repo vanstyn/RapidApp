@@ -1298,7 +1298,7 @@ Ext.ux.RapidApp.Plugin.DynamicFormLabelWidth = Ext.extend(Ext.util.Observable,{
 		});
 		label.show();
 		var metrics = Ext.util.TextMetrics.createInstance(label.getEl());
-		var calcWidth = metrics.getWidth(longField.fieldLabel) + 5;
+		var calcWidth = metrics.getWidth(longField.fieldLabel) + 10;
 		label.destroy();
 		
 		if(calcWidth > cmp.labelWidth) {
