@@ -6,12 +6,19 @@ extends 'RapidApp::AppCmp';
 
 use RapidApp::Include qw(sugar perlutil);
 
+has 'get_id_code', is => 'ro', lazy => 1, isa => 'CodeRef', default => sub { die "Virtual Method!" };
+has 'get_content_code', is => 'ro', lazy => 1, isa => 'CodeRef', default => sub { die "Virtual Method!" };
+has 'title', is => 'ro', isa => 'Str', default => 'Mime Content';
+
+sub get_id { my $self = shift; return $self->get_id_code->($self,@_); }
+sub get_content { my $self = shift; return $self->get_content_code->($self,@_); }
+
 sub BUILD {
 	my $self = shift;
 	
 	$self->apply_extconfig(
 		xtype => 'iframepanel',
-		title => 'Sent Message',
+		title => $self->title,
 		iconCls => 'icon-email',
 		collapsible => \1,
 		titleCollapse => \1,
@@ -27,8 +34,7 @@ sub BUILD {
 	$self->apply_actions( mime_content => 'mime_content' );
 }
 
-sub get_id { die "Virtual Method!" }
-sub get_content { die "Virtual Method!" }
+
 
 before content => sub {
 	my $self = shift;
