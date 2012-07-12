@@ -218,8 +218,11 @@ Ext.ux.RapidApp.errMsgHandler = function(title,msg) {
 */
 
 
-Ext.ux.RapidApp.errMsgHandler = function(title,msg) {
+Ext.ux.RapidApp.errMsgHandler = function(title,msg,as_text) {
 	var win;
+	
+	var body = as_text ? '<pre>' + Ext.util.Format.nl2br(msg) + '</pre>' : msg;
+	
 	win = new Ext.Window({
 		title: 'Exception',
 		width: 600,
@@ -236,7 +239,7 @@ Ext.ux.RapidApp.errMsgHandler = function(title,msg) {
 				html: title
 			},
 			autoScroll: true,
-			html: '<pre>' + Ext.util.Format.nl2br(msg) + '</pre>',
+			html: body,
 			bodyStyle: 'padding:5px;'
 		},
 		buttonAlign: 'center',
@@ -262,7 +265,7 @@ Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
 				Ext.ux.RapidApp.WinFormPost(data.winform);
 			}
 			else {
-				Ext.ux.RapidApp.errMsgHandler(title,msg);
+				Ext.ux.RapidApp.errMsgHandler(title,msg,data.as_text);
 			}
 		}
 		
@@ -271,7 +274,7 @@ Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
 			var data = Ext.decode(warning);
 			var title = data.title || 'Warning';
 			var msg = data.msg || 'Unknown (X-RapidApp-Warning)';
-			Ext.ux.RapidApp.errMsgHandler(title,msg);
+			Ext.ux.RapidApp.errMsgHandler(title,msg,data.as_text);
 		}
 	}
 	catch(err) {}
