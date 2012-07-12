@@ -2433,7 +2433,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			// Re-enable the form panel if an exception occurs so the user can
 			// try again. We don't need to do this on success because we close
 			// the form/window:
-			var fp_enable_handler = function(){ fp.setDisabled(false); }
+			var fp_enable_handler = function(){ try{ fp.setDisabled(false); }catch(err){} }
 			store.on('exception',fp_enable_handler,this);
 			
 			// Use a copy of the new record in case the save fails and we need to try again:
