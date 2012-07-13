@@ -1790,6 +1790,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		
 		store.hasAnyPendingChanges = function() {
 			var pend = false;
+			// If the store has no update api, it can't have any pending changes
+			if(!store.api.update) { return false; }
 			store.eachTiedChild(function(s) {
 				if(s.hasPendingChanges()) { pend = true; }
 			});
