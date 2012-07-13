@@ -459,6 +459,7 @@ sub rs_count_manual {
 	my $attr = {
 		page => undef, 
 		rows => undef,
+		order_by => undef
 	};
 	
 	unless($opts{no_strip_colums}) {
