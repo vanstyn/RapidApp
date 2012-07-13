@@ -246,7 +246,19 @@ Ext.ux.RapidApp.errMsgHandler = function(title,msg,as_text) {
 		buttons: [{
 			text: 'Ok',
 			handler: function() { win.close(); }
-		}]
+		}],
+		listeners: {
+			render: function(){
+				// Catch navload events and auto-close the exception window:
+				var loadTarget = Ext.getCmp("explorer-id").getComponent("load-target");
+				if(loadTarget){
+					loadTarget.on('navload',this.close,this);
+					this.on('beforeclose',function(){
+						loadTarget.un('navload',this.close);
+					},this);
+				}
+			}
+		}
 	});
 	win.show();
 }
