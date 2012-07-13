@@ -902,18 +902,19 @@ sub inlineNavLink {
 	my $self = shift;
 	my $text = shift || '<span>open</span>';
 	my %attrs = ( class => "magnify-link-tiny", @_ );
+	my $loadCfg = delete $attrs{loadCfg} || {};
 	
 	my $title = $self->getDisplayValue || return undef;
 	my $url = $self->getOpenUrl || return undef;
 	my $pk_val = $self->getRecordPkValue || return undef;
 	
-	my $loadCfg = {
+	$loadCfg = merge({
 		title => $title,
 		autoLoad => {
 			url => $url,
 			params => { '___record_pk' => $pk_val }
 		}
-	};
+	},$loadCfg);
 	
 	my $href = '#loadcfg:data=' . uri_escape(encode_json($loadCfg));
 	my $onclick = 'return Ext.ux.RapidApp.InlineLinkHandler.apply(this,arguments);';
