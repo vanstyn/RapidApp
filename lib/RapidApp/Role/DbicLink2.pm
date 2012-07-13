@@ -670,7 +670,7 @@ sub chain_Rs_req_base_Attr {
 		push @{$attr->{'as'}}, $col;
 	}
 	
-	if (defined $params->{sort} and defined $params->{dir}) {
+	if ($params->{sort} and $params->{dir}) {
 		my $sort = lc($params->{sort});
 		my $sort_name = $dbic_name_map->{$sort} || $self->resolve_dbic_render_colname($sort,$attr->{join});
 		if (ref $sort_name eq 'HASH') {
