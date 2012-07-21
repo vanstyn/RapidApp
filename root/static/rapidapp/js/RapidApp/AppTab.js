@@ -508,6 +508,10 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		}
 		// ------------------------- //
 		
+		// ----- Clear Sort: ----- //
+		this.plugins.push('grid-hmenu-clear-sort');
+		// ----------------------- //
+		
 		
 		// ------ Grid Quick Search --------- //
 		if (this.gridsearch && this.tbar) {

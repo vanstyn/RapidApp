@@ -1182,6 +1182,50 @@ Ext.ux.RapidApp.Plugin.GridHmenuColumnsToggle = Ext.extend(Ext.util.Observable,{
 Ext.preg('grid-hmenu-columns-toggle',Ext.ux.RapidApp.Plugin.GridHmenuColumnsToggle);
 
 
+/*
+ Ext.ux.RapidApp.Plugin.GridHmenuClearSort
+ 2012-07-21 by HV
+
+ Plugin for Ext.grid.GridPanel that adds "Clear Current Sort" to Hmenu
+*/
+Ext.ux.RapidApp.Plugin.GridHmenuClearSort = Ext.extend(Ext.util.Observable,{
+	init: function(cmp) {
+		this.cmp = cmp;
+		cmp.on('afterrender',this.onAfterrender,this);
+	},
+	
+	getClearSortButton: function(){
+		return {
+			text: 'Clear Current Sort',
+			itemId: 'clear-sort',
+			iconCls: 'icon-remove-sort',
+			handler: function() {
+				this.cmp.store.setDefaultSort(null);
+				this.cmp.store.reload();
+			},
+			scope: this
+		};
+	},
+	
+	beforeMenuShow: function(hmenu){
+		var clearSortItem = hmenu.getComponent('clear-sort');
+		if (!clearSortItem) { return; }
+		var store = this.cmp.getStore();
+		var curSort = store ? store.getSortState() : null;
+		clearSortItem.setVisible(curSort);
+	},
+	
+	onAfterrender: function() {
+		var hmenu = this.cmp.view.hmenu;
+		if(!hmenu) { return; }
+		hmenu.insert(2,this.getClearSortButton());
+		hmenu.on('beforeshow',this.beforeMenuShow,this);
+	}
+});
+Ext.preg('grid-hmenu-clear-sort',Ext.ux.RapidApp.Plugin.GridHmenuClearSort);
+
+
+
 // For use with Fields, returns empty strings as null
 Ext.ux.RapidApp.Plugin.EmptyToNull = Ext.extend(Ext.util.Observable,{
 	init: function(cmp) {

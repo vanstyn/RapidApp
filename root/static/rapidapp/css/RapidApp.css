@@ -252,6 +252,12 @@ pre {
 .icon-accept { background-image: url(/static/rapidapp/images/accept.png) !important; }
 .icon-tabs-delete { background-image: url(/static/rapidapp/images/tabs_delete.png) !important; }
 .icon-tab-go { background-image: url(/static/rapidapp/images/tab_go.png) !important; }
+.icon-remove-sort { background-image: url(/static/rapidapp/images/remove_sort.png) !important; }
+
+
+
+
+
 
 
 .tbar-title-medium {
