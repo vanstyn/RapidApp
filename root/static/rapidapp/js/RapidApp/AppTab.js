@@ -326,11 +326,10 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		// view_config gets saved into 'saved_state' when a search is saved:
 		var view_config = {
 			columns: columns,
-			column_order: column_order
+			column_order: column_order,
+			sort: grid.getState().sort || null
 		};
-		var sort = grid.getState().sort;
-		if(sort) { view_config.sort = sort; }
-		
+
 		var store = grid.getStore();
 		
 		
