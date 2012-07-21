@@ -430,11 +430,11 @@ sub rs_count {
 	
 	$self->c->stash->{query_count_start} = [gettimeofday];
 	
-	return $self->rs_count_manual($Rs2);
+	#return $self->rs_count_manual($Rs2);
 	
 	#return $self->rs_count_via_pager($Rs2);
 	#return $self->rs_count_manual($Rs2);
-	#return $self->rs_count_with_fallbacks($Rs2);
+	return $self->rs_count_with_fallbacks($Rs2);
 }
 
 sub rs_count_via_pager {
