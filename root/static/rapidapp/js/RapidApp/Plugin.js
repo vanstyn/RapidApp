@@ -2177,6 +2177,51 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			if(!btn) { return; }
 			
 			this.cmp.loadedStoreButtons[name] = btn;
+			
+			// --------------------------------------------------
+			// --- Keyboard shortcut handling:
+			var keyMapConfigs = {
+				'save': {
+					ctrl: true,
+					key: 's'
+				},
+				'undo': {
+					ctrl: true,
+					key: 'z'
+				},
+				'delete': {
+					key: Ext.EventObject.DELETE
+				}
+			};
+			
+			this.storeBtnKeyMaps = this.storeBtnKeyMaps || {};
+			
+			if(keyMapConfigs[name]) {
+				this.storeBtnKeyMaps[name] = new Ext.KeyMap(Ext.getBody(),Ext.apply({
+					fn: function(k,e){
+						var El = this.cmp.getEl();
+						var pos = El.getXY();
+						
+						// Method to know if our component element is *really* visible
+						// and only handle the key event if it is
+						var element = document.elementFromPoint(pos[0],pos[1]);
+						
+						if(El.isVisible() && El.contains(element)){
+							e.stopEvent();
+							btn.handler.call(this,btn);
+						}
+					},
+					scope: this
+				},keyMapConfigs[name]));
+				
+				this.cmp.on('beforedestroy',function(){
+					this.storeBtnKeyMaps[name].disable.call(this.storeBtnKeyMaps[name]);
+					delete this.storeBtnKeyMaps[name];
+				},this);
+			}
+			// ---
+			// --------------------------------------------------
+			
 		}
 
 		return this.cmp.loadedStoreButtons[name];
