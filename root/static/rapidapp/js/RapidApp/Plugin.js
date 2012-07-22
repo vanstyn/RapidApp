@@ -1522,11 +1522,12 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					if(field && !field.DataStorePlusApplied) {
 						
 						var stopEditFn = cmp.stopEditing.createDelegate(cmp);
-
-						// --- Handle Ctrl+S ('save' keyboard shortcut) for in-progress edit:
+						
+						// --- Handle Ctrl+S/Ctrl+Z ('save'/'undo' keyboard shortcuts) for in-progress edit:
 						field.on('afterrender', function(){
-							//if(!field.el) { return; }
-							var map = new Ext.KeyMap(field.el,{
+							if(!field.el) { return; }
+							var savebtn = cmp.loadedStoreButtons ? cmp.loadedStoreButtons.save : null;
+							new Ext.KeyMap(field.el,{
 								ctrl: true,
 								key: 's',
 								fn: function(k,e){
@@ -1536,11 +1537,20 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 									stopEditFn();
 
 									// If we have a Store save button, also call its handler:
-									var btn = cmp.loadedStoreButtons ? cmp.loadedStoreButtons.save : null;
-									if(btn) { return btn.handler.call(this,btn); }
+									if(savebtn) { return savebtn.handler.call(this,savebtn); }
 								},
 								scope: this
 							});
+							// This is better than the default Ctrl+Z behavior for text fields:
+							var xtype = field.getXType();
+							if(xtype == 'field' || xtype == 'textfield' || xtype == 'numberfield') {
+								new Ext.KeyMap(field.el,{
+									ctrl: true,
+									key: 'z',
+									fn: ed.cancelEdit,
+									scope: ed
+								});
+							}
 						},this);
 						// ---
 
