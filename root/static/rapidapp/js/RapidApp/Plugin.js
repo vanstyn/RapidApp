@@ -2345,16 +2345,37 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 						store.saveAll();
 					}
 				},cnf || {}),showtext);
+					
+				var title_parent = cmp.findParentBy(function(c){
+					return (c.title && c.setTitle)  ? true : false;
+				},this);
+				var modified_suffix = '&nbsp;' +
+					// #c00000 (shade of red) is the same color as 'dirty.gif'  (dirty cell corner triangle icon)
+					'<span style="font-weight:bold;font-size:1.2em;color:#c00000;display:inline;line-height:15px;">' +
+						'*' +
+					'</span>';
 
 				cmp.cascade(function(){
 					if(!this.store || !this.store.addTrackedToggleFunc){ return; }
 					this.store.addTrackedToggleFunc(function(store) {
-						if (cmp.store.hasAnyPendingChanges()) {
-							btn.setDisabled(false);
+						var has_changes = cmp.store.hasAnyPendingChanges();
+						btn.setDisabled(!has_changes);
+						
+						// ---- Add/remove '*' suffix from the title based on the saved/unsaved status:
+						if(!title_parent) { return; }
+						if(has_changes) {
+							if(!title_parent.notUnsavedTitle) {
+								title_parent.notUnsavedTitle = title_parent.title;
+								title_parent.setTitle(title_parent.notUnsavedTitle + modified_suffix);
+							}
 						}
 						else {
-							btn.setDisabled(true);
+							if(title_parent.notUnsavedTitle) {
+								title_parent.setTitle(title_parent.notUnsavedTitle);
+								delete title_parent.notUnsavedTitle;
+							}
 						}
+						// ----
 					});
 				});
 				
