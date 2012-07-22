@@ -1521,9 +1521,32 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					var field = ed.field;
 					if(field && !field.DataStorePlusApplied) {
 						
+						var stopEditFn = cmp.stopEditing.createDelegate(cmp);
+
+						// --- Handle Ctrl+S ('save' keyboard shortcut) for in-progress edit:
+						field.on('afterrender', function(){
+							//if(!field.el) { return; }
+							var map = new Ext.KeyMap(field.el,{
+								ctrl: true,
+								key: 's',
+								fn: function(k,e){
+									e.stopEvent();
+
+									// Complete the edit:
+									stopEditFn();
+
+									// If we have a Store save button, also call its handler:
+									var btn = cmp.loadedStoreButtons ? cmp.loadedStoreButtons.save : null;
+									if(btn) { return btn.handler.call(this,btn); }
+								},
+								scope: this
+							});
+						},this);
+						// ---
+
 						// For combos and other fields with a select listener, automatically
 						// finish the edit on select
-						field.on('select',cmp.stopEditing.createDelegate(cmp));
+						field.on('select',stopEditFn);
 						
 						// For cycle-field/menu-field:
 						field.cycleOnShow = false;
