@@ -8,6 +8,7 @@ use Image::Size;
 use Digest::SHA1;
 use IO::File;
 use Data::Dumper;
+use MIME::Base64;
 
 has 'store_dir' => ( is => 'ro', isa => 'Str', required => 1 );
 
@@ -16,6 +17,12 @@ sub init_store_dir {
 	my $self = shift;
 	return if (-d $self->store_dir);
 	mkdir $self->store_dir or die "Failed to create directory: " . $self->store_dir;
+}
+
+sub add_content_base64 {
+	my $self = shift;
+	my $data = decode_base64(shift) or die "Error decoding base64 data. $@";
+	return $self->add_content($data);
 }
 
 sub add_content {

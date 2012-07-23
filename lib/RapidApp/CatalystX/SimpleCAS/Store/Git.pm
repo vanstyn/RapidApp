@@ -1,5 +1,10 @@
 package RapidApp::CatalystX::SimpleCAS::Store::Git;
 
+## NOTE: This SimpleCas store/backend was never finished because the 'File'
+## store/backend is simple, works, and is all that is really needed. This
+## class probably doesn't work or implement the expected store API...
+
+
 use warnings;
 use Moose;
 
