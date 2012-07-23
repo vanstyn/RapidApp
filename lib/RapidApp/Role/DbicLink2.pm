@@ -1616,17 +1616,6 @@ sub prepare_record_updates {
 		my $rel = $_{rel};
 		my $UpdRow = $rel ? $Row->$rel : $Row;
 		
-		unless (defined $UpdRow) {
-			scream('NOTICE: Relationship/row "' . $rel . '" is not defined'); 
-			return ' ';
-		}
-		
-		if ($UpdRow->isa('DBIx::Class::ResultSet')) {
-			scream('NOTICE: Skipping multi relationship "' . $rel . '"'); 
-			return ' ';
-		}
-
-		
 		my %update = map { $_ => $data->{ $_{name_map}->{$_} } } keys %{$_{name_map}};
 		
 		# --- Need to do a map and a grep here; map to remap the values, and grep to prevent
@@ -1640,6 +1629,30 @@ sub prepare_record_updates {
 		my %revalias = map {$_=>1} values %$alias;
 		%update = map { $alias->{$_} ? $alias->{$_} : $_ => $update{$_} } grep { !$revalias{$_} } keys %update;
 		# ---
+		
+		unless (defined $UpdRow) {
+			scream('NOTICE: Relationship/row "' . $rel . '" is not defined',\@columns); 
+			
+			# New: Throw an error when trying to update a column through a missing relationship so
+			# the user knows instead of silenting ignoring those columns.
+			# TODO: make this an option and alternatively *create* the missing relationship based on
+			# settings of the relationship (needs an API/design to be thought up)
+			if($rel) {
+				my $relf = '<span style="font-weight:bold;color:navy;">' . $rel . '</span>';
+				my $cols = '<span style="font-family:monospace;font-size:.85em;">' . join(', ',keys %update) . '</span>';
+				my $html = '<span style="font-size:1.3em;">' .
+					"Cannot update related field(s) of $relf ($cols) because there is no $relf set for this record. " .
+					"<br><br>This probably just means you need to add or select a $relf first.</span>";
+				die usererr rawhtml $html, title => "Can't update fields of non-existant related '$rel' ";
+			}
+		}
+		
+		# This should throw an error to the user, too:
+		if ($UpdRow->isa('DBIx::Class::ResultSet')) {
+			scream('NOTICE: Skipping multi relationship "' . $rel . '"'); 
+			return ' ';
+		}
+
 		
 		# --- pull out updates to virtual relationship columns
 		my $Source = $UpdRow->result_source;
