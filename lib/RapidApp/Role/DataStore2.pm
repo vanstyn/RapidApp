@@ -170,6 +170,9 @@ after 'BUILD' => sub {
 	}
 	
 	if($self->allow_batch_update && defined $self->Module('store',1)->update_handler) {
+		$self->apply_actions( edit_form => 'get_edit_form' );
+		$self->apply_extconfig( edit_form_url => $self->suburl('edit_form') );
+		
 		$self->apply_actions( batch_update => 'batch_update' );
 		$self->apply_extconfig( batch_update_url => $self->suburl('batch_update') );
 	}
@@ -227,19 +230,54 @@ sub apply_store_to_extconfig {
 }
 
 
-sub get_add_form_items {
+has 'add_edit_formpanel_defaults', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {{
+	xtype => 'form',
+	frame => \1,
+	labelAlign => 'right',
+	labelWidth => 100,
+	plugins => ['dynamic-label-width'],
+	bodyStyle => 'padding: 25px 10px 5px 5px;',
+	defaults => {
+		width => 250
+	},
+	autoScroll => \1,
+	monitorValid => \1,
+	buttonAlign => 'center',
+	minButtonWidth => 100,
+	
+	# datastore-plus (client side) adds handlers based on the "name" properties 'save' and 'cancel' below
+	buttons => [
+		{
+			name => 'save',
+			text => 'Save',
+			iconCls => 'icon-save',
+			formBind => \1
+		},
+		{
+			name => 'cancel',
+			text => 'Cancel',
+		}
+	]
+}};
+
+sub get_add_edit_form_items {
 	my $self = shift;
+	my $mode = shift;
+	die '$mode should be "add" or "edit"' unless ($mode eq 'add' || $mode eq 'edit');
+	
+	my $allow_flag = "allow_$mode";
+	
 	my @items = ();
 	
 	foreach my $colname (@{$self->column_order}) {
 		my $Cnf = $self->columns->{$colname} or next;
 		next unless (defined $Cnf->{editor} and $Cnf->{editor} ne '');
 		
-		#Skip columns with 'no_column' set to true except if 'allow_add' is true:
-		next if (jstrue($Cnf->{no_column}) && ! jstrue($Cnf->{allow_add}));
+		#Skip columns with 'no_column' set to true except if $allow_flag is true:
+		next if (jstrue($Cnf->{no_column}) && ! jstrue($Cnf->{$allow_flag}));
 		
-		#Skip if allow_add is defined but set to false:
-		next if (defined $Cnf->{allow_add} && ! jstrue($Cnf->{allow_add}));
+		#Skip if $allow_flag is defined but set to false:
+		next if (defined $Cnf->{$allow_flag} && ! jstrue($Cnf->{$allow_flag}));
 		
 		my $field = clone($Cnf->{editor});
 		$field->{name} = $colname;
@@ -260,38 +298,31 @@ sub get_add_form_items {
 
 sub get_add_form {
 	my $self = shift;
-
 	return {
-		xtype => 'form',
-		frame => \1,
-		labelAlign => 'right',
-		labelWidth => 100,
-		plugins => ['dynamic-label-width'],
-		bodyStyle => 'padding: 25px 10px 5px 5px;',
-		defaults => {
-			width => 250
-		},
-		autoScroll => \1,
-		monitorValid => \1,
-		buttonAlign => 'center',
-		minButtonWidth => 100,
-		
-		# datastore-plus (client side) adds handlers based on the "name" properties 'save' and 'cancel' below
-		buttons => [
-			{
-				name => 'save',
-				text => 'Save',
-				iconCls => 'icon-save',
-				formBind => \1
-			},
-			{
-				name => 'cancel',
-				text => 'Cancel',
-			}
-		],
+		%{$self->add_edit_formpanel_defaults},
 		items => [ $self->get_add_form_items ]
 	};
 }
+
+sub get_add_form_items {
+	my $self = shift;
+	return $self->get_add_edit_form_items('add');
+}
+
+sub get_edit_form {
+	my $self = shift;
+	return {
+		%{$self->add_edit_formpanel_defaults},
+		items => [ $self->get_edit_form_items ]
+	};
+}
+
+sub get_edit_form_items {
+	my $self = shift;
+	return $self->get_add_edit_form_items('edit');
+}
+
+
 
 sub before_batch_update {
 	my $self = shift;

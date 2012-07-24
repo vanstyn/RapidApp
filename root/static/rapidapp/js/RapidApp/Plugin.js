@@ -1457,6 +1457,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			'persist_all_immediately',
 			'persist_immediately',
 			'store_add_initData',
+			'use_edit_form',
 			'use_add_form',
 			'add_form_url_params',
 			'add_form_window_cnf',
@@ -1468,6 +1469,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		
 		this.exclude_btn_map = {};
 		Ext.each(this.store_exclude_buttons,function(item) { this.exclude_btn_map[item] = true; },this);
+		if(!this.use_edit_form) { this.exclude_btn_map.edit = true; }
 		
 		this.initAdditionalStoreMethods.call(this,this.cmp.store,this);
 		
@@ -1585,10 +1587,6 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		
 		
 		
-		
-		
-		
-
 		if(Ext.isFunction(this.cmp.getSelectionModel)) {
 			// Give Grids getSelectedRecords() so they work like DataViews:
 			if(!Ext.isFunction(this.cmp.getSelectedRecords)) {
@@ -1783,10 +1781,11 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	store_add_initData: {},
 	close_unsaved_confirm: true,
 	show_store_button_text: false,
-	store_buttons: [ 'add', 'delete', 'reload', 'save', 'undo' ],
+	store_buttons: [ 'add', 'edit', 'delete', 'reload', 'save', 'undo' ],
 	store_button_cnf: {},
 	store_exclude_buttons: [],
 	exclude_btn_map: {},
+	use_edit_form: false,
 	use_add_form: false,
 	add_form_url_params: {},
 	add_form_window_cnf: {},
@@ -1817,6 +1816,48 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			}
 			return -1;
 		};
+		
+		store.getColumnConfig = function(name) {
+			if(!store.columns_map){
+				var map = {};
+				Ext.each(store.columns,function(cnf){ map[cnf.name] = cnf; },this);
+				store.columns_map = map;
+			}
+			return store.columns_map[name];
+		};
+		
+		// ----
+		// New: track 'loaded_columns' from the server (see metaData in DataStore2)
+		store.on('metachange',function(ds,meta){
+			if(meta.loaded_columns){
+				var loaded_map = {}, edit_count = 0;
+				Ext.each(meta.loaded_columns,function(f){
+					loaded_map[f] = true; 
+					if(store.api.update) { 
+						var column = store.getColumnConfig(f);
+						if(!column){ return; }
+						var editable = (column.editor && !column.no_column);
+						if(typeof column.allow_edit != 'undefined' && !column.allow_edit) {
+							editable = false;
+						}
+						if(editable || column.allow_edit) { edit_count++; }
+					}
+				},this);
+				store.loaded_columns_map = loaded_map;
+				// We're tracking the count of loaded and editable fields, which can change from
+				// request to request, so we can disable the edit button when that number is 0
+				store.editable_fields_count = edit_count;
+			}
+		},this);
+		
+		store.hasLoadedColumn = function(name) {
+			var map = store.loaded_columns_map || {};
+			return map[name];
+		};
+		store.editableFieldsCount = function() {
+			return (store.editable_fields_count || 0);
+		};
+		// ----
 		
 		store.getPhantomRecords = function() {
 			var records = [];
@@ -1906,6 +1947,10 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			return store.getAt(index);
 		};
 		
+		
+		
+		
+		// -- Add Functions -- //
 		store.prepareNewRecord = function(initData) {
 			return new store.recordType(
 				Ext.apply({},initData || plugin.store_add_initData)
@@ -1924,8 +1969,6 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			if(plugin.persist_immediately.create) { store.saveIfPersist(); }
 			return ret;
 		};
-		
-		
 		
 		store.addRecordForm = function(initData) {
 			if(plugin.use_add_form == 'tab') {
@@ -2027,6 +2070,142 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				loadTarget.activate(tab);
 			});
 		};
+		// -- -- //
+		
+		
+		
+		// -- Edit Functions -- //
+		// edit is only allowed if 1 record is selected, or there is only 1 record
+		store.editNotAllowed = function() {
+			if(!plugin.cmp.use_edit_form) { return true; }
+			var count;
+			if(plugin.cmp.getSelectionModel) {
+				var sm = plugin.cmp.getSelectionModel();
+				count = sm.getCount();
+			}
+			else {
+				count = store.getCount();
+			}
+			if(!store.editableFieldsCount()){ return true; }
+			return (count != 1);
+		},
+		
+		// Gets the record that should be the target of an edit operation. If the
+		// component has getSelectedRecords (like a grid or dataview) it is used, 
+		// otherwise, the first record of the store is returned
+		store.getRecordForEdit = function() {
+			if(store.editNotAllowed()) { return null; }
+			if(plugin.cmp.getSelectedRecords) {
+				var records = plugin.cmp.getSelectedRecords() || [];
+				return records[0];
+			}
+			return store.getAt(0);
+		};
+		
+		
+		store.editRecordForm = function() {
+			if(plugin.use_edit_form == 'tab') {
+				return store.editRecordFormTab();
+			}
+			else {
+				return store.editRecordFormWindow();
+			}
+		};
+		
+		store.editRecordFormWindow = function() {
+			var Rec = store.getRecordForEdit();
+			
+			var win;
+			var close_handler = function(btn) { win.close(); };
+			
+			plugin.getEditFormPanel(Rec,close_handler,function(formpanel){
+			
+				var title;
+				if(plugin.store_button_cnf.edit && plugin.store_button_cnf.edit.text) {
+					title = plugin.store_button_cnf.edit.text;
+				}
+				else {
+					title = 'Edit Record';
+				}
+				if(formpanel.title) { title = formpanel.title; }
+				var height = formpanel.height || 500;
+				var width = formpanel.width || 700;
+				
+				delete formpanel.height;
+				delete formpanel.width;
+				delete formpanel.title;
+				
+				var win_cfg = Ext.apply({
+					title: title,
+					layout: 'fit',
+					width: width,
+					height: height,
+					closable: true,
+					modal: true,
+					items: formpanel
+				},plugin.add_form_window_cnf); //<-- use same custom config from add
+				
+				if(Ext.isFunction(plugin.cmp.edit_form_onPrepare)) {
+					plugin.cmp.edit_form_onPrepare(win_cfg);
+				}
+				
+				win = new Ext.Window(win_cfg);
+				return win.show();
+			});
+		};
+		
+		store.editRecordFormTab = function() {
+			var loadTarget = Ext.getCmp('main-load-target');
+			
+			// Fall back to Window if the load target can't be found for a Tab:
+			if(!loadTarget) { return store.editRecordFormWindow(); }
+			
+			var Rec = store.getRecordForEdit();
+			
+			var tab;
+			var close_handler = function(btn) { loadTarget.remove(tab); };
+			
+			plugin.getEditFormPanel(Rec,close_handler,function(formpanel){
+
+				var title, iconCls;
+				if(plugin.store_button_cnf.edit && plugin.store_button_cnf.edit.text) {
+					title = plugin.store_button_cnf.edit.text;
+				}
+				else {
+					title = 'Edit Record'
+				}
+				
+				if(plugin.store_button_cnf.edit && plugin.store_button_cnf.edit.iconCls) {
+					iconCls = plugin.store_button_cnf.edit.iconCls;
+				}
+				
+				title = formpanel.title || title;
+				iconCls = formpanel.iconCls || iconCls;
+				
+				delete formpanel.height;
+				delete formpanel.width;
+				delete formpanel.title;
+				delete formpanel.iconCls;
+				
+				var tab_cfg = {
+					title: title,
+					iconCls: iconCls,
+					layout: 'fit',
+					closable: true,
+					items: formpanel
+				};
+				
+				if(Ext.isFunction(plugin.cmp.edit_form_onPrepare)) {
+					plugin.cmp.edit_form_onPrepare(tab_cfg);
+				}
+				
+				tab = loadTarget.add(tab_cfg);
+				loadTarget.activate(tab);
+			});
+		};
+		// -- -- //
+		
+		
 		
 		
 		store.removeRecord = function(Record) {
@@ -2290,6 +2469,35 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 						btn.setDisabled(false);
 					}
 				});
+					
+				return btn;
+			},
+			
+			edit: function(cnf,cmp,showtext) {
+				
+				if(!cmp.store.api.update) { return false; }
+				
+				var btn = cmp.store.buttonConstructor(Ext.apply({
+					tooltip: 'Edit',
+					iconCls: 'icon-application_form_edit',
+					handler: function(btn) {
+						var store = cmp.store;
+						if(store.proxy.getConnection().isLoading()) { return; }
+						store.editRecordForm();
+					}
+				},cnf || {}),showtext);
+					
+				cmp.store.addTrackedToggleFunc(function(store) {
+					btn.setDisabled(store.editNotAllowed());
+				});
+				
+				cmp.on('afterrender',function() {
+					var store = this.store;
+					var toggleBtn = function() {
+						btn.setDisabled(store.editNotAllowed());
+					};
+					this.on('selectionchange',toggleBtn,this);
+				},cmp);
 					
 				return btn;
 			},
@@ -2661,6 +2869,121 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				},this);
 				
 				formpanel.Record = newRec;
+				
+				hide_mask();
+				callback(formpanel);
+			},
+			scope: this
+		});
+	},
+	
+	
+	getEditFormPanel: function(Rec,close_handler,callback) {
+		
+		var plugin = this;
+		var store = this.cmp.store;
+		
+		close_handler = close_handler || Ext.emptyFn;
+		
+		var cancel_handler = function(btn) {
+			close_handler(btn);
+		};
+		
+		var save_handler = function(btn) {
+			var fp = btn.ownerCt.ownerCt, form = fp.getForm();
+			
+			// Disable the form panel to prevent user interaction during the save.
+			// Tthere is also a global load mask set on updates, but it is possible 
+			// that the form could be above it if this is a chained sequences of
+			// created records, so this is an extra safety measure in that case:
+			fp.setDisabled(true);
+			
+			// Re-enable the form panel if an exception occurs so the user can
+			// try again. We don't need to do this on success because we close
+			// the form/window:
+			var fp_enable_handler = function(){ try{ fp.setDisabled(false); }catch(err){} }
+			store.on('exception',fp_enable_handler,this);
+			
+			form.updateRecord(Rec);
+			
+			if(plugin.persist_immediately.update) {
+				
+				var after_write_fn = Ext.emptyFn;
+				var remove_handler = Ext.emptyFn;
+				
+				remove_handler = function() { 
+					store.un('write',after_write_fn);
+					// Remove ourselves as we are also a single-use handler:
+					store.un('exception',remove_handler);
+					// remove the enable handler:
+					store.un('exception',fp_enable_handler);
+				}
+				
+				after_write_fn = function(store,action) {
+					if(action == 'update') {
+						// Remove ourselves as we are a single-use handler:
+						remove_handler();
+						
+						// close the add form only after successful create on the server:
+						close_handler(btn);
+					}
+				}
+				
+				store.on('write',after_write_fn,store);
+				
+				// Also remove this single-use handler on exception:
+				store.on('exception',remove_handler,store);
+				
+				store.saveIfPersist(); 
+			}
+			else {
+				close_handler(btn);
+			}
+		};
+		
+		//var myMask = new Ext.LoadMask(Ext.getBody(), {msg:"Loading Form..."});
+		var myMask = new Ext.LoadMask(plugin.cmp.getEl(), {msg:"Loading Edit Form..."});
+		var show_mask = function() { myMask.show(); }
+		var hide_mask = function() { myMask.hide(); }
+		
+		var params = {};
+		if(store.lastOptions.params) { Ext.apply(params,store.lastOptions.params); }
+		if(store.baseParams) { Ext.apply(params,store.baseParams); }
+		if(plugin.cmp.baseParams) { Ext.apply(params,plugin.cmp.baseParams); }
+		Ext.apply(params,plugin.add_form_url_params);
+		
+		show_mask();
+		Ext.Ajax.request({
+			url: plugin.cmp.edit_form_url,
+			params: params,
+			failure: hide_mask,
+			success: function(response,options) {
+				
+				var formpanel = Ext.decode(response.responseText);
+				
+				var new_items = [];
+				Ext.each(formpanel.items,function(field) {
+					// Don't try to edit fields that aren't loaded, exclude them from the form:
+					if(!store.hasLoadedColumn(field.name)){ return; }
+					// Important: autoDestroy must be false on the store or else store-driven
+					// components (i.e. combos) will be broken as soon as the form is closed 
+					// the first time
+					if(field.store) { field.store.autoDestroy = false; }
+					field.value = Rec.data[field.name];
+					new_items.push(field);
+				},this);
+				formpanel.items = new_items;
+				
+				Ext.each(formpanel.buttons,function(button) {
+					if(button.name == 'save') {
+						button.handler = save_handler;
+					}
+					else if(button.name == 'cancel') {
+						button.handler = cancel_handler;
+					}
+				},this);
+				
+				formpanel.Record = Rec;
 				
 				hide_mask();
 				callback(formpanel);

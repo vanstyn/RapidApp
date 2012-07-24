@@ -634,7 +634,8 @@ sub meta_json_packet {
 			messageProperty => 'msg',
 			successProperty => 'success',
 			totalProperty => 'results',
-			fields => defined $self->store_fields ? $self->store_fields : $self->store_fields_from_rows($opt{rows})
+			fields => defined $self->store_fields ? $self->store_fields : $self->store_fields_from_rows($opt{rows}),
+			loaded_columns => try{[ keys %{$opt{rows}->[0]} ]}
 		},
 		success	=> \1,
 		%opt
