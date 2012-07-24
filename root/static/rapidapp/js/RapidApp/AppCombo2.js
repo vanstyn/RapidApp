@@ -1098,7 +1098,11 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 			// If this is an editable appgrid, convert it to a non-editable appgrid:
 			var update_cmpConfig = function(conf) {
 				if(conf && conf.xtype == 'appgrid2ed') {
-					conf.xtype = 'appgrid2';
+					// Temp turned off this override because there turned out to be cases
+					// where editing in the grid combo is desired. 
+					// TODO: Need to revisit this, because in general, we probably don't
+					// want to assume that editing should be allowed....
+					//conf.xtype = 'appgrid2';
 				}
 			};
 			
