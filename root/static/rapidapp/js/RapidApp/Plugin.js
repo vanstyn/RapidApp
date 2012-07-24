@@ -1840,7 +1840,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 						if(typeof column.allow_edit != 'undefined' && !column.allow_edit) {
 							editable = false;
 						}
-						if(editable || column.allow_edit) { edit_count++; }
+						if(editable || column.allow_edit || column.allow_batchedit) { edit_count++; }
 					}
 				},this);
 				store.loaded_columns_map = loaded_map;
@@ -2106,8 +2106,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		};
 		
 		
-		store.editRecordForm = function() {
-			var Rec = store.getRecordForEdit();
+		store.editRecordForm = function(Rec) {
+			Rec = Rec || store.getRecordForEdit();
 			if(!Rec) { return; }
 			if(plugin.use_edit_form == 'tab') {
 				return store.editRecordFormTab(Rec);

@@ -649,14 +649,19 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	},
 	
 	handle_edit_record: function (target,editEl,Record,index,domEl) {
+		
+		var Store = this.getStore();
+		
+		// New: use the datastore-plus edit record function:
+		if(this.use_edit_form){
+			return Store.editRecordForm(Record);
+		}
 
 		var editDoms = domEl.query('div.editable-value');
 		var editEls = [];
 		Ext.each(editDoms,function(dom) {
 			editEls.push(new Ext.Element(dom));
 		});
-		
-		var Store = this.getStore();
 		
 		if(domEl.hasClass('editing-record')) {
 			
