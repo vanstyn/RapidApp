@@ -653,7 +653,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		var Store = this.getStore();
 		
 		// New: use the datastore-plus edit record function:
-		if(this.use_edit_form){
+		if(this.use_edit_form && !Record.phantom){
 			return Store.editRecordForm(Record);
 		}
 
