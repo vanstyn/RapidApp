@@ -4633,6 +4633,8 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 	
 	markDirty: true,
 	
+	use_edit_form: true,
+	
 	initComponent: function() {
 		
 		this.on('beforepropertychange',function(source,rec,n,o) {
@@ -4652,13 +4654,25 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		delete this.store;
 		
 		if(this.storeReloadButton) {
+			var store = this.bindStore;
 			this.tools = [{
 				id: 'refresh',
+				qtip: 'Refresh',
 				handler: function() {
-					this.bindStore.reload();
+					store.reload();
 				},
 				scope: this
-			}]
+			}];
+			if(store.api.update){
+				this.tools.unshift({
+					id: 'gear',
+					qtip: 'Edit',
+					handler: function() {
+						store.editRecordForm();
+					},
+					scope: this
+				});
+			}
 		}
 		
 		if(this.columns && ! this.fields) {

@@ -2077,7 +2077,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		// -- Edit Functions -- //
 		// edit is only allowed if 1 record is selected, or there is only 1 record
 		store.editNotAllowed = function() {
-			if(!plugin.cmp.use_edit_form) { return true; }
+			//if(!store.use_edit_form) { return true; }
 			var count;
 			if(plugin.cmp.getSelectionModel) {
 				var sm = plugin.cmp.getSelectionModel();
@@ -2099,21 +2099,25 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				var records = plugin.cmp.getSelectedRecords() || [];
 				return records[0];
 			}
-			return store.getAt(0);
+			if(store.getCount() == 1){
+				return store.getAt(0);
+			}
+			return null;
 		};
 		
 		
 		store.editRecordForm = function() {
+			var Rec = store.getRecordForEdit();
+			if(!Rec) { return; }
 			if(plugin.use_edit_form == 'tab') {
-				return store.editRecordFormTab();
+				return store.editRecordFormTab(Rec);
 			}
 			else {
-				return store.editRecordFormWindow();
+				return store.editRecordFormWindow(Rec);
 			}
 		};
 		
-		store.editRecordFormWindow = function() {
-			var Rec = store.getRecordForEdit();
+		store.editRecordFormWindow = function(Rec) {
 			
 			var win;
 			var close_handler = function(btn) { win.close(); };
@@ -2154,13 +2158,11 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			});
 		};
 		
-		store.editRecordFormTab = function() {
+		store.editRecordFormTab = function(Rec) {
 			var loadTarget = Ext.getCmp('main-load-target');
 			
 			// Fall back to Window if the load target can't be found for a Tab:
-			if(!loadTarget) { return store.editRecordFormWindow(); }
-			
-			var Rec = store.getRecordForEdit();
+			if(!loadTarget) { return store.editRecordFormWindow(Rec); }
 			
 			var tab;
 			var close_handler = function(btn) { loadTarget.remove(tab); };
@@ -2958,7 +2960,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			params: params,
 			failure: hide_mask,
 			success: function(response,options) {
-				
+
 				var formpanel = Ext.decode(response.responseText);
 				
 				var new_items = [];
