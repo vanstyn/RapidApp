@@ -273,11 +273,14 @@ sub get_add_edit_form_items {
 		my $Cnf = $self->columns->{$colname} or next;
 		next unless (defined $Cnf->{editor} and $Cnf->{editor} ne '');
 		
+		my $allow = jstrue($Cnf->{$allow_flag});
+		$allow = $allow || jstrue($Cnf->{allow_batchedit}) if ($mode eq 'edit');
+		
 		#Skip columns with 'no_column' set to true except if $allow_flag is true:
-		next if (jstrue($Cnf->{no_column}) && ! jstrue($Cnf->{$allow_flag}));
+		next if (jstrue($Cnf->{no_column}) && ! $allow);
 		
 		#Skip if $allow_flag is defined but set to false:
-		next if (defined $Cnf->{$allow_flag} && ! jstrue($Cnf->{$allow_flag}));
+		next if (defined $Cnf->{$allow_flag} && ! $allow);
 		
 		my $field = clone($Cnf->{editor});
 		$field->{name} = $colname;
