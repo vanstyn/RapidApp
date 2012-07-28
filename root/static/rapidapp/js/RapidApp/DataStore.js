@@ -1568,7 +1568,15 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				// Also remove this single-use handler on exception:
 				store.on('exception',remove_handler,store);
 				
-				store.saveIfPersist(); 
+				if(store.hasAnyPendingChanges()) {
+					store.saveIfPersist();
+				}
+				else {
+					// Cleanup if there are no changes, thus no write action will be
+					// called. 
+					remove_handler();
+					close_handler(btn);
+				}
 			}
 			else {
 				close_handler(btn);
