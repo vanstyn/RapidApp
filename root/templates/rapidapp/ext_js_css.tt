@@ -128,6 +128,7 @@
 
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp/base64.js"></script>
 
+<script type="text/javascript" src="/static/rapidapp/js/RapidApp/DataStore.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp/Plugin.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/MultiFilter.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp/AppTab.js"></script>
