@@ -51,8 +51,11 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
 				this.store.load({
 					params:data,
 					callback:function(){
-						delete combo.getStore().baseParams['valueqry'];
-						combo.nativeSetValue(v)
+						var Store = combo.getStore();
+						if(Store){
+							delete Store.baseParams['valueqry'];
+						}
+						combo.nativeSetValue(v);
 					}
 				})   
 			} else return combo.nativeSetValue(v);
