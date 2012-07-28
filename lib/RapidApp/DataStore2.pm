@@ -635,11 +635,21 @@ sub meta_json_packet {
 			successProperty => 'success',
 			totalProperty => 'results',
 			fields => defined $self->store_fields ? $self->store_fields : $self->store_fields_from_rows($opt{rows}),
-			loaded_columns => try{[ keys %{$opt{rows}->[0]} ]}
+			loaded_columns => $self->store_loaded_columns($opt{rows})
 		},
 		success	=> \1,
 		%opt
 	};
+}
+
+sub store_loaded_columns {
+	my $self = shift;
+	my $rows = shift || [];
+	return [ keys %{$rows->[0]} ] if (scalar @$rows > 0);
+	
+	#If there are no rows, we assume *all* fields are loaded. Convert from 'store_fields'
+	my $fields = $self->store_fields || $self->store_fields_from_rows($rows);
+	return [ map { $_->{name} } @$fields ];
 }
 
 

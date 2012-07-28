@@ -460,6 +460,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		// ----
 		// New: track 'loaded_columns' from the server (see metaData in DataStore2)
 		store.on('metachange',function(ds,meta){
+
 			if(meta.loaded_columns){
 				var loaded_map = {}, edit_count = 0;
 				Ext.each(meta.loaded_columns,function(f){
