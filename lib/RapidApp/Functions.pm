@@ -125,7 +125,7 @@ sub caller_data {
 		my $h = {};
 		($h->{package}, $h->{filename}, $h->{line}, $h->{subroutine}, $h->{hasargs},
 			$h->{wantarray}, $h->{evaltext}, $h->{is_require}, $h->{hints}, $h->{bitmask}) = caller($i);
-		push @list,$h;
+		push @list,$h if($h->{package});
 	}
 	
 	return \@list;
@@ -338,8 +338,10 @@ sub func_debug_around {
 			my $stack = caller_data_brief($opt{stack} + 3);
 			shift @$stack;
 			shift @$stack;
+			shift @$stack;
 			@$stack = reverse @$stack;
-			my $i = $opt{stack};
+			my $i = scalar @$stack;
+			#my $i = $opt{stack};
 			print STDERR $newline;
 			foreach my $data (@$stack) {
 				print STDERR '((stack ' . sprintf("%2s",$i--) . ')) ' . sprintf("%7s",'[' . $data->{line} . ']') . ' ' . 
