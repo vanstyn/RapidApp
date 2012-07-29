@@ -1038,7 +1038,8 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 			var win, field = this;
 			var autoLoad = this.autoLoad || { url: this.load_url };
 			
-			var select_fn = function(Record) {
+			var select_fn;
+			select_fn = function(Record) {
 				if(!win || !win.app){ return; }
 				if(!Record) {
 					var records = win.app.getSelectedRecords();
@@ -1046,6 +1047,25 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 				}
 				
 				if(!Record) { return; }
+				
+				// ------- Handle special case where the grid is editable and the user makes changes
+				// that they don't save before clicking select. Save them, then re-update the field
+				// in case they changed the selected field (mostly for display purposes)
+				// TODO: add code to handle the exception event/code path. Also need to do the same for the
+				// confirm save dialog in datastore-plus which is where this code was copied from
+				var store = Record.store;
+				if(store.hasAnyPendingChanges()){
+					var onsave;
+					onsave = function() {
+						store.un('saveall',onsave);
+						var value = Record.data[field.valueField], 
+							disp = Record.data[field.displayField];
+						field.setData(value,disp);
+					};
+					store.on('saveall',onsave);
+					store.saveAll();
+				}
+				// -------
 				
 				var value = Record.data[field.valueField], 
 					disp = Record.data[field.displayField];
