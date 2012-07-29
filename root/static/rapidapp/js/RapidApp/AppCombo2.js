@@ -1107,6 +1107,10 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 					// want to assume that editing should be allowed....
 					//conf.xtype = 'appgrid2';
 				}
+				
+				// Force persist immediately on create so "Add and select" will work as
+				// expected
+				conf.persist_immediately.create = true;
 			};
 			
 			var cmpConfig = {
