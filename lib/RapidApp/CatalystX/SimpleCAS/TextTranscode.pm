@@ -11,6 +11,8 @@ use HTML::Encoding 'encoding_from_html_document', 'encoding_from_byte_order_mark
 use HTML::TokeParser::Simple;
 use Try::Tiny;
 use Email::MIME;
+use CSS::Simple;
+use String::Random;
 
 sub transcode_html: Local  {
 	my ($self, $c) = @_;
@@ -21,12 +23,22 @@ sub transcode_html: Local  {
 	#   file on disk in its native 8-bit encoding.
 	my $upload = $c->req->upload('Filedata') or die "no upload object";
 	my $src_octets = $upload->slurp;
-	my $src_encoding= encoding_from_html_document($src_octets) || 'utf-8';
-	my $in_codec= find_encoding($src_encoding) or die "Unsupported encoding: $src_encoding";
-	my $src_text= $in_codec->decode($src_octets);
 	
-	$self->convert_from_mhtml($c,\$src_text);
+	my $src_text;
 	
+	# If MIME:
+	my $MIME = try{Email::MIME->new($src_octets)};
+	if($MIME && $MIME->subparts) {
+		$src_text = $self->convert_from_mhtml($c,$MIME);
+	}
+	# If HTML:
+	else {
+		my $src_encoding= encoding_from_html_document($src_octets) || 'utf-8';
+		my $in_codec= find_encoding($src_encoding) or die "Unsupported encoding: $src_encoding";
+		$src_text= $in_codec->decode($src_octets);
+	}
+	
+	$src_text = $self->parse_html_get_style_body(\$src_text);
 	$self->convert_data_uri_scheme_links($c,\$src_text);
 	
 	my $rct= $c->stash->{requestContentType};
@@ -48,10 +60,8 @@ sub transcode_html: Local  {
 sub convert_from_mhtml {
 	my $self = shift;
 	my $c = shift;
-	my $string_ref = shift;
-	
-	# Detect if this is MIME content:
-	my $MIME = try{Email::MIME->new($$string_ref)} or return;
+	my $MIME = shift;
+
 	my ($SubPart) = $MIME->subparts or return;
 	
 	## -- Check for and remove extra outer MIME wrapper (exists in actual MIME EMails):
@@ -89,7 +99,49 @@ sub convert_from_mhtml {
 	});
 	
 	$self->convert_mhtml_links_parts($c,\$html,\%ndx);
-	$$string_ref = $self->parse_html_get_body(\$html);
+	return $html;
+}
+
+# Try to extract the 'body' from html to prevent causing DOM/parsing issues on the client side
+sub parse_html_get_style_body {
+	my $self = shift;
+	my $htmlref = shift;
+	
+	my $body = $self->parse_html_get_body($htmlref) or return $$htmlref;
+	my $style = $self->parse_html_get_styles($htmlref);
+	
+	my $auto_css_pre = 'cas-selector-wrap-';
+	my $auto_css_id = $auto_css_pre . String::Random->new->randregex('[a-z0-9]{8}');
+	
+	if($style) {
+		my $Css = CSS::Simple->new;
+		$Css->read({ css => $style });
+		
+		#scream_color(BLACK.ON_RED,$Css->get_selectors);
+		
+		foreach my $selector ($Css->get_selectors) {
+			my @parts = split(/\s+/,$selector);
+			# strip selector wrap from previous content processing (when the user imports + 
+			# exports + imports multiple times)
+			shift @parts if ($parts[0] =~ /^\#${auto_css_pre}/);
+			unshift @parts, '#' . $auto_css_id;
+			pop @parts if (lc($selector) eq 'body'); #<-- any 'body' selectors are replaced by the new div wrap below
+			
+			$Css->modify_selector({
+				selector => $selector,
+				new_selector => join(' ',@parts)
+			});
+		}
+		
+		$style = $Css->write;
+		
+		#scream_color(GREEN.ON_RED,$Css->get_selectors);
+	}
+	
+	$style = '<style>' . $style . '</style>' if ($style);
+	$style ||= '';
+
+	return $style . '<div id="' . $auto_css_id . '">' . $body . '</div>';	
 }
 
 
@@ -105,9 +157,30 @@ sub parse_html_get_body {
 		$inner .= $tag->as_is if ($in_body);
 		$in_body = 1 if ($tag->is_start_tag('body'));
 	};
-	return $$htmlref unless ($in_body);
-	return '<div>' . $inner . '</div>';
+	return undef if ($inner eq '');
+	return $inner;
 }
+
+sub parse_html_get_styles {
+	my $self = shift;
+	my $htmlref = shift;
+	my $parser = HTML::TokeParser::Simple->new($htmlref);
+	my $in_style = 0;
+	my $styles = '';
+	while (my $tag = $parser->get_token) {
+		$in_style = 0 if ($tag->is_end_tag('style'));
+		$styles .= $tag->as_is if ($in_style);
+		$in_style = 1 if ($tag->is_start_tag('style'));
+	};
+	return undef if ($styles eq '');
+	
+	# Pull out html comment characters, ignored in css, but can interfere with CSS::Simple (rare cases)
+	$styles =~ s/\<\!\-\-//gm;
+	$styles =~ s/\-\-\>//gm;
+	
+	return $styles;
+}
+
 
 
 # Extracts the base file path from the 'base' tag of the MHTML content
@@ -243,5 +316,57 @@ sub mime_part_to_cas_url {
 	
 	return "/simplecas/fetch_content/$checksum/$filename";
 }
+
+# not currently used:
+sub css_reset { return q|
+/**
+* Eric Meyer's Reset CSS v2.0 (http://meyerweb.com/eric/tools/css/reset/)
+* http://cssreset.com
+*/
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, menu, nav, section {
+  display: block;
+}
+body {
+  line-height: 1;
+}
+ol, ul {
+  list-style: none;
+}
+blockquote, q {
+  quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+  content: '';
+  content: none;
+}
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+/* End Reset CSS */
+|}
 
 1;
