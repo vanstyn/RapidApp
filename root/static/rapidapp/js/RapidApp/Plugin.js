@@ -286,8 +286,8 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHtmlFile = Ext.extend(Ext.util.Observable,
 	selectHtmlFile: function() {
 		var upload_field = {
 			xtype: 'fileuploadfield',
-			emptyText: 'Select html file',
-			fieldLabel:'Html File',
+			emptyText: 'Select html or mht file',
+			fieldLabel:'Html/Mht File',
 			name: 'Filedata',
 			buttonText: 'Browse',
 			width: 300
@@ -297,7 +297,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHtmlFile = Ext.extend(Ext.util.Observable,
 			style: 'border: none',
 			hideBorders: true,
 			xtype: 'fieldset',
-			labelWidth: 70,
+			labelWidth: 80,
 			border: false,
 			items:[ upload_field ]
 		};
@@ -309,7 +309,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHtmlFile = Ext.extend(Ext.util.Observable,
 		
 		Ext.ux.RapidApp.WinFormPost.call(this,{
 			title: 'Load html file',
-			width: 430,
+			width: 440,
 			height:140,
 			url:'/simplecas/texttranscode/transcode_html',
 			useSubmit: true,
