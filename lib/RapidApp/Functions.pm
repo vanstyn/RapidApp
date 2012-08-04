@@ -208,6 +208,27 @@ sub disp {
 	return "'" . $val . "'";
 }
 
+
+sub print_trunc($$) {
+	my $max_length = shift;
+	my $str = shift;
+	
+	die "Invalid max length '$max_length'" unless (
+		defined $max_length &&
+		$max_length =~ /^\d+$/ &&
+		$max_length > 0
+	);
+	
+	die "non-ref string required ('$str' is invalid)" if (ref $str || ! defined $str);
+	
+	# escape single quotes:
+	$str =~ s/'/\\'/g;
+	
+	my $length = length $str;
+	return "'" . $str . "'" if ($length <= $max_length);
+	return "'" . substr($str,0,$max_length) . "'...<$length> "; 
+}
+
 our $debug_arounds_set = {};
 our $debug_around_nest_level = 0;
 our $debug_around_last_nest_level = 0;

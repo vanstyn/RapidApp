@@ -1681,7 +1681,7 @@ sub prepare_record_updates {
 			my $msg = 'Will UPDATE -> ' . $self->get_Row_Rs_label($UpdRow) . "\n";
 			if (keys %$change > 0){ 
 				my $t = Text::TabularDisplay->new(qw(column old new));
-				$t->add($_,disp($current{$_}),disp($change->{$_})) for (keys %$change);
+				$t->add($_,print_trunc(60,$current{$_}),print_trunc(60,$change->{$_})) for (keys %$change);
 				$msg .= $t->render;
 			}
 			else {
@@ -1793,7 +1793,7 @@ sub _dbiclink_create_records {
 					my $t = Text::TabularDisplay->new(qw(column value));
 					#$t->add($_,ref $create->{$_} ? Dumper($create->{$_}) : $create->{$_} ) for (keys %$create);
 					#$t->add($_,disp(sub{ ref $_ ? Dumper($_) : undef },$create->{$_}) ) for (keys %$create);
-					$t->add($_,disp($create->{$_})) for (keys %$create);
+					$t->add($_,print_trunc(60,$create->{$_})) for (keys %$create);
 					$msg .= $t->render;
 				}
 				else {
