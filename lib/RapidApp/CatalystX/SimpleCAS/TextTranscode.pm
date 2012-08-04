@@ -54,8 +54,6 @@ sub convert_from_mhtml {
 	my $MIME = try{Email::MIME->new($$string_ref)} or return;
 	my ($SubPart) = $MIME->subparts or return;
 	
-	scream_color(BLUE.ON_WHITE,$MIME->debug_structure);
-
 	## -- Check for and remove extra outer MIME wrapper (exists in actual MIME EMails):
 	$MIME = $SubPart if (
 		$SubPart->content_type &&
@@ -65,9 +63,7 @@ sub convert_from_mhtml {
 	
 	my ($MainPart) = $MIME->subparts or return;
 	my $html = $MainPart->body_str;
-	my $base_path = $self->parse_html_base_href(\$html);
-	
-	scream($base_path);
+	my $base_path = $self->parse_html_base_href(\$html) || $self->get_mime_part_base_path($MainPart);
 	
 	my %ndx = ();
 	$MIME->walk_parts(sub{ 
@@ -90,18 +86,14 @@ sub convert_from_mhtml {
 				$ndx{$content_location} = $Part;
 			}
 		}
-		
 	});
 	
-	scream_color(BLACK.ON_WHITE,keys %ndx);
-	
 	$self->convert_mhtml_links_parts($c,\$html,\%ndx);
-	
 	$$string_ref = $self->parse_html_get_body(\$html);
 }
 
 
-# Try to extract the 'body' from html to prevent
+# Try to extract the 'body' from html to prevent causing DOM/parsing issues on the client side
 sub parse_html_get_body {
 	my $self = shift;
 	my $htmlref = shift;
@@ -132,6 +124,19 @@ sub parse_html_base_href {
 	return undef;
 }
 
+# alternative method to identify a base path from a Mime Part
+sub get_mime_part_base_path {
+	my $self = shift;
+	my $Part = shift;
+	
+	my $content_location = $Part->header('Content-Location') or return undef;
+	my @parts = split(/\//,$content_location);
+	my $filename = pop @parts;
+	my $path = join('/',@parts) . '/';
+	
+	return $path;
+}
+
 
 sub convert_mhtml_links_parts {
 	my $self = shift;
@@ -154,14 +159,9 @@ sub convert_mhtml_links_parts {
 			
 			my $as_is = $tag->as_is;
 			$tag->set_attr( $attr => $cas_url );
-			
 			$substitutions->{$as_is} = $tag->as_is;
-			
-			#scream_color(BLACK.ON_RED,$url,$as_is,$tag->as_is);
 		}
 	}
-	
-	scream_color(BLACK.ON_RED,$substitutions);
 	
 	foreach my $find (keys %$substitutions) {
 		my $replace = $substitutions->{$find};
@@ -240,8 +240,6 @@ sub mime_part_to_cas_url {
 	my $data = $Part->body;
 	my $filename = $Part->filename(1);
 	my $checksum = $Cas->Store->add_content($data) or return undef;
-	
-	return "/simplecas/fetch_content/$checksum";
 	
 	return "/simplecas/fetch_content/$checksum/$filename";
 }
