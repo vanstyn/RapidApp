@@ -14,8 +14,13 @@ use MIME::Base64;
 use Image::Resize;
 use String::Random;
 
-has 'store_class' => ( is => 'ro', default => 'RapidApp::CatalystX::SimpleCAS::Store::File' );
-has 'store_path' => ( is => 'ro', required => 1 );
+has 'store_class', is => 'ro', default => 'RapidApp::CatalystX::SimpleCAS::Store::File';
+has 'store_path', is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	my $c = $self->_app;
+	# Default Cas Store path if none was supplied in the config:
+	return $c->config->{home} . '/cas_store';
+};
 
 has 'Store' => (
 	is => 'ro',

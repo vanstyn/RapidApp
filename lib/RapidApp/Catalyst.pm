@@ -1,5 +1,5 @@
 package RapidApp::Catalyst;
-use Catalyst;
+use Catalyst qw(+RapidApp::CatalystX::SimpleCAS);
 use base 'Catalyst';
 
 use RapidApp::AttributeHandlers;
