@@ -219,7 +219,9 @@ sub print_trunc($$) {
 		$max_length > 0
 	);
 	
-	die "non-ref string required ('$str' is invalid)" if (ref $str || ! defined $str);
+	return 'undef' unless (defined $str);
+	
+	die "non-ref string required ('$str' is invalid)" if (ref $str);
 	
 	# escape single quotes:
 	$str =~ s/'/\\'/g;
