@@ -1467,3 +1467,20 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
   padding-top:15px;
   padding-bottom:15px;
 }
+
+
+
+/* -----
+Overrides to prevent editors from being chopped when they are larger than the grid,
+happens especially in Property Grid when editing the last field/row when it is a
+multi-line editor, like a textarea or html editor.
+TODO: make sure this doesn't cause problems someplace else
+*/
+.x-grid-panel .x-panel-bwrap,
+.x-grid-panel .x-panel-bwrap .x-grid-panel .x-panel-body,
+.x-grid-panel .x-panel-bwrap .x-panel-body,
+.x-grid-panel .x-panel-bwrap .x-panel-body .x-grid3,
+.x-grid-panel .x-panel-bwrap .x-panel-body .x-grid3 .x-grid3-viewport {
+  overflow: visible !important;
+}
+/* ----- */
