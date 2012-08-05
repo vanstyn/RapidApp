@@ -444,19 +444,20 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		}
 		/*****************************************************/
 		
-		if(Field.resizable) {
-			var resizer = new Ext.Resizable(Field.wrap, {
-				pinned: true,
-				handles: 's',
-				//handles: 's,e,se',
-				dynamic: true,
-				listeners : {
-					'resize' : function(resizable, height, width) {
-						Field.setSize(height,width);
-					}
-				}
-			});
-		}
+		// This logic moved into Ext.ux.RapidApp.HtmlEditor
+		//if(Field.resizable) {
+		//	var resizer = new Ext.Resizable(Field.wrap, {
+		//		pinned: true,
+		//		handles: 's',
+		//		//handles: 's,e,se',
+		//		dynamic: true,
+		//		listeners : {
+		//			'resize' : function(resizable, height, width) {
+		//				Field.setSize(height,width);
+		//			}
+		//		}
+		//	});
+		//}
 		
 		Field.show();
 		

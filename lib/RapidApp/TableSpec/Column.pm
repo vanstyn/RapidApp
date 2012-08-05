@@ -122,10 +122,10 @@ sub DEFAULT_PROFILES {{
 			renderer => jsfunc('function(v){ return v; }'),
 			editor => {
 				xtype		=> 'ra-htmleditor',
-				resizable => \1, #<-- this doesn't work anymore?
+				resizable => \1, #<-- Specific to Ext.ux.RapidApp.HtmlEditor ('ra-htmleditor')
 				#height => 200,
-				#minHeight => 200,
-				#minWidth	=> 400,
+				minHeight => 200,
+				minWidth	=> 400,
 				anchor => '-25',
 			},
 		},

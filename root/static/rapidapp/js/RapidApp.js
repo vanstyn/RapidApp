@@ -5447,8 +5447,34 @@ Ext.ux.RapidApp.HtmlEditor = Ext.extend(Ext.form.HtmlEditor,{
 			new Ext.ux.form.HtmlEditor.SubSuperScript(),
 			'clickablelinks'
 		);
-		
 		this.plugins = plugins;
+			
+		if(this.resizable) {
+			this.on('initialize',function(){
+				var Field = this;
+				var minHeight = this.minHeight || 50;
+				var minWidth = this.minWidth || 100;
+				
+				var resizer = new Ext.Resizable(this.wrap, {
+					minHeight: minHeight,
+					minWidth: minWidth,
+					pinned: true,
+					handles: 'se',
+					//handles: 's,e,se',
+					//dynamic: true,
+					listeners : {
+						'resize' : function(resizable,width,height) {
+							//height = height - 6; //<-- adjust for size of resizer (needed when handles: 's')
+							Field.setSize(width,height);
+						}
+					}
+				});
+				// Manually fire resize to trigger init adjustment for resizer
+				//var size = this.wrap.getSize();
+				//resizer.resizeTo(size.width,size.height);
+			},this);
+		}
+			
 		Ext.ux.RapidApp.HtmlEditor.superclass.initComponent.call(this);
 	}
 });
