@@ -220,8 +220,11 @@ sub print_trunc($$) {
 	);
 	
 	return 'undef' unless (defined $str);
-	
-	die "non-ref string required ('$str' is invalid)" if (ref $str);
+	if (ref $str) {
+		$str = disp($str);
+		$str =~ s/^\'//;
+		$str =~ s/\'$//;
+	}
 	
 	# escape single quotes:
 	$str =~ s/'/\\'/g;
