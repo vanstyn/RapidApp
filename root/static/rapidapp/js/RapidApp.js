@@ -5431,6 +5431,7 @@ Ext.ux.RapidApp.HtmlEditor = Ext.extend(Ext.form.HtmlEditor,{
 		if(!Ext.isArray(plugins)) { plugins = [ this.plugins ]; }
 		
 		plugins.push(
+			'htmleditor-autosizers',
 			new Ext.ux.form.HtmlEditor.Break(),
 			'htmleditor-loadhtml',
 			'htmleditor-insertfile',
@@ -5455,7 +5456,7 @@ Ext.ux.RapidApp.HtmlEditor = Ext.extend(Ext.form.HtmlEditor,{
 				var minHeight = this.minHeight || 50;
 				var minWidth = this.minWidth || 100;
 				
-				var resizer = new Ext.Resizable(this.wrap, {
+				this.Resizer = new Ext.Resizable(this.wrap, {
 					minHeight: minHeight,
 					minWidth: minWidth,
 					pinned: true,

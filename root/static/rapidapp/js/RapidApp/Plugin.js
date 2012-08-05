@@ -245,6 +245,69 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.DVSelect = Ext.extend(Ext.util.Observable, {
 });
 Ext.preg('htmleditor-dvselect',Ext.ux.RapidApp.Plugin.HtmlEditor.DVSelect);
 
+Ext.ux.RapidApp.Plugin.HtmlEditor.AutoSizers = Ext.extend(Ext.util.Observable, {
+	// private
+	init: function(cmp){
+		this.cmp = cmp;
+		this.cmp.on('render', this.onRender, this);
+		this.cmp.on('push', this.onPush, this);
+		this.cmp.autoHeightUp = function() {
+			var editorBody = this.getEditorBody();
+			if (editorBody.scrollHeight > editorBody.clientHeight) {
+
+				var tbheight = this.getToolbar().getHeight();
+				var height = editorBody.scrollHeight + tbheight + 5;
+				if (height < this.initialConfig.height) {
+					height = this.initialConfig.height;
+				}
+				if(this.Resizer) {
+					this.Resizer.resizeTo(this.getWidth(),height);
+				}
+				else {
+					this.setHeight(height);
+					this.wrap.setHeight(height);
+				}
+			}
+		};
+		this.cmp.setMinHeight = function() {
+			var height = this.initialConfig.minHeight || 150;
+			if(this.Resizer) {
+				this.Resizer.resizeTo(this.getWidth(),height);
+			}
+			else {
+				this.setHeight(height);
+				this.wrap.setHeight(height);
+			}
+		};
+	},
+
+	onPush: function() {
+		if(this.initExpanded) { return; }
+		this.cmp.autoHeightUp();
+		this.initExpanded = true;
+	},
+
+	// private
+	onRender: function(){
+		this.cmp.getToolbar().add(
+			'->',
+			new Ext.ux.RapidApp.BoxToolBtn({
+				toolType: 'minimize',
+				toolQtip: 'Min Height',
+				handler: this.cmp.setMinHeight,
+				scope: this.cmp
+			}),
+			new Ext.ux.RapidApp.BoxToolBtn({
+				toolType: 'maximize',
+				toolQtip: 'Expand Height',
+				handler: this.cmp.autoHeightUp,
+				scope: this.cmp
+			})
+		);
+	}
+});
+Ext.preg('htmleditor-autosizers',Ext.ux.RapidApp.Plugin.HtmlEditor.AutoSizers);
+
 
 Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHtmlFile = Ext.extend(Ext.util.Observable, {
 	
@@ -3666,6 +3729,7 @@ Ext.ux.RapidApp.Plugin.MenuFilter = Ext.extend(Ext.util.Observable,{
 	}
 });
 Ext.preg('menu-filter',Ext.ux.RapidApp.Plugin.MenuFilter);
+
 
 
 
