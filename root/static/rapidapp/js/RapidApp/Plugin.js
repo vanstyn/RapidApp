@@ -308,7 +308,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHtmlFile = Ext.extend(Ext.util.Observable,
 		};
 		
 		Ext.ux.RapidApp.WinFormPost.call(this,{
-			title: 'Load html file',
+			title: 'Load html file (replace existing content)',
 			width: 440,
 			height:140,
 			url:'/simplecas/texttranscode/transcode_html',

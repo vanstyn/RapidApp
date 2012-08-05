@@ -134,16 +134,27 @@ sub parse_html_get_style_body {
 		}
 		
 		$style = $Css->write;
-		
-		#scream_color(GREEN.ON_RED,$Css->get_selectors);
+	}
+
+	if ($style) {
+		# minify:
+		$style =~ s/\r?\n/ /gm;
+		$style =~ s/\s+/ /gm;
+		$style = "\n<style type=\"text/css\">\n$style\n</style>";
 	}
 	
-	#$style = "\n\n" . $self->css_reset_for_element_id($auto_css_id) . "\n\n" . $style;
-	
-	$style = '<style>' . $style . '</style>' if ($style);
 	$style ||= '';
-
-	return $style . '<div id="' . $auto_css_id . '">' . $body . '</div>';	
+	$style = "\n" .
+		'<!-- isolated styles dynamically generated/imported by ' . ref($self) . ' -->' . "\n" .
+			'<style type="text/css">' . "\n" .
+				'   @import "/static/rapidapp/css/CssIsolation.css";' . "\n" .
+			'</style>' . $style . "\n" .
+		'<!-- end of dynamically generated styles -->' . "\n";
+	
+	return 
+		'<div class="isolate" id="' . $auto_css_id . '"> <!-- this tag required for correct style rendering -->' . "\n" .
+			$body . "\n" . 
+		'</div>' . "\n$style";		
 }
 
 
@@ -318,99 +329,5 @@ sub mime_part_to_cas_url {
 	
 	return "/simplecas/fetch_content/$checksum/$filename";
 }
-
-# http://snipplr.com/view/7438/
-sub css_reset_for_element_id {
-	my $self = shift;
-	my $id = shift;
-	$id = '#' . $id unless ($id =~ /^\#/);
-	
-	return $id.','.$id.' *,'.$id.' a:hover,'.$id.' a:visited,'.$id.' a:active {' . q|
-background:none;
-border:none;
-bottom:auto;
-clear:none;
-cursor:default;
-float:none;
-font-family:Arial, Helvetica, sans-serif;
-font-size:medium;
-font-style:normal;
-font-weight:normal;
-height:auto;
-left:auto;
-letter-spacing:normal;
-line-height:normal;
-max-height:none;
-max-width:none;
-min-height:0;
-min-width:0;
-overflow:visible;
-position:static;
-right:auto;
-text-align:left;
-text-decoration:none;
-text-indent:0;
-text-transform:none;
-top:auto;
-visibility:visible;
-white-space:normal;
-width:auto;
-z-index:auto;
-}|;
-
-}
-
-
-# not currently used:
-sub css_reset { return q|
-/**
-* Eric Meyer's Reset CSS v2.0 (http://meyerweb.com/eric/tools/css/reset/)
-* http://cssreset.com
-*/
-html, body, div, span, applet, object, iframe,
-h1, h2, h3, h4, h5, h6, p, blockquote, pre,
-a, abbr, acronym, address, big, cite, code,
-del, dfn, em, img, ins, kbd, q, s, samp,
-small, strike, strong, sub, sup, tt, var,
-b, u, i, center,
-dl, dt, dd, ol, ul, li,
-fieldset, form, label, legend,
-table, caption, tbody, tfoot, thead, tr, th, td,
-article, aside, canvas, details, embed,
-figure, figcaption, footer, header, hgroup,
-menu, nav, output, ruby, section, summary,
-time, mark, audio, video {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  font-size: 100%;
-  font: inherit;
-  vertical-align: baseline;
-}
-/* HTML5 display-role reset for older browsers */
-article, aside, details, figcaption, figure,
-footer, header, hgroup, menu, nav, section {
-  display: block;
-}
-body {
-  line-height: 1;
-}
-ol, ul {
-  list-style: none;
-}
-blockquote, q {
-  quotes: none;
-}
-blockquote:before, blockquote:after,
-q:before, q:after {
-  content: '';
-  content: none;
-}
-table {
-  border-collapse: collapse;
-  border-spacing: 0;
-}
-/* End Reset CSS */
-|}
 
 1;
