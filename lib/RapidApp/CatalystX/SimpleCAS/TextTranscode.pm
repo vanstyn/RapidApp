@@ -138,6 +138,8 @@ sub parse_html_get_style_body {
 		#scream_color(GREEN.ON_RED,$Css->get_selectors);
 	}
 	
+	#$style = "\n\n" . $self->css_reset_for_element_id($auto_css_id) . "\n\n" . $style;
+	
 	$style = '<style>' . $style . '</style>' if ($style);
 	$style ||= '';
 
@@ -316,6 +318,48 @@ sub mime_part_to_cas_url {
 	
 	return "/simplecas/fetch_content/$checksum/$filename";
 }
+
+# http://snipplr.com/view/7438/
+sub css_reset_for_element_id {
+	my $self = shift;
+	my $id = shift;
+	$id = '#' . $id unless ($id =~ /^\#/);
+	
+	return $id.','.$id.' *,'.$id.' a:hover,'.$id.' a:visited,'.$id.' a:active {' . q|
+background:none;
+border:none;
+bottom:auto;
+clear:none;
+cursor:default;
+float:none;
+font-family:Arial, Helvetica, sans-serif;
+font-size:medium;
+font-style:normal;
+font-weight:normal;
+height:auto;
+left:auto;
+letter-spacing:normal;
+line-height:normal;
+max-height:none;
+max-width:none;
+min-height:0;
+min-width:0;
+overflow:visible;
+position:static;
+right:auto;
+text-align:left;
+text-decoration:none;
+text-indent:0;
+text-transform:none;
+top:auto;
+visibility:visible;
+white-space:normal;
+width:auto;
+z-index:auto;
+}|;
+
+}
+
 
 # not currently used:
 sub css_reset { return q|

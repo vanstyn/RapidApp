@@ -116,6 +116,19 @@ sub DEFAULT_PROFILES {{
 			editor		=> { xtype => 'textarea', grow => \1 },
 			summary_functions => \@text_summary_funcs 
 		},
+		html => {
+			# We need this renderer in case the 'bigtext' profile above has been applied
+			# automatically. For HTML we *don't* want to nl2br() as it will totally break markup
+			renderer => jsfunc('function(v){ return v; }'),
+			editor => {
+				xtype		=> 'ra-htmleditor',
+				resizable => \1, #<-- this doesn't work anymore?
+				#height => 200,
+				#minHeight => 200,
+				#minWidth	=> 400,
+				anchor => '-25',
+			},
+		},
 		email => {
 			editor => { xtype => 'textfield' },
 			summary_functions => \@text_summary_funcs,

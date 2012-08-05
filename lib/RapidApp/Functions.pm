@@ -226,9 +226,12 @@ sub print_trunc($$) {
 	# escape single quotes:
 	$str =~ s/'/\\'/g;
 	
+	# convert tabs:
+	$str =~ s/\t/   /g;
+	
 	my $length = length $str;
 	return "'" . $str . "'" if ($length <= $max_length);
-	return "'" . substr($str,0,$max_length) . "'...<$length> "; 
+	return "'" . substr($str,0,$max_length) . "'...<$length" . " bytes> "; 
 }
 
 our $debug_arounds_set = {};

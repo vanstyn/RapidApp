@@ -310,16 +310,14 @@ has 'autofield' => (
 			
 			# editable
 			
+			my @bigfield_types = qw(textarea htmleditor ra-htmleditor);
 			return $self->div_bigfield($Column->name,$display) if (
-				$config->{xtype} eq 'textarea' or
-				$config->{xtype} eq 'htmleditor'
+				$config->{xtype} ~~ @bigfield_types
 			);
 			
+			my @no_icons_types = qw(cycle-field menu-field cas-upload-field cas-image-field);
 			return $self->div_edit_field_no_icons($Column->name,$display) if (
-				$config->{xtype} eq 'cycle-field' or
-				$config->{xtype} eq 'menu-field' or 
-				$config->{xtype} eq 'cas-upload-field' or
-				$config->{xtype} eq 'cas-image-field'
+				$config->{xtype} ~~ @no_icons_types
 			);
 			
 			return $self->div_edit_field($Column->name,$display);

@@ -5425,4 +5425,31 @@ Ext.apply(Ext.form.VTypes,{
 /*******************************************/
 
 
-
+Ext.ux.RapidApp.HtmlEditor = Ext.extend(Ext.form.HtmlEditor,{
+	initComponent: function() {
+		var plugins = this.plugins || [];
+		if(!Ext.isArray(plugins)) { plugins = [ this.plugins ]; }
+		
+		plugins.push(
+			new Ext.ux.form.HtmlEditor.Break(),
+			'htmleditor-loadhtml',
+			'htmleditor-insertfile',
+			{
+				ptype: 'htmleditor-casimage',
+				maxImageWidth: 800,
+				resizeWarn: true
+			},
+			new Ext.ux.form.HtmlEditor.SpecialCharacters(),
+			new Ext.ux.form.HtmlEditor.UndoRedo(),
+			new Ext.ux.form.HtmlEditor.Divider(),
+			new Ext.ux.form.HtmlEditor.Table(),
+			new Ext.ux.form.HtmlEditor.IndentOutdent(),
+			new Ext.ux.form.HtmlEditor.SubSuperScript(),
+			'clickablelinks'
+		);
+		
+		this.plugins = plugins;
+		Ext.ux.RapidApp.HtmlEditor.superclass.initComponent.call(this);
+	}
+});
+Ext.reg('ra-htmleditor',Ext.ux.RapidApp.HtmlEditor);
