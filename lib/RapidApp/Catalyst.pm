@@ -10,6 +10,22 @@ use base 'Catalyst';
 
 use RapidApp::AttributeHandlers;
 use RapidApp::Include qw(sugar perlutil);
+use Template;
+
+# convenience util function
+my $TT;
+sub template_render {
+	my $c = shift;
+	my $template = shift;
+	my $vars = shift || {};
+	
+	$TT ||= Template->new({ INCLUDE_PATH => $c->config->{home} . '/root' });
+	
+	my $out;
+	$TT->process($template,$vars,\$out) or die $TT->error;
+
+	return $out;
+}
 
 
 1;

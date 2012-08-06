@@ -2,14 +2,14 @@
 
 Ext.ns('Ext.ux.RapidApp.Plugin.HtmlEditor');
 
-// Creates an empty menu at this.EditMenu (looked for by other plugis)
-Ext.ux.RapidApp.Plugin.HtmlEditor.EditMenu = Ext.extend(Ext.util.Observable, {
+// Creates an empty menu at this.ToolsMenu (looked for by other plugis)
+Ext.ux.RapidApp.Plugin.HtmlEditor.ToolsMenu = Ext.extend(Ext.util.Observable, {
 	
 	text: '<span style="' + 
 		'font-weight:bold;color:#444444;padding-right:2px;' +
 		'font-family:tahoma,helvetica,sans-serif;' + 
 		'">' +
-			'Edit' +
+			'Tools' +
 	'</span>',
 	
 	init: function(cmp){
@@ -18,17 +18,17 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.EditMenu = Ext.extend(Ext.util.Observable, {
 	},
 	
 	onRender: function() {
-		this.cmp.EditMenu = new Ext.menu.Menu();
+		this.cmp.ToolsMenu = new Ext.menu.Menu();
 		var tb = this.cmp.getToolbar();
 		this.btn = tb.addButton({
 			iconCls: 'icon-bullet-wrench',
 			style: 'font-size:1.9em;',
 			text: this.text,
-			menu: this.cmp.EditMenu
+			menu: this.cmp.ToolsMenu
 		});
 	}
 });
-Ext.preg('htmleditor-editmenu',Ext.ux.RapidApp.Plugin.HtmlEditor.EditMenu);
+Ext.preg('htmleditor-toolsmenu',Ext.ux.RapidApp.Plugin.HtmlEditor.ToolsMenu);
 
 
 Ext.ux.RapidApp.Plugin.HtmlEditor.SimpleCAS_Image = Ext.extend(Ext.ux.form.HtmlEditor.Image,{
@@ -308,8 +308,8 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHtmlFile = Ext.extend(Ext.util.Observable,
 			text: this.title,
 			scope: this
 		};
-		if(this.cmp.EditMenu){
-			this.cmp.EditMenu.add(itm);
+		if(this.cmp.ToolsMenu){
+			this.cmp.ToolsMenu.add(itm);
 		}
 		else {
 			this.btn = this.cmp.getToolbar().addButton(itm);
@@ -367,8 +367,7 @@ Ext.preg('htmleditor-loadhtml',Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHtmlFile);
 Ext.ux.RapidApp.Plugin.HtmlEditor.SaveMhtml = Ext.extend(Ext.util.Observable, {
 	
 	title: 'Save Mhtml',
-	height: 400,
-	width: 500,
+	iconCls: 'icon-save-as',
 	
 	constructor: function(cnf) {
 		Ext.apply(this,cnf);
@@ -381,61 +380,23 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.SaveMhtml = Ext.extend(Ext.util.Observable, {
 	
 	onRender: function() {
 		var itm = {
-			iconCls: 'icon-save-as',
-			handler: this.selectHtmlFile,
 			text: this.title,
+			iconCls: this.iconCls,
+			handler: this.downloadFile,
 			scope: this
 		};
-		if(this.cmp.EditMenu){
-			this.cmp.EditMenu.add(itm);
+		if(this.cmp.ToolsMenu){
+			this.cmp.ToolsMenu.add(itm);
 		}
 		else {
 			this.btn = this.cmp.getToolbar().addButton(itm);
 		}
 	},
 	
-	replaceContent: function(str) {
-		if(!this.cmp.activated) {
-			// This works in FF, but not in IE:
-			this.cmp.onFirstFocus();
-		}
-		this.cmp.setValue(str);
-	},
-	
-	selectHtmlFile: function() {
-		var upload_field = {
-			xtype: 'fileuploadfield',
-			emptyText: 'Select html or mht file',
-			fieldLabel:'Html/Mht File',
-			name: 'Filedata',
-			buttonText: 'Browse',
-			width: 300
-		};
-		
-		var fieldset = {
-			style: 'border: none',
-			hideBorders: true,
-			xtype: 'fieldset',
-			labelWidth: 80,
-			border: false,
-			items:[ upload_field ]
-		};
-		
-		var callback = function(form,res) {
-			var packet = Ext.decode(res.response.responseText);
-			this.replaceContent(packet.content);
-		};
-		
-		Ext.ux.RapidApp.WinFormPost.call(this,{
-			title: 'Load html file (replace existing content)',
-			width: 440,
-			height:140,
-			url:'/simplecas/texttranscode/transcode_html',
-			useSubmit: true,
-			fileUpload: true,
-			fieldset: fieldset,
-			success: callback
-			//failure: callback
+	downloadFile: function() {
+		//Ext.ux.iframeBgDownload(
+		Ext.ux.postwith('/simplecas/texttranscode/generate_mhtml_download',{
+			html: this.cmp.getRawValue()
 		});
 	}
 });
@@ -536,7 +497,7 @@ Ext.ux.RapidApp.HtmlEditor = Ext.extend(Ext.form.HtmlEditor,{
 		plugins.push(
 			'htmleditor-autosizers',
 			new Ext.ux.form.HtmlEditor.Break(),
-			'htmleditor-editmenu',
+			'htmleditor-toolsmenu',
 			'htmleditor-loadhtml',
 			'htmleditor-save-mhtml',
 			'htmleditor-insertfile',
