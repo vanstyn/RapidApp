@@ -497,9 +497,9 @@ Ext.ux.RapidApp.HtmlEditor = Ext.extend(Ext.form.HtmlEditor,{
 		plugins.push(
 			'htmleditor-autosizers',
 			new Ext.ux.form.HtmlEditor.Break(),
-			'htmleditor-toolsmenu',
+			//'htmleditor-toolsmenu',
 			'htmleditor-loadhtml',
-			'htmleditor-save-mhtml',
+			//'htmleditor-save-mhtml',
 			'htmleditor-insertfile',
 			{
 				ptype: 'htmleditor-casimage',
