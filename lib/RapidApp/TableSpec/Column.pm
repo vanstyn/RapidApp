@@ -119,7 +119,7 @@ sub DEFAULT_PROFILES {{
 		html => {
 			# We need this renderer in case the 'bigtext' profile above has been applied
 			# automatically. For HTML we *don't* want to nl2br() as it will totally break markup
-			renderer => jsfunc('function(v){ return v; }'),
+			renderer => 'Ext.ux.showNull',
 			editor => {
 				xtype		=> 'ra-htmleditor',
 				resizable => \1, #<-- Specific to Ext.ux.RapidApp.HtmlEditor ('ra-htmleditor')
