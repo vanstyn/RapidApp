@@ -1079,6 +1079,80 @@ Ext.ux.postwith = function (to,p) {
 }
 
 
+// http://thomas.bindzus.me/2007/12/24/adding-dynamic-contents-to-iframes/
+Ext.ns('Ext.ux.IFrame');
+Ext.ux.IFrame = function (parentElement) {
+
+   // Create the iframe which will be returned
+   var iframe = document.createElement("iframe");
+ 
+   // If no parent element is specified then use body as the parent element
+   if(parentElement == null)
+      parentElement = document.body;
+ 
+   // This is necessary in order to initialize the document inside the iframe
+   parentElement.appendChild(iframe);
+ 
+   // Initiate the iframe's document to null
+   iframe.doc = null;
+ 
+   // Depending on browser platform get the iframe's document, this is only
+   // available if the iframe has already been appended to an element which
+   // has been added to the document
+   if(iframe.contentDocument)
+      // Firefox, Opera
+      iframe.doc = iframe.contentDocument;
+   else if(iframe.contentWindow)
+      // Internet Explorer
+      iframe.doc = iframe.contentWindow.document;
+   else if(iframe.document)
+      // Others?
+      iframe.doc = iframe.document;
+ 
+   // If we did not succeed in finding the document then throw an exception
+   if(iframe.doc == null)
+      throw "Document not found, append the parent element to the DOM before creating the IFrame";
+ 
+   // Create the script inside the iframe's document which will call the
+   iframe.doc.open();
+   iframe.doc.close();
+ 
+   // Return the iframe, now with an extra property iframe.doc containing the
+   // iframe's document
+   return iframe;
+};
+
+Ext.ns('Ext.ux.iFramePostwith');
+Ext.ux.iFramePostwith = function (to,p) {
+	
+	// TODO: in order to detect the completion of the submit there will
+	// need to be a server-side process to return js code with an 'onload'
+	// event. In the mean time, we don't clean up ourselves, but we do
+	// look for and cleanup previous calls. This is a hack-ish workaround
+	var id = 'iframe-poster-global-element';
+	var old_iframe = document.getElementById(id);
+	if(old_iframe){
+		document.body.removeChild(old_iframe);
+	}
+	
+	var iframe = new Ext.ux.IFrame(document.body);
+	iframe.id = id;
+	
+	var myForm = iframe.doc.createElement("form");
+	myForm.method="post" ;
+	myForm.action = to ;
+
+	for (var k in p) {
+		var myInput = iframe.doc.createElement("input") ;
+		myInput.setAttribute("name", k) ;
+		myInput.setAttribute("value", p[k]);
+		myForm.appendChild(myInput) ;
+	}
+	iframe.doc.body.appendChild(myForm) ;
+	myForm.submit() ;
+}
+
+
 /* ####################################################### */
 /* ####################################################### */
 
