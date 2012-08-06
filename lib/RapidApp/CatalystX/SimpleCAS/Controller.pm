@@ -49,7 +49,11 @@ sub fetch_content: Local {
    my ($self, $c, $checksum, $filename) = @_;
 	
 	my $disposition = 'inline;filename="' . $checksum . '"';
-	$disposition = 'attachment;filename=' . $filename if ($filename);
+	
+	if ($filename) {
+		$filename =~ s/\"/\'/g;
+		$disposition = 'attachment; filename="' . $filename . '"';	
+	}
 	
 	unless($self->Store->content_exists($checksum)) {
 		$c->res->body('Does not exist');
