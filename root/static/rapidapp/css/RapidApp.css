@@ -253,6 +253,8 @@ pre {
 .icon-tabs-delete { background-image: url(/static/rapidapp/images/tabs_delete.png) !important; }
 .icon-tab-go { background-image: url(/static/rapidapp/images/tab_go.png) !important; }
 .icon-remove-sort { background-image: url(/static/rapidapp/images/remove_sort.png) !important; }
+.icon-bullet-wrench { background-image: url(/static/rapidapp/images/bullet_wrench.png) !important; }
+.icon-wrench { background-image: url(/static/rapidapp/images/wrench.png) !important; }
 
 
 

@@ -17,29 +17,9 @@ use String::Random;
 sub transcode_html: Local  {
 	my ($self, $c) = @_;
 	
-	# Get the file text and determine what encoding it came from.
-	# Note that an encode/decode phase happened during the HTTP transfer of this file, but
-	#   it should have been taken care of by Catalyst and now we have the original
-	#   file on disk in its native 8-bit encoding.
 	my $upload = $c->req->upload('Filedata') or die "no upload object";
-	my $src_octets = $upload->slurp;
-	
-	my $src_text;
-	
-	# If MIME:
-	my $MIME = try{Email::MIME->new($src_octets)};
-	if($MIME && $MIME->subparts) {
-		$src_text = $self->convert_from_mhtml($c,$MIME);
-	}
-	# If HTML:
-	else {
-		my $src_encoding= encoding_from_html_document($src_octets) || 'utf-8';
-		my $in_codec= find_encoding($src_encoding) or die "Unsupported encoding: $src_encoding";
-		$src_text= $in_codec->decode($src_octets);
-	}
-	
-	$src_text = $self->parse_html_get_style_body(\$src_text);
-	$self->convert_data_uri_scheme_links($c,\$src_text);
+
+	my $src_text = $self->normaliaze_rich_content($c,$upload->slurp,$upload->filename);
 	
 	my $rct= $c->stash->{requestContentType};
 	if ($rct eq 'JSON' || $rct eq 'text/x-rapidapp-form-response') {
@@ -55,6 +35,48 @@ sub transcode_html: Local  {
 	# we need to set the charset here so that catalyst doesn't try to convert it further
 	$c->res->content_type('text/html; charset='.$dest_encoding);
 	return $c->res->body($dest_octets);
+}
+
+sub normaliaze_rich_content {
+	my $self = shift;
+	my $c = shift;
+	my $src_octets = shift;
+	my $filename = shift;
+	
+	my $content;
+	
+	# Try to determine what text encoding the file content came from, and then detect if it 
+	# is MIME or HTML.
+	#
+	# Note that if the content came from a file upload/post an encode/decode phase happened 
+	#   during the HTTP transfer of this file, but it should have been taken care of by Catalyst 
+	#   and now we have the original file on disk in its native 8-bit encoding.
+
+	# If MIME:
+	my $MIME = try{Email::MIME->new($src_octets)};
+	if($MIME && $MIME->subparts) {
+		$content = $self->convert_from_mhtml($c,$MIME);
+	}
+	# If HTML:
+	else {
+		my $src_encoding= encoding_from_html_document($src_octets) || 'utf-8';
+		my $in_codec= find_encoding($src_encoding) or die "Unsupported encoding: $src_encoding";
+		$content= $in_codec->decode($src_octets);
+	}
+	# TODO: Detect other content types and add fallback logic
+	
+	$content = $self->parse_html_get_style_body(\$content);
+	$self->convert_data_uri_scheme_links($c,\$content);
+
+	$content = "<!-- Original Filename: $filename -->\n\n" . $content if ($filename);
+	
+	return $content;
+}
+
+sub generate_mhtml {
+
+
+
 }
 
 sub convert_from_mhtml {
