@@ -3,6 +3,8 @@ package RapidApp::CatalystX::SimpleCAS::Store::File;
 use warnings;
 use Moose;
 
+use RapidApp::Include qw(sugar perlutil);
+
 use File::MimeInfo::Magic;
 use Image::Size;
 use Digest::SHA1;
@@ -140,6 +142,19 @@ sub content_mimetype {
 	my $self = shift;
 	my $checksum = shift;
 	
+	# See if this is an actual MIME file with a defined Content-Type:
+	my $MIME = try{
+		my $fh = $self->fetch_content_fh($checksum);
+		# only read the begining of the file, enough to make it past the Content-Type header:
+		my $buf; $fh->read($buf,1024); $fh->close;
+		return Email::MIME->new($buf);
+	};
+	if($MIME && $MIME->content_type) {
+		my ($type) = split(/\s*\;\s*/,$MIME->content_type);
+		return $type;
+	}
+	
+	# Otherwise, guess the mimetype from the file on disk
 	my $file = $self->checksum_to_path($checksum);
 	
 	return undef unless ( -f $file );
