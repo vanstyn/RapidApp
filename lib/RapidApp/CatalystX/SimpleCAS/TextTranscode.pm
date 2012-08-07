@@ -25,7 +25,7 @@ sub transcode_html: Local  {
 	
 	my $upload = $c->req->upload('Filedata') or die "no upload object";
 
-	my $src_text = $self->normaliaze_rich_content($c,$upload->slurp,$upload->filename);
+	my $src_text = $self->normaliaze_rich_content($c,$upload,$upload->filename);
 	
 	my $rct= $c->stash->{requestContentType};
 	if ($rct eq 'JSON' || $rct eq 'text/x-rapidapp-form-response') {
@@ -152,6 +152,17 @@ sub normaliaze_rich_content {
 	my $src_octets = shift;
 	my $filename = shift;
 	
+	my $upload;
+	if(ref($src_octets)) {
+		$upload = $src_octets;
+		$src_octets = $upload->slurp;
+	}
+	
+	if($upload) {
+		scream($upload->type);
+	
+	}
+	
 	my $content;
 	
 	# Try to determine what text encoding the file content came from, and then detect if it 
@@ -161,16 +172,26 @@ sub normaliaze_rich_content {
 	#   during the HTTP transfer of this file, but it should have been taken care of by Catalyst 
 	#   and now we have the original file on disk in its native 8-bit encoding.
 
-	# If MIME:
+	# If MIME (MTHML):
 	my $MIME = try{Email::MIME->new($src_octets)};
 	if($MIME && $MIME->subparts) {
 		$content = $self->convert_from_mhtml($c,$MIME);
 	}
-	# If HTML:
+	# If HTML or binary:
 	else {
-		my $src_encoding= encoding_from_html_document($src_octets) || 'utf-8';
-		my $in_codec= find_encoding($src_encoding) or die "Unsupported encoding: $src_encoding";
-		$content = (utf8::is_utf8($src_octets)) ? $src_octets : $in_codec->decode($src_octets);
+		if(!$upload || $upload->type =~ /^text/){
+			my $src_encoding= encoding_from_html_document($src_octets) || 'utf-8';
+			my $in_codec= find_encoding($src_encoding) or die "Unsupported encoding: $src_encoding";
+			$content = (utf8::is_utf8($src_octets)) ? $src_octets : $in_codec->decode($src_octets);
+		}
+		# Binary
+		else {
+			my $Cas = $c->controller('SimpleCAS');
+			my $checksum = $Cas->Store->add_content_file_mv($upload->tempname) or die "Failed to add content";
+			my $Content = $Cas->Content($checksum,$upload->filename);
+			return $Content->imglink if ($Content->imglink);
+			return $Content->filelink;
+		}
 	}
 	# TODO: Detect other content types and add fallback logic
 	

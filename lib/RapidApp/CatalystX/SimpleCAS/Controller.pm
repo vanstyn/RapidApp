@@ -13,6 +13,7 @@ use JSON::PP;
 use MIME::Base64;
 use Image::Resize;
 use String::Random;
+use Switch qw(switch);
 
 has 'store_class', is => 'ro', default => 'RapidApp::CatalystX::SimpleCAS::Store::File';
 has 'store_path', is => 'ro', lazy => 1, default => sub {
@@ -33,6 +34,8 @@ has 'Store' => (
 		);
 	}
 );
+
+#has 'fetch_url_path', is => 'ro', isa => 'Str', default => '/simplecas/fetch_content/';
 
 sub Content {
 	my $self = shift;
@@ -80,6 +83,18 @@ sub fetch_content: Local {
 	
 	my $type = $self->Store->content_mimetype($checksum) or die "Error reading mime type";
 	
+	# type overrides for places where File::MimeInfo::Magic is known to guess wrong
+	if($type eq 'application/vnd.ms-powerpoint' || $type eq 'application/zip') {
+		my $Content = $self->Content($checksum,$filename);
+		switch($Content->file_ext){
+			case 'doc' { $type = 'application/msword' }
+			case 'xls' { $type = 'application/vnd.ms-excel' }
+			case 'docx' { $type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
+			case 'xlsx' { $type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
+			case 'pptx' { $type = 'application/vnd.openxmlformats-officedocument.presentationml.presentation' }
+		}
+	}
+	
 	$c->response->header('Content-Type' => $type);
 	$c->response->header('Content-Disposition' => $disposition);
 	return $c->res->body( $self->Store->fetch_content_fh($checksum) );
@@ -111,6 +126,8 @@ sub upload_image: Local  {
 	#my $tag = '<img src="/simplecas/fetch_content/' . $checksum . '"';
 	#$tag .= ' width=' . $width . ' height=' . $height if ($width and $height);
 	#$tag .= '>';
+	
+	# TODO: fix this API!!!
 	
 	my $packet = {
 		success => \1,
@@ -183,22 +200,14 @@ sub upload_file : Local {
 	
 	my $upload = $c->req->upload('Filedata') or die "no upload object";
 	my $checksum = $self->Store->add_content_file_mv($upload->tempname) or die "Failed to add content";
-	
-	my @css_class = ('filelink');
-	
-	my @parts = split(/\./,$upload->filename);
-	my $file_ext = lc(pop @parts);
-	
-	push @css_class, $file_ext if (scalar @parts > 0);
-	
-	my $Content = $self->Content($checksum);
+	my $Content = $self->Content($checksum,$upload->filename);
 	
 	my $packet = {
 		success	=> \1,
 		filename => $self->safe_filename($upload->filename),
 		checksum	=> $Content->checksum,
 		mimetype	=> $Content->mimetype,
-		css_class => join(' ',@css_class)
+		css_class => $Content->filelink_css_class,
 	};
 	
 	return $c->res->body(JSON::PP::encode_json($packet));
