@@ -394,9 +394,12 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.SaveMhtml = Ext.extend(Ext.util.Observable, {
 	},
 	
 	downloadFile: function() {
+		var html = this.cmp.getRawValue();
+
 		//Ext.ux.iframeBgDownload(
-		Ext.ux.postwith('/simplecas/texttranscode/generate_mhtml_download',{
-			html: this.cmp.getRawValue()
+		//Ext.ux.postwith('/simplecas/texttranscode/generate_mhtml_download',{
+		Ext.ux.iFramePostwith('/simplecas/texttranscode/generate_mhtml_download',{
+			html_enc: Ext.encode({ data: html })
 		});
 	}
 });
@@ -497,9 +500,9 @@ Ext.ux.RapidApp.HtmlEditor = Ext.extend(Ext.form.HtmlEditor,{
 		plugins.push(
 			'htmleditor-autosizers',
 			new Ext.ux.form.HtmlEditor.Break(),
-			//'htmleditor-toolsmenu',
+			'htmleditor-toolsmenu',
 			'htmleditor-loadhtml',
-			//'htmleditor-save-mhtml',
+			'htmleditor-save-mhtml',
 			'htmleditor-insertfile',
 			{
 				ptype: 'htmleditor-casimage',

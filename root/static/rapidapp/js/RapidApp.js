@@ -1069,14 +1069,14 @@ Ext.ux.postwith = function (to,p) {
 	myForm.action = to ;
 	for (var k in p) {
 		var myInput = document.createElement("input") ;
-		myInput.setAttribute("name", k) ;
+		myInput.setAttribute("name", k);
 		myInput.setAttribute("value", p[k]);
-		myForm.appendChild(myInput) ;
+		myForm.appendChild(myInput);
 	}
-	document.body.appendChild(myForm) ;
-	myForm.submit() ;
-	document.body.removeChild(myForm) ;
-}
+	document.body.appendChild(myForm);
+	myForm.submit();
+	document.body.removeChild(myForm);
+};
 
 
 // http://thomas.bindzus.me/2007/12/24/adding-dynamic-contents-to-iframes/

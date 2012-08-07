@@ -11,8 +11,11 @@ use HTML::Encoding 'encoding_from_html_document', 'encoding_from_byte_order_mark
 use HTML::TokeParser::Simple;
 use Try::Tiny;
 use Email::MIME;
+use Email::MIME::CreateHTML;
 use CSS::Simple;
 use String::Random;
+
+use RapidApp::CatalystX::SimpleCAS::MimeUriResolver;
 
 
 my $ISOLATE_CSS_RULE = '@import "/static/rapidapp/css/CssIsolation.css";';
@@ -42,22 +45,23 @@ sub transcode_html: Local  {
 
 sub generate_mhtml_download: Local {
 	my ($self, $c) = @_;
-	my $html = $c->req->params->{html} or die "No html content supplied";
-	
+	die "No html content supplied" unless ($c->req->params->{html_enc});
+	my $html = decode_json($c->req->params->{html_enc})->{data};
+
 	# 'filename' param is optional and probably not supplied
 	$html = $self->normaliaze_rich_content($c,$html,$c->req->params->{filename});
 	
 	my $filename = $self->get_strip_orig_filename(\$html) || 'content.mht';
-	my $content = $self->html_to_mhtml($c,$html);
 	$filename =~ s/\"/\'/g; #<-- convert any " characters
 	my $disposition = 'attachment;filename="' . $filename . '"';
-	my $type = 'text/html; charset=utf-8';
 	
-	$c->response->header('Content-Type' => $type);
+	my $MIME = $self->html_to_mhtml($c,$html);
+
+	$c->response->header( $_ => $MIME->header($_) ) for ($MIME->header_names);
 	$c->response->header('Content-Disposition' => $disposition);
-	return $c->res->body( $content );
+	return $c->res->body( $MIME->as_string );
 }
-	
+
 
 # extracts filename previously embedded by normaliaze_rich_content in html comment
 sub get_strip_orig_filename {
@@ -75,7 +79,6 @@ sub get_strip_orig_filename {
 	return  $filename;
 }
 
-
 sub html_to_mhtml {
 	my $self = shift;
 	my $c = shift;
@@ -85,8 +88,6 @@ sub html_to_mhtml {
 	
 	# strip isolate css import rule:
 	$style =~ s/\Q$ISOLATE_CSS_RULE\E//g;
-	
-	#scream_color(BLACK.ON_YELLOW,$ISOLATE_CSS_RULE,$style);
 	
 	if($style) {
 		my $Css = CSS::Simple->new;
@@ -115,10 +116,33 @@ sub html_to_mhtml {
 		$style = $Css->write;
 	}
 	
-	return $c->template_render('templates/rapidapp/xhtml_document.tt',{
+	$html = $c->template_render('templates/rapidapp/xhtml_document.tt',{
 		style => $style, 
 		body => $html
 	});
+	
+	my $UriResolver = RapidApp::CatalystX::SimpleCAS::MimeUriResolver->new({
+		Cas => $c->controller('SimpleCAS'),
+		base => ''
+	});
+	
+	my $MIME = Email::MIME->create_html(
+		header => [], 
+		body_attributes => { charset => 'UTF-8', encoding => 'quoted-printable' },
+		body => encode('UTF-8', $html),
+		resolver => $UriResolver
+	);
+	
+	# Force wrap in a multipart/related
+	return Email::MIME->create(
+        attributes => {
+            content_type => "multipart/related",
+            disposition  => "attachment"
+		},
+		parts => [ $MIME ]
+    ) unless ($MIME->subparts);
+	
+	return $MIME;
 }
 
 

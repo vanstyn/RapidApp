@@ -12,6 +12,8 @@ use IO::File;
 use Data::Dumper;
 use MIME::Base64;
 
+use IO::All;
+
 has 'store_dir' => ( is => 'ro', isa => 'Str', required => 1 );
 
 
@@ -108,12 +110,12 @@ sub checksum_to_path {
 
 sub fetch_content {
 	my $self = shift;
-	my $sha1 = shift;
+	my $checksum = shift;
 	
-	my $fh = $self->fetch_content_fh($sha1) or return undef;
+	my $file = $self->checksum_to_path($checksum);
+	return undef unless ( -f $file);
 	
-	my @out = $fh->getlines;
-	return join('',@out);
+	return io($file)->slurp;
 }
 
 sub content_exists {

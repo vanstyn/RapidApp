@@ -37,13 +37,31 @@ has 'Store' => (
 sub Content {
 	my $self = shift;
 	my $checksum = shift;
+	my $filename = shift; #<-- optional
 	return RapidApp::CatalystX::SimpleCAS::Content->new(
 		Store		=> $self->Store,
-		checksum	=> $checksum
+		checksum	=> $checksum,
+		filename	=> $filename
 	);
 }
 
-
+# Accepts a free-form string and tries to extract a Cas checksum and 
+# filename from it. If it is successfully, and the checksum exists in 
+# the Store, returns the Content object
+sub uri_find_Content {
+	my $self = shift;
+	my $uri = shift;
+	my @parts = split(/\//,$uri);
+	
+	while (scalar @parts > 0) {
+		my $checksum = shift @parts;
+		next unless ($checksum =~ /^[0-9a-f]{40}$/);
+		my $filename = (scalar @parts == 1) ? $parts[0] : undef;
+		my $Content = $self->Content($checksum,$filename) or next;
+		return $Content;
+	}
+	return undef;
+}
 
 sub fetch_content: Local {
    my ($self, $c, $checksum, $filename) = @_;
