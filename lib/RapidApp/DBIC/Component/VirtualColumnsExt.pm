@@ -6,7 +6,7 @@ require base; base->import('DBIx::Class');
 use RapidApp::Include qw(sugar perlutil);
 
 # Load the vanilla/original DBIx::Class::VirtualColumns component:
-__PACKAGE__->load_components(qw/VirtualColumns/);
+__PACKAGE__->load_components('+RapidApp::DBIC::Component::VirtualColumns');
 
 __PACKAGE__->mk_classdata( '_virtual_columns_order' );
 
