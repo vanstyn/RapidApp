@@ -288,7 +288,7 @@ Ext.preg('htmleditor-autosizers',Ext.ux.RapidApp.Plugin.HtmlEditor.AutoSizers);
 
 Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHtmlFile = Ext.extend(Ext.util.Observable, {
 	
-	title: 'Load Html',
+	title: 'Load from File',
 	height: 400,
 	width: 500,
 	
@@ -303,7 +303,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHtmlFile = Ext.extend(Ext.util.Observable,
 	
 	onRender: function() {
 		var itm = {
-			iconCls: 'icon-page-white-world',
+			iconCls: 'icon-paste-document',
 			handler: this.selectHtmlFile,
 			text: this.title,
 			scope: this
@@ -366,8 +366,8 @@ Ext.preg('htmleditor-loadhtml',Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHtmlFile);
 
 Ext.ux.RapidApp.Plugin.HtmlEditor.SaveMhtml = Ext.extend(Ext.util.Observable, {
 	
-	title: 'Save Mhtml',
-	iconCls: 'icon-save-as',
+	title: 'Download as File',
+	iconCls: 'icon-document-save',
 	
 	constructor: function(cnf) {
 		Ext.apply(this,cnf);
@@ -410,7 +410,7 @@ Ext.preg('htmleditor-save-mhtml',Ext.ux.RapidApp.Plugin.HtmlEditor.SaveMhtml);
 
 Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile = Ext.extend(Ext.util.Observable, {
 	
-	title: 'Insert File',
+	title: 'Attach File (Link)',
 	height: 400,
 	width: 500,
 	
@@ -431,7 +431,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile = Ext.extend(Ext.util.Observable, {
 	
 	onRender: function() {
 		this.btn = this.cmp.getToolbar().addButton({
-				iconCls: 'icon-page-white-world',
+				iconCls: 'icon-page-white-zip-link',
 				handler: this.selectFile,
 				text: this.title,
 				scope: this

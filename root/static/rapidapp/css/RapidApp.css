@@ -255,7 +255,10 @@ pre {
 .icon-remove-sort { background-image: url(/static/rapidapp/images/remove_sort.png) !important; }
 .icon-bullet-wrench { background-image: url(/static/rapidapp/images/bullet_wrench.png) !important; }
 .icon-wrench { background-image: url(/static/rapidapp/images/wrench.png) !important; }
-
+.icon-paste-plain { background-image: url(/static/rapidapp/images/paste_plain.png) !important; }
+.icon-paste-document { background-image: url(/static/rapidapp/images/paste_document.png) !important; }
+.icon-page-white-zip-link { background-image: url(/static/rapidapp/images/page_white_zip_link.png) !important; }
+.icon-document-save { background-image: url(/static/rapidapp/images/document_save.png) !important; }
 
 
 
