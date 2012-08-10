@@ -5504,7 +5504,8 @@ Ext.ux.RapidApp.showIframeWindow = function(cnf){
 		src: 'about:blank',
 		title: 'Message',
 		width: 400,
-		height: 225
+		height: 225,
+		show_loading: false
 	},cnf || {});
 		
 	var win, iframe = document.createElement("iframe");
@@ -5514,21 +5515,25 @@ Ext.ux.RapidApp.showIframeWindow = function(cnf){
 	iframe.setAttribute("allowtransparency", 'true');
 	iframe.src = cnf.src;
 		
-	win = new Ext.Window({
+	var winCfg = {
 		title: cnf.title,
 		modal: true,
 		closable: true,
 		width: cnf.width,
 		height: cnf.height,
-		bodyCssClass: 'loading-background',
 		buttonAlign: 'center',
 		buttons:[{
 			text: 'Ok',
 			handler: function(){ win.hide(); win.close(); }
 		}],
 		contentEl: iframe
-	});
-
+	};
+	
+	if(cnf.show_loading) { 
+		winCfg.bodyCssClass = 'loading-background'; 
+	}
+	
+	win = new Ext.Window(winCfg);
 	win.show();
 
 };

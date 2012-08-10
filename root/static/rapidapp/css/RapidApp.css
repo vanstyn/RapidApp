@@ -47,7 +47,15 @@ pre {
 	background-repeat: no-repeat;
 	background-position: 1px center;
 	display: table-cell;
-  vertical-align: middle;
+	vertical-align: middle;
+}
+
+.with-inline-icon {
+	padding-left: 19px;
+	line-height: 19px;
+	display: inline-block;
+	background-repeat: no-repeat;
+	background-position: 1px center;
 }
 
 .icon-centered-16x16 {

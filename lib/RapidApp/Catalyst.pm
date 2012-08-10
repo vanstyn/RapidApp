@@ -2,15 +2,35 @@ package RapidApp::Catalyst;
 
 # Built-in plugins required for all RapidApp Applications:
 use Catalyst qw(
-	+RapidApp::Role::CatalystApplication
-	+RapidApp::CatalystX::SimpleCAS	
++RapidApp::Role::CatalystApplication
++RapidApp::CatalystX::SimpleCAS
 );
 
-use base 'Catalyst';
+use Moose;
+extends 'Catalyst';
 
 use RapidApp::AttributeHandlers;
 use RapidApp::Include qw(sugar perlutil);
 use Template;
+
+# -- override Static::Simple default config to ignore extensions like html.
+before 'setup_plugins' => sub {
+	my $c = shift;
+	
+	my $config
+		= $c->config->{'Plugin::Static::Simple'}
+		= $c->config->{'static'}
+		= Catalyst::Utils::merge_hashes(
+			$c->config->{'Plugin::Static::Simple'} || {},
+			$c->config->{static} || {}
+		);
+	
+	$config->{ignore_extensions} ||= [];
+	$c->config->{'Plugin::Static::Simple'} = $config;
+};
+# --
+
+
 
 # convenience util function
 my $TT;

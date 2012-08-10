@@ -407,6 +407,47 @@ Ext.preg('htmleditor-save-mhtml',Ext.ux.RapidApp.Plugin.HtmlEditor.SaveMhtml);
 
 
 
+Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHelp = Ext.extend(Ext.util.Observable, {
+	
+	title: 'Load & Download HowTo',
+	height: 430,
+	width: 675,
+	
+	init: function(cmp){
+		this.cmp = cmp;
+		this.cmp.on('render', this.onRender, this);
+	},
+	
+	onRender: function() {
+		var itm = {
+			iconCls: 'icon-help',
+			handler: this.showWindow,
+			text: this.title,
+			scope: this
+		};
+		if(this.cmp.ToolsMenu){
+			this.cmp.ToolsMenu.add(itm);
+		}
+		else {
+			this.btn = this.cmp.getToolbar().addButton(itm);
+		}
+	},
+	
+	showWindow: function(){
+		Ext.ux.RapidApp.showIframeWindow({
+			title: this.title,
+			height: this.height,
+			width: this.width,
+			src: '/static/rapidapp/html/htmleditor_load_download_help.html'
+		});
+	}
+	
+});
+Ext.preg('htmleditor-loadhelp',Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHelp);
+
+
+
+
 
 Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile = Ext.extend(Ext.util.Observable, {
 	
@@ -503,6 +544,7 @@ Ext.ux.RapidApp.HtmlEditor = Ext.extend(Ext.form.HtmlEditor,{
 			'htmleditor-toolsmenu',
 			'htmleditor-loadhtml',
 			'htmleditor-save-mhtml',
+			'htmleditor-loadhelp',
 			'htmleditor-insertfile',
 			{
 				ptype: 'htmleditor-casimage',
