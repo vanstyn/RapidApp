@@ -5498,3 +5498,39 @@ Ext.apply(Ext.form.VTypes,{
 });
 /*******************************************/
 
+
+Ext.ux.RapidApp.showIframeWindow = function(cnf){
+	cnf = Ext.apply({
+		src: 'about:blank',
+		title: 'Message',
+		width: 400,
+		height: 225
+	},cnf || {});
+		
+	var win, iframe = document.createElement("iframe");
+	iframe.height = '100%';
+	iframe.width = '100%';
+	iframe.setAttribute("frameborder", '0');
+	iframe.setAttribute("allowtransparency", 'true');
+	iframe.src = cnf.src;
+		
+	win = new Ext.Window({
+		title: cnf.title,
+		modal: true,
+		closable: true,
+		width: cnf.width,
+		height: cnf.height,
+		bodyCssClass: 'loading-background',
+		buttonAlign: 'center',
+		buttons:[{
+			text: 'Ok',
+			handler: function(){ win.hide(); win.close(); }
+		}],
+		contentEl: iframe
+	});
+
+	win.show();
+
+};
+
+
