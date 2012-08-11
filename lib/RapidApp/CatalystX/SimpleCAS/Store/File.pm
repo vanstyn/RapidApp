@@ -77,7 +77,7 @@ sub add_content_file_mv {
 	my $save_path = $self->checksum_to_path($checksum,1);
 	
 	system('mv', $file, $save_path) == 0
-		or die "Failed to move file";
+		or die "SimpleCAS: Failed to move file '$file' -> '$save_path'";
 	
 	return $checksum;
 }
