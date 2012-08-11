@@ -9,6 +9,7 @@ use Data::Dumper;
 use Scalar::Util 'blessed', 'reftype';
 use HTML::Entities;
 use RapidApp::Sugar;
+use RapidApp::Include qw(sugar perlutil);
 
 =head1 NAME
 
@@ -76,7 +77,7 @@ sub process {
 		$c->res->header('X-RapidApp-Exception' => 1);
 		$c->res->status(500);
 		
-		my $msg= $self->getUserMessage($err) || 'An internal error occured';
+		my $msg= $self->getUserMessage($err) || "An internal error occured:  \n\n" . $err;
 		my $title= $self->getUserMessageTitle($err) || 'Error';
 		
 		# This flag prevents infinite error reporting if adding a comment throws an error
