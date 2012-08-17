@@ -237,7 +237,8 @@ sub DbicLink_around_BUILD {
 	
 	$self->apply_extconfig(
 		remote_columns		=> \1,
-		loadMask				=> \1
+		loadMask			=> \1,
+		quicksearch_mode	=> $self->quicksearch_mode
 	);
 	
 	

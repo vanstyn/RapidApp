@@ -480,10 +480,13 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 				//tb.addSeparator();
 			}
 		}
+		
+		var search_text = (this.grid.quicksearch_mode == 'exact') ?
+			'Exact Search' : this.searchText;
 
 		// add menu button
 		tb.add({
-			 text:this.searchText
+			 text: search_text
 			,menu:this.menu
 			,iconCls:this.iconCls
 		});
