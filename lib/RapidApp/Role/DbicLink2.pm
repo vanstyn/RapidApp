@@ -742,8 +742,11 @@ sub get_req_columns {
 	}
 	# ---
 	
-	
 	push @$columns, $self->all_always_fetch_columns;
+	
+	# Make sure the supplied sort column is included (needed for sorting on a *hidden* virtual
+	# columns, including mutli and m2m relationship columns)
+	push @$columns, $params->{sort} if ($params->{sort});
 	
 	my @exclude = ( $self->record_pk, 'loadContentCnf' );
 	
