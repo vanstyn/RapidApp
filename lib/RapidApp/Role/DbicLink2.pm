@@ -237,7 +237,8 @@ sub DbicLink_around_BUILD {
 	
 	$self->apply_extconfig(
 		remote_columns		=> \1,
-		loadMask				=> \1
+		loadMask			=> \1,
+		quicksearch_mode	=> $self->quicksearch_mode
 	);
 	
 	
@@ -849,7 +850,10 @@ sub chain_Rs_req_quicksearch {
 		my $dbicname = $self->resolve_dbic_colname($f,$attr->{join});
 		
 		if($self->quicksearch_mode eq 'exact') {
-			push @search, { $dbicname => $query };
+			#push @search, { $dbicname => { '=' => $query } }; 	#<-- for some reason this causes all records to be 
+																# shown if none match. No idea why.
+			
+			push @search, { $dbicname => { like => $query } };
 		}
 		else { # default: $self->quicksearch_mode eq 'like'
 			push @search, { $dbicname => { like => '%' . $query . '%' } };
