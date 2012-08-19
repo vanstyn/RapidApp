@@ -65,6 +65,8 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		// from opening:
 		e.stopEvent();
 		
+		if(!tab.closable) { return; }
+		
 		var items = this.getContextMenuItems(tp,tab);
 		if(items.length == 0) { return; }
 		
