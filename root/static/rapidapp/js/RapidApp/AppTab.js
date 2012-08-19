@@ -128,10 +128,11 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 	loadTab: function(cnf) {
 		var orig_cnf = Ext.decode(Ext.encode(cnf));
 		
+		// What was this for? Removed 2012-08-19 by HV because this breaks cnf.closable = false
 		// prune falsy properties (object version of Ext.clean)
-		Ext.iterate(cnf,function(k,v){
-			if(!v) { delete cnf[k]; }
-		},this);
+		//Ext.iterate(cnf,function(k,v){
+		//	if(!v) { delete cnf[k]; }
+		//},this);
 		
 		cnf = Ext.apply({
 			loadContentCnf: orig_cnf, //<-- save the cnf used
