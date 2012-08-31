@@ -275,6 +275,11 @@ Ext.ux.RapidApp.AppTab.tryLoadTargetRecord = function(loadTarget,Record,cmp) {
 
 Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	
+	// Override Ext.Component.getId() auto id generation
+	getId : function(){
+		return this.id || (this.id = 'appgrid-' + (++Ext.Component.AUTO_ID));
+	},
+	
 	viewConfig: {
 		emptyText: '<div style="font-size:16px;color:#d0d0d0;padding-top:10px;padding-left:25px">' +
 			'(No Data)</div>',

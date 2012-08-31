@@ -1984,6 +1984,11 @@ Ext.override(Ext.Container, {
 
 Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 	
+	// Override Ext.Component.getId() auto id generation
+	getId : function(){
+		return this.id || (this.id = 'ap-' + (++Ext.Component.AUTO_ID));
+	},
+	
 	cmpListeners: null,
 	cmpConfig: {},
 	update_cmpConfig: null,
