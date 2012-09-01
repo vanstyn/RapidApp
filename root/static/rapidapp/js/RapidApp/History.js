@@ -19,6 +19,36 @@
 
 Ext.ns('Ext.ux.RapidApp');
 
+Ext.ux.RapidApp.HistoryInit_new = function() {
+	Ext.History.init();
+
+	Ext.History.on('change', function(token) {
+		
+		// nav schmea: starts with '!/'
+		if(token.search('!/') == 0) {
+			var url = token.substring(1); // strip leading !
+			var params = {};
+				
+			var parts = url.split('?');
+			if(parts[1]) {
+				url = parts[0];
+				params = Ext.urlDecode(parts[1]);
+			}
+			
+			var loadTarget = Ext.getCmp('main-load-target');
+			
+			loadTarget.loadContent({ autoLoad: { 
+				url: url, 
+				params: params 
+			}});
+		}
+		
+	});
+}
+
+
+
+
 Ext.ux.RapidApp.HistoryInit = function() {
 	Ext.History.init();
 	Ext.History.on('change', function(token) { Ext.ux.RapidApp.AutoHistory.handleHistChange(token); });
@@ -89,6 +119,7 @@ Ext.ux.RapidApp.AutoHistory= {
 
 
 
+
 Ext.override(Ext.TabPanel, {
 	initComponent_orig: Ext.TabPanel.prototype.initComponent,
 	initComponent: function() {
@@ -113,3 +144,4 @@ Ext.override(Ext.TabPanel, {
 	},
 	getNavState: function() { return this.getActiveTab()? this.getActiveTab().id : ""; }
 });
+
