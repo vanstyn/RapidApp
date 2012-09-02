@@ -19,35 +19,88 @@
 
 Ext.ns('Ext.ux.RapidApp');
 
-Ext.ux.RapidApp.HistoryInit_new = function() {
+Ext.ux.RapidApp.HistoryInit = function() {
 	Ext.History.init();
-
-	Ext.History.on('change', function(token) {
-		
-		// nav schmea: starts with '!/'
-		if(token.search('!/') == 0) {
-			var url = token.substring(1); // strip leading !
-			var params = {};
-				
-			var parts = url.split('?');
-			if(parts[1]) {
-				url = parts[0];
-				params = Ext.urlDecode(parts[1]);
-			}
-			
-			var loadTarget = Ext.getCmp('main-load-target');
-			
-			loadTarget.loadContent({ autoLoad: { 
-				url: url, 
-				params: params 
-			}});
-		}
-		
-	});
+	Ext.History.on('change', Ext.ux.RapidApp.HashNav.handleHashChange);
 }
 
+Ext.ux.RapidApp.HashNav = {
+	
+	INIT_LOCATION_HASH: window.location.hash,
+	ignoreHashChange: false,
+	
+	hashpath_to_autoLoad: function(hashpath) {
+		var token = hashpath;
+		
+		// hashpath with or without leading #
+		if(hashpath.search('#') == 0) { token = hashpath.substring(1); }
+		
+		// valid hashpaths must start with '!/'
+		if(token.search('!/') !== 0) { return null; }
+		
+		var url = token.substring(1); // strip leading !
+		var params = {};
+			
+		var parts = url.split('?');
+		if(parts.length > 1) {
+			url = parts.shift();
+			params = Ext.urlDecode(parts.join('?'));
+		}
+		
+		return {
+			url: url, 
+			params: params 
+		};
+		
+	},
+	
+	autoLoad_to_hashpath: function(autoLoad){
+		if(Ext.isObject(autoLoad) && Ext.isString(autoLoad.url)) { 
+			// Ignore if url doesn't start with /:
+			if(autoLoad.url.search('/') !== 0) { return null; }
+			
+			var hashpath = '#!' + autoLoad.url;
+			var encParams = autoLoad.params ? Ext.urlEncode(autoLoad.params) : '';
+			if(encParams.length > 0) { hashpath += '?' + encParams; }
+			
+			return hashpath;
+		}
+		return null;
+	},
+	
+	// Set's the hashpath without doing a nav:
+	setHashpath: function(autoLoad) {
+		var hashpath = Ext.ux.RapidApp.HashNav.autoLoad_to_hashpath(autoLoad);
+		if(hashpath) {
+			Ext.ux.RapidApp.HashNav.ignoreHashChange = true;
+			window.location.hash = hashpath;
+		}
+	},
+	
+	handleHashChange: function(hashpath) {
+		if(Ext.ux.RapidApp.HashNav.ignoreHashChange) {
+			Ext.ux.RapidApp.HashNav.ignoreHashChange = false;
+			return;
+		}
+		
+		var loadTarget = Ext.getCmp('main-load-target');
+		if(!loadTarget) { return; }
+		
+		var autoLoad = Ext.ux.RapidApp.HashNav.hashpath_to_autoLoad(hashpath);
+		if(!autoLoad) {  
+			// Try to reset the hashpath to the active tab
+			var tab = loadTarget.getActiveTab.call(loadTarget);
+			autoLoad = tab ? tab.autoLoad : null;
+			return Ext.ux.RapidApp.HashNav.setHashpath(autoLoad);
+		}
+		
+		loadTarget.loadContent({ autoLoad: autoLoad });
+		Ext.ux.RapidApp.HashNav.ignoreHashChange = false;
+	}
+};
 
 
+/* -- Old component-id-based history code
 
 Ext.ux.RapidApp.HistoryInit = function() {
 	Ext.History.init();
@@ -118,8 +171,6 @@ Ext.ux.RapidApp.AutoHistory= {
 };
 
 
-
-
 Ext.override(Ext.TabPanel, {
 	initComponent_orig: Ext.TabPanel.prototype.initComponent,
 	initComponent: function() {
@@ -145,3 +196,4 @@ Ext.override(Ext.TabPanel, {
 	getNavState: function() { return this.getActiveTab()? this.getActiveTab().id : ""; }
 });
 
+*/

@@ -58,6 +58,31 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 			this.on('contextmenu',this.onContextmenu,this);
 		}
 		
+		// ------------------------------------------------------------
+		// -- special HashNav behaviors if this is the main-load-target
+		if(this.id == 'main-load-target'){
+			// Handle direct nav on first load: (See Ext.ux.RapidApp.HashNav in History.js)
+			this.on('afterrender',function(){
+				
+				var hash = Ext.ux.RapidApp.HashNav.INIT_LOCATION_HASH;
+				if(hash && hash.search('#!/') == 0){
+					Ext.ux.RapidApp.HashNav.handleHashChange(hash);
+				}
+				else {
+					var tab = this.getActiveTab();
+					if(tab) {
+						Ext.ux.RapidApp.HashNav.setHashpath(tab.autoLoad);
+					}
+				}
+				
+				this.on('tabchange',function(tp,tab) {
+					Ext.ux.RapidApp.HashNav.setHashpath(tab.autoLoad);
+				},this);
+			},this);
+		}
+		// --
+		// ------------------------------------------------------------
+		
 		Ext.ux.RapidApp.AppTab.TabPanel.superclass.initComponent.call(this);
 	},
 	
@@ -156,7 +181,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 	getNavsource: function() {
 		return this.navsource;
 	},
-	
+
 	loadContent: function() {
 		this.fireEvent( 'navload' );
 		this.loadTab.apply(this,arguments);
@@ -190,7 +215,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		
 		cnf.autoLoad.url = cnf.autoLoad.url || cnf.url;
 		Ext.apply(cnf.autoLoad.params,cnf.params||{});
-			
+		
 		// ------------------------
 		if(cnf.newtab) { //<-- the newtab param is set by the "open another tab" plugin
 			delete cnf.newtab;
