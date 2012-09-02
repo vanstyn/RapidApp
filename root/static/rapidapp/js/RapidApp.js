@@ -279,18 +279,11 @@ Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
 			// Check to see if this exception is associated with an AutoPanel load, and
 			// if it is, display the exception message in the AutoPanel body instead of in
 			// a new window
-			if(options.scope && options.scope.AutoPanelId && options.scope.el) {
+			if(options.scope && options.scope.AutoPanelId) {
 				var AutoPanel = Ext.getCmp(options.scope.AutoPanelId);
 				if(AutoPanel) {
-					AutoPanel.setTitle('Load Failed');
-					AutoPanel.setIconClass('icon-cancel');
+					return AutoPanel.setErrorBody.call(AutoPanel,title,msg);
 				}
-				options.scope.el.dom.innerHTML = '<div class="ra-autopanel-error">' +
-					'<div class="title">' + title + '</div>' +
-					'<div class="msg">' + msg + '</div>' +
-				'</div>';
-				
-				return;
 			}
 			// -----------------------------------------------------------------------------
 			
@@ -2032,6 +2025,11 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 			thisEl = this.getEl();
 			thisEl.addClass('no-text-select');
 		},this);
+		// Allowing highlighting within the panel once loading is complete:
+		this.on('afterlayout',function(){
+			thisEl = this.getEl();
+			thisEl.removeClass('no-text-select');
+		},this);
 		// --
 
 		var container = this;
@@ -2056,22 +2054,38 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 						};
 					}
 
-					if(container.items.getCount() > 0) { container.removeAll(true); }
-					
-					el.dom.innerHTML = '';
-					container.insert(0,conf);
-					container.doLayout();
+					container.setBodyConf.call(container,conf,el);
 					
 					// This is legacy and should probably be removed:
 					if (conf.rendered_eval) { eval(conf.rendered_eval); }
-
-					// Allowing highlighting within the panel once loading is complete:
-					thisEl.removeClass('no-text-select');
 				}
 			}
 		};
 
 		Ext.ux.AutoPanel.superclass.initComponent.call(this);
+	},
+	
+	setBodyConf: function(conf,thisEl) {
+		thisEl = thisEl || this.getEl();
+		if(this.items.getCount() > 0) { this.removeAll(true); }
+		this.insert(0,conf);
+		this.doLayout();
+	},
+	
+	setErrorBody: function(title,msg) {
+		this.setTitle('Load Failed');
+		this.setIconClass('icon-cancel');
+		
+		this.setBodyConf({
+			layout: 'fit',
+			autoScroll: true,
+			frame: true,
+			xtype: 'panel',
+			html: '<div class="ra-autopanel-error">' +
+				'<div class="ra-exception-heading">' + title + '</div>' +
+				'<div class="msg">' + msg + '</div>' +
+			'</div>'
+		},this.getEl());
 	}
 });
 Ext.reg('autopanel',Ext.ux.AutoPanel);

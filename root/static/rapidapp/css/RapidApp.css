@@ -1483,6 +1483,18 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
   padding-bottom:15px;
 }
 
+.ra-autopanel-error {
+  padding: 10px;
+  font-size: 1.2em;
+}
+
+.ra-autopanel-error .msg {
+  padding-top: 15px;
+  font-size: 1.2em;
+  font-family: Consolas,Menlo,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New,monospace,serif;
+  color: gray;
+
+}
 
 
 /* -----
