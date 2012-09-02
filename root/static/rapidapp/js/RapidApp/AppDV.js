@@ -496,6 +496,15 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	
 	click_controller: function(dv, index, domNode, event) {
 		var target = event.getTarget(null,null,true);
+		
+		// --- Override for HashNav links (a tags with href starting with '#!/'):
+		var href = target.getAttribute('href');
+		if(href && target.is('a') && href.search('#!/') === 0) {
+			window.location.hash = href;
+			return;
+		}
+		// ---
+			
 		var domEl = new Ext.Element(domNode);
 
 		// Limit processing to click nodes within this dataview (i.e. not in our submodules)
