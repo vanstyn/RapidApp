@@ -270,9 +270,30 @@ Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
 	try {
 		var exception = response.getResponseHeader('X-RapidApp-Exception');
 		if (exception) {
+			
 			var data = response.result || Ext.decode(response.responseText, true) || {};
 			var title = data.title || 'Error';
 			var msg = data.msg || 'unknown error - Ext.ux.RapidApp.ajaxCheckException';
+			
+			// -----------------------------------------------------------------------------
+			// Check to see if this exception is associated with an AutoPanel load, and
+			// if it is, display the exception message in the AutoPanel body instead of in
+			// a new window
+			if(options.scope && options.scope.AutoPanelId && options.scope.el) {
+				var AutoPanel = Ext.getCmp(options.scope.AutoPanelId);
+				if(AutoPanel) {
+					AutoPanel.setTitle('Load Failed');
+					AutoPanel.setIconClass('icon-cancel');
+				}
+				options.scope.el.dom.innerHTML = '<div class="ra-autopanel-error">' +
+					'<div class="title">' + title + '</div>' +
+					'<div class="msg">' + msg + '</div>' +
+				'</div>';
+				
+				return;
+			}
+			// -----------------------------------------------------------------------------
+			
 			if (data.winform) {
 				Ext.ux.RapidApp.WinFormPost(data.winform);
 			}
@@ -883,7 +904,7 @@ Ext.ux.RapidApp.ReAuthPrompt = function(success_callback) {
 
 	Ext.ux.RapidApp.WinFormPost({
 		title: "Session Expired",
-		height: 200,
+		height: 220,
 		width: 300,
 		url: Ext.ux.RapidApp.loginUrl,
 		fieldset: fieldset,
@@ -1982,6 +2003,7 @@ Ext.override(Ext.Container, {
 });
 
 
+
 Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 	
 	// Override Ext.Component.getId() auto id generation
@@ -1992,6 +2014,14 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 	cmpListeners: null,
 	cmpConfig: {},
 	update_cmpConfig: null,
+	
+	// Save the ID of the AutoPanel in the Updater object for referencing if
+	// an exception (X-RapidApp-Exception) occurs during content load:
+	doAutoLoad: function() {
+		var u = this.body.getUpdater();
+		u.AutoPanelId = this.getId();
+		Ext.ux.AutoPanel.superclass.doAutoLoad.call(this);
+	},
 	
 	initComponent: function() {
 		
@@ -2009,7 +2039,6 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 			disableCaching: true,
 			render: function(el, response, updater, callback) {
 				if (!updater.isUpdating() && el.dom) {
-					
 					var conf = Ext.decode(response.responseText);
 					Ext.apply(conf,container.cmpConfig);
 					
