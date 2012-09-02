@@ -40,18 +40,37 @@ Ext.ux.RapidApp.HashNav = {
 		
 		var url = token.substring(1); // strip leading !
 		var params = {};
-			
-		var parts = url.split('?');
+		
+		// double ?? means base64+json encoded query string (params):
+		var parts = url.split('??');
 		if(parts.length > 1) {
 			url = parts.shift();
-			params = Ext.urlDecode(parts.join('?'));
+			var encP = parts.join('??');
+			params = Ext.decode(base64.decode(encP));
+		}
+		else {
+			// else, single ? is a standard urlEncoded query string
+			parts = url.split('?');
+			if(parts.length > 1) {
+				url = parts.shift();
+				params = Ext.urlDecode(parts.join('?'));
+			}
 		}
 		
-		return {
+		var autoLoad = {
 			url: url, 
 			params: params 
 		};
 		
+		return autoLoad;
+	},
+	
+	isParamsUrlSafe: function(params) {
+		var safe = true;
+		Ext.iterate(params,function(k,v){
+			if(v.search('=') !== -1) { safe = false; }
+		});
+		return safe;
 	},
 	
 	autoLoad_to_hashpath: function(autoLoad){
@@ -60,8 +79,20 @@ Ext.ux.RapidApp.HashNav = {
 			if(autoLoad.url.search('/') !== 0) { return null; }
 			
 			var hashpath = '#!' + autoLoad.url;
-			var encParams = autoLoad.params ? Ext.urlEncode(autoLoad.params) : '';
-			if(encParams.length > 0) { hashpath += '?' + encParams; }
+			if(Ext.ux.RapidApp.HashNav.isParamsUrlSafe(autoLoad.params)) {
+				// Use standard url encoded query string:
+				var encParams = autoLoad.params ? Ext.urlEncode(autoLoad.params) : '';
+				if(encParams.length > 0) { 
+					hashpath += '?' + encParams; 
+				}
+			}
+			else {
+				// Use special base64+json encoded query string, denoted with double '??'
+				var encP = Ext.encode(autoLoad.params || {});
+				if(encP !== '{}') {
+					hashpath += '??' + base64.encode(encP);
+				}
+			}
 			
 			return hashpath;
 		}
@@ -98,6 +129,9 @@ Ext.ux.RapidApp.HashNav = {
 		Ext.ux.RapidApp.HashNav.ignoreHashChange = false;
 	}
 };
+
+
+
 
 
 /* -- Old component-id-based history code
