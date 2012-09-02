@@ -68,7 +68,7 @@ Ext.ux.RapidApp.HashNav = {
 	isParamsUrlSafe: function(params) {
 		var safe = true;
 		Ext.iterate(params,function(k,v){
-			if(v.search('=') !== -1) { safe = false; }
+			if(v.search && v.search('=') !== -1) { safe = false; }
 		});
 		return safe;
 	},
@@ -118,7 +118,7 @@ Ext.ux.RapidApp.HashNav = {
 		if(!loadTarget) { return; }
 		
 		var autoLoad = Ext.ux.RapidApp.HashNav.hashpath_to_autoLoad(hashpath);
-		if(!autoLoad) {  
+		if(!autoLoad) {
 			// Try to reset the hashpath to the active tab
 			var tab = loadTarget.getActiveTab.call(loadTarget);
 			autoLoad = tab ? tab.autoLoad : null;

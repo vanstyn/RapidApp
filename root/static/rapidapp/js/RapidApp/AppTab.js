@@ -44,6 +44,10 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 	useContextMenu: true,
 
 	initComponent: function() {
+		
+		// init tab checksum (crc) map:
+		this.tabCrcMap = {};
+		
 		if(this.initLoadTabs) {
 			this.on('afterrender',function() {
 				Ext.each(this.initLoadTabs,function(cnf) {
@@ -188,6 +192,15 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 	},
 
 	loadTab: function(cnf) {
+		if(cnf.newtab) { //<-- the newtab param is set by the "open another tab" plugin
+			delete cnf.newtab;
+			cnf.seq = cnf.seq || 0;
+			cnf.seq++;
+			cnf.autoLoad = cnf.autoLoad || {};
+			cnf.autoLoad.params = cnf.autoLoad.params || {};
+			cnf.autoLoad.params['_seq'] = cnf.seq.toString();
+		}
+		
 		var orig_cnf = Ext.decode(Ext.encode(cnf));
 		
 		// What was this for? Removed 2012-08-19 by HV because this breaks cnf.closable = false
@@ -217,22 +230,18 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		Ext.apply(cnf.autoLoad.params,cnf.params||{});
 		
 		// ------------------------
-		if(cnf.newtab) { //<-- the newtab param is set by the "open another tab" plugin
-			delete cnf.newtab;
-		}
-		else {
-			// 'id' overrides itemId. If neither specified:
-			// Generate an itemId from a checksum (using a crc algorithm) of the
-			// *actual* url/params of the target. This allows dynamically checking
-			// if a supplied loadContent is already open (see existTab below)
-			cnf.itemId = cnf.id || cnf.itemId || 'tab-crc' + crc32(Ext.encode(
-				[cnf.autoLoad.url,cnf.autoLoad.params]
-			));
-		}
-			
+		// Generate a checksum (using a crc algorithm) of the
+		// *actual* url/params of the target. This allows dynamically checking
+		// if a supplied loadContent is already open (see existTab below)
+		var tabCrc = 'tab-crc' + crc32(Ext.encode(
+			[cnf.autoLoad.url,cnf.autoLoad.params]
+		));
+		
 		// Check if this Tab is already loaded, and set active and return if it is:
-		var existTab = this.getComponent(cnf.id) || this.getComponent(cnf.itemId);
+		var existTab = this.getComponent(this.tabCrcMap[tabCrc]) || 
+			this.getComponent(cnf.id) || this.getComponent(cnf.itemId);
 		if (existTab) {
+			//console.dir(existTab);
 			return this.activate(existTab);
 		}
 		// ------------------------
@@ -256,6 +265,10 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		);
 		
 		var new_tab = this.add(cnf);
+		if(tabCrc) { 
+			// Map the crc checksum to the id of the tab for lookup later (above)
+			this.tabCrcMap[tabCrc] = new_tab.itemId || new_tab.getId(); 
+		}
 		return this.activate(new_tab);
 	},
 	
