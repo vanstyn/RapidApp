@@ -259,6 +259,20 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 				var setTitle = cnf.tabTitle || this.tabTitle;
 				var setIconCls = cnf.tabIconCls || this.tabIconCls;
 				
+				if(!setIconCls && tab.iconCls == 'icon-loading') {
+					setIconCls = 'icon-page';
+				}
+				
+				if(!setTitle && tab.title == 'Loading') {
+					var max_len = 10;
+					var url_st = cnf.autoLoad.url.split('').reverse().join('');
+					var str = url_st;
+					if(url_st.length > max_len) { 
+						str = url_st.substring(0,max_len) + '...'; 
+					}
+					setTitle = 'Untitled (' + str.split('').reverse().join('') + ')';
+				}
+				
 				if(setTitle) { tab.setTitle(setTitle); }
 				if(setIconCls) { tab.setIconClass(setIconCls); }
 			}
