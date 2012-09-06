@@ -74,7 +74,7 @@ sub BUILD {
 	
 	$self->init_multi_rel_modules;
 	
-	$self->add_ONCONTENT_calls('apply_items_config');
+	$self->add_ONCONTENT_calls('call_apply_items_config');
 	
 	$self->apply_actions( id => 'rest_id_action' );
 }
@@ -201,6 +201,25 @@ has 'req_Row', is => 'ro', lazy => 1, traits => [ 'RapidApp::Role::PerRequestBui
 	return $self->_ResultSet->first;
 };
 
+sub call_apply_items_config {
+	my $self = shift;
+	
+	unless ($self->req_Row){
+		$self->apply_extconfig(
+			tabTitle 	=> 'Record not found',
+			tabIconCls 	=> 'icon-cancel'
+		);
+		return $self->apply_extconfig( items => [{
+			html => '<div class="ra-autopanel-error">' .
+				'<div class="ra-exception-heading">Record not found</div>' .
+				'<div class="msg">Record not found by id: "' . $self->supplied_id . '"</div>' .
+			'</div>'
+		}]);
+	}
+
+	return $self->apply_items_config;
+}
+
 sub apply_items_config {
 	my $self = shift;
 	
@@ -216,26 +235,10 @@ sub full_property_grid {
 	my $self = shift;
 	my $multi_only = shift || 0;
 	
-	# ----
-	my $reqRow = $self->req_Row;
-	unless ($reqRow){
-		$self->apply_extconfig(
-			tabTitle 	=> 'Record not found',
-			tabIconCls 	=> 'icon-cancel'
-		);
-		return ({
-			html => '<div class="ra-autopanel-error">' .
-				'<div class="ra-exception-heading">Record not found</div>' .
-				'<div class="msg">Record not found by id: "' . $self->supplied_id . '"</div>' .
-			'</div>'
-		});
-	}
-	# ----
-		
 	local $ONLY_MULTI_GRIDS = 1 if ($multi_only);
 	
 	my $real_columns = [];
-	my @items = $self->TableSpec_property_grids($self->TableSpec,$reqRow,$real_columns);
+	my @items = $self->TableSpec_property_grids($self->TableSpec,$self->req_Row,$real_columns);
 	shift @items;
 	
 	# -- for performance, delete all the remaining columns that don't exist for
