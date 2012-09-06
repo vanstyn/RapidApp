@@ -75,7 +75,27 @@ sub BUILD {
 	$self->init_multi_rel_modules;
 	
 	$self->add_ONCONTENT_calls('apply_items_config');
+	
+	$self->apply_actions( id => 'rest_id_action' );
 }
+
+# ---
+# action to convert a RESTful style URL into a ___record_pk query string
+sub rest_id_action {
+	my $self = shift;
+	my $id = shift;
+	
+	if($id) {
+		$self->apply_extconfig( tabTitle => $id );
+		$self->c->req->params->{___record_pk} = $id;
+		my $baseParams = $self->DataStore->get_extconfig_param('baseParams') || {};
+		$baseParams->{___record_pk} = $id;
+		$self->DataStore->apply_extconfig( baseParams => $baseParams );
+	}
+	
+	return $self->content;
+}
+# ---
 
 sub set_default_tab_icon {
 	my $self = shift;
@@ -196,10 +216,26 @@ sub full_property_grid {
 	my $self = shift;
 	my $multi_only = shift || 0;
 	
+	# ----
+	my $reqRow = $self->req_Row;
+	unless ($reqRow){
+		$self->apply_extconfig(
+			tabTitle 	=> 'Record not found',
+			tabIconCls 	=> 'icon-cancel'
+		);
+		return ({
+			html => '<div class="ra-autopanel-error">' .
+				'<div class="ra-exception-heading">Record not found</div>' .
+				'<div class="msg">Record not found by id: "' . $self->supplied_id . '"</div>' .
+			'</div>'
+		});
+	}
+	# ----
+		
 	local $ONLY_MULTI_GRIDS = 1 if ($multi_only);
 	
 	my $real_columns = [];
-	my @items = $self->TableSpec_property_grids($self->TableSpec,$self->req_Row,$real_columns);
+	my @items = $self->TableSpec_property_grids($self->TableSpec,$reqRow,$real_columns);
 	shift @items;
 	
 	# -- for performance, delete all the remaining columns that don't exist for

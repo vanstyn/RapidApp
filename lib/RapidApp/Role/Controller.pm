@@ -333,7 +333,7 @@ sub process_action {
 	
 	# New: if $coderef is not actually a coderef, we assume its a string representing an 
 	# object method and we call it directly:
-	return $self->render_data( ref($coderef) eq 'CODE'? $coderef->() : $self->$coderef );
+	return $self->render_data( ref($coderef) eq 'CODE'? $coderef->($self,@args) : $self->$coderef(@args) );
 }
 
 =head2 render_data( $data )
