@@ -189,11 +189,11 @@ sub record_pk_cond {
 			$val =~ s/^\'//;
 			$val =~ s/\'$//;
 		}
-		# Have to do this to force an *exact* match because of the problem described here:
+		# To force an *exact* match when col is a number, have to use LIKE because of the problem described here:
 		#http://stackoverflow.com/questions/8570884/mysql-where-exact-match
-		# COME BACK TO THIS! What implications does this cause to other db backends??? 
-		$cond{'me.' . $col} = { 'LIKE' => $val };
-		#$cond{'me.' . $col} = $val;
+		# Otherwise '1833sdfsdf' will match just like '1833'. But LIKE is slow!!! This is lame!
+		#$cond{'me.' . $col} = { 'LIKE' => $val };
+		$cond{'me.' . $col} = $val;
 	}
 	
 	return \%cond;
