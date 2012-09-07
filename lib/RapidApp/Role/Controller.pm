@@ -46,7 +46,7 @@ has 'auto_web1'				=> ( is => 'rw',	default => 0 );
 # not exist as a defined action or sub-module. TODO: refactor and use built-in Catalyst
 # functionality for controller actions. ALL of Module/Controller should be refactored
 # into proper sub-classes of Catalyst controllers
-has 'accept_subargs', is => 'ro', isa => 'Bool', default => 0;
+has 'accept_subargs', is => 'rw', isa => 'Bool', default => 0;
 
 has 'actions' => (
 	traits	=> ['Hash'],

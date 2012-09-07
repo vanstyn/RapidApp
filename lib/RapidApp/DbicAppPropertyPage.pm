@@ -41,7 +41,7 @@ has 'exclude_grids_relationships_map', is => 'ro', lazy => 1, isa => 'HashRef', 
 
 has 'setup_multi_grids', is => 'ro', isa => 'Bool', default => 1;
 
-
+has '+allow_restful_queries', default => 1;
 
 #has '+DataStore_build_params' => ( default => sub {{
 #	store_autoLoad => 1,
@@ -69,29 +69,6 @@ sub BUILD {
 }
 
 
-# --- Handle RESTful URLs - convert 'id/1234' into '?___record_pk=1234'
-has '+accept_subargs', default => 1;
-# have to get in *very* early in the request process to make sure we update
-# the request params in time for any application code that may get called in
-# ONREQUEST handlers:
-before 'ONREQUEST' => sub {
-	my $self = shift;
-	my @args = $self->local_args;
-	shift @args; #<-- first arg should be the name of the module
-	
-	my ($key,$id) = @args;
-	
-	return unless ($key && lc($key) eq 'id' && $id);
-	
-	$self->apply_extconfig( tabTitle => $id );
-	$self->c->req->params->{$self->record_pk} = $id;
-	
-	# Need to manually set the baseParams in the store:
-	my $baseParams = $self->DataStore->get_extconfig_param('baseParams') || {};
-	$baseParams->{$self->record_pk} = $id;
-	$self->DataStore->apply_extconfig( baseParams => $baseParams );
-};
-# ---
 
 
 sub set_default_tab_icon {
