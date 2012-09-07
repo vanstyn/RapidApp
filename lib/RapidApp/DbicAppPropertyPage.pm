@@ -65,7 +65,7 @@ sub BUILD {
 	
 	$self->init_multi_rel_modules;
 	
-	$self->add_ONCONTENT_calls('call_apply_items_config');
+	$self->add_ONCONTENT_calls('apply_items_config');
 }
 
 
@@ -169,41 +169,52 @@ sub ResultSet {
 	return $Rs->search_rs($self->record_pk_cond($value));
 }
 
-#has 'req_Row', is => 'ro', lazy => 1, traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ], default => sub {
-sub req_Row {
-	my $self = shift;
-	return $self->_ResultSet->first;
-};
-
-sub call_apply_items_config {
+has 'req_Row', is => 'ro', lazy => 1, traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ], default => sub {
+#sub req_Row {
 	my $self = shift;
 	
-	unless ($self->req_Row){
+	my $Rs = $self->_ResultSet;
+	my $count = $Rs->count;
+	
+	return $Rs->first if ($count == 1);
+	
+	my $supId = $self->supplied_id;
+	my $idErr = "id: '$supId'";
+	$idErr = "'" . $self->c->req->params->{rest_query} . "'"
+		if (!$supId && $self->c->req->params->{rest_query});
+	
+	if(!$count) {
 		$self->apply_extconfig(
 			tabTitle 	=> 'Record not found',
 			tabIconCls 	=> 'icon-cancel'
 		);
-		
-		my $supId = $self->supplied_id;
-		my $idErr = "id: '$supId'";
-		$idErr = "'" . $self->c->req->params->{rest_query} . "'"
-			if (!$supId && $self->c->req->params->{rest_query});
-		
-		return $self->apply_extconfig( items => [{
+		$self->apply_extconfig( items => [{
 			html => '<div class="ra-autopanel-error">' .
 				'<div class="ra-exception-heading">Record not found</div>' .
 				'<div class="msg">Record not found by ' . $idErr . '</div>' .
 			'</div>'
 		}]);
 	}
-
-	return $self->apply_items_config;
-}
+	else {
+		$self->apply_extconfig(
+			tabTitle 	=> 'Multiple records match',
+			tabIconCls 	=> 'icon-cancel'
+		);
+		$self->apply_extconfig( items => [{
+			html => '<div class="ra-autopanel-error">' .
+				'<div class="ra-exception-heading">Multiple records match</div>' .
+				'<div class="msg">' . $count . ' records match ' . $idErr . '</div>' .
+			'</div>'
+		}]);
+	}
+	
+	return undef;
+};
 
 sub apply_items_config {
 	my $self = shift;
-	
-	$self->apply_extconfig( items => [ $self->full_property_grid ] );
+	$self->apply_extconfig( items => [ $self->full_property_grid ] )
+		if($self->req_Row);
 }
 
 sub multi_grids {
