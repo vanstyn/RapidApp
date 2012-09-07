@@ -41,6 +41,8 @@ has 'exclude_grids_relationships_map', is => 'ro', lazy => 1, isa => 'HashRef', 
 
 has 'setup_multi_grids', is => 'ro', isa => 'Bool', default => 1;
 
+
+
 #has '+DataStore_build_params' => ( default => sub {{
 #	store_autoLoad => 1,
 #	reload_on_save => 0,
@@ -52,17 +54,6 @@ our $ONLY_MULTI_GRIDS = 0;
 sub BUILD {
 	my $self = shift;
 	
-	
-	# WTF!!!!!!!!!! Without this the whole world breaks and I have no idea why
-	# FIXME!!!!!
-	#$self->apply_init_modules( item => { 
-	#	class 	=> 'RapidApp::DbicAppPropertyPage1',
-	#	params	=> { 
-	#		ResultSource => $self->ResultSource, 
-	#		record_pk => $self->record_pk,
-	#	}
-	#});
-
 	$self->apply_extconfig(
 		xtype => 'panel',
 		layout => 'anchor',
@@ -75,27 +66,27 @@ sub BUILD {
 	$self->init_multi_rel_modules;
 	
 	$self->add_ONCONTENT_calls('call_apply_items_config');
-	
-	$self->apply_actions( id => 'rest_id_action' );
 }
 
-# ---
-# action to convert a RESTful style URL into a ___record_pk query string
-sub rest_id_action {
+# --- Handle RESTful URLs - convert 'id/1234' into '?___record_pk=1234'
+has '+accept_subargs', default => 1;
+before 'prepare_controller' => sub {
 	my $self = shift;
-	my $id = shift;
+	my @args = @_;
+	my ($key,$id) = @args;
 	
-	if($id) {
-		$self->apply_extconfig( tabTitle => $id );
-		$self->c->req->params->{$self->record_pk} = $id;
-		my $baseParams = $self->DataStore->get_extconfig_param('baseParams') || {};
-		$baseParams->{$self->record_pk} = $id;
-		$self->DataStore->apply_extconfig( baseParams => $baseParams );
-	}
+	return unless (lc($key) eq 'id' && $id);
 	
-	return $self->content;
-}
+	$self->apply_extconfig( tabTitle => $id );
+	$self->c->req->params->{$self->record_pk} = $id;
+	
+	# Need to manually set the baseParams in the store:
+	my $baseParams = $self->DataStore->get_extconfig_param('baseParams') || {};
+	$baseParams->{$self->record_pk} = $id;
+	$self->DataStore->apply_extconfig( baseParams => $baseParams );
+};
 # ---
+
 
 sub set_default_tab_icon {
 	my $self = shift;

@@ -131,11 +131,15 @@ sub store_init_onrequest {
 		}
 	}
 	
-	$self->apply_extconfig( baseParams => $self->base_params ) if (
-		defined $self->base_params and
-		scalar keys %{ $self->base_params } > 0
-	);
-	
+	# -- Update: set the baseParams via merge just in case some earlier code has already set
+	# some baseParams (not likely, but safer)
+	if (defined $self->base_params and scalar keys %{$self->base_params} > 0) {
+		my $baseParams = $self->get_extconfig_param('baseParams') || {};
+		%$baseParams = ( %$baseParams, %{$self->base_params} );
+		$self->apply_extconfig( baseParams => $baseParams );
+	}
+	# --
+
 	$self->apply_extconfig(
 		storeId 					=> $self->storeId,
 		api 						=> $self->store_api,
@@ -163,7 +167,15 @@ sub store_init_onrequest {
 	# If there is no Catalyst request, we can't get the base params:
 	if (defined $self->c) {
 		my $params = $self->get_store_base_params;
-		$self->apply_extconfig( baseParams => $params ) if (defined $params);
+		# -- Update: set the baseParams via merge just in case some earlier code has already set
+		# some baseParams (not likely, but safer)
+		if (defined $params) {
+			my $baseParams = $self->get_extconfig_param('baseParams') || {};
+			%$baseParams = ( %$baseParams, %$params );
+			$self->apply_extconfig( baseParams => $baseParams )
+		}
+		#$self->apply_extconfig( baseParams => $params ) if (defined $params);
+		# --
 	}
 	
 }
@@ -198,20 +210,10 @@ sub get_store_base_params {
 	}
 	
 	my $keys = [];
-#	if (ref($self->item_keys) eq 'ARRAY') {
-#		$keys = $self->item_keys;
-#	}
-#	else {
-#		push @$keys, $self->item_keys;
-#	}
-	
-	#push @$keys, $self->record_pk;
-	
 	my $orig_params = {};
 	my $orig_params_enc = $self->c->req->params->{orig_params};
 	$orig_params = $self->json->decode($orig_params_enc) if (defined $orig_params_enc);
 	
-	#foreach my $key (@$keys) {
 	foreach my $key ($self->base_keys_list) {
 		$params->{$key} = $orig_params->{$key} if (defined $orig_params->{$key});
 		$params->{$key} = $self->c->req->params->{$key} if (defined $self->c->req->params->{$key});

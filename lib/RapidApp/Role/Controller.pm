@@ -42,6 +42,12 @@ has 'default_action'			=> ( is => 'ro',	default => undef );
 has 'render_as_json'			=> ( is => 'rw',	default => 1, traits => [ 'RapidApp::Role::PerRequestVar' ]  );
 has 'auto_web1'				=> ( is => 'rw',	default => 0 );
 
+# NEW: if true, sub-args (of url path) are passed in even if the sub path does
+# not exist as a defined action or sub-module. TODO: refactor and use built-in Catalyst
+# functionality for controller actions. ALL of Module/Controller should be refactored
+# into proper sub-classes of Catalyst controllers
+has 'accept_subargs', is => 'ro', isa => 'Bool', default => 0;
+
 has 'actions' => (
 	traits	=> ['Hash'],
 	is        => 'ro',
@@ -225,7 +231,8 @@ sub Controller {
 	# run user-defined or mix-in code to get ready to process the action
 	# the prepare function can modify the argument list if it so chooses
 	
-	$self->prepare_controller(\@args);
+	#$self->prepare_controller(\@args); # why was this passed as a ref?? - changed 2012-09-07 by HV
+	$self->prepare_controller(@args);
 	
 	# dispatch the request to the appropriate handler
 	
@@ -289,7 +296,8 @@ sub controller_dispatch {
 	else {
 		my $ct= $self->c->stash->{requestContentType};
 		# if there were unprocessed arguments which were not an action, and there was no default action, generate a 404
-		if (defined $opt) {
+		# UPDATE: unless new 'accept_subargs' attr is true (see attribute declaration above)
+		if (defined $opt && !$self->accept_subargs) {
 			$self->c->log->info("--> " . RED . BOLD . "unknown action: $opt" . CLEAR);
 			if ($ct eq 'text/x-RapidApp-FormSubmitResponse'
 				|| $ct eq 'JSON'
