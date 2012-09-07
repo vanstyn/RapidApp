@@ -189,9 +189,13 @@ sub record_pk_cond {
 			$val =~ s/^\'//;
 			$val =~ s/\'$//;
 		}
-		$cond{'me.' . $col} = $val;
+		# Have to do this to force an *exact* match because of the problem described here:
+		#http://stackoverflow.com/questions/8570884/mysql-where-exact-match
+		# COME BACK TO THIS! What implications does this cause to other db backends??? 
+		$cond{'me.' . $col} = { 'LIKE' => $val };
+		#$cond{'me.' . $col} = $val;
 	}
-
+	
 	return \%cond;
 }
 
