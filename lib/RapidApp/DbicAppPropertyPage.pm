@@ -87,9 +87,9 @@ sub rest_id_action {
 	
 	if($id) {
 		$self->apply_extconfig( tabTitle => $id );
-		$self->c->req->params->{___record_pk} = $id;
+		$self->c->req->params->{$self->record_pk} = $id;
 		my $baseParams = $self->DataStore->get_extconfig_param('baseParams') || {};
-		$baseParams->{___record_pk} = $id;
+		$baseParams->{$self->record_pk} = $id;
 		$self->DataStore->apply_extconfig( baseParams => $baseParams );
 	}
 	
@@ -195,8 +195,8 @@ sub ResultSet {
 	return $Rs->search_rs($self->record_pk_cond($value));
 }
 
-has 'req_Row', is => 'ro', lazy => 1, traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ], default => sub {
-#sub req_Row {
+#has 'req_Row', is => 'ro', lazy => 1, traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ], default => sub {
+sub req_Row {
 	my $self = shift;
 	return $self->_ResultSet->first;
 };
