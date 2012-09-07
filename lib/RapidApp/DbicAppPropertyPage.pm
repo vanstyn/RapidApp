@@ -68,14 +68,20 @@ sub BUILD {
 	$self->add_ONCONTENT_calls('call_apply_items_config');
 }
 
+
 # --- Handle RESTful URLs - convert 'id/1234' into '?___record_pk=1234'
 has '+accept_subargs', default => 1;
-before 'prepare_controller' => sub {
+# have to get in *very* early in the request process to make sure we update
+# the request params in time for any application code that may get called in
+# ONREQUEST handlers:
+before 'ONREQUEST' => sub {
 	my $self = shift;
-	my @args = @_;
+	my @args = $self->local_args;
+	shift @args; #<-- first arg should be the name of the module
+	
 	my ($key,$id) = @args;
 	
-	return unless (lc($key) eq 'id' && $id);
+	return unless ($key && lc($key) eq 'id' && $id);
 	
 	$self->apply_extconfig( tabTitle => $id );
 	$self->c->req->params->{$self->record_pk} = $id;

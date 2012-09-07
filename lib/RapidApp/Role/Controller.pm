@@ -219,8 +219,16 @@ sub prepare_controller {
 This method handles a request.
 
 =cut
+
+# new available API accessor:
+our $LOCAL_ARGS = [];
+sub local_args { @$LOCAL_ARGS }
+
 sub Controller {
 	my ($self, $c, @args) = @_;
+	
+	# track the current argument list in a localized global for easy access:
+	local $LOCAL_ARGS = \@args;
 	
 	# base_url has been set by the Module function in the process of getting this module, or it will default to c->namespace
 	# 'c' is now a function that pulls from ScopedGlobals
