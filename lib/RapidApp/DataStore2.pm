@@ -131,14 +131,20 @@ sub store_init_onrequest {
 		}
 	}
 	
-	# -- Update: set the baseParams via merge just in case some earlier code has already set
-	# some baseParams (not likely, but safer)
-	if (defined $self->base_params and scalar keys %{$self->base_params} > 0) {
-		my $baseParams = $self->get_extconfig_param('baseParams') || {};
-		%$baseParams = ( %$baseParams, %{$self->base_params} );
-		$self->apply_extconfig( baseParams => $baseParams );
-	}
-	# --
+	$self->apply_extconfig( baseParams => $self->base_params ) if (
+		defined $self->base_params and
+		scalar keys %{ $self->base_params } > 0
+	);
+	
+	## Update update: turned back off due to possible caching issue (TODO: revisit)
+	## -- Update: set the baseParams via merge just in case some earlier code has already set
+	## some baseParams (not likely, but safer)
+	#if (defined $self->base_params and scalar keys %{$self->base_params} > 0) {
+	#	my $baseParams = try{$self->get_extconfig_param('baseParams')} || {};
+	#	%$baseParams = ( %$baseParams, %{$self->base_params} );
+	#	$self->apply_extconfig( baseParams => $baseParams );
+	#}
+	## --
 
 	$self->apply_extconfig(
 		storeId 					=> $self->storeId,
@@ -167,14 +173,15 @@ sub store_init_onrequest {
 	# If there is no Catalyst request, we can't get the base params:
 	if (defined $self->c) {
 		my $params = $self->get_store_base_params;
+		# Update Update: don't update via merge due to caching problem (TODO - investigate)
 		# -- Update: set the baseParams via merge just in case some earlier code has already set
 		# some baseParams (not likely, but safer)
-		if (defined $params) {
-			my $baseParams = $self->get_extconfig_param('baseParams') || {};
-			%$baseParams = ( %$baseParams, %$params );
-			$self->apply_extconfig( baseParams => $baseParams )
-		}
-		#$self->apply_extconfig( baseParams => $params ) if (defined $params);
+		#if (defined $params) {
+		#	my $baseParams = $self->get_extconfig_param('baseParams') || {};
+		#	%$baseParams = ( %$baseParams, %$params );
+		#	$self->apply_extconfig( baseParams => $baseParams )
+		#}
+		$self->apply_extconfig( baseParams => $params ) if (defined $params);
 		# --
 	}
 	

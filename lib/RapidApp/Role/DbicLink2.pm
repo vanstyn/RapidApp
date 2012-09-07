@@ -81,6 +81,13 @@ sub baseResultSet {
 sub _ResultSet {
 	my $self = shift;
 	my $Rs = $self->baseResultSet(@_);
+	
+	if($self->c->req->params->{rest_query}) {
+		my ($key,$val) = split(/\//,$self->c->req->params->{rest_query},2);
+		$key = 'me.' . $key unless ($key =~ /\./);
+		$Rs = $Rs->search_rs({ $key => $val });
+	}
+
 	$Rs = $self->ResultSet($Rs) if ($self->can('ResultSet'));
 	return $Rs;
 }
@@ -203,28 +210,37 @@ sub record_pk_cond {
 
 # --- Handle RESTful URLs - convert 'id/1234' into '?___record_pk=1234'
 has 'allow_restful_queries', is => 'ro', isa => 'Bool', default => 0;
-# have to get in *very* early in the request process to make sure we update
-# the request params in time for any application code that may get called in
-# ONREQUEST handlers:
-before 'ONREQUEST' => sub {
+has 'restful_record_pk_alias', is => 'ro', isa => 'Str', default => 'id';
+sub prepare_rest_request {
 	my $self = shift;
 	return unless ($self->allow_restful_queries);
 	
 	my @args = $self->local_args;
-	shift @args; #<-- first arg should be the name of the module
+	shift @args; #<-- first arg should be the name of this module
 	
-	my ($key,$id) = @args;
+	my $key = shift @args or return;
 	
-	return unless ($key && lc($key) eq 'id' && $id);
+	# Ignore paths that are submodules or actions:
+	return if (exists $self->modules_obj->{$key} || $self->get_action($key));
 	
-	$self->apply_extconfig( tabTitle => $id );
-	$self->c->req->params->{$self->record_pk} = $id;
+	die usererr "Incorrect number of args in RESTful URL (" . join('/',$key,@args) . ") - should be 2 (i.e. 'id/1234')" 
+		unless (scalar @args == 1);
 	
-	# Need to manually set the baseParams in the store:
-	my $baseParams = $self->DataStore->get_extconfig_param('baseParams') || {};
-	$baseParams->{$self->record_pk} = $id;
-	$self->DataStore->apply_extconfig( baseParams => $baseParams );
-};
+	my $val = shift @args;
+	$key = lc($key);
+	
+	# Apply default tabTitle:
+	$self->apply_extconfig( tabTitle => $key . '/' . $val );
+	
+	# Special handling for the record_pk itself, convert into a query param:
+	if($key eq $self->record_pk || $key eq $self->restful_record_pk_alias) {
+		$self->c->req->params->{$self->record_pk} = $val;
+	}
+	else {
+		# create a one-off condition:
+		$self->c->req->params->{rest_query} = $key . '/' . $val;
+	}
+}
 # ---
 
 sub BUILD {}
@@ -235,7 +251,15 @@ sub DbicLink_around_BUILD {
 	
 	die "FATAL: DbicLink and DbicLink2 cannot both be loaded" if ($self->does('RapidApp::Role::DbicLink'));
 	
-	$self->accept_subargs(1) if ($self->allow_restful_queries);
+	
+	
+	# -- RESTful URLs --
+	if ($self->allow_restful_queries) {
+		$self->accept_subargs(1);
+		$self->add_ONREQUEST_calls_early('prepare_rest_request');
+		$self->DataStore->add_base_keys('rest_query');
+	};
+	# --
 	
 	# Disable editing on columns that aren't updatable:
 	#$self->apply_except_colspec_columns($self->TableSpec->updatable_colspec => {

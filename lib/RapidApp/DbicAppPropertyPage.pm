@@ -165,7 +165,7 @@ sub ResultSet {
 	my $self = shift;
 	my $Rs = shift;
 
-	my $value = $self->supplied_id;
+	my $value = $self->supplied_id or return $Rs;
 	return $Rs->search_rs($self->record_pk_cond($value));
 }
 
@@ -183,10 +183,16 @@ sub call_apply_items_config {
 			tabTitle 	=> 'Record not found',
 			tabIconCls 	=> 'icon-cancel'
 		);
+		
+		my $supId = $self->supplied_id;
+		my $idErr = "id: '$supId'";
+		$idErr = "'" . $self->c->req->params->{rest_query} . "'"
+			if (!$supId && $self->c->req->params->{rest_query});
+		
 		return $self->apply_extconfig( items => [{
 			html => '<div class="ra-autopanel-error">' .
 				'<div class="ra-exception-heading">Record not found</div>' .
-				'<div class="msg">Record not found by id: "' . $self->supplied_id . '"</div>' .
+				'<div class="msg">Record not found by ' . $idErr . '</div>' .
 			'</div>'
 		}]);
 	}
