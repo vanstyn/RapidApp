@@ -18,6 +18,10 @@ sub BUILD {
 	
 	$self->apply_extconfig( setup_bbar_store_buttons => \1 );
 	
+	# New AppGrid2 nav feature. Need to always fetch the column to use for grid nav (open)
+	push @{$self->always_fetch_columns}, $self->open_record_rest_key
+		if ($self->open_record_rest_key);
+	
 	# Defaults: only applicable items will actually be added:
 	#$self->apply_extconfig( store_buttons => [ 'add', 'delete', 'reload', 'save', 'undo' ]);
 }
