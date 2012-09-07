@@ -19,6 +19,9 @@ has 'title_icon_href' => ( is => 'ro', default => undef );
 has 'open_record_class' => ( is => 'ro', default => undef, isa => 'Maybe[ClassName|HashRef]' );
 has 'add_record_class' => ( is => 'ro', default => undef, isa => 'Maybe[ClassName|HashRef]' );
 
+has 'open_record_via_rest', is => 'ro', isa => 'Bool', default => 1;
+has 'open_record_rest_key', is => 'ro', isa => 'Maybe[Str]', default => undef;
+
 # autoLoad needs to be false for the paging toolbar to not load the whole
 # data set
 has 'store_autoLoad' => ( is => 'ro', default => sub {\0} );
@@ -81,33 +84,6 @@ has 'allow_edit_frozen', is => 'ro', isa => 'Bool', default => 1;
 sub BUILD {
 	my $self = shift;
 	
-	$self->apply_extconfig(
-		xtype						=> 'appgrid2',
-		pageSize					=> $self->init_pagesize,
-		maxPageSize				=> $self->max_pagesize,
-		stripeRows				=> \1,
-		columnLines				=> \1,
-		use_multifilters		=> \1,
-		gridsearch				=> \1,
-		gridsearch_remote		=> \1,
-		column_allow_save_properties => [ 'width','hidden' ], #<-- is this still doing anything?
-		use_column_summaries => $self->use_column_summaries ? \1 : \0,
-		use_autosize_columns => $self->use_autosize_columns ? \1 : \0,
-		auto_autosize_columns => $self->auto_autosize_columns ? \1 : \0,
-		auto_autosize_columns_deep => $self->auto_autosize_columns_deep ? \1 : \0,
-		autosize_hidden => $self->autosize_hidden ? \1 : \0,
-		autosize_maxwidth => $self->autosize_maxwidth,
-		allow_edit_frozen => $self->allow_edit_frozen ? \1 : \0
-	);
-	
-	# The record_pk is forced to be added/included as a column:
-	if (defined $self->record_pk) {
-		$self->apply_columns( $self->record_pk => {} );
-		push @{ $self->include_columns }, $self->record_pk if (scalar @{ $self->include_columns } > 0);
-		#$self->meta->find_attribute_by_name('include_columns_hash')->clear_value($self);
-		%{ $self->include_columns_hash } = ();
-	}
-	
 	if (defined $self->open_record_class) {
 		$self->apply_init_modules( item => $self->open_record_class );
 		
@@ -131,17 +107,50 @@ sub BUILD {
 		#);
 	}
 	
+	
+	$self->apply_extconfig(
+		xtype						=> 'appgrid2',
+		pageSize					=> $self->init_pagesize,
+		maxPageSize				=> $self->max_pagesize,
+		stripeRows				=> \1,
+		columnLines				=> \1,
+		use_multifilters		=> \1,
+		gridsearch				=> \1,
+		gridsearch_remote		=> \1,
+		column_allow_save_properties => [ 'width','hidden' ], #<-- is this still doing anything?
+		use_column_summaries => $self->use_column_summaries ? \1 : \0,
+		use_autosize_columns => $self->use_autosize_columns ? \1 : \0,
+		auto_autosize_columns => $self->auto_autosize_columns ? \1 : \0,
+		auto_autosize_columns_deep => $self->auto_autosize_columns_deep ? \1 : \0,
+		autosize_hidden => $self->autosize_hidden ? \1 : \0,
+		autosize_maxwidth => $self->autosize_maxwidth,
+		allow_edit_frozen => $self->allow_edit_frozen ? \1 : \0,
+		open_record_via_rest => $self->open_record_via_rest ? \1 : \0,
+		open_record_url => $self->open_record_url,
+		open_record_rest_key => $self->open_record_rest_key
+	);
+	
+	# The record_pk is forced to be added/included as a column:
+	if (defined $self->record_pk) {
+		$self->apply_columns( $self->record_pk => {} );
+		push @{ $self->include_columns }, $self->record_pk if (scalar @{ $self->include_columns } > 0);
+		#$self->meta->find_attribute_by_name('include_columns_hash')->clear_value($self);
+		%{ $self->include_columns_hash } = ();
+	}
+	
 	if (defined $self->open_record_url or defined $self->add_record_class) {
 		$self->add_listener(	beforerender => RapidApp::JSONFunc->new( raw => 1, func => 
 			'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' 
 		));
 	}
 	
-	if (defined $self->open_record_url) {
-    $self->add_listener( rowdblclick => RapidApp::JSONFunc->new( raw => 1, func => 
-			'Ext.ux.RapidApp.AppTab.gridrow_nav' 
-		));
-  }
+	# -- Moved into Ext.ux.RapidApp.AppTab.AppGrid2Def:
+	#if (defined $self->open_record_url) {
+	#	$self->add_listener( rowdblclick => RapidApp::JSONFunc->new( raw => 1, func => 
+	#		'Ext.ux.RapidApp.AppTab.gridrow_nav' 
+	#	));
+	#}
+	# --
 	
 	$self->apply_actions( save_search => 'save_search' ) if ( $self->can('save_search') );
 	$self->apply_actions( delete_search => 'delete_search' ) if ( $self->can('delete_search') );

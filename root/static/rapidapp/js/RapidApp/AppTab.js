@@ -467,6 +467,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	titleCount: false,
 
 	initComponent: function() {
+	
+		this.init_open_record_handler();
 		
 		this.on('afterrender',this.addExtraToOptionsMenu,this);
 		
@@ -751,6 +753,32 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		}
 		
 		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.onRender.apply(this, arguments);
+	},
+	
+	init_open_record_handler: function() {
+		if(this.open_record_url) {
+			if(this.open_record_via_rest) {
+				this.on('rowdblclick',function(grid,index,e){
+					this.rest_open_record(index);
+				},this);
+			}
+			else {
+				// Original LoadContentCnf double-click handler, moved out of AppGrid2.pm:
+				this.on('rowdblclick',Ext.ux.RapidApp.AppTab.gridrow_nav,this);
+			}
+		}
+	},
+	
+	rest_open_record: function(rec) {
+		// Support argument as either index or actual Record:
+		var Record = Ext.isNumber(rec) ? this.store.getAt(rec) : rec;
+		var key = this.open_record_rest_key ? this.open_record_rest_key : 'id';
+		var val = this.open_record_rest_key ? Record.data[key] : Record.id;
+		
+		if(!val) { throw 'rest_open_record(): failed to identify Record value!'; }
+		
+		var hashpath = '#!' + this.open_record_url + '/' + key + '/' + val;
+		window.location.hash = hashpath;
 	},
 	
 	alwaysRequestColumns: {},

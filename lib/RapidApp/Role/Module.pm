@@ -277,7 +277,7 @@ sub Module {
 	my $name = shift;
 	my $no_onreq = shift;
 	
-	$self->_load_module($name) or die "Failed to load Module '$name'";
+	$self->_load_module($name) or confess "Failed to load Module '$name'";
 	
 	#return $self->modules_obj->{$name} if ($no_onreq);
 	return $self->modules_obj->{$name}->THIS_MODULE;

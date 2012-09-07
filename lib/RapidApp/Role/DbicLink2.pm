@@ -174,7 +174,8 @@ sub generate_record_pk_value {
 	die "generate_record_pk_value(): expected hashref arg" unless (ref($data) eq 'HASH');
 	return join(
 		$self->primary_columns_sep, 
-		map { defined $data->{$_} ? "'" . $data->{$_} . "'" : 'undef' } @{$self->primary_columns}
+		#map { defined $data->{$_} ? "'" . $data->{$_} . "'" : 'undef' } @{$self->primary_columns}
+		map { defined $data->{$_} ? $data->{$_} : 'undef' } @{$self->primary_columns}
 	);
 }
 
