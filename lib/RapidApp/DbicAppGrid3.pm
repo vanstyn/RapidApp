@@ -18,6 +18,14 @@ sub BUILD {
 	
 	$self->apply_extconfig( setup_bbar_store_buttons => \1 );
 	
+	# ---- apply default tab title and icon:
+	my $class = $self->ResultClass;
+	my $title = try{$class->TableSpec_get_conf('title_multi')} || try{$self->ResultSource->from};
+	my $iconCls = try{$class->TableSpec_get_conf('multiIconCls')};
+	$self->apply_extconfig( tabTitle => $title ) if ($title);
+	$self->apply_extconfig( tabIconCls => $iconCls ) if ($iconCls);
+	# ----
+	
 	# New AppGrid2 nav feature. Need to always fetch the column to use for grid nav (open)
 	push @{$self->always_fetch_columns}, $self->open_record_rest_key
 		if ($self->open_record_rest_key);
