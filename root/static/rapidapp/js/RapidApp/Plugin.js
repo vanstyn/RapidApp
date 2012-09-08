@@ -501,6 +501,25 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 			,onTrigger2Click:this.minChars ? Ext.emptyFn : this.onTriggerSearch.createDelegate(this)
 			,minLength:this.minLength
 		});
+		
+		// -----
+		if(this.grid.preload_quick_search) {
+			this.field.setValue(this.grid.preload_quick_search);
+			var plugin = this, store = this.grid.store;
+			var onBeforeload;
+			onBeforeload = function(ds,options) {
+				// immediately remove ourselves on first call. This should be the initial
+				// load of the store after being initialized
+				store.un('beforeload',onBeforeload,plugin);
+				// Called only on the very first load (removes itself above)
+				// sets the store params without calling reload (since the load is
+				// already in progress). This allows a single load, including the
+				// preload_quick_search
+				plugin.applyStoreParams.call(plugin);
+			}
+			store.on('beforeload',onBeforeload,plugin);
+		}
+		// -----
 
 		// install event handlers on input field
 		this.field.on('render', function() {
@@ -515,8 +534,6 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 			}
 			*/
 			
-			
-
 			if(this.minChars) {
 				this.field.el.on({scope:this, buffer:300, keyup:this.onKeyUp});
 			}
@@ -637,38 +654,47 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		}
 		// ask server to filter records
 		else {
-			// clear start (necessary if we have paging)
-			if(store.lastOptions && store.lastOptions.params) {
-				store.lastOptions.params[store.paramNames.start] = 0;
-			}
-
-			// get fields to search array
-			var fields = [];
-			this.menu.items.each(function(item) {
-				if(item.checked) {
-					var col_name = item.dataIndex;
-					if(this.fieldNameMap[col_name]) { col_name = this.fieldNameMap[col_name]; }
-					fields.push(col_name);
-				}
-			},this);
-
-			// add fields and query to baseParams of store
-			delete(store.baseParams[this.paramNames.fields]);
-			delete(store.baseParams[this.paramNames.query]);
-			if (store.lastOptions && store.lastOptions.params) {
-				delete(store.lastOptions.params[this.paramNames.fields]);
-				delete(store.lastOptions.params[this.paramNames.query]);
-			}
-			if(fields.length) {
-				store.baseParams[this.paramNames.fields] = Ext.encode(fields);
-				store.baseParams[this.paramNames.query] = val;
-			}
-
+			this.applyStoreParams();
 			// reload store
 			store.reload();
 		}
 
-	} // eo function onTriggerSearch
+	}
+
+	,applyStoreParams: function() {
+		var val = this.field.getValue();
+		var store = this.grid.store;
+		
+		// clear start (necessary if we have paging)
+		if(store.lastOptions && store.lastOptions.params) {
+			store.lastOptions.params[store.paramNames.start] = 0;
+		}
+
+		// get fields to search array
+		var fields = [];
+		this.menu.items.each(function(item) {
+			if(item.checked) {
+				var col_name = item.dataIndex;
+				if(this.fieldNameMap[col_name]) { col_name = this.fieldNameMap[col_name]; }
+				fields.push(col_name);
+			}
+		},this);
+
+		// add fields and query to baseParams of store
+		delete(store.baseParams[this.paramNames.fields]);
+		delete(store.baseParams[this.paramNames.query]);
+		if (store.lastOptions && store.lastOptions.params) {
+			delete(store.lastOptions.params[this.paramNames.fields]);
+			delete(store.lastOptions.params[this.paramNames.query]);
+		}
+		if(fields.length) {
+			store.baseParams[this.paramNames.fields] = Ext.encode(fields);
+			store.baseParams[this.paramNames.query] = val;
+		}
+	}
+
+
+	// eo function onTriggerSearch
 	// }}}
 	// {{{
 	/**

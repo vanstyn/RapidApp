@@ -163,9 +163,12 @@ sub BUILD {
 
 sub init_onrequest {
 	my $self = shift;
+	
+	$self->apply_extconfig( preload_quick_search => $self->c->req->params->{quick_search} )
+		if ($self->c->req->params->{quick_search});
 		
 	#$self->apply_config(store => $self->JsonStore);
-	$self->apply_config(tbar => $self->tbar_items) if (defined $self->tbar_items);
+	$self->apply_extconfig(tbar => $self->tbar_items) if (defined $self->tbar_items);
 }
 
 
