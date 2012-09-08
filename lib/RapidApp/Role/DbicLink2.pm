@@ -217,13 +217,6 @@ sub prepare_rest_request {
 	return unless ($self->allow_restful_queries);
 	
 	my @args = $self->local_args;
-	
-	scream_color(GREEN,$self->c->req->path);
-	
-	scream(\@args);
-	
-	shift @args; #<-- first arg should be the name of this module
-	
 	my $key = shift @args or return;
 	
 	# Ignore paths that are submodules or actions:
@@ -257,12 +250,9 @@ sub DbicLink_around_BUILD {
 	
 	die "FATAL: DbicLink and DbicLink2 cannot both be loaded" if ($self->does('RapidApp::Role::DbicLink'));
 	
-	
-	
 	# -- RESTful URLs --
 	if ($self->allow_restful_queries) {
 		$self->accept_subargs(1);
-		#$self->add_ONREQUEST_calls_early('prepare_rest_request');
 		$self->add_ONCONTENT_calls('prepare_rest_request');
 		$self->DataStore->add_base_keys('rest_query');
 	};
