@@ -210,13 +210,18 @@ sub record_pk_cond {
 
 
 # --- Handle RESTful URLs - convert 'id/1234' into '?___record_pk=1234'
-has 'allow_restful_queries', is => 'ro', isa => 'Bool', default => 0;
+has 'allow_restful_queries', is => 'ro', isa => 'Bool', default => 1;
 has 'restful_record_pk_alias', is => 'ro', isa => 'Str', default => 'id';
 sub prepare_rest_request {
 	my $self = shift;
 	return unless ($self->allow_restful_queries);
 	
 	my @args = $self->local_args;
+	
+	scream_color(GREEN,$self->c->req->path);
+	
+	scream(\@args);
+	
 	shift @args; #<-- first arg should be the name of this module
 	
 	my $key = shift @args or return;
@@ -257,7 +262,8 @@ sub DbicLink_around_BUILD {
 	# -- RESTful URLs --
 	if ($self->allow_restful_queries) {
 		$self->accept_subargs(1);
-		$self->add_ONREQUEST_calls_early('prepare_rest_request');
+		#$self->add_ONREQUEST_calls_early('prepare_rest_request');
+		$self->add_ONCONTENT_calls('prepare_rest_request');
 		$self->DataStore->add_base_keys('rest_query');
 	};
 	# --

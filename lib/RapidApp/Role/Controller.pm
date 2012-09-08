@@ -220,15 +220,26 @@ This method handles a request.
 
 =cut
 
-# new available API accessor:
-our $LOCAL_ARGS = [];
-sub local_args { @$LOCAL_ARGS }
-
+# new available API accessor: tracks the extra/leftover arguments in the current request
+# in a global/localized variable. This is needed for new RESTful logic/processing.
+# TODO: come up with a better, less lazy/hackish way to do this
+#our $LOCAL_ARGS = {};
+#sub local_args { 
+#	my $self = shift;
+#	$LOCAL_ARGS->{$self->base_url} ||= [];
+#	return @{$LOCAL_ARGS->{$self->base_url}};
+#}
+sub local_args { @{(shift)->local_args_attr} }
+has 'local_args_attr', is => 'ro', isa => 'ArrayRef', traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ], default => sub {[]};
 sub Controller {
 	my ($self, $c, @args) = @_;
 	
 	# track the current argument list in a localized global for easy access:
-	local $LOCAL_ARGS = \@args;
+	#$LOCAL_ARGS->{$self->base_url} ||= [];
+	#local $LOCAL_ARGS->{$self->base_url} = \@args;
+	#$self->_local_args([@args]);
+	@{$self->local_args_attr} = @args;
+	print STDERR RED . Dumper([$self->local_args]) . CLEAR;
 	
 	# base_url has been set by the Module function in the process of getting this module, or it will default to c->namespace
 	# 'c' is now a function that pulls from ScopedGlobals
