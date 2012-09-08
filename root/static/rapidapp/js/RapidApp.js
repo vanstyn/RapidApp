@@ -5077,6 +5077,14 @@ Ext.ux.RapidApp.InlineLinkHandler = function(e) {
 	e.cancelBubble = true;
 	if (e.stopPropagation) e.stopPropagation();
 	if(e.type == 'click' && this.hash) {
+	
+		// --- New: handle simple hashpath URL
+		// The reason this is still being done in this function at all is
+		// for the code that stops the event from propagating above
+		if(this.host == window.location.host && this.hash.search('#!/') == 0) {
+			return window.location.href = this.href;
+		}
+		// ---
 		
 		var parts = this.hash.split('#loadcfg:data=');
 		if(parts.length == 2) {
@@ -5518,8 +5526,11 @@ Ext.ux.RapidApp.DbicSingleRelationshipColumnRender = function(c) {
 		}
 	};
 	
+	// New, simple RESTful hashpath URL/link:
+	var url = '#!' + c.open_url + '/id/' + c.value;
 	return disp + "&nbsp;" + Ext.ux.RapidApp.inlineLink(
-		"#loadcfg:" + Ext.urlEncode({data: Ext.encode(loadCfg)}),
+		//"#loadcfg:" + Ext.urlEncode({data: Ext.encode(loadCfg)}),
+		url,
 		"<span>open</span>",
 		"magnify-link-tiny",
 		null,
