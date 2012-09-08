@@ -111,7 +111,7 @@ fn: function(buttonId) { if (buttonId=="yes") {
 Ext.Ajax.request({ 
 	disableCaching: true, 
 	url: '~ . $self->base_url . q~/logout', 
-	success: function(response, opts) { window.location.reload(); }
+	success: function(response, opts) { window.location.hash = ''; window.location.reload(); }
 })
 }}});
 ~
