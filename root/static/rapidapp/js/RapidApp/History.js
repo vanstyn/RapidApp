@@ -127,6 +127,75 @@ Ext.ux.RapidApp.HashNav = {
 		
 		loadTarget.loadContent({ autoLoad: autoLoad });
 		Ext.ux.RapidApp.HashNav.ignoreHashChange = false;
+	},
+	
+	/*  Ext.ux.RapidApp.HashNav.formSubmitHandler:
+	 Function to be used as 'onsubmit' for any html form tag/element to
+	 "submit" the form to a hashpath/loadcontent url instead of doing 
+	 an actual GET/POST, directly. 
+	 
+	 Example:
+	
+		<form 
+		 action="#!/main/explorer/navtree/classicdb_employees" 
+		 onsubmit="return Ext.ux.RapidApp.HashNav.formSubmitHandler.apply(this,arguments);"
+		>
+			<label for="quick_search">Search Employees:</label>
+			<input type="text" name="quick_search" />
+		</form>
+		
+	 If 'abc123' were typed into the form/field it would load the following hashpath url:
+		
+		#!/main/explorer/navtree/classicdb_employees?quick_search=abc123
+		
+	*/
+	formSubmitHandler: function(e) {
+
+		var action = this.getAttribute('action');
+		if(!action || action.search('#!/') !== 0) {
+			alert("Invalid form action URL: '" + action + 
+				'" - HashNav form actions must be valid hashpaths starting with \'#!/\'');
+			return false;
+		}
+		
+		var parts = action.split('?');
+		if(parts.length > 2) {
+			alert("Invalid form action URL: '" + action + 
+				'" - multiple question-mark (?) characters are not allowed');
+			return false;
+		}
+		
+		var url = action;
+		var params = {};
+		
+		if(parts.length > 1) {
+			url = parts.shift();
+			params = Ext.urlDecode(parts.join('?'));
+		}
+		
+		for (var i = 0; i < this.elements.length; i++) {
+			var name = this.elements[i].name, value = this.elements[i].value;
+			if(name && value) {
+				if(params[name]) {
+					alert("duplicate param name '" + name + "' in HashNav form/url - not supported");
+					return false;
+				}
+				params[name] = value;
+			}
+		}
+		
+		var hashpath = url;
+		var encParams = Ext.urlEncode(params);
+		if(encParams.length > 0) {
+			hashpath = url + '?' + encParams;
+		}
+		
+		window.location.hash = hashpath;
+		
+		// Important! the onsubmit handler *must* return false to stop the
+		// normal GET/POST browser submit operation (but we also called
+		// e.preventDefault() first, so this isn't also needed)
+		return false;
 	}
 };
 
