@@ -1497,6 +1497,93 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 }
 
 
+/* general purpose search box styles */
+
+.ra-search-box {
+  position: relative;
+  width: 100%;
+  margin: 0;
+}
+
+.ra-search-form {
+  height: 30px;
+  border: 1px solid #999;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+  background-color: #fff;
+  overflow: hidden;
+}
+
+.ra-search-text {
+  font-size: 14px;
+  color: #ddd;
+  border-width: 0;
+  background: transparent;
+}
+
+.ra-search-box input[type="text"] {
+  width: 90%;
+  padding: 9px 0 6px 1em;
+  color: #333;
+  outline: none;
+  color: #083772;
+  font-family: "Lucida Console", Monaco, monospace;
+  font-weight: bold;
+}
+
+/*
+
+.ra-search-box input::-webkit-input-placeholder {
+  color: #999;
+  font-weight: normal;
+  font-family: Arial,Helvetica,sans-serif;
+  padding: 8px 0 6px 1em;
+}
+.ra-search-box input:-moz-placeholder {
+  color: #999;
+  font-weight: normal;
+  font-family: Arial,Helvetica,sans-serif;
+  padding: 8px 0 6px 1em;
+}
+.ra-search-box input:-ms-input-placeholder {
+  color: #999;
+  font-weight: normal;
+  font-family: Arial,Helvetica,sans-serif;
+  padding: 8px 0 6px 1em;
+}
+
+*/
+
+.ra-search-button {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 32px;
+  width: 40px;
+  font-size: 14px;
+  color: #fff;
+  text-align: center;
+  line-height: 32px;
+  border-width: 0;
+  background-color: #999;
+  -webkit-border-radius: 0px 5px 5px 0px;
+  -moz-border-radius: 0px 5px 5px 0px;
+  border-radius: 0px 5px 5px 0px;
+  cursor: pointer;
+}
+
+.ra-search-box-heading {
+  font-size: 14px;
+  font-family: Arial,Helvetica,sans-serif;
+  color: #666666;
+  font-weight: bold;
+  padding-bottom:2px;
+  padding-left:1px;
+}
+
+
+
 /* -----
 Overrides to prevent editors from being chopped when they are larger than the grid,
 happens especially in Property Grid when editing the last field/row when it is a
