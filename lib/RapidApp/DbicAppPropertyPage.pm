@@ -173,12 +173,12 @@ sub ResultSet {
 has 'req_Row', is => 'ro', lazy => 1, traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ], default => sub {
 #sub req_Row {
 	my $self = shift;
+	my $Rs = $self->_ResultSet;
 	
 	my $supId = $self->supplied_id;
 	die usererr "Record Id not supplied in request", title => 'Id not supplied'
 		unless ($supId || $self->c->req->params->{rest_query});
 	
-	my $Rs = $self->_ResultSet;
 	my $count = $Rs->count;
 	
 	return $Rs->first if ($count == 1);

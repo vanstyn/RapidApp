@@ -219,17 +219,8 @@ sub prepare_controller {
 This method handles a request.
 
 =cut
-
-# new available API accessor: tracks the extra/leftover arguments in the current request
-# in a global/localized variable. This is needed for new RESTful logic/processing.
-# TODO: come up with a better, less lazy/hackish way to do this
-sub local_args { @{(shift)->local_args_attr} }
-has 'local_args_attr', is => 'ro', isa => 'ArrayRef', traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ], default => sub {[]};
 sub Controller {
 	my ($self, $c, @args) = @_;
-	
-	# track the current argument list in a localized global for easy access:
-	@{$self->local_args_attr} = @args;
 	
 	# base_url has been set by the Module function in the process of getting this module, or it will default to c->namespace
 	# 'c' is now a function that pulls from ScopedGlobals
@@ -245,12 +236,24 @@ sub Controller {
 	
 	# dispatch the request to the appropriate handler
 	
-	$self->c->log->info('--> ' . GREEN . BOLD . ref($self) . CLEAR . '  ' . join(' . ',@args));
-	
+	$self->c->log->debug('--> ' . 
+		GREEN.BOLD . ref($self) . CLEAR . '  ' . 
+		GREEN . join('/',@args) . CLEAR
+	);
+
 	$self->controller_dispatch(@args);
 }
 
+sub local_args {
+	my $self = shift;
+	my $path = '/' . $self->c->req->path;
+	my $base = quotemeta($self->base_url . '/');
+	$path =~ /^${base}(.+$)/;
+	my $argpath = $1 || '';
+	return split('/',$argpath);
+}
 
+# is this being used anyplace??
 sub clear_attributes {
 	my $self = shift;
 	for my $attr ($self->meta->get_all_attributes) {
@@ -290,44 +293,44 @@ Else, content is called, and its return value is passed to render_data.
 =back
 
 =cut
+
 sub controller_dispatch {
 	my ($self, $opt, @subargs)= @_;
 	
-	if ( defined $opt and $self->has_action($opt) ) {
-		return $self->process_action($opt,@subargs);
-	}
-	elsif (defined $opt and $self->_load_module($opt)) {
-		return $self->Module($opt)->Controller($self->c,@subargs);
-	}
-	elsif (defined $self->default_action) {
-		return $self->process_action($self->default_action,@_);
-	}
-	else {
-		my $ct= $self->c->stash->{requestContentType};
-		# if there were unprocessed arguments which were not an action, and there was no default action, generate a 404
-		# UPDATE: unless new 'accept_subargs' attr is true (see attribute declaration above)
-		if (defined $opt && !$self->accept_subargs) {
-			$self->c->log->info("--> " . RED . BOLD . "unknown action: $opt" . CLEAR);
-			if ($ct eq 'text/x-RapidApp-FormSubmitResponse'
-				|| $ct eq 'JSON'
-			) {
-				die RapidApp::Role::Controller::UnknownAction->new(message => "Unknown module or action '$opt'", unknown_arg => $opt);
-			}
-			else {
-				$self->c->stash->{current_view} = 'RapidApp::HttpStatus';
-				$self->c->res->status(404);
-				return 1;
-			}
-		}
-		elsif ($ct ne 'JSON' && $ct ne 'text/x-rapidapp-form-response' && $self->auto_web1) {
-			$self->c->log->info("--> " . GREEN . BOLD . "[web1_content]" . CLEAR . ". (no action)");
-			return $self->web1_content;
+	return $self->Module($opt)->Controller($self->c,@subargs)
+		if ($opt && !$self->has_action($opt) && $self->_load_module($opt));
+		
+	return $self->process_action($opt,@subargs)
+		if ($opt && $self->has_action($opt));
+		
+	return $self->process_action($self->default_action,@_)
+		if (defined $self->default_action);
+	
+	my $ct= $self->c->stash->{requestContentType};
+	# if there were unprocessed arguments which were not an action, and there was no default action, generate a 404
+	# UPDATE: unless new 'accept_subargs' attr is true (see attribute declaration above)
+	if (defined $opt && !$self->accept_subargs) {
+		$self->c->log->debug("--> " . RED . BOLD . "unknown action: $opt" . CLEAR);
+		if ($ct eq 'text/x-RapidApp-FormSubmitResponse'
+			|| $ct eq 'JSON'
+		) {
+			die RapidApp::Role::Controller::UnknownAction->new(message => "Unknown module or action '$opt'", unknown_arg => $opt);
 		}
 		else {
-			$self->c->log->info("--> " . GREEN . BOLD . "[content]" . CLEAR . ". (no action)");
-			return $self->render_data($self->content);
+			$self->c->stash->{current_view} = 'RapidApp::HttpStatus';
+			$self->c->res->status(404);
+			return 1;
 		}
 	}
+	elsif ($ct ne 'JSON' && $ct ne 'text/x-rapidapp-form-response' && $self->auto_web1) {
+		$self->c->log->debug("--> " . GREEN . BOLD . "[web1_content]" . CLEAR . ". (no action)");
+		return $self->web1_content;
+	}
+	else {
+		$self->c->log->debug("--> " . GREEN . BOLD . "[content]" . CLEAR . ". (no action)");
+		return $self->render_data($self->content);
+	}
+	
 }
 
 =head2 process_action( $actionName, [optional @args] )
@@ -341,16 +344,23 @@ sub process_action {
 	my $self = shift;
 	my ( $opt, @args ) = @_;
 	
-	$self->c->log->info("--> " . GREEN . BOLD . "action{ " . $opt . " }" . CLEAR);
+	die "No action specified" unless ($opt);
 	
-	defined $opt or die "No action specified";
+	$self->c->log->debug('--> ' . 
+		GREEN.BOLD . ref($self) . CLEAR . '  ' . 
+		GREEN . "action{ " . $opt . " }" . CLEAR . '  ' . 
+		GREEN . join('/',@args) . CLEAR
+	);
 	
-	my $coderef = $self->get_action($opt);
-	defined $coderef or die "No action named $opt";
+	my $coderef = $self->get_action($opt) or die "No action named $opt";
 	
-	# New: if $coderef is not actually a coderef, we assume its a string representing an 
+	# If $coderef is not actually a coderef, we assume its a string representing an 
 	# object method and we call it directly:
-	return $self->render_data( ref($coderef) eq 'CODE'? $coderef->($self,@args) : $self->$coderef(@args) );
+	return $self->render_data( 
+		ref($coderef) eq 'CODE' ? 
+			$coderef->($self,@args) : 
+				$self->$coderef(@args) 
+	);
 }
 
 =head2 render_data( $data )

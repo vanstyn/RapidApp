@@ -61,6 +61,7 @@ has 'quicksearch_mode', is => 'ro', isa => 'Str', default => 'like';
 # database/schema order, otherwise, order is based on the include_colspec
 has 'natural_column_order', is => 'ro', isa => 'Bool', default => 1;
 
+has 'allow_restful_queries', is => 'ro', isa => 'Bool', default => 1;
 
 has 'ResultSource' => (
 	is => 'ro',
@@ -81,6 +82,9 @@ sub baseResultSet {
 sub _ResultSet {
 	my $self = shift;
 	my $Rs = $self->baseResultSet(@_);
+	
+	# the order of when this is called is vitally important:
+	$self->prepare_rest_request;
 	
 	if($self->c->req->params->{rest_query}) {
 		my ($key,$val) = split(/\//,$self->c->req->params->{rest_query},2);
@@ -210,23 +214,20 @@ sub record_pk_cond {
 
 
 # --- Handle RESTful URLs - convert 'id/1234' into '?___record_pk=1234'
-has 'allow_restful_queries', is => 'ro', isa => 'Bool', default => 1;
 has 'restful_record_pk_alias', is => 'ro', isa => 'Str', default => 'id';
 sub prepare_rest_request {
 	my $self = shift;
 	return unless ($self->allow_restful_queries);
 	
 	my @args = $self->local_args;
-	my $key = shift @args or return;
+	my $key = lc($args[0]) or return;
+	my $val = $args[1] or return;
 	
 	# Ignore paths that are submodules or actions:
-	return if (exists $self->modules_obj->{$key} || $self->get_action($key));
+	return if (exists $self->modules_obj->{$key} || $self->has_action($key));
 	
-	die usererr "Incorrect number of args in RESTful URL (" . join('/',$key,@args) . ") - should be 2 (i.e. 'id/1234')" 
-		unless (scalar @args == 1);
-	
-	my $val = shift @args;
-	$key = lc($key);
+	die usererr "Too many args in RESTful URL (" . join('/',@args) . ") - should be 2 (i.e. 'id/1234')"
+		if(scalar @args > 2);
 	
 	# Apply default tabTitle:
 	$self->apply_extconfig( tabTitle => $key . '/' . $val );
@@ -253,8 +254,7 @@ sub DbicLink_around_BUILD {
 	# -- RESTful URLs --
 	if ($self->allow_restful_queries) {
 		$self->accept_subargs(1);
-		$self->add_ONCONTENT_calls('prepare_rest_request');
-		$self->DataStore->add_base_keys('rest_query');
+		$self->DataStore->add_base_keys('rest_query'); #<-- this makes DataStore add the key to baseParams
 	};
 	# --
 	
