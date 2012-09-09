@@ -5537,7 +5537,7 @@ Ext.ux.RapidApp.DbicSingleRelationshipColumnRender = function(c) {
 	};
 	
 	// New, simple RESTful hashpath URL/link:
-	var url = '#!' + c.open_url + '/id/' + c.value;
+	var url = '#!' + c.open_url + '/___record_pk/' + c.value;
 	return disp + "&nbsp;" + Ext.ux.RapidApp.inlineLink(
 		//"#loadcfg:" + Ext.urlEncode({data: Ext.encode(loadCfg)}),
 		url,
