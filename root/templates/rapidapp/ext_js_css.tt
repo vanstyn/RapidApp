@@ -145,3 +145,8 @@
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp/AppDV.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/ErrorTrace.js"></script>
+
+[% TRY %]
+  [% INCLUDE templates/local_js_css.tt %]
+[% CATCH %]
+[% END %]
