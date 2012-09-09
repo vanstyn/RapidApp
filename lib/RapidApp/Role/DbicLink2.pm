@@ -88,7 +88,16 @@ sub _ResultSet {
 	
 	if($self->c->req->params->{rest_query}) {
 		my ($key,$val) = split(/\//,$self->c->req->params->{rest_query},2);
-		$key = 'me.' . $key unless ($key =~ /\./);
+		if ($key =~ /\./) {
+			# if there is a '.' in the key name, assume it means 'rel.col', and
+			# try to add the join for 'rel':
+			my ($rel) = split(/\./,$key,2);
+			$Rs = $Rs->search_rs(undef,{ join => $rel }) 
+				if ($self->ResultSource->has_relationship($rel));
+		}
+		else {
+			$key = 'me.' . $key;
+		}
 		$Rs = $Rs->search_rs({ $key => $val });
 	}
 
