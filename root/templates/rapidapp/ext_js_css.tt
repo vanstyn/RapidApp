@@ -1,7 +1,4 @@
-﻿<!-- default favicon -->
-<link rel="icon" href="/static/rapidapp/images/rapidapp_icon_small.ico" type="image/x-icon" />
-
-<link rel="stylesheet" type="text/css" href="/static/ext/resources/css/ext-all.css" />
+﻿<link rel="stylesheet" type="text/css" href="/static/ext/resources/css/ext-all.css" />
 <link rel="stylesheet" type="text/css" href="/static/ext/resources/css/xtheme-gray.css" />
 
 
@@ -146,7 +143,11 @@
 <script type="text/javascript" src="/static/rapidapp/js/RapidApp/AppDV.js"></script>
 <script type="text/javascript" src="/static/rapidapp/js/ErrorTrace.js"></script>
 
+<!-- default favicon -->
+[% SET favicon = '/static/rapidapp/images/rapidapp_icon_small.ico' %]
 [% TRY %]
-  [% INCLUDE templates/local_js_css.tt %]
+  [% PROCESS templates/local_js_css.tt %]
 [% CATCH %]
 [% END %]
+
+<link rel="icon" href="[% favicon %]" type="image/x-icon" />
