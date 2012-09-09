@@ -241,8 +241,6 @@ sub prepare_rest_request {
 		my $rest_key_column = try{$self->ResultClass->TableSpec_get_conf('rest_key_column')};
 		$key = $rest_key_column || $self->record_pk;
 	}
-	
-	scream($key,$val);
 
 	die usererr "Too many args in RESTful URL (" . join('/',@args) . ") - should be 2 (i.e. 'id/1234')"
 		if(scalar @args > 2);
@@ -250,16 +248,21 @@ sub prepare_rest_request {
 	# Apply default tabTitle:
 	$self->apply_extconfig( tabTitle => ($key eq $self->record_pk ? 'Id' : $key ) . '/' . $val );
 	
-	# Special handling for the record_pk itself, convert into a query param:
-	if($key eq $self->record_pk) {
-		# TODO: currently, this is only interpreted by DbicAppPropertyPage, needs generalized
-		# and pulled into here (DbicLink2) like rest_query below:
-		$self->c->req->params->{$self->record_pk} = $val;
-	}
-	else {
-		# create a one-off condition:
-		$self->c->req->params->{rest_query} = $key . '/' . $val;
-	}
+	# ---
+	# Update both the params of the active request, in place, as well as updating the baseParams
+	# of the store for the subsequent read request:
+	# TODO: '___record_pk' and 'rest_query' params are handled in different places in the subsequent
+	# read request. '___record_pk' pre-dates the REST functionality and is only handled in DbicAppPropertyPage
+	# (see the req_Row and and supplied_id methods in that class) while 'rest_query' is handled by
+	# all modules with the DbicLink2 role. Need to consolidate these in DbicLink2 so this all happens in 
+	# the same place
+	my $params = $key eq $self->record_pk ? { $key => $val } : { rest_query => $key . '/' . $val };
+	%{$self->c->req->params} = ( %{$self->c->req->params}, %$params );
+	my $baseParams = $self->DataStore->get_extconfig_param('baseParams') || {};
+	%$baseParams = ( %$baseParams, %$params );
+	$self->DataStore->apply_extconfig( baseParams => $baseParams );
+	# ---
+	
 }
 # ---
 
@@ -271,13 +274,7 @@ sub DbicLink_around_BUILD {
 	
 	die "FATAL: DbicLink and DbicLink2 cannot both be loaded" if ($self->does('RapidApp::Role::DbicLink'));
 	
-	# -- RESTful URLs --
-	if ($self->allow_restful_queries) {
-		$self->accept_subargs(1);
-		$self->DataStore->add_base_keys('rest_query'); #<-- this makes DataStore add the key to baseParams
-		$self->DataStore->add_base_keys($self->record_pk);
-	};
-	# --
+	$self->accept_subargs(1) if ($self->allow_restful_queries);
 	
 	# Disable editing on columns that aren't updatable:
 	#$self->apply_except_colspec_columns($self->TableSpec->updatable_colspec => {
