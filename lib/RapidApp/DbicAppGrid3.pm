@@ -30,9 +30,12 @@ sub BUILD {
 	push @{$self->always_fetch_columns}, $self->open_record_rest_key
 		if ($self->open_record_rest_key);
 	
-	# Defaults: only applicable items will actually be added:
-	#$self->apply_extconfig( store_buttons => [ 'add', 'delete', 'reload', 'save', 'undo' ]);
 }
+
+has '+open_record_rest_key', default => sub {
+	my $self = shift;
+	return try{$self->ResultClass->TableSpec_get_conf('rest_key_column')};
+};
 
 
 #### --------------------- ####
