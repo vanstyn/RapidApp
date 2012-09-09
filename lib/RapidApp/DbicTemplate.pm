@@ -15,6 +15,8 @@ has 'tt_file', is => 'ro', isa => 'Str', required => 1;
 # if true, page will be wrapped into a tab panel with an extra "Data" tab (RapidApp::DbicAppPropertyPage)
 has 'tabify_data', is => 'ro', isa => 'Bool', default => 0;
 
+has '+allow_restful_queries', default => 1;
+
 sub BUILD {
 	my $self = shift;
 	
@@ -33,6 +35,7 @@ sub BUILD {
 				get_ResultSet => $self->get_ResultSet, 
 				TableSpec => $self->TableSpec,
 				include_colspec => $self->include_colspec,
+				allow_restful_queries => $self->allow_restful_queries
 			}
 		});
 	}

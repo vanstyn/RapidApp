@@ -777,7 +777,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		
 		if(!val) { throw 'rest_open_record(): failed to identify Record value!'; }
 		
-		var hashpath = '#!' + this.open_record_url + '/' + key + '/' + val;
+		//var hashpath = '#!' + this.open_record_url + '/' + key + '/' + val;
+		var hashpath = '#!' + this.open_record_url + '/' + val;
 		window.location.hash = hashpath;
 	},
 	

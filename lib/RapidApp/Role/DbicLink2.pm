@@ -61,7 +61,7 @@ has 'quicksearch_mode', is => 'ro', isa => 'Str', default => 'like';
 # database/schema order, otherwise, order is based on the include_colspec
 has 'natural_column_order', is => 'ro', isa => 'Bool', default => 1;
 
-has 'allow_restful_queries', is => 'ro', isa => 'Bool', default => 1;
+has 'allow_restful_queries', is => 'ro', isa => 'Bool', default => 0;
 
 has 'ResultSource' => (
 	is => 'ro',
@@ -223,26 +223,29 @@ sub record_pk_cond {
 
 
 # --- Handle RESTful URLs - convert 'id/1234' into '?___record_pk=1234'
-has 'restful_record_pk_alias', is => 'ro', isa => 'Str', default => 'id';
+#has 'restful_record_pk_alias', is => 'ro', isa => 'Str', default => '_id';
 sub prepare_rest_request {
 	my $self = shift;
 	return unless ($self->allow_restful_queries);
 	
 	my @args = $self->local_args;
 	my $key = lc($args[0]) or return;
-	my $val = $args[1] or return;
+	my $val = $args[1];
 	
 	# Ignore paths that are submodules or actions:
 	return if (exists $self->modules_obj->{$key} || $self->has_action($key));
 	
+	# if there was only 1 argument, treat it as the value and set the default key/pk:
+	($key,$val) = ($self->record_pk,$args[0]) unless ($val);
+
 	die usererr "Too many args in RESTful URL (" . join('/',@args) . ") - should be 2 (i.e. 'id/1234')"
 		if(scalar @args > 2);
 	
 	# Apply default tabTitle:
-	$self->apply_extconfig( tabTitle => $key . '/' . $val );
+	$self->apply_extconfig( tabTitle => ($key eq $self->record_pk ? 'Id' : $key ) . '/' . $val );
 	
 	# Special handling for the record_pk itself, convert into a query param:
-	if($key eq $self->record_pk || $key eq $self->restful_record_pk_alias) {
+	if($key eq $self->record_pk) {
 		$self->c->req->params->{$self->record_pk} = $val;
 	}
 	else {

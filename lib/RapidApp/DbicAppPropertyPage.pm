@@ -41,8 +41,7 @@ has 'exclude_grids_relationships_map', is => 'ro', lazy => 1, isa => 'HashRef', 
 
 has 'setup_multi_grids', is => 'ro', isa => 'Bool', default => 1;
 
-# now default on in DbicLink2:
-#has '+allow_restful_queries', default => 1;
+has '+allow_restful_queries', default => 1;
 
 #has '+DataStore_build_params' => ( default => sub {{
 #	store_autoLoad => 1,
