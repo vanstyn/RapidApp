@@ -236,7 +236,13 @@ sub prepare_rest_request {
 	return if (exists $self->modules_obj->{$key} || $self->has_action($key));
 	
 	# if there was only 1 argument, treat it as the value and set the default key/pk:
-	($key,$val) = ($self->record_pk,$args[0]) unless ($val);
+	unless ($val) {
+		$val = $args[0];
+		my $rest_key_column = try{$self->ResultClass->TableSpec_get_conf('rest_key_column')};
+		$key = $rest_key_column || $self->record_pk;
+	}
+	
+	scream($key,$val);
 
 	die usererr "Too many args in RESTful URL (" . join('/',@args) . ") - should be 2 (i.e. 'id/1234')"
 		if(scalar @args > 2);
@@ -246,6 +252,8 @@ sub prepare_rest_request {
 	
 	# Special handling for the record_pk itself, convert into a query param:
 	if($key eq $self->record_pk) {
+		# TODO: currently, this is only interpreted by DbicAppPropertyPage, needs generalized
+		# and pulled into here (DbicLink2) like rest_query below:
 		$self->c->req->params->{$self->record_pk} = $val;
 	}
 	else {
@@ -267,6 +275,7 @@ sub DbicLink_around_BUILD {
 	if ($self->allow_restful_queries) {
 		$self->accept_subargs(1);
 		$self->DataStore->add_base_keys('rest_query'); #<-- this makes DataStore add the key to baseParams
+		$self->DataStore->add_base_keys($self->record_pk);
 	};
 	# --
 	
