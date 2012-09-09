@@ -184,32 +184,37 @@ has 'req_Row', is => 'ro', lazy => 1, traits => [ 'RapidApp::Role::PerRequestBui
 	$idErr = "'" . $self->c->req->params->{rest_query} . "'"
 		if (!$supId && $self->c->req->params->{rest_query});
 	
-	if(!$count) {
-		$self->apply_extconfig(
-			tabTitle 	=> 'Record not found',
-			tabIconCls 	=> 'icon-cancel'
-		);
-		$self->apply_extconfig( items => [{
-			html => '<div class="ra-autopanel-error">' .
-				'<div class="ra-exception-heading">Record not found</div>' .
-				'<div class="msg">Record not found by ' . $idErr . '</div>' .
-			'</div>'
-		}]);
-	}
-	else {
-		$self->apply_extconfig(
-			tabTitle 	=> 'Multiple records match',
-			tabIconCls 	=> 'icon-cancel'
-		);
-		$self->apply_extconfig( items => [{
-			html => '<div class="ra-autopanel-error">' .
-				'<div class="ra-exception-heading">Multiple records match</div>' .
-				'<div class="msg">' . $count . ' records match ' . $idErr . '</div>' .
-			'</div>'
-		}]);
-	}
+	die usererr 'Record not found by ' . $idErr, title => 'Record not found'
+		unless ($count);
 	
-	return undef;
+	die usererr $count . ' records match ' . $idErr , title => 'Multiple records match';
+	
+	#if(!$count) {
+	#	$self->apply_extconfig(
+	#		tabTitle 	=> 'Record not found',
+	#		tabIconCls 	=> 'icon-cancel'
+	#	);
+	#	$self->apply_extconfig( items => [{
+	#		html => '<div class="ra-autopanel-error">' .
+	#			'<div class="ra-exception-heading">Record not found</div>' .
+	#			'<div class="msg">Record not found by ' . $idErr . '</div>' .
+	#		'</div>'
+	#	}]);
+	#}
+	#else {
+	#	$self->apply_extconfig(
+	#		tabTitle 	=> 'Multiple records match',
+	#		tabIconCls 	=> 'icon-cancel'
+	#	);
+	#	$self->apply_extconfig( items => [{
+	#		html => '<div class="ra-autopanel-error">' .
+	#			'<div class="ra-exception-heading">Multiple records match</div>' .
+	#			'<div class="msg">' . $count . ' records match ' . $idErr . '</div>' .
+	#		'</div>'
+	#	}]);
+	#}
+	#
+	#return undef;
 };
 
 sub apply_items_config {
