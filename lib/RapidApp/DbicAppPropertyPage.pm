@@ -174,16 +174,17 @@ has 'req_Row', is => 'ro', lazy => 1, traits => [ 'RapidApp::Role::PerRequestBui
 #sub req_Row {
 	my $self = shift;
 	
+	my $supId = $self->supplied_id;
+	die usererr "Record Id not supplied in request", title => 'Id not supplied'
+		unless ($supId || $self->c->req->params->{rest_query});
+	
 	my $Rs = $self->_ResultSet;
 	my $count = $Rs->count;
 	
 	return $Rs->first if ($count == 1);
 	
-	my $supId = $self->supplied_id;
-	my $idErr = "id: '$supId'";
-	$idErr = "'" . $self->c->req->params->{rest_query} . "'"
-		if (!$supId && $self->c->req->params->{rest_query});
-	
+	my $idErr = $supId ? "id: '$supId'" : "'" . $self->c->req->params->{rest_query} . "'";
+
 	die usererr 'Record not found by ' . $idErr, title => 'Record not found'
 		unless ($count);
 	
