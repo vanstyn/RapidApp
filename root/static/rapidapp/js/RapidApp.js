@@ -1998,6 +1998,16 @@ Ext.override(Ext.Container, {
 
 
 Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
+
+	setTitle: function() {
+		Ext.ux.AutoPanel.superclass.setTitle.apply(this,arguments);
+		
+		// If our owner is the RapidApp 'main-load-target' TabPanel, this will
+		// update the browser title
+		if(this.ownerCt && Ext.isFunction(this.ownerCt.applyTabTitle)) {
+			this.ownerCt.applyTabTitle();
+		}
+	},
 	
 	// Override Ext.Component.getId() auto id generation
 	getId : function(){

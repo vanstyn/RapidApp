@@ -27,6 +27,7 @@ Ext.ux.RapidApp.HistoryInit = function() {
 Ext.ux.RapidApp.HashNav = {
 	
 	INIT_LOCATION_HASH: window.location.hash,
+	INIT_TITLE: document.title,
 	ignoreHashChange: false,
 	
 	hashpath_to_autoLoad: function(hashpath) {
@@ -196,6 +197,15 @@ Ext.ux.RapidApp.HashNav = {
 		// normal GET/POST browser submit operation (but we also called
 		// e.preventDefault() first, so this isn't also needed)
 		return false;
+	},
+	
+	updateTitle: function(title) {
+		if(!title || !Ext.isString(title) || title.search(/[\w\s\-]+$/) == -1) {
+			document.title = Ext.ux.RapidApp.HashNav.INIT_TITLE;
+		}
+		else {
+			document.title = title + ' - ' + Ext.ux.RapidApp.HashNav.INIT_TITLE;
+		}
 	}
 };
 

@@ -42,6 +42,14 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 	layoutOnTabChange: true,
 	enableTabScroll: true,
 	useContextMenu: true,
+	
+	applyTabTitle: function() {
+		if(this.id == 'main-load-target'){
+			var tab = this.getActiveTab();
+			var title = tab ? tab.title : null;
+			Ext.ux.RapidApp.HashNav.updateTitle(title);
+		}
+	},
 
 	initComponent: function() {
 		
@@ -81,6 +89,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 				
 				this.on('tabchange',function(tp,tab) {
 					Ext.ux.RapidApp.HashNav.setHashpath(tab.autoLoad);
+					this.applyTabTitle();
 				},this);
 			},this);
 		}
