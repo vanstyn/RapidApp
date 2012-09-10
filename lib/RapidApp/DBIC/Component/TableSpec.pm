@@ -209,6 +209,8 @@ sub apply_TableSpec {
 	$self->TableSpec_cnf({});
 	$self->TableSpec_built_cnf(undef);
 	
+	$self->apply_row_methods();
+	
 	# Just doing this to ensure we're initialized:
 	$self->TableSpec_set_conf( apply_TableSpec_timestamp => time );
 	
@@ -872,67 +874,119 @@ sub proxy_method_get_changed {
 }
 
 
-
-
-### Util functions: to be called in Row-object context
-
-sub getDisplayValue {
-	my $self = shift;
-	my $display_column = $self->TableSpec_get_conf('display_column') || return undef;
-	return $self->get_column($display_column);
-}
-
-## TODO: this is duplicate logic from DbicLink2, and could possibly conflict. DbicLink2
-## should be getting this info from here instead of defining it within itself. See record_pk
-## and primary_columns_sep in DbicLink2
-sub getRecordPkValue {
-	my $self = shift;
-	my @pk_vals = map { $self->get_column($_) } $self->primary_columns;
-	return "'" . join('~$~',@pk_vals) . "'";
-}
-
 sub getOpenUrl {
 	my $self = shift;
 	return $self->TableSpec_get_conf('open_url');
 }
 
-## This function creates links just like the JavaScript function Ext.ux.RapidApp.inlineLink
-use URI::Escape;
-sub inlineNavLink {
-	my $self = shift;
-	my $text = shift || '<span>open</span>';
-	my %attrs = ( class => "magnify-link-tiny", @_ );
-	my $loadCfg = delete $attrs{loadCfg} || {};
+### Util functions: to be called in Row-object context
+sub apply_row_methods {
+	my $class = shift;
 	
-	my $title = $self->getDisplayValue || return undef;
-	my $url = $self->getOpenUrl || return undef;
-	my $pk_val = $self->getRecordPkValue || return undef;
+	my %RowMethods = (
 	
-	$loadCfg = merge({
-		title => $title,
-		autoLoad => {
-			url => $url,
-			params => { '___record_pk' => $pk_val }
+		getRecordPkValue => sub {
+			my $self = shift;
+			my @pk_vals = map { $self->get_column($_) } $self->primary_columns;
+			return join('~$~',@pk_vals);
+		},
+		
+		getRestKeyVal => sub {
+			my $self = shift;
+			my $rest_key_col = $class->TableSpec_get_conf('rest_key_column');
+			return $self->get_column($rest_key_col) if ($self->has_column($rest_key_col));
+			return $self->getRecordPkValue;
+		},
+		
+		getRestPath => sub {
+			my $self = shift;
+			my $url = $class->getOpenUrl or return undef;
+			my $val = $self->getRestKeyVal or return undef;
+			return "$url/$val";
+		},
+	
+		getDisplayValue => sub {
+			my $self = shift;
+			my $display_column = $class->TableSpec_get_conf('display_column');
+			return $self->get_column($display_column) if ($self->has_column($display_column));
+			return $self->getRecordPkValue;
+		},
+		
+		inlineNavLink => sub {
+			my $self = shift;
+			my $text = shift || '<span>open</span>';
+			my %attrs = ( class => "magnify-link-tiny", @_ );
+
+			my $title = $self->getDisplayValue or return undef;
+			my $url = $self->getRestPath or return undef;
+			
+			%attrs = (
+				href => '#!' . $url,
+				title => $title,
+				%attrs
+			);
+			
+			my $attr_str = join(' ',map { $_ . '="' . $attrs{$_} . '"' } keys %attrs);
+			return '<a ' . $attr_str . '>' . $text . '</a>';
+		},
+
+		displayWithLink => sub {
+			my $self = shift;
+			return $self->getDisplayValue . ' ' . $self->inlineNavLink;
 		}
-	},$loadCfg);
-	
-	my $href = '#loadcfg:data=' . uri_escape(encode_json($loadCfg));
-	my $onclick = 'return Ext.ux.RapidApp.InlineLinkHandler.apply(this,arguments);';
-	
-	%attrs = (
-		href => $href,
-		onclick => $onclick,
-		ondblclick => $onclick,
-		title => $title,
-		%attrs
 	);
 	
-	my $attr_str = join(' ',map { $_ . '="' . $attrs{$_} . '"' } keys %attrs);
-	
-	return '<a ' . $attr_str . '>' . $text . '</a>';
-
+	# --- Actualize/load methods into the Row object namespace:
+	foreach my $meth (keys %RowMethods) {
+		my $meth_name = join '::', $class, $meth;
+		*$meth_name = subname $meth_name => $RowMethods{$meth};
+	}
+	# ---
 }
 
+
+
+
+
+
+### -- old, pre-rest inlineNavLink:
+## This function creates links just like the JavaScript function Ext.ux.RapidApp.inlineLink
+#use URI::Escape;
+#sub inlineNavLink {
+#	my $self = shift;
+#	my $text = shift || '<span>open</span>';
+#	my %attrs = ( class => "magnify-link-tiny", @_ );
+#	my $loadCfg = delete $attrs{loadCfg} || {};
+#	
+#	my $title = $self->getDisplayValue || return undef;
+#	my $url = $self->getOpenUrl || return undef;
+#	my $pk_val = $self->getRecordPkValue || return undef;
+#	
+#	$loadCfg = merge({
+#		title => $title,
+#		autoLoad => {
+#			url => $url,
+#			params => { '___record_pk' => $pk_val }
+#		}
+#	},$loadCfg);
+#	
+#	my $href = '#loadcfg:data=' . uri_escape(encode_json($loadCfg));
+#	my $onclick = 'return Ext.ux.RapidApp.InlineLinkHandler.apply(this,arguments);';
+#	
+#	%attrs = (
+#		href => $href,
+#		onclick => $onclick,
+#		ondblclick => $onclick,
+#		title => $title,
+#		%attrs
+#	);
+#	
+#	my $attr_str = join(' ',map { $_ . '="' . $attrs{$_} . '"' } keys %attrs);
+#	
+#	return '<a ' . $attr_str . '>' . $text . '</a>';
+#
+#}
+#
 
 
 1;
