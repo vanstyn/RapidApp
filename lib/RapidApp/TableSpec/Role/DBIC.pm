@@ -1470,6 +1470,7 @@ sub get_relationship_column_cnf {
 	$conf->{no_fetch} = 1 unless ($is_also_local_col);
 	# ---
 	
+	
 	$conf = { %$conf, 
 		
 		#no_quick_search => \1,
@@ -1484,8 +1485,28 @@ sub get_relationship_column_cnf {
 		
 		read_raw_munger => RapidApp::Handler->new( code => $read_raw_munger ),
 		#update_munger => RapidApp::Handler->new( code => $update_munger ),
-		
-		renderer => jsfunc(
+	};
+	
+	my $cur_renderer = $conf->{renderer};
+	
+	# NEW: use simpler DbicRelRestRender to generate a REST link. Check to make sure
+	# the relationship references the *single* primary column of the related row
+	my $use_rest = 1; #<-- simple toggle var
+	my $cond_data = $self->ResultClass->parse_relationship_cond($info->{cond});
+	my $pk = join('~$~',$Source->primary_columns);
+	if ($use_rest && $pk eq $cond_data->{foreign} && $conf->{open_url}) {
+		$conf->{renderer} = jsfunc(
+			'function(value, metaData, record) { return Ext.ux.RapidApp.DbicRelRestRender({' .
+				'value:value,record:record,' .
+				'key_col: "' . $key_col . '",' .
+				'render_col: "' . $render_col . '",' .
+				'open_url: "' . $conf->{open_url} . '"' .
+			'})}',$cur_renderer
+		);
+	}
+	# Fall back to the older loadCnf inlineLink:
+	else {
+		$conf->{renderer} = jsfunc(
 			'function(value, metaData, record, rowIndex, colIndex, store) {' .
 				'return Ext.ux.RapidApp.DbicSingleRelationshipColumnRender({' .
 					'value:value,metaData:metaData,record:record,rowIndex:rowIndex,colIndex:colIndex,store:store,' .
@@ -1494,9 +1515,9 @@ sub get_relationship_column_cnf {
 					'upd_key_col: "' . $upd_key_col . '"' .
 					( $conf->{open_url} ? ",open_url: '" . $conf->{open_url} . "'" : '' ) .
 				'});' .
-			'}', $conf->{renderer}
-		)
-	};
+			'}', $cur_renderer
+		);
+	}
 	
 	
 	############# ---

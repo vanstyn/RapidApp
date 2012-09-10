@@ -5488,6 +5488,34 @@ Ext.ux.RapidApp.num2pct = function(num) {
 	return num;
 }
 
+Ext.ux.RapidApp.DbicRelRestRender = function(c) {
+	var disp = c.record.data[c.render_col];
+	var key_value = c.record.data[c.key_col];
+
+	if(!c.value) { 
+		if(!disp && !key_value) {
+			// If everything is unset, including the key_col value itself,
+			// we render like a normal empty value. It is only when the 
+			// key_col is set but the value/disp is not (indicating a broken
+			// or missing link/relationship) that we want to render the special 
+			// "unavailable" string (see the following code block) -- SEE UPDATED
+			// NOTE BELOW
+			return Ext.ux.showNull(key_value);
+		}
+		c.value = key_value; 
+	}
+	
+	if(!c.value)		{ return disp; }
+	if(!disp) 			{ return c.value; }
+	if(!c.open_url)	{ return disp; }
+	
+	var url = '#!' + c.open_url + '/' + c.value;
+	var link = '<a class="magnify-link-tiny" href="' + 
+		url + '" title="Open/view: ' + disp + '"><span>open</span></a>';
+	
+	return disp + '&nbsp;' + link;
+}
+
 
 Ext.ux.RapidApp.DbicSingleRelationshipColumnRender = function(c) {
 	var disp = c.record.data[c.render_col];
@@ -5535,11 +5563,10 @@ Ext.ux.RapidApp.DbicSingleRelationshipColumnRender = function(c) {
 			params: { ___record_pk: "'" + c.value + "'" } 
 		}
 	};
-	
-	// New, simple RESTful hashpath URL/link:
-	var url = '#!' + c.open_url + '/___record_pk/' + c.value;
+		
+	var url = "#loadcfg:" + Ext.urlEncode({data: Ext.encode(loadCfg)});
+
 	return disp + "&nbsp;" + Ext.ux.RapidApp.inlineLink(
-		//"#loadcfg:" + Ext.urlEncode({data: Ext.encode(loadCfg)}),
 		url,
 		"<span>open</span>",
 		"magnify-link-tiny",

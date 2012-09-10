@@ -48,6 +48,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 			var tab = tab || this.getActiveTab();
 			
 			if(tab) {
+				// disabled unfished 'tabPath' feature
 				//var load = tab.tabPath || tab.autoLoad;
 				var load = tab.autoLoad;
 				Ext.ux.RapidApp.HashNav.setHashpath(load);
@@ -57,14 +58,6 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 			Ext.ux.RapidApp.HashNav.updateTitle(title);
 		}
 	},
-	
-	//applyTabTitle: function() {
-	//	if(this.id == 'main-load-target'){
-	//		var tab = this.getActiveTab();
-	//		var title = tab ? tab.title : null;
-	//		Ext.ux.RapidApp.HashNav.updateTitle(title);
-	//	}
-	//},
 
 	initComponent: function() {
 		
@@ -304,10 +297,10 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 					if(Crc) {
 						tp.tabCrcMap[Crc] = tabId;
 					}
-					
-					//tp.applyActiveTab.call(tp);
 				}
 				*/
+				
+				tp.applyActiveTab.call(tp);
 			}
 		);
 		
