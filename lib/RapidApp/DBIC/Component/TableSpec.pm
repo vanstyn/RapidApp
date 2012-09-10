@@ -885,6 +885,8 @@ sub apply_row_methods {
 	
 	my %RowMethods = (
 	
+		getOpenUrl => sub { $class->TableSpec_get_conf('open_url') },
+	
 		getRecordPkValue => sub {
 			my $self = shift;
 			my @pk_vals = map { $self->get_column($_) } $self->primary_columns;

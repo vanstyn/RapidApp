@@ -180,47 +180,26 @@ has 'req_Row', is => 'ro', lazy => 1, traits => [ 'RapidApp::Role::PerRequestBui
 	
 	my $count = $Rs->count;
 	
-	return $Rs->first if ($count == 1);
-	
-	my $idErr = $supId ? "id: '$supId'" : "'" . $self->c->req->params->{rest_query} . "'";
+	unless ($count == 1) {
+		my $idErr = $supId ? "id: '$supId'" : "'" . $self->c->req->params->{rest_query} . "'";
 
-	die usererr 'Record not found by ' . $idErr, title => 'Record not found'
-		unless ($count);
+		die usererr 'Record not found by ' . $idErr, title => 'Record not found'
+			unless ($count);
+		
+		die usererr $count . ' records match ' . $idErr , title => 'Multiple records match';
+	}
 	
-	die usererr $count . ' records match ' . $idErr , title => 'Multiple records match';
-	
-	#if(!$count) {
-	#	$self->apply_extconfig(
-	#		tabTitle 	=> 'Record not found',
-	#		tabIconCls 	=> 'icon-cancel'
-	#	);
-	#	$self->apply_extconfig( items => [{
-	#		html => '<div class="ra-autopanel-error">' .
-	#			'<div class="ra-exception-heading">Record not found</div>' .
-	#			'<div class="msg">Record not found by ' . $idErr . '</div>' .
-	#		'</div>'
-	#	}]);
-	#}
-	#else {
-	#	$self->apply_extconfig(
-	#		tabTitle 	=> 'Multiple records match',
-	#		tabIconCls 	=> 'icon-cancel'
-	#	);
-	#	$self->apply_extconfig( items => [{
-	#		html => '<div class="ra-autopanel-error">' .
-	#			'<div class="ra-exception-heading">Multiple records match</div>' .
-	#			'<div class="msg">' . $count . ' records match ' . $idErr . '</div>' .
-	#		'</div>'
-	#	}]);
-	#}
-	#
-	#return undef;
+	return $Rs->first;
 };
 
 sub apply_items_config {
 	my $self = shift;
-	$self->apply_extconfig( items => [ $self->full_property_grid ] )
-		if($self->req_Row);
+	my $Row = $self->req_Row or return;
+	$self->apply_extconfig( items => [ $self->full_property_grid ] );
+	
+	# 'tabPath' - unfinished feature
+	#my $path = try{$Row->getRestPath} or return;
+	#$self->apply_extconfig( tabPath => $path );
 }
 
 sub multi_grids {

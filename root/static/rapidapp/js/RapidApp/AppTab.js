@@ -43,13 +43,28 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 	enableTabScroll: true,
 	useContextMenu: true,
 	
-	applyTabTitle: function() {
+	applyActiveTab: function(tp,tab) {
 		if(this.id == 'main-load-target'){
-			var tab = this.getActiveTab();
+			var tab = tab || this.getActiveTab();
+			
+			if(tab) {
+				//var load = tab.tabPath || tab.autoLoad;
+				var load = tab.autoLoad;
+				Ext.ux.RapidApp.HashNav.setHashpath(load);
+			}
+			
 			var title = tab ? tab.title : null;
 			Ext.ux.RapidApp.HashNav.updateTitle(title);
 		}
 	},
+	
+	//applyTabTitle: function() {
+	//	if(this.id == 'main-load-target'){
+	//		var tab = this.getActiveTab();
+	//		var title = tab ? tab.title : null;
+	//		Ext.ux.RapidApp.HashNav.updateTitle(title);
+	//	}
+	//},
 
 	initComponent: function() {
 		
@@ -81,16 +96,11 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 					Ext.ux.RapidApp.HashNav.handleHashChange(hash);
 				}
 				else {
-					var tab = this.getActiveTab();
-					if(tab) {
-						Ext.ux.RapidApp.HashNav.setHashpath(tab.autoLoad);
-					}
+					this.applyActiveTab();
 				}
 				
-				this.on('tabchange',function(tp,tab) {
-					Ext.ux.RapidApp.HashNav.setHashpath(tab.autoLoad);
-					this.applyTabTitle();
-				},this);
+				this.on('tabchange',this.applyActiveTab,this);
+
 			},this);
 		}
 		// --
@@ -242,9 +252,10 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		// Generate a checksum (using a crc algorithm) of the
 		// *actual* url/params of the target. This allows dynamically checking
 		// if a supplied loadContent is already open (see existTab below)
-		var tabCrc = 'tab-crc' + crc32(Ext.encode(
-			[cnf.autoLoad.url,cnf.autoLoad.params]
-		));
+		//var tabCrc = 'tab-crc' + crc32(Ext.encode(
+		//	[cnf.autoLoad.url,cnf.autoLoad.params]
+		//));
+		var tabCrc = this.getLoadCrc(cnf.autoLoad);
 		
 		// Check if this Tab is already loaded, and set active and return if it is:
 		var existTab = this.getComponent(this.tabCrcMap[tabCrc]) || 
@@ -255,14 +266,14 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		}
 		// ------------------------
 		
+		var tp = this;
+		
 		if(!cnf.cmpListeners) { cnf.cmpListeners = {}; }
 		if(!cnf.cmpListeners.beforerender) { cnf.cmpListeners.beforerender = Ext.emptyFn; }
 		cnf.cmpListeners.beforerender = Ext.createInterceptor(
 			cnf.cmpListeners.beforerender,
 			function() {
 				var tab = this.ownerCt;
-				//if(this.tabTitle) { setTitle = this.tabTitle; }
-				//if(this.tabIconCls) { setIconCls = this.tabIconCls; }
 				
 				// optional override if supplied in cnf:
 				var setTitle = cnf.tabTitle || this.tabTitle;
@@ -284,15 +295,40 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 				
 				if(setTitle) { tab.setTitle(setTitle); }
 				if(setIconCls) { tab.setIconClass(setIconCls); }
+				
+				/* 'tabPath' - unfinished feature
+				if(this.tabPath) {
+					tab.tabPath = this.tabPath;
+					var tabId = tab.itemId || tab.getId();
+					var Crc = tp.getLoadCrc(tab.tabPath);
+					if(Crc) {
+						tp.tabCrcMap[Crc] = tabId;
+					}
+					
+					//tp.applyActiveTab.call(tp);
+				}
+				*/
 			}
 		);
 		
 		var new_tab = this.add(cnf);
+		var tabId = new_tab.itemId || new_tab.getId();
 		if(tabCrc) { 
 			// Map the crc checksum to the id of the tab for lookup later (above)
-			this.tabCrcMap[tabCrc] = new_tab.itemId || new_tab.getId(); 
+			this.tabCrcMap[tabCrc] = tabId;
 		}
+		
 		return this.activate(new_tab);
+	},
+	
+	getLoadCrc: function(load) {
+		if(Ext.isString(load) || Ext.isObject(load)) {
+			var autoLoad = Ext.isString(load) ? {url:load,params:{}} : load;
+			return 'tab-crc' + crc32(Ext.encode(
+				[autoLoad.url,autoLoad.params]
+			));
+		}
+		return null;
 	},
 	
 	closeActive: function() {

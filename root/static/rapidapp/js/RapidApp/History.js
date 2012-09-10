@@ -101,9 +101,10 @@ Ext.ux.RapidApp.HashNav = {
 	},
 	
 	// Set's the hashpath without doing a nav:
-	setHashpath: function(autoLoad) {
+	setHashpath: function(load) {
+		var autoLoad = Ext.isString(load) ? {url:load,params:{}} : load;
 		var hashpath = Ext.ux.RapidApp.HashNav.autoLoad_to_hashpath(autoLoad);
-		if(hashpath) {
+		if(hashpath && window.location.hash !== hashpath) {
 			Ext.ux.RapidApp.HashNav.ignoreHashChange = true;
 			window.location.hash = hashpath;
 		}
