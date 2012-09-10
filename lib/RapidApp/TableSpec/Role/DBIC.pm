@@ -1492,15 +1492,18 @@ sub get_relationship_column_cnf {
 	# NEW: use simpler DbicRelRestRender to generate a REST link. Check to make sure
 	# the relationship references the *single* primary column of the related row
 	my $use_rest = 1; #<-- simple toggle var
-	my $cond_data = $self->ResultClass->parse_relationship_cond($info->{cond});
-	my $pk = join('~$~',$Source->primary_columns);
-	if ($use_rest && $pk eq $cond_data->{foreign} && $conf->{open_url}) {
+	my $cond_data = try{$self->ResultClass->parse_relationship_cond($info->{cond})};
+	my $rel_rest_key = try{$self->ResultSource->related_class($rel)->getRestKey};
+	if($use_rest && $cond_data && $rel_rest_key && $conf->{open_url}) {
+		# Toggle setting the 'key' arg in the link (something/1234 vs something/key/1234)
+		my $rest_key = $rel_rest_key eq $cond_data->{foreign} ? undef : $cond_data->{foreign};
 		$conf->{renderer} = jsfunc(
 			'function(value, metaData, record) { return Ext.ux.RapidApp.DbicRelRestRender({' .
 				'value:value,record:record,' .
 				'key_col: "' . $key_col . '",' .
 				'render_col: "' . $render_col . '",' .
 				'open_url: "' . $conf->{open_url} . '"' .
+				( $rest_key ? ',rest_key:"' . $rest_key . '"' : '') .
 			'})}',$cur_renderer
 		);
 	}

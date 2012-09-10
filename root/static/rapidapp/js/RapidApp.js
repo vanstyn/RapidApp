@@ -5488,10 +5488,11 @@ Ext.ux.RapidApp.num2pct = function(num) {
 	return num;
 }
 
+
 Ext.ux.RapidApp.DbicRelRestRender = function(c) {
 	var disp = c.record.data[c.render_col];
 	var key_value = c.record.data[c.key_col];
-
+	
 	if(!c.value) { 
 		if(!disp && !key_value) {
 			// If everything is unset, including the key_col value itself,
@@ -5509,11 +5510,17 @@ Ext.ux.RapidApp.DbicRelRestRender = function(c) {
 	if(!disp) 			{ return c.value; }
 	if(!c.open_url)	{ return disp; }
 	
-	var url = '#!' + c.open_url + '/' + c.value;
-	var link = '<a class="magnify-link-tiny" href="' + 
-		url + '" title="Open/view: ' + disp + '"><span>open</span></a>';
+	var url = '#!' + c.open_url + '/';
+	if(c.rest_key) { url += c.rest_key + '/'; }
+	url += c.value;
 	
-	return disp + '&nbsp;' + link;
+	return disp + "&nbsp;" + Ext.ux.RapidApp.inlineLink(
+		url,
+		"<span>open</span>",
+		"magnify-link-tiny",
+		null,
+		"Open/view: " + disp
+	);
 }
 
 

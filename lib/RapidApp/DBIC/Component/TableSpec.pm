@@ -879,6 +879,15 @@ sub getOpenUrl {
 	return $self->TableSpec_get_conf('open_url');
 }
 
+sub getRestKey {
+	my $self = shift;
+	my $rest_key_col = $self->TableSpec_get_conf('rest_key_column');
+	return $rest_key_col if ($rest_key_col && $rest_key_col ne '');
+	my @pri = $self->primary_columns;
+	return $pri[0] if ($pri[0] && scalar @pri == 1);
+	return undef;
+}
+
 ### Util functions: to be called in Row-object context
 sub apply_row_methods {
 	my $class = shift;
@@ -895,9 +904,8 @@ sub apply_row_methods {
 		
 		getRestKeyVal => sub {
 			my $self = shift;
-			my $rest_key_col = $class->TableSpec_get_conf('rest_key_column');
-			return $self->get_column($rest_key_col) if ($self->has_column($rest_key_col));
-			return $self->getRecordPkValue;
+			my $col = $class->getRestKey or return $self->getRecordPkValue;
+			return $self->get_column($col);
 		},
 		
 		getRestPath => sub {
