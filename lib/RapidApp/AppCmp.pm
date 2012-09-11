@@ -30,10 +30,10 @@ sub content {
 	# optionally apply extconfig parameters stored in the stash. This was added to support
 	# dynamic dispatch functionality such as a 'RequestMapper' Catalyst controller that might
 	# load saved searches by id or name, and might need to apply extra app/module params
-	my $apply_extconfig = try{delete $self->c->stash->{apply_extconfig}};
+	my $apply_extconfig = try{$self->c->stash->{apply_extconfig}};
 	$self->apply_extconfig( %$apply_extconfig ) if (ref($apply_extconfig) eq 'HASH');
 	# ---
-	
+
 	return $self->get_complete_extconfig;
 }
 

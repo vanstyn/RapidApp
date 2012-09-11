@@ -88,21 +88,26 @@ sub _ResultSet {
 	
 	if($self->c->req->params->{rest_query}) {
 		my ($key,$val) = split(/\//,$self->c->req->params->{rest_query},2);
-		if ($key =~ /\./) {
-			# if there is a '.' in the key name, assume it means 'rel.col', and
-			# try to add the join for 'rel':
-			my ($rel) = split(/\./,$key,2);
-			$Rs = $Rs->search_rs(undef,{ join => $rel }) 
-				if ($self->ResultSource->has_relationship($rel));
-		}
-		else {
-			$key = 'me.' . $key;
-		}
-		$Rs = $Rs->search_rs({ $key => $val });
+		$Rs = $self->chain_Rs_REST($Rs,$key,$val);
 	}
 
 	$Rs = $self->ResultSet($Rs) if ($self->can('ResultSet'));
 	return $Rs;
+}
+
+sub chain_Rs_REST {
+	my ($self,$Rs,$key,$val) = @_;
+	if ($key =~ /\./) {
+		# if there is a '.' in the key name, assume it means 'rel.col', and
+		# try to add the join for 'rel':
+		my ($rel) = split(/\./,$key,2);
+		$Rs = $Rs->search_rs(undef,{ join => $rel }) 
+			if ($self->ResultSource->has_relationship($rel));
+	}
+	else {
+		$key = 'me.' . $key;
+	}
+	return $Rs->search_rs({ $key => $val });
 }
 
 has 'get_CreateData' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default => sub {
@@ -229,6 +234,19 @@ sub prepare_rest_request {
 	return unless ($self->allow_restful_queries);
 	
 	my @args = $self->local_args;
+	
+	# -- peel of the rs (resultset) args if present:
+	my $rs;
+	if(scalar @args > 2) {
+		my @rargs = reverse @args;
+		if(lc($rargs[1]) eq 'rs') {
+			$rs = pop @args;
+			pop @args;
+		}
+	}
+	# --
+	
+	
 	my $key = lc($args[0]) or return;
 	my $val = $args[1];
 	
@@ -238,12 +256,14 @@ sub prepare_rest_request {
 	# if there was only 1 argument, treat it as the value and set the default key/pk:
 	unless ($val) {
 		$val = $args[0];
-		my $rest_key_column = try{$self->ResultClass->TableSpec_get_conf('rest_key_column')};
+		my $rest_key_column = try{$self->ResultClass->getRestKey};
 		$key = $rest_key_column || $self->record_pk;
 	}
 
 	die usererr "Too many args in RESTful URL (" . join('/',@args) . ") - should be 2 (i.e. 'id/1234')"
 		if(scalar @args > 2);
+		
+	return $self->redirect_handle_rest_rs_request($key,$val,$rs) if ($rs);
 	
 	# Apply default tabTitle:
 	$self->apply_extconfig( tabTitle => ($key eq $self->record_pk ? 'Id' : $key ) . '/' . $val );
@@ -264,6 +284,45 @@ sub prepare_rest_request {
 	# ---
 	
 }
+
+sub restGetRow {
+	my ($self,$key,$val) = @_;
+	
+	my $Rs = $self->chain_Rs_REST($self->baseResultSet,$key,$val);
+	
+	# TODO: check to make sure the count == 1, replace logic in DbicAppPropertyPage
+	return $Rs->first;
+}
+
+sub redirect_handle_rest_rs_request {
+	my ($self,$key,$val,$rel) = @_;
+	
+	my $Row  = $self->restGetRow($key,$val);
+	
+	die usererr "No such relationship $rel" unless ($Row->has_relationship($rel));
+	
+	my $Source = $Row->result_source;
+	my $class = $Source->related_class($rel);
+	
+	my $url = try{$class->TableSpec_get_conf('open_url_multi')}
+		or die usererr "No path (open_url_multi) defined to render Result Class: $class";
+	
+	$self->c->stash->{apply_extconfig} = {
+		tabTitle => "[$key/$val] $rel"
+	};
+
+	%{$self->c->req->params} = (
+		base_params => $self->json->encode({ 
+			resultset_condition => $self->json->encode($Row->$rel->{attrs}->{where})
+		})
+	);
+	
+	$url =~ s/^\///; #<-- strip leading / (needed for split below)
+	my @arg_path = split(/\//,$url);
+	$self->c->detach('/approot',\@arg_path);
+}
+
+
 # ---
 
 sub BUILD {}
