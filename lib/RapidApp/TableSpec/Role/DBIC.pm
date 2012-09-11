@@ -1718,54 +1718,75 @@ sub get_multi_relationship_column_cnf {
 	#my $attrs = {};
 	#$attrs->{join} = $conf->{relationship_cond_data}->{attrs}->{join} if ($conf->{relationship_cond_data}->{attrs}->{join});
 	
-	
-	
-	$conf->{renderer} = jsfunc(
-		'function(value, metaData, record, rowIndex, colIndex, store) {' .
-			"var div_open = '$div_open';" .
-			"var disp = div_open + value + '</span>';" .
-			
-			#'var key_key = ' .
-			'var key_val = record.data["' . $self->column_prefix . $rel_data->{self} . '"];' .
-			
-			'var attr = ' . JSON::PP::encode_json($rel_data->{attrs}) . ';' .
-			
-			( # TODO: needs to be generalized better
-				$conf->{open_url_multi} ?
-					'if(key_val && value && value > 0) {' .
-						'var loadCfg = ' . JSON::PP::encode_json($loadCfg) . ';' .
-						
-						'var join_name = "' . $conf->{open_url_multi_rs_join_name} . '";' .
-						
-						'var cond = {};' .
-						'cond[join_name + ".' . $rel_data->{foreign} . '"] = key_val;' .
-						
-						#'var attr = {};' .
-						'if(join_name != "me"){ if(!attr.join) { attr.join = []; } attr.join.push(join_name); }' .
-						
-						# Fix!!!
-						'if(join_name == "me" && Ext.isArray(attr.join) && attr.join.length > 0) { join_name = attr.join[0]; }' .
-						
-						#Fix!!
-						'loadCfg.autoLoad.params.personality = join_name;' .
-						
-						'loadCfg.autoLoad.params.base_params = Ext.encode({' .
-							'resultset_condition: Ext.encode(cond),' .
-							'resultset_attr: Ext.encode(attr)' .
-						'});' .
-						
-						'var href = "#loadcfg:" + Ext.urlEncode({data: Ext.encode(loadCfg)});' .
-						'disp += "&nbsp;" + Ext.ux.RapidApp.inlineLink(' .
-							'href,"<span>open</span>","magnify-link-tiny",null,"Open/view: " + loadCfg.title' .
-						');' .
-					'}'
-				:
-					''
-			) .
-			"disp += '</span></div>';" .
-			'return disp;' .
-		'}', $conf->{renderer}
-	);
+	my $cur_renderer = $conf->{renderer};
+
+	my $use_rest = 1;
+	my $rel_rest_key = try{$self->ResultClass->getRestKey};
+	if($use_rest && $rel_rest_key) {
+		my $key_col = $rel_data->{foreign};
+		my $open_url = $self->ResultClass->TableSpec_get_conf('open_url');
+		# Toggle setting the 'key' arg in the link (something/1234/rs/rel vs something/key/1234/rs/rel)
+		my $rest_key = $rel_rest_key eq $rel_data->{self} ? undef : $rel_data->{self};
+		$conf->{renderer} = jsfunc(
+			'function(value, metaData, record) { return Ext.ux.RapidApp.DbicRelRestRender({' .
+				'value:value,record:record,' .
+				"disp: '" . $div_open . "' + value + '</span>'," .
+				'key_col: "' . $key_col . '",' .
+				'open_url: "' . $open_url . '",' .
+				'rs: "' . $rel . '"' . 
+				( $rest_key ? ',rest_key:"' . $rest_key . '"' : '') .
+			'})}',$cur_renderer
+		);
+	}
+	else {
+		# Fall back to the old thick, loadCnf inlineLink
+		$conf->{renderer} = jsfunc(
+			'function(value, metaData, record, rowIndex, colIndex, store) {' .
+				"var div_open = '$div_open';" .
+				"var disp = div_open + value + '</span>';" .
+				
+				#'var key_key = ' .
+				'var key_val = record.data["' . $self->column_prefix . $rel_data->{self} . '"];' .
+				
+				'var attr = ' . JSON::PP::encode_json($rel_data->{attrs}) . ';' .
+				
+				( # TODO: needs to be generalized better
+					$conf->{open_url_multi} ?
+						'if(key_val && value && value > 0) {' .
+							'var loadCfg = ' . JSON::PP::encode_json($loadCfg) . ';' .
+							
+							'var join_name = "' . $conf->{open_url_multi_rs_join_name} . '";' .
+							
+							'var cond = {};' .
+							'cond[join_name + ".' . $rel_data->{foreign} . '"] = key_val;' .
+							
+							#'var attr = {};' .
+							'if(join_name != "me"){ if(!attr.join) { attr.join = []; } attr.join.push(join_name); }' .
+							
+							# Fix!!!
+							'if(join_name == "me" && Ext.isArray(attr.join) && attr.join.length > 0) { join_name = attr.join[0]; }' .
+							
+							#Fix!!
+							'loadCfg.autoLoad.params.personality = join_name;' .
+							
+							'loadCfg.autoLoad.params.base_params = Ext.encode({' .
+								'resultset_condition: Ext.encode(cond),' .
+								'resultset_attr: Ext.encode(attr)' .
+							'});' .
+							
+							'var href = "#loadcfg:" + Ext.urlEncode({data: Ext.encode(loadCfg)});' .
+							'disp += "&nbsp;" + Ext.ux.RapidApp.inlineLink(' .
+								'href,"<span>open</span>","magnify-link-tiny",null,"Open/view: " + loadCfg.title' .
+							');' .
+						'}'
+					:
+						''
+				) .
+				"disp += '</span></div>';" .
+				'return disp;' .
+			'}', $cur_renderer
+		);
+	}
 	
 	
 

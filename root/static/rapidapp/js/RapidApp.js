@@ -5490,7 +5490,7 @@ Ext.ux.RapidApp.num2pct = function(num) {
 
 
 Ext.ux.RapidApp.DbicRelRestRender = function(c) {
-	var disp = c.record.data[c.render_col];
+	var disp = c.disp || c.record.data[c.render_col];
 	var key_value = c.record.data[c.key_col];
 	
 	if(!c.value) { 
@@ -5512,7 +5512,21 @@ Ext.ux.RapidApp.DbicRelRestRender = function(c) {
 	
 	var url = '#!' + c.open_url + '/';
 	if(c.rest_key) { url += c.rest_key + '/'; }
-	url += c.value;
+	
+	
+	if(c.rs) {
+		// multi-rel: no link for 0 records:
+		if(c.value == '0') { return disp; }
+		// For multi-rel. value actually only contains the count of related
+		// rows. key_value will contain the id of the row from which the rs originated
+		url += key_value + '/rs/' + c.rs; 
+	}
+	else {
+		// For single-rel
+		url += c.value;
+	}
+	
+	
 	
 	return disp + "&nbsp;" + Ext.ux.RapidApp.inlineLink(
 		url,
