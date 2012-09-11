@@ -290,7 +290,15 @@ sub restGetRow {
 	
 	my $Rs = $self->chain_Rs_REST($self->baseResultSet,$key,$val);
 	
-	# TODO: check to make sure the count == 1, replace logic in DbicAppPropertyPage
+	# TODO: currently duplicated in DbicAppPropertyPage... it should defer to here
+	my $count = $Rs->count;
+
+	die usererr "Record not found by '$key/$val'", title => 'Record not found'
+		unless ($count);
+		
+	die usererr $count . " records match '$key/$val'", title => 'Multiple records match'
+		if($count > 1);
+
 	return $Rs->first;
 }
 
@@ -310,10 +318,11 @@ sub redirect_handle_rest_rs_request {
 	$self->c->stash->{apply_extconfig} = {
 		tabTitle => "[$key/$val] $rel"
 	};
-
+	
+	my $cond = $Row->$rel->{attrs}->{where};
 	%{$self->c->req->params} = (
 		base_params => $self->json->encode({ 
-			resultset_condition => $self->json->encode($Row->$rel->{attrs}->{where})
+			resultset_condition => $self->json->encode($cond)
 		})
 	);
 	
