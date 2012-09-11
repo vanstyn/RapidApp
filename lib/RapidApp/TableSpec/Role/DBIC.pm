@@ -1719,8 +1719,9 @@ sub get_multi_relationship_column_cnf {
 	#$attrs->{join} = $conf->{relationship_cond_data}->{attrs}->{join} if ($conf->{relationship_cond_data}->{attrs}->{join});
 	
 	my $cur_renderer = $conf->{renderer};
-
-	my $use_rest = 1;
+	
+	# not fully working yet, use_rest turned off...
+	my $use_rest = 0;
 	my $rel_rest_key = try{$self->ResultClass->getRestKey};
 	if($use_rest && $rel_rest_key) {
 		my $key_col = $rel_data->{foreign};
