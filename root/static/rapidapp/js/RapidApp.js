@@ -1446,6 +1446,11 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 				{
 					text	: cfg.submitBtnText,
 					handler	: function(btn) {
+						if(cfg.disableBtn) {
+							btn.setDisabled(true);
+							btn.setText('Wait...');
+						}
+						
 						var form = Ext.getCmp(formId).getForm();
 
 						if (cfg.useSubmit) {
