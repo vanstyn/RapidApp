@@ -18,8 +18,12 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		}
 		
 		this.store.on('beforeload',function(store,options) {
-			delete store.baseParams.multifilter;
-			delete store.lastOptions.params.multifilter;
+			if(store.baseParams) {
+				delete store.baseParams.multifilter;
+			}
+			if(store.lastOptions && store.lastOptions.params) { 
+				delete store.lastOptions.params.multifilter;
+			}
 			if(store.filterdata || store.filterdata_frozen) {
 				var multifilter = this.getMultiFilterParam();
 				var multifilter_frozen = this.getMultiFilterParam(true);
