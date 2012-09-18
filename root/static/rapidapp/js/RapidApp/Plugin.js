@@ -469,6 +469,8 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		var tb = 'bottom' === this.position ? panel.bottomToolbar : panel.topToolbar;
 		// add menu
 		this.menu = new Ext.menu.Menu();
+		
+		this.menu.on('hide',this.persistCheckIndexes,this);
 
 		// handle position
 		if('right' === this.align) {
@@ -726,14 +728,17 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 	 * @private 
 	 */
 	,reconfigure:function() {
-
+	
+		// NEW: Try to load checkIndex list from a property in the grid
+		// (added for saved state integration, 2012-09-18 by HV)
+		this.checkIndexes = this.grid.getStore().quickSearchCheckIndexes || this.checkIndexes;
+		
 		// {{{
 		// remove old items
 		var menu = this.menu;
 		menu.removeAll();
 		
 		
-
 		// add Select All item plus separator
 		if(this.showSelectAll && 'radio' !== this.menuStyle) {
 			menu.add(new Ext.menu.CheckItem({
@@ -763,6 +768,7 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		}
 		//Ext.each(cm.config, function(config) {
 		Ext.each(columns, function(config) {
+			
 			var disable = false;
 			Ext.each(this.disableIndexes, function(item) {
 				disable = disable ? disable : item === config.dataIndex;
@@ -820,6 +826,19 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 			this.QuickSearchColumns = quick_search_columns;
 		}
 		return this.QuickSearchColumns;
+	},
+	
+	persistCheckIndexes: function(){
+		var indexes = [];
+		this.menu.items.each(function(item) {
+			if(item.checked) {
+				indexes.push(item.dataIndex);
+			}
+		},this);
+		
+		// -- New: Persist checkIndexes for saved state integration:
+		this.grid.store.quickSearchCheckIndexes = indexes;
+		// --
 	}
 
 }); 

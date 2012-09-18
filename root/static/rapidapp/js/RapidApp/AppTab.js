@@ -450,9 +450,10 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	},
 	
 	saveStateProperties: [
-		'filterdata', 				// MultiFilters
-		'filterdata_frozen', 	// Frozen MultiFilters
-		'column_summaries'		// Column Summaries
+		'filterdata', 					// MultiFilters
+		'filterdata_frozen', 		// Frozen MultiFilters
+		'column_summaries',			// Column Summaries
+		'quickSearchCheckIndexes'	// Quick Search checked columns
 	],
 	
 	// Function to get the current grid state needed to save a search
@@ -681,7 +682,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		// ---------------------------- //
 		
 
-		// ---- Delete support:
+		// ---- Delete support: LEGACY - this code is depricated by DataStorePlus 'destroy'
 		if (this.delete_url) {
 			this.checkbox_selections = true;
 			var storeId = this.store.storeId;
