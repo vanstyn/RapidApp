@@ -240,6 +240,7 @@ pre {
 .icon-tick-tiny { background-image: url(/static/rapidapp/images/tick_tiny.png) !important; }
 .icon-tick-tiny-light { background-image: url(/static/rapidapp/images/tick_tiny_light.png) !important; }
 .icon-function { background-image: url(/static/rapidapp/images/function.png) !important; }
+.icon-function-clear { background-image: url(/static/rapidapp/images/function_clear.png) !important; }
 .icon-function-small { background-image: url(/static/rapidapp/images/function_small.png) !important; }
 .icon-left-right { background-image: url(/static/rapidapp/images/left_right.png) !important; }
 .icon-table-selection-all { background-image: url(/static/rapidapp/images/table_selection_all.png) !important; }

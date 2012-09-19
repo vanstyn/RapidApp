@@ -1490,7 +1490,16 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 					this.getFunctionsField(),
 					this.getTitleField()
 				]
-			}); 
+			});
+			
+			this.clearAllItem = hmenu.add({
+				iconCls: 'icon-function-clear',
+				itemId: 'clear-all',
+				text: 'Clear All Summaries',
+				handler: this.clearAllSummaries,
+				scope: this
+			});
+			
 			this.menu = hmenu.add({
 				hideOnClick: false,
 				iconCls: 'icon-checkbox-no',
@@ -1658,6 +1667,7 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		}
 		this.menu.setVisible(funcs !== undefined);
 		this.sep.setVisible(funcs !== undefined);
+		this.clearAllItem.setVisible(this.hasActiveSummaries());
 	},
 	
 	autoToggle: function() {
@@ -1807,6 +1817,13 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 			tstyle: tstyle,
 			cells: buf.join('')
 		});
+	},
+	
+	clearAllSummaries: function() {
+		if(this.grid.store.column_summaries) {
+			delete this.grid.store.column_summaries;
+		}
+		this.onSummaryDataChange();
 	}
 	
 });
