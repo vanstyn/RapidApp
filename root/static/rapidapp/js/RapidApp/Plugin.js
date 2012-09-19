@@ -472,6 +472,8 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		store.quickSearchCheckIndexes = this.grid.init_quick_search_columns || store.quickSearchCheckIndexes;
 		// --
 		
+		store.on('beforeload',this.applyStoreParams,this);
+		
 		var panel = this.toolbarContainer || this.grid;
 		var tb = 'bottom' === this.position ? panel.bottomToolbar : panel.topToolbar;
 		// add menu
@@ -490,15 +492,16 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 			}
 		}
 		
-		var search_text = (this.grid.quicksearch_mode == 'exact') ?
+		this.searchText = (this.grid.quicksearch_mode == 'exact') ?
 			'Exact Search' : this.searchText;
 
 		// add menu button
-		tb.add({
-			 text: search_text
-			,menu:this.menu
-			,iconCls:this.iconCls
+		this.button = new Ext.Button ({
+			text: this.searchText,
+			menu:this.menu,
+			iconCls:this.iconCls
 		});
+		tb.add(this.button);
 
 		// add input field (TwinTriggerField in fact)
 		this.field = new Ext.form.TwinTriggerField({
@@ -663,7 +666,8 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		}
 		// ask server to filter records
 		else {
-			this.applyStoreParams();
+			//applyStoreParams now called in 'beforeload' handler
+			//this.applyStoreParams();
 			// reload store
 			store.reload();
 		}
@@ -671,7 +675,7 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 	}
 
 	,applyStoreParams: function() {
-		var val = this.field.getValue();
+		var val = this.field.disabled ? '' : this.field.getValue();
 		var store = this.grid.store;
 		
 		// clear start (necessary if we have paging)
@@ -696,10 +700,10 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 			delete(store.lastOptions.params[this.paramNames.fields]);
 			delete(store.lastOptions.params[this.paramNames.query]);
 		}
-		if(fields.length) {
+		//if(fields.length && !this.field.disabled) {
 			store.baseParams[this.paramNames.fields] = Ext.encode(fields);
 			store.baseParams[this.paramNames.query] = val;
-		}
+		//}
 	}
 
 
@@ -817,7 +821,8 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 			}, this);
 		}
 		// }}}
-
+		
+		this.persistCheckIndexes();
 	}, 
 	
 	getQuickSearchColumns: function() {
@@ -837,15 +842,37 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 	
 	persistCheckIndexes: function(){
 		var indexes = [];
+		var headers = [];
+		var all = true;
 		this.menu.items.each(function(item) {
-			if(item.checked) {
+			if(item.checked && item.dataIndex) {
+				headers.push(item.text);
 				indexes.push(item.dataIndex);
+			}
+			else {
+				if(item.dataIndex) { all = false; }
 			}
 		},this);
 		
 		// -- New: Persist checkIndexes for saved state integration:
 		this.grid.store.quickSearchCheckIndexes = indexes;
 		// --
+		
+		var sup = all ? 'all' : indexes.length;
+		
+		var btnText = this.searchText + 
+			'<span class="superscript-green" style="font-weight:bold;padding-left:1px;">' + sup + '</span>';
+			
+		if(indexes.length == 1) {
+			var header = headers[0] || indexes[0];
+			btnText = this.searchText + ' | ' + header; 
+		}
+		
+		this.button.setText(btnText);
+		
+		//
+		this.field.setDisabled(!indexes.length);
+		
 	}
 
 }); 

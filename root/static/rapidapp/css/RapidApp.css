@@ -349,6 +349,12 @@ a.magnify-link-tiny:hover span {
   position: relative;
   top: -4px;
 }
+.superscript-green {
+  color: green;
+  font-weight: lighter; 
+  position: relative;
+  top: -4px;
+}
 
 .x-multifilter-not {
 	font-weight: bolder !important;
