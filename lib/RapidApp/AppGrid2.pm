@@ -166,7 +166,13 @@ sub init_onrequest {
 	
 	$self->apply_extconfig( preload_quick_search => $self->c->req->params->{quick_search} )
 		if (try{$self->c->req->params->{quick_search}});
-		
+	
+	my $quick_search_cols = try{lc($self->c->req->params->{quick_search_cols})};
+	if($quick_search_cols && $quick_search_cols ne '') {
+		my @cols = split(/\s*,\s*/,$quick_search_cols);
+		$self->apply_extconfig( init_quick_search_columns => \@cols );
+	}
+	
 	#$self->apply_config(store => $self->JsonStore);
 	$self->apply_extconfig(tbar => $self->tbar_items) if (defined $self->tbar_items);
 }

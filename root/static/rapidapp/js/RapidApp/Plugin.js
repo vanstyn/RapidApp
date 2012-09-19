@@ -465,6 +465,13 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 	 * @private
 	 */
 	onRender:function() {
+		
+		// -- Optional extra override for checked columns. init_quick_search_columns is
+		// set in AppGrid2 via HTTP Query param 'quick_search_cols'
+		var store = this.grid.getStore();
+		store.quickSearchCheckIndexes = this.grid.init_quick_search_columns || store.quickSearchCheckIndexes;
+		// --
+		
 		var panel = this.toolbarContainer || this.grid;
 		var tb = 'bottom' === this.position ? panel.bottomToolbar : panel.topToolbar;
 		// add menu
@@ -729,7 +736,7 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 	 */
 	,reconfigure:function() {
 	
-		// NEW: Try to load checkIndex list from a property in the grid
+		// NEW: Try to load checkIndex list from a property in the grid store
 		// (added for saved state integration, 2012-09-18 by HV)
 		this.checkIndexes = this.grid.getStore().quickSearchCheckIndexes || this.checkIndexes;
 		
