@@ -167,8 +167,9 @@ sub init_onrequest {
 	$self->apply_extconfig( preload_quick_search => $self->c->req->params->{quick_search} )
 		if (try{$self->c->req->params->{quick_search}});
 	
-	my $quick_search_cols = try{lc($self->c->req->params->{quick_search_cols})};
+	my $quick_search_cols = try{$self->c->req->params->{quick_search_cols}};
 	if($quick_search_cols && $quick_search_cols ne '') {
+		$quick_search_cols = lc($quick_search_cols);
 		my @cols = split(/\s*,\s*/,$quick_search_cols);
 		$self->apply_extconfig( init_quick_search_columns => \@cols );
 	}
