@@ -669,20 +669,21 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 			//applyStoreParams now called in 'beforeload' handler
 			//this.applyStoreParams();
 			// reload store
+			
+			// clear start (necessary if we have paging) - resets to page 1
+			// (moved from applyStoreParams since it is now called in beforeload)
+			if(store.lastOptions && store.lastOptions.params) {
+				store.lastOptions.params[store.paramNames.start] = 0;
+			}
+			
 			store.reload();
 		}
-
 	}
 
 	,applyStoreParams: function() {
 		var val = this.field.disabled ? '' : this.field.getValue();
 		var store = this.grid.store;
 		
-		// clear start (necessary if we have paging)
-		if(store.lastOptions && store.lastOptions.params) {
-			store.lastOptions.params[store.paramNames.start] = 0;
-		}
-
 		// get fields to search array
 		var fields = [];
 		this.menu.items.each(function(item) {
