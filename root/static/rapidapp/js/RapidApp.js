@@ -5677,4 +5677,12 @@ Ext.ux.RapidApp.increaseDecreasePctRenderer = function(val) {
 	return 					'<span style="color:green;font-weight:bold;">+' + v + '%</span>'; 
 };
 
+// Renders money up tp 2 decimal points (i.e. 41.2343 = $41.23) in green or red for +/-
+Ext.ux.RapidApp.increaseDecreaseMoneyRenderer = function(val) {
+	if (val == null || val === "") { return Ext.ux.showNull(val); }
+	var v = Math.round(val*100)/100;
+	if(v == 0) { return	'<span style="color:#333333;font-size:1.3em;font-weight:bolder;">&ndash;</span>'; }
+	if(v < 0) { return 	'<span style="color:red;font-weight:bold;">' + Ext.util.Format.usMoney(v) + '</span>'; }
+	return 					'<span style="color:green;font-weight:bold;">+' + Ext.util.Format.usMoney(v) + '</span>'; 
+};
 
