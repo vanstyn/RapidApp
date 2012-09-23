@@ -5660,4 +5660,12 @@ Ext.ux.RapidApp.showIframeWindow = function(cnf){
 
 };
 
+// Renders a positive, negative, or zero number as green/red/black dash
+Ext.ux.RapidApp.plusMinusRenderer = function(v) {
+	if (v == null || v === "") { return Ext.ux.showNull(v); }
+	if(v == 0) { return	'<span style="color:#333333;font-size:1.3em;font-weight:bolder;">&ndash;</span>'; }
+	if(v < 0) { return 	'<span style="color:red;font-weight:bold;">' + v + '</span>'; }
+	return 					'<span style="color:green;font-weight:bold;">+' + v + '</span>'; 
+}
+
 
