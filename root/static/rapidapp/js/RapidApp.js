@@ -5661,11 +5661,20 @@ Ext.ux.RapidApp.showIframeWindow = function(cnf){
 };
 
 // Renders a positive, negative, or zero number as green/red/black dash
-Ext.ux.RapidApp.plusMinusRenderer = function(v) {
+Ext.ux.RapidApp.increaseDecreaseRenderer = function(v) {
 	if (v == null || v === "") { return Ext.ux.showNull(v); }
 	if(v == 0) { return	'<span style="color:#333333;font-size:1.3em;font-weight:bolder;">&ndash;</span>'; }
 	if(v < 0) { return 	'<span style="color:red;font-weight:bold;">' + v + '</span>'; }
 	return 					'<span style="color:green;font-weight:bold;">+' + v + '</span>'; 
-}
+};
+
+// Renders pct up tp 2 decimal points (i.e. .412343 = 41.23%) in green or red for +/-
+Ext.ux.RapidApp.increaseDecreasePctRenderer = function(val) {
+	if (val == null || val === "") { return Ext.ux.showNull(val); }
+	var v = Math.round(val*10000)/100;
+	if(v == 0) { return	'<span style="color:#333333;font-size:1.3em;font-weight:bolder;">&ndash;</span>'; }
+	if(v < 0) { return 	'<span style="color:red;font-weight:bold;">-' + Math.abs(v) + '%</span>'; }
+	return 					'<span style="color:green;font-weight:bold;">+' + v + '%</span>'; 
+};
 
 
