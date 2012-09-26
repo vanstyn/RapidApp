@@ -32,9 +32,11 @@ around 'content' => sub {
 	my $orig = shift;
 	my $self = shift;
 	
+	my $html =  $self->html;
+	
 	my $content = $self->$orig(@_);
 	
-	$content->{html} = $self->html;
+	$content->{html} = $html;
 	
 	return $content;
 };
