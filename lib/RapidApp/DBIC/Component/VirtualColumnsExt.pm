@@ -62,4 +62,41 @@ sub columns {
 	return ($self->next::method(@_),$self->virtual_columns);
 }
 
+#TODO: init_virtual_column_value via get_columns, too
+sub get_column {
+    my ($self, $column) = @_;
+
+    return $self->next::method($column) unless (
+		defined $self->_virtual_columns &&
+        exists $self->_virtual_columns->{$column}
+	);
+	
+	$self->init_virtual_column_value($column);
+	
+	return $self->next::method($column);
+}
+
+
+sub init_virtual_column_value {
+	my ($self, $column) = @_;
+	return if (exists $self->{_virtual_values}{$column});
+	my $sql = try{$self->column_info($column)->{sql}} or return;
+	
+	my $rel = 'me';
+	$sql =~ s/self\./${rel}\./g;
+	$sql =~ s/\`self\`\./\`${rel}\`\./g; #<-- also support backtic quoted form (quote_sep)
+	
+	my $Source = $self->result_source;
+	my $cond = { map { $rel . '.' . $_ => $self->get_column($_) } $Source->primary_columns };
+	
+	my $row = $Source->resultset->search_rs($cond,{
+		select => [{ '' => \"($sql)", -as => $col }],
+		as => [$column],
+		result_class => 'DBIx::Class::ResultClass::HashRefInflator'
+	})->first or return undef;
+	
+	return $self->store_column($column,$row->{$column});
+}
+
+
 1;
