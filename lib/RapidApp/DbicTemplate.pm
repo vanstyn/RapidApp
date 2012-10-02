@@ -35,7 +35,8 @@ sub BUILD {
 				get_ResultSet => $self->get_ResultSet, 
 				TableSpec => $self->TableSpec,
 				include_colspec => $self->include_colspec,
-				allow_restful_queries => $self->allow_restful_queries
+				allow_restful_queries => $self->allow_restful_queries,
+				get_local_args => sub { $self->local_args }
 			}
 		});
 	}

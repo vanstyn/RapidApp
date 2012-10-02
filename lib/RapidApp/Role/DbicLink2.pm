@@ -234,18 +234,21 @@ sub prepare_rest_request {
 	return unless ($self->allow_restful_queries);
 	
 	my @args = $self->local_args;
+	my @rargs = reverse @args;
+	
+	# special case, ignore if the path ends in 'store/read' (TODO: what happens on the off chance 
+	# that there is a key named 'store' and a value named 'read'?)
+	return if ($rargs[0] eq 'read' && $rargs[1] eq 'store');
 	
 	# -- peel of the rs (resultset) args if present:
 	my $rs;
 	if(scalar @args > 2) {
-		my @rargs = reverse @args;
 		if(lc($rargs[1]) eq 'rs') {
 			$rs = pop @args;
 			pop @args;
 		}
 	}
 	# --
-	
 	
 	my $key = lc($args[0]) or return;
 	my $val = $args[1];

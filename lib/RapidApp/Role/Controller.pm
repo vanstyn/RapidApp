@@ -244,8 +244,13 @@ sub Controller {
 	$self->controller_dispatch(@args);
 }
 
+has 'get_local_args', is => 'ro', isa => 'Maybe[CodeRef]', lazy => 1, default => undef;
+
 sub local_args {
 	my $self = shift;
+	
+	return $self->get_local_args->() if ($self->get_local_args);
+	
 	my $path = '/' . $self->c->req->path;
 	my $base = quotemeta($self->base_url . '/');
 	$path =~ /^${base}(.+$)/;
