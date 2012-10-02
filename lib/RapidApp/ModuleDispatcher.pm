@@ -32,7 +32,7 @@ sub dispatch {
 	$c->stash->{controllerResult} = $result;
 	
 	# if the body was not set, make sure a view was chosen
-	defined $c->res->body || defined $c->stash->{current_view} || defined defined $self->c->stash->{current_view_instance}
+	defined $c->res->body || defined $c->stash->{current_view} || defined $c->stash->{current_view_instance}
 		or die "No view was selected, and a body was not generated";
 	
 	return $result;
