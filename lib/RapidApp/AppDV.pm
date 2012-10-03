@@ -131,6 +131,7 @@ sub xtemplate_cnf {
 	my $html_out = '';
 	
 	my $tt_vars = {
+		c	=> $self->c,
 		r	=> $self->TTController,
 		%{ $self->extra_tt_vars }
 	};
