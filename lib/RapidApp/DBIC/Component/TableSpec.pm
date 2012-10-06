@@ -905,7 +905,7 @@ sub apply_row_methods {
 		getRestKeyVal => sub {
 			my $self = shift;
 			my $col = $class->getRestKey or return $self->getRecordPkValue;
-			return $self->get_column($col);
+			return try{$self->get_column($col)};
 		},
 		
 		getRestPath => sub {
