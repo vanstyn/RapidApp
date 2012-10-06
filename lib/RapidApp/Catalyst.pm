@@ -47,6 +47,7 @@ sub template_render {
 	return $out;
 }
 
+our $ON_FINALIZE_SUCCESS = [];
 
 ## -- 'on_finalize_success' provides a mechanism to call code at the end of the request
 ## only if successful
@@ -58,24 +59,37 @@ sub add_on_finalize_success {
 	die "add_on_finalize_success(): argument not a CodeRef" 
 		unless (ref $code eq 'CODE');
 	
-	$c->stash->{on_finalize_success} ||= [];
-	push @{$c->stash->{on_finalize_success}},$code;
+	if(try{$c->stash}) {
+		$c->stash->{on_finalize_success} ||= [];
+		push @{$c->stash->{on_finalize_success}},$code;
+	}
+	else {
+		push @$ON_FINALIZE_SUCCESS,$code;
+	}
 	return 1;
 }
+
 before 'finalize' => sub {
 	my $c = shift;
-	my $coderefs = $c->stash->{on_finalize_success} or return;
+	my $coderefs = try{$c->stash->{on_finalize_success}} or return;
+	return unless (scalar @$coderefs > 0);
 	my $status = $c->res->code;
 	return unless ($status =~ /^2\d{2}$/); # status code 2xx = success
 	$c->log->info(
 		"finalize_body(): calling " . (scalar @$coderefs) .
 		" CodeRefs added by 'add_on_finalize_success'"
 	);
-	
+	$c->run_on_finalize_success_codes($coderefs);
+};
+END { __PACKAGE__->run_on_finalize_success_codes($ON_FINALIZE_SUCCESS); }
+
+sub run_on_finalize_success_codes {
+	my $c = shift;
+	my $coderefs = shift;
 	my $num = 0;
 	foreach my $ref (@$coderefs) {
 		try {
-			$ref->($c) 
+			$ref->($c);
 		}
 		catch {
 			# If we get here, we're screwed. Best we can do is log the error. (i.e. we can't tell the user)
@@ -83,7 +97,7 @@ before 'finalize' => sub {
 			my $errStr = RED.BOLD . "EXCEPTION IN CodeRefs added by 'add_on_finalize_success!! [coderef #" . 
 				++$num . "]:\n " . CLEAR . RED . (ref $err ? Dumper($err) : $err) . CLEAR;
 			
-			$c->log->error($errStr);
+			try{$c->log->error($errStr)} or warn $errStr;
 			
 			# TODO: handle exceptions here like any other. This might require a bit
 			# of work to achieve because by the time we get here we're already past the
