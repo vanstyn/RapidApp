@@ -1753,7 +1753,7 @@ sub get_multi_relationship_column_cnf {
 				
 				( # TODO: needs to be generalized better
 					$conf->{open_url_multi} ?
-						'if(key_val && value && value > 0) {' .
+						'if(key_val && value && value > 0 && !Ext.ux.RapidApp.NO_DBIC_REL_LINKS) {' .
 							'var loadCfg = ' . JSON::PP::encode_json($loadCfg) . ';' .
 							
 							'var join_name = "' . $conf->{open_url_multi_rs_join_name} . '";' .

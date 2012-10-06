@@ -302,6 +302,9 @@ Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
 			var msg = data.msg || 'Unknown (X-RapidApp-Warning)';
 			Ext.ux.RapidApp.errMsgHandler(title,msg,data.as_text);
 		}
+		
+		var eval_code = response.getResponseHeader('X-RapidApp-EVAL');
+		if (eval) { eval(eval_code); }
 	}
 	catch(err) {}
 }
@@ -5494,6 +5497,8 @@ Ext.ux.RapidApp.num2pct = function(num) {
 }
 
 
+Ext.ux.RapidApp.NO_DBIC_REL_LINKS = false;
+
 Ext.ux.RapidApp.DbicRelRestRender = function(c) {
 	var disp = c.disp || c.record.data[c.render_col];
 	var key_value = c.record.data[c.key_col];
@@ -5531,7 +5536,9 @@ Ext.ux.RapidApp.DbicRelRestRender = function(c) {
 		url += c.value;
 	}
 	
-	
+	if(Ext.ux.RapidApp.NO_DBIC_REL_LINKS) {
+		return disp;
+	}
 	
 	return disp + "&nbsp;" + Ext.ux.RapidApp.inlineLink(
 		url,
