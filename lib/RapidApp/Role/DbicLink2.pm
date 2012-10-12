@@ -250,6 +250,19 @@ sub prepare_rest_request {
 	}
 	# --
 	
+	# --- Handle and assume extra args are values containing '/'
+	if(scalar @args > 1) {
+		my @newargs = (shift @args);
+		if (scalar @args > 0 && $self->ResultSource->has_column($newargs[0])) {
+			push @newargs, join('/',@args);
+		}
+		else {
+			@newargs = (join('/',@newargs,@args));
+		}
+		@args = @newargs;
+	}
+	# ---
+	
 	my $key = lc($args[0]) or return;
 	my $val = $args[1];
 	
@@ -262,7 +275,8 @@ sub prepare_rest_request {
 		my $rest_key_column = try{$self->ResultClass->getRestKey};
 		$key = $rest_key_column || $self->record_pk;
 	}
-
+	
+	# This should never happen any more (see "Handle and assume..." above):
 	die usererr "Too many args in RESTful URL (" . join('/',@args) . ") - should be 2 (i.e. 'id/1234')"
 		if(scalar @args > 2);
 		
