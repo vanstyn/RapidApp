@@ -11,6 +11,7 @@ use Text::TabularDisplay;
 use Time::HiRes qw(gettimeofday tv_interval);
 use Switch qw( switch );
 use RapidApp::Data::Dmap qw(dmap);
+use URI::Escape;
 
 if($ENV{DBIC_TRACE}) {
 	debug_around 'DBIx::Class::Storage::DBI::_execute', newline => 1, stack=>20;
@@ -234,6 +235,9 @@ sub prepare_rest_request {
 	return unless ($self->allow_restful_queries);
 	
 	my @args = $self->local_args;
+	
+	$_ = uri_unescape($_) for (@args);
+	
 	my @rargs = reverse @args;
 	
 	# special case, ignore if the path ends in 'store/read' (TODO: what happens on the off chance 
