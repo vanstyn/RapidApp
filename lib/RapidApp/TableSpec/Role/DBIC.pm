@@ -256,6 +256,9 @@ sub add_db_column($@) {
 		# the future, but it will require a bit of effort (see the complex/custom code
 		# in multifilters with the conversion into a 'HAVING' clause
 		$opt{no_quick_search} = \1;
+		
+		# Also, need to disable column summaries (added 2012-10-13 by HV):
+		$opt{no_summary} = \1;
 	}
 	# --
 	
@@ -1423,14 +1426,15 @@ sub get_relationship_column_cnf {
 	
 	my $Source = $self->ResultSource->related_source($rel);
 	
-	# --- Disable searching on rel cols with virtual display_column
+	# --- Disable quick searching on rel cols with virtual display_column
 	# If the display column of the remote result class is virtual we turn
-	# off searching. This *could* be supported in the future; it would require
+	# off quick searching. This *could* be supported in the future; it would require
 	# some special coding. It is probably not something that should be on per
 	# default anyway, because searching on a virtual column could be slow 
+	# (see the complex HAVING stuff for multifilters)
 	$conf = { %$conf,
-		no_multifilter => \1,
-		no_quick_search => \1
+		no_quick_search => \1,
+		no_summary => \1, #<-- also disable column summaries
 	} if (try{$self->ResultSource->related_class($rel)->has_virtual_column($conf->{displayField})});
 	#
 	# ---
