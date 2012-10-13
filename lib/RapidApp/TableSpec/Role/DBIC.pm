@@ -1423,6 +1423,17 @@ sub get_relationship_column_cnf {
 	
 	my $Source = $self->ResultSource->related_source($rel);
 	
+	# --- Disable searching on rel cols with virtual display_column
+	# If the display column of the remote result class is virtual we turn
+	# off searching. This *could* be supported in the future; it would require
+	# some special coding. It is probably not something that should be on per
+	# default anyway, because searching on a virtual column could be slow 
+	$conf = { %$conf,
+		no_multifilter => \1,
+		no_quick_search => \1
+	} if (try{$self->ResultSource->related_class($rel)->has_virtual_column($conf->{displayField})});
+	#
+	# ---
 
 	my $render_col = $self->column_prefix . $rel . $self->relation_sep . $conf->{displayField};
 	my $key_col = $self->column_prefix . $rel . $self->relation_sep . $conf->{valueField};
