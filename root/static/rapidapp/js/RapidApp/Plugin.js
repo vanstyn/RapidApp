@@ -2442,9 +2442,7 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 	doBatchEdit: function(sel) {
 		var editSpec = this.getBatchEditSpec(sel);
 		
-		var win,fp;
-		
-		fp = new Ext.form.FormPanel({
+		var fp = new Ext.form.FormPanel({
 			xtype: 'form',
 			frame: true,
 			labelAlign: 'right',
@@ -2565,7 +2563,11 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 		var title = 'Batch Modify Active Records';
 		if(sel) { title = 'Batch Modify Selected Records'; }
 		
-		win = new Ext.Window({
+		if(this.win) {
+			this.win.close();
+		}
+		
+		this.win = new Ext.Window({
 			title: title,
 			layout: 'fit',
 			width: 600,
@@ -2573,11 +2575,12 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 			minWidth: 475,
 			minHeight: 350,
 			closable: true,
+			closeAction: 'close',
 			modal: true,
 			items: fp
 		});
 		
-		win.show();
+		this.win.show();
 	},
 	
 	postUpdate: function(editSpec,data,win){
