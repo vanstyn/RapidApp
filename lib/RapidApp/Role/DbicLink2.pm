@@ -240,9 +240,10 @@ sub prepare_rest_request {
 	
 	my @rargs = reverse @args;
 	
-	# special case, ignore if the path ends in 'store/read' (TODO: what happens on the off chance 
-	# that there is a key named 'store' and a value named 'read'?)
-	return if ($rargs[0] eq 'read' && $rargs[1] eq 'store');
+	# ignore paths that match store CRUD actions (store/create, store/read, store/update or store/destroy)
+	# (TODO: what happens on the off chance that there is a key named 'store' and a value named 'read'?)
+	my @crud = qw(create read update destroy);
+	return if ($rargs[1] eq 'store' && $rargs[0] ~~ @crud);
 	
 	# -- peel of the rs (resultset) args if present:
 	my $rs;
