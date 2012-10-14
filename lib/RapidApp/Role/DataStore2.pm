@@ -29,6 +29,8 @@ has 'persist_immediately' => ( is => 'ro', isa => 'HashRef', default => sub{{
 has 'allow_batch_update', is => 'ro', isa => 'Bool', default => 1;
 has 'batch_update_max_rows', is => 'ro', isa => 'Int', default => 500;
 
+has 'confirm_on_destroy', is => 'ro', isa => 'Bool', default => 1;
+
 # not implimented yet:
 #has 'batch_update_warn_rows', is => 'ro', isa => 'Int', default => 100;
 
@@ -158,7 +160,8 @@ after 'BUILD' => sub {
 	$self->apply_extconfig(
 		persist_all_immediately => \scalar($self->persist_all_immediately),
 		persist_immediately => $self->persist_immediately,
-		cache_total_count => $self->cache_total_count ? \1 : \0
+		cache_total_count => $self->cache_total_count ? \1 : \0,
+		confirm_on_destroy => $self->confirm_on_destroy ? \1 : \0
 	);
 	
 	## Apply the TableSpec if its defined ##

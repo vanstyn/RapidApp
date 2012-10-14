@@ -95,7 +95,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			'autoload_added_record',
 			'add_records_first',
 			'store_exclude_api',
-			'store_write_mask'
+			'store_write_mask',
+			'confirm_on_destroy'
 		]);
 		
 		this.exclude_btn_map = {};
@@ -391,19 +392,6 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					return true;
 				},this);
 			},this);
-			
-			// Invalidate the total cache on write operations: 
-			cmp.store.on('beforewrite',function(store) { 
-				delete store.cached_total_count;
-				
-				if(store.baseParams) {
-					delete store.baseParams.cached_total_count;
-				}
-				
-				if(store.lastOptions && store.lastOptions.params) {
-					delete store.lastOptions.params.cached_total_count;
-				}
-			},this);
 		}
 		// ---
 		
@@ -424,6 +412,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	add_records_first: false,
 	store_exclude_api: [],
 	store_write_mask: true,
+	confirm_on_destroy: true,
 		
 	initAdditionalStoreMethods: function(store,plugin) {
 		
@@ -437,6 +426,18 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				store.fields.each(function(field){ colnames.push(field.name); });
 				options.params.create_columns = Ext.encode(colnames);
 			}
+			
+			
+			// -- Invalidate the total cache on write operations:
+			delete store.cached_total_count;
+			if(store.baseParams) {
+				delete store.baseParams.cached_total_count;
+			}
+			if(store.lastOptions && store.lastOptions.params) {
+				delete store.lastOptions.params.cached_total_count;
+			}
+			// --
+			
 		});
 		
 		store.addEvents('beforeremove');
