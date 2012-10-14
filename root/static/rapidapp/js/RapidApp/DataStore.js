@@ -968,8 +968,42 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		// --
 		
 		store.addEvents('saveall');
-		store.on('beforesave',function() {
+		store.on('beforesave',function(ds,data) {
 			store.save_inprogress = true; 
+			
+			// ------------------------------------
+			// vv ----- CONFIRM ON DESTROY ----- vv
+			if(data && data.destroy && data.destroy.length > 0 && plugin.cmp.confirm_on_destroy) {
+				if(store.destroy_confirmed) {
+					store.destroy_confirmed = false;
+				}
+				else {
+					Ext.Msg.show({
+						title: 'Confirm Delete?',
+						msg: '<b>Are you sure you want to delete ' + 
+							data.destroy.length + ' items?</b>',
+						icon: Ext.Msg.WARNING,
+						buttons: { yes: 'Yes', no: 'No' }, 
+						fn: function(sel) {
+							if (sel == 'yes') {
+								this.destroy_confirmed = true;
+								return this.saveAll();
+							}
+							else {
+								this.destroy_confirmed = false; //<-- redundant, added for extra safety
+								return this.undoChangesAll();
+							}
+						},
+						scope: store
+					});
+					
+					store.save_inprogress = false;
+					return false;
+				}
+			}
+			// ^^ ------------------------------ ^^
+			// ------------------------------------
+			
 		});
 		this.cmp.on('afterrender',function(){
 			store.eachTiedChild(function(s) {
