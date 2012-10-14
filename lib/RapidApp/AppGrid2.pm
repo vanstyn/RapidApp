@@ -24,8 +24,8 @@ has 'open_record_rest_key', is => 'ro', isa => 'Maybe[Str]', default => undef;
 
 # ---
 # If true, a special "open" link column will be prepended to the column list. This is useful for clients
-# that cannot doible-click, such as iPads
-has 'open_record_column', is => 'ro', isa => 'Bool', default => 0;
+# that cannot double-click, such as iPads
+has 'open_record_column', is => 'ro', isa => 'Bool', default => 1;
 has 'open_record_column_hidden', is => 'ro', isa => 'Bool', default => 1;
 # ---
 
