@@ -980,8 +980,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				else {
 					Ext.Msg.show({
 						title: 'Confirm Delete?',
-						msg: '<b>Are you sure you want to delete ' + 
-							data.destroy.length + ' items?</b>',
+						msg: '<b>Are you sure you want to delete <span style="color:red;">' + 
+							data.destroy.length + '</span> items?</b>',
 						icon: Ext.Msg.WARNING,
 						buttons: { yes: 'Yes', no: 'No' }, 
 						fn: function(sel) {
@@ -1001,6 +1001,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					return false;
 				}
 			}
+			store.destroy_confirmed = false; //<-- clear one more time for good measure
 			// ^^ ------------------------------ ^^
 			// ------------------------------------
 			
@@ -1400,7 +1401,13 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		
 		Ext.Msg.show({
 			title: 'Save Changes?',
-			msg: '<b>There are unsaved changes on this page.</b><br><br>Save before closing?<br>',
+			msg: (
+				store.removed.length > 0 ?
+					'<b>There are unsaved changes on this page, including <span style="color:red;">' + 
+						store.removed.length + '</span> items to be deleted.</b>' :
+					'<b>There are unsaved changes on this page.</b>'
+				) +
+				'<br><br>Save before closing?<br>',
 			icon: Ext.Msg.WARNING,
 			buttons: { yes: 'Save', no: 'Discard Changes', cancel: 'Cancel' }, 
 			fn: function(sel) {
@@ -1417,6 +1424,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 						c.remove(component);
 					};
 					store.on('saveall',onsave);
+					// Prevent the confirm delete dialog from also being displayed:
+					store.destroy_confirmed = true;
 					store.saveAll();
 				}
 				else {
