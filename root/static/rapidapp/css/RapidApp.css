@@ -270,7 +270,8 @@ pre {
 .icon-document-save { background-image: url(/static/rapidapp/images/document_save.png) !important; }
 .icon-cancel { background-image: url(/static/rapidapp/images/cancel.png) !important; }
 .icon-page { background-image: url(/static/rapidapp/images/page.png) !important; }
-
+.icon-magnify-tiny { background-image: url(/static/rapidapp/images/magnify.gif) !important; }
+.icon-magnifier { background-image: url(/static/rapidapp/images/magnifier.png) !important; }
 
 
 

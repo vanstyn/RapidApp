@@ -506,8 +506,6 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	titleCount: false,
 
 	initComponent: function() {
-	
-		this.init_open_record_handler();
 		
 		this.on('afterrender',this.addExtraToOptionsMenu,this);
 		
@@ -728,6 +726,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			delete this.bbar; 
 		}
 		
+		this.init_open_record_handler();
+		
 		if(this.checkbox_selections) {
 			this.sm = new Ext.grid.CheckboxSelectionModel();
 			this.columns.unshift(this.sm);
@@ -797,14 +797,45 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	init_open_record_handler: function() {
 		if(this.open_record_url) {
 			if(this.open_record_via_rest) {
-				this.on('rowdblclick',function(grid,index,e){
+				this.row_open_handler = function(grid,index,e){
 					this.rest_open_record(index);
-				},this);
+				};
 			}
 			else {
 				// Original LoadContentCnf double-click handler, moved out of AppGrid2.pm:
-				this.on('rowdblclick',Ext.ux.RapidApp.AppTab.gridrow_nav,this);
+				this.row_open_handler = Ext.ux.RapidApp.AppTab.gridrow_nav;
 			}
+			
+			if(this.open_record_column) {
+				this.columns.unshift({
+					xtype: 'actioncolumn',
+					width: 30,
+					name: '___open_action_col',
+					dataIndex: '___open_action_col',
+					sortable: false,
+					menuDisabled: true,
+					resizable: false,
+					hidden: !this.open_record_column_init_visible,
+					header: '<span ' +
+							'style="padding-left:0px;height:12px;color:#666666;" ' +
+							'class="with-icon icon-magnify-tiny"' + 
+						'>' +
+						// using a bunch of &nbsp; instead of padding-left for IE. Idea is to push the 
+						// header text to the right far enough so it can't be seen in the column header,
+						// but can still be seen in the columns menu to toggle on/off. The column header
+						// appears to show 
+						'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
+						'<i>Open Item Column</i></span>',
+					items: [{
+						icon: '/static/rapidapp/images/magnifier.png',
+						tooltip: 'Open Item',
+						handler: this.row_open_handler,
+						scope: this
+					}]
+				});
+			}
+			
+			this.on('rowdblclick',this.row_open_handler,this);
 		}
 	},
 	
@@ -831,7 +862,12 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		
 		var columns = cm.getColumnsBy(function(c){
 			if(this.alwaysRequestColumns[c.name]) { return true; }
-			if(c.hidden || c.dataIndex == "") { return false; }
+			if(
+				c.hidden || c.dataIndex == "" || 
+				c.dataIndex == '___open_action_col'
+			){ 
+				return false; 
+			}
 			return true;
 		},this);
 		

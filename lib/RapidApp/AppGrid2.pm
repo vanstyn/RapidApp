@@ -22,6 +22,13 @@ has 'add_record_class' => ( is => 'ro', default => undef, isa => 'Maybe[ClassNam
 has 'open_record_via_rest', is => 'ro', isa => 'Bool', default => 1;
 has 'open_record_rest_key', is => 'ro', isa => 'Maybe[Str]', default => undef;
 
+# ---
+# If true, a special "open" link column will be prepended to the column list. This is useful for clients
+# that cannot doible-click, such as iPads
+has 'open_record_column', is => 'ro', isa => 'Bool', default => 0;
+has 'open_record_column_init_visible', is => 'ro', isa => 'Bool', default => 0;
+# ---
+
 # autoLoad needs to be false for the paging toolbar to not load the whole
 # data set
 has 'store_autoLoad' => ( is => 'ro', default => sub {\0} );
@@ -127,7 +134,9 @@ sub BUILD {
 		allow_edit_frozen => $self->allow_edit_frozen ? \1 : \0,
 		open_record_via_rest => $self->open_record_via_rest ? \1 : \0,
 		open_record_url => $self->open_record_url,
-		open_record_rest_key => $self->open_record_rest_key
+		open_record_rest_key => $self->open_record_rest_key,
+		open_record_column => $self->open_record_column ? \1 : \0,
+		open_record_column_init_visible => $self->open_record_column_init_visible ? \1 : \0,
 	);
 	
 	# The record_pk is forced to be added/included as a column:
