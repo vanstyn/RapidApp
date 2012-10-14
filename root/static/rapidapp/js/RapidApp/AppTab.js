@@ -450,10 +450,11 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	},
 	
 	saveStateProperties: [
-		'filterdata', 					// MultiFilters
-		'filterdata_frozen', 		// Frozen MultiFilters
-		'column_summaries',			// Column Summaries
-		'quickSearchCheckIndexes'	// Quick Search checked columns
+		'filterdata', 						// MultiFilters
+		'filterdata_frozen', 			// Frozen MultiFilters
+		'column_summaries',				// Column Summaries
+		'quickSearchCheckIndexes',		// Quick Search checked columns
+		'open_record_column_hidden'	// Hidden state of special open record column
 	],
 	
 	// Function to get the current grid state needed to save a search
@@ -748,6 +749,16 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		},this);
 		
 		this.getColumnModel().on('hiddenchange',function(colmodel,colIndex,hidden) {
+			
+			if(colmodel.config[colIndex] && 
+			 colmodel.config[colIndex].dataIndex == '___open_action_col') {
+				// Update the store open_record_column_hidden param with the current status 
+				// (needed for saved searches):
+				this.store.open_record_column_hidden = hidden;
+				// Don't reload the store for the open record column:
+				return;
+			}
+			
 			// Only reload the store when showing columns that aren't already loaded
 			if(hidden || this.loadedColumnIndexes[colIndex]) { 
 				// Need to set reloadColumns even if no store reload is needed so
@@ -807,6 +818,12 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			}
 			
 			if(this.open_record_column) {
+				// optionally set the hidden status param from the store 
+				// (i.e. loaded from saved search)
+				this.open_record_column_hidden = 
+					(typeof this.store.open_record_column_hidden == 'undefined') ?
+						this.open_record_column_hidden : this.store.open_record_column_hidden;
+					
 				this.columns.unshift({
 					xtype: 'actioncolumn',
 					width: 30,
@@ -815,7 +832,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 					sortable: false,
 					menuDisabled: true,
 					resizable: false,
-					hidden: !this.open_record_column_init_visible,
+					hidden: this.open_record_column_hidden,
 					header: '<span ' +
 							'style="padding-left:0px;height:12px;color:#666666;" ' +
 							'class="with-icon icon-magnify-tiny"' + 

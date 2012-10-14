@@ -26,7 +26,7 @@ has 'open_record_rest_key', is => 'ro', isa => 'Maybe[Str]', default => undef;
 # If true, a special "open" link column will be prepended to the column list. This is useful for clients
 # that cannot doible-click, such as iPads
 has 'open_record_column', is => 'ro', isa => 'Bool', default => 0;
-has 'open_record_column_init_visible', is => 'ro', isa => 'Bool', default => 0;
+has 'open_record_column_hidden', is => 'ro', isa => 'Bool', default => 1;
 # ---
 
 # autoLoad needs to be false for the paging toolbar to not load the whole
@@ -136,7 +136,7 @@ sub BUILD {
 		open_record_url => $self->open_record_url,
 		open_record_rest_key => $self->open_record_rest_key,
 		open_record_column => $self->open_record_column ? \1 : \0,
-		open_record_column_init_visible => $self->open_record_column_init_visible ? \1 : \0,
+		open_record_column_hidden => $self->open_record_column_hidden ? \1 : \0,
 	);
 	
 	# The record_pk is forced to be added/included as a column:
