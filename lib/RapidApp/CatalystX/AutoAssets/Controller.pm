@@ -139,7 +139,7 @@ sub generate_asset :Debug {
 	die '$ext may only be js or css!!' unless ($ext eq 'js' || $ext eq 'css');
 	
 	$self->init_built_dir;
-	my $tmpf = $self->built_dir . '/-/' . $$ . '-' . rand . '.' . $ext . '.tmp';
+	my $tmpf = $self->built_dir . '/-' . $$ . '-' . rand . '.' . $ext . '.tmp';
 	
 	my $fd = IO::File->new($tmpf, '>:raw') or die $!;
 	$fd->write($_) for ( map { io($_)->slurp . "\r\n" } @$files );
@@ -159,6 +159,10 @@ sub generate_asset :Debug {
 	
 	system('mv', $tmpf, $asset_path) == 0
 		or die "AutoAssets: Failed to move file '$tmpf' -> '$asset_path'";
+	
+	$self->_app->log->info(
+		'AutoAssets: gen ' . GREEN.BOLD . $asset_path . CLEAR
+	);
 	
 	return $asset_path;
 }
@@ -182,7 +186,7 @@ sub index :Path :Args(1) :Debug {
     my ( $self, $c, $filename ) = @_;
 	
 	my ($checksum,$ext) = split(/\./,$filename,2);
-	my $fh = $self->get_asset_fh($c,$filename,$checksum) or return $self->unknown_asset($c);
+	my $fh = $self->get_asset_fh($filename) or return $self->unknown_asset($c);
 	
 	# Set the Content-Type according to the extention - only 'js' or 'css' current supported:
 	switch($ext) {
@@ -196,9 +200,9 @@ sub index :Path :Args(1) :Debug {
 
 
 sub get_asset_fh :Debug {
-	my ($self,$c,$filename) = @_;
+	my ($self,$filename) = @_;
 	
-	my $self->prepare_assets;
+	$self->prepare_assets;
 	
 	my $file = $self->built_dir . '/' . $filename;
 	return undef unless (-f $file);
@@ -207,7 +211,6 @@ sub get_asset_fh :Debug {
 	$fh->open('< ' . $file) or die "Failed to open $file for reading.";
 	
 	return undef;
-
 }
 
 sub unknown_asset :Debug {
