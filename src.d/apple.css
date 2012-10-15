@@ -1,0 +1,51 @@
+/* testing assets - dummy css file */
+
+
+.foo-blah-boo {
+    background: white none repeat scroll 0% 0%;
+    border: 0px none black;
+    border-collapse: separate;
+    border-spacing: 0px;
+    bottom: auto;
+    caption-side:top;
+    clear: none;
+    clip: auto;
+    color: black;
+    content: none;
+    counter-increment:none;
+    counter-reset:none;
+    float: none;
+    cursor: auto;
+    direction: ltr;
+    display: inline;
+    empty-cells: hide;
+}
+
+
+
+.happy-go-lucky {
+    max-height: none;
+    max-width: none;
+    min-height: 0px;
+    min-width: 0px;
+    opacity: 1;
+    outline: 0px none black;
+    outline-offset: 0px;
+    overflow: inherit;
+    padding: 0px;
+    page-break-after: auto;
+    page-break-before: auto;
+    position: static;
+    quotes: "“" "”" "‘" "’";
+    right: auto;
+    table-layout: auto;
+    text-align: left;
+    text-decoration: none;
+    text-indent: 0px;
+    text-transform: none;
+    top: auto;
+    unicode-bidi: normal;
+    vertical-align: baseline;
+    visibility: visible;
+    white-space: normal;
+}

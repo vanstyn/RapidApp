@@ -204,24 +204,25 @@ sub content_size {
 	
 	my $file = $self->checksum_to_path($checksum);
 	
-	return $self->xstat($file)->{size};
+	return xstat($file)->{size};
 }
 
 
-sub xstat {
-	my $self = shift;
-	my $file = shift;
-
-	return undef unless (-e $file);
-
-	my $h = {};
-
-	($h->{dev},$h->{ino},$h->{mode},$h->{nlink},$h->{uid},$h->{gid},$h->{rdev},
-			 $h->{size},$h->{atime},$h->{mtime},$h->{ctime},$h->{blksize},$h->{blocks})
-						  = stat($file);
-
-	return $h;
-}
+# Moved into RapidApp::Functions
+#sub xstat {
+#	my $self = shift;
+#	my $file = shift;
+#
+#	return undef unless (-e $file);
+#
+#	my $h = {};
+#
+#	($h->{dev},$h->{ino},$h->{mode},$h->{nlink},$h->{uid},$h->{gid},$h->{rdev},
+#			 $h->{size},$h->{atime},$h->{mtime},$h->{ctime},$h->{blksize},$h->{blocks})
+#						  = stat($file);
+#
+#	return $h;
+#}
 
 
 #### --------------------- ####

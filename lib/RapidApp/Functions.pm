@@ -498,6 +498,19 @@ sub debug_around_all {
 	debug_around($_, pkg => $pkg) for ($meta->get_method_list);
 }
 
+# Returns a stat in a hash with named keys
+sub xstat {
+	my $file = shift;
+	return undef unless (-e $file);
+	my $h = {};
+
+	($h->{dev},$h->{ino},$h->{mode},$h->{nlink},$h->{uid},$h->{gid},$h->{rdev},
+			 $h->{size},$h->{atime},$h->{mtime},$h->{ctime},$h->{blksize},$h->{blocks})
+						  = stat($file);
+
+	return $h;
+}
+
 # Automatically export all functions defined above:
 BEGIN {
 	our @ISA = qw(Exporter);
