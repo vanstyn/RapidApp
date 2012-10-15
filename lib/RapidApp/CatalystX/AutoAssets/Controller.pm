@@ -98,7 +98,7 @@ sub get_inc_mtime_concat {
 	return join('-', map { xstat($_)->{mtime} } @$list );
 }
 
-sub prepare_assets :Debug {
+sub prepare_assets {
 	my $self = shift;
 	
 	my @files = $self->get_inc_files;
@@ -119,11 +119,12 @@ sub prepare_assets :Debug {
 	);
 	
 	# Remove all other files in the built_dir:
-	unlink $_ for( grep {
-		! $_ ~~ @assets and	# exclude the asset files we just generated
-		! -d $_ and			# exclude directories (should never happen)
-		! $_ =~ /\.tmp/		# exclude tmp files to avoid clobbering files being written by other procs
-	} $self->get_built_dir_files );
+	my @unlinks = grep {
+		! ($_ ~~ @assets) and	# exclude the asset files we just generated
+		! (-d $_) and			# exclude directories (should never happen)
+		! ($_ =~ /\.tmp$/)		# exclude tmp files to avoid clobbering files being written by other procs
+	} $self->get_built_dir_files;
+	unlink $_ for(@unlinks);
 	
 	# Update mtime_concat
 	# TODO: store this in a FastMmap so each process doesn't regenerate the files
@@ -131,7 +132,7 @@ sub prepare_assets :Debug {
 }
 
 
-sub generate_asset :Debug {
+sub generate_asset {
 	my $self = shift;
 	my $ext = shift or die "No file ext supplied!!!";
 	my $files = shift || [];
@@ -168,7 +169,7 @@ sub generate_asset :Debug {
 }
 
 
-sub file_checksum :Debug {
+sub file_checksum {
 	my $self = shift;
 	my $file = shift;
 	
@@ -182,7 +183,7 @@ sub file_checksum :Debug {
 }
 
 
-sub index :Path :Args(1) :Debug {
+sub index :Path :Args(1) {
     my ( $self, $c, $filename ) = @_;
 	
 	my ($checksum,$ext) = split(/\./,$filename,2);
@@ -195,11 +196,16 @@ sub index :Path :Args(1) :Debug {
 		else 		{ return $self->unknown_asset($c); }
 	}
 	
+	# Let browsers cache forever because we're a CAS path! content will always be current:
+	$c->response->header( 
+		'Cache-Control' => 'public, max-age=31536000, s-max-age=31536000' # 31536000 = 1 year
+	); 
+	
     return $c->response->body( $fh );
 }
 
 
-sub get_asset_fh :Debug {
+sub get_asset_fh {
 	my ($self,$filename) = @_;
 	
 	$self->prepare_assets;
@@ -210,10 +216,10 @@ sub get_asset_fh :Debug {
 	my $fh = IO::File->new();
 	$fh->open('< ' . $file) or die "Failed to open $file for reading.";
 	
-	return undef;
+	return $fh;
 }
 
-sub unknown_asset :Debug {
+sub unknown_asset {
 	my ($self,$c) = @_;
 	$c->res->status(404);
 	return $c->res->body('Unknown asset');
