@@ -13,10 +13,12 @@ use RapidApp::AttributeHandlers;
 use RapidApp::Include qw(sugar perlutil);
 use Template;
 
-# -- override Static::Simple default config to ignore extensions like html.
+sub app_version { eval '$' . (shift)->config->{name} . '::VERSION' }
+
 before 'setup_plugins' => sub {
 	my $c = shift;
-	
+
+	# -- override Static::Simple default config to ignore extensions like html.
 	my $config
 		= $c->config->{'Plugin::Static::Simple'}
 		= $c->config->{'static'}
@@ -27,6 +29,8 @@ before 'setup_plugins' => sub {
 	
 	$config->{ignore_extensions} ||= [];
 	$c->config->{'Plugin::Static::Simple'} = $config;
+	# --
+	
 };
 # --
 
