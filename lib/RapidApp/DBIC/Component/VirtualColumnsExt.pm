@@ -62,7 +62,7 @@ sub columns {
 	return ($self->next::method(@_),$self->virtual_columns);
 }
 
-#TODO: init_virtual_column_value via get_columns, too
+
 sub get_column {
     my ($self, $column) = @_;
 
@@ -76,9 +76,26 @@ sub get_column {
 	return $self->next::method($column);
 }
 
+sub get_columns {
+    my $self = shift;
+    
+    return $self->next::method(@_) unless $self->in_storage;
+    my %data = $self->next::method(@_);
+    
+    if (defined $self->_virtual_columns) {
+        foreach my $column (keys %{$self->_virtual_columns}) {
+            my $value = undef;
+			$data{$column} = $value
+				if($self->init_virtual_column_value($column,\$value));
+        }
+    }
+    return %data;
+}
+
+
 
 sub init_virtual_column_value {
-	my ($self, $column) = @_;
+	my ($self, $column,$valref) = @_;
 	return if (exists $self->{_virtual_values}{$column});
 	my $sql = try{$self->column_info($column)->{sql}} or return;
 	
@@ -94,6 +111,9 @@ sub init_virtual_column_value {
 		as => [$column],
 		result_class => 'DBIx::Class::ResultClass::HashRefInflator'
 	})->first or return undef;
+	
+	# optionally update a supplied reference, passed by argument:
+	$$valref = $row->{$column} if (ref($valref) eq 'SCALAR');
 	
 	return $self->store_column($column,$row->{$column});
 }
