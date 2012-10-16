@@ -99,4 +99,69 @@ sub init_virtual_column_value {
 }
 
 
+# Prepares any set_functions, if applicable, for the supplied col/vals
+# ('set_functions' are custom coderefs optionally defined in the attributes
+# of a virtaul column. Similar concept to the 'sql' attribute but for update/insert
+# instead of select. Also, 'set_function' is a Perl coderef which calls
+# DBIC methods while 'sql' is raw SQL code passed off to the DB)
+sub prepare_set {
+	my $self = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+	
+	return unless (defined $self->_virtual_columns);
+	$self->{_virtual_columns_pending_set_function} ||= {};
+	foreach my $column (keys %opt) {
+		next unless (exists $self->_virtual_columns->{$column});
+		my $coderef = try{$self->column_info($column)->{set_function}} or next;
+		$self->{_virtual_columns_pending_set_function}{$column} = {
+			coderef	=> $coderef,
+			value	=> $opt{$column}
+		};
+	}
+}
+
+sub execute_pending_set_functions {
+	my $self = shift;
+	my $pend = $self->{_virtual_columns_pending_set_function} or return;
+	foreach my $column (keys %$pend) {
+		my $h = delete $pend->{$column}; #<-- fetch and clear
+		$h->{coderef}->($self,$h->{value});
+	}
+}
+
+sub store_column {
+    my ($self, $column, $value) = @_;
+	$self->prepare_set($column,$value);
+    return $self->next::method($column, $value);
+}
+
+sub set_column {
+    my ($self, $column, $value) = @_;
+	$self->prepare_set($column,$value);
+    return $self->next::method($column, $value);
+}
+
+sub update {
+    my $self = shift;
+	$self->prepare_set(@_);
+ 
+    # Do regular update
+    $self->next::method(@_);
+    
+	$self->execute_pending_set_functions;
+    return $self;
+}
+
+sub insert {
+    my $self = shift;
+	$self->prepare_set(@_);
+ 
+    # Do regular insert
+    $self->next::method(@_);
+    
+	$self->execute_pending_set_functions;
+    return $self;
+}
+
+
 1;

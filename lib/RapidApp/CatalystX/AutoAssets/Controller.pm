@@ -29,7 +29,7 @@ use Digest::SHA1;
 require JavaScript::Minifier;
 require CSS::Minifier;
 
-has 'minify', is => 'ro', isa => 'Bool', default => 1;
+has 'minify', is => 'ro', isa => 'Bool', default => 0;
 
 has 'built_dir', is => 'ro', lazy => 1, default => sub {
 	my $self = shift;

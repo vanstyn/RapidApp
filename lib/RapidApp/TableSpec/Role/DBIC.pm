@@ -248,10 +248,13 @@ sub add_db_column($@) {
 	my $editable = $self->filter_updatable_columns($name,$opt{name});
 	my $creatable = $self->filter_creatable_columns($name,$opt{name});
 	
-	# --  NEW: VIRTUAL COLUMNS SUPPORT - never editable:
+	# --  NEW: VIRTUAL COLUMNS SUPPORT:
 	if($self->ResultClass->has_virtual_column($name)) {
-		$editable = 0;
-		$creatable = 0;
+		# Only editable if a custom 'set_function' has been defined for the virtual column:
+		unless(try{$self->ResultClass->column_info($name)->{set_function}}) {
+			$editable = 0;
+			$creatable = 0;
+		}
 		# Hard-code exclude virtual columns from quick search. May add this support in
 		# the future, but it will require a bit of effort (see the complex/custom code
 		# in multifilters with the conversion into a 'HAVING' clause
