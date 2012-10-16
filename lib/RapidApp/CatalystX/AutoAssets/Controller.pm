@@ -5,6 +5,20 @@ use namespace::autoclean;
 
 BEGIN { extends 'Catalyst::Controller' }
 
+
+=head1 NAME
+
+RapidApp::CatalystX::AutoAssets::Controller - Catalyst Controller
+
+=head1 DESCRIPTION
+
+Controller for CAS/checksum serving of JavaScript and CSS.
+
+See RapidApp::CatalystX::AutoAssets Plugin
+
+=cut
+
+
 use RapidApp::Include qw(sugar perlutil);
 
 use Switch qw(switch);
@@ -15,7 +29,7 @@ use Digest::SHA1;
 require JavaScript::Minifier;
 require CSS::Minifier;
 
-has 'minify', is => 'ro', isa => 'Bool', default => 0;
+has 'minify', is => 'ro', isa => 'Bool', default => 1;
 
 has 'built_dir', is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
@@ -139,8 +153,6 @@ sub prepare_assets {
 	# No new changes, return
 	return if ($self->prepared_inc_mtime_concat eq $mtime_concat);
 	
-	scream(\@files);
-	
 	# separate css from js files and ignore all other files:
 	my @js = ();
 	my @css = ();
@@ -182,6 +194,7 @@ sub generate_asset {
 			my %opt = ( input => *INFILE, outfile => $fd );
 			$ext eq 'js' ? JavaScript::Minifier::minify(%opt) : CSS::Minifier::minify(%opt);
 			close INFILE;
+			$fd->write("\r\n");
 		}
 	}
 	else {
