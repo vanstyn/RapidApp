@@ -16,6 +16,11 @@ after 'setup_components' => sub {
     );
 };
 
+sub autoasset_include_tags {
+	my $c = shift;
+	return $c->controller('Asset')->html_head_includes;
+}
+
 1;
 
 

@@ -15,12 +15,19 @@ use Digest::SHA1;
 require JavaScript::Minifier;
 require CSS::Minifier;
 
-has 'minify', is => 'ro', isa => 'Bool', default => 1;
+has 'minify', is => 'ro', isa => 'Bool', default => 0;
 
 has 'built_dir', is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	my $c = $self->_app;
 	return $c->config->{home} . '/built_assets';
+};
+
+has 'extjs_theme_css', is => 'ro', lazy => 1, isa => 'Str', default => sub {
+	my $self = shift;
+	my $c = $self->_app;
+	my $home = $c->config->{home};
+	return $home . '/root/static/ext/resources/css/xtheme-gray.css'
 };
 
 # List of shell globs to include:
@@ -31,12 +38,27 @@ has 'inc', is => 'ro', lazy => 1, isa => 'Str', default => sub {
 	my $home = $c->config->{home};
 	$home =~ s/\s+/\\ /g; #<-- escape any whitespace in path
 	
-	return join(' ',
-		$home . '/rapidapp/src.d/*.js',
-		$home . '/rapidapp/src.d/*.css',
-		$home . '/root/src.d/*.js',
-		$home . '/root/src.d/*.css',
+	my @globs = (
+		## -- not serving ext css via AutoAsset yet because of relative paths in css
+		##$home . '/root/static/ext/resources/css/ext-all.css',
+		##$self->extjs_theme_css,
+		##$home . '/root/static/ext/examples/ux/fileuploadfield/css/fileuploadfield.css',
+		## --
+		$home . '/root/static/ext/adapter/ext/ext-base.js', 
+		#$home . '/root/static/ext/ext-all.js', #<-- TODO: option alternate debug version
+		$home . '/root/static/ext/ext-all-debug.js', #<-- TODO: option alternate debug version
+		$home . '/root/static/ext/src/debug.js', #<-- TODO: option alternate debug version
+		$home . '/root/static/ext/examples/ux/fileuploadfield/FileUploadField.js'
 	);
+	
+	my @files = qw(*.js *.css js/*.js css/*.css);
+	my @dirs = ($home . '/rapidapp/src.d/', $home . '/root/src.d/');
+	
+	foreach my $dir (@dirs) {
+		push @globs, $dir . $_ for (@files);
+	}
+	
+	return join(' ',@globs);
 };
 
 has 'js_asset_path', is => 'rw', isa => 'Maybe[Str]', default => undef;
@@ -116,6 +138,8 @@ sub prepare_assets {
 	
 	# No new changes, return
 	return if ($self->prepared_inc_mtime_concat eq $mtime_concat);
+	
+	scream(\@files);
 	
 	# separate css from js files and ignore all other files:
 	my @js = ();
@@ -199,8 +223,6 @@ sub file_checksum {
 sub index :Path :Args(2) {
     my ( $self, $c, $checksum, $name ) = @_;
 	
-	scream($self->html_head_includes);
-	
 	# Ignore the the client-supplied filename except the file extention
 	my ($junk,$ext) = split(/\./,$name,2);
 	my $filename = $checksum . '.' . $ext;
@@ -221,6 +243,18 @@ sub index :Path :Args(2) {
     return $c->response->body( $fh );
 }
 
+#### ---
+#### TODO: FIX ME - temp remap/redirect to ext - needed because of relative paths in ext css
+##sub images :Local {
+##	my ( $self, $c, @args ) = @_;
+##	my $path = '/static/ext/resources/images/' . join('/',@args);
+##	$c->response->header( 
+##		'Cache-Control' => 'public, max-age=86400, s-max-age=86400' # 86400 = 1 day
+##	); 
+##	$c->response->body(' ');
+##	return $c->response->redirect($path);
+##}
+#### ---
 
 sub get_asset_fh {
 	my ($self,$filename) = @_;

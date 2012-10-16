@@ -7,7 +7,23 @@
 <title>[% title %]</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 
-[% INCLUDE templates/rapidapp/ext_js_css.tt %]
+[%# INCLUDE templates/rapidapp/ext_js_css.tt %]
+
+<!-- Can't serve ext css via AutoAsset yet because of relative url paths within the css -->
+<link rel="stylesheet" type="text/css" href="/static/ext/resources/css/ext-all.css" />
+<link rel="stylesheet" type="text/css" href="/static/ext/resources/css/xtheme-gray.css" />
+<link rel="stylesheet" type="text/css" href="/static/ext/examples/ux/fileuploadfield/css/fileuploadfield.css" />
+
+[% c.autoasset_include_tags %]
+
+<!-- default favicon -->
+[% SET favicon = '/static/rapidapp/images/rapidapp_icon_small.ico' %]
+[% TRY %]
+  [% PROCESS templates/local_js_css.tt %]
+[% CATCH %]
+[% END %]
+
+<link rel="icon" href="[% favicon %]" type="image/x-icon" />
 
 
 <script type="text/javascript">

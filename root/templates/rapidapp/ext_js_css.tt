@@ -1,4 +1,14 @@
-﻿<link rel="stylesheet" type="text/css" href="/static/ext/resources/css/ext-all.css" />
+﻿<!--
+
+ THIS FILE NOW INACTIVE! 
+ 
+ See ext_page.tt and RapidApp::CatalystX::AutoAssets::Controller
+
+-->
+
+
+
+<link rel="stylesheet" type="text/css" href="/static/ext/resources/css/ext-all.css" />
 <link rel="stylesheet" type="text/css" href="/static/ext/resources/css/xtheme-gray.css" />
 
 
