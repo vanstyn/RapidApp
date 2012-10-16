@@ -12,8 +12,10 @@ use IO::File;
 use IO::All;
 use Digest::SHA1;
 
-# does nothing yet:
-has 'minify', is => 'ro', isa => 'Bool', default => 0;
+require JavaScript::Minifier;
+require CSS::Minifier;
+
+has 'minify', is => 'ro', isa => 'Bool', default => 1;
 
 has 'built_dir', is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
@@ -143,14 +145,18 @@ sub generate_asset {
 	my $tmpf = $self->built_dir . '/-' . $$ . '-' . rand . '.' . $ext . '.tmp';
 	
 	my $fd = IO::File->new($tmpf, '>:raw') or die $!;
-	$fd->write($_) for ( map { io($_)->slurp . "\r\n" } @$files );
-	$fd->close;
-	
 	if($self->minify) {
-		# TODO ...
-		#
-	
+		foreach my $file (@$files) {
+			open(INFILE, $file) or die $!;
+			my %opt = ( input => *INFILE, outfile => $fd );
+			$ext eq 'js' ? JavaScript::Minifier::minify(%opt) : CSS::Minifier::minify(%opt);
+			close INFILE;
+		}
 	}
+	else {
+		$fd->write($_) for ( map { io($_)->slurp . "\r\n" } @$files );
+	}
+	$fd->close;
 	
 	my $sha1 = $self->file_checksum($tmpf);
 	my $asset_name = $sha1 . '.' . $ext;
@@ -196,7 +202,7 @@ sub index :Path :Args(1) {
 		else 		{ return $self->unknown_asset($c); }
 	}
 	
-	# Let browsers cache forever because we're a CAS path! content will always be current:
+	# Let browsers cache forever because we're a CAS path! content will always be current
 	$c->response->header( 
 		'Cache-Control' => 'public, max-age=31536000, s-max-age=31536000' # 31536000 = 1 year
 	); 
