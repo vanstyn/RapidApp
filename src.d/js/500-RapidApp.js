@@ -5401,6 +5401,7 @@ Ext.ux.RapidApp.fieldContextDataGetValue = function(name) {
 	if(this.ownerCt && this.ownerCt.getForm) { 
 		var form = this.ownerCt.getForm();
 		var field = form.findField(name);
+		if (!field) { return null; }
 		if(name) { 
 			rec_data[name] = field.getValue(); 
 		}
