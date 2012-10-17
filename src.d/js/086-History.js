@@ -104,7 +104,7 @@ Ext.ux.RapidApp.HashNav = {
 	setHashpath: function(load) {
 		var autoLoad = Ext.isString(load) ? {url:load,params:{}} : load;
 		var hashpath = Ext.ux.RapidApp.HashNav.autoLoad_to_hashpath(autoLoad);
-		if(hashpath && window.location.hash !== hashpath) {
+		if(hashpath && decodeURIComponent(window.location.hash) !== decodeURIComponent(hashpath)) {
 			Ext.ux.RapidApp.HashNav.ignoreHashChange = true;
 			window.location.hash = hashpath;
 		}
