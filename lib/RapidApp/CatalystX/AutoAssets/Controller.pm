@@ -31,7 +31,7 @@ use Fcntl qw( :DEFAULT :flock :seek F_GETFL );
 require JavaScript::Minifier;
 require CSS::Minifier;
 
-has 'minify', is => 'ro', isa => 'Bool', default => 0;
+has 'minify', is => 'ro', isa => 'Bool', default => 1;
 
 has 'work_dir', is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
@@ -97,7 +97,7 @@ has 'css_asset_path', is => 'rw', isa => 'Maybe[Str]', default => undef;
 
 sub BUILD {
 	my $self = shift;
-	$self->init_work_dir;
+	$self->prepare_assets;
 }
 
 
@@ -202,6 +202,8 @@ sub fingerprint_calc_current {
 
 sub prepare_assets {
 	my $self = shift;
+	
+	$self->init_work_dir;
 	
 	my @files = $self->get_inc_files;
 	my $inc_mtimes = $self->get_inc_mtime_concat(\@files);
