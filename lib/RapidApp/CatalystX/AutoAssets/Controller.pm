@@ -400,6 +400,10 @@ sub html_head_includes {
 	
 	$self->prepare_assets;
 	
+	$self->css_asset_path(undef);
+	$self->js_asset_path(undef);
+	$self->find_set_unknown_asset_paths;
+	
 	my @tags = ();
 	push @tags, '<link rel="stylesheet" type="text/css" href="' . 
 		$self->asset_path_to_url( $self->css_asset_path ). 
