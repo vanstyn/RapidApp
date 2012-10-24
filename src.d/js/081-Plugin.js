@@ -516,6 +516,13 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		
 		// -----
 		if(this.grid.preload_quick_search) {
+			// -- Highlight Fx on the field to call attention to it when it is preloaded
+			this.field.on('afterrender',function(){
+				this.el.pause(1.5);
+				this.el.frame("FFDF00", 2, { duration: .5 });
+			},this.field);
+			// --
+			
 			this.field.setValue(this.grid.preload_quick_search);
 			var plugin = this, store = this.grid.store;
 			var onBeforeload;
@@ -528,6 +535,7 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 				// already in progress). This allows a single load, including the
 				// preload_quick_search
 				plugin.applyStoreParams.call(plugin);
+				
 			}
 			store.on('beforeload',onBeforeload,plugin);
 		}
