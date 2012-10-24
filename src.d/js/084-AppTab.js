@@ -507,6 +507,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	titleCount: false,
 
 	initComponent: function() {
+	
+		this.addEvents('firstload');
 		
 		this.on('afterrender',this.addExtraToOptionsMenu,this);
 		
@@ -548,6 +550,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 				lMask.show();
 				var hide_fn;
 				hide_fn = function(){ 
+					this.fireEvent('firstload');
 					lMask.hide(); 
 					this.store.un('load',hide_fn);
 					this.store.un('exception',hide_fn); 

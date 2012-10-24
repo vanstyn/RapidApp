@@ -517,8 +517,8 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		// -----
 		if(this.grid.preload_quick_search) {
 			// -- Highlight Fx on the field to call attention to it when it is preloaded
-			this.field.on('afterrender',function(){
-				this.el.pause(1.5);
+			this.grid.on('firstload',function(){
+				this.el.pause(.2);
 				this.el.frame("FFDF00", 2, { duration: .5 });
 			},this.field);
 			// --
