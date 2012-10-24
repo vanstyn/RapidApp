@@ -204,12 +204,15 @@ sub TS_title {
 }
 
 
+our $property_grid_nest_level = 0;
 
 sub TableSpec_property_grids {
 	my $self = shift;
 	my $TableSpec = shift;
 	my $Row = shift || $self->req_Row;
 	my $real_columns = shift || [];
+	
+	local $property_grid_nest_level = $property_grid_nest_level + 1;
 	
 	return $self->not_found_content unless ($Row);
 	
@@ -251,13 +254,21 @@ sub TableSpec_property_grids {
 		
 		# This is fundamentally flawed if a related record doesn't exist initially, but then 
 		# gets created, it will never be available!!
-		my $relRow = $Row->$rel or next;
-		if($relRow->isa('DBIx::Class::Row')) {
+		my $relRow = $Row->$rel;# or next;
+		# New: consider 'update_create_rels' (note that update_create_rels API is subject to change)
+		my $setup_grid = (
+			($relRow && $relRow->isa('DBIx::Class::Row')) or
+			($property_grid_nest_level == 1 && $rel ~~ @{$self->update_create_rels})
+		) ? 1 : 0;
+		if($setup_grid) {
 			push @items, $self->TableSpec_property_grids(
 				$TableSpec->related_TableSpec->{$rel},
 				$relRow,
 				$real_columns
 			);
+		}
+		elsif(!$relRow) {
+			next;
 		}
 		elsif($relRow->isa('DBIx::Class::ResultSet') and ($self->setup_multi_grids || $ONLY_MULTI_GRIDS)) {
 		
