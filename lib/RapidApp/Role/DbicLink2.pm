@@ -48,6 +48,10 @@ has 'creatable_colspec' => ( is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default 
 # sets of related rows. Most of the time you'll only want to put '*' in here
 has 'destroyable_relspec' => ( is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default => undef );
 
+# New: List of relationship names to auto-create if they don't exist during an UPDATE
+# TODO: make this a 'relspec' format like 'destroyable_relspec' above
+has 'update_create_rels', is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]};
+
 # These columns will always be fetched regardless of whether or not they were requested
 # by the client:
 has 'always_fetch_colspec' => ( is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default => undef );
@@ -1782,6 +1786,25 @@ sub prepare_record_updates {
 		
 		my $rel = $_{rel};
 		my $UpdRow = $rel ? $Row->$rel : $Row;
+		
+		
+		# ---- New partial/preliminary auto create relationship support
+		#
+		# 1st-level relationships that don't already exist that are listed in the
+		# 'update_create_rels' attr will be automatically created (as blank so they 
+		# can be updated in the subsequent update process)
+		# 
+		# TODO: support any depth via an alternate 'update_create_relspec' attr and
+		# create with supplied column values instead of blank (1 step instead of 2)
+		#
+		if($rel && !$UpdRow && $rel ~~ @{$self->update_create_rels} && $_{depth} == 1){
+			$UpdRow = $Row->create_related($rel,{})->get_from_storage;
+			my $msg = 'Auto CREATED RELATED -> ' . $self->get_Row_Rs_label($UpdRow) . "\n";
+			scream_color(WHITE.ON_GREEN.BOLD,$msg);
+		}
+		#
+		# ----
+		
 		
 		my %update = map { $_ => $data->{ $_{name_map}->{$_} } } keys %{$_{name_map}};
 		
