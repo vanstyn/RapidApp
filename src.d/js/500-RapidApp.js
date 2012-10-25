@@ -5457,6 +5457,27 @@ Ext.override(Ext.form.Field, {
    
 });
 
+// Takes an image tag (html string) and makes it autosize via max-width:100%
+Ext.ux.RapidApp.imgTagAutoSizeRender = function(v,maxheight) {
+	//if(v.search('<img ') !== 0) { return v; }
+	var div = document.createElement('div');
+	div.innerHTML = v;
+	var domEl = div.firstChild;
+	if(domEl && domEl.tagName == 'IMG') { 
+		var El = new Ext.Element(domEl);
+		var styles = 'max-width:100%;height:auto;width:auto;';
+		if(maxheight) { styles += 'max-height:' + maxheight + ';'; }
+		El.applyStyles(styles);
+		if(El.dom.getAttribute('width')) { El.dom.removeAttribute('width'); }
+		if(El.dom.getAttribute('height')) { El.dom.removeAttribute('height'); }
+		return div.innerHTML;
+	}
+	else {
+		return v;
+	}
+}
+
+
 Ext.ux.RapidApp.getImgTagRendererDefault = function(src,w,h,alt) {
 	var def = '<img ';
 	if(src){ def += 'src="' + src + '" '; }
@@ -5467,9 +5488,16 @@ Ext.ux.RapidApp.getImgTagRendererDefault = function(src,w,h,alt) {
 	
 	return function(v) {
 		if(!v) { return def; }
+		if(w == 'autosize') {
+			var maxheight = h;
+			return Ext.ux.RapidApp.imgTagAutoSizeRender(v,h); 
+		}
 		return v;
 	}
 }
+
+
+
 
 
 
