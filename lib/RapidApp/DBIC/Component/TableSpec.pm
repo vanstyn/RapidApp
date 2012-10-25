@@ -225,8 +225,10 @@ sub create_result_TableSpec {
 	my $ResultClass = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
+	my $table = $ResultClass->table;
+	$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
 	my $TableSpec = RapidApp::TableSpec->new( 
-		name => $ResultClass->table,
+		name => $table,
 		%opt
 	);
 	
@@ -270,13 +272,17 @@ sub default_TableSpec_cnf  {
 	my $data = $set->{data} || {};
 	my $order = $set->{order} || {};
 	my $deref = $set->{deref} || {};
-
+	
+	
+	my $table = $self->table;
+	$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
+	
 	my %defaults = ();
 	$defaults{iconCls} = $data->{singleIconCls} if ($data->{singleIconCls} and ! $data->{iconCls});
 	$defaults{iconCls} = $defaults{iconCls} || $data->{iconCls} || 'icon-pg';
 	$defaults{multiIconCls} = $data->{multiIconCls} || 'icon-pg-multi';
 	$defaults{singleIconCls} = $data->{singleIconCls} || $defaults{iconCls};
-	$defaults{title} = $data->{title} || $self->table;
+	$defaults{title} = $data->{title} || $table;
 	$defaults{title_multi} = $data->{title_multi} || $defaults{title};
 	($defaults{display_column}) = $self->primary_columns;
 	

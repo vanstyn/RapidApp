@@ -151,8 +151,10 @@ has 'TableSpec' => ( is => 'ro', isa => 'TableSpec', lazy_build => 1 );
 sub _build_TableSpec {
 	my $self = shift;
 	
+	my $from = $self->ResultSource->from;
+	$from = (split(/\./,$from,2))[1] || $from; #<-- get 'table' for both 'db.table' and 'table' format
 	my %opt = (
-		name => $self->ResultSource->from,
+		name => $from,
 		relation_sep => $self->relation_sep,
 		ResultSource => $self->ResultSource,
 		include_colspec => $self->include_colspec

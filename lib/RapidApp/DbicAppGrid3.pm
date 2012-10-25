@@ -35,7 +35,13 @@ sub apply_default_tabtitle {
 	my $self = shift;
 	# ---- apply default tab title and icon:
 	my $class = $self->ResultClass;
-	my $title = try{$class->TableSpec_get_conf('title_multi')} || try{$self->ResultSource->from};
+	
+	my $title = try{$class->TableSpec_get_conf('title_multi')} || try{
+		my $from = $self->ResultSource->from;
+		$from = (split(/\./,$from,2))[1] || $from; #<-- get 'table' for both 'db.table' and 'table' format
+		return $from;
+	};
+	
 	my $iconCls = try{$class->TableSpec_get_conf('multiIconCls')};
 	$self->apply_extconfig( tabTitle => $title ) if ($title);
 	$self->apply_extconfig( tabIconCls => $iconCls ) if ($iconCls);

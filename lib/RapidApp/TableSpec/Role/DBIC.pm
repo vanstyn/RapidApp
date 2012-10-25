@@ -1093,8 +1093,10 @@ sub add_related_TableSpec {
 	$relspec_prefix .= '.' if ($relspec_prefix and $relspec_prefix ne '');
 	$relspec_prefix .= $rel;
 	
+	my $table = $relclass->table;
+	$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
 	my %params = (
-		name => $relclass->table,
+		name => $table,
 		ResultClass => $relclass,
 		schema => $self->schema, #<-- need both ResultClass and schema to identify ResultSource
 		relation_sep => $self->relation_sep,
@@ -1421,7 +1423,9 @@ sub get_relationship_column_cnf {
 	my $conf = \%opt;
 	my $info = $conf->{relationship_info} or die "relationship_info is required";
 	
-	my $err_info = "rel col: " . $self->ResultSource->from . ".$rel - " . Dumper($conf);
+	my $from = $self->ResultSource->from;
+	$from = (split(/\./,$from,2))[1] || $from; #<-- get 'table' for both 'db.table' and 'table' format
+	my $err_info = "rel col: " . $from . ".$rel - " . Dumper($conf);
 	
 	die "displayField is required ($err_info)" unless (defined $conf->{displayField});
 	die "valueField is required ($err_info)" unless (defined $conf->{valueField});
@@ -1572,7 +1576,9 @@ sub get_relationship_column_cnf {
 	
 		case 'combo' {
 		
-			my $module_name = 'combo_' . $self->ResultClass->table . '_' . $colname;
+			my $table = $self->ResultClass->table;
+			$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
+			my $module_name = 'combo_' . $table . '_' . $colname;
 			my $Module = $self->get_or_create_rapidapp_module( $module_name,
 				class	=> 'RapidApp::DbicAppCombo2',
 				params	=> {
@@ -1613,7 +1619,9 @@ sub get_relationship_column_cnf {
 			};
 			$conf->{auto_editor_params}->{onBUILD} = $onBUILD;
 			
-			my $grid_module_name = 'grid_' . $self->ResultClass->table . '_' . $colname;
+			my $table = $self->ResultClass->table;
+			$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
+			my $grid_module_name = 'grid_' . $table . '_' . $colname;
 			my $GridModule = $self->get_or_create_rapidapp_module( $grid_module_name,
 				class	=> 'RapidApp::DbicAppGrid3',
 				params	=> {
@@ -1852,7 +1860,9 @@ sub get_m2m_multi_relationship_column_cnf {
 	my $schema = $self->ResultSource->schema;
 	my $Source = $schema->source($rrinfo->{source});
 	
-	my $module_name = 'm2mcombo_' . $self->ResultClass->table . '_' . $colname;
+	my $table = $self->ResultClass->table;
+	$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
+	my $module_name = 'm2mcombo_' . $table . '_' . $colname;
 	my $Module = $self->get_or_create_rapidapp_module( $module_name,
 		class	=> 'RapidApp::DbicAppCombo2',
 		params	=> {
