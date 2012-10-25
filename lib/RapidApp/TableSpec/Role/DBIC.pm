@@ -27,7 +27,9 @@ default => sub {
 	$self->meta->throw_error("'schema' not supplied; cannot get ResultSource automatically!")
 		unless ($schema_attr->has_value($self));
 	
-	return $self->schema->source($self->ResultClass);
+	#return $self->schema->source($self->ResultClass);
+	return try{$self->schema->source($self->ResultClass)} || 
+		$self->schema->source((reverse split(/\:\:/,$self->ResultClass))[0]);
 };
 
 has 'ResultClass', is => 'ro', isa => 'Str', lazy => 1, 
@@ -1186,16 +1188,37 @@ around 'updated_column_order' => sub {
 hashash 'multi_rel_columns_indx', lazy => 1, default => sub {
 	my $self = shift;
 	my $list = $self->get_Cnf('multi_relationship_column_names') || [];
-		
-	my %indx = map { $_ => 
-		{ %{$self->ResultClass->parse_relationship_cond(
-				$self->ResultSource->relationship_info($_)->{cond}
-			)}, 
-			info => $self->ResultSource->relationship_info($_),
-			rev_relname => (keys %{$self->ResultSource->reverse_relationship_info($_)})[0],
-			relname => $_
-		} 
-	} @$list;
+	
+	my %indx = ();
+	foreach my $rel (@$list) {
+		unless($self->ResultSource->has_relationship($rel)) {
+			warn RED.BOLD . "\n\nMulti-rel column error: '$rel' is not a valid " .
+				"relationship of ResultSource '" . $self->ResultSource->source_name . 
+				"'\n\n" . CLEAR;
+			next;
+		}
+		my $info = $self->ResultSource->relationship_info($rel) || {};
+		my $cond = $info->{cond};
+		my $h = $cond ? $self->ResultClass->parse_relationship_cond($cond) : {};
+		$indx{$rel} = { %$h, 
+			info => $info,
+			rev_relname => (keys %{$self->ResultSource->reverse_relationship_info($rel)})[0],
+			relname => $rel
+		};
+	}
+	
+	# -- finally refactored this into simpler code above (with error handling). 
+	# Got too carried away with map!!!
+	#my %indx = map { $_ => 
+	#	{ %{$self->ResultClass->parse_relationship_cond(
+	#			$self->ResultSource->relationship_info($_)->{cond}
+	#		)}, 
+	#		info => $self->ResultSource->relationship_info($_),
+	#		rev_relname => (keys %{$self->ResultSource->reverse_relationship_info($_)})[0],
+	#		relname => $_
+	#	} 
+	#} @$list;
+	# --
 	
 	# Add in any defined functions (this all needs to be cleaned up/refactored):
 	$self->Cnf_columns->{$_}->{function} and $indx{$_}->{function} = $self->Cnf_columns->{$_}->{function} 
@@ -1431,7 +1454,11 @@ sub get_relationship_column_cnf {
 	die "valueField is required ($err_info)" unless (defined $conf->{valueField});
 	die "keyField is required ($err_info)" unless (defined $conf->{keyField});
 	
-	my $Source = $self->ResultSource->related_source($rel);
+	my $Source = try{$self->ResultSource->related_source($rel)} catch {
+		warn RED.BOLD . $_ . CLEAR;
+		return undef;
+	} or return undef; 
+
 	
 	# --- Disable quick searching on rel cols with virtual display_column
 	# If the display column of the remote result class is virtual we turn
