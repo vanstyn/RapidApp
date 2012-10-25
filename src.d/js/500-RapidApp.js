@@ -5481,7 +5481,7 @@ Ext.ux.RapidApp.imgTagAutoSizeRender = function(v,maxheight) {
 Ext.ux.RapidApp.getImgTagRendererDefault = function(src,w,h,alt) {
 	var def = '<img ';
 	if(src){ def += 'src="' + src + '" '; }
-	if(w){ def += 'width="' + w + '" '; }
+	if(w && w != 'autosize'){ def += 'width="' + w + '" '; }
 	if(h){ def += 'height="' + h + '" '; }
 	if(alt){ def += 'alt="' + alt + '" '; }
 	def += '>';
@@ -5490,7 +5490,7 @@ Ext.ux.RapidApp.getImgTagRendererDefault = function(src,w,h,alt) {
 		if(!v) { return def; }
 		if(w == 'autosize') {
 			var maxheight = h;
-			return Ext.ux.RapidApp.imgTagAutoSizeRender(v,h); 
+			return Ext.ux.RapidApp.imgTagAutoSizeRender(v); 
 		}
 		return v;
 	}
