@@ -293,7 +293,7 @@ sub prepare_rest_request {
 		
 	return $self->redirect_handle_rest_rs_request($key,$val,$rs) if ($rs);
 	
-	# Apply default tabTitle:
+	# Apply default tabTitle: (see also 'getTabTitle' in DbicRowPage)
 	$self->apply_extconfig( tabTitle => ($key eq $self->record_pk ? 'Id' : $key ) . '/' . $val );
 	
 	# ---

@@ -9,6 +9,9 @@ use RapidApp::Include qw(sugar perlutil);
 
 requires '_ResultSet';
 
+has 'getTabTitle', is => 'ro', isa => 'Maybe[CodeRef]', default => undef;
+has 'getTabIconCls', is => 'ro', isa => 'Maybe[CodeRef]', default => undef;
+
 sub supplied_id {
 	my $self = shift;
 	my $id = $self->c->req->params->{$self->record_pk};
@@ -47,7 +50,19 @@ has 'req_Row', is => 'ro', lazy => 1, traits => [ 'RapidApp::Role::PerRequestBui
 		die usererr $count . ' records match ' . $idErr , title => 'Multiple records match';
 	}
 	
-	return $Rs->first;
+	my $Row = $Rs->first or return undef;
+	
+	if ($self->getTabTitle) {
+		my $title = $self->getTabTitle->($self,$Row);
+		$self->apply_extconfig( tabTitle => $title ) if ($title);
+	}
+	
+	if ($self->getTabIconCls) {
+		my $iconCls = $self->getTabIconCls->($self,$Row);
+		$self->apply_extconfig( tabIconCls => $iconCls ) if ($iconCls);
+	}
+	  
+	return $Row;
 };
 
 
