@@ -5722,3 +5722,20 @@ Ext.ux.RapidApp.increaseDecreaseMoneyRenderer = function(val) {
 	return 					'<span style="color:green;font-weight:bold;">+' + Ext.util.Format.usMoney(v) + '</span>'; 
 };
 
+
+// Returns the infitity character instead of the value when it is
+// a number greater than or equal to 'maxvalue'. Otherwise, the value
+// is returned as-is.
+Ext.ux.RapidApp.getInfinityNumRenderer = function(maxvalue) {
+	if(!Ext.isNumber(maxvalue)) { 
+		return function(v) { return v; }; 
+	}
+	return function(v) {
+		if(Number(v) >= Number(maxvalue)) {
+			// also increase size because the default size of the charater is really small
+			return '<span style="font-size:1.5em;">&infin;</span>';
+		}
+		return v;
+	}
+};
+
