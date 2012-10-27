@@ -5739,3 +5739,9 @@ Ext.ux.RapidApp.getInfinityNumRenderer = function(maxvalue) {
 	}
 };
 
+
+Ext.ux.RapidApp.jsonArrArrToHtmlTable = function(v) {
+
+	return v;
+}
+
