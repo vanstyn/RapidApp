@@ -5739,9 +5739,45 @@ Ext.ux.RapidApp.getInfinityNumRenderer = function(maxvalue) {
 	}
 };
 
-
+// renders a json array of arrays into an HTML Table
 Ext.ux.RapidApp.jsonArrArrToHtmlTable = function(v) {
 
-	return v;
+	var table_markup;
+	try {
+		var arr = Ext.decode(v);
+		var rows = [];
+		Ext.each(arr,function(tr,r) {
+			var cells = [];
+			Ext.each(tr,function(td,c) {
+				var style = '';
+				if(r == 0) {
+					style = 'font-size:1.1em;font-weight:bold;color:navy;min-width:50px;';
+				}
+				else if (c == 0) {
+					style = 'font-weight:bold;color:#333333;padding-right:30px;';
+				}
+				else {
+					style = 'font-family:monospace;padding-right:10px;';
+				}
+				cells.push({
+					tag: 'td',
+					html: td ? '<div style="' + style + '">' +
+						td + '</div>' : Ext.ux.showNull(td)
+				})
+			});
+			rows.push({
+				tag: 'tr',
+				children: cells
+			});
+		});
+		
+		table_markup = Ext.DomHelper.markup({
+			tag: 'table',
+			cls: 'r-simple-table',
+			children: rows
+		});
+	}catch(err){};
+
+	return table_markup ? table_markup : v;
 }
 
