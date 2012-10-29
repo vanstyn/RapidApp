@@ -2517,16 +2517,17 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 								data[f.name] = f.getValue();
 							}
 						},this);
-
-						this.postUpdate(editSpec,data,win);
+						
+						this.postUpdate(editSpec,data,this.win);
 					}
 				},
 				{
 					name: 'cancel',
 					text: 'Cancel',
 					handler: function(btn) {
-						win.close();
-					}
+						this.win.close();
+					},
+					scope: this
 				}
 			]
 		});
