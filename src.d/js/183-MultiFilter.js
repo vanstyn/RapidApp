@@ -64,20 +64,25 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 	
 	onRender: function() {
 	
+		var grid = this.grid;
+
 		this.filtersBtn = new Ext.Button({
-			//text: this.filterCountText(),
-			
 			text: 'Filters',
 			handler: function(btn) {
 				var win = btn.ownerCt.ownerCt.multifilter.showFilterWindow();
-			}
+			},
+			hidden: grid.hide_multifilter_button ? true: false
 		});
 		
 		this.updateFilterBtn();
 		
-		var grid = this.grid;
 		var add_to_cmp = this.grid.getBottomToolbar() || this.grid.getTopToolbar();
-		if(add_to_cmp && !grid.hide_filtersBtn) { add_to_cmp.add('-',this.filtersBtn) };
+		if(add_to_cmp && !grid.hide_filtersBtn) { 
+			if(!this.filtersBtn.hidden){
+				add_to_cmp.add('-');
+			}
+			add_to_cmp.add(this.filtersBtn);
+		};
 	},
 	
 	setFields: function() {
