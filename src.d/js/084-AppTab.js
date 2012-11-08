@@ -454,7 +454,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		'filterdata_frozen', 			// Frozen MultiFilters
 		'column_summaries',				// Column Summaries
 		'quickSearchCheckIndexes',		// Quick Search checked columns
-		'open_record_column_hidden'	// Hidden state of special open record column
+		'open_record_column_hidden',	// Hidden state of special open record column
+		'advanced_config'
 	],
 	
 	// Function to get the current grid state needed to save a search
