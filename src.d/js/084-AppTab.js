@@ -455,7 +455,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		'column_summaries',				// Column Summaries
 		'quickSearchCheckIndexes',		// Quick Search checked columns
 		'open_record_column_hidden',	// Hidden state of special open record column
-		'advanced_config'
+		'advanced_config',
+		'advanced_config_active'
 	],
 	
 	// Function to get the current grid state needed to save a search
@@ -513,10 +514,16 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		// This is here primarily for saved searches. Note: this is a very powerful,
 		// and thus possibly dangerous functionality. But the risk is at the point where
 		// this config property is loaded.
-		if(this.store.advanced_config) {
+		if(this.store.advanced_config && this.store.advanced_config_active) {
 			Ext.apply(this,this.store.advanced_config);
 		}
 		// --
+		
+		if(this.force_read_only && this.store.api) {
+			this.store.api.create = null;
+			this.store.api.update = null;
+			this.store.api.destroy = null;
+		}
 	
 		this.addEvents('firstload');
 		
