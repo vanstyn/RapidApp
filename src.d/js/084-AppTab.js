@@ -647,17 +647,16 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		var bbar_items = [];
 		if(Ext.isArray(this.bbar)) { bbar_items = this.bbar; }
 		
-		
-		//if(this.persist_immediately && this.store.api.update) {
-		//	this.on('afteredit',function(){ this.getStore().save(); },this);
-		//}
+		// Override for consistency: push buttons to the right to match general positioning
+		// when the paging toolbar is active
+		if(this.force_disable_paging) { bbar_items.push('->'); }
 		
 		this.bbar = {
 			xtype:	'toolbar',
 			items: bbar_items
 		};
 		
-		if(this.pageSize) {
+		if(this.pageSize && !this.force_disable_paging) {
 			Ext.apply(this.bbar,{
 				xtype:	'rapidapp-paging',
 				store: this.store,
@@ -745,6 +744,16 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		// Remove the bbar if its empty and there is no pageSize set (and there are no store buttons):
 		if (this.bbar.items.length == 0 && !this.pageSize && !this.setup_bbar_store_buttons) { 
 			delete this.bbar; 
+		}
+		
+		// Optional override to force disable the bbar:
+		if(this.force_disable_bbar && this.bbar) { 
+			delete this.bbar; 
+		}
+		
+		// Optional override to force disable the tbar:
+		if(this.force_disable_tbar && this.tbar) { 
+			delete this.tbar; 
 		}
 		
 		this.init_open_record_handler();

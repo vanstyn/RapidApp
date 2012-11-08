@@ -465,6 +465,12 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 	 * @private
 	 */
 	onRender:function() {
+	
+		var panel = this.toolbarContainer || this.grid;
+		var tb = 'bottom' === this.position ? panel.bottomToolbar : panel.topToolbar;
+		
+		// If there is no toolbar, then we can't setup, so we abort:
+		if(!tb) { return; }
 		
 		// -- Optional extra override for checked columns. init_quick_search_columns is
 		// set in AppGrid2 via HTTP Query param 'quick_search_cols'
@@ -474,8 +480,6 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		
 		store.on('beforeload',this.applyStoreParams,this);
 		
-		var panel = this.toolbarContainer || this.grid;
-		var tb = 'bottom' === this.position ? panel.bottomToolbar : panel.topToolbar;
 		// add menu
 		this.menu = new Ext.menu.Menu();
 		
