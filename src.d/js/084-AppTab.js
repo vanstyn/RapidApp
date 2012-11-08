@@ -507,6 +507,15 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	titleCount: false,
 
 	initComponent: function() {
+		
+		// NEW: support for loading any arbitrary config params from the store.
+		// This is here primarily for saved searches. Note: this is a very powerful,
+		// and thus possibly dangerous functionality. But the risk is at the point where
+		// this config property is loaded.
+		if(this.store.advanced_config) {
+			Ext.apply(this,this.store.advanced_config);
+		}
+		// --
 	
 		this.addEvents('firstload');
 		

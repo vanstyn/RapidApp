@@ -906,6 +906,8 @@ Ext.ux.RapidApp.Plugin.GridHmenuColumnsToggle = Ext.extend(Ext.util.Observable,{
 	onAfterrender: function() {
 		
 		var hmenu = this.cmp.view.hmenu;
+		if(!hmenu) { return; }
+		
 		var colsItem = hmenu.getComponent('columns');
 		if (!colsItem) { return; }
 		colsItem.hide();
