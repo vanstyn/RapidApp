@@ -494,13 +494,26 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		
 		this.searchText = (this.grid.quicksearch_mode == 'exact') ?
 			'Exact Search' : this.searchText;
-
-		// add menu button
-		this.button = new Ext.Button ({
+			
+		var btnConfig = {
 			text: this.searchText,
 			menu:this.menu,
 			iconCls:this.iconCls
-		});
+		};
+		
+		// -- Optional config: disable pressing of the button (making it act only as a label):
+		if(this.grid.quicksearch_disable_change_columns) {
+			delete btnConfig.menu;
+			Ext.apply(btnConfig,{
+				enableToggle: false,
+				allowDepress: false,
+				handleMouseEvents: false,
+				cls:'ra-override-cursor-default'
+			});
+		}
+		// --
+
+		this.button = new Ext.Button(btnConfig);
 		tb.add(this.button);
 
 		// add input field (TwinTriggerField in fact)

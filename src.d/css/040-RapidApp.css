@@ -1606,3 +1606,8 @@ TODO: make sure this doesn't cause problems someplace else
   overflow: visible !important;
 }
 /* ----- */
+
+
+.ra-override-cursor-default, .ra-override-cursor-default * {
+  cursor: default !important;
+}
