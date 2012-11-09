@@ -508,8 +508,50 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	
 	storeReloadButton: false,
 	titleCount: false,
+	
+	/*
+     NEW: 'ADVANCED_CONFIG' OVERRIDE 
+     
+     Optionally loads any additonal config parameters from the special config 
+     property 'advanced_config' if 'advanced_config_active' is also present and
+     set to truthy value.
+     
+     This is here primarily for saved searches. Note: this is a very powerful,
+     and thus possibly dangerous functionality. But the risk is at the point where
+     this config property is loaded.
+	*/
+	initAdvancedConfig: function(){
+		// Want this to be a global override to Ext.Component. But that causes 
+		// loading order issues. Want to find a way to apply the config to the 
+		// original config supplied to the constructor...  Need to figure out a
+		// way to do that
+		
+		// If there is a store within this component, optionally copy the 
+		// advanced_config properties from it:
+		if(this.store) {
+			Ext.apply(this,Ext.copyTo({},this.store,[
+				'advanced_config',
+				'advanced_config_active',
+				'advanced_config_json'
+			]));
+		}
+		
+		// Optionally load from JSON string:
+		if(this.advanced_config_active && this.advanced_config_json) {
+			this.advanced_config = Ext.decode(this.advanced_config_json);
+		}
+		
+		if(this.advanced_config_active && this.advanced_config) {
+			Ext.apply(this,this.advanced_config);
+		}
+	
+	},
 
 	initComponent: function() {
+	
+		this.initAdvancedConfig();
+	
+		//console.dir([this,this.initialConfig]);
 		
 		if(this.force_read_only && this.store.api) {
 			this.store.api.create = null;
