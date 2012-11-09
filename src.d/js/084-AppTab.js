@@ -456,6 +456,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		'quickSearchCheckIndexes',		// Quick Search checked columns
 		'open_record_column_hidden',	// Hidden state of special open record column
 		'advanced_config',
+		'advanced_config_json',
 		'advanced_config_active'
 	],
 	

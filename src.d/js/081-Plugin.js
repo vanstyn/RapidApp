@@ -3450,4 +3450,143 @@ Ext.preg('menu-filter',Ext.ux.RapidApp.Plugin.MenuFilter);
 
 
 
+/*
+ Ext.ux.RapidApp.Plugin.GridEditAdvancedConfig
+ 2012-11-08 by HV
+
+ Plugin that allows editing of the special 'advanced_config' of the component
+*/
+Ext.ux.RapidApp.Plugin.GridEditAdvancedConfig = Ext.extend(Ext.util.Observable,{
+	init: function(grid) {
+		this.grid = grid;
+		grid.on('afterrender',this.onAfterRender,this);
+	},
+	
+	onAfterRender: function(){
+		menu = this.grid.getOptionsMenu();
+		if(menu) {
+			menu.add({
+				xtype: 'menuitem',
+				text: 'Edit Advanced Config',
+				iconCls: 'icon-bullet-wrench',
+				handler: this.showAdvancedConfigWin,
+				scope: this
+			});
+		}
+	},
+	
+	showAdvancedConfigWin: function() {
+		
+		var json = this.grid.store.advanced_config_json;
+		json = json || (
+			this.grid.store.advanced_config ? 
+				Ext.encode(this.grid.store.advanced_config) : ''
+		);
+		
+		var fp = new Ext.form.FormPanel({
+			xtype: 'form',
+			frame: true,
+			labelAlign: 'right',
+			
+			//plugins: ['dynamic-label-width'],
+			labelWidth: 160,
+			labelPad: 15,
+			bodyStyle: 'padding: 10px 10px 5px 5px;',
+			defaults: { anchor: '-0' },
+			autoScroll: true,
+			monitorValid: true,
+			buttonAlign: 'right',
+			minButtonWidth: 100,
+			
+			items: [
+				{
+					name: 'active',
+					xtype: 'checkbox',
+					fieldLabel: 'Advanced Config Active',
+					labelStyle: 'font-weight: bold;color:navy;',
+					checked: this.grid.store.advanced_config_active ? true : false,
+					listeners: {
+						check: function(cb,checked) {
+							var json_field = cb.ownerCt.getComponent('json_data');
+							json_field.setDisabled(!checked);
+						}
+					}
+				},
+				{ xtype: 'spacer', height: 10 },
+				{
+					name: 'json_data',
+					itemId: 'json_data',
+					xtype: 'textarea',
+					style: 'font-family: monospace;',
+					fieldLabel: 'Advanced Config JSON',
+					hideLabel: true,
+					disabled: this.grid.store.advanced_config_active ? false : true,
+					value: json,
+					anchor: '-0 -35',
+					validator: function(v) {
+						if(!v || v == '') { return false; }
+						var obj, err;
+						try{ obj = Ext.decode(v) }catch(e){ err = e; };
+						if(err){ return err; }
+						return Ext.isObject(obj);
+					}
+				}
+			],
+			
+			buttons: [
+				{
+					name: 'save',
+					text: 'Apply',
+					iconCls: 'icon-save',
+					width: 175,
+					formBind: true,
+					scope: this,
+					handler: function(btn) {
+						var data = fp.getForm().getFieldValues();
+						data.json_data = data.json_data || null;
+						
+						this.grid.store.advanced_config_active = data.active;
+						this.grid.store.advanced_config_json = data.json_data;
+						
+						this.win.close();
+					}
+				},
+				{
+					name: 'cancel',
+					text: 'Cancel',
+					handler: function(btn) {
+						this.win.close();
+					},
+					scope: this
+				}
+			]
+		});
+		
+		if(this.win) {
+			this.win.close();
+		}
+		
+		this.win = new Ext.Window({
+			title: 'Edit Advanced Config (Experts Only)',
+			layout: 'fit',
+			width: 600,
+			height: 400,
+			minWidth: 400,
+			minHeight: 250,
+			closable: true,
+			closeAction: 'close',
+			modal: true,
+			items: fp
+		});
+		
+		this.win.show();
+	}
+	
+	
+	
+});
+Ext.preg('grid-edit-advanced-config',Ext.ux.RapidApp.Plugin.GridEditAdvancedConfig);
+
+
+
 
