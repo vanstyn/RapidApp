@@ -495,7 +495,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		if(store.column_summaries) { view_config.column_summaries = store.column_summaries; }
 		*/
 		
-		view_config.pageSize = grid.getBottomToolbar().pageSize;
+		var bbar = grid.getBottomToolbar();
+		view_config.pageSize = bbar ? bbar.pageSize : (this.pageSize || null);
 		
 		// Copy designated extra properties to be saved into view_config (saved_state):
 		Ext.copyTo(
