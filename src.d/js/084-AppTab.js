@@ -213,7 +213,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		this.loadTab.apply(this,arguments);
 	},
 
-	loadTab: function(cnf) {
+	loadTab: function(cnf,extra_cnf) {
 		if(cnf.newtab) { //<-- the newtab param is set by the "open another tab" plugin
 			delete cnf.newtab;
 			cnf.seq = cnf.seq || 0;
@@ -230,6 +230,12 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		//Ext.iterate(cnf,function(k,v){
 		//	if(!v) { delete cnf[k]; }
 		//},this);
+		
+		// -- New: apply optional second cnf argument:
+		if(Ext.isObject(extra_cnf)) {
+			Ext.apply(cnf,extra_cnf);
+		}
+		// --
 		
 		cnf = Ext.apply({
 			loadContentCnf: orig_cnf, //<-- save the cnf used

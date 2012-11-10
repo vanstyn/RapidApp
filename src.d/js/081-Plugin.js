@@ -3495,7 +3495,45 @@ Ext.ux.RapidApp.Plugin.GridEditAdvancedConfig = Ext.extend(Ext.util.Observable,{
 				Ext.encode(this.grid.store.advanced_config) : ''
 		);
 		
-		var fp = new Ext.form.FormPanel({
+		var fp;
+		
+		var saveFn = function(btn) {
+			var form = fp.getForm();
+			var cb = form.findField('active');
+			var jsonf = form.findField('json_data');
+			
+			// Doing this instead of just called getFieldValues() because that doesn't
+			// return the json_data when the field is disabled
+			var data = {};
+			if(cb && jsonf) {
+				data.active = cb.getValue();
+				data.json_data = jsonf.getValue();
+				this.grid.store.advanced_config_active = data.active;
+				this.grid.store.advanced_config_json = data.json_data;
+			}
+			
+			this.win.close();
+			
+			// Apply the config immediately:
+			if(btn.name == 'apply' && this.grid.ownerCt && this.grid.ownerCt.ownerCt) {
+				var tab = this.grid.ownerCt, tp = tab.ownerCt;
+				if(Ext.isFunction(tp.loadContent) && Ext.isObject(tab.loadContentCnf)) {
+					var cnf = tab.loadContentCnf;
+					var extra_cnf = {
+						update_cmpConfig: function(conf) {
+							if(conf.store) {
+								conf.store.advanced_config_active = data.active;
+								conf.store.advanced_config_json = data.json_data;
+							}
+						}
+					};
+					tp.remove(tab);
+					tp.loadContent(cnf,extra_cnf);
+				}
+			}
+		};
+		
+		fp = new Ext.form.FormPanel({
 			xtype: 'form',
 			frame: true,
 			labelAlign: 'right',
@@ -3547,21 +3585,22 @@ Ext.ux.RapidApp.Plugin.GridEditAdvancedConfig = Ext.extend(Ext.util.Observable,{
 			
 			buttons: [
 				{
-					name: 'save',
-					text: 'Apply',
+					name: 'apply',
+					text: 'Save &amp; Apply',
 					iconCls: 'icon-save',
 					width: 175,
 					formBind: true,
 					scope: this,
-					handler: function(btn) {
-						var data = fp.getForm().getFieldValues();
-						data.json_data = data.json_data || null;
-						
-						this.grid.store.advanced_config_active = data.active;
-						this.grid.store.advanced_config_json = data.json_data;
-						
-						this.win.close();
-					}
+					handler: saveFn
+				},
+				{
+					name: 'save',
+					text: 'Save',
+					iconCls: 'icon-save',
+					width: 100,
+					formBind: true,
+					scope: this,
+					handler: saveFn
 				},
 				{
 					name: 'cancel',
@@ -3593,9 +3632,6 @@ Ext.ux.RapidApp.Plugin.GridEditAdvancedConfig = Ext.extend(Ext.util.Observable,{
 		
 		this.win.show();
 	}
-	
-	
-	
 });
 Ext.preg('grid-edit-advanced-config',Ext.ux.RapidApp.Plugin.GridEditAdvancedConfig);
 
