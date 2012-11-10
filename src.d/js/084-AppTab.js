@@ -132,6 +132,16 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		if(close_item)	{ items.push(close_item); }
 		if(open_item)	{ items.push(open_item); }
 		
+		// -- New: Optionally get additional menu items defined in the tab itself:
+		if(Ext.isFunction(tab.getTabContextMenuItems)) {
+			var tabitems = tab.getTabContextMenuItems.call(tab,tp);
+			if(Ext.isArray(tabitems)) {
+				var newitems = items.concat(tabitems);
+				items = newitems;
+			}
+		}
+		// --
+		
 		return items;
 	},
 	

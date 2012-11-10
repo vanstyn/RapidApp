@@ -3464,15 +3464,27 @@ Ext.ux.RapidApp.Plugin.GridEditAdvancedConfig = Ext.extend(Ext.util.Observable,{
 	
 	onAfterRender: function(){
 		menu = this.grid.getOptionsMenu();
-		if(menu) {
-			menu.add({
-				xtype: 'menuitem',
-				text: 'Edit Advanced Config',
-				iconCls: 'icon-bullet-wrench',
-				handler: this.showAdvancedConfigWin,
-				scope: this
-			});
+		if(menu) { menu.add(this.getMenuItem()); }
+		
+		// Designed to work specifically with AppTab's context menu system:
+		if(this.grid.ownerCt) {
+			this.grid.ownerCt.getTabContextMenuItems = 
+				this.getTabContextMenuItems.createDelegate(this);
 		}
+	},
+	
+	getTabContextMenuItems: function() {
+		return [ this.getMenuItem() ];
+	},
+	
+	getMenuItem: function() {
+		return {
+			xtype: 'menuitem',
+			text: 'Edit Advanced Config',
+			iconCls: 'icon-bullet-wrench',
+			handler: this.showAdvancedConfigWin,
+			scope: this
+		};
 	},
 	
 	showAdvancedConfigWin: function() {
