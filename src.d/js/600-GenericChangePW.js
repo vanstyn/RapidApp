@@ -2,6 +2,11 @@ Ext.ns('Ext.ux.RapidApp');
 
 Ext.ux.RapidApp.genericChangePW = function(username,post_url) {
 
+	// Shouldn't come up, but check for and close existing windows:
+	var winId = 'general-change-pw-window';
+	var curWin = Ext.getCmp(winId);
+	if(curWin){ curWin.close(); }
+	
 	var win;
 	
 	var newPwField = new Ext.form.TextField({
@@ -18,7 +23,13 @@ Ext.ux.RapidApp.genericChangePW = function(username,post_url) {
 		allowBlank: false
 	});
 	
-	var success_fn = function() {
+	var success_fn = function(res) {
+		// Check for special text in response body:
+		if(res && res.responseText && res.responseText == 'bad_old_pw'){
+			win.hide_mask();
+			return Ext.Msg.alert('Bad Password', 'Current password incorrect');
+		}
+
 		win.close();
 		Ext.Msg.alert('Success', 'Password Changed Successfully');
 	};
@@ -106,6 +117,7 @@ Ext.ux.RapidApp.genericChangePW = function(username,post_url) {
 	});
 
 	win = new Ext.Window({
+		id: winId, 
 		title: 'Change Password (' + username + ')',
 		layout: 'fit',
 		width: 475,
