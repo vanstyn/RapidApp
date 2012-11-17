@@ -1,0 +1,20 @@
+
+.ra-change-pw-heading {
+	background-repeat: no-repeat;
+	background-position: left top;
+	background-image: url(/static/rapidapp/images/keys.png) !important;
+	padding-left: 128px;
+	padding-top: 15px;
+	min-height: 128px;
+	min-width: 160px;
+	font-size: 30px;
+  font-family: Arial,Helvetica,sans-serif;
+  color: #666666;
+  text-align: center;
+}
+
+.ra-change-pw-heading .sub {
+  padding-top:20px;
+  font-size: .65em;
+  
+}
