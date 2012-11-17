@@ -53,7 +53,7 @@ sub Content {
 # the Store, returns the Content object
 sub uri_find_Content {
 	my $self = shift;
-	my $uri = shift;
+	my $uri = shift or return undef;
 	my @parts = split(/\//,$uri);
 	
 	while (scalar @parts > 0) {
