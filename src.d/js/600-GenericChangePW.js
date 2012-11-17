@@ -4,6 +4,46 @@ Ext.ux.RapidApp.genericChangePW = function(username,post_url) {
 
 	var win;
 	
+	var newPwField = new Ext.form.TextField({
+		name: 'new_pw',
+		inputType: 'password',
+		fieldLabel: 'New Password',
+		allowBlank: false
+	});
+	
+	var oldPwField = new Ext.form.TextField({
+		name: 'current_pw',
+		inputType: 'password',
+		fieldLabel: 'Current Password',
+		allowBlank: false
+	});
+	
+	var success_fn = function() {
+		win.close();
+		Ext.Msg.alert('Success', 'Password Changed Successfully');
+	};
+	
+	var failure_fn = function() {
+		win.hide_mask();
+		// Don't show a message; assume the backend set a RapidApp exception:
+		//Ext.Msg.alert('Failed', 'Failed to change password');
+	};
+	
+	var doChange = function() {
+		win.show_mask();
+		Ext.Ajax.request({
+			url: post_url,
+			method: 'POST',
+			params: { 
+				username: username, 
+				old_pw: oldPwField.getValue(),
+				new_pw: newPwField.getValue()
+			},
+			success: success_fn,
+			failure: failure_fn
+		});
+	};
+	
 	var fp = new Ext.form.FormPanel({
 		xtype: 'form',
 		frame: true,
@@ -28,33 +68,31 @@ Ext.ux.RapidApp.genericChangePW = function(username,post_url) {
 				'</div>'
 			},
 			{ xtype: 'spacer', height: 10 },
-			{
-				name: 'current_pw',
-				xtype: 'textfield',
-				inputType: 'password',
-				fieldLabel: 'Current Password',
-			},
-			{
-				name: 'new_pw',
-				xtype: 'textfield',
-				inputType: 'password',
-				fieldLabel: 'New Password',
-			},
+			
+			oldPwField,
+			newPwField,
 			{
 				name: 'confirm_pw',
 				xtype: 'textfield',
 				inputType: 'password',
 				fieldLabel: 'Confirm New Password',
+				allowBlank: false,
+				validator: function(v) {
+					if(v != newPwField.getValue()) {
+						return 'Passwords do not match';
+					}
+					return true;
+				}
 			},
 		],
 		
 		buttons: [
 			{
-				name: 'change',
-				text: 'Change Password',
-				iconCls: 'icon-save',
-				width: 175,
+				name: 'ok',
+				text: 'Ok',
+				iconCls: 'icon-key',
 				formBind: true,
+				handler: doChange
 			},
 			{
 				name: 'cancel',
@@ -67,18 +105,40 @@ Ext.ux.RapidApp.genericChangePW = function(username,post_url) {
 		]
 	});
 
-
 	win = new Ext.Window({
 		title: 'Change Password (' + username + ')',
 		layout: 'fit',
-		width: 450,
+		width: 475,
 		height: 350,
-		minWidth: 425,
+		minWidth: 455,
 		minHeight: 350,
 		closable: true,
 		closeAction: 'close',
 		modal: true,
-		items: fp
+		items: fp,
+		show_mask: function() { win.myMask.show(); },
+		hide_mask: function() { win.myMask.hide(); },
+		listeners: {
+			afterrender: function() {
+				var El = win.getEl()
+				// Create the actual mask object tied to the window
+				win.myMask = new Ext.LoadMask(El, {msg:"Please wait..."});
+				
+				new Ext.KeyMap(El, {
+					key: Ext.EventObject.ENTER,
+					shift: false,
+					alt: false,
+					fn: function(keyCode, e){
+						fp.el.select('button').item(0).dom.click();
+					}
+				});
+			},
+			show: function(){
+				oldPwField.focus('',10); 
+				oldPwField.focus('',100); 
+				oldPwField.focus('',300);
+			}
+		}
 	});
 	
 	win.show();
