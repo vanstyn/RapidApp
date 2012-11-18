@@ -79,7 +79,7 @@ before 'finalize' => sub {
 	my $coderefs = try{$c->stash->{on_finalize_success}} or return;
 	return unless (scalar @$coderefs > 0);
 	my $status = $c->res->code;
-	return unless ($status =~ /^2\d{2}$/); # status code 2xx = success
+	return unless ($status =~ /^[23]\d{2}$/); # status code 2xx = success, also allow 3xx codes
 	$c->log->info(
 		"finalize_body(): calling " . (scalar @$coderefs) .
 		" CodeRefs added by 'add_on_finalize_success'"
