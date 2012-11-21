@@ -214,6 +214,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 	},
 
 	loadTab: function(cnf,extra_cnf) {
+		
 		if(cnf.newtab) { //<-- the newtab param is set by the "open another tab" plugin
 			delete cnf.newtab;
 			cnf.seq = cnf.seq || 0;
@@ -256,6 +257,22 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		
 		cnf.autoLoad.url = cnf.autoLoad.url || cnf.url;
 		Ext.apply(cnf.autoLoad.params,cnf.params||{});
+		
+		// ------------------------
+		// Attempt to sanitize special characters in the URL. Only do this for absolute
+		// URL paths *relative* to the current hostname (i.e. start with '/'). This is
+		// needed for REST paths, specifically situations where the db key contains funky
+		// characters.
+		// TODO: the right way to fix this is on the backend by encoding the REST key
+		if(cnf.autoLoad.url.search('/') == 0) {
+			// The following 3 lines are a roundabout way to encode all special characters
+			// except '/'. Manually encode '.' because it isn't considered 'special' by the
+			// encodeURIComponent function
+			var encUrl = encodeURIComponent(cnf.autoLoad.url);
+			var encUrl2 = encUrl.replace(/\%2F/g,'/');
+			cnf.autoLoad.url = encUrl2.replace(/\./g,'%2E');
+		}
+		// ------------------------
 		
 		// ------------------------
 		// Generate a checksum (using a crc algorithm) of the
