@@ -1153,7 +1153,14 @@ Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler = function(cmp,url,all_pages,
 			else {
 				// Background download, since non-FF browsers can't detect download complete and
 				// close the window:
-				return Ext.ux.iframeBgDownload(url,options.params,timeout);
+				
+				// UPDATE: had to revert to using iFramePostwith because iframeBgDownload
+				// fails when there are too many params which results in an encoded URL which
+				// is too long, which happens with grid views with lots of columns or filter
+				// criteria.
+				//return Ext.ux.iframeBgDownload(url,options.params,timeout);
+				return Ext.ux.iFramePostwith(url,options.params);
+				
 			}
 			
 		},

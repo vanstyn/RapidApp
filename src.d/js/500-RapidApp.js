@@ -929,9 +929,10 @@ Ext.ux.iFramePostwith = function (to,p) {
 	myForm.action = to ;
 
 	for (var k in p) {
+		var v = (p[k] == null || typeof p[k] == 'undefined') ? '' : p[k];
 		var myInput = iframe.doc.createElement("input") ;
-		myInput.setAttribute("name", k) ;
-		myInput.setAttribute("value", p[k]);
+		myInput.setAttribute("name", k);
+		myInput.setAttribute("value", v);
 		myForm.appendChild(myInput) ;
 	}
 	iframe.doc.body.appendChild(myForm) ;
@@ -951,6 +952,9 @@ Ext.ux.iFramePostwith = function (to,p) {
  the download. The downside of this is that nothing will be shown to the user if an error or 
  exception occurs, the download will just never happen. To address this limitation, see the 
  alternate method 'Ext.ux.RapidApp.winDownload' below (which has its own, different limitations)
+ 
+ UPDATE: one limitation of this function is with long URLs since it uses a GET instead of a 
+ POST. This will fail if the encoded URL is longer than ~2k characters
 */
 Ext.ns('Ext.ux.iframeBgDownload');
 Ext.ux.iframeBgDownload = function (url,params,timeout) {
