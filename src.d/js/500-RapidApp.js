@@ -5156,14 +5156,16 @@ Ext.ux.RapidApp.increaseDecreaseMoneyRenderer = function(val) {
 // is returned as-is.
 Ext.ux.RapidApp.getInfinityNumRenderer = function(maxvalue) {
 	if(!Ext.isNumber(maxvalue)) { 
-		return function(v) { return v; }; 
+		return function(v) { return Ext.ux.showNull(v); }; 
 	}
 	return function(v) {
 		if(Number(v) >= Number(maxvalue)) {
 			// also increase size because the default size of the charater is really small
 			return '<span style="font-size:1.5em;">&infin;</span>';
 		}
-		return v;
+		return v && moment ? 
+			moment.duration(Number(v), "seconds").humanize() : 
+				Ext.ux.showNull(v);
 	}
 };
 
