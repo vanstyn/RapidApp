@@ -88,6 +88,11 @@ Ext.ux.RapidApp.Plugin.ClickableLinks = Ext.extend(Ext.util.Observable, {
 	},
 	
 	onClick: function(e,el,o) {
+		// -- New: limit to only Anchor (<a>) tags. Needed for IE
+		var tag = el ? el.nodeName : null;
+		if(tag != 'A') { return; }
+		// --
+		
 		var Element = new Ext.Element(el);
 		var href = Element.getAttribute('href');
 		if (href && href != '#') {
