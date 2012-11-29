@@ -5154,7 +5154,7 @@ Ext.ux.RapidApp.increaseDecreaseMoneyRenderer = function(val) {
 // Returns the infitity character instead of the value when it is
 // a number greater than or equal to 'maxvalue'. Otherwise, the value
 // is returned as-is.
-Ext.ux.RapidApp.getInfinityNumRenderer = function(maxvalue) {
+Ext.ux.RapidApp.getInfinityNumRenderer = function(maxvalue,type) {
 	if(!Ext.isNumber(maxvalue)) { 
 		return function(v) { return Ext.ux.showNull(v); }; 
 	}
@@ -5163,16 +5163,38 @@ Ext.ux.RapidApp.getInfinityNumRenderer = function(maxvalue) {
 			// also increase size because the default size of the charater is really small
 			return '<span title="' + v + '" style="font-size:1.5em;">&infin;</span>';
 		}
-		if(v && moment) {
-			return '<span title="' + v + '">' +
-				moment.duration(Number(v), "seconds").humanize() +
-			'</span>'
+		
+		if(type == 'duration') {
+			return Ext.ux.RapidApp.renderDuration(v);
 		}
-		else {
-			return Ext.ux.showNull(v);
-		}
+		
+		return Ext.ux.showNull(v);
 	}
 };
+
+
+
+
+Ext.ux.RapidApp.renderDuration = function(seconds,suffixed) {
+	if(seconds && moment) {
+		return '<span title="' + seconds + '">' +
+			moment.duration(Number(seconds),"seconds").humanize(suffixed) +
+		'</span>'
+	}
+	else {
+		return Ext.ux.showNull(seconds);
+	}
+}
+
+Ext.ux.RapidApp.renderDurationSuf = function(seconds) {
+	return Ext.ux.RapidApp.renderDuration(seconds,true);
+}
+
+Ext.ux.RapidApp.renderDurationPastSuf = function(v) {
+	var seconds = Math.abs(Number(v));
+	return Ext.ux.RapidApp.renderDurationSuf(-seconds);
+}
+
 
 // renders a json array of arrays into an HTML Table
 Ext.ux.RapidApp.jsonArrArrToHtmlTable = function(v) {
