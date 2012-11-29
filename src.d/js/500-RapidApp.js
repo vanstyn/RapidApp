@@ -5177,7 +5177,7 @@ Ext.ux.RapidApp.getInfinityNumRenderer = function(maxvalue,type) {
 
 Ext.ux.RapidApp.renderDuration = function(seconds,suffixed) {
 	if(typeof seconds != 'undefined' && seconds != null && moment) {
-		return '<span title="' + seconds + '">' +
+		return '<span title="' + seconds + ' seconds">' +
 			moment.duration(Number(seconds),"seconds").humanize(suffixed) +
 		'</span>'
 	}
