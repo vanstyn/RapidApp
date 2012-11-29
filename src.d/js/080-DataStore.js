@@ -1081,6 +1081,13 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			if(keyMapConfigs[name]) {
 				this.storeBtnKeyMaps[name] = new Ext.KeyMap(Ext.getBody(),Ext.apply({
 					fn: function(k,e){
+					
+						// -- New: skip DELETE (46) if the event target is within a form field:
+						if(k == 46 && e.target && typeof e.target.form != 'undefined') {
+							return;
+						}
+						// --
+					
 						var El = this.cmp.getEl();
 						var pos = El.getXY();
 						
