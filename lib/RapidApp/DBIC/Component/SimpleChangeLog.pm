@@ -10,23 +10,29 @@ __PACKAGE__->mk_classdata( 'log_source_name' );
 __PACKAGE__->mk_classdata( 'log_source_column_map' );
 __PACKAGE__->mk_classdata( 'track_actions' );
 __PACKAGE__->mk_classdata( 'track_immutable' );
+#__PACKAGE__->mk_classdata( 'get_user_id_coderef' );
 
 __PACKAGE__->mk_classdata( '_tracked_sources' );
 __PACKAGE__->mk_classdata( '_initialized' );
+__PACKAGE__->mk_classdata( '_active_data_points' );
+
+# Provided as an optional hook to get arbitrary data points
+sub get_log_data_points { {} }
 
 # These are the default mappings of columns for the supplied log Source
 # User-defined mappings are optionally specified in 'log_source_column_map'
 # Any columns from the default list can be turned off (i.e. set to not store
 # the given data point) by setting a value of undef
 our %default_column_map = (
-	change_ts	=> 'change_ts',
-	user_id		=> 'user_id',
-	action		=> 'action', 		# insert/update/delete
-	schema		=> undef, 			# store the name of the schema, off by default
-	source		=> 'source',
-	table		=> undef, 			# store the table name
-	pri_key		=> 'pri_key', 		# the value of the primary key of the changed row
-	diff_change	=> 'diff_change'	# where to store the description of the change
+	change_ts		=> 'change_ts',
+	user_id			=> 'user_id',
+	action			=> 'action', 		# insert/update/delete
+	schema			=> '', 			# store the name of the schema, off by default
+	source			=> 'source',
+	table			=> '', 			# store the table name
+	pri_key_column	=> '',
+	pri_key_value	=> 'pri_key', 		# the value of the primary key of the changed row
+	change_details	=> 'diff_change'	# where to store the description of the change
 );
 
 
@@ -52,16 +58,20 @@ sub _init {
 		%default_column_map,
 		%{ $class->log_source_column_map || {} }
 	});
+	my $col_map = $class->log_source_column_map;
 	
-	my @required_cols = grep { defined $_ } values %{$class->log_source_column_map};
+	# data points are disabled if they map to a false/undef/empty value:
+	! $col_map->{$_} || $col_map->{$_} eq '' and delete $col_map->{$_} for (keys %$col_map);
+	
+	# Check to make sure the selected Log Source actually has columns for each
+	# of the active/enabled data points:
 	my %has_cols = map {$_=>1} $LogSource->columns;
-	my @missing_cols = grep { !$has_cols{$_} } @required_cols;
-	
+	my @missing_cols = grep { !$has_cols{$_} } values %$col_map;
 	die ref($LogSource) . ' cannot be used as the Log Source because it is missing ' .
 	 'the following required columns: ' . join(', ',map {"'$_'"} @missing_cols) 
 		if (scalar @missing_cols > 0);
 	
-	# Normalize:
+	# Normalize the recorded source name for good measure:
 	$class->log_source_name( $LogSource->source_name );
 	
 	return $class->_initialized(1);
@@ -89,17 +99,9 @@ sub track_sources {
 		# Skip sources we've already setup:
 		return if ($class->_tracked_sources->{$source_name});
 		
-		
-		## Setup tracking code.....
-		
-		$class->_add_change_tracker($source_name,'insert');
-		$class->_add_change_tracker($source_name,'update');
-		$class->_add_change_tracker($source_name,'delete');
-	
-	
+		$class->_add_change_tracker($source_name,$_) for (@{$class->track_actions});
 		$class->_tracked_sources->{$source_name} = 1;
 	}
-
 }
 
 
@@ -110,6 +112,7 @@ sub _add_change_tracker {
 	my $action = shift;
 	die "Bad action '$action'" unless ($action ~~ @_action_names);
 	
+	my $Source = $class->source($source_name);
 	my $result_class = $class->class($source_name);
 	my $meta = Class::MOP::Class->initialize($result_class);
 	my $immutable = $meta->is_immutable;
@@ -131,21 +134,29 @@ sub _add_change_tracker {
 		
 	die "Attempted to add duplicate update tracker!" 
 		if ($result_class->$applied_attr);
+		
+	my @pri_keys = $Source->primary_columns;
+	die "Source '$source_name' has " . scalar(@pri_keys) . " primary keys. " .
+	 "Only sources with exactly 1 are currently supported." unless (scalar(@pri_keys) == 1);
 	
+	my %base_data = (
+		action 				=> $action,
+		source 				=> $Source->source_name,
+		table 				=> $Source->from,
+		pri_key_column		=> $pri_keys[0]
+	);
 	
 	$meta->add_around_method_modifier( $action => sub {
 		my $orig = shift;
-		my $self = shift;
+		my $Row = shift;
 		
 		###
 		my ($changes,@ret) = wantarray ?
-			proxy_method_get_changed($self,$orig,@_) :
-				@{proxy_method_get_changed($self,$orig,@_)};
+			proxy_method_get_changed($Row,$orig,@_) :
+				@{proxy_method_get_changed($Row,$orig,@_)};
 		###
 		
-		scream($action,$changes);
-		
-		
+		$class->record_change($Row,$changes,%base_data);
 		
 		return wantarray ? @ret : $ret[0];
 	}) and $result_class->$applied_attr(1);
@@ -156,6 +167,64 @@ sub _add_change_tracker {
 
 
 
+sub record_change {
+	my $class = shift;
+	my ($Row,$changes,%base_data) = @_;
+	
+	my $data_points = $class->get_log_data_points(@_);
+	die "'get_log_data_points()' did not return expected HashRef"
+		unless (ref($data_points) eq 'HASH');
+		
+	%$data_points = (%base_data, %$data_points);
+	
+	my $col_map = $class->log_source_column_map;
+	my %activ = map {$_=>1} keys %$col_map;
+	
+	# Assuming it hasn't already been obtained above (and hasn't been turned off)
+	# get the actual string description of the change:
+	$data_points->{change_details} = $class->get_change_details(@_) if (
+		! exists $data_points->{change_details} and
+		$activ{change_details}
+	);
+	
+	# Get the pri_key value:
+	$data_points->{pri_key_value} = $class->get_pri_key_value(@_) if (
+		! exists $data_points->{pri_key_value} and
+		$activ{pri_key_value}
+	);
+	
+	my $dt = DateTime->now( time_zone => 'local' );
+	$data_points->{change_ts} = $dt if (
+		! exists $data_points->{change_ts} and
+		$activ{change_ts}
+	);
+	
+	my %create = map { $col_map->{$_} => ($data_points->{$_} || undef) } keys %$col_map;
+	return $class->create_log_entry(\%create);
+}
+
+sub create_log_entry {
+	my $class = shift;
+	return $class->resultset($class->log_source_name)->create(@_);
+}
+
+
+sub get_change_details {
+	my $class = shift;
+	my ($Row,$changes,%base_data) = @_;
+	
+	# TODO, make json, formatted ascii, etc
+	
+	return Dumper($changes);
+}
+
+
+sub get_pri_key_value {
+	my $class = shift;
+	my $Row = shift;
+	my ($col) = $Row->primary_columns;
+	return $Row->get_column($col);
+}
 
 
 ## copied from RapidApp::DBIC::Component::TableSpec:
