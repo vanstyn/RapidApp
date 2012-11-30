@@ -25,14 +25,14 @@ sub get_log_data_points { {} }
 # the given data point) by setting a value of undef
 our %default_column_map = (
 	change_ts		=> 'change_ts',
-	user_id			=> 'user_id',
+	#user_id			=> 'user_id', #<-- this will almost always be defined, but is app specific so not built-in
 	action			=> 'action', 		# insert/update/delete
 	schema			=> '', 			# store the name of the schema, off by default
 	source			=> 'source',
 	table			=> '', 			# store the table name
 	pri_key_column	=> '',
-	pri_key_value	=> 'pri_key', 		# the value of the primary key of the changed row
-	change_details	=> 'diff_change'	# where to store the description of the change
+	pri_key_value	=> 'row_key', 		# the value of the primary key of the changed row
+	change_details	=> 'change_details'	# where to store the description of the change
 );
 
 
@@ -82,7 +82,16 @@ sub track_all_sources {
 	$class->_init;
 	
 	push @exclude, $class->log_source_name;
-	return $class->track_sources(grep { ! $_ ~~ @exclude } $class->sources);
+	
+	# temp - auto exclude sources without exactly one primary key
+	foreach my $source_name ($class->sources) {
+		my $Source = $class->source($source_name);
+		push @exclude, $source_name unless (scalar($Source->primary_columns) == 1);
+	}
+	
+	
+	my %excl = map {$_=>1} @exclude;
+	return $class->track_sources(grep { !$excl{$_} } $class->sources);
 }
 
 sub track_sources {
@@ -208,17 +217,6 @@ sub create_log_entry {
 	return $class->resultset($class->log_source_name)->create(@_);
 }
 
-
-sub get_change_details {
-	my $class = shift;
-	my ($Row,$changes,%base_data) = @_;
-	
-	# TODO, make json, formatted ascii, etc
-	
-	return Dumper($changes);
-}
-
-
 sub get_pri_key_value {
 	my $class = shift;
 	my $Row = shift;
@@ -226,6 +224,28 @@ sub get_pri_key_value {
 	return $Row->get_column($col);
 }
 
+sub get_change_details {
+	my $class = shift;
+	
+	# TODO: add a choice among multiple different formats:
+	
+	return $class->get_change_format_json_table(@_);
+}
+
+# simple tabular as array of arrays in JSON:
+sub get_change_format_json_table {
+	my $class = shift;
+	my ($Row,$changes,%base_data) = @_;
+	
+	my $action = $base_data{action} or die "Unexpected error; action attr missing";
+	
+	#my $table = $action eq 'update' ? [[$action,'old','new']] : [[$action,'']];
+	my $table = [[$action,'old','new']];
+	push @$table, [$changes->{$_}->{header},$changes->{$_}->{old},$changes->{$_}->{new}]
+		for (sort {$a cmp $b} keys %$changes);
+	
+	return encode_json($table);
+}
 
 ## copied from RapidApp::DBIC::Component::TableSpec:
 #
