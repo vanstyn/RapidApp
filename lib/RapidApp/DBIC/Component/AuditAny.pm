@@ -1,4 +1,4 @@
-package RapidApp::DBIC::Component::SimpleChangeLog;
+package RapidApp::DBIC::Component::AuditAny;
 #use base 'DBIx::Class';
 # this is for Attribute::Handlers:
 require base; base->import('DBIx::Class::Schema');
