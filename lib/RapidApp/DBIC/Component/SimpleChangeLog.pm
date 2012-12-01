@@ -10,6 +10,7 @@ __PACKAGE__->mk_classdata( 'log_source_name' );
 __PACKAGE__->mk_classdata( 'log_source_column_map' );
 __PACKAGE__->mk_classdata( 'track_actions' );
 __PACKAGE__->mk_classdata( 'track_immutable' );
+__PACKAGE__->mk_classdata( 'no_compare_from_storage' );
 #__PACKAGE__->mk_classdata( 'get_user_id_coderef' );
 
 __PACKAGE__->mk_classdata( '_tracked_sources' );
@@ -35,6 +36,7 @@ our %default_column_map = (
 	change_details	=> 'change_details'	# where to store the description of the change
 );
 
+our $ACTIVE_TXN = undef;
 
 our @_action_names = qw(insert update delete);
 
@@ -159,10 +161,26 @@ sub _add_change_tracker {
 		my $orig = shift;
 		my $Row = shift;
 		
+		if($ACTIVE_TXN) {
+			my $origRow = $Row;
+			my %old = ();
+			if($Row->in_storage) {
+				$origRow = $Row->get_from_storage || $Row;
+				%old = $origRow->get_columns;
+			}
+			
+			push @{$ACTIVE_TXN->{change_rows}}, {
+				Row => $Row,
+				old => \%old,
+				origRow => $origRow
+			};
+		
+		}
+		
 		###
 		my ($changes,@ret) = wantarray ?
-			proxy_method_get_changed($Row,$orig,@_) :
-				@{proxy_method_get_changed($Row,$orig,@_)};
+			$class->proxy_method_get_changed($Row,$orig,@_) :
+				@{$class->proxy_method_get_changed($Row,$orig,@_)};
 		###
 		
 		$class->record_change($Row,$changes,%base_data);
@@ -244,8 +262,37 @@ sub get_change_format_json_table {
 	push @$table, [$changes->{$_}->{header},$changes->{$_}->{old},$changes->{$_}->{new}]
 		for (sort {$a cmp $b} keys %$changes);
 	
+	return undef unless (scalar @$table > 1);
 	return encode_json($table);
 }
+
+
+## Future... 
+#sub txn_do :Debug {
+#	my $class = shift;
+#	return $class->next::method(@_) if ($ACTIVE_TXN);
+#	
+#	# If we're here, this is the topmost txn_do call.
+#	require String::Random;
+#	local $ACTIVE_TXN = {
+#		txn_id => String::Random->new->randregex('[a-z0-9A-Z]{5}'),
+#		change_rows => []
+#	};
+#	
+#	scream('txn_Id: ' . $ACTIVE_TXN->{txn_id});
+#	
+#	my $ret = $class->next::method(@_);
+#	
+#	foreach my $ch (@{$ACTIVE_TXN->{change_rows}}) {
+#		my $diff = $class->row_compare_data_diff($ch->{Row},$ch->{old},$ch->{origRow});
+#		scream_color(GREEN.BOLD,$diff);
+#	}
+#	
+#	
+#	
+#	return $ret;
+#}
+
 
 ## copied from RapidApp::DBIC::Component::TableSpec:
 #
@@ -266,6 +313,7 @@ sub get_change_format_json_table {
 our $TRY_USE_TABLESPEC = 1;
 our $TABLESPEC_EXCLUDE_ORIG_FK_VAL = 0;
 sub proxy_method_get_changed {
+	my $class = shift;
 	my $self = shift;
 	my $method = shift;
 	
@@ -281,9 +329,24 @@ sub proxy_method_get_changed {
 		@ret = $self->$method(@_) : 
 			$ret[0] = $self->$method(@_);
 	
+	my $diff = $class->row_compare_data_diff($self,\%old,$origRow);
+	
+	return wantarray ? ($diff,@ret) : [$diff,@ret];
+}
+
+
+sub row_compare_data_diff {
+	my $class = shift;
+	my $self = shift;
+	my $data = shift;
+	my $origRow = shift;
+	
+	my %old = %$data;
+	
 	my %new = ();
 	if($self->in_storage) {
-		%new = $self->get_columns;
+		%new = $class->no_compare_from_storage ? 
+			$self->get_columns : $self->get_from_storage->get_columns;
 	}
 	
 	# This logic is duplicated in DbicLink2. Not sure how to avoid it, though,
@@ -344,10 +407,8 @@ sub proxy_method_get_changed {
 		} 
 	} @changed;
 	
-	return wantarray ? (\%diff,@ret) : [\%diff,@ret];
+	return \%diff;
 }
-
-
 
 
 1;__END__
