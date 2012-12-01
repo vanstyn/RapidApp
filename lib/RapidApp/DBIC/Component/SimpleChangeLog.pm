@@ -161,21 +161,21 @@ sub _add_change_tracker {
 		my $orig = shift;
 		my $Row = shift;
 		
-		if($ACTIVE_TXN) {
-			my $origRow = $Row;
-			my %old = ();
-			if($Row->in_storage) {
-				$origRow = $Row->get_from_storage || $Row;
-				%old = $origRow->get_columns;
-			}
-			
-			push @{$ACTIVE_TXN->{change_rows}}, {
-				Row => $Row,
-				old => \%old,
-				origRow => $origRow
-			};
-		
-		}
+		# Future...
+		#if($ACTIVE_TXN) {
+		#	my $origRow = $Row;
+		#	my %old = ();
+		#	if($Row->in_storage) {
+		#		$origRow = $Row->get_from_storage || $Row;
+		#		%old = $origRow->get_columns;
+		#	}
+		#	
+		#	push @{$ACTIVE_TXN->{change_rows}}, {
+		#		Row => $Row,
+		#		old => \%old,
+		#		origRow => $origRow
+		#	};
+		#}
 		
 		###
 		my ($changes,@ret) = wantarray ?
