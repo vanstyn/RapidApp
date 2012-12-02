@@ -5,7 +5,7 @@ use RapidApp::Include qw(sugar perlutil);
 
 # ***** Generic Base Class *****
 
-has 'collector_coderef', is => 'ro', isa => 'Maybe[CodeRef]', default => undef;
+has 'collect_coderef', is => 'ro', isa => 'Maybe[CodeRef]', default => undef;
 
 
 # these are part of the base class because the AuditObj expects them in all
@@ -17,7 +17,7 @@ sub uses_sources { () }
 
 sub record_changes {
 	my $self = shift;
-	return $self->collector_coderef->(@_) if ($self->collector_coderef);
+	return $self->collect_coderef->(@_) if ($self->collect_coderef);
 	
 	die "No record_changes method implemented or no collector_coderef supplied!";
 

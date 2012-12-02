@@ -20,7 +20,7 @@ has 'default_datapoint_class', is => 'ro', default => 'RapidApp::DBIC::AuditAny:
 has 'collector_class', is => 'ro', required => 1;
 
 has 'collector_params', is => 'ro', isa => 'HashRef', default => sub {{}};
-has 'Collector', is => 'ro', lazy => 1, default => sub {
+has 'collector', is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	eval 'require ' . $self->collector_class;
 	return ($self->collector_class)->new( 
@@ -33,13 +33,13 @@ has 'primary_key_separator', is => 'ro', isa => 'Str', default => '|~|';
 
 has 'logs_to_own_schema', is => 'ro', isa => 'Bool', lazy => 1, init_arg => undef, default => sub {
 	my $self = shift;
-	return ($self->Collector->uses_schema == $self->schema) ? 1 : 0;
+	return ($self->collector->uses_schema == $self->schema) ? 1 : 0;
 };
 
 has 'log_sources', is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, init_arg => undef, default => sub {
 	my $self = shift;
 	return [] unless ($self->logs_to_own_schema);
-	return [ $self->Collector->uses_sources ];
+	return [ $self->collector->uses_sources ];
 };
 
 
@@ -171,6 +171,20 @@ sub track {
 	
 	die "track_sources and track_all_sources are incompatable" if ($sources && $track_all);
 	
+	my $collect = exists $opts{collect} ? delete $opts{collect} : undef;
+	if ($collect) {
+		die "'collect' cannot be used with 'collector_params', 'collector_class' or 'collector'"
+			if ($opts{collector_params} || $opts{collector_class} || $opts{collector});
+			
+		$opts{collector_class} = 'RapidApp::DBIC::AuditAny::Collector';
+		$opts{collector_params} = { collect_coderef => $collect };
+	}
+	
+	if($opts{collector}) {
+		die "'collector' cannot be used with 'collector_params', 'collector_class' or 'collect'"
+			if ($opts{collector_params} || $opts{collector_class} || $opts{collect});
+	}
+	
 	my $self = $class->new(%opts);
 	
 	$self->track_sources(@$sources) if ($sources);
@@ -270,7 +284,7 @@ sub finish_changeset {
 	my $self = shift;
 	die "Cannot finish_changeset because there isn't one active" unless ($self->active_changeset);
 	
-	$self->Collector->record_changes($self->active_changeset);
+	$self->collector->record_changes($self->active_changeset);
 	$self->active_changeset(undef);
 	$self->auto_finish(0);
 	return 1;
@@ -286,7 +300,9 @@ sub _bind_schema {
 	 "Auditors, set 'allow_multiple_auditors' to true"
 		if(scalar(@{$self->schema->auditors}) > 0 and ! $self->allow_multiple_auditors);
 	
-	$self->schema->add_auditor($self) unless ($self ~~ @{$self->schema->auditors});
+	$_ == $self and return for(@{$self->schema->auditors});
+	
+	return $self->schema->add_auditor($self);
 }
 
 

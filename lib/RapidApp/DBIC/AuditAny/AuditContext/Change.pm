@@ -220,6 +220,30 @@ has 'column_datapoint_values', is => 'ro', isa => 'HashRef', lazy => 1, default 
 	return { map { $_->column_name => $_->datapoint_values } @Contexts };
 };
 
+sub dump_change {
+	my $self = shift;
+	return Dumper($self->column_datapoint_values);
+}
 
+
+### Special TableSpec-specific datapoints:
+
+
+has 'has_TableSpec', is => 'ro', isa => 'Bool', lazy => 1, default => sub {
+	my $self = shift;
+	return $self->class->can('TableSpec_get_conf') ? 1 : 0;
+};
+
+has 'fk_map', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
+	my $self = shift;
+	return {} unless ($self->has_TableSpec);
+	return $self->class->TableSpec_get_conf('relationship_column_fks_map') || {};
+};
+
+has 'column_properties', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
+	my $self = shift;
+	return {} unless ($self->has_TableSpec);
+	return { $self->class->TableSpec_get_conf('columns') };
+};
 
 1;

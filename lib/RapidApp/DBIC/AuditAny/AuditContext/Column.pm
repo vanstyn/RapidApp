@@ -11,18 +11,6 @@ has 'column_name', is => 'ro', isa => 'Str', required => 1;
 has 'old_value', is => 'ro', isa => 'Maybe[Str]', required => 1;
 has 'new_value', is => 'ro', isa => 'Maybe[Str]', required => 1;
 
-has 'col_props', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
-	my $self = shift;
-	return {} unless ($self->has_TableSpec);
-	return { $self->class->TableSpec_get_conf('columns') };
-};
-
-has 'column_header', is => 'ro', isa => 'Str', lazy => 1, default => sub { 
-	my $self = shift;
-	my $header = $self->col_props->{header} || $self->column_name;
-	return $header;
-};
-
 sub class { (shift)->ChangeContext->class }
 
 has 'datapoint_values', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
@@ -41,16 +29,18 @@ has 'all_datapoint_values', is => 'ro', isa => 'HashRef', lazy => 1, default => 
 
 ### Special TableSpec-specific datapoints:
 
+sub fk_map { (shift)->ChangeContext->fk_map }
+sub column_properties { (shift)->ChangeContext->column_properties }
 
-has 'has_TableSpec', is => 'ro', isa => 'Bool', lazy => 1, default => sub {
+has 'col_props', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
 	my $self = shift;
-	return $self->class->can('TableSpec_get_conf') ? 1 : 0;
+	return $self->column_properties->{$self->column_name} || {};
 };
 
-has 'fk_map', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
+has 'column_header', is => 'ro', isa => 'Str', lazy => 1, default => sub { 
 	my $self = shift;
-	return {} unless ($self->has_TableSpec);
-	return $self->class->TableSpec_get_conf('relationship_column_fks_map') || {};
+	my $header = $self->col_props->{header} || $self->column_name;
+	return $header;
 };
 
 has 'rel', is => 'ro', isa => 'Maybe[Str]', lazy => 1, default => sub {
@@ -60,11 +50,13 @@ has 'rel', is => 'ro', isa => 'Maybe[Str]', lazy => 1, default => sub {
 
 has 'old_display_value', is => 'ro', isa => 'Maybe[Str]', lazy => 1, default => sub {
 	my $self = shift;
+	return undef unless (defined $self->old_value);
 	return $self->get_display_value($self->ChangeContext->origRow);
 };
 
 has 'new_display_value', is => 'ro', isa => 'Maybe[Str]', lazy => 1, default => sub {
 	my $self = shift;
+	return undef unless (defined $self->new_value);
 	return $self->get_display_value($self->ChangeContext->Row);
 };
 
