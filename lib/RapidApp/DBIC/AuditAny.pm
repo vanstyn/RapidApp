@@ -50,7 +50,7 @@ has 'tracked_sources', is => 'ro', isa => 'HashRef[Str]', default => sub {{}};
 has 'calling_action_function', is => 'ro', isa => 'HashRef[Bool]', default => sub {{}};
 has 'datapoint_configs', is => 'ro', isa => 'ArrayRef[HashRef]', default => sub {[]};
 has 'active_changeset', is => 'rw', isa => 'Maybe[Object]', default => undef;
-
+has 'auto_finish', is => 'rw', isa => 'Bool', default => 0;
 
 sub _get_datapoint_configs {
 	my $self = shift;
@@ -242,27 +242,38 @@ sub _init_apply_schema_class {
 		my @ChangeSets = ();
 		foreach my $AuditAny (@$Auditors) {
 			next if ($AuditAny->active_changeset);
-			
-			my $class = $AuditAny->changeset_context_class;
-			my $ChangeSetContext = $class->new( AuditObj => $AuditAny );
-			push @ChangeSets, $ChangeSetContext;
-			$AuditAny->active_changeset($ChangeSetContext);
+			push @ChangeSets, $AuditAny->start_changeset;
 		};
 		
 		return $Schema->$orig(@_) unless (scalar(@ChangeSets) > 0);
 		
 		my $result = $Schema->$orig(@_);
 		
-		foreach my $ChangeSetContext (@ChangeSets) {
-			my $AuditAny = $ChangeSetContext->AuditObj;
-			$AuditAny->active_changeset(undef);
-			$AuditAny->record_changes($ChangeSetContext);
-		}
+		$_->finish for (@ChangeSets);
 		
 		return $result;
 	});
 		
 	$meta->make_immutable(%immut_opts) if ($immutable);
+}
+
+sub start_changeset {
+	my $self = shift;
+	die "Cannot start_changeset because a changeset is already active" if ($self->active_changeset);
+	
+	my $class = $self->changeset_context_class;
+	$self->active_changeset($class->new( AuditObj => $self ));
+	return $self->active_changeset;
+}
+
+sub finish_changeset {
+	my $self = shift;
+	die "Cannot finish_changeset because there isn't one active" unless ($self->active_changeset);
+	
+	$self->Collector->record_changes($self->active_changeset);
+	$self->active_changeset(undef);
+	$self->auto_finish(0);
+	return 1;
 }
 
 sub _bind_schema {
@@ -378,6 +389,11 @@ sub _add_action_tracker {
 				$AuditAny->calling_action_function->{$func_name}
 			);
 			
+			unless ($AuditAny->active_changeset) {
+				$AuditAny->start_changeset;
+				$AuditAny->auto_finish(1);
+			}
+			
 			$AuditAny->calling_action_function->{$func_name} = 1;
 			my $class = $AuditAny->change_context_class;
 			my $ChangeContext = $class->new(
@@ -413,35 +429,10 @@ sub _add_action_tracker {
 sub record_change {
 	my $self = shift;
 	my $ChangeContext = shift;
-	
-	# Add the change to the active ChangeSet:
-	return $self->active_changeset->add_changes($ChangeContext)
-		if ($self->active_changeset);
-	
-	# Create and record a dedicated ChangeSet with a single change:
-	my $class = $self->changeset_context_class;
-	my $ChangeSetContext = $class->new( AuditObj => $self );
-	$ChangeSetContext->add_changes($ChangeContext);
-	
-	return $self->record_changes($ChangeSetContext);
+	die "Cannot record_change without an active changeset" unless ($self->active_changeset);
+	$self->active_changeset->add_changes($ChangeContext);
+	$self->finish_changeset if ($self->auto_finish);
 }
-
-sub record_changes {
-	my $self = shift;
-	my $ChangeSetContext = shift;
-	return $self->Collector->record_changes($ChangeSetContext);
-}
-
-
-
-
-
-#has 'data_points', isa => 'HashRef[HashRef]', lazy_build => 1;
-#sub _build_data_points {
-#	my $self = shift;
-#
-#}
-
 
 
 1;

@@ -12,4 +12,10 @@ sub add_changes { push @{(shift)->changes}, @_ }
 
 sub all_changes { @{(shift)->changes} }
 
+sub finish {
+	my $self = shift;
+	die "Not active changeset" unless ($self == $self->AuditObj->active_changeset);
+	$self->AuditObj->finish_changeset;
+}
+
 1;
