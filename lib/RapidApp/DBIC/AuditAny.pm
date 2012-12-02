@@ -8,11 +8,16 @@ use Class::MOP::Class;
 #$SIG{__DIE__} = sub { confess(shift) };
 
 has 'schema', is => 'ro', required => 1, isa => 'DBIx::Class::Schema';
+has 'track_immutable', is => 'ro', isa => 'Bool', default => 0;
+has 'track_actions', is => 'ro', isa => 'ArrayRef', default => sub { [qw(insert update delete)] };
+has 'allow_multiple_auditors', is => 'ro', isa => 'Bool', default => 0; 
+
 has 'source_context_class', is => 'ro', default => 'RapidApp::DBIC::AuditAny::AuditContext::Source';
 has 'change_context_class', is => 'ro', default => 'RapidApp::DBIC::AuditAny::AuditContext::Change';
 has 'column_context_class', is => 'ro', default => 'RapidApp::DBIC::AuditAny::AuditContext::Column';
 has 'default_datapoint_class', is => 'ro', default => 'RapidApp::DBIC::AuditAny::DataPoint';
 has 'collector_class', is => 'ro', required => 1;
+
 has 'collector_params', is => 'ro', isa => 'HashRef', default => sub {{}};
 has 'Collector', is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
@@ -36,8 +41,7 @@ has 'log_sources', is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, init_arg => un
 	return [ $self->Collector->uses_sources ];
 };
 
-has 'track_immutable', is => 'ro', isa => 'Bool', default => 0;
-has 'track_actions', is => 'ro', isa => 'ArrayRef', default => sub { [qw(insert update delete)] };
+
 
 has 'tracked_action_functions', is => 'ro', isa => 'HashRef', default => sub {{}};
 
@@ -93,6 +97,7 @@ action
 source
 pri_key_value
 column_name
+column_header
 old_value
 new_value
 old_display_value
@@ -185,12 +190,16 @@ sub BUILD {
 }
 
 
-sub _init_schema_class_attribute {
+sub _init_apply_schema_class {
 	my $self = shift;
-	return if ($self->schema->can('auditany'));
+	return if ($self->schema->can('auditors'));
 	my $class = ref($self->schema) or die "schema is not a reference";
 	
 	my $meta = Class::MOP::Class->initialize($class);
+	
+	# If this class has already be updated:
+	return if ($meta->has_attribute('auditors'));
+	
 	my $immutable = $meta->is_immutable;
 	
 	die "Won't add 'auditany' attribute to immutable Schema Class '$class' " .
@@ -206,25 +215,36 @@ sub _init_schema_class_attribute {
 	}
 	
 	$meta->add_attribute( 
-		auditany => ( 
-			accessor => 'auditany',
-			reader => 'auditany',
-			writer => 'set_auditany',
+		auditors => ( 
+			accessor => 'auditors',
+			reader => 'auditors',
+			writer => 'set_auditors',
 			default => undef
 		)
 	);
+	$meta->add_method( add_auditor => sub { push @{(shift)->auditors}, @_ } );
+	
+	#$meta->add_around_method_modifier( 'txn_do' => sub {
+	#	my $orig = shift;
+	#	my $Schema = shift;
+	#	
+	#});
+	
 	
 	$meta->make_immutable(%immut_opts) if ($immutable);
 }
 
 sub _bind_schema {
 	my $self = shift;
-	$self->_init_schema_class_attribute;
+	$self->_init_apply_schema_class;
 	
-	die "Supplied Schema instance already has a bound AuditAny instance!" 
-		if ($self->schema->auditany);
-		
-	return $self->schema->set_auditany($self);
+	$self->schema->set_auditors([]) unless ($self->schema->auditors);
+	
+	die "Supplied Schema instance already has a bound Auditor - to allow multple " .
+	 "Auditors, set 'allow_multiple_auditors' to true"
+		if(scalar(@{$self->schema->auditors}) > 0 and ! $self->allow_multiple_auditors);
+	
+	$self->schema->add_auditor($self) unless ($self ~~ @{$self->schema->auditors});
 }
 
 
@@ -307,30 +327,47 @@ sub _add_action_tracker {
 	$meta->add_around_method_modifier( $action => sub {
 		my $orig = shift;
 		my $Row = shift;
-		
+		my $columns = $_[0];
+	
 		# This method modifier is applied to the entire result class. Call/return the
 		# unaltered original method unless the Row is tied to a schema instance that
 		# is being tracked by an AuditAny which is configured to track the current
 		# action function. Also, make sure this call is not already nested to prevent
 		# deep recursion
-		my $AuditAny = $Row->result_source->schema->auditany;
-		return $Row->$orig(@_) if (
-			! $AuditAny ||
-			! $AuditAny->tracked_action_functions->{$func_name} ||
-			$AuditAny->calling_action_function->{$func_name}
-		);
+		my $Auditors = $Row->result_source->schema->auditors || [];
+		return $Row->$orig(@_) unless (scalar(@$Auditors) > 0);
 		
-		$AuditAny->calling_action_function->{$func_name} = 1;
-		my $class = $self->change_context_class;
-		my $AuditChangeContext = $class->new( 
-			AuditObj			=> $self,
-			SourceContext	=> $self->tracked_sources->{$source_name},
-			Row 				=> $Row 
-		);
-		my $result = $AuditChangeContext->proxy_action($action,@_);
-		$AuditAny->calling_action_function->{$func_name} = 0;
+		$Row->set_inflated_columns($columns) if ($columns && $action ne 'delete');
 		
-		$AuditAny->record_change($AuditChangeContext);
+		# Before action is called:
+		my @Trackers = ();
+		foreach my $AuditAny (@$Auditors) {
+			next if (
+				! $AuditAny->tracked_action_functions->{$func_name} ||
+				$AuditAny->calling_action_function->{$func_name}
+			);
+			
+			$AuditAny->calling_action_function->{$func_name} = 1;
+			my $class = $AuditAny->change_context_class;
+			my $ChangeContext = $class->new(
+				AuditObj			=> $AuditAny,
+				SourceContext	=> $AuditAny->tracked_sources->{$source_name},
+				Row 				=> $Row,
+				action			=> $action
+			);
+			push @Trackers, $ChangeContext;
+		}
+		
+		# call action:
+		my $result = $Row->$orig;
+		
+		# After action is called:
+		foreach my $ChangeContext (@Trackers) {
+			$ChangeContext->record;
+			my $AuditAny = $ChangeContext->AuditObj;
+			$AuditAny->record_change($ChangeContext);
+			$AuditAny->calling_action_function->{$func_name} = 0;
+		}
 		
 		return $result;
 	}) or die "Unknown error setting up '$action' modifier on '$result_class'";

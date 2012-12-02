@@ -11,7 +11,12 @@ has 'column_name', is => 'ro', isa => 'Str', required => 1;
 has 'old_value', is => 'ro', isa => 'Maybe[Str]', required => 1;
 has 'new_value', is => 'ro', isa => 'Maybe[Str]', required => 1;
 
-has 'col_props', is => 'ro', isa => 'HashRef', default => sub {{}};
+has 'col_props', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
+	my $self = shift;
+	return {} unless ($self->has_TableSpec);
+	return { $self->class->TableSpec_get_conf('columns') };
+};
+
 has 'column_header', is => 'ro', isa => 'Str', lazy => 1, default => sub { 
 	my $self = shift;
 	my $header = $self->col_props->{header} || $self->column_name;

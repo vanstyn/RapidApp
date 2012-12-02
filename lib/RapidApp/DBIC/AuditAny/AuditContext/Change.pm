@@ -8,7 +8,17 @@ use RapidApp::Include qw(sugar perlutil);
 
 has 'SourceContext', is => 'ro', required => 1;
 has 'Row', is => 'ro', required => 1;
-#has 'txn_id', is => 'ro', isa => 'Maybe[Str]', default => undef;
+has 'action', is => 'ro', isa => 'Str', required => 1;
+
+# whether or not to fetch the row from storage again after the action
+# to identify changes
+has 'new_columns_from_storage', is => 'ro', isa => 'Bool', default => 1;
+
+has 'allowed_actions', is => 'ro', isa => 'ArrayRef', lazy_build => 1;
+sub _build_allowed_actions { [qw(insert update delete)] };
+
+has 'executed', is => 'rw', isa => 'Bool', default => 0, init_arg => undef;
+has 'recorded', is => 'rw', isa => 'Bool', default => 0, init_arg => undef;
 
 sub ResultSource { (shift)->SourceContext->ResultSource }
 sub source { (shift)->SourceContext->source }
@@ -39,28 +49,46 @@ has 'orig_pri_key_value', is => 'ro', isa => 'Maybe[Str]', lazy => 1, default =>
 	return $self->get_pri_key_value($self->origRow);
 };
 
-has 'change_ts', is => 'rw', isa => 'Maybe[DateTime]', default => undef;
-
-
-
-# whether or not to fetch the row from storage again after the action
-# to identify changes
-has 'new_columns_from_storage', is => 'ro', isa => 'Bool', default => 1;
-
-has 'origRow', is => 'ro', init_arg => undef, lazy_build => 1;
-sub _build_origRow {
+has 'change_ts', is => 'ro', isa => 'DateTime', lazy => 1, default => sub {
 	my $self = shift;
 	$self->enforce_unexecuted;
-	return $self->Row unless ($self->Row->in_storage);
+	return DateTime->now( time_zone => 'local' );
+};
+
+has 'dirty_columns', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
+	my $self = shift;
+	$self->enforce_unexecuted;
+	return { $self->Row->get_dirty_columns };
+};
+
+
+has 'origRow', is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	$self->enforce_unexecuted;
+	return $self->Row->in_storage ? $self->Row->get_from_storage : $self->Row;
+};
+
+has 'newRow', is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	$self->enforce_executed;
+	
+	return $self->Row unless (
+		$self->Row->in_storage and
+		$self->new_columns_from_storage
+	);
 	return $self->Row->get_from_storage;
+};
+
+
+
+
+sub BUILD {
+	my $self = shift;
+	$self->dirty_columns;
+	$self->origRow;
+	$self->old_columns;
 }
 
-has 'allowed_actions', is => 'ro', isa => 'ArrayRef', lazy_build => 1;
-sub _build_allowed_actions { [qw(insert update delete)] };
-
-has 'action', is => 'rw', init_arg => undef;
-has 'executed', is => 'rw', isa => 'Bool', default => 0, init_arg => undef;
-has 'dirty_columns', is => 'rw', isa => 'HashRef', default => sub {{}};
 
 has 'action_id_map', is => 'ro', isa => 'HashRef[Str]', lazy_build => 1;
 sub _build_action_id_map {{
@@ -102,79 +130,83 @@ sub enforce_executed {
 }
 
 
-sub proxy_action {
+sub record {
 	my $self = shift;
-	my $action = shift;
-	my $columns = shift;
-	
-	die "Bad action '$action'" unless ($action ~~ @{$self->allowed_actions});
-	
 	$self->enforce_unexecuted;
-	$self->origRow;
-	$self->action($action);
+	$self->change_ts;
 	$self->executed(1);
-	
-	$self->Row->set_inflated_columns($columns) if $columns;
-	
-	$self->dirty_columns({ $self->Row->get_dirty_columns });
-	
-	$self->change_ts( DateTime->now( time_zone => 'local' ) );
-	return $self->Row->$action;
+	$self->newRow;
+	$self->recorded(1);
 }
 
-sub get_old_columns {
+around 'Row' => sub {
+	my $orig = shift;
 	my $self = shift;
-	return () unless ($self->origRow->in_storage);
-	return $self->origRow->get_columns;
-}
+	return $self->recorded ? $self->newRow : $self->$orig(@_);
+};
 
-sub get_new_columns {
+#sub proxy_action {
+#	my $self = shift;
+#	my $action = shift;
+#	my $columns = shift;
+#	
+#	die "Bad action '$action'" unless ($action ~~ @{$self->allowed_actions});
+#	
+#	$self->enforce_unexecuted;
+#	$self->origRow;
+#	$self->action($action);
+#	$self->executed(1);
+#	
+#	$self->Row->set_inflated_columns($columns) if $columns;
+#	
+#	$self->dirty_columns({ $self->Row->get_dirty_columns });
+#	
+#	$self->change_ts( DateTime->now( time_zone => 'local' ) );
+#	return $self->Row->$action;
+#}
+
+has 'old_columns', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
 	my $self = shift;
-	return () unless ($self->Row->in_storage);
-	my $Row = $self->new_columns_from_storage ? $self->Row->get_from_storage : $self->Row;
-	return $Row->get_columns;
-}
+	return {} unless ($self->origRow->in_storage);
+	return { $self->origRow->get_columns };
+};
 
+has 'new_columns', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
+	my $self = shift;
+	return {} unless ($self->newRow->in_storage);
+	return { $self->newRow->get_columns };
+};
 
 
 has 'column_changes', is => 'ro', isa => 'HashRef[Object]', lazy => 1, default => sub {
 	my $self = shift;
 	$self->enforce_executed;
 	
-	my %old = $self->get_old_columns;
-	my %new = $self->get_new_columns;
+	my $old = $self->old_columns;
+	my $new = $self->new_columns;
 	
 	# This logic is duplicated in DbicLink2. Not sure how to avoid it, though,
 	# and keep a clean API
 	my @changed = ();
-	foreach my $col (uniq(keys %new,keys %old)) {
-		next if (! defined $new{$col} and ! defined $old{$col});
-		next if ($new{$col} eq $old{$col});
+	foreach my $col (uniq(keys %$new,keys %$old)) {
+		next if (!(defined $new->{$col}) and !(defined $old->{$col}));
+		next if (
+			defined $new->{$col} and defined $old->{$col} and 
+			$new->{$col} eq $old->{$col}
+		);
 		push @changed, $col;
 	}
-	
-	my @new_changed = ();
-	
-	# Designed to work with proprietary RapidApp/TableSpec, if configured:
-	my $use_ts = 1 if ($TRY_USE_TABLESPEC && $self->class->can('TableSpec_get_conf'));
-	my $fk_map = $use_ts ? $self->class->TableSpec_get_conf('relationship_column_fks_map') : {};
 	
 	my %col_context = ();
 	my $class = $self->AuditObj->column_context_class;
 	foreach my $column (@changed) {
-	
-		my $col_props = $use_ts ? { $self->class->TableSpec_get_conf('columns') } : {};
-		
-		my $params = {
+		my $ColumnContext = $class->new(
 			AuditObj => $self->AuditObj,
 			ChangeContext => $self,
 			column_name => $column, 
-			old_value => $old{$column}, 
-			new_value => $new{$column},
-			col_props => $col_props
-		};
-				
-		my $ColumnContext = $class->new(%$params);
+			old_value => $old->{$column}, 
+			new_value => $new->{$column},
+		);
 		$col_context{$ColumnContext->column_name} = $ColumnContext;
 	}
 	
