@@ -255,7 +255,10 @@ sub _init_apply_schema_class {
 		
 		my @ChangeSets = ();
 		foreach my $AuditAny (@$Auditors) {
-			next if ($AuditAny->active_changeset);
+			next if (
+				ref($self) ne ref($AuditAny) ||
+				$AuditAny->active_changeset
+			);
 			push @ChangeSets, $AuditAny->start_changeset;
 		};
 		
@@ -401,6 +404,7 @@ sub _add_action_tracker {
 		my @Trackers = ();
 		foreach my $AuditAny (@$Auditors) {
 			next if (
+				ref($self) ne ref($AuditAny) ||
 				! $AuditAny->tracked_action_functions->{$func_name} ||
 				$AuditAny->calling_action_function->{$func_name}
 			);
