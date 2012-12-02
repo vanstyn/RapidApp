@@ -12,13 +12,17 @@ sub uses_schema { (shift)->log_schema }
 sub uses_sources { ( (shift)->change_log_source ) }
 
 
-sub record_change {
+sub record_changes {
 	my $self = shift;
-	my $Context = shift;
+	my $ChangeSet = shift;
 	
+	scream_color(MAGENTA,'record changes');
 	
-	scream($Context->all_datapoint_values,$Context->column_datapoint_values);
+	my @Changes = $ChangeSet->all_changes;
 	
+	scream([ map {
+		[ $_->all_datapoint_values,$_->column_datapoint_values ]
+	} @Changes ], scalar(@Changes));
 	
 }
 

@@ -14,15 +14,6 @@ has 'collector_coderef', is => 'ro', isa => 'Maybe[CodeRef]', default => undef;
 sub uses_schema { undef; }
 sub uses_sources { () }
 
-# This is the basic method every Collector must provide:
-sub record_change {
-	my $self = shift;
-	my $AuditContext = shift;
-	
-	
-	die "Virtual Method!";
-}
-
 
 sub record_changes {
 	my $self = shift;

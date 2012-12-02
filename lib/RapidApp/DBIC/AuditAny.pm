@@ -14,6 +14,7 @@ has 'allow_multiple_auditors', is => 'ro', isa => 'Bool', default => 0;
 
 has 'source_context_class', is => 'ro', default => 'RapidApp::DBIC::AuditAny::AuditContext::Source';
 has 'change_context_class', is => 'ro', default => 'RapidApp::DBIC::AuditAny::AuditContext::Change';
+has 'changeset_context_class', is => 'ro', default => 'RapidApp::DBIC::AuditAny::AuditContext::ChangeSet';
 has 'column_context_class', is => 'ro', default => 'RapidApp::DBIC::AuditAny::AuditContext::Column';
 has 'default_datapoint_class', is => 'ro', default => 'RapidApp::DBIC::AuditAny::DataPoint';
 has 'collector_class', is => 'ro', required => 1;
@@ -48,6 +49,7 @@ has 'tracked_action_functions', is => 'ro', isa => 'HashRef', default => sub {{}
 has 'tracked_sources', is => 'ro', isa => 'HashRef[Str]', default => sub {{}};
 has 'calling_action_function', is => 'ro', isa => 'HashRef[Bool]', default => sub {{}};
 has 'datapoint_configs', is => 'ro', isa => 'ArrayRef[HashRef]', default => sub {[]};
+has 'active_changeset', is => 'rw', isa => 'Maybe[Object]', default => undef;
 
 
 sub _get_datapoint_configs {
@@ -180,6 +182,7 @@ sub BUILD {
 	my $self = shift;
 	
 	eval 'require ' . $self->change_context_class;
+	eval 'require ' . $self->changeset_context_class;
 	eval 'require ' . $self->source_context_class;
 	eval 'require ' . $self->column_context_class;
 	eval 'require ' . $self->collector_class;
@@ -224,13 +227,41 @@ sub _init_apply_schema_class {
 	);
 	$meta->add_method( add_auditor => sub { push @{(shift)->auditors}, @_ } );
 	
-	#$meta->add_around_method_modifier( 'txn_do' => sub {
-	#	my $orig = shift;
-	#	my $Schema = shift;
-	#	
-	#});
-	
-	
+	$meta->add_around_method_modifier( 'txn_do' => sub {
+		my $orig = shift;
+		my $Schema = shift;
+		
+		# This method modifier is applied to the entire schema class. Call/return the
+		# unaltered original method unless the Row is tied to a schema instance that
+		# is being tracked by an AuditAny which is configured to track the current
+		# action function. Also, make sure this call is not already nested to prevent
+		# deep recursion
+		my $Auditors = $Schema->auditors || [];
+		return $Schema->$orig(@_) unless (scalar(@$Auditors) > 0);
+		
+		my @ChangeSets = ();
+		foreach my $AuditAny (@$Auditors) {
+			next if ($AuditAny->active_changeset);
+			
+			my $class = $AuditAny->changeset_context_class;
+			my $ChangeSetContext = $class->new( AuditObj => $AuditAny );
+			push @ChangeSets, $ChangeSetContext;
+			$AuditAny->active_changeset($ChangeSetContext);
+		};
+		
+		return $Schema->$orig(@_) unless (scalar(@ChangeSets) > 0);
+		
+		my $result = $Schema->$orig(@_);
+		
+		foreach my $ChangeSetContext (@ChangeSets) {
+			my $AuditAny = $ChangeSetContext->AuditObj;
+			$AuditAny->active_changeset(undef);
+			$AuditAny->record_changes($ChangeSetContext);
+		}
+		
+		return $result;
+	});
+		
 	$meta->make_immutable(%immut_opts) if ($immutable);
 }
 
@@ -379,13 +410,30 @@ sub _add_action_tracker {
 	$meta->make_immutable(%immut_opts) if ($immutable);
 }
 
-
 sub record_change {
 	my $self = shift;
-	my $AuditContext = shift;
+	my $ChangeContext = shift;
 	
-	return $self->Collector->record_change($AuditContext);
+	# Add the change to the active ChangeSet:
+	return $self->active_changeset->add_changes($ChangeContext)
+		if ($self->active_changeset);
+	
+	# Create and record a dedicated ChangeSet with a single change:
+	my $class = $self->changeset_context_class;
+	my $ChangeSetContext = $class->new( AuditObj => $self );
+	$ChangeSetContext->add_changes($ChangeContext);
+	
+	return $self->record_changes($ChangeSetContext);
 }
+
+sub record_changes {
+	my $self = shift;
+	my $ChangeSetContext = shift;
+	return $self->Collector->record_changes($ChangeSetContext);
+}
+
+
+
 
 
 #has 'data_points', isa => 'HashRef[HashRef]', lazy_build => 1;
