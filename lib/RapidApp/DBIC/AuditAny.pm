@@ -73,7 +73,7 @@ sub _get_datapoint_configs {
 	push @configs, { name => $_, context => 'change', passthrough => 1 } for (@change_points);
 	
 	# direct passthroughs to the Column data hash (within the Change context object):
-	my @column_points = qw(column_header column_name old_value new_value);
+	my @column_points = qw(column_header column_name old_value new_value old_display_value new_display_value);
 	push @configs, { name => $_, context => 'column', passthrough => 1 } for (@column_points);
 	
 
@@ -95,6 +95,8 @@ pri_key_value
 column_name
 old_value
 new_value
+old_display_value
+new_display_value
 )]};
 
 has '_datapoints', is => 'ro', isa => 'HashRef', default => sub {{}};

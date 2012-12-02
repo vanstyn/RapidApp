@@ -137,9 +137,6 @@ sub get_new_columns {
 
 
 
-
-our $TRY_USE_TABLESPEC = 1;
-our $TABLESPEC_EXCLUDE_ORIG_FK_VAL = 0;
 has 'column_changes', is => 'ro', isa => 'HashRef[Object]', lazy => 1, default => sub {
 	my $self = shift;
 	$self->enforce_executed;
@@ -182,57 +179,7 @@ has 'column_changes', is => 'ro', isa => 'HashRef[Object]', lazy => 1, default =
 	}
 	
 	return \%col_context;
-	
-	
-	
-	
-	
-	
-	foreach my $col (@changed) {
-		if ($use_ts && $fk_map->{$col}) {
-			push @new_changed, $col;
-			next;
-		}
-		
-		# ------
-		# Only applies to proprietary RapidApp/TableSpec, if present:
-		#
-		push @new_changed, $col unless ($TABLESPEC_EXCLUDE_ORIG_FK_VAL);
-		
-		my $rel = $fk_map->{$col};
-		my $display_col = $self->class->TableSpec_related_get_set_conf($rel,'display_column');
-		
-		my $relOld = $self->origRow->$rel;
-		my $relNew = $self->Row->$rel;
-		
-		unless($display_col and ($relOld or $relNew)) {
-			push @new_changed, $col if ($TABLESPEC_EXCLUDE_ORIG_FK_VAL);
-			next;
-		}
-		
-		push @new_changed, $rel;
-		
-		$old{$rel} = $relOld->get_column($display_col) if (exists $old{$col} and $relOld);
-		$new{$rel} = $relNew->get_column($display_col) if (exists $new{$col} and $relNew);
-		#
-		# ------
-	}
-	
-	@changed = @new_changed;
-	
-	my $col_props = $use_ts ? { $self->class->TableSpec_get_conf('columns') } : {};
-	my $class = $self->AuditObj->column_context_class;
-	return { map { $_ => $class->new({
-		AuditObj => $self->AuditObj,
-		ChangeContext => $self,
-		column_name => $_, 
-		old_value => $old{$_}, 
-		new_value => $new{$_},
-		col_props => ($col_props->{$_} || {})
-	}) } @changed };
 };
-
-
 
 
 has 'column_datapoint_values', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
