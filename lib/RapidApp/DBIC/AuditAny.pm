@@ -23,6 +23,7 @@ has 'primary_key_separator', is => 'ro', isa => 'Str', default => '|~|';
 has 'datapoints', is => 'ro', isa => 'ArrayRef[Str]', lazy_build => 1;
 has 'datapoint_configs', is => 'ro', isa => 'ArrayRef[HashRef]', default => sub {[]};
 has 'rename_datapoints', is => 'ro', isa => 'Maybe[HashRef[Str]]', default => undef;
+has 'disable_datapoints', is => 'ro', isa => 'ArrayRef', default => sub {[]};
 
 has 'collector', is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
@@ -151,7 +152,8 @@ sub _init_datapoints {
 	my %seen = ();
 	$seen{$_}++ and die "Duplicate datapoint name '$_'" for (@{$self->datapoints});
 	
-	my %activ = map {$_=>1} @{$self->datapoints};
+	my %disable = map {$_=>1} @{$self->disable_datapoints};
+	my %activ = map {$_=>1} grep { !$disable{$_} } @{$self->datapoints};
 	
 	foreach my $cnf (@configs) {
 		# Do this just to throw the exception for no name:
