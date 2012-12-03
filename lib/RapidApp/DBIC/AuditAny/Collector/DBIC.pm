@@ -130,15 +130,44 @@ sub record_changes {
 	my $self = shift;
 	my $ChangeSet = shift;
 	
-	scream_color(MAGENTA.BOLD,' --- record changes ---');
+	return $self->add_changeset_row($ChangeSet) if ($self->changesetSource);
+	$self->add_change_row($_) for ($ChangeSet->all_changes);
 	
-	my @Changes = $ChangeSet->all_changes;
+	return 1;
 	
-	scream([ map {
-		[ $_->all_datapoint_values,$_->column_datapoint_values ]
-	} @Changes ], scalar(@Changes));
+	
+	#scream_color(MAGENTA.BOLD,' --- record changes ---');
+	#
+	#my @Changes = $ChangeSet->all_changes;
+	#
+	#scream([ map {
+	#	[ $_->all_datapoint_values,$_->column_datapoint_values ]
+	#} @Changes ], scalar(@Changes));
 	
 }
+
+
+sub add_change_row {
+	my $self = shift;
+	my $ChangeContext = shift;
+	
+	my %create = $ChangeContext->get_named_datapoint_values($self->change_datapoints);
+	
+	scream(\%create);
+	
+	return $self->changeSource->resultset->create(\%create);
+	
+}
+
+
+sub add_changeset_row {
+	my $self = shift;
+	my $ChangeSetContext = shift;
+	
+	die "not implemented";
+
+}
+
 
 
 

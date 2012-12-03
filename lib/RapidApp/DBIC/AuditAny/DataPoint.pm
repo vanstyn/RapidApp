@@ -9,16 +9,8 @@ has 'AuditObj', is => 'ro', isa => 'RapidApp::DBIC::AuditAny', required => 1;
 has 'name', is => 'ro', isa => 'Str', required => 1;
 has 'context', is => 'ro', isa => 'Str', required => 1;
 has 'method', is => 'ro', isa => 'Str|CodeRef', required => 1;
-#has 'method', is => 'ro', isa => 'Str|CodeRef', lazy => 1, default => sub {
-#	my $self = shift;
-#	my $method = $self->passthrough_method or return undef;
-#	return sub {
-#		my $s = shift;
-#		my $Context = shift;
-#		my $name = $s->name;
-#		return $Context->$name(@_);
-#	};
-#};
+has 'user_defined', is => 'ro', isa => 'Bool', default => 0;
+
 
 sub BUILD {
 	my $self = shift;

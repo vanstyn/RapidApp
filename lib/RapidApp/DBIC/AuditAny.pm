@@ -22,6 +22,7 @@ has 'collector_params', is => 'ro', isa => 'HashRef', default => sub {{}};
 has 'primary_key_separator', is => 'ro', isa => 'Str', default => '|~|';
 has 'datapoints', is => 'ro', isa => 'ArrayRef[Str]', lazy_build => 1;
 has 'datapoint_configs', is => 'ro', isa => 'ArrayRef[HashRef]', default => sub {[]};
+has 'auto_include_user_defined_datapoints', is => 'ro', isa => 'Bool', default => 1;
 has 'rename_datapoints', is => 'ro', isa => 'Maybe[HashRef[Str]]', default => undef;
 has 'disable_datapoints', is => 'ro', isa => 'ArrayRef', default => sub {[]};
 
@@ -88,6 +89,9 @@ sub _get_datapoint_configs {
 	my %cust = map {$_->{name}=>1} @{$self->datapoint_configs};
 	@configs = grep { !$cust{$_->{name}} } @configs;
 	
+	# Set flag to mark the configs that were user defined
+	$_->{user_defined} = 1 for (@{$self->datapoint_configs});
+	
 	push @configs, @{$self->datapoint_configs};
 	
 	return @configs;
@@ -149,6 +153,8 @@ sub _init_datapoints {
 	
 	my @configs = $self->_get_datapoint_configs;
 	
+	
+	
 	if($self->rename_datapoints) {
 		my $rename = $self->rename_datapoints;
 		
@@ -163,6 +169,10 @@ sub _init_datapoints {
 	
 	my %disable = map {$_=>1} @{$self->disable_datapoints};
 	my %activ = map {$_=>1} grep { !$disable{$_} } @{$self->datapoints};
+	
+	if($self->auto_include_user_defined_datapoints) {
+		$activ{$_->{name}} = 1 for(grep { $_->{name} && $_->{user_defined} } @configs);
+	}
 	
 	foreach my $cnf (@configs) {
 		# Do this just to throw the exception for no name:

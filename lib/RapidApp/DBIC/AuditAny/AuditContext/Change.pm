@@ -121,6 +121,13 @@ has 'all_datapoint_values', is => 'ro', isa => 'HashRef', lazy => 1, default => 
 	};
 };
 
+sub get_named_datapoint_values {
+	my $self = shift;
+	my @names = (ref($_[0]) eq 'ARRAY') ? @{ $_[0] } : @_; # <-- arg as array or arrayref
+	my $data = $self->all_datapoint_values;
+	return map { $_ => (exists $data->{$_} ? $data->{$_} : undef) } @names;
+}
+
 sub enforce_unexecuted {
 	my $self = shift;
 	die "Error: Audit action already executed!" if ($self->executed);
