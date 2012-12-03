@@ -131,19 +131,10 @@ sub record_changes {
 	my $ChangeSet = shift;
 	
 	return $self->add_changeset_row($ChangeSet) if ($self->changesetSource);
-	$self->add_change_row($_) for ($ChangeSet->all_changes);
+	my @Changes = $ChangeSet->all_changes;
+	$self->add_change_row($_) for (@Changes);
 	
 	return 1;
-	
-	
-	#scream_color(MAGENTA.BOLD,' --- record changes ---');
-	#
-	#my @Changes = $ChangeSet->all_changes;
-	#
-	#scream([ map {
-	#	[ $_->all_datapoint_values,$_->column_datapoint_values ]
-	#} @Changes ], scalar(@Changes));
-	
 }
 
 
@@ -151,11 +142,22 @@ sub add_change_row {
 	my $self = shift;
 	my $ChangeContext = shift;
 	
-	my %create = $ChangeContext->get_named_datapoint_values($self->change_datapoints);
+	scream_color(MAGENTA,$ChangeContext->column_datapoint_values);
 	
-	scream(\%create);
+	my $create = $ChangeContext->get_datapoints_data($self->change_datapoints);
 	
-	return $self->changeSource->resultset->create(\%create);
+	
+	my $relname = $self->column_data_rel;
+	if($relname) {
+		my @ColChanges = $ChangeContext->all_column_changes;
+		$create->{$relname} = [
+			map { $_->get_datapoints_data($self->column_datapoints) } @ColChanges
+		];
+	}
+	
+	scream($create);
+	
+	return $self->changeSource->resultset->create($create);
 	
 }
 

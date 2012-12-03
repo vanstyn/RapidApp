@@ -9,6 +9,7 @@ use Text::TabularDisplay;
 # ***** PRIVATE Object Class *****
 
 has 'SourceContext', is => 'ro', required => 1;
+has 'ChangeSetContext', isa => 'Maybe[Object]', is => 'ro', default => undef;
 has 'Row', is => 'ro', required => 1;
 has 'action', is => 'ro', isa => 'Str', required => 1;
 
@@ -29,6 +30,20 @@ sub pri_key_count { (shift)->SourceContext->pri_key_column }
 sub primary_key_separator { (shift)->SourceContext->primary_key_separator }
 sub primary_columns { (shift)->SourceContext->primary_columns }
 sub class { (shift)->SourceContext->class }
+
+
+sub _build_tiedContexts { 
+	my $self = shift;
+	my @Contexts = ( $self->SourceContext );
+	unshift @Contexts, $self->ChangeSetContext if ($self->ChangeSetContext);
+	return \@Contexts;
+}
+sub _build_local_datapoint_data { 
+	my $self = shift;
+	$self->enforce_executed;
+	return { map { $_->name => $_->get_value($self) } $self->get_context_datapoints('change') };
+}
+
 
 sub get_pri_key_value {
 	my $self = shift;
@@ -107,26 +122,26 @@ sub action_id {
 }
 
 
-has 'datapoint_values', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
-	my $self = shift;
-	$self->enforce_executed;
-	return { map { $_->name => $_->get_value($self) } $self->get_context_datapoints('change') };
-};
+#has 'datapoint_values', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
+#	my $self = shift;
+#	$self->enforce_executed;
+#	return { map { $_->name => $_->get_value($self) } $self->get_context_datapoints('change') };
+#};
+#
+#has 'all_datapoint_values', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
+#	my $self = shift;
+#	return {
+#		%{ $self->SourceContext->all_datapoint_values },
+#		%{ $self->datapoint_values }
+#	};
+#};
 
-has 'all_datapoint_values', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
-	my $self = shift;
-	return {
-		%{ $self->SourceContext->all_datapoint_values },
-		%{ $self->datapoint_values }
-	};
-};
-
-sub get_named_datapoint_values {
-	my $self = shift;
-	my @names = (ref($_[0]) eq 'ARRAY') ? @{ $_[0] } : @_; # <-- arg as array or arrayref
-	my $data = $self->all_datapoint_values;
-	return map { $_ => (exists $data->{$_} ? $data->{$_} : undef) } @names;
-}
+#sub get_named_datapoint_values {
+#	my $self = shift;
+#	my @names = (ref($_[0]) eq 'ARRAY') ? @{ $_[0] } : @_; # <-- arg as array or arrayref
+#	my $data = $self->all_datapoint_values;
+#	return map { $_ => (exists $data->{$_} ? $data->{$_} : undef) } @names;
+#}
 
 sub enforce_unexecuted {
 	my $self = shift;
@@ -223,16 +238,19 @@ has 'column_changes', is => 'ro', isa => 'HashRef[Object]', lazy => 1, default =
 };
 
 
+sub all_column_changes { values %{(shift)->column_changes} }
+
 has 'column_datapoint_values', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
 	my $self = shift;
+	#my @Contexts = $self->all_column_changes;
 	my @Contexts = values %{$self->column_changes};
-	return { map { $_->column_name => $_->datapoint_values } @Contexts };
+	return { map { $_->column_name => $_->local_datapoint_data } @Contexts };
 };
 
-sub dump_change {
-	my $self = shift;
-	return Dumper($self->column_datapoint_values);
-}
+#sub dump_change {
+#	my $self = shift;
+#	return Dumper($self->column_datapoint_values);
+#}
 
 
 has 'column_changes_ascii', is => 'ro', isa => 'Str', lazy => 1, default => sub {
@@ -254,8 +272,6 @@ has 'column_changes_arr_arr_table', is => 'ro', isa => 'ArrayRef',
 	my @cols = $self->get_context_datapoint_names('column');
 	
 	my @col_datapoints = values %{$self->column_datapoint_values};
-	
-	scream(\@col_datapoints);
 	
 	my $table = [\@cols];
 	foreach my $col_data (@col_datapoints) {

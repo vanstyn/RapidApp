@@ -13,19 +13,29 @@ has 'new_value', is => 'ro', isa => 'Maybe[Str]', required => 1;
 
 sub class { (shift)->ChangeContext->class }
 
-has 'datapoint_values', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
+sub _build_tiedContexts { 
+	my $self = shift;
+	my @Contexts = ( $self->ChangeContext, @{$self->ChangeContext->tiedContexts} );
+	return \@Contexts;
+}
+sub _build_local_datapoint_data { 
 	my $self = shift;
 	return { map { $_->name => $_->get_value($self) } $self->get_context_datapoints('column') };
-};
+}
 
-
-has 'all_datapoint_values', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
-	my $self = shift;
-	return {
-		%{ $self->ChangeContext->all_datapoint_values },
-		%{ $self->datapoint_values }
-	};
-};
+#has 'datapoint_values', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
+#	my $self = shift;
+#	return { map { $_->name => $_->get_value($self) } $self->get_context_datapoints('column') };
+#};
+#
+#
+#has 'all_datapoint_values', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
+#	my $self = shift;
+#	return {
+#		%{ $self->ChangeContext->all_datapoint_values },
+#		%{ $self->datapoint_values }
+#	};
+#};
 
 ### Special TableSpec-specific datapoints:
 

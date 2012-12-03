@@ -142,7 +142,7 @@ sub get_context_datapoint_names {
 }
 
 
-
+sub local_datapoint_data { (shift)->base_datapoint_values }
 has 'base_datapoint_values', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
 	my $self = shift;
 	return { map { $_->name => $_->get_value($self) } $self->get_context_datapoints('base') };
@@ -301,10 +301,19 @@ sub _init_apply_schema_class {
 		
 		return $Schema->$orig(@_) unless (scalar(@ChangeSets) > 0);
 		
-		my $result = $Schema->$orig(@_);
-		
-		$_->finish for (@ChangeSets);
-		
+		my $result;
+		my @args = @_;
+		try {
+			$result = $Schema->$orig(@args);
+			$_->finish for (@ChangeSets);
+		}
+		catch {
+			my $err = shift;
+			# Clean up:
+			try{$_->AuditObj->clear_changeset} for (@ChangeSets);
+			# Re-throw:
+			die $err;
+		};
 		return $result;
 	});
 		
@@ -325,9 +334,14 @@ sub finish_changeset {
 	die "Cannot finish_changeset because there isn't one active" unless ($self->active_changeset);
 	
 	$self->collector->record_changes($self->active_changeset);
+	$self->clear_changeset;
+	return 1;
+}
+
+sub clear_changeset {
+	my $self = shift;
 	$self->active_changeset(undef);
 	$self->auto_finish(0);
-	return 1;
 }
 
 sub _bind_schema {
@@ -454,25 +468,41 @@ sub _add_action_tracker {
 			$AuditAny->calling_action_function->{$func_name} = 1;
 			my $class = $AuditAny->change_context_class;
 			my $ChangeContext = $class->new(
-				AuditObj			=> $AuditAny,
-				SourceContext	=> $AuditAny->tracked_sources->{$source_name},
-				Row 				=> $Row,
-				action			=> $action
-			);
+				AuditObj				=> $AuditAny,
+				SourceContext		=> $AuditAny->tracked_sources->{$source_name},
+				ChangeSetContext	=> $AuditAny->active_changeset,
+				Row 					=> $Row,
+				action				=> $action
+			) or next;
 			push @Trackers, $ChangeContext;
 		}
 		
-		# call action:
-		my $result = $Row->$orig;
-		
-		# After action is called:
-		foreach my $ChangeContext (@Trackers) {
-			$ChangeContext->record;
-			my $AuditAny = $ChangeContext->AuditObj;
-			$AuditAny->record_change($ChangeContext);
-			$AuditAny->calling_action_function->{$func_name} = 0;
+		my $result;
+		try {
+			# call action:
+			$result = $Row->$orig;
+			
+			# After action is called:
+			foreach my $ChangeContext (@Trackers) {
+				$ChangeContext->record;
+				my $AuditAny = $ChangeContext->AuditObj;
+				$AuditAny->record_change($ChangeContext);
+				$AuditAny->calling_action_function->{$func_name} = 0;
+			}
 		}
-		
+		catch {
+			my $err = shift;
+			# Still Clean up:
+			foreach my $ChangeContext (@Trackers) {
+				try {
+					my $AuditAny = $ChangeContext->AuditObj;
+					try{$AuditAny->clear_changeset};
+					$AuditAny->calling_action_function->{$func_name} = 0;
+				};
+			}
+			# Re-throw:
+			die $err;
+		};
 		return $result;
 	}) or die "Unknown error setting up '$action' modifier on '$result_class'";
 	
@@ -482,6 +512,7 @@ sub _add_action_tracker {
 	# Restore immutability to the way to was:
 	$meta->make_immutable(%immut_opts) if ($immutable);
 }
+
 
 sub record_change {
 	my $self = shift;
