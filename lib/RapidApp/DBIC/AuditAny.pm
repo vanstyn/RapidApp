@@ -521,7 +521,11 @@ sub _add_action_tracker {
 sub record_change {
 	my $self = shift;
 	my $ChangeContext = shift;
-	die "Cannot record_change without an active changeset" unless ($self->active_changeset);
+	unless ($self->active_changeset) {
+		$self->start_changeset;		
+		$self->auto_finish(1);
+	}
+	#die "Cannot record_change without an active changeset" unless ($self->active_changeset);
 	$self->active_changeset->add_changes($ChangeContext);
 	$self->finish_changeset if ($self->auto_finish);
 }
