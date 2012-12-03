@@ -4,6 +4,9 @@ extends 'RapidApp::DBIC::AuditAny::AuditContext';
 
 use RapidApp::Include qw(sugar perlutil);
 
+use Time::HiRes qw(gettimeofday tv_interval);
+sub get_dt { DateTime->now( time_zone => 'local' ) }
+
 use Text::TabularDisplay;
 
 # ***** PRIVATE Object Class *****
@@ -69,8 +72,11 @@ has 'orig_pri_key_value', is => 'ro', isa => 'Maybe[Str]', lazy => 1, default =>
 has 'change_ts', is => 'ro', isa => 'DateTime', lazy => 1, default => sub {
 	my $self = shift;
 	$self->enforce_unexecuted;
-	return DateTime->now( time_zone => 'local' );
+	return &get_dt;
 };
+
+has 'start_timeofday', is => 'ro', default => sub { [gettimeofday] };
+has 'change_elapsed', is => 'rw', default => undef;
 
 has 'dirty_columns', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
 	my $self = shift;
@@ -158,6 +164,7 @@ sub record {
 	my $self = shift;
 	$self->enforce_unexecuted;
 	$self->change_ts;
+	$self->change_elapsed(tv_interval($self->start_timeofday));
 	$self->executed(1);
 	$self->newRow;
 	$self->recorded(1);

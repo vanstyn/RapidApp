@@ -79,7 +79,7 @@ sub _get_datapoint_configs {
 	# direct passthroughs to the AuditChangeContext object:
 	my @change_points = (
 		(qw(change_ts action action_id pri_key_value orig_pri_key_value)),
-		(qw(column_changes_json column_changes_ascii))
+		(qw(change_elapsed column_changes_json column_changes_ascii))
 	);
 	push @configs, { name => $_, context => 'change', method => $_ } for (@change_points);
 	
