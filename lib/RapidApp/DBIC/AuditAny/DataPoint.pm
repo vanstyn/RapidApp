@@ -8,17 +8,17 @@ use Switch qw(switch);
 has 'AuditObj', is => 'ro', isa => 'RapidApp::DBIC::AuditAny', required => 1;
 has 'name', is => 'ro', isa => 'Str', required => 1;
 has 'context', is => 'ro', isa => 'Str', required => 1;
-has 'passthrough', is => 'ro', isa => 'Bool', default => 0;
-has 'method', is => 'ro', isa => 'CodeRef', lazy => 1, default => sub {
-	my $self = shift;
-	return undef unless ($self->passthrough);
-	return sub {
-		my $s = shift;
-		my $Context = shift;
-		my $name = $s->name;
-		return $Context->$name(@_);
-	};
-};
+has 'method', is => 'ro', isa => 'Str|CodeRef', required => 1;
+#has 'method', is => 'ro', isa => 'Str|CodeRef', lazy => 1, default => sub {
+#	my $self = shift;
+#	my $method = $self->passthrough_method or return undef;
+#	return sub {
+#		my $s = shift;
+#		my $Context = shift;
+#		my $name = $s->name;
+#		return $Context->$name(@_);
+#	};
+#};
 
 sub BUILD {
 	my $self = shift;
@@ -34,7 +34,8 @@ sub BUILD {
 sub get_value {
 	my $self = shift;
 	my $Context = shift;
-	return $self->method->($self,$Context,@_);
+	my $method = $self->method;
+	return ref($method) ? $method->($self,$Context,@_) : $Context->$method(@_);
 }
 
 1;

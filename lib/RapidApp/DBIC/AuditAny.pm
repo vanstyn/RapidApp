@@ -18,8 +18,12 @@ has 'changeset_context_class', is => 'ro', default => 'RapidApp::DBIC::AuditAny:
 has 'column_context_class', is => 'ro', default => 'RapidApp::DBIC::AuditAny::AuditContext::Column';
 has 'default_datapoint_class', is => 'ro', default => 'RapidApp::DBIC::AuditAny::DataPoint';
 has 'collector_class', is => 'ro', required => 1;
-
 has 'collector_params', is => 'ro', isa => 'HashRef', default => sub {{}};
+has 'primary_key_separator', is => 'ro', isa => 'Str', default => '|~|';
+has 'datapoints', is => 'ro', isa => 'ArrayRef[Str]', lazy_build => 1;
+has 'datapoint_configs', is => 'ro', isa => 'ArrayRef[HashRef]', default => sub {[]};
+has 'rename_datapoints', is => 'ro', isa => 'Maybe[HashRef[Str]]', default => undef;
+
 has 'collector', is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	eval 'require ' . $self->collector_class;
@@ -29,17 +33,13 @@ has 'collector', is => 'ro', lazy => 1, default => sub {
 	);
 };
 
-has 'primary_key_separator', is => 'ro', isa => 'Str', default => '|~|';
 
-has 'logs_to_own_schema', is => 'ro', isa => 'Bool', lazy => 1, init_arg => undef, default => sub {
-	my $self = shift;
-	return ($self->collector->uses_schema == $self->schema) ? 1 : 0;
-};
 
+# Any sources within the tracked schema that the collector is writing to; these
+# sources are not allowed to be tracked because it would create infinite recursion:
 has 'log_sources', is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, init_arg => undef, default => sub {
 	my $self = shift;
-	return [] unless ($self->logs_to_own_schema);
-	return [ $self->collector->uses_sources ];
+	return $self->collector->writes_bound_schema_sources;
 };
 
 
@@ -48,7 +48,6 @@ has 'tracked_action_functions', is => 'ro', isa => 'HashRef', default => sub {{}
 
 has 'tracked_sources', is => 'ro', isa => 'HashRef[Str]', default => sub {{}};
 has 'calling_action_function', is => 'ro', isa => 'HashRef[Bool]', default => sub {{}};
-has 'datapoint_configs', is => 'ro', isa => 'ArrayRef[HashRef]', default => sub {[]};
 has 'active_changeset', is => 'rw', isa => 'Maybe[Object]', default => undef;
 has 'auto_finish', is => 'rw', isa => 'Bool', default => 0;
 
@@ -65,22 +64,22 @@ sub _get_datapoint_configs {
 	
 	# direct passthroughs to the AuditAny object:
 	my @base_points = qw();
-	push @configs, { name => $_, context => 'base', passthrough => 1 } for (@base_points);
+	push @configs, { name => $_, context => 'base', method => $_  } for (@base_points);
 	
 	# direct passthroughs to the AuditSourceContext object:
 	my @source_points = qw(source class from table pri_key_column pri_key_count);
-	push @configs, { name => $_, context => 'source', passthrough => 1 } for (@source_points);
+	push @configs, { name => $_, context => 'source', method => $_  } for (@source_points);
 	
 	# direct passthroughs to the AuditChangeContext object:
 	my @change_points = (
 		(qw(change_ts action action_id pri_key_value orig_pri_key_value)),
 		(qw(change_details_json))
 	);
-	push @configs, { name => $_, context => 'change', passthrough => 1 } for (@change_points);
+	push @configs, { name => $_, context => 'change', method => $_ } for (@change_points);
 	
 	# direct passthroughs to the Column data hash (within the Change context object):
 	my @column_points = qw(column_header column_name old_value new_value old_display_value new_display_value);
-	push @configs, { name => $_, context => 'column', passthrough => 1 } for (@column_points);
+	push @configs, { name => $_, context => 'column', method => $_  } for (@column_points);
 	
 
 	
@@ -93,7 +92,8 @@ sub _get_datapoint_configs {
 	return @configs;
 }
 
-has 'datapoints', is => 'ro', isa => 'ArrayRef', default => sub {[qw(
+
+sub _build_datapoints {[qw(
 change_ts
 action
 source
@@ -137,8 +137,21 @@ has 'base_datapoint_values', is => 'ro', isa => 'HashRef', lazy => 1, default =>
 sub _init_datapoints {
 	my $self = shift;
 	
-	my %activ = map {$_=>1} @{$self->datapoints};
 	my @configs = $self->_get_datapoint_configs;
+	
+	if($self->rename_datapoints) {
+		my $rename = $self->rename_datapoints;
+		
+		@{$self->datapoints} = map { $rename->{$_} || $_ } @{$self->datapoints};
+		
+		$_->{name} = (exists $rename->{$_->{name}} ? $rename->{$_->{name}} : $_->{name})
+			for (@configs);
+	}
+	
+	my %seen = ();
+	$seen{$_}++ and die "Duplicate datapoint name '$_'" for (@{$self->datapoints});
+	
+	my %activ = map {$_=>1} @{$self->datapoints};
 	
 	foreach my $cnf (@configs) {
 		# Do this just to throw the exception for no name:

@@ -11,8 +11,7 @@ has 'collect_coderef', is => 'ro', isa => 'Maybe[CodeRef]', default => undef;
 # these are part of the base class because the AuditObj expects them in all
 # Collectors to know if a particular tracked source is also a source used
 # by the collector which would create a deep recursion situation
-sub uses_schema { undef; }
-sub uses_sources { () }
+has 'writes_bound_schema_sources', is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default => sub {[]};
 
 
 sub record_changes {
