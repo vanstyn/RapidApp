@@ -5,43 +5,43 @@ extends 'RapidApp::DBIC::AuditAny::Collector';
 use RapidApp::Include qw(sugar perlutil);
 
 has 'AuditObj', is => 'ro', required => 1;
-has 'log_schema', is => 'ro', isa => lazy => 1, default => sub { (shift)->AuditObj->schema };
+has 'target_schema', is => 'ro', isa => 'Object', lazy => 1, default => sub { (shift)->AuditObj->schema };
 
-has 'record_source', is => 'ro', isa => 'Str', required => 1;
+has 'target_source', is => 'ro', isa => 'Str', required => 1;
 has 'change_data_rel', is => 'ro', isa => 'Maybe[Str]';
 has 'column_data_rel', is => 'ro', isa => 'Maybe[Str]';
 
 
 
 # the top level source; could be either change or changeset
-has 'record_Source', is => 'ro', isa => 'Object', 
+has 'targetSource', is => 'ro', isa => 'Object', 
  lazy => 1, init_arg => undef, default => sub {
 	my $self = shift;
-	my $Source = $self->log_schema->source($self->record_source) 
-		or die "Bad record_source name '" . $self->record_source . "'";
+	my $Source = $self->target_schema->source($self->target_source) 
+		or die "Bad target_source name '" . $self->target_source . "'";
 	return $Source;
 };
 
-has 'changeset_Source', is => 'ro', isa => 'Maybe[Object]', 
+has 'changesetSource', is => 'ro', isa => 'Maybe[Object]', 
  lazy => 1, init_arg => undef, default => sub {
 	my $self = shift;
-	return $self->change_data_rel ? $self->record_Source : undef;
+	return $self->change_data_rel ? $self->targetSource : undef;
 };
 
-has 'change_Source', is => 'ro', isa => 'Object', 
+has 'changeSource', is => 'ro', isa => 'Object', 
  lazy => 1, init_arg => undef, default => sub {
 	my $self = shift;
-	my $SetSource = $self->changeset_Source or return $self->record_Source;
+	my $SetSource = $self->changesetSource or return $self->targetSource;
 	my $Source = $SetSource->related_source($self->change_data_rel)
 		or die "Bad change_data_rel name '" . $self->change_data_rel . "'";
 	return $Source;
 };
 
-has 'column_Source', is => 'ro', isa => 'Maybe[Object]', 
+has 'columnSource', is => 'ro', isa => 'Maybe[Object]', 
  lazy => 1, init_arg => undef, default => sub {
 	my $self = shift;
 	return undef unless ($self->column_data_rel);
-	my $Source = $self->change_Source->related_source($self->column_data_rel)
+	my $Source = $self->changeSource->related_source($self->column_data_rel)
 		or die "Bad column_data_rel name '" . $self->column_data_rel . "'";
 	return $Source;
 };
@@ -49,62 +49,88 @@ has 'column_Source', is => 'ro', isa => 'Maybe[Object]',
 has 'changeset_datapoints', is => 'ro', isa => 'ArrayRef[Str]',
  lazy => 1, default => sub {
 	my $self = shift;
-	return [] unless ($self->changeset_Source);
+	return [] unless ($self->changesetSource);
 	my @DataPoints = $self->AuditObj->get_context_datapoints(qw(base set));
-	return [ map { $_->name } @DataPoints ];
+	my @names = map { $_->name } @DataPoints;
+	$self->enforce_source_has_columns($self->changesetSource,@names);
+	return \@names;
 };
 
 has 'change_datapoints', is => 'ro', isa => 'ArrayRef[Str]',
  lazy => 1, default => sub {
 	my $self = shift;
 	my @contexts = qw(source change);
-	push @contexts,(qw(base set)) unless ($self->changeset_Source);
+	push @contexts,(qw(base set)) unless ($self->changesetSource);
 	my @DataPoints = $self->AuditObj->get_context_datapoints(@contexts);
-	return [ map { $_->name } @DataPoints ];
+	my @names = map { $_->name } @DataPoints;
+	$self->enforce_source_has_columns($self->changeSource,@names);
+	return \@names;
 };
 
 has 'column_datapoints', is => 'ro', isa => 'ArrayRef[Str]',
  lazy => 1, default => sub {
 	my $self = shift;
-	return [] unless ($self->column_Source);
+	return [] unless ($self->columnSource);
 	my @DataPoints = $self->AuditObj->get_context_datapoints(qw(column));
-	return [ map { $_->name } @DataPoints ];
+	my @names = map { $_->name } @DataPoints;
+	$self->enforce_source_has_columns($self->columnSource,@names);
+	return \@names;
 };
 
 has 'write_sources', is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, default => sub {
 	my $self = shift;
 	my @sources = ();
-	push @sources, $self->changeset_Source->source_name if ($self->changeset_Source);
-	push @sources, $self->change_Source->source_name if ($self->change_Source);
-	push @sources, $self->column_Source->source_name if ($self->column_Source);
+	push @sources, $self->changesetSource->source_name if ($self->changesetSource);
+	push @sources, $self->changeSource->source_name if ($self->changeSource);
+	push @sources, $self->columnSource->source_name if ($self->columnSource);
 	return \@sources;
 };
 
 has '+writes_bound_schema_sources', default => sub {
 	my $self = shift;
-	return $self->log_schema == $self->AuditObj->schema ? 
+	return $self->target_schema == $self->AuditObj->schema ? 
 		$self->write_sources : [];
 };
 
 sub BUILD {
 	my $self = shift;
 	
-	$self->validate_log_schema;
+	$self->validate_target_schema;
 
 }
 
-sub validate_log_schema {
+sub validate_target_schema {
 	my $self = shift;
+	
+	$self->changeset_datapoints;
+	$self->change_datapoints;
+	$self->column_datapoints;
+	
+	
 
 }
 
+
+sub enforce_source_has_columns {
+	my $self = shift;
+	my $Source = shift;
+	my @columns = @_;
+	
+	my @missing = ();
+	$Source->has_column($_) or push @missing, $_ for (@columns);
+	
+	return 1 unless (scalar(@missing) > 0);
+	
+	die "Source '" . $Source->source_name . "' missing required columns: " . 
+		join(',',map { "'$_'" } @missing);
+}
 
 
 sub record_changes {
 	my $self = shift;
 	my $ChangeSet = shift;
 	
-	scream_color(MAGENTA,'record changes');
+	scream_color(MAGENTA.BOLD,' --- record changes ---');
 	
 	my @Changes = $ChangeSet->all_changes;
 	

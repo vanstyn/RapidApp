@@ -11,5 +11,6 @@ sub SchemaObj { (shift)->AuditObj->schema };
 sub schema { ref (shift)->AuditObj->schema };
 sub primary_key_separator { (shift)->AuditObj->primary_key_separator };
 sub get_context_datapoints { (shift)->AuditObj->get_context_datapoints(@_) };
+sub get_context_datapoint_names { (shift)->AuditObj->get_context_datapoint_names(@_) };
 
 1;

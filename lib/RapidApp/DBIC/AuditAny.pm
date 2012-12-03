@@ -74,7 +74,7 @@ sub _get_datapoint_configs {
 	# direct passthroughs to the AuditChangeContext object:
 	my @change_points = (
 		(qw(change_ts action action_id pri_key_value orig_pri_key_value)),
-		(qw(change_details_json))
+		(qw(column_changes_json column_changes_ascii))
 	);
 	push @configs, { name => $_, context => 'change', method => $_ } for (@change_points);
 	
@@ -105,6 +105,8 @@ old_value
 new_value
 old_display_value
 new_display_value
+column_changes_ascii
+column_changes_json
 )]};
 
 has '_datapoints', is => 'ro', isa => 'HashRef', default => sub {{}};
@@ -129,6 +131,13 @@ sub get_context_datapoints {
 	my @contexts = grep { exists $self->_datapoints_context->{$_} } @_;
 	return map { values %{$self->_datapoints_context->{$_}} } @contexts;
 }
+
+sub get_context_datapoint_names {
+	my $self = shift;
+	return map { $_->name } $self->get_context_datapoints(@_);
+}
+
+
 
 has 'base_datapoint_values', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
 	my $self = shift;
@@ -219,6 +228,9 @@ sub BUILD {
 	
 	$self->_init_datapoints;
 	$self->_bind_schema;
+	
+	# init collector object:
+	$self->collector;
 }
 
 

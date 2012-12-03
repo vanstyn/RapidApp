@@ -4,6 +4,8 @@ extends 'RapidApp::DBIC::AuditAny::AuditContext';
 
 use RapidApp::Include qw(sugar perlutil);
 
+use Text::TabularDisplay;
+
 # ***** PRIVATE Object Class *****
 
 has 'SourceContext', is => 'ro', required => 1;
@@ -223,6 +225,66 @@ has 'column_datapoint_values', is => 'ro', isa => 'HashRef', lazy => 1, default 
 sub dump_change {
 	my $self = shift;
 	return Dumper($self->column_datapoint_values);
+}
+
+
+has 'column_changes_ascii', is => 'ro', isa => 'Str', lazy => 1, default => sub {
+	my $self = shift;
+	my $table = $self->column_changes_arr_arr_table;
+	return $self->arr_arr_ascii_table($table);
+};
+
+has 'column_changes_json', is => 'ro', isa => 'Str', lazy => 1, default => sub {
+	my $self = shift;
+	my $table = $self->column_changes_arr_arr_table;
+	return encode_json($table);
+};
+
+
+has 'column_changes_arr_arr_table', is => 'ro', isa => 'ArrayRef',
+ lazy => 1, default => sub {
+	my $self = shift;
+	my @cols = $self->get_context_datapoint_names('column');
+	
+	my @col_datapoints = values %{$self->column_datapoint_values};
+	
+	scream(\@col_datapoints);
+	
+	my $table = [\@cols];
+	foreach my $col_data (@col_datapoints) {
+		my @row = map { $col_data->{$_} || undef } @cols;
+		push @$table, \@row;
+	}
+	
+	return $table;
+};
+
+
+
+sub arr_arr_ascii_table {
+	my $self = shift;
+	my $table = shift;
+	die "Supplied table is not an arrayref" unless (ref($table) eq 'ARRAY');
+	
+	require Text::TabularDisplay;
+	require Text::Wrap;
+	
+	my $t = Text::TabularDisplay->new;
+	
+	local $Text::Wrap::columns = 52;
+	
+	my $header = shift @$table;
+	die "Encounted non-arrayref table row" unless (ref($header) eq 'ARRAY');
+	
+	$t->add(@$header);
+	$t->add('');
+	
+	foreach my $row (@$table) {
+		die "Encounted non-arrayref table row" unless (ref($row) eq 'ARRAY');
+		$t->add( map { Text::Wrap::wrap('','',$_) } @$row );
+	}
+	
+	return $t->render;
 }
 
 
