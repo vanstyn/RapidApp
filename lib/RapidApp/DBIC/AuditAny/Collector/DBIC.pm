@@ -106,8 +106,6 @@ sub validate_target_schema {
 	$self->change_datapoints;
 	$self->column_datapoints;
 	
-	
-
 }
 
 
@@ -130,6 +128,8 @@ sub record_changes {
 	my $self = shift;
 	my $ChangeSet = shift;
 	
+	$ChangeSet->mark_finished; #<-- only for good measure
+	
 	return $self->add_changeset_row($ChangeSet) if ($self->changesetSource);
 	my @Changes = $ChangeSet->all_changes;
 	$self->add_change_row($_) for (@Changes);
@@ -138,14 +138,11 @@ sub record_changes {
 }
 
 
-sub add_change_row {
+sub get_add_create_change {
 	my $self = shift;
 	my $ChangeContext = shift;
 	
-	scream_color(MAGENTA,$ChangeContext->column_datapoint_values);
-	
 	my $create = $ChangeContext->get_datapoints_data($self->change_datapoints);
-	
 	
 	my $relname = $self->column_data_rel;
 	if($relname) {
@@ -155,22 +152,31 @@ sub add_change_row {
 		];
 	}
 	
-	scream($create);
-	
-	return $self->changeSource->resultset->create($create);
-	
+	return $create;
 }
 
+
+sub add_change_row {
+	my $self = shift;
+	my $ChangeContext = shift;
+	my $create = $self->get_add_create_change($ChangeContext);
+	return $self->changeSource->resultset->create($create);
+}
 
 sub add_changeset_row {
 	my $self = shift;
 	my $ChangeSetContext = shift;
 	
-	die "not implemented";
-
+	my $create = $ChangeSetContext->get_datapoints_data($self->changeset_datapoints);
+	
+	my $relname = $self->change_data_rel;
+	if($relname) {
+		my @Changes = $ChangeSetContext->all_changes;
+		$create->{$relname} = [ map { $self->get_add_create_change($_) } @Changes ];
+	}
+	
+	return $self->changesetSource->resultset->create($create);
 }
-
-
 
 
 

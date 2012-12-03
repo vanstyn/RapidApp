@@ -72,6 +72,10 @@ sub _get_datapoint_configs {
 	my @source_points = qw(source class from table pri_key_column pri_key_count);
 	push @configs, { name => $_, context => 'source', method => $_  } for (@source_points);
 	
+	# direct passthroughs to the AuditChangeSetContext object:
+	my @set_points = qw(changeset_ts changeset_finish_ts changeset_elapsed);
+	push @configs, { name => $_, context => 'set', method => $_ } for (@set_points);
+	
 	# direct passthroughs to the AuditChangeContext object:
 	my @change_points = (
 		(qw(change_ts action action_id pri_key_value orig_pri_key_value)),

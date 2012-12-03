@@ -8,7 +8,7 @@ use RapidApp::Include qw(sugar perlutil);
 has 'AuditObj', is => 'ro', isa => 'RapidApp::DBIC::AuditAny', required => 1;
 
 has 'tiedContexts', is => 'ro', isa => 'ArrayRef[Object]', lazy_build => 1;
-has 'local_datapoint_data', is => 'ro', isa => 'HashRef[Str]', lazy_build => 1;
+has 'local_datapoint_data', is => 'ro', isa => 'HashRef', lazy_build => 1;
 
 sub _build_tiedContexts { die "Virtual method" }
 sub _build_local_datapoint_data { die "Virtual method" }
