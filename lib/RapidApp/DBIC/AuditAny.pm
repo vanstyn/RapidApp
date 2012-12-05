@@ -482,9 +482,10 @@ sub _add_action_tracker {
 		}
 		
 		my $result;
+		my @args = @_;
 		try {
 			# call action:
-			$result = $Row->$orig;
+			$result = $Row->$orig(@args);
 			
 			# After action is called:
 			foreach my $ChangeContext (@Trackers) {
