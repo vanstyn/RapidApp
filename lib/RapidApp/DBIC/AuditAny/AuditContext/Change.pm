@@ -61,7 +61,8 @@ sub get_pri_key_value {
 has 'pri_key_value', is => 'ro', isa => 'Maybe[Str]', lazy => 1, default => sub { 
 	my $self = shift;
 	$self->enforce_executed;
-	return $self->get_pri_key_value($self->Row);
+	my $Row = $self->Row || $self->origRow;
+	return $self->get_pri_key_value($Row);
 };
 
 has 'orig_pri_key_value', is => 'ro', isa => 'Maybe[Str]', lazy => 1, default => sub { 
@@ -198,13 +199,13 @@ around 'Row' => sub {
 
 has 'old_columns', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
 	my $self = shift;
-	return {} unless ($self->origRow->in_storage);
+	return {} unless ($self->origRow && $self->origRow->in_storage);
 	return { $self->origRow->get_columns };
 };
 
 has 'new_columns', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
 	my $self = shift;
-	return {} unless ($self->newRow->in_storage);
+	return {} unless ($self->newRow && $self->newRow->in_storage);
 	return { $self->newRow->get_columns };
 };
 

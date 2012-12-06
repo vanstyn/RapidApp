@@ -443,7 +443,6 @@ sub _add_action_tracker {
 	$meta->add_around_method_modifier( $action => sub {
 		my $orig = shift;
 		my $Row = shift;
-		my $columns = $_[0];
 	
 		# This method modifier is applied to the entire result class. Call/return the
 		# unaltered original method unless the Row is tied to a schema instance that
@@ -452,8 +451,6 @@ sub _add_action_tracker {
 		# deep recursion
 		my $Auditors = $Row->result_source->schema->auditors || [];
 		return $Row->$orig(@_) unless (scalar(@$Auditors) > 0);
-		
-		$Row->set_inflated_columns($columns) if ($columns && $action ne 'delete');
 		
 		# Before action is called:
 		my @Trackers = ();
