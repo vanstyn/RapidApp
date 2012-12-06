@@ -1491,6 +1491,18 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
   padding-bottom:15px;
 }
 
+.ra-exception-body * {
+  word-wrap: break-word;
+}
+
+.ra-exception-body pre {
+  white-space: pre-wrap;       /* css-3 */
+  white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+  white-space: -pre-wrap;      /* Opera 4-6 */
+  white-space: -o-pre-wrap;    /* Opera 7 */
+  word-wrap: break-word;    
+}
+
 .ra-autopanel-error {
   padding: 10px;
   font-size: 1.2em;
@@ -1611,3 +1623,5 @@ TODO: make sure this doesn't cause problems someplace else
 .ra-override-cursor-default, .ra-override-cursor-default * {
   cursor: default !important;
 }
+
+

@@ -174,7 +174,7 @@ Ext.ux.RapidApp.errMsgHandler = function(title,msg,as_text) {
 				html: title
 			},
 			autoScroll: true,
-			html: body,
+			html: '<div class="ra-exception-body">' + body + '</div>',
 			bodyStyle: 'padding:5px;'
 		},
 		buttonAlign: 'center',
