@@ -25,6 +25,7 @@ has 'datapoint_configs', is => 'ro', isa => 'ArrayRef[HashRef]', default => sub 
 has 'auto_include_user_defined_datapoints', is => 'ro', isa => 'Bool', default => 1;
 has 'rename_datapoints', is => 'ro', isa => 'Maybe[HashRef[Str]]', default => undef;
 has 'disable_datapoints', is => 'ro', isa => 'ArrayRef', default => sub {[]};
+has 'record_empty_changes', is => 'ro', isa => 'Bool', default => 0;
 
 has 'collector', is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
@@ -339,7 +340,18 @@ sub finish_changeset {
 	my $self = shift;
 	die "Cannot finish_changeset because there isn't one active" unless ($self->active_changeset);
 	
+	unless($self->record_empty_changes) {
+		my $count_cols = 0;
+		$count_cols = $count_cols + scalar($_->all_column_changes) 
+			for (@{$self->active_changeset->changes});
+		unless ($count_cols > 0) {
+			$self->clear_changeset;
+			return 1;
+		}
+	}
+	
 	$self->collector->record_changes($self->active_changeset);
+
 	$self->clear_changeset;
 	return 1;
 }
