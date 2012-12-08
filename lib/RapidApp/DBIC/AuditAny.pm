@@ -413,23 +413,28 @@ sub track_all_sources {
 sub init_sources {
 	my ($self,@sources) = @_;
 	
-	foreach my $name (@sources) {
-		my $SourceContext = $self->tracked_sources->{$name} 
-			or die "Source '$name' is not being tracked";
-		
-		print STDERR "\n";
-		
-		my $Rs = $SourceContext->ResultSource->resultset;
-		my $total = $Rs->count;
-		my $count = 0;
-		foreach my $Row ($Rs->all) {
-			my $msg = "Initializing Audit Records for $name: " . ++$count . '/' . $total;
-			print STDERR $msg . "\r";
-			$Row->audit_init($self);
-		}
-	}
+	$self->schema->txn_do(sub {
 	
-	print STDERR "\n\n";
+		foreach my $name (@sources) {
+			my $SourceContext = $self->tracked_sources->{$name} 
+				or die "Source '$name' is not being tracked";
+			
+			print STDERR "\n";
+			
+			my $msg = "Initializing Audit Records for $name: ";
+			print STDERR $msg . "\r";
+			
+			my $Rs = $SourceContext->ResultSource->resultset;
+			my $total = $Rs->count;
+			my $count = 0;
+			foreach my $Row ($Rs->all) {
+				print STDERR $msg . ++$count . '/' . $total . "\r";
+				$Row->audit_init($self);
+			}
+		}
+		
+		print STDERR "\n\n";
+	});
 }
 
 sub init_all_sources {
