@@ -97,7 +97,8 @@ sub get_columns {
 sub init_virtual_column_value {
 	my ($self, $column,$valref) = @_;
 	return if (exists $self->{_virtual_values}{$column});
-	my $sql = try{$self->column_info($column)->{sql}} or return;
+	my $info = try{$self->column_info($column)} or return;
+	my $sql = $info->{sql} or return;
 	
 	my $rel = 'me';
 	$sql =~ s/self\./${rel}\./g;
@@ -105,12 +106,14 @@ sub init_virtual_column_value {
 	
 	my $Source = $self->result_source;
 	my $cond = { map { $rel . '.' . $_ => $self->get_column($_) } $Source->primary_columns };
-	
-	my $row = $Source->resultset->search_rs($cond,{
+	my $attr = {
 		select => [{ '' => \"($sql)", -as => $col }],
 		as => [$column],
 		result_class => 'DBIx::Class::ResultClass::HashRefInflator'
-	})->first or return undef;
+	};
+	$attr->{join} = $info->{join} if (exists $info->{join});
+	
+	my $row = $Source->resultset->search_rs($cond,$attr)->first or return undef;
 	
 	# optionally update a supplied reference, passed by argument:
 	$$valref = $row->{$column} if (ref($valref) eq 'SCALAR');

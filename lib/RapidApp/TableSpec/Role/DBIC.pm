@@ -1249,7 +1249,7 @@ sub resolve_dbic_colname {
 	$get_render_col ||= 0;
 	
 	my ($rel,$col,$join,$cond_data) = $self->resolve_dbic_rel_alias_by_column_name($name,$get_render_col);
-	
+
 	%$merge_join = %{ merge($merge_join,$join) }
 		if ($merge_join and $join);
 
@@ -1408,6 +1408,13 @@ sub resolve_dbic_rel_alias_by_column_name  {
 				return { '' => \"($sql)", -as => $col };
 			};
 			$cond_data = { function => $function };
+			
+			if ($info->{join}) {
+				my @prefix = split(/\./,$self->relspec_prefix);
+				push @prefix, $info->{join};
+				$join = $self->chain_to_hash(@prefix);
+			}
+			
 			return ('me',$name,$join,$cond_data);
 		}
 		## ----
@@ -1426,16 +1433,34 @@ sub resolve_dbic_rel_alias_by_column_name  {
 # This exists specifically to handle relationship columns:
 has 'custom_dbic_rel_aliases' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 
+# Updated: the last item may now be a ref in which case it will be set 
+# as the last value instead of {}
 sub chain_to_hash {
 	my $self = shift;
 	my @chain = @_;
 	
 	my $hash = {};
+	my $last;
 
 	my @evals = ();
+	my $i = 0;
 	foreach my $item (@chain) {
-		unshift @evals, '$hash->{\'' . join('\'}->{\'',@chain) . '\'} = {}';
-		pop @chain;
+		my $right = '{}';
+		my $set_end = 0;
+		if($i++ == 0) {
+			$last = pop @chain;
+			if(ref $last) {
+				$right = '$last';
+				$set_end = 1;
+			}
+			else {
+				# Put it back if its not a ref:
+				push @chain, $last;
+			}
+		}
+		my $left = '$hash->{\'' . join('\'}->{\'',@chain) . '\'}';		
+		unshift @evals, $left . ' = ' . $right;
+		pop @chain unless ($set_end);
 	}
 	eval $_ for (@evals);
 	
