@@ -199,15 +199,15 @@ sub track {
 	my %opts = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	die "track cannot be called on object instances" if (ref $class);
 	
-	#my $collector = exists $opts{collector_params} ? delete $opts{collector_params} : {};
-	#die 'collector_params must be a hashref' unless (ref($collector) eq 'HASH');
-	
 	my $sources = exists $opts{track_sources} ? delete $opts{track_sources} : undef;
 	die 'track_sources must be an arrayref' if ($sources and ! ref($sources) eq 'ARRAY');
-	
 	my $track_all = exists $opts{track_all_sources} ? delete $opts{track_all_sources} : undef;
-	
 	die "track_sources and track_all_sources are incompatable" if ($sources && $track_all);
+	
+	my $init_sources = exists $opts{init_sources} ? delete $opts{init_sources} : undef;
+	die 'init_sources must be an arrayref' if ($init_sources and ! ref($init_sources) eq 'ARRAY');
+	my $init_all = exists $opts{init_all_sources} ? delete $opts{init_all_sources} : undef;
+	die "init_sources and init_all_sources are incompatable" if ($init_sources && $init_all);
 	
 	my $collect = exists $opts{collect} ? delete $opts{collect} : undef;
 	if ($collect) {
@@ -226,8 +226,10 @@ sub track {
 	my $self = $class->new(%opts);
 	
 	$self->track_sources(@$sources) if ($sources);
-	$self->track_all_sources if ($track_all)
-
+	$self->track_all_sources if ($track_all);
+	
+	$self->init_sources(@$init_sources) if ($init_sources);
+	$self->init_all_sources if ($init_all);
 }
 
 sub BUILD {
@@ -386,7 +388,7 @@ sub track_sources {
 		# Skip sources we've already setup:
 		return if ($self->tracked_sources->{$source_name});
 		
-		$self->_add_action_tracker($AuditSourceContext,$_) for (@{$self->track_actions});
+		$self->_add_row_trackers_methods($AuditSourceContext);
 		$self->tracked_sources->{$source_name} = $AuditSourceContext;
 	}
 }
@@ -408,23 +410,41 @@ sub track_all_sources {
 }
 
 
+sub init_sources {
+	my ($self,@sources) = @_;
+	
+	foreach my $name (@sources) {
+		my $SourceContext = $self->tracked_sources->{$name} 
+			or die "Source '$name' is not being tracked";
+		
+		print STDERR "\n";
+		
+		my $Rs = $SourceContext->ResultSource->resultset;
+		my $total = $Rs->count;
+		my $count = 0;
+		foreach my $Row ($Rs->all) {
+			my $msg = "Initializing Audit Records for $name: " . ++$count . '/' . $total;
+			print STDERR $msg . "\r";
+			$Row->audit_init($self);
+		}
+	}
+	
+	print STDERR "\n\n";
+}
+
+sub init_all_sources {
+	my $self = shift;
+	$self->init_sources(keys %{$self->track_sources});
+}
+
+
 our $NESTED_CALL = 0;
-sub _add_action_tracker {
+sub _add_row_trackers_methods {
 	my $self = shift;
 	my $AuditSourceContext = shift;
-	my $action = shift;
+	
 	my $source_name = $AuditSourceContext->source;
-	
-	die "Bad action '$action'" unless ($action ~~ @{$self->track_actions});
-	
 	my $result_class = $self->schema->class($source_name);
-	my $func_name = $result_class . '::' . $action;
-	
-	return if $self->tracked_action_functions->{$func_name}++;
-	
-	my $applied_attr = '_auditany_' . $action . '_tracker_applied';
-	return if ($result_class->can($applied_attr));
-	
 	my $meta = Class::MOP::Class->initialize($result_class);
 	my $immutable = $meta->is_immutable;
 	
@@ -439,80 +459,148 @@ sub _add_action_tracker {
 		%immut_opts = $meta->immutable_options;
 		$meta->make_mutable;
 	}
-		
-	$meta->add_around_method_modifier( $action => sub {
-		my $orig = shift;
-		my $Row = shift;
 	
-		# This method modifier is applied to the entire result class. Call/return the
-		# unaltered original method unless the Row is tied to a schema instance that
-		# is being tracked by an AuditAny which is configured to track the current
-		# action function. Also, make sure this call is not already nested to prevent
-		# deep recursion
-		my $Auditors = $Row->result_source->schema->auditors || [];
-		return $Row->$orig(@_) unless (scalar(@$Auditors) > 0);
+	foreach my $action (@{$self->track_actions}) {
+
+		my $func_name = $result_class . '::' . $action;
 		
-		# Before action is called:
-		my @Trackers = ();
-		foreach my $AuditAny (@$Auditors) {
-			next if (
-				ref($self) ne ref($AuditAny) ||
-				! $AuditAny->tracked_action_functions->{$func_name} ||
-				$AuditAny->calling_action_function->{$func_name}
-			);
+		return if $self->tracked_action_functions->{$func_name}++;
+		
+		my $applied_attr = '_auditany_' . $action . '_tracker_applied';
+		return if ($result_class->can($applied_attr));
+
+		$meta->add_around_method_modifier( $action => sub {
+			my $orig = shift;
+			my $Row = shift;
+		
+			# This method modifier is applied to the entire result class. Call/return the
+			# unaltered original method unless the Row is tied to a schema instance that
+			# is being tracked by an AuditAny which is configured to track the current
+			# action function. Also, make sure this call is not already nested to prevent
+			# deep recursion
+			my $Auditors = $Row->result_source->schema->auditors || [];
+			return $Row->$orig(@_) unless (scalar(@$Auditors) > 0);
 			
-			unless ($AuditAny->active_changeset) {
-				$AuditAny->start_changeset;
-				$AuditAny->auto_finish(1);
+			# Before action is called:
+			my @Trackers = ();
+			foreach my $AuditAny (@$Auditors) {
+				next if (
+					ref($self) ne ref($AuditAny) ||
+					! $AuditAny->tracked_action_functions->{$func_name} ||
+					$AuditAny->calling_action_function->{$func_name}
+				);
+				
+				unless ($AuditAny->active_changeset) {
+					$AuditAny->start_changeset;
+					$AuditAny->auto_finish(1);
+				}
+				
+				$AuditAny->calling_action_function->{$func_name} = 1;
+				my $class = $AuditAny->change_context_class;
+				my $ChangeContext = $class->new(
+					AuditObj				=> $AuditAny,
+					SourceContext		=> $AuditAny->tracked_sources->{$source_name},
+					ChangeSetContext	=> $AuditAny->active_changeset,
+					Row 					=> $Row,
+					action				=> $action
+				) or next;
+				push @Trackers, $ChangeContext;
 			}
 			
-			$AuditAny->calling_action_function->{$func_name} = 1;
-			my $class = $AuditAny->change_context_class;
-			my $ChangeContext = $class->new(
-				AuditObj				=> $AuditAny,
-				SourceContext		=> $AuditAny->tracked_sources->{$source_name},
-				ChangeSetContext	=> $AuditAny->active_changeset,
-				Row 					=> $Row,
-				action				=> $action
-			) or next;
-			push @Trackers, $ChangeContext;
-		}
-		
-		my $result;
-		my @args = @_;
-		try {
-			# call action:
-			$result = $Row->$orig(@args);
-			
-			# After action is called:
-			foreach my $ChangeContext (@Trackers) {
-				$ChangeContext->record;
-				my $AuditAny = $ChangeContext->AuditObj;
-				$AuditAny->record_change($ChangeContext);
-				$AuditAny->calling_action_function->{$func_name} = 0;
-			}
-		}
-		catch {
-			my $err = shift;
-			# Still Clean up:
-			foreach my $ChangeContext (@Trackers) {
-				try {
+			my $result;
+			my @args = @_;
+			try {
+				# call action:
+				$result = $Row->$orig(@args);
+				
+				# After action is called:
+				foreach my $ChangeContext (@Trackers) {
+					$ChangeContext->record;
 					my $AuditAny = $ChangeContext->AuditObj;
-					try{$AuditAny->clear_changeset};
+					$AuditAny->record_change($ChangeContext);
 					$AuditAny->calling_action_function->{$func_name} = 0;
-				};
+				}
 			}
-			# Re-throw:
-			die $err;
-		};
-		return $result;
-	}) or die "Unknown error setting up '$action' modifier on '$result_class'";
+			catch {
+				my $err = shift;
+				# Still Clean up:
+				foreach my $ChangeContext (@Trackers) {
+					try {
+						my $AuditAny = $ChangeContext->AuditObj;
+						try{$AuditAny->clear_changeset};
+						$AuditAny->calling_action_function->{$func_name} = 0;
+					};
+				}
+				# Re-throw:
+				die $err;
+			};
+			return $result;
+		}) or die "Unknown error setting up '$action' modifier on '$result_class'";
+		
+		$result_class->mk_classdata($applied_attr);
+		$result_class->$applied_attr(1);
+		
+	}
 	
-	$result_class->mk_classdata($applied_attr);
-	$result_class->$applied_attr(1);
+	$self->_add_additional_row_methods($meta);
 	
 	# Restore immutability to the way to was:
 	$meta->make_immutable(%immut_opts) if ($immutable);
+}
+
+
+sub _add_additional_row_methods {
+	my $self = shift;
+	my $meta = shift;
+	
+	return if ($meta->has_method('audit_take_snapshot'));
+	
+	$meta->add_method( audit_take_snapshot => sub {
+		my $Row = shift;
+		my $AuditObj = shift or die "AuditObj not supplied in argument.";
+		
+		my $Auditors = $Row->result_source->schema->auditors || [];
+		my $found = 0;
+		$_ == $AuditObj and $found = 1 for (@$Auditors);
+		die "Supplied AuditObj is not an active Auditor on this Row's schema instance"
+			unless ($found);
+		
+		my $source_name = $Row->result_source->source_name;
+		my $SourceContext = $AuditObj->tracked_sources->{$source_name}
+			or die "Source '$source_name' is not being tracked by the supplied Auditor";
+		
+		unless ($AuditObj->active_changeset) {
+			$AuditObj->start_changeset;
+			$AuditObj->auto_finish(1);
+		}
+		
+		my $class = $AuditObj->change_context_class;
+		my $ChangeContext = $class->new(
+			AuditObj				=> $AuditObj,
+			SourceContext		=> $SourceContext,
+			ChangeSetContext	=> $AuditObj->active_changeset,
+			Row 					=> $Row,
+			action				=> 'select'
+		);
+		$ChangeContext->record;
+		$AuditObj->record_change($ChangeContext);
+		return $Row;
+	});
+	
+	$meta->add_method( audit_init => sub {
+		my $Row = shift;
+		my $AuditObj = shift or die "AuditObj not supplied in argument.";
+		
+		my $Auditors = $Row->result_source->schema->auditors || [];
+		my $found = 0;
+		$_ == $AuditObj and $found = 1 for (@$Auditors);
+		die "Supplied AuditObj is not an active Auditor on this Row's schema instance"
+			unless ($found);
+			
+		my $Collector = $AuditObj->collector;
+		return $Row->audit_take_snapshot($AuditObj) unless ($Collector->has_full_row_stored($Row));
+		return $Row;
+	});
 }
 
 

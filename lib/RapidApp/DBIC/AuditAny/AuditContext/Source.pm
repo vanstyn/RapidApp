@@ -20,7 +20,6 @@ sub _build_local_datapoint_data {
 	return { map { $_->name => $_->get_value($self) } $self->get_context_datapoints('source') };
 }
 
-
 has 'pri_key_column', is => 'ro', isa => 'Maybe[Str]', lazy => 1, default => sub { 
 	my $self = shift;
 	my @cols = $self->primary_columns;
@@ -33,6 +32,16 @@ has 'pri_key_count', is => 'ro', isa => 'Int', lazy => 1, default => sub {
 	my $self = shift;
 	return scalar($self->primary_columns);
 };
+
+sub get_pri_key_value {
+	my $self = shift;
+	my $Row = shift;
+	my @num = $self->pri_key_count;
+	return undef unless (scalar(@num) > 0);
+	return $Row->get_column($self->pri_key_column) if (scalar(@num) == 1);
+	my $sep = $self->primary_key_separator;
+	return join($sep, map { $Row->get_column($_) } $self->primary_columns );
+}
 
 #has 'datapoint_values', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
 #	my $self = shift;

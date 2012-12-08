@@ -5,6 +5,7 @@ use RapidApp::Include qw(sugar perlutil);
 
 # ***** Generic Base Class *****
 
+has 'AuditObj', is => 'ro', required => 1;
 has 'collect_coderef', is => 'ro', isa => 'Maybe[CodeRef]', default => undef;
 
 
@@ -20,6 +21,15 @@ sub record_changes {
 	
 	die "No record_changes method implemented or no collector_coderef supplied!";
 
+}
+
+sub has_full_row_stored {
+	my $self = shift;
+	my $Row = shift;
+	
+	warn "has_full_row_stored() not implemented - returning false\n";
+	
+	return 0;
 }
 
 1;

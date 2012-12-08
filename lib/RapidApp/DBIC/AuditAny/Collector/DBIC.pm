@@ -4,7 +4,7 @@ extends 'RapidApp::DBIC::AuditAny::Collector';
 
 use RapidApp::Include qw(sugar perlutil);
 
-has 'AuditObj', is => 'ro', required => 1;
+
 has 'target_schema', is => 'ro', isa => 'Object', lazy => 1, default => sub { (shift)->AuditObj->schema };
 
 has 'target_source', is => 'ro', isa => 'Str', required => 1;
@@ -124,20 +124,6 @@ sub enforce_source_has_columns {
 }
 
 
-sub record_changes {
-	my $self = shift;
-	my $ChangeSet = shift;
-	
-	$ChangeSet->mark_finished; #<-- only for good measure
-	
-	return $self->add_changeset_row($ChangeSet) if ($self->changesetSource);
-	my @Changes = $ChangeSet->all_changes;
-	$self->add_change_row($_) for (@Changes);
-	
-	return 1;
-}
-
-
 sub get_add_create_change {
 	my $self = shift;
 	my $ChangeContext = shift;
@@ -178,6 +164,49 @@ sub add_changeset_row {
 	return $self->changesetSource->resultset->create($create);
 }
 
+
+######### Public API #########
+
+sub record_changes {
+	my $self = shift;
+	my $ChangeSet = shift;
+	
+	$ChangeSet->mark_finished; #<-- only for good measure
+	
+	return $self->add_changeset_row($ChangeSet) if ($self->changesetSource);
+	my @Changes = $ChangeSet->all_changes;
+	$self->add_change_row($_) for (@Changes);
+	
+	return 1;
+}
+
+sub has_full_row_stored {
+	my $self = shift;
+	my $Row = shift;
+	
+	my $Rs = $self->changeSource->resultset 
+		or die "No changeSource in this collector";
+	
+	my $source_name = $Row->result_source->source_name;
+	my $SourceContext = $self->AuditObj->tracked_sources->{$source_name} 
+		or die "Source '$source_name' is not being tracked by the Auditor!";
+	
+	my $pri_key_value = $SourceContext->get_pri_key_value($Row);
+	
+	my $rename = $self->AuditObj->rename_datapoints || {};
+	
+	my $pri_key_row = $rename->{pri_key_value} || 'pri_key_value';
+	my $source = $rename->{source} || 'source';
+	my $action = $rename->{action} || 'action';
+	
+	$Rs = $Rs->search_rs({
+		$pri_key_row => $pri_key_value,
+		$source => $source_name,
+		$action => [ 'select','insert' ]
+	},{ limit => 1 });
+	
+	return $Rs->count;
+}
 
 
 1;

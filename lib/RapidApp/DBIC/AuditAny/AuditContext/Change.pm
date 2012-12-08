@@ -26,13 +26,13 @@ sub _build_allowed_actions { [qw(insert update delete)] };
 has 'executed', is => 'rw', isa => 'Bool', default => 0, init_arg => undef;
 has 'recorded', is => 'rw', isa => 'Bool', default => 0, init_arg => undef;
 
+sub class { (shift)->SourceContext->class }
 sub ResultSource { (shift)->SourceContext->ResultSource }
 sub source { (shift)->SourceContext->source }
 sub pri_key_column { (shift)->SourceContext->pri_key_column }
 sub pri_key_count { (shift)->SourceContext->pri_key_column }
-sub primary_key_separator { (shift)->SourceContext->primary_key_separator }
 sub primary_columns { (shift)->SourceContext->primary_columns }
-sub class { (shift)->SourceContext->class }
+sub get_pri_key_value { (shift)->SourceContext->get_pri_key_value(@_) }
 
 
 sub _build_tiedContexts { 
@@ -45,17 +45,6 @@ sub _build_local_datapoint_data {
 	my $self = shift;
 	$self->enforce_executed;
 	return { map { $_->name => $_->get_value($self) } $self->get_context_datapoints('change') };
-}
-
-
-sub get_pri_key_value {
-	my $self = shift;
-	my $Row = shift;
-	my @num = $self->pri_key_count;
-	return undef unless (scalar(@num) > 0);
-	return $Row->get_column($self->pri_key_column) if (scalar(@num) == 1);
-	my $sep = $self->primary_key_separator;
-	return join($sep, map { $Row->get_column($_) } $self->primary_columns );
 }
 
 has 'pri_key_value', is => 'ro', isa => 'Maybe[Str]', lazy => 1, default => sub { 
@@ -98,7 +87,8 @@ has 'newRow', is => 'ro', lazy => 1, default => sub {
 	
 	return $self->Row unless (
 		$self->Row->in_storage and
-		$self->new_columns_from_storage
+		$self->new_columns_from_storage and
+		$self->action ne 'select'
 	);
 	return $self->Row->get_from_storage;
 };
@@ -199,7 +189,7 @@ around 'Row' => sub {
 
 has 'old_columns', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
 	my $self = shift;
-	return {} unless ($self->origRow && $self->origRow->in_storage);
+	return {} unless ($self->action ne 'select' && $self->origRow && $self->origRow->in_storage);
 	return { $self->origRow->get_columns };
 };
 
