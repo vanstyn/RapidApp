@@ -1860,10 +1860,15 @@ sub get_multi_relationship_column_cnf {
 							#Fix!!
 							'loadCfg.autoLoad.params.personality = join_name;' .
 							
-							'loadCfg.autoLoad.params.base_params = Ext.encode({' .
+							#'loadCfg.autoLoad.params.base_params = Ext.encode({' .
+							#	'resultset_condition: Ext.encode(cond),' .
+							#	'resultset_attr: Ext.encode(attr)' .
+							#'});' .
+							
+							'loadCfg.autoLoad.params.base_params_base64 = base64.encode(Ext.encode({' .
 								'resultset_condition: Ext.encode(cond),' .
 								'resultset_attr: Ext.encode(attr)' .
-							'});' .
+							'}));' .
 							
 							'var href = "#loadcfg:" + Ext.urlEncode({data: Ext.encode(loadCfg)});' .
 							'disp += "&nbsp;" + Ext.ux.RapidApp.inlineLink(' .

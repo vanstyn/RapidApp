@@ -6,6 +6,7 @@ use strict;
 use RapidApp::Include qw(sugar perlutil);
 use String::Random;
 use RapidApp::Column;
+use MIME::Base64;
 
 use Text::Glob qw( match_glob );
 
@@ -205,10 +206,18 @@ sub JsonStore {
 
 sub get_store_base_params {
 	my $self = shift;
-	
+	my $r_parms = $self->c->req->params;
 	my $params = {};
-
-	my $encoded = $self->c->req->params->{base_params};
+	
+	confess "base_params and base_params_base64 cannot be specified together" if (
+		exists $r_parms->{base_params} and
+		exists $r_parms->{base_params_base64}
+	);
+	
+	my $encoded = exists $r_parms->{base_params_base64} ?
+		decode_base64($r_parms->{base_params_base64}) :
+		$self->c->req->params->{base_params};
+		
 	if (defined $encoded) {
 		my $decoded = $self->json->decode($encoded) or die "Failed to decode base_params JSON";
 		foreach my $k (keys %$decoded) {

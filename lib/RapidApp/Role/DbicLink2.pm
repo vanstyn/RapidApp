@@ -2133,7 +2133,15 @@ sub param_decodeIf {
 	return $default unless (defined $param);
 	
 	return $param if (ref $param);
-	return $self->json->decode($param);
+	my $decoded;
+	try {
+		$decoded = $self->json->decode($param);
+	}
+	catch {
+		my $err = shift;
+		confess "$err \n\nINPUT STRING: '$param'\n\n";
+	};
+	return $decoded;
 }
 
 
