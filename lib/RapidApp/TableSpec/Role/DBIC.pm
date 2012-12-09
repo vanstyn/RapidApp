@@ -1202,6 +1202,7 @@ hashash 'multi_rel_columns_indx', lazy => 1, default => sub {
 		my $h = $cond ? $self->ResultClass->parse_relationship_cond($cond) : {};
 		$indx{$rel} = { %$h, 
 			info => $info,
+			# TODO: this throws warnings sometimes:
 			rev_relname => (keys %{$self->ResultSource->reverse_relationship_info($rel)})[0],
 			relname => $rel
 		};
