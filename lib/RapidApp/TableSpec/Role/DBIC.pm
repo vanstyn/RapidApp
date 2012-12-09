@@ -1806,6 +1806,10 @@ sub get_multi_relationship_column_cnf {
 	
 	my $cur_renderer = $conf->{renderer};
 	
+	$conf->{required_fetch_columns} = [
+		$self->column_prefix . $rel_data->{self}
+	];
+	
 	# not fully working yet, use_rest turned off...
 	my $use_rest = 0;
 	my $rel_rest_key = try{$self->ResultClass->getRestKey};
