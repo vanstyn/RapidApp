@@ -503,10 +503,39 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		
 		this.searchText = (this.grid.quicksearch_mode == 'exact') ?
 			'Exact Search' : this.searchText;
-			
+		
+		this.modeMenu = new Ext.menu.Menu();
+		this.modeMenu.add(
+			{
+				xtype: 'menucheckitem',
+				text: 'Normal',
+				group: 'quick_search_mode',
+				checked: true
+			},
+			{
+				xtype: 'menucheckitem',
+				text: 'Exact (faster)',
+				group: 'quick_search_mode'
+			}
+		);
+		
+		this.outerMenu = new Ext.menu.Menu();
+		this.outerMenu.add(
+			{
+				text: 'Mode',
+				iconCls: 'icon-preferences',
+				menu: this.modeMenu
+			},
+			{
+				text: 'Search Columns',
+				iconCls: 'x-cols-icon',
+				menu: this.menu
+			}
+		);
+		
 		var btnConfig = {
 			text: this.searchText,
-			menu:this.menu,
+			menu:this.outerMenu,
 			iconCls:this.iconCls
 		};
 		
