@@ -490,7 +490,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		'open_record_column_hidden',	// Hidden state of special open record column
 		'advanced_config',
 		'advanced_config_json',
-		'advanced_config_active'
+		'advanced_config_active',
+		'quicksearch_mode'
 	],
 	
 	// Function to get the current grid state needed to save a search

@@ -397,8 +397,9 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 	 * @cfg {Object} paramNames Params name map (defaults to {fields:"fields", query:"query"}
 	 */
 	,paramNames: {
-		 fields:'fields'
-		,query:'query'
+		fields:'fields',
+		query:'query',
+		quicksearch_mode: 'quicksearch_mode'
 	}
 
 	/**
@@ -483,12 +484,13 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		store.quickSearchCheckIndexes = this.grid.init_quick_search_columns || store.quickSearchCheckIndexes;
 		// --
 		
+		store.quicksearch_mode = store.quicksearch_mode || this.grid.quicksearch_mode;
+		this.grid.quicksearch_mode = store.quicksearch_mode;
+		
 		store.on('beforeload',this.applyStoreParams,this);
 		
 		// add menu
 		this.menu = new Ext.menu.Menu();
-		
-		this.menu.on('hide',this.persistCheckIndexes,this);
 
 		// handle position
 		if('right' === this.align) {
@@ -501,6 +503,8 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 			}
 		}
 		
+		this.grid.quicksearch_mode = this.grid.quicksearch_mode || 'like';
+		
 		this.searchText = (this.grid.quicksearch_mode == 'exact') ?
 			'Exact Search' : this.searchText;
 		
@@ -510,12 +514,17 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 				xtype: 'menucheckitem',
 				text: 'Normal',
 				group: 'quick_search_mode',
-				checked: true
+				header: 'Quick Search',
+				mode: 'like',
+				checked: (this.grid.quicksearch_mode == 'like' ? true : false)
 			},
 			{
 				xtype: 'menucheckitem',
 				text: 'Exact (faster)',
-				group: 'quick_search_mode'
+				group: 'quick_search_mode',
+				header: 'Exact Search',
+				mode: 'exact',
+				checked: (this.grid.quicksearch_mode == 'exact' ? true : false)
 			}
 		);
 		
@@ -524,20 +533,29 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 			{
 				text: 'Mode',
 				iconCls: 'icon-preferences',
+				hideOnClick: false,
 				menu: this.modeMenu
 			},
 			{
 				text: 'Search Columns',
 				iconCls: 'x-cols-icon',
+				hideOnClick: false,
 				menu: this.menu
 			}
 		);
 		
+		// Only enable the new 'outerMenu' if allow_set_quicksearch_mode is true:
+		var menu = this.grid.allow_set_quicksearch_mode ? this.outerMenu : this.menu;
+		
 		var btnConfig = {
 			text: this.searchText,
-			menu:this.outerMenu,
+			menu: menu,
 			iconCls:this.iconCls
 		};
+		
+		
+		//this.menu.on('hide',this.persistCheckIndexes,this);
+		menu.on('hide',this.persistCheckIndexes,this);
 		
 		// -- Optional config: disable pressing of the button (making it act only as a label):
 		if(this.grid.quicksearch_disable_change_columns) {
@@ -756,13 +774,16 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		// add fields and query to baseParams of store
 		delete(store.baseParams[this.paramNames.fields]);
 		delete(store.baseParams[this.paramNames.query]);
+		delete(store.baseParams[this.paramNames.quicksearch_mode]);
 		if (store.lastOptions && store.lastOptions.params) {
 			delete(store.lastOptions.params[this.paramNames.fields]);
 			delete(store.lastOptions.params[this.paramNames.query]);
+			delete(store.lastOptions.params[this.paramNames.quicksearch_mode]);
 		}
 		//if(fields.length && !this.field.disabled) {
 			store.baseParams[this.paramNames.fields] = Ext.encode(fields);
 			store.baseParams[this.paramNames.query] = val;
+			store.baseParams[this.paramNames.quicksearch_mode] = this.grid.quicksearch_mode;
 		//}
 	}
 
@@ -799,10 +820,14 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 	 * @private 
 	 */
 	,reconfigure:function() {
+		var store = this.grid.getStore()
 	
 		// NEW: Try to load checkIndex list from a property in the grid store
 		// (added for saved state integration, 2012-09-18 by HV)
-		this.checkIndexes = this.grid.getStore().quickSearchCheckIndexes || this.checkIndexes;
+		this.checkIndexes = store.quickSearchCheckIndexes || this.checkIndexes;
+		
+		// Added for saved state integration 2012-12-16 by HV:
+		this.grid.quicksearch_mode = store.quicksearch_mode;
 		
 		// {{{
 		// remove old items
@@ -900,7 +925,25 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		return this.QuickSearchColumns;
 	},
 	
+	applySearchMode: function(){
+		var item;
+		this.modeMenu.items.each(function(i) {
+			if(i.checked) { item = i; }
+		},this);
+		if(!item || !item.header || !item.mode) {
+			// Fallback/default: should never get here:
+			item = { header: 'Quick Search', mode: 'like' };
+		}
+		
+		this.searchText = item.header;
+		this.grid.quicksearch_mode = item.mode;
+		this.grid.store.quicksearch_mode = item.mode;
+	},
+	
 	persistCheckIndexes: function(){
+		
+		this.applySearchMode();
+		
 		var indexes = [];
 		var headers = [];
 		var all = true;

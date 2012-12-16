@@ -62,6 +62,10 @@ has 'always_fetch_colspec' => ( is => 'ro', isa => 'Maybe[ArrayRef[Str]]', defau
 # TODO: add 'phrases' mode to act like google searches with +/- and quotes around phrases
 has 'quicksearch_mode', is => 'ro', isa => 'Str', default => 'like';
 
+# Define if the user/client is allowed to specify the quicksearch_mode:
+has 'allow_set_quicksearch_mode', is => 'ro', isa => 'Bool', default => 1;
+
+
 # If natural_column_order is true (default) columns will be ordered according to the real
 # database/schema order, otherwise, order is based on the include_colspec
 has 'natural_column_order', is => 'ro', isa => 'Bool', default => 1;
@@ -402,9 +406,10 @@ sub DbicLink_around_BUILD {
 	);
 	
 	$self->apply_extconfig(
-		remote_columns		=> \1,
-		loadMask			=> \1,
-		quicksearch_mode	=> $self->quicksearch_mode
+		remote_columns				=> \1,
+		loadMask					=> \1,
+		quicksearch_mode			=> $self->quicksearch_mode,
+		allow_set_quicksearch_mode	=> $self->allow_set_quicksearch_mode ? \1 : \0
 	);
 	
 	
@@ -1011,18 +1016,26 @@ sub chain_Rs_req_quicksearch {
 	
 	my $attr = { join => {} };
 	
+	my $mode = $params->{quicksearch_mode} || $self->quicksearch_mode;
+	$mode = $self->quicksearch_mode unless ($self->allow_set_quicksearch_mode);
+	
 	my @search = ();
 	foreach my $f (@$fields) {
 		my $dbicname = $self->resolve_dbic_colname($f,$attr->{join});
-		
-		if($self->quicksearch_mode eq 'exact') {
-			#push @search, { $dbicname => { '=' => $query } }; 	#<-- for some reason this causes all records to be 
-																# shown if none match. No idea why.
-			
-			push @search, { $dbicname => { like => $query } };
-		}
-		else { # default: $self->quicksearch_mode eq 'like'
-			push @search, { $dbicname => { like => '%' . $query . '%' } };
+		switch($mode) {
+			case 'like' {
+				# Default:
+				push @search, { $dbicname => { like => '%' . $query . '%' } };
+			}
+			case 'exact' {
+				#push @search, { $dbicname => { '=' => $query } }; 	#<-- for some reason this causes all records to be 
+																	# shown if none match. No idea why.
+				
+				push @search, { $dbicname => { like => $query } };
+			}
+			else {
+				confess "Invalid quicksearch_mode '$mode'";
+			}
 		}
 	}
 	
