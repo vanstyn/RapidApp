@@ -6,7 +6,7 @@ use Scalar::Util 'blessed';
 use Data::Dumper;
 use base 'JSON::PP';
 
-our @EXPORT = qw{encode_json decode_json};
+our @EXPORT = qw{encode_json decode_json encode_json_utf8 decode_json_utf8};
 
 # copied from JSON::PP
 my $JSON; # cache
@@ -16,6 +16,15 @@ sub encode_json ($) { # encode
 sub decode_json ($) { # decode
 	($JSON ||= __PACKAGE__->new)->decode($_[0]);
 }
+
+my $JSONUft8; # cache
+sub encode_json_utf8 ($) { # encode
+	($JSONUtf8 ||= __PACKAGE__->new->utf8)->encode($_[0]);
+}
+sub decode_json_utf8 ($) { # decode
+	($JSONUtf8 ||= __PACKAGE__->new->utf8)->decode($_[0]);
+}
+
 
 sub new {
 	return bless JSON::PP->new->allow_blessed->convert_blessed->allow_nonref, __PACKAGE__;
