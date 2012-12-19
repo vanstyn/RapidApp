@@ -17,7 +17,7 @@ sub decode_json ($) { # decode
 	($JSON ||= __PACKAGE__->new)->decode($_[0]);
 }
 
-my $JSONUft8; # cache
+my $JSONUtf8; # cache
 sub encode_json_utf8 ($) { # encode
 	($JSONUtf8 ||= __PACKAGE__->new->utf8)->encode($_[0]);
 }
