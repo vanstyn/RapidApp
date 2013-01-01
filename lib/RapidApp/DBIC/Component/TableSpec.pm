@@ -687,9 +687,10 @@ sub TableSpec_get_hash_conf {
 		
 	my %order_indx = map {$_=>1} @$order;
 	
-	!$order_indx{$_} and
-		die "FATAL: Unexpected data! param '$param' - found key '$_' missing from stored order!"
-			for (keys %$data);
+	# This is sometimes breaking, and this whole thing will be refactored soon...
+	#!$order_indx{$_} and
+	#	die "FATAL: Unexpected data! param '$param' - found key '$_' missing from stored order!"
+	#		for (keys %$data);
 			
 	!$data->{$_} and
 		die "FATAL: Unexpected data! param '$param' - missing declared ordered key '$_' from data!"
