@@ -1,5 +1,4 @@
 Ext.Updater.defaults.disableCaching = true;
-Ext.Ajax.timeout = 120000; // 2 minute timeout (default is 30 seconds)
 
 Ext.ns('Ext.log');
 Ext.log = function() {};
@@ -1737,6 +1736,15 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 	// an exception (X-RapidApp-Exception) occurs during content load:
 	doAutoLoad: function() {
 		var u = this.body.getUpdater();
+		
+		// Set the timeout to match the Ajax default: (note conversion from millisecs to secs)
+		u.timeout = (Ext.Ajax.timeout)/1000;
+		
+		//New: allow custom timeout to be set via autoLoad param:
+		if(Ext.isObject(this.autoLoad) && this.autoLoad.timeout) {
+			u.timeout = (this.autoLoad.timeout)/1000;
+		}
+		
 		u.AutoPanelId = this.getId();
 		Ext.ux.AutoPanel.superclass.doAutoLoad.call(this);
 	},
