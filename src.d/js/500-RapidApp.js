@@ -1713,6 +1713,9 @@ Ext.reg('dyncontainer',Ext.ux.DynContainer);
 
 Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 
+	// Set the timeout to match the Ajax default:
+	timeout: Ext.Ajax.timeout,
+
 	setTitle: function() {
 		Ext.ux.AutoPanel.superclass.setTitle.apply(this,arguments);
 		
@@ -1737,13 +1740,54 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 	doAutoLoad: function() {
 		var u = this.body.getUpdater();
 		
-		// Set the timeout to match the Ajax default: (note conversion from millisecs to secs)
-		u.timeout = (Ext.Ajax.timeout)/1000;
+		// -- Set the 'Updater' timeout: (note conversion from millisecs to secs)
+		u.timeout = (this.timeout)/1000;
 		
 		//New: allow custom timeout to be set via autoLoad param:
 		if(Ext.isObject(this.autoLoad) && this.autoLoad.timeout) {
 			u.timeout = (this.autoLoad.timeout)/1000;
 		}
+		// --
+		
+		// -----  AutoPanel failure handler  -----
+		u.on('failure',function(el,response) {
+			// --- RapidApp Exceptions are handled in global Ajax handlers:
+			if(
+				response && Ext.isFunction(response.getResponseHeader) &&
+				response.getResponseHeader('X-RapidApp-Exception')
+			) { return; }
+			// ---
+			
+			var retry_text = 'Please try again later.<br><br>' +
+			 '<span style="font-size:.7em;">' +
+			 '<i>If you continue to receive this message, please contact your ' +
+			 'System Administrator.</i></span>';
+			
+			var title = 'Load Request Failed:';
+			var msg = '<div style="padding:10px;font-size:1.3em;color:navy;">&nbsp;&nbsp;' +
+			 response.statusText + 
+			 '&nbsp;</div>' +
+			 '<br>' + retry_text;
+			var opt = { 
+				tabTitle: '<span style="color:gray;">(load failed)</span>',
+				tabIconCls: 'icon-warning' 
+			};
+			
+			// All-purpose timeout message:
+			if(response.isTimeout) {
+				opt.tabTitle = '<span style="color:gray;">(timed out)</span>';
+				title = 'Load Request Timeout';
+				msg = 'The page/content load request timed out.<br><br>Possible causes:<br>' +
+				 '<ol style="list-style:circle inside;padding:20px;font-size:.8em;color:navy;">' +
+				 '<li>Connection problem. (check to make sure you can access other sites)</li>' +
+				 '<li>The server may be responding slowly due to an unusually high load.</li>' +
+				 '<li>The system may be temporarily down for maintentence.</li>' +
+				 '</ol>' + retry_text;
+			}
+			
+			return this.setErrorBody(title,msg,opt);
+		},this);
+		// -----   ***   -----
 		
 		u.AutoPanelId = this.getId();
 		Ext.ux.AutoPanel.superclass.doAutoLoad.call(this);
@@ -1805,20 +1849,28 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 		this.doLayout();
 	},
 	
-	setErrorBody: function(title,msg) {
-		this.setTitle('Load Failed');
-		this.setIconClass('icon-cancel');
-		
-		this.setBodyConf({
-			layout: 'fit',
-			autoScroll: true,
-			frame: true,
-			xtype: 'panel',
+	setErrorBody: function(title,msg,opt) {
+		opt = opt || {};
+		opt = Ext.apply({
+			tabTitle: 'Load Failed',
+			tabIconCls: 'icon-cancel',
 			html: '<div class="ra-autopanel-error">' +
 				'<div class="ra-exception-heading">' + title + '</div>' +
 				'<div class="msg">' + msg + '</div>' +
 			'</div>'
-		},this.getEl());
+		},opt);
+		
+		opt.bodyConf = opt.bodyConf || {
+			layout: 'fit',
+			autoScroll: true,
+			frame: true,
+			xtype: 'panel',
+			html: opt.html
+		};
+		
+		this.setTitle(opt.tabTitle);
+		this.setIconClass(opt.tabIconCls);
+		this.setBodyConf(opt.bodyConf,this.getEl());
 	}
 });
 Ext.reg('autopanel',Ext.ux.AutoPanel);
