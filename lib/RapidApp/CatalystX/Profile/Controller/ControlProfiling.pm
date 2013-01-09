@@ -11,14 +11,14 @@ sub start_profiling : Local {
     my ($self, $c) = @_;
 	DB::enable_profile();
     $c->log->debug('Profiling has now been started');
-    $c->body('Profiling started');
+    $c->res->body('Profiling started');
 }
 
 sub stop_profiling : Local {
     my ($self, $c) = @_;
     DB::finish_profile();
     $c->log->debug('Profiling has now been disabled');
-    $c->body('Profiling finished');
+    $c->res->body('Profiling finished');
 }
 
 1;
