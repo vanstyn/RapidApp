@@ -429,6 +429,20 @@ sub _report_debug_around_stats {
 	
 	my $total = $c->stats->elapsed;
 	
+	my $display = $c->_get_debug_around_stats_ascii($total,"Catalyst Request Elapsed");
+	
+	print STDERR "\n" . $display;
+}
+
+
+sub _get_debug_around_stats_ascii {
+	my $c = shift;
+	my $total = shift or die "missing total arg";
+	my $total_heading = shift || 'Total Elapsed';
+	
+	my $stats = $RapidApp::Functions::debug_around_stats || return;
+	return unless (ref($stats) && keys %$stats > 0);
+	
 	my $auto_width = 'calls';
 	my @order = qw(class sub calls min/max/avg total pct);
 	
@@ -468,7 +482,9 @@ sub _report_debug_around_stats {
 		BOLD.MAGENTA . $table . CLEAR .
 		BOLD . "Catalyst Request Elapsed: " . YELLOW . sprintf('%.3f',$total) . CLEAR . "s\n\n";
 	
-	print STDERR "\n" . $display;
+	return $display;
+
 }
+
 
 1;
