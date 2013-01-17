@@ -94,7 +94,7 @@ Ext.ux.RapidApp.genericChangePW = function(username,post_url) {
 					}
 					return true;
 				}
-			},
+			}
 		],
 		
 		buttons: [
@@ -115,6 +115,8 @@ Ext.ux.RapidApp.genericChangePW = function(username,post_url) {
 			}
 		]
 	});
+	
+	
 
 	win = new Ext.Window({
 		id: winId, 
