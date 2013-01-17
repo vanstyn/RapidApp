@@ -134,7 +134,7 @@ Ext.ux.RapidApp.genericChangePW = function(username,post_url) {
 		hide_mask: function() { win.myMask.hide(); },
 		listeners: {
 			afterrender: function() {
-				var El = win.getEl()
+				var El = win.getEl();
 				// Create the actual mask object tied to the window
 				win.myMask = new Ext.LoadMask(El, {msg:"Please wait..."});
 				
