@@ -15,7 +15,9 @@ use RapidApp::Include qw(sugar perlutil);
 require Module::Runtime;
 
 has 'title', is => 'ro', default => 'AppExplorer';
+has 'right_footer', is => 'ro', lazy => 1, default => sub {(shift)->title};
 has 'iconCls', is => 'ro',	default => 'icon-server_database';
+
 has 'navtree_class', is => 'ro', isa => 'Str', required => 1;
 has 'navtree_params', is => 'ro', isa => 'HashRef', lazy => 1, default => sub{{}};
 
@@ -76,7 +78,7 @@ sub content {
 			<div id="infostatus"></div>
 		</td>
 		<td width="25%" class="right">
-			AppExplorer v???} . '' . q{
+			} . $self->right_footer . q{
 		</td>
 	</tr></table>
 </div></div>
