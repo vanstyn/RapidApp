@@ -17,6 +17,7 @@ require Module::Runtime;
 has 'title', is => 'ro', default => 'AppExplorer';
 has 'iconCls', is => 'ro',	default => 'icon-server_database';
 has 'navtree_class', is => 'ro', isa => 'Str', required => 1;
+has 'navtree_params', is => 'ro', isa => 'HashRef', lazy => 1, default => sub{{}};
 
 sub BUILD {
 	my $self = shift;
@@ -24,7 +25,10 @@ sub BUILD {
 	Module::Runtime::require_module($self->navtree_class);
 	
 	$self->apply_init_modules(
-		navtree => $self->navtree_class,
+		navtree => {
+			class => $self->navtree_class,
+			params => $self->navtree_params
+		}
 		#dashboard => 'RaSakila::Modules::Dashboard'
 	);
 }
