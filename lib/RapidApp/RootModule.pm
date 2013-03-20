@@ -4,13 +4,11 @@ use Moose;
 use RapidApp::Include 'perlutil';
 extends 'RapidApp::AppBase';
 
+require Module::Runtime;
+
 =head1 NAME
 
 RapidApp::RootModule;
-
-=cut
-
-has 'app_title' => ( is => 'rw', isa => 'Str', default => 'RapidApp Application' );
 
 =head1 DESCRIPTION
 
@@ -27,6 +25,20 @@ RootModule enables the auto_viewport capability of Controller by default.
 =cut
 
 our @GLOBAL_INIT_CODEREFS = ();
+
+has 'app_title', is => 'rw', isa => 'Str', default => 'RapidApp Application';
+
+has 'main_module_class', is => 'ro', isa => 'Maybe[Str]', lazy => 1, default => undef;
+has 'main_module_params', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {{}};
+
+# default_module now 'main' by default:
+around 'BUILDARGS' => sub {
+	my ($orig, $class, @args)= @_;
+	my $params= $class->$orig(@args);
+	$params->{default_module} ||= 'main';
+	$params->{module_name} ||= '';
+	return $params;
+};
 
 sub BUILD {
 	my $self= shift;
@@ -46,6 +58,20 @@ sub BUILD {
 	
 	$self->auto_web1(1);
 	$self->auto_viewport(1);
+	
+	## ---
+	## NEW: optional auto initialization of the 'main' Module
+	if($self->main_module_class) {
+		Module::Runtime::require_module($self->main_module_class);
+		$self->apply_init_modules(
+			main => {
+				class => $self->main_module_class,
+				params => $self->main_module_params
+			}
+		);
+	}
+	##
+	## ---
 }
 
 sub Controller {
