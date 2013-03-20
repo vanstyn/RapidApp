@@ -6,7 +6,7 @@ use strict;
 #
 
 use RapidApp::Include qw(sugar perlutil);
-
+use Module::Runtime;
 
 use Clone qw(clone);
 use Time::HiRes qw(gettimeofday);
@@ -311,6 +311,8 @@ sub create_module {
 	my $name = shift;
 	my $class_name = shift;
 	my $params = shift;
+	
+	Module::Runtime::require_module($class_name);
 	
 	$params = $self->create_module_params unless (defined $params);
 	
