@@ -22,6 +22,14 @@ before 'setup_components' => sub {
   $config->{nav_title} ||= 'Loaded DBIC Sources';
   $config->{table_class} ||= 'Catalyst::Plugin::RapidApp::RapidDbic::TableBase';
   
+  my $appclass = ref($c) || $c;
+  my %active_models = ();
+  foreach my $model (@{$config->{dbic_models}}) {
+    my ($schema,$result) = split(/\:\:/,$model,2);
+    $active_models{$appclass."::Model::".$schema}++;
+  }
+  $config->{_active_models} = \%active_models;
+  
   # Apply base/default configs to 'Model::RapidApp':
   $c->config( 'Model::RapidApp' => 
     Catalyst::Utils::merge_hashes({
@@ -50,6 +58,7 @@ before 'setup_component' => sub {
   my( $c, $component ) = @_;
   
   my $config = $c->config->{'Plugin::RapidApp::RapidDbic'};
+  return unless ($config->{_active_models}->{$component});
   
   my $suffix = Catalyst::Utils::class2classsuffix( $component );
   my $config = $c->config->{ $suffix } || {};
@@ -65,11 +74,25 @@ before 'setup_component' => sub {
   # each Result class *early*, before 'Catalyst::Model::DBIC::Schema'
   # gets ahold of them. Otherwise problems will happen if we try to
   # load it later:
+  my ($model_name) = reverse split(/\:\:/,$component); #<-- educated guess, see temp/hack below
   Module::Runtime::require_module($schema_class);
   for my $class (keys %{$schema_class->class_mappings}) {
     next if ($class->can('TableSpec_cnf'));
     $class->load_components('+RapidApp::DBIC::Component::TableSpec');
     $class->apply_TableSpec;
+    
+    # ---- TEMP HACK / FIXME:
+    # *predict* (guess) what the auto-generated grid module paths will be and set
+    # the open url configs so that cross table links are able to work. this is 
+    # just a stop-gap until this functionality is factored into the RapidApp API 
+    # officially, somehow...
+    my $module_name = lc($model_name . '_' . $class->table);
+    my $grid_url = '/main/navtree/' . $module_name;
+    $class->TableSpec_set_conf(
+      open_url_multi => $grid_url,
+      open_url => $grid_url."/item",
+    );
+    # ----
   }
 
 };

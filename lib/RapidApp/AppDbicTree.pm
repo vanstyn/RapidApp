@@ -9,20 +9,19 @@ extends 'RapidApp::AppNavTree';
 use RapidApp::Include qw(sugar perlutil);
 require Module::Runtime;
 
-has 'dbic_models', is => 'ro', isa => 'ArrayRef[Str]', required => 1;
+has 'dbic_models', is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default => undef;
 has 'table_class', is => 'ro', isa => 'Str', required => 1;
 
-sub BUILD {
+has 'dbic_model_tree', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => sub {
 	my $self = shift;
-	
-	Module::Runtime::require_module($self->table_class);
-	
-	# init
-	$self->TreeConfig;
-}
+	die "Must supply either 'dbic_models' or 'dbic_model_tree'" unless ($self->dbic_models);
+	return parse_dbic_model_list($self->app,@{$self->dbic_models});
+};
 
+
+# General func instead of class method for use in other packages (temporary):
 sub parse_dbic_model_list {
-	my $self = shift;
+	my $c = shift;
 	my @models = @_;
 	
 	my %schemas = ();
@@ -32,7 +31,7 @@ sub parse_dbic_model_list {
 		die "Bad argument" if (ref $model);
 		my ($schema,$result) = split(/\:\:/,$model,2);
 		
-		my $M = $self->app->model($schema) or die "No such model '$schema'";
+		my $M = $c->model($schema) or die "No such model '$schema'";
 		die "Model '$schema' does not appear to be a DBIC Schema Model." 
 			unless ($M->can('schema'));
 		
@@ -53,14 +52,21 @@ sub parse_dbic_model_list {
 }
 
 
+sub BUILD {
+	my $self = shift;
+	
+	Module::Runtime::require_module($self->table_class);
+	
+	# init
+	$self->TreeConfig;
+}
+
 
 has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => sub {
 	my $self = shift;
 	
-	my $s_list = $self->parse_dbic_model_list(@{$self->dbic_models});
-
 	my @items = ();
-	for my $s (@$s_list) {
+	for my $s (@{$self->dbic_model_tree}) {
 		my $model = $s->{model};
 		my $schema = $self->app->model($model)->schema;
 		my @children = ();
