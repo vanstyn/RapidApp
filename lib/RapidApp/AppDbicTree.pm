@@ -25,16 +25,23 @@ sub BUILD {
 has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => sub {
 	my $self = shift;
 	
+	
 	my @items = ();
 	
 	foreach my $model (@{$self->dbic_models}) {
+		my $orig_model = $model;
+		# Support Schema::Result syntax: (quick/dirty)
+		my ($top_model,$result) = split(/\:\:/,$model,2);
+		$model = $top_model if ($result) ;
+		
 		my $M = $self->app->model($model) or die "No such model '$model'";
 		die "Model '$model' does not appear to be a DBIC Schema Model." 
 			unless ($M->can('schema'));
 		
 		my @children = ();
 		my $schema = $M->schema;
-		foreach my $source ($schema->sources) {
+		my @sources = $result ? ($result) : ($schema->sources);
+		foreach my $source (@sources) {
 			my $Source = $schema->source($source) or die "Source $source not found!";
 			my $module_name = lc($model . '_' . $Source->from);
 			$self->apply_init_modules( $module_name => {
@@ -58,7 +65,7 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 		
 		push @items, {
 			id		=> lc($model) . '_tables',
-			text	=> $model,
+			text	=> $orig_model,
 			iconCls	=> 'icon-server_database',
 			params	=> {},
 			expand	=> 1,
