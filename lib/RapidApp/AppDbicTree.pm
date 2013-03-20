@@ -21,28 +21,52 @@ sub BUILD {
 	$self->TreeConfig;
 }
 
+sub parse_dbic_model_list {
+	my $self = shift;
+	my @models = @_;
+	
+	my %schemas = ();
+	my %sources = ();
+	my @list = ();
+	for my $model (@models) {
+		die "Bad argument" if (ref $model);
+		my ($schema,$result) = split(/\:\:/,$model,2);
+		
+		my $M = $self->app->model($schema) or die "No such model '$schema'";
+		die "Model '$schema' does not appear to be a DBIC Schema Model." 
+			unless ($M->can('schema'));
+		
+		unless ($schemas{$schema}) {
+			$schemas{$schema} = [];
+			push @list, {
+				model => $schema,
+				sources => $schemas{$schema}
+			};
+		}
+		
+		# Either add specific/supplied result, or all results. Skip duplicates:
+		my @results = $result ? ($result) : $M->schema->sources;
+		$sources{$schema . '::' . $_}++ or push @{$schemas{$schema}}, $_ for (@results);
+	}
+	
+	return \@list;
+}
+
+
 
 has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => sub {
 	my $self = shift;
 	
-	
+	my $s_list = $self->parse_dbic_model_list(@{$self->dbic_models});
+
 	my @items = ();
-	
-	foreach my $model (@{$self->dbic_models}) {
-		my $orig_model = $model;
-		# Support Schema::Result syntax: (quick/dirty)
-		my ($top_model,$result) = split(/\:\:/,$model,2);
-		$model = $top_model if ($result) ;
-		
-		my $M = $self->app->model($model) or die "No such model '$model'";
-		die "Model '$model' does not appear to be a DBIC Schema Model." 
-			unless ($M->can('schema'));
-		
+	for my $s (@$s_list) {
+		my $model = $s->{model};
+		my $schema = $self->app->model($model)->schema;
 		my @children = ();
-		my $schema = $M->schema;
-		my @sources = $result ? ($result) : ($schema->sources);
-		foreach my $source (@sources) {
+		for my $source (@{$s->{sources}}) {
 			my $Source = $schema->source($source) or die "Source $source not found!";
+			
 			my $module_name = lc($model . '_' . $Source->from);
 			$self->apply_init_modules( $module_name => {
 				class => $self->table_class,
@@ -61,11 +85,11 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 				expand		=> 1,
 				children	=> []
 			}
-		};
-		
+		}
+
 		push @items, {
-			id		=> lc($orig_model) . '_tables',
-			text	=> $orig_model,
+			id		=> lc($model) . '_tables',
+			text	=> $model,
 			iconCls	=> 'icon-server_database',
 			params	=> {},
 			expand	=> 1,
