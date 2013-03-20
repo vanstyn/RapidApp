@@ -64,7 +64,7 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 		};
 		
 		push @items, {
-			id		=> lc($model) . '_tables',
+			id		=> lc($orig_model) . '_tables',
 			text	=> $orig_model,
 			iconCls	=> 'icon-server_database',
 			params	=> {},

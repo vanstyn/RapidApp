@@ -217,6 +217,16 @@ sub apply_TableSpec {
 	# Just doing this to ensure we're initialized:
 	$self->TableSpec_set_conf( apply_TableSpec_timestamp => time );
 	
+	# --- Set some base defaults here:
+	my $table = $self->table;
+	$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
+	my ($pri) = ($self->primary_columns,$self->columns); #<-- first primary col, or first col
+	$self->TableSpec_set_conf(
+		display_column => $pri,
+		title => $table
+	);
+	# ---
+	
 	return $self;
 }
 
@@ -277,6 +287,9 @@ sub default_TableSpec_cnf  {
 	my $table = $self->table;
 	$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
 	
+	# FIXME: These defaults cannot be seen via call from related tablespec, because of
+	# a circular logic situation. For base-defaults, see apply_TableSpec above
+	# This is one of the reasons the whole TableSpec design needs to be refactored
 	my %defaults = ();
 	$defaults{iconCls} = $data->{singleIconCls} if ($data->{singleIconCls} and ! $data->{iconCls});
 	$defaults{iconCls} = $defaults{iconCls} || $data->{iconCls} || 'icon-pg';
