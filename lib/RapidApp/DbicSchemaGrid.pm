@@ -5,6 +5,8 @@ extends 'RapidApp::AppGrid2';
 
 use RapidApp::Include qw(sugar perlutil);
 
+has '+auto_autosize_columns', default => 1; #<-- not working
+
 has 'Schema', is => 'ro', isa => 'Object', required => 1;
 has '+record_pk', default => 'source';
 
@@ -21,21 +23,54 @@ sub BUILD {
 	$self->apply_columns( 
 		source => {
 			header => 'Source',
-			width => 170
+			width => 180
+		},
+		table => {
+			header => 'Table Name',
+			width => 150,
+			hidden => \1
+		},
+		class => {
+			header => 'Class Name',
+			width => 210,
+			hidden => \1
+		},
+		columns => {
+			header => 'Columns',
+			width => 100,
+			xtype => 'numbercolumn',
+			format => '0',
+			align => 'right',
 		},
 		rows => {
 			header => 'Rows',
-			width => 80,
+			width => 90,
 			xtype => 'numbercolumn',
 			format => '0,0',
 			align => 'right',
 		}
 	);
 	
-	$self->apply_extconfig(tabTitle => $self->tabTitle);
+	$self->set_columns_order(0,qw(source table class columns rows));
+	
+	$self->apply_extconfig(
+		tabTitle => $self->tabTitle,
+		use_multifilters => \0,
+		pageSize => undef
+	);
+	
 	$self->apply_extconfig(tabIconCls => $self->tabIconCls) if ($self->tabIconCls);
-
 }
+
+has '+DataStore_build_params', default => sub {{
+	store_fields => [
+		{ name => 'source' },
+		{ name => 'table' },
+		{ name => 'class' },
+		{ name => 'columns', sortType => 'asInt', type => 'int' },
+		{ name => 'rows', sortType => 'asInt', type => 'int' }
+	]
+}};
 
 
 sub read_records {
@@ -53,12 +88,16 @@ sub read_records {
 sub schema_source_rows {
 	my $self = shift;
 	return map {
+		my $Source = $self->Schema->source($_);
 		my $class = $self->Schema->class($_);
 		my $url = try{$class->TableSpec_get_conf('open_url_multi')};
 		
 		{
 			source => $url ? '<a href="#!' . $url . '">' . $_ . '</a>' : $_,
-			rows => $self->Schema->resultset($_)->count
+			table => $Source->from,
+			class => $class,
+			columns => (scalar $Source->columns),
+			rows => $Source->resultset->count
 		};
 		
 	} $self->Schema->sources;

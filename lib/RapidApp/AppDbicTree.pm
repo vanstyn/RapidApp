@@ -111,7 +111,7 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 			iconCls	=> $iconcls,
 			module		=> $module_name,
 			params	=> {},
-			expand	=> 1,
+			expand	=> 0,
 			children	=> \@children
 		};
 	}
