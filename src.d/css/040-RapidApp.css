@@ -273,8 +273,8 @@ pre {
 .icon-magnify-tiny { background-image: url(/static/rapidapp/images/magnify.gif) !important; }
 .icon-magnifier { background-image: url(/static/rapidapp/images/magnifier.png) !important; }
 .icon-warning { background-image: url(/static/rapidapp/images/warning.png) !important; }
-
-
+.icon-catalyst { background-image: url(/static/rapidapp/images/catalyst-icon.png) !important; }
+.icon-catalyst-transparent { background-image: url(/static/rapidapp/images/catalyst-icon-transparent.png) !important; }
 
 
 
