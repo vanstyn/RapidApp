@@ -92,11 +92,24 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 				children	=> []
 			}
 		}
-
+		
+		my $iconcls = 'icon-server_database';
+		
+		my $module_name = lc($model);
+		$self->apply_init_modules( $module_name => {
+			class => 'RapidApp::DbicSchemaGrid',
+			params => { 
+				Schema => $self->app->model($model)->schema,
+				tabTitle => $model,
+				tabIconCls => $iconcls
+			}
+		});
+		
 		push @items, {
 			id		=> lc($model) . '_tables',
 			text	=> $model,
-			iconCls	=> 'icon-server_database',
+			iconCls	=> $iconcls,
+			module		=> $module_name,
 			params	=> {},
 			expand	=> 1,
 			children	=> \@children
