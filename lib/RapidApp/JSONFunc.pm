@@ -8,6 +8,7 @@ use strict;
 use warnings;
 use Moose;
 
+use RapidApp::Include qw(sugar perlutil);
 
 use JSON::PP;
 
@@ -32,8 +33,12 @@ BEGIN {
 		
 		my $type = ref($obj);
 		
+
 		# Convert \'NULL' into undef (this came up after switing from MySQL to SQLite??)
 		$obj = undef if ($type eq 'SCALAR' && $$obj eq 'NULL');
+		
+		# FIXME: This is another SQLite-ism: There are probably more
+		$obj = undef if ($type eq 'SCALAR' && $$obj eq 'current_timestamp');
 		
 		return $orig->($self,$obj) unless (
 			$type and
