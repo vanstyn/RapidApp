@@ -1711,6 +1711,23 @@ sub _dbiclink_update_records {
 	# Perform a fresh lookup of all the records we just updated and send them back to the client:
 	my $newdata = $self->DataStore->read({ columns => [ keys %{ $arr->[0] } ], id_in => \@updated_keyvals });
 	
+	## ----------------
+	# NEW: We need to make sure the order of the returned rows matches the supplied rows;
+	# Ext's data store uses the order rather than the record ids to match. If we don't do
+	# this it could mix up the rows and cause subsequent updates to change the wrong rows!!
+	{
+		my %pkRowMap = map { $_->{$self->record_pk} => $_ } @{$newdata->{rows}};
+		my $supplied_count = scalar @updated_keyvals;
+		my $returned_count = scalar keys %pkRowMap;
+		die "Supplied/returned row mismatch. Expected $supplied_count rows, got $returned_count. "
+			unless ($supplied_count == $returned_count);
+		
+		# Manually set the correct order
+		@{$newdata->{rows}} = map { $pkRowMap{$_} } @updated_keyvals;
+	}
+	## ----------------
+	
+	
 	# -- Restore the original record_pk, if it changed, and put the new value in another key.
 	# This is needed to make sure the client can keep track of which row is which. Code in datastore-plus
 	# then detects this and updates the idProperty in the record to the new value so it will be used
