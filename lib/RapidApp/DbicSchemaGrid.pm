@@ -63,6 +63,7 @@ sub BUILD {
 }
 
 has '+DataStore_build_params', default => sub {{
+	preload_data => 1,
 	store_fields => [
 		{ name => 'source' },
 		{ name => 'table' },
