@@ -23,20 +23,22 @@ has '+open_record_class', lazy => 1, default => sub {
 		params => {
 			ResultSource => $self->ResultSource,
 			get_ResultSet => $self->get_ResultSet, 
-			TableSpec => $self->TableSpec,
-			include_colspec => $self->include_colspec,
-			updatable_colspec => $self->updatable_colspec,
+			#TableSpec => $self->TableSpec,
+			#include_colspec => $self->include_colspec,
+			#updatable_colspec => $self->updatable_colspec,
+      include_colspec => [qw(* *.*)],
+      updatable_colspec => [qw(*)],
 			persist_all_immediately => 1,
 		}
 	};
 };
 
 
-#has '+include_colspec', default => sub{[qw(* *.*)]};
+has '+include_colspec', default => sub{[qw(* *.*)]};
 
 
-has '+include_colspec', default => sub{[qw(*)]};
-has '+updatable_colspec', default => sub{[qw(*)]};
+#has '+include_colspec', default => sub{[qw(*)]};
+#has '+updatable_colspec', default => sub{[qw(*)]};
 has '+creatable_colspec', default => sub{[qw(*)]};
 has '+destroyable_relspec', default => sub{[qw(*)]};
 
