@@ -81,20 +81,20 @@ before 'setup_component' => sub {
     unless ($class->can('TableSpec_cnf')) {
       $class->load_components('+RapidApp::DBIC::Component::TableSpec');
       $class->apply_TableSpec;
-      
-      # ---- TEMP HACK / FIXME:
-      # *predict* (guess) what the auto-generated grid module paths will be and set
-      # the open url configs so that cross table links are able to work. this is 
-      # just a stop-gap until this functionality is factored into the RapidApp API 
-      # officially, somehow...
-      my $module_name = lc($model_name . '_' . $class->table);
-      my $grid_url = '/main/navtree/' . $module_name;
-      $class->TableSpec_set_conf(
-        open_url_multi => $grid_url,
-        open_url => $grid_url."/item",
-      );
-      # ----
     }
+
+    # ----
+    # *predict* (guess) what the auto-generated grid module paths will be and set
+    # the open url configs so that cross table links are able to work. this is 
+    # just a stop-gap until this functionality is factored into the RapidApp API 
+    # officially, somehow...
+    my $module_name = lc($model_name . '_' . $class->table);
+    my $grid_url = '/main/navtree/' . $module_name;
+    $class->TableSpec_set_conf(
+      open_url_multi => $grid_url,
+      open_url => $grid_url."/item",
+    );
+    # ----
 
     # ---
     # For single-relationship columns (belongs_to) we want to hide
@@ -117,8 +117,13 @@ before 'setup_component' => sub {
         if (keys %col_props > 0);
     }
     # ---
-  }
 
+    # --- apply TableSpec configs specified in the plugin config:
+    my $source_name = $schema_class->class_mappings->{$class};
+    my $TSconfig = try{$config->{configs}->{$model_name}->{TableSpecs}->{$source_name}} || {};
+    $class->TableSpec_set_conf( $_ => $TSconfig->{$_} ) for (keys %$TSconfig);
+    # ---
+  }
 };
 
 
