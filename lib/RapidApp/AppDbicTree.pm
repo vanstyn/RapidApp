@@ -80,7 +80,7 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 		my $model = $s->{model};
 		my $schema = $self->app->model($model)->schema;
 		my @children = ();
-		for my $source (@{$s->{sources}}) {
+		for my $source (sort @{$s->{sources}}) {
 			my $Source = $schema->source($source) or die "Source $source not found!";
 			
       my $cust_def_config = try{$self->configs->{$model}{grid_params}{'*defaults'}} || {};
