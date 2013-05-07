@@ -12,7 +12,7 @@ has 'header_template', is => 'ro', isa => 'Maybe[Str]', default => sub{undef};
 has 'get_header_html', is => 'ro', isa => 'CodeRef', default => sub {
   sub {
     my $o = shift;
-    return $o->header_template ? $o->c->render_template(
+    return $o->header_template ? $o->c->template_render(
       $o->header_template, 
       { c => $o->c, self => $o }
     ) : undef;
@@ -23,7 +23,7 @@ has 'footer_template', is => 'ro', isa => 'Maybe[Str]', default => sub{undef};
 has 'get_footer_html', is => 'ro', isa => 'CodeRef', default => sub {
   sub {
     my $o = shift;
-    return $o->footer_template ? $o->c->render_template(
+    return $o->footer_template ? $o->c->template_render(
       $o->footer_template, 
       { c => $o->c, self => $o }
     ) : undef;

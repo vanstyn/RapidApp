@@ -113,6 +113,7 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
     
     my $exclude_sources = try{$self->configs->{$model}{exclude_sources}} || [];
 		my $iconcls = 'icon-server_database';
+    my $template = try{$self->configs->{$model}{template}};
 		
 		my $module_name = lc($model);
 		$self->apply_init_modules( $module_name => {
@@ -121,7 +122,8 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 				Schema => $self->app->model($model)->schema,
 				tabTitle => $model,
 				tabIconCls => $iconcls,
-        exclude_sources => $exclude_sources
+        exclude_sources => $exclude_sources,
+        header_template => $template
 			}
 		});
 		
