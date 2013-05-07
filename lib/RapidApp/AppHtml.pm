@@ -26,13 +26,18 @@ sub BUILD {
 	);
 }
 
+has 'get_html', is => 'ro', isa => 'CodeRef', lazy => 1, default => sub {
+  my $self = shift;
+  return sub { $self->html };
+};
+
 sub html { die "Virtual Method!" } 
 
 around 'content' => sub {
 	my $orig = shift;
 	my $self = shift;
 	
-	my $html =  $self->html;
+	my $html =  $self->get_html->($self);
 	
 	my $content = $self->$orig(@_);
 	

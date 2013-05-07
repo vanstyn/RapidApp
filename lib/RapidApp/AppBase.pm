@@ -36,6 +36,7 @@ has 'base_query_string'			=> ( is => 'ro',	default => ''		);
 has 'exception_style' 			=> ( is => 'ro',	required => 0,		default => "color: red; font-weight: bolder;"			);
 has 'auto_viewport'				=> ( is => 'rw',	default => 0 );
 
+has 'auto_init_modules', is => 'ro', isa => 'Maybe[HashRef]', default => sub{undef};
 # ----------
 
 
@@ -56,6 +57,9 @@ sub BUILD {
 	$self->apply_actions(viewport => 'viewport');
 	$self->apply_actions('web1.0' => 'web1');
 	$self->apply_actions(printview => 'printview');
+  
+  $self->apply_init_modules(%{$self->auto_init_modules})
+    if ($self->auto_init_modules);
 }
 
 sub suburl {

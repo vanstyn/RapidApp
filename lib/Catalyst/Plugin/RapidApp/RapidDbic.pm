@@ -30,27 +30,41 @@ before 'setup_components' => sub {
   }
   $config->{_active_models} = \%active_models;
   
+  my $main_module_params = {
+    title => $config->{nav_title},
+    right_footer => $config->{title},
+    iconCls => 'icon-catalyst-transparent',
+    navtree_class => 'RapidApp::AppDbicTree',
+    navtree_params => {
+      dbic_models => $config->{dbic_models},
+      table_class	=> $config->{table_class}
+    },
+  };
+  
+  if($config->{dashboard_template}) {
+    $main_module_params->{dashboard_class} = 'RapidApp::AppHtml';
+    $main_module_params->{dashboard_params} = {
+      get_html => sub {
+        my $self = shift;
+        my $vars = { c => $self->c };
+        return $self->c->template_render($config->{dashboard_template},$vars);
+      }
+    };
+  }
+  
+  my $cnf = {
+    rootModuleClass => 'RapidApp::RootModule',
+    rootModuleConfig => {
+      app_title => $config->{title},
+      main_module_class => 'RapidApp::AppExplorer',
+      main_module_params => $main_module_params
+    }
+  };
+    
   # Apply base/default configs to 'Model::RapidApp':
   $c->config( 'Model::RapidApp' => 
-    Catalyst::Utils::merge_hashes({
-      rootModuleClass => 'RapidApp::RootModule',
-      rootModuleConfig => {
-        app_title => $config->{title},
-        main_module_class => 'RapidApp::AppExplorer',
-        main_module_params => {
-          title => $config->{nav_title},
-          right_footer => $config->{title},
-          iconCls => 'icon-catalyst-transparent',
-          navtree_class => 'RapidApp::AppDbicTree',
-          navtree_params => {
-            dbic_models => $config->{dbic_models},
-            table_class	=> $config->{table_class}
-          }
-        }
-      }
-    }, $c->config->{'Model::RapidApp'} || {} )
+    Catalyst::Utils::merge_hashes($cnf, $c->config->{'Model::RapidApp'} || {} )
   );
-  
 };
 
 

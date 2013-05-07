@@ -21,18 +21,29 @@ has 'iconCls', is => 'ro',	default => 'icon-server_database';
 has 'navtree_class', is => 'ro', isa => 'Str', required => 1;
 has 'navtree_params', is => 'ro', isa => 'HashRef', lazy => 1, default => sub{{}};
 
+has 'dashboard_class', is => 'ro', isa => 'Maybe[Str]', default => sub {undef};
+has 'dashboard_params', is => 'ro', isa => 'HashRef', lazy => 1, default => sub{{}};
+
 sub BUILD {
 	my $self = shift;
 	
 	Module::Runtime::require_module($self->navtree_class);
-	
 	$self->apply_init_modules(
 		navtree => {
 			class => $self->navtree_class,
 			params => $self->navtree_params
 		}
-		#dashboard => 'RaSakila::Modules::Dashboard'
 	);
+  
+  if ($self->dashboard_class) {
+    Module::Runtime::require_module($self->dashboard_class);
+    $self->apply_init_modules(
+      dashboard => {
+        class => $self->dashboard_class,
+        params => $self->dashboard_params
+      }
+    );
+  }
 }
 
 
@@ -97,28 +108,32 @@ sub west_area_items {
 
 sub content_area {
 	my $self = shift;
+	
+	my $cnf = {
+		# main-load-target is looked for by RapidApp js functions:
+		id => 'main-load-target',
+		region		=> 'center',
+		margins		=> '3 3 3 0',
+		bodyCssClass		=> 'sbl-panel-body-noborder',
+	};
+	
+	#$cnf->{margins} = '3 3 3 3' unless ($self->show_navtree);
+  
+  $cnf->{initLoadTabs} = [
+    {
+      title	=> '<img src="/static/rapidapp/images/toolbar_home.png" height=15 width=16>',
+      iconCls => '',
+      closable	=> \0,
+      autoLoad => {
+        url 	=> $self->Module('dashboard')->base_url,
+        params	=> {}
+      }
+    }
+  ] if ($self->dashboard_class);
+	
 	return  RapidApp::JSONFunc->new(
 		func => 'new Ext.ux.RapidApp.AppTab.TabPanel',
-		parm => {
-			# main-load-target is looked for by RapidApp js functions:
-			id => 'main-load-target',
-			region		=> 'center',
-			margins		=> '3 3 3 0',
-			bodyCssClass		=> 'sbl-panel-body-noborder',
-			
-			#initLoadTabs => [
-			#	{
-			#		title	=> 'Dashboard',
-			#		#iconCls	=> 'icon-text-rich-colored',
-			#		iconCls => 'icon-server_database',
-			#		closable	=> \0,
-			#		autoLoad => {
-			#			url 	=> $self->Module('dashboard')->base_url,
-			#			params	=> {}
-			#		}
-			#	}
-			#]
-		}
+		parm => $cnf
 	);
 }
 
