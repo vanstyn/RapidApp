@@ -7,6 +7,29 @@ extends 'RapidApp::AppBase';
 
 use RapidApp::Include qw(sugar perlutil);
 
+# New: ability to programatically set the Ext panel header/footer
+has 'header_template', is => 'ro', isa => 'Maybe[Str]', default => sub{undef};
+has 'get_header_html', is => 'ro', isa => 'CodeRef', default => sub {
+  sub {
+    my $o = shift;
+    return $o->header_template ? $o->c->render_template(
+      $o->header_template, 
+      { c => $o->c, self => $o }
+    ) : undef;
+  }
+};
+
+has 'footer_template', is => 'ro', isa => 'Maybe[Str]', default => sub{undef};
+has 'get_footer_html', is => 'ro', isa => 'CodeRef', default => sub {
+  sub {
+    my $o = shift;
+    return $o->footer_template ? $o->c->render_template(
+      $o->footer_template, 
+      { c => $o->c, self => $o }
+    ) : undef;
+  }
+};
+
 sub BUILD {
 	my $self = shift;
 	
@@ -34,7 +57,23 @@ sub content {
 	$self->apply_extconfig( %$apply_extconfig ) if (ref($apply_extconfig) eq 'HASH');
 	# ---
 
-	return $self->get_complete_extconfig;
+	my $cnf = $self->get_complete_extconfig;
+  
+  my $header_html = $self->get_header_html->($self);
+  $cnf->{headerCfg} = {
+    tag => 'div',
+    cls => 'panel-borders',
+    html => $header_html
+  } if ($header_html);
+  
+  my $footer_html = $self->get_footer_html->($self);
+  $cnf->{footerCfg} = {
+    tag => 'div',
+    cls => 'panel-borders',
+    html => $footer_html
+  } if ($footer_html);
+  
+  return $cnf;
 }
 
 # The default web-1.0 rendering for AppCmp subclasses is to generate the config, and then run it
