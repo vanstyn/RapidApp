@@ -110,9 +110,10 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 			}
 		}
 		
-    
     my $exclude_sources = try{$self->configs->{$model}{exclude_sources}} || [];
-		my $iconcls = 'icon-server_database';
+		my $expand = (try{$self->configs->{$model}{expand}}) ? 1 : 0;
+    my $iconcls = (try{$self->configs->{$model}{iconCls}}) || 'icon-server_database';
+    my $text = (try{$self->configs->{$model}{text}}) || $model;
     my $template = try{$self->configs->{$model}{template}};
 		
 		my $module_name = lc($model);
@@ -120,20 +121,20 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 			class => 'RapidApp::DbicSchemaGrid',
 			params => { 
 				Schema => $self->app->model($model)->schema,
-				tabTitle => $model,
+				tabTitle => $text,
 				tabIconCls => $iconcls,
         exclude_sources => $exclude_sources,
         header_template => $template
 			}
 		});
-		
+    
 		push @items, {
 			id		=> lc($model) . '_tables',
-			text	=> $model,
+			text	=> $text,
 			iconCls	=> $iconcls,
 			module		=> $module_name,
 			params	=> {},
-			expand	=> 0,
+			expand	=> $expand,
 			children	=> \@children
 		};
 	}
