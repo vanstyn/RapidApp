@@ -92,8 +92,16 @@ before 'setup_component' => sub {
   my ($model_name) = reverse split(/\:\:/,$component); #<-- educated guess, see temp/hack below
   Module::Runtime::require_module($schema_class);
   for my $class (keys %{$schema_class->class_mappings}) {
-    unless ($class->can('TableSpec_cnf')) {
+    my $source_name = $schema_class->class_mappings->{$class};
+    
+    my $virtual_columns = try{$config->{configs}{$model_name}{virtual_columns}{$source_name}};
+    if ($class->can('TableSpec_cnf')) {
+      die "Cannot setup virtual columns on $class - already has TableSpec loaded"
+        if ($virtual_columns);
+    }
+    else {
       $class->load_components('+RapidApp::DBIC::Component::TableSpec');
+      $class->add_virtual_columns(%$virtual_columns) if ($virtual_columns);
       $class->apply_TableSpec;
     }
 
@@ -109,6 +117,7 @@ before 'setup_component' => sub {
       open_url => $grid_url."/item",
     );
     # ----
+    
 
     # ---
     # For single-relationship columns (belongs_to) we want to hide
@@ -133,10 +142,28 @@ before 'setup_component' => sub {
     # ---
 
     # --- apply TableSpec configs specified in the plugin config:
-    my $source_name = $schema_class->class_mappings->{$class};
+    
     my $TSconfig = try{$config->{configs}->{$model_name}->{TableSpecs}->{$source_name}} || {};
     $class->TableSpec_set_conf( $_ => $TSconfig->{$_} ) for (keys %$TSconfig);
     # ---
+    
+    # If there are more than 3 columns, set the editor to the full-blown (combo) grid
+    # instead of simple dropdown:
+    my @cols = $class->columns;
+    if(scalar(@cols) > 3) {
+      $class->TableSpec_set_conf(
+        auto_editor_type => 'custom',
+        auto_editor_params => {
+          xtype => 'datastore-app-field',
+          displayField => $class->TableSpec_get_conf('display_column'),
+          autoLoad => {
+            url => $class->TableSpec_get_conf('open_url_multi'),
+            params => {}
+          }
+        }
+      );
+    }
+    
   }
 };
 
