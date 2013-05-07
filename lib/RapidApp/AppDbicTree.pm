@@ -11,11 +11,21 @@ require Module::Runtime;
 
 has 'dbic_models', is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default => undef;
 has 'table_class', is => 'ro', isa => 'Str', required => 1;
+has 'configs', is => 'ro', isa => 'HashRef', default => sub {{}};
 
 has 'dbic_model_tree', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => sub {
 	my $self = shift;
 	die "Must supply either 'dbic_models' or 'dbic_model_tree'" unless ($self->dbic_models);
-	return parse_dbic_model_list($self->app,@{$self->dbic_models});
+	my $list = parse_dbic_model_list($self->app,@{$self->dbic_models});
+  
+  # strip excludes:
+  for my $itm (@$list) {
+    my $exclude_sources = try{$self->configs->{$itm->{model}}{exclude_sources}} || [];
+    my %excl_sources = map { $_ => 1 } @$exclude_sources;
+    @{$itm->{sources}} = grep { ! $excl_sources{$_} } @{$itm->{sources}};
+  }
+  
+  return $list;
 };
 
 

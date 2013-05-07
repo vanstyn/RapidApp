@@ -37,7 +37,8 @@ before 'setup_components' => sub {
     navtree_class => 'RapidApp::AppDbicTree',
     navtree_params => {
       dbic_models => $config->{dbic_models},
-      table_class	=> $config->{table_class}
+      table_class	=> $config->{table_class},
+      configs => $config->{configs}
     },
   };
   
@@ -91,8 +92,14 @@ before 'setup_component' => sub {
   # load it later:
   my ($model_name) = reverse split(/\:\:/,$component); #<-- educated guess, see temp/hack below
   Module::Runtime::require_module($schema_class);
+  
+  my $exclude_sources = try{$config->{configs}{$model_name}{exclude_sources}} || [];
+  my %excl_sources = map { $_ => 1 } @$exclude_sources;
+  
   for my $class (keys %{$schema_class->class_mappings}) {
     my $source_name = $schema_class->class_mappings->{$class};
+    
+    next if ($excl_sources{$source_name});
     
     my $virtual_columns = try{$config->{configs}{$model_name}{virtual_columns}{$source_name}};
     if ($class->can('TableSpec_cnf')) {
