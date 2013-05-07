@@ -120,6 +120,7 @@ before 'setup_component' => sub {
     my $module_name = lc($model_name . '_' . $class->table);
     my $grid_url = '/main/navtree/' . $module_name;
     $class->TableSpec_set_conf(
+      priority_rel_columns => 1,
       open_url_multi => $grid_url,
       open_url => $grid_url."/item",
     );
