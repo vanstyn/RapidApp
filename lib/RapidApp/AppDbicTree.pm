@@ -83,10 +83,17 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 		for my $source (@{$s->{sources}}) {
 			my $Source = $schema->source($source) or die "Source $source not found!";
 			
+      my $cust_def_config = try{$self->configs->{$model}{grid_params}{'*defaults'}} || {};
+      my $cust_config = try{$self->configs->{$model}{grid_params}{$source}} || {};
+      # since we're using these params over and over we need to protect refs in deep params
+      # since currently DataStore/TableSpec modules modify params like include_colspec in
+      # place (note this probably needs to be fixed in there for exactly this reason)
+      my $cust_merged = clone( Catalyst::Utils::merge_hashes($cust_def_config,$cust_config) );
+      
 			my $module_name = lc($model . '_' . $Source->from);
 			$self->apply_init_modules( $module_name => {
 				class => $self->table_class,
-				params => { ResultSource => $Source }
+				params => { %$cust_merged, ResultSource => $Source }
 			});
 			
 			my $class = $schema->class($source);

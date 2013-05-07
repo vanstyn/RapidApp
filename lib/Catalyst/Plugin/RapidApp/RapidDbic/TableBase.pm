@@ -15,32 +15,33 @@ has '+use_column_summaries', default => 1;
 has '+use_autosize_columns', default => 1;
 has '+auto_autosize_columns', default => 1;
 
+has 'page_class', is => 'ro', isa => 'Str', default => 'RapidApp::DbicAppPropertyPage';
+has 'page_params', is => 'ro', isa => 'HashRef', default => sub {{}};
+
 # This is an option of RapidApp::AppGrid2 that will allow double-click to open Rows:
 has '+open_record_class', lazy => 1, default => sub {
 	my $self = shift;
 	return {
-		class => 'RapidApp::DbicAppPropertyPage',
+		class => $self->page_class,
 		params => {
 			ResultSource => $self->ResultSource,
 			get_ResultSet => $self->get_ResultSet, 
 			#TableSpec => $self->TableSpec,
-			#include_colspec => $self->include_colspec,
-			#updatable_colspec => $self->updatable_colspec,
-      include_colspec => [qw(* *.*)],
-      updatable_colspec => [qw(*)],
-			persist_all_immediately => 1,
+			include_colspec => clone( $self->include_colspec ),
+			updatable_colspec => clone( $self->updatable_colspec ),
+			persist_all_immediately => $self->persist_all_immediately,
+      persist_immediately => $self->persist_immediately,
+      %{ clone( $self->page_params ) }
 		}
 	};
 };
 
+has '+include_colspec', default => sub{[qw(*)]};
 
-has '+include_colspec', default => sub{[qw(* *.*)]};
-
-
-#has '+include_colspec', default => sub{[qw(*)]};
-#has '+updatable_colspec', default => sub{[qw(*)]};
-has '+creatable_colspec', default => sub{[qw(*)]};
-has '+destroyable_relspec', default => sub{[qw(*)]};
+# default to read-only:
+has '+updatable_colspec', default => undef;
+has '+creatable_colspec', default => undef;
+has '+destroyable_relspec', default => undef;
 
 has '+persist_all_immediately', default => 0;
 has '+persist_immediately', default => sub {{
