@@ -53,6 +53,10 @@ before 'setup_components' => sub {
     };
   }
   
+  $main_module_params->{header_template} = $config->{banner_template}
+    if($config->{banner_template});
+  
+  
   my $cnf = {
     rootModuleClass => 'RapidApp::RootModule',
     rootModuleConfig => {

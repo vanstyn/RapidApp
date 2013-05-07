@@ -8,7 +8,7 @@ package RapidApp::AppExplorer;
 use strict;
 use warnings;
 use Moose;
-extends 'RapidApp::AppBase';
+extends 'RapidApp::AppCmp';
 
 use RapidApp::Include qw(sugar perlutil);
 
@@ -47,11 +47,13 @@ sub BUILD {
 }
 
 
-sub content {
-	my $self = shift;
+around 'content' => sub {
+	my $orig = shift;
+  my $self = shift;
+  
+  my $cnf = $self->$orig(@_);
 
-	return {
-		#id			=> $self->instance_id,
+	return { %$cnf,
 		id			=> 'explorer-id',
 		xtype		=> 'panel',
 		layout	=> 'border',
@@ -96,7 +98,7 @@ sub content {
 }
 		},
 	};
-}
+};
 
 
 sub west_area_items {
