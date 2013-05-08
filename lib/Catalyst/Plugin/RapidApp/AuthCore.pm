@@ -10,29 +10,6 @@ require Catalyst::Utils;
 use CatalystX::InjectComponent;
 
 
-before 'setup_components' => sub {
-  my $c = shift;
-  
-  #my $config = $c->config->{'Plugin::RapidApp::AuthCore'} or die
-  #  "No 'Plugin::RapidApp::AuthCore' config specified!";
-  #
-  #die "Plugin::RapidApp::AuthCore: No schema_class specified!"
-  #  unless ($config->{schema_class});
-  #  
-
-  
-  my $cnf = {
-    db_file => 'core_schema.db'
-  };
-  
-   $c->config( 'Model::RapidApp::CoreSchema' => 
-    Catalyst::Utils::merge_hashes($cnf, $c->config->{'Model::RapidApp::CoreSchema'} || {} )
-  );
-  
- 
-};
-
-
 after 'setup_components' => sub {
   my $c = shift;
   CatalystX::InjectComponent->inject(

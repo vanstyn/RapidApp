@@ -35,7 +35,7 @@ has connect_info => (
   }
 );
 
-has 'db_file', is => 'ro', isa => 'Str', required => 1;
+has 'db_file', is => 'ro', isa => 'Str', default => 'rapidapp_coreschema.db';
 
 
 sub _prepare_db_file {
