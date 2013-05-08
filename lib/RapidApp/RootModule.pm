@@ -74,11 +74,18 @@ sub BUILD {
 	## ---
 }
 
-sub Controller {
-	my $self= shift;
+# another ugly hack, added to make it easier to hook/wrap the top Controller
+# Added for Plugin::AuthCore
+has '_around_Controller', is => 'rw', isa => 'Maybe[CodeRef]', default => undef;
+
+around 'Controller' => sub {
+	my $orig = shift;
+  my $self = shift;
 	$self->c->stash->{title} = $self->app_title;
-	return $self->SUPER::Controller(@_);
-}
+	return $self->_around_Controller ? 
+    $self->_around_Controller->($orig,$self,@_) :
+    $self->$orig(@_);
+};
 
 # build a HTML viewport for the ExtJS content
 # we override the config_url and the title

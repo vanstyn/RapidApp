@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<!--[if lt IE 8]> <html class="lt-ie8" lang="en"> <![endif]-->
+<!--[if gte IE 8]><!--> <html lang="en"> <!--<![endif]-->
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>Clippard Intranet - Login Page</title>
+
+	<!-- Foundation framework -->
+		<link rel="stylesheet" href="foundation.css">
+	<!--[if lt IE 8]> <link rel="stylesheet" href="foundation/stylesheets/ie.css" /> <![endif]-->
+        
+        <link rel="stylesheet" href="css/style.css">
+
+</head>
+<body class="ptrn_a grdnt_a">
+    <div class="container">
+        <div class="row" style="min-width:480px;">
+		  
+            <div class="eight columns centered" style="padding-top:85px;max-width:520px;">
+				
+                <div class="login_box" style="max-width:500px;">
+							<div class="login_logo" style="top:-125px;"><img src="greensheet_login_logo.png" alt="" /></div>
+                    <div class="lb_content">
+                        <!--
+								<div class="login_logo"><img src="clippardShadowLogo.png" alt="" /></div>
+                        -->
+								<div class="cf">
+                            <h2 class="lb_ribbon lb_blue"><span>GreenSheet Login</span><span style="display:none">New password</span></h2>
+							<!--
+							<a href="#" class="right small sl_link">
+								<span>Forgot your password?</span>
+								<span style="display:none">Back to login form</span>
+							</a>
+							-->
+							
+							<div class="right">
+								<span>GreenSheet v2.17</span>
+							</div>
+							
+					    </div>
+                        <div class="row m_cont">
+                            <div class="eight columns centered">
+                                <div class="l_pane">
+									<form action="index.php?uid=1" method="post" class="nice" id="l_form">
+										<div class="sepH_c">
+											<div class="elVal">
+												<label for="username">Username</label>
+												<input type="text" id="username"  name="username" class="oversize expand input-text" />
+											</div>
+											<div class="elVal">
+												<label for="password">Password</label>
+												<input type="password" id="password"  name="password" class="oversize expand input-text" />
+											</div>
+										</div>
+										
+							
+										<div class="cf" style="padding-bottom:30px;">
+											<!--
+											<label for="remember" class="left"><input type="checkbox" id="remember"> Remember me</label>
+											-->
+											<input type="submit" class="button small radius right black" value="Login" />
+										</div>
+										
+										
+										
+									</form>
+								</div>
+								<!--
+								<div class="l_pane" style="display:none">
+									<form action="index.php" method="post" class="nice" id="rp_form">
+										<div class="sepH_c">
+											<p class="sepH_b">Please enter your email address. You will receive a link to create a new password via email.</p>
+											<div class="elVal">
+												<label for="upname">E-mail:</label>
+												<input type="text" id="upname" name="upname" class="oversize expand input-text" />
+											</div>
+										</div>
+										<div class="cf">
+											<input type="submit" class="button small radius right black" value="Get new password" />
+										</div>
+									</form>
+								</div>
+								-->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+					 
+					<div style="position: absolute; bottom: 0px; width:100%;">
+						<div style="text-align:center;padding-bottom:2px;height:100%;">
+							<a target="_blank" href="http://www.intellitree.com/">
+								<img width="99" height="14" border="0" src="/static/rapidapp/images/rapidapp_powered_logo_tiny.png">
+							</a>
+						</div> 
+					</div>
+					
+            </div>
+        </div>
+    </div>
+</body>
+</html>

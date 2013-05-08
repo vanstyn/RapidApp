@@ -53,6 +53,11 @@ sub _prepare_db_file {
     ordering => 0
   });
   
+  $schema->resultset('User')->create({
+    username => 'admin',
+    password => 'pass'
+  });
+  
 }
 
 
