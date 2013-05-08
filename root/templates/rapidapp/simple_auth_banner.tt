@@ -1,0 +1,4 @@
+
+<div class="ra-footer" style="padding:2px;text-align:right;font-weight:bolder;">
+[% c.user.username %] | <a href="/auth/logout">Logout</a>
+</div>
