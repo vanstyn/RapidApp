@@ -38,9 +38,16 @@ sub parse_dbic_model_list {
 	my %sources = ();
 	my @list = ();
 	for my $model (@models) {
-		die "Bad argument" if (ref $model);
-		my ($schema,$result) = split(/\:\:/,$model,2);
-		
+    die "Bad argument" if (ref $model);
+    my $Model = $c->model($model) or die "No such model '$model'";
+    my ($schema, $result) = ($model);
+    
+    if($Model->isa('DBIx::Class::ResultSet')){
+      my @parts = split(/\:\:/,$model);
+      $result = pop @parts;
+      $schema = join('::',@parts);
+    }
+  
 		my $M = $c->model($schema) or die "No such model '$schema'";
 		die "Model '$schema' does not appear to be a DBIC Schema Model." 
 			unless ($M->can('schema'));
@@ -91,6 +98,7 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
       my $cust_merged = clone( Catalyst::Utils::merge_hashes($cust_def_config,$cust_config) );
       
 			my $module_name = lc($model . '_' . $Source->from);
+      $module_name =~ s/\:\:/__/g;
 			$self->apply_init_modules( $module_name => {
 				class => $self->table_class,
 				params => { %$cust_merged, ResultSource => $Source }

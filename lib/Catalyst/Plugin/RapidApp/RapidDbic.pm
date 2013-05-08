@@ -23,13 +23,13 @@ before 'setup_components' => sub {
   $config->{table_class} ||= 'Catalyst::Plugin::RapidApp::RapidDbic::TableBase';
   $config->{configs} ||= {};
   
-  my $appclass = ref($c) || $c;
-  my %active_models = ();
-  foreach my $model (@{$config->{dbic_models}}) {
-    my ($schema,$result) = split(/\:\:/,$model,2);
-    $active_models{$appclass."::Model::".$schema}++;
-  }
-  $config->{_active_models} = \%active_models;
+  #my $appclass = ref($c) || $c;
+  #my %active_models = ();
+  #foreach my $model (@{$config->{dbic_models}}) {
+  #  my ($schema,$result) = split(/\:\:/,$model,2);
+  #  $active_models{$appclass."::Model::".$schema}++;
+  #}
+  #$config->{_active_models} = \%active_models;
   
   my $main_module_params = {
     title => $config->{nav_title},
@@ -77,8 +77,20 @@ before 'setup_components' => sub {
 before 'setup_component' => sub {
   my( $c, $component ) = @_;
   
-  my $config = $c->config->{'Plugin::RapidApp::RapidDbic'};
-  return unless ($config->{_active_models}->{$component});
+  my $config = $c->config->{'Plugin::RapidApp::RapidDbic'} or die
+    "No 'Plugin::RapidApp::RapidDbic' config specified!";
+  
+  die "Plugin::RapidApp::RapidDbic: No dbic_models specified!"
+    unless ($config->{dbic_models});
+  
+  my $appclass = ref($c) || $c;
+  my %active_models = ();
+  foreach my $model (@{$config->{dbic_models}}) {
+    my ($schema,$result) = split(/\:\:/,$model,2);
+    $active_models{$appclass."::Model::".$schema}++;
+  }
+  return unless ($active_models{$component});
+  
   
   # this doesn't seem to work, and why is it here?
   #my $suffix = Catalyst::Utils::class2classsuffix( $component );
