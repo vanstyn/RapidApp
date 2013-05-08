@@ -98,7 +98,7 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
       my $cust_merged = clone( Catalyst::Utils::merge_hashes($cust_def_config,$cust_config) );
       
 			my $module_name = lc($model . '_' . $Source->from);
-      $module_name =~ s/\:\:/__/g;
+      $module_name =~ s/\:\:/_/g;
 			$self->apply_init_modules( $module_name => {
 				class => $self->table_class,
 				params => { %$cust_merged, ResultSource => $Source }
@@ -125,6 +125,7 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
     my $template = try{$self->configs->{$model}{template}};
 		
 		my $module_name = lc($model);
+    $module_name =~ s/\:\:/_/g;
 		$self->apply_init_modules( $module_name => {
 			class => 'RapidApp::DbicSchemaGrid',
 			params => { 
@@ -136,8 +137,10 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 			}
 		});
     
+    my $itm_id = lc($model) . '_tables';
+    $itm_id =~ s/\:\:/_/g;
 		push @items, {
-			id		=> lc($model) . '_tables',
+			id		=> $itm_id,
 			text	=> $text,
 			iconCls	=> $iconcls,
 			module		=> $module_name,
