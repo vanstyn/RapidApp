@@ -49,16 +49,9 @@ sub reauth :Local :Args(0) {
 	my ($user, $pass)= ($c->req->params->{'username'}, $c->req->params->{'password'});
 	
 	$c->stash->{current_view} = 'RapidApp::JSON';
-	
-	return {
-		success	=> 1,
-		msg		=> $user . ' logged in.'
-	} if ($self->do_login($c,$user,$pass));
-	
-	return {
-		success	=> 0,
-		msg		=> 'Logon failure.'
-	};
+  $c->stash->{json} = $self->do_login($c,$user,$pass) ? 
+    { success	=> 1, msg => $user . ' logged in.' } :
+    { success	=> 0,	msg => 'Logon failure.' };
 }
 
 # To be called within any controller to auth if needed
@@ -66,7 +59,17 @@ sub auth_verify :Private {
 	my $self = shift;
 	my $c = shift;
   
-  $self->render_login_page($c) unless ($c->session_is_valid and $c->user_exists);
+  if ($c->session_is_valid and $c->user_exists) {
+    $c->res->header('X-RapidApp-Authenticated' => $c->user->username);
+  }
+  else {
+    $c->res->header('X-RapidApp-Authenticated' => 0);
+    if ( $c->stash->{requestContentType} eq 'JSON' ) {
+      $c->res->body('not authenticated');
+      return $c->detach;
+    }
+    $self->render_login_page($c);
+  }
 };
 
 
@@ -155,6 +158,7 @@ sub render_login_page {
 		template 	=> 'templates/rapidapp/login.tt',
     form_post_url => '/auth/login',
 		ver_string	=> $ver_string,
+    title => $ver_string . ' - Login',
 		%$cnf
 	);
 	

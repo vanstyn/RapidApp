@@ -72,17 +72,27 @@ after 'setup_components' => sub {
 };
 
 after 'setup_finalize' => sub {
-  my $c = shift;
+  my $class = shift;
   
   #$c->session_expire_key( __user => 3600 );
   
-  $c->rapidApp->rootModule->_around_Controller(sub {
+  $class->rapidApp->rootModule->_around_Controller(sub {
     my $orig = shift;
     my $self = shift;
+    my $c = $self->c;
     
-    $self->c->forward('/auth/auth_verify');
+    if ($c->session_is_valid and $c->user_exists) {
+      $c->res->header('X-RapidApp-Authenticated' => $c->user->username);
+      return $self->$orig(@_);
+    }
     
-    return $self->$orig(@_);
+    $c->res->header('X-RapidApp-Authenticated' => 0);
+    
+    # only for the root / path when there is no session
+    my $args = $c->req->arguments;
+    return $c->controller('Auth')->render_login_page($c) if(@$args == 0);
+    
+    return $self->render_data('');
   });
 };
 
