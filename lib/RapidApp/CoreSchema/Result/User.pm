@@ -55,6 +55,10 @@ __PACKAGE__->TableSpec_set_conf(
 	#multiIconCls => 'icon-group',
 	display_column => 'username',
   priority_rel_columns => 1,
+  columns => {
+    last_login_ts => { allow_edit => \0, allow_add => \0 },
+    disabled => { profiles => ['bool'] }
+  }
 );
 
 

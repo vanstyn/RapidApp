@@ -17,11 +17,13 @@ has '+auto_autosize_columns', default => 1;
 
 has 'page_class', is => 'ro', isa => 'Str', default => 'RapidApp::DbicAppPropertyPage';
 has 'page_params', is => 'ro', isa => 'HashRef', default => sub {{}};
+has 'no_page', is => 'ro', isa => 'Bool', default => 0;
 
 # This is an option of RapidApp::AppGrid2 that will allow double-click to open Rows:
 has '+open_record_class', lazy => 1, default => sub {
 	my $self = shift;
-	return {
+	return undef if ($self->no_page);
+  return {
 		class => $self->page_class,
 		params => {
 			ResultSource => $self->ResultSource,
@@ -51,6 +53,8 @@ has '+persist_immediately', default => sub {{
 }};
 
 
+has 'extra_extconfig', is => 'ro', isa => 'HashRef', default => sub {{}};
+
 sub BUILD {
 	my $self = shift;
 	
@@ -77,6 +81,9 @@ sub BUILD {
 	# Init joined columns hidden:
 	$self->apply_columns( $_ => { hidden => \1 } ) 
 		for (grep { $_ =~ /__/ } @{$self->column_order});
+    
+  my $extra_cnf = $self->extra_extconfig;
+  $self->apply_extconfig( %$extra_cnf ) if (keys %$extra_cnf > 0);
 
 }
 

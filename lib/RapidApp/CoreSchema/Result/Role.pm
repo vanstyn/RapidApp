@@ -11,12 +11,20 @@ extends 'DBIx::Class::Core';
 __PACKAGE__->table('role');
 
 __PACKAGE__->add_columns(
+  "id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_auto_increment => 1,
+    is_nullable => 0,
+  },
   "role",
-  { data_type => "varchar", is_nullable => 0, size => 64 },
+  { data_type => "varchar", is_nullable => 0, is_foreign_key => 1, size => 64 },
   "description",
   { data_type => "varchar", is_nullable => 0, size => 255 },
 );
-__PACKAGE__->set_primary_key("role");
+__PACKAGE__->set_primary_key("id");
+__PACKAGE__->add_unique_constraint("role", ["role"]);
 
 __PACKAGE__->has_many(
   "user_to_roles",
@@ -46,9 +54,12 @@ __PACKAGE__->TableSpec_set_conf(
 
 __PACKAGE__->TableSpec_set_conf('column_properties_ordered', 
 
+  id => { no_column => \1, no_multifilter => \1, no_quick_search => \1 },
+
 	role => {
 		header => 'Role',
 		width	=> 150,
+    allow_edit => \1
 	},
 	
 	description => {
