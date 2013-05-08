@@ -2984,7 +2984,15 @@ Ext.ux.RapidApp.form.DateTime2 = Ext.extend(Ext.ux.form.DateTime ,{
 		
 		this.setMinMax(newDate);
 		this.fireEvent('updated',this);
-	}
+	},
+  
+  // New: return formatted date string instead of Date object
+  // this prevents the system seeing the value as changed when
+  // it hasn't and producing a db update
+  getValue: function() {
+    var dt = this.dateValue ? new Date(this.dateValue) : null;
+    return dt ? dt.format(this.hiddenFormat) : '';
+  }
 });
 Ext.reg('xdatetime2', Ext.ux.RapidApp.form.DateTime2);
 
