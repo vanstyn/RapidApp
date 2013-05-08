@@ -21,6 +21,7 @@ before 'setup_components' => sub {
   $config->{title} ||= $c->config->{name};  
   $config->{nav_title} ||= 'Loaded DBIC Sources';
   $config->{table_class} ||= 'Catalyst::Plugin::RapidApp::RapidDbic::TableBase';
+  $config->{configs} ||= {};
   
   my $appclass = ref($c) || $c;
   my %active_models = ();
