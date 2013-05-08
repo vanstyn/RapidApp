@@ -45,6 +45,14 @@ sub _prepare_db_file {
   Module::Runtime::require_module($class);
   my $schema = $class->connect('dbi:SQLite:dbname=' . $self->db_file);
   $schema->deploy;
+  
+  $schema->resultset('NavtreeNode')->create({
+    id => 0,
+    pid => undef,
+    text => 'DUMMY ROOT NODE',
+    ordering => 0
+  });
+  
 }
 
 

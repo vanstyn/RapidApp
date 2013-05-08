@@ -25,6 +25,12 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+__PACKAGE__->has_many(
+  "navtree_node_to_roles",
+  "RapidApp::CoreSchema::Result::NavtreeNodeToRole",
+  { "foreign.role" => "self.role" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 __PACKAGE__->load_components('+RapidApp::DBIC::Component::TableSpec');
 __PACKAGE__->apply_TableSpec;
