@@ -108,16 +108,19 @@ sub DEFAULT_PROFILES {{
 			#editor => { xtype => 'logical-checkbox', plugins => [ 'booltoint' ] }
 		},
 		text => {
+      width => 100,
 			editor => { xtype => 'textfield', grow => \0 },
 			summary_functions => \@text_summary_funcs 
 		},
 		bigtext => {
+      width => 150,
 			renderer 	=> ['Ext.util.Format.nl2br'],
 			editor		=> { xtype => 'textarea', grow => \1 },
 			summary_functions => \@text_summary_funcs 
 		},
 		html => {
-			# We need this renderer in case the 'bigtext' profile above has been applied
+			width => 200,
+      # We need this renderer in case the 'bigtext' profile above has been applied
 			# automatically. For HTML we *don't* want to nl2br() as it will totally break markup
 			renderer => 'Ext.ux.showNull',
 			editor => {
@@ -130,6 +133,7 @@ sub DEFAULT_PROFILES {{
 			},
 		},
 		email => {
+      width => 100,
 			editor => { xtype => 'textfield' },
 			summary_functions => \@text_summary_funcs,
 		},
@@ -140,6 +144,7 @@ sub DEFAULT_PROFILES {{
 				minWidth => 200,
 				editable => \0  #<-- force whole-field click/select
 			},
+      width => 130,
 			renderer => ["Ext.ux.RapidApp.getDateFormatter('M d, Y g:i A')"],
 			multifilter_type => 'datetime',
 			summary_functions => \@date_summary_funcs
@@ -151,6 +156,7 @@ sub DEFAULT_PROFILES {{
 				minWidth => 120,
 				editable => \0 #<-- force whole-field click/select
 			},
+      width => 80,
 			renderer => ["Ext.ux.RapidApp.getDateFormatter('M d, Y')"],
 			multifilter_type => 'date',
 			summary_functions => \@date_summary_funcs

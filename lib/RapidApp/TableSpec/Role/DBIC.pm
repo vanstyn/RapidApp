@@ -438,7 +438,8 @@ sub expand_relspec_wildcards {
 
 	my @matching_rels = grep { match_glob($rel,$_) } @rel_list;
 	die 'Invalid ColSpec: "' . $rel . '" doesn\'t match any relationships of ' . 
-		$Source->schema->class($Source->source_name) unless ($macros{'?'} or @matching_rels > 0);
+		$Source->schema->class($Source->source_name) 
+      unless ($macros{'?'} or @matching_rels > 0 or scalar(@rel_list) == 0);
 	
 	my @expanded = ();
 	foreach my $rel_name (@matching_rels) {
@@ -1200,10 +1201,10 @@ hashash 'multi_rel_columns_indx', lazy => 1, default => sub {
 		my $info = $self->ResultSource->relationship_info($rel) || {};
 		my $cond = $info->{cond};
 		my $h = $cond ? $self->ResultClass->parse_relationship_cond($cond) : {};
-		$indx{$rel} = { %$h, 
+		my ($rev_relname) = (keys %{$self->ResultSource->reverse_relationship_info($rel)});
+    $indx{$rel} = { %$h, 
 			info => $info,
-			# TODO: this throws warnings sometimes:
-			rev_relname => (keys %{$self->ResultSource->reverse_relationship_info($rel)})[0],
+			rev_relname => $rev_relname,
 			relname => $rel
 		};
 	}

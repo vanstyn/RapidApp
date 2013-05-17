@@ -60,8 +60,9 @@ before 'setup_component' => sub {
   my $config = $c->config->{'Plugin::RapidApp::RapidDbic'};
   return unless ($config->{_active_models}->{$component});
   
-  my $suffix = Catalyst::Utils::class2classsuffix( $component );
-  my $config = $c->config->{ $suffix } || {};
+  # this doesn't seem to work, and why is it here?
+  #my $suffix = Catalyst::Utils::class2classsuffix( $component );
+  #my $config = $c->config->{ $suffix } || {};
   my $cmp_config = try{$component->config} || {};
   
   my $cnf = { %$cmp_config, %$config };
@@ -77,11 +78,12 @@ before 'setup_component' => sub {
   my ($model_name) = reverse split(/\:\:/,$component); #<-- educated guess, see temp/hack below
   Module::Runtime::require_module($schema_class);
   for my $class (keys %{$schema_class->class_mappings}) {
-    next if ($class->can('TableSpec_cnf'));
-    $class->load_components('+RapidApp::DBIC::Component::TableSpec');
-    $class->apply_TableSpec;
-    
-    # ---- TEMP HACK / FIXME:
+    unless ($class->can('TableSpec_cnf')) {
+      $class->load_components('+RapidApp::DBIC::Component::TableSpec');
+      $class->apply_TableSpec;
+    }
+
+    # ----
     # *predict* (guess) what the auto-generated grid module paths will be and set
     # the open url configs so that cross table links are able to work. this is 
     # just a stop-gap until this functionality is factored into the RapidApp API 
@@ -93,8 +95,35 @@ before 'setup_component' => sub {
       open_url => $grid_url."/item",
     );
     # ----
-  }
 
+    # ---
+    # For single-relationship columns (belongs_to) we want to hide
+    # the underlying fk_column because the relationship column name
+    # handles setting it for us. In typical RapidApps this is done manually,
+    # currently...
+    if($config->{hide_fk_columns}) {
+      my %col_props = ( $class->TableSpec_get_conf('column_properties') || () );
+      for my $rel ( $class->relationships ) {
+        my $rel_info = $class->relationship_info($rel);
+        next unless ($rel_info->{attrs}->{accessor} eq 'single');
+        my $fk_columns = $rel_info->{attrs}->{fk_columns} || {};
+        $col_props{$_} =
+          # hides the column in the interface:
+          { no_column => \1, no_multifilter => \1, no_quick_search => \1 }
+          # exclude columns with the same name as the rel (see priority_rel_columns setting)
+          for (grep { $_ ne $rel } keys %$fk_columns);
+      }
+      $class->TableSpec_set_conf( column_properties => %col_props )
+        if (keys %col_props > 0);
+    }
+    # ---
+
+    # --- apply TableSpec configs specified in the plugin config:
+    my $source_name = $schema_class->class_mappings->{$class};
+    my $TSconfig = try{$config->{configs}->{$model_name}->{TableSpecs}->{$source_name}} || {};
+    $class->TableSpec_set_conf( $_ => $TSconfig->{$_} ) for (keys %$TSconfig);
+    # ---
+  }
 };
 
 
