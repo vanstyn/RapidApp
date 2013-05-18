@@ -3034,7 +3034,9 @@ Ext.ux.RapidApp.BoxToolBtn = Ext.extend(Ext.ux.RapidApp.ClickBox, {
 
 	initComponent: function() {
 		
+    var cls = this.cls;
 		this.cls = 'x-tool x-tool-' + this.toolType;
+    if(cls){ this.cls += ' ' + cls; }
 		this.overCls = 'x-tool-' + this.toolType + '-over';
 		if(this.toolQtip) { this.qtip = this.toolQtip; }
 		
