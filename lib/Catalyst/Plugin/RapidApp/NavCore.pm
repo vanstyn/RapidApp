@@ -20,6 +20,12 @@ after 'setup_components' => sub {
     as => 'Model::RapidApp::CoreSchema'
   ) unless ($c->model('RapidApp::CoreSchema'));
   
+  CatalystX::InjectComponent->inject(
+    into => $c,
+    component => 'Catalyst::Plugin::RapidApp::NavCore::Controller',
+    as => 'Controller::View'
+  );
+  
 };
 
 

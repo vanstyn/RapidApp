@@ -56,6 +56,28 @@ __PACKAGE__->belongs_to(
   },
 );
 
+
+sub loadContentCnf {
+	my $self = shift;
+	
+	#my $params = $self->decoded_params;
+	#$params->{search_id} = $self->get_column('id');
+
+	return {
+		title		=> $self->title,
+		iconCls	=> $self->iconcls,
+		autoLoad => {
+			#New REST url:
+			url => '/view/' . $self->get_column('id')
+			#url => $self->url,
+			#params => $params,
+		}
+	};
+}
+
+
+
+
 __PACKAGE__->load_components('+RapidApp::DBIC::Component::TableSpec');
 __PACKAGE__->apply_TableSpec;
 

@@ -26,8 +26,6 @@ around 'options_menu_items' => sub {
   
   return $self->$orig(@_) unless ($self->_navcore_enabled);
 	
-
-	
 	my $save_cnf = {};
 	$save_cnf->{save_url} = $self->suburl('/save_search');
 	$save_cnf->{search_id} = $self->c->req->params->{search_id} if (defined $self->c->req->params->{search_id});
@@ -51,7 +49,7 @@ around 'options_menu_items' => sub {
 		text		=> 'Save Search',
 		iconCls	=> 'icon-save-as',
 		handler	=> RapidApp::JSONFunc->new( raw => 1, func =>
-			'function(cmp) { Ext.ux.GreenSheet.SaveSearchHandler(cmp,' . $self->json->encode($save_cnf) . '); }'
+			'function(cmp) { Ext.ux.RapidApp.NavCore.SaveSearchHandler(cmp,' . $self->json->encode($save_cnf) . '); }'
 		)
 	};
 	
@@ -61,7 +59,8 @@ around 'options_menu_items' => sub {
 			text	=> 'Delete Search',
 			iconCls	=> 'icon-delete',
 			handler	=> RapidApp::JSONFunc->new( raw => 1, func =>
-				'function(cmp) { Ext.ux.GreenSheet.DeleteSearchHandler(cmp,"' . $self->suburl('/delete_search') . '","' . $self->c->req->params->{search_id} . '"); }'
+				'function(cmp) { Ext.ux.RapidApp.NavCore.DeleteSearchHandler(cmp,"' . 
+          $self->suburl('/delete_search') . '","' . $self->c->req->params->{search_id} . '"); }'
 			)
 		} unless (
 			$self->c->req->params->{public_search} 
@@ -83,8 +82,9 @@ sub load_saved_search {
   return 0 unless ($self->_navcore_enabled);
   
 	
-	my $Search = $self->c->model('DB::SavedState')->search_rs({ 'me.id' => $search_id })->single or 
-		die usererr "Failed to load search ID '$search_id'";
+	my $Search = $self->c->model('RapidApp::CoreSchema::SavedState')->
+    search_rs({ 'me.id' => $search_id })->single 
+      or die usererr "Failed to load search ID '$search_id'";
 	
 	$self->apply_extconfig(
 		tabTitle => $Search->get_column('title'),
@@ -136,10 +136,10 @@ sub save_search {
 	
 	# This codepath should never happen because if they don't have permission
 	# they shouldn't see the public checkbox in the first place:
-	die usererr "You are not allowed to save/modify public searches" if (
-		$public and
-		not $self->c->model('DB')->has_roles(qw/admin modify_public_searches/)
-	);
+	#die usererr "You are not allowed to save/modify public searches" if (
+	#	$public and
+	#	not $self->c->model('DB')->has_roles(qw/admin modify_public_searches/)
+	#);
 	
 	$search_name = undef if (
 		defined $search_name and 
@@ -147,7 +147,7 @@ sub save_search {
 		$search_name eq 'false'
 	);
 	
-	my $Rs = $self->c->model('DB::SavedState');
+	my $Rs = $self->c->model('RapidApp::CoreSchema::SavedState');
 	
 	# Update existing search:
 	my $cur_id = $self->c->req->params->{cur_search_id};
@@ -162,24 +162,24 @@ sub save_search {
 	$Rs->search_rs({ 'me.title' => $search_name })->count and die usererr "Search '" . $search_name . "' already exists";
 	
 	my $create = {
-		saved_state => {
+		#saved_state => {
 			title => $search_name,
 			url => $target_url,
 			params => $target_params,
 			iconcls => $target_iconcls,
 			state_data => $state_data
-		}
+		#}
 	};
 	
 	# Turn off public search stuff:
 	#$create->{owner_id} = 1 if ($public);
 	
-	my $Object = $self->c->model('DB::Object')->create($create);
+	my $Row = $Rs->create($create);
 	
 	return {
 		success	=> \1,
 		msg		=> 'Created Search',
-		loadCnf => $Object->saved_state->loadContentCnf
+		loadCnf => $Row->loadContentCnf
 	};
 }
 
