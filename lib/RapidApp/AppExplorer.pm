@@ -25,7 +25,7 @@ has 'navtrees', is => 'ro', isa => 'ArrayRef', lazy => 1, default => sub {
   my $self = shift;
   die "either navtrees or navtree_class is required" unless ($self->navtree_class);
   return [{
-    module_name => 'navtree',
+    module => 'navtree',
     class => $self->navtree_class,
     params => $self->navtree_params
   }];
@@ -39,10 +39,10 @@ sub BUILD {
 	
   my %seen = ();
   for my $cnf (@{$self->navtrees}) {
-    my $name = $cnf->{module_name} or die "Missing module_name";
+    my $name = $cnf->{module} or next;
     my $class = $cnf->{class} or die "Missing class name";
     my $params = $cnf->{params} || {};
-    die "Duplicate module_name '$name'" if ($seen{$name}++);
+    die "Duplicate module '$name'" if ($seen{$name}++);
     
     Module::Runtime::require_module($class);
     $self->apply_init_modules( $name => { class => $class, params => $params } );
@@ -117,10 +117,11 @@ around 'content' => sub {
 sub west_area_items {
 	my $self = shift;
   
-  return [
-    map { $self->Module($_->{module_name})->content }
-    @{$self->navtrees}
-  ];
+  # Dynamic "typing" (of sorts). Allow raw ExtJS configs to
+  # be interspersed among module cnfs 
+  return [ map {
+    $_->{module} ? $self->Module($_->{module})->content : $_
+  } @{$self->navtrees} ];
 }
 
 

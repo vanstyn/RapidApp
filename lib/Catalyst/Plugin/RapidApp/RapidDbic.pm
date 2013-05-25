@@ -40,7 +40,7 @@ before 'setup_components' => sub {
   #$config->{_active_models} = \%active_models;
   
   my @navtrees = ({
-    module_name => 'db',
+    module => 'db',
     class => 'RapidApp::AppDbicTree',
     params => {
       dbic_models => $config->{dbic_models},
@@ -49,10 +49,16 @@ before 'setup_components' => sub {
     }
   });
   
-  unshift @navtrees, {
-    module_name => 'navtree',
-    class => 'Catalyst::Plugin::RapidApp::NavCore::NavTree',
-  } if ($c->_navcore_enabled);
+  unshift @navtrees, (
+    {
+      module => 'navtree',
+      class => 'Catalyst::Plugin::RapidApp::NavCore::NavTree',
+      params => {
+        title => 'Foo'
+      }
+    },
+    { xtype => 'spacer', height => '8px' } 
+  ) if ($c->_navcore_enabled);
   
   my $main_module_params = {
     title => $config->{nav_title},

@@ -247,8 +247,7 @@ sub saved_search_tree_items {
 	
 	return {
 		id			=> 'my-saved-searches',
-		cls		=> 'pad-top-7px',
-		text		=> 'My Searches',
+		text		=> 'My Views',
 		iconCls		=> 'icon-folder-view',
 		expand		=> 1,
 		children	=> $saved_searches
