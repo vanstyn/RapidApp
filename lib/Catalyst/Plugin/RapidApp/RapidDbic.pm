@@ -9,6 +9,14 @@ require Module::Runtime;
 require Catalyst::Utils;
 
 
+sub _navcore_enabled { 
+  my $c = shift;
+  return (
+    $c->does('Catalyst::Plugin::RapidApp::NavCore') ||
+    $c->registered_plugins('RapidApp::NavCore') #<-- this one doesn't seem to apply
+  ) ? 1 : 0;
+}
+
 before 'setup_components' => sub {
   my $c = shift;
   
@@ -31,16 +39,26 @@ before 'setup_components' => sub {
   #}
   #$config->{_active_models} = \%active_models;
   
+  my @navtrees = ({
+    module_name => 'db',
+    class => 'RapidApp::AppDbicTree',
+    params => {
+      dbic_models => $config->{dbic_models},
+      table_class	=> $config->{table_class},
+      configs => $config->{configs}
+    }
+  });
+  
+  unshift @navtrees, {
+    module_name => 'navtree',
+    class => 'Catalyst::Plugin::RapidApp::NavCore::NavTree',
+  } if ($c->_navcore_enabled);
+  
   my $main_module_params = {
     title => $config->{nav_title},
     right_footer => $config->{title},
     iconCls => 'icon-catalyst-transparent',
-    navtree_class => 'RapidApp::AppDbicTree',
-    navtree_params => {
-      dbic_models => $config->{dbic_models},
-      table_class	=> $config->{table_class},
-      configs => $config->{configs}
-    },
+    navtrees => \@navtrees
   };
   
   if($config->{dashboard_template}) {
