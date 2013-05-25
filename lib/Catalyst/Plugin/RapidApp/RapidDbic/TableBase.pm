@@ -4,7 +4,13 @@ use strict;
 use warnings;
 use Moose;
 extends 'RapidApp::DbicAppGrid3';
-with 'RapidApp::AppGrid2::Role::ExcelExport';
+with 
+  'RapidApp::AppGrid2::Role::ExcelExport',
+  # This is a bit of overlap/entaglement needed for 'NavCore' to be able to
+  # work. However, NavCore is not always enabled, and this role only
+  # enables itself if it is (i.e. Plugin::NavCore is present)
+  'Catalyst::Plugin::RapidApp::NavCore::GridRole'
+;
 
 #use RapidApp::DbicAppPropertyPage;
 
