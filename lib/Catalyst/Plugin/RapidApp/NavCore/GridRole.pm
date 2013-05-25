@@ -168,6 +168,7 @@ sub save_search {
     and die usererr "Search '" . $search_name . "' already exists";
 	
 	my $create = {
+    user_id => $self->c->user->get_column('id'),
     title => $search_name,
     url => $target_url,
     params => $target_params,

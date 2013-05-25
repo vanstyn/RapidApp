@@ -209,33 +209,35 @@ sub fetch_nodes {
 #}
 #
 
-sub is_admin { 1 }
+
 sub can_edit_navtree { 1 }
-sub can_delete { 1 }
 
-
+sub is_admin {
+  my $self = shift;
+  return $self->c->check_user_roles('administrator');
+}
 
 sub TreeConfig {
 	my $self = shift;
-	my $items = [
+  my @items = ();
+  
+  push @items, (
 		$self->saved_search_tree_items,
 		$self->organize_navtree_node
-	];
+	) if ($self->c->user);
 	
-	#push @$items, $self->deleted_objects_node if ($self->can_delete);
-	
-	return $items;
+	return \@items;
 }
 
 
 sub saved_search_tree_items {
 	my $self = shift;
-
-	
+  
 	my $saved_searches = [];
   # TODO: permissions:
 	#my $Rs = $self->c->model('DB::SavedState')->my_saved_states;
-  my $Rs = $self->c->model('RapidApp::CoreSchema::SavedState');
+  #my $Rs = $self->c->model('RapidApp::CoreSchema::SavedState');
+  my $Rs = $self->c->user->saved_states;
 	
 	#exclude searches with a node_id (which means they are shown in the public tree above)
 	$Rs = $Rs->search_rs({ 'me.node_id' => undef }); 
@@ -271,7 +273,7 @@ sub organize_navtree_node {
 	my $self = shift;
 	return {
 		id			=> 'manager',
-		text		=> $self->can_edit_navtree ? 'Organize Navtree' : 'Organize Searches',
+		text		=> $self->is_admin ? 'Organize Navtree' : 'Organize Views',
 		cls		=> 'pad-top-7px-bottom-4px',
 		iconCls		=> 'icon-tree-edit',
 		module		=> 'manager',

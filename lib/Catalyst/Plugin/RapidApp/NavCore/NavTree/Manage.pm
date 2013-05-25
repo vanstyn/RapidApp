@@ -123,7 +123,7 @@ sub fetch_nodes {
 sub my_searches_nodes {
 	my $self = shift;
   
-  return [];
+  #return [];
   
 	my $User = $self->c->user || return [];
 	return $self->searches_nodes_for_User($User);
@@ -143,12 +143,12 @@ sub searches_nodes_for_User {
 	#);
 		
 	my $children = [];
-	foreach my $State ($PrivSearchesRs->search_rs({ 'object.owner_id' => $User->get_column('id') })->all) {
+	foreach my $State ($PrivSearchesRs->search_rs({ 'me.user_id' => $User->get_column('id') })->all) {
 	#foreach my $Object ($SearchObjectsRs->search_rs({ 'me.owner_id' => $User->get_column('id') })->all) {
 		#my $State = $Object->saved_state;
 		
 		# Make sure its not deleted or otherwise invalid object:
-		next unless ($State->object);
+		#next unless ($State->object);
 		
 		my $cnf = $self->get_Node_config($State);
 		$cnf = { %$cnf,
@@ -323,21 +323,21 @@ sub copy_node {
 	
 	$self->enforce_valid_new_search_name($name);
 	
-	my $create = { $State->object->get_columns };
-	$create->{saved_state} = { $State->get_columns };
-	$create->{saved_state}->{title} = $name if ($name);
+	my $create = { $State->get_columns };
+  delete $create->{id};
+	$create->{title} = $name if ($name);
 	
-	delete $create->{$_} for(qw(id type_id name disp_name creator_id created owner_id));
-	delete $create->{saved_state}->{$_} for(qw(id));
+	#delete $create->{$_} for(qw(id type_id name disp_name creator_id created owner_id));
+	#delete $create->{saved_state}->{$_} for(qw(id));
 	
-	my $NewObject = $self->c->model('DB::Object')->create($create);
+	my $NewRow = $self->c->model('RapidApp::CoreSchema::SavedState')->create($create);
 	
-	$self->move_node($NewObject->saved_state,$target,$point,$point_node);
+	$self->move_node($NewRow,$target,$point,$point_node);
 	
 	return {
 		msg		=> 'Copied',
 		success	=> \1,
-		child => $self->get_Node_config($NewObject->saved_state)
+		child => $self->get_Node_config($NewRow)
 	};
 }
 
@@ -345,9 +345,9 @@ sub enforce_valid_new_search_name {
 	my $self = shift;
 	my $name = shift;
 	
-	my $uid = $self->c->model('DB')->current_user_id;
+	my $uid = $self->c->user->get_column('id');
 	
-	my $Rs = $self->SearchesRs->search_rs({ 'object.owner_id' => $uid, 'me.title' => $name });
+	my $Rs = $self->SearchesRs->search_rs({ 'me.user_id' => $uid, 'me.title' => $name });
 	
 	die usererr "You already own a search named '$name'" if ($Rs->count);
 }
@@ -385,7 +385,7 @@ sub get_node_order_boundary {
 	
 	my $method = "get_Rs_order_boundary_" . $direction;
 	
-	return $self->$method($Rs_list,$Node->order);
+	return $self->$method($Rs_list,$Node->ordering);
 }
 sub get_node_order_boundary_high	{ (shift)->get_node_order_boundary('high',@_)	}
 sub get_node_order_boundary_low	{ (shift)->get_node_order_boundary('low',@_)	}
@@ -501,11 +501,11 @@ sub get_order_string {
 	}
 
 	if ($point eq 'below') {
-		$min = $PointNode->order + 1;
+		$min = $PointNode->ordering + 1;
 		$max = $self->get_node_order_boundary_high($PointNode);
 	}
 	elsif ($point eq 'above') {
-		$max = $PointNode->order - 1;
+		$max = $PointNode->ordering - 1;
 		$min = $self->get_node_order_boundary_low($PointNode);
 	}
 	else { die "Unknown point value '$point' (expected 'append', 'above' or 'below')"; }
@@ -572,7 +572,7 @@ sub delete_node {
 	
 	if ($recursive) {
 		try {
-			$self->c->model('DB')->txn_do(sub { $count = $self->Node_delete_recursive($Node) });
+			$self->c->model('RapidApp::CoreSchema')->txn_do(sub { $count = $self->Node_delete_recursive($Node) });
 		}
 		catch { 
 			my $err = shift;
@@ -596,11 +596,13 @@ sub unlink_search {
 	return $State->update({ node_id => undef }) if (defined $State->node_id);
 }
 
+
+# TODO: check permissions:
 sub delete_search {
 	my $self = shift;
 	my $State = shift;
 	$self->unlink_search($State);
-	return $State->object->mark_deleted;
+	return $State->delete;
 }
 
 sub Node_delete_recursive {

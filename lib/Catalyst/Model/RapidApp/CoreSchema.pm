@@ -58,6 +58,16 @@ sub _prepare_db_file {
     password => 'pass'
   });
   
+  $schema->resultset('Role')->create({
+    role => 'administrator',
+    description => 'Full Control'
+  });
+  
+  $schema->resultset('UserToRole')->create({
+    username => 'admin',
+    role => 'administrator',
+  });
+  
 }
 
 

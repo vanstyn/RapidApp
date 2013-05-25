@@ -44,7 +44,7 @@ before 'setup_dispatcher' => sub {
             user_model => 'RapidApp::CoreSchema::User',
             role_relation => 'roles',
             role_field => 'role',
-            use_userdata_from_session => '1'
+            use_userdata_from_session => '1',
           }
         }
       }
