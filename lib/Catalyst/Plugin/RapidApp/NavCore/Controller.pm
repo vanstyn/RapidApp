@@ -10,8 +10,10 @@ require Catalyst::Utils;
 
 use JSON qw(decode_json);
 
+# Controller for loading a saved search in CoreSchema via ID
 
-sub index :Path :Args(1) {
+
+sub load :Path :Args(1) {
   my ( $self, $c, $search_id ) = @_;
 
   my $Rs = $c->model('RapidApp::CoreSchema::SavedState');

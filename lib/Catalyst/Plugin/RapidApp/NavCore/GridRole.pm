@@ -82,9 +82,8 @@ sub load_saved_search {
   return 0 unless ($self->_navcore_enabled);
   
 	
-	my $Search = $self->c->model('RapidApp::CoreSchema::SavedState')->
-    search_rs({ 'me.id' => $search_id })->single 
-      or die usererr "Failed to load search ID '$search_id'";
+	my $Search = $self->c->model('RapidApp::CoreSchema::SavedState')->find($search_id)
+    or die usererr "Failed to load search ID '$search_id'";
 	
 	$self->apply_extconfig(
 		tabTitle => $Search->get_column('title'),
@@ -152,23 +151,28 @@ sub save_search {
 	# Update existing search:
 	my $cur_id = $self->c->req->params->{cur_search_id};
 	if ($cur_id and not $self->c->req->params->{create_search}) {
-		my $Search = $Rs->writable_saved_states->search_rs({ 'object.id' => $cur_id })->single or
-			die usererr "Cannot update existing search '" . $cur_id . "'\n";
+  
+    # TODO: check permissions
+    
+    my $Search = $Rs->find($cur_id) 
+      or die usererr "Cannot update existing search '" . $cur_id . "'\n";
+  
 		return $Search->update({ state_data => $state_data });
 	}
 
-	die usererr "Search name cannot be null" unless (defined $search_name);
+	die usererr "Search name required" 
+    unless (defined $search_name && $search_name ne '');
 	
-	$Rs->search_rs({ 'me.title' => $search_name })->count and die usererr "Search '" . $search_name . "' already exists";
+  # TODO: allow searches with the same name if different folder, etc
+	$Rs->search_rs({ 'me.title' => $search_name })->count 
+    and die usererr "Search '" . $search_name . "' already exists";
 	
 	my $create = {
-		#saved_state => {
-			title => $search_name,
-			url => $target_url,
-			params => $target_params,
-			iconcls => $target_iconcls,
-			state_data => $state_data
-		#}
+    title => $search_name,
+    url => $target_url,
+    params => $target_params,
+    iconcls => $target_iconcls,
+    state_data => $state_data
 	};
 	
 	# Turn off public search stuff:
@@ -188,11 +192,14 @@ sub save_search {
 sub delete_search {
 	my $self = shift;
 	my $search_id = $self->c->req->params->{search_id} or die usererr "Missing search_id";
-	
-	my $Search = $self->c->model('DB::SavedState')->writable_saved_states->search_rs({ 'object.id' => $search_id })->single
-		or die usererr "Failed to retrieve search id '$search_id'";
-	
-	return $Search->object->mark_deleted;
+  
+  # TODO: enfornce permissions
+  
+  
+  my $Search = $self->c->model('RapidApp::CoreSchema::SavedState')->find($search_id)
+    or die usererr "Failed to find search ID '$search_id'";
+    
+  return $Search->delete;
 }
 
 

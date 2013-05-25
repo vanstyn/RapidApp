@@ -137,10 +137,8 @@ Ext.ux.RapidApp.NavCore.DeleteSearchHandler = function(cmp,url,search_id) {
 				loadTarget.closeActive();
 				
 				// Reload/refresh the tree:
-				//var tree = loadTarget.getNavsource();
-				//var rootnode = tree.getRootNode();
-				//tree.getLoader().load(rootnode);
-				Ext.ux.GreenSheet.reloadMainNavTree();
+				// TODO!
+				//Ext.ux.GreenSheet.reloadMainNavTree();
 			
 			}
 		
