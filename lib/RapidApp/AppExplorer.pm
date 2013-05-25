@@ -18,8 +18,18 @@ has 'title', is => 'ro', default => 'AppExplorer';
 has 'right_footer', is => 'ro', lazy => 1, default => sub {(shift)->title};
 has 'iconCls', is => 'ro',	default => 'icon-server_database';
 
-has 'navtree_class', is => 'ro', isa => 'Str', required => 1;
+has 'navtree_class', is => 'ro', isa => 'Maybe[Str]', default => sub{undef};
 has 'navtree_params', is => 'ro', isa => 'HashRef', lazy => 1, default => sub{{}};
+
+has 'navtrees', is => 'ro', isa => 'ArrayRef', lazy => 1, default => sub {
+  my $self = shift;
+  die "either navtrees or navtree_class is required" unless ($self->navtree_class);
+  return [{
+    module_name => 'navtree',
+    class => $self->navtree_class,
+    params => $self->navtree_params
+  }];
+};
 
 has 'dashboard_class', is => 'ro', isa => 'Maybe[Str]', default => sub {undef};
 has 'dashboard_params', is => 'ro', isa => 'HashRef', lazy => 1, default => sub{{}};
@@ -27,13 +37,16 @@ has 'dashboard_params', is => 'ro', isa => 'HashRef', lazy => 1, default => sub{
 sub BUILD {
 	my $self = shift;
 	
-	Module::Runtime::require_module($self->navtree_class);
-	$self->apply_init_modules(
-		navtree => {
-			class => $self->navtree_class,
-			params => $self->navtree_params
-		}
-	);
+  my %seen = ();
+  for my $cnf (@{$self->navtrees}) {
+    my $name = $cnf->{module_name} or die "Missing module_name";
+    my $class = $cnf->{class} or die "Missing class name";
+    my $params = $cnf->{params} || {};
+    die "Duplicate module_name '$name'" if ($seen{$name}++);
+    
+    Module::Runtime::require_module($class);
+    $self->apply_init_modules( $name => { class => $class, params => $params } );
+  }
   
   if ($self->dashboard_class) {
     Module::Runtime::require_module($self->dashboard_class);
@@ -68,7 +81,7 @@ around 'content' => sub {
 				minSize => 150,
 				width	=> 240,
 				margins => '3 3 3 3',
-				layout	=> 'fit',
+				layout	=> 'anchor',
 				#tools => [{
 				#	id => 'refresh',
 				#	qtip => 'Refresh Nav Tree',
@@ -103,8 +116,11 @@ around 'content' => sub {
 
 sub west_area_items {
 	my $self = shift;
-	
-	return $self->Module('navtree')->content;
+  
+  return [
+    map { $self->Module($_->{module_name})->content }
+    @{$self->navtrees}
+  ];
 }
 
 
