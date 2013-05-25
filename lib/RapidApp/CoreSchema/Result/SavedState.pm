@@ -30,6 +30,11 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
+  "user_id" =>  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_nullable => 1,
+  },
   "ordering",
   { data_type => "integer", default_value => 500001, is_nullable => 0 },
   "iconcls",
@@ -56,6 +61,17 @@ __PACKAGE__->belongs_to(
   },
 );
 
+__PACKAGE__->belongs_to(
+  "user",
+  "RapidApp::CoreSchema::Result::User",
+  { id => "user_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
 
 sub loadContentCnf {
 	my $self = shift;

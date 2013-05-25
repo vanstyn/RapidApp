@@ -13,6 +13,13 @@ __PACKAGE__->load_components("InflateColumn::DateTime");
 __PACKAGE__->table('user');
 
 __PACKAGE__->add_columns(
+   "id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_auto_increment => 1,
+    is_nullable => 0,
+  },
   "username",
   { data_type => "varchar", is_nullable => 0, size => 32 },
   "password",
@@ -34,12 +41,27 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
 );
-__PACKAGE__->set_primary_key("username");
+__PACKAGE__->set_primary_key("id");
+__PACKAGE__->add_unique_constraint("username", ["username"]);
 
 __PACKAGE__->has_many(
   "user_to_roles",
   "RapidApp::CoreSchema::Result::UserToRole",
   { "foreign.username" => "self.username" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+__PACKAGE__->has_many(
+  "navtree_nodes",
+  "RapidApp::CoreSchema::Result::NavtreeNode",
+  { "foreign.user_id" => "self.id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+__PACKAGE__->has_many(
+  "saved_states",
+  "RapidApp::CoreSchema::Result::SavedState",
+  { "foreign.user_id" => "self.id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 

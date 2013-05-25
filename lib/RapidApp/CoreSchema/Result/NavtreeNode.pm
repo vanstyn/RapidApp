@@ -26,6 +26,11 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
+  "user_id" =>  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_nullable => 1,
+  },
   "text",
   { data_type => "varchar", is_nullable => 0, size => 255 },
   "iconcls",
@@ -42,6 +47,18 @@ __PACKAGE__->belongs_to(
   "pid",
   "RapidApp::CoreSchema::Result::NavtreeNode",
   { id => "pid" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
+__PACKAGE__->belongs_to(
+  "user",
+  "RapidApp::CoreSchema::Result::User",
+  { id => "user_id" },
   {
     is_deferrable => 1,
     join_type     => "LEFT",

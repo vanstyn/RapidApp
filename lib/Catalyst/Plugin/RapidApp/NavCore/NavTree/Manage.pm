@@ -83,7 +83,7 @@ sub fetch_nodes {
 		
 		my $my_searches = {
 			id => 'my_searches',
-			text => 'My Searches',
+			text => 'My Views',
 			iconCls => 'icon-folder-view',
 			expanded => \1,
 			rootValidActions => \1, #<-- prevents actions that wouldn't be valid for the root node (rename, etc)
