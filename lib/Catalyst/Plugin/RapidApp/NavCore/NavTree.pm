@@ -6,8 +6,17 @@ extends 'RapidApp::AppNavTree';
 
 use RapidApp::Include qw(sugar perlutil);
 
+sub BUILD {
+  my $self = shift;
+  
+  $self->apply_init_modules(
+    'manager' => 'Catalyst::Plugin::RapidApp::NavCore::NavTree::Manage'
+  ) unless ($self->isa('Catalyst::Plugin::RapidApp::NavCore::NavTree::Manage'));
 
-has '+module_scope', default => sub { return (shift)->parent_module };
+}
+
+
+#has '+module_scope', default => sub { return (shift)->parent_module };
 has '+instance_id', default => 'main-nav-tree';
 
 has '+fetch_nodes_deep', default => 1;
@@ -210,7 +219,7 @@ sub TreeConfig {
 	my $self = shift;
 	my $items = [
 		$self->saved_search_tree_items,
-		#$self->organize_navtree_node
+		$self->organize_navtree_node
 	];
 	
 	#push @$items, $self->deleted_objects_node if ($self->can_delete);
@@ -256,22 +265,22 @@ sub saved_search_tree_items {
 
 
 
-#
-#
-#sub organize_navtree_node {
-#	my $self = shift;
-#	return {
-#		id			=> 'dyn_navtree',
-#		text		=> $self->can_edit_navtree ? 'Organize Navtree' : 'Organize Searches',
-#		cls		=> 'pad-top-7px-bottom-4px',
-#		iconCls		=> 'icon-cog',
-#		module		=> 'dyn_navtree',
-#		params		=> {},
-#		expand		=> 1,
-#		children	=> []
-#	};
-#}
-#
+
+
+sub organize_navtree_node {
+	my $self = shift;
+	return {
+		id			=> 'manager',
+		text		=> $self->can_edit_navtree ? 'Organize Navtree' : 'Organize Searches',
+		cls		=> 'pad-top-7px-bottom-4px',
+		iconCls		=> 'icon-tree-edit',
+		module		=> 'manager',
+		params		=> {},
+		expand		=> 1,
+		children	=> []
+	};
+}
+
 #sub deleted_objects_node {{
 #	id			=> 'deleted_objects',
 #	text		=> 'Deleted Objects',

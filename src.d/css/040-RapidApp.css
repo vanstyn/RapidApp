@@ -275,7 +275,9 @@ pre {
 .icon-warning { background-image: url(/static/rapidapp/images/warning.png) !important; }
 .icon-catalyst { background-image: url(/static/rapidapp/images/catalyst-icon.png) !important; }
 .icon-catalyst-transparent { background-image: url(/static/rapidapp/images/catalyst-icon-transparent.png) !important; }
-
+.icon-tree-edit { background-image: url(/static/rapidapp/images/tree-edit.png) !important; }
+.icon-tree-expand { background-image: url(/static/rapidapp/images/tree-expand.png) !important; }
+.icon-tree-collapse { background-image: url(/static/rapidapp/images/tree-collapse.png) !important; }
 
 
 .tbar-title-medium {

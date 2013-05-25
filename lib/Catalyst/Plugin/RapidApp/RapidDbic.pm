@@ -57,7 +57,7 @@ before 'setup_components' => sub {
         title => 'Foo'
       }
     },
-    { xtype => 'spacer', height => '8px' } 
+    { xtype => 'spacer', height => '5px' } 
   ) if ($c->_navcore_enabled);
   
   my $main_module_params = {

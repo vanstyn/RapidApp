@@ -74,6 +74,7 @@ around 'content' => sub {
 			$self->content_area,
 			{
 				region	=> 'west',
+        id => 'main-navtrees-container',
 				title		=> $self->title,
 				iconCls		=> $self->iconCls,
 				collapsible => \1,
@@ -82,11 +83,11 @@ around 'content' => sub {
 				width	=> 240,
 				margins => '3 3 3 3',
 				layout	=> 'anchor',
-				#tools => [{
-				#	id => 'refresh',
-				#	qtip => 'Refresh Nav Tree',
-				#	handler => jsfunc 'Ext.ux.RaSakila.reloadMainNavTreeOnly'
-				#}],
+				tools => [{
+					id => 'refresh',
+					qtip => 'Refresh Nav Tree',
+					handler => jsfunc 'Ext.ux.RapidApp.NavCore.reloadMainNavTrees'
+				}],
 				collapseFirst => \0,
 				items => $self->west_area_items,
 			}

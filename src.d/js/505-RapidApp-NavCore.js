@@ -148,3 +148,34 @@ Ext.ux.RapidApp.NavCore.DeleteSearchHandler = function(cmp,url,search_id) {
 	return Ext.ux.RapidApp.confirmDialogCall("Delete Search", "Really Delete This Search?", fn);
 };
 
+
+/*
+// TODO: put this in rapidapp and handle properly:
+Ext.ux.RapidApp.NavCore.reloadMainNavTree = function() {
+	//var loadTarget = Ext.getCmp("main-load-target");
+	//var tree = loadTarget.getNavsource();
+	//if(!tree) { tree = Ext.getCmp('main-nav-tree'); }
+	
+	Ext.ux.RapidApp.NavCore.reloadMainNavTreeOnly();
+	
+	// Now reload the manage NavTree, if its loaded, too:
+	var tree = Ext.getCmp('manage-nav-tree');
+	if(tree) {
+		var rootnode = tree.getRootNode();
+		tree.getLoader().load(rootnode);
+	}
+}
+*/
+
+
+Ext.ux.RapidApp.NavCore.reloadMainNavTrees = function() {
+	var container = Ext.getCmp('main-navtrees-container');
+  container.items.each(function(tree) {
+    if(Ext.isFunction(tree.getRootNode)) {
+      var rootnode = tree.getRootNode();
+      tree.getLoader().load(rootnode);
+    }
+  });
+}
+
+
