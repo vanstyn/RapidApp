@@ -54,6 +54,13 @@ has 'SearchesRs', is => 'ro', lazy => 1, default => sub {
 	);
 };
 
+has 'UsersRs', is => 'ro', lazy => 1, default => sub {
+	my $self = shift;
+	return $self->c->model('RapidApp::CoreSchema::User')->search_rs(undef,
+		{ order_by => { -asc => 'me.username' }}
+	);
+};
+
 sub get_node_id {
 	my $self = shift;
 	my $node = shift;

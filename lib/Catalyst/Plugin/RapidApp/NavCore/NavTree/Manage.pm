@@ -99,7 +99,7 @@ sub fetch_nodes {
 		
 		push @$nodes, {
 			id => 'user_searches',
-			text => 'Other User\'s Searches',
+			text => 'Other User\'s Views',
 			iconCls => 'icon-data-views',
 			cls => 'pad-top-7px',
 			expanded => \0,
@@ -123,17 +123,15 @@ sub fetch_nodes {
 sub my_searches_nodes {
 	my $self = shift;
   
-  #return [];
-  
-	my $User = $self->c->user || return [];
+	my $User = $self->c->user->get_from_storage or die "Failed to get user";
 	return $self->searches_nodes_for_User($User);
 }
 
 sub searches_nodes_for_User {
 	my $self = shift;
 	my $User = shift;
-	
-	my $path = 'user_searches/' . $User->username;
+  
+	my $path = 'user_searches/' . $User->get_column('username');
 	
 	# Todo: use an accessor on $User instead of this (why am I doing it this way?):
 	my $PrivSearchesRs = $self->SearchesRs->search_rs({ 'me.node_id' => undef });
@@ -171,11 +169,11 @@ sub user_searches_nodes {
 	
 	my $nodes = [];
 	
-	my $UserRs = $self->c->model('DB::User')->search_rs({},{ order_by => { -asc => 'full_name' } });
+	my $UserRs = $self->UsersRs;
 	
 	my $empties = [];
 	
-	my $uid = $self->c->model('DB')->current_user_id;
+	my $uid = $self->c->user->get_column('id');
 	
 	foreach my $User ($UserRs->all) {
 		
@@ -209,8 +207,8 @@ sub user_searches_nodes {
 				expanded => \1
 			};
 			
-			# If the user has no searches, skip them if they are deleted or disaled:
-			next if ($User->disabled or $User->safe_get_object->deleted);
+			# If the user has no searches, skip them if they are disaled:
+			next if ($User->disabled);
 			push @$empties, $data;
 		}	
 	}
@@ -250,8 +248,8 @@ sub add_node {
 
 sub my_searches_target {
 	my $self = shift;
-	my $User = $self->current_User || die "Failed to get current User!!";
-	return 'user_searches/' . $User->username;
+	my $User = $self->c->user->get_from_storage or die "Failed to get current User!!";
+	return 'user_searches/' . $User->get_column('username');
 }
 
 sub move_node {
@@ -259,7 +257,7 @@ sub move_node {
 	my $node = shift;
 	my $target = shift;
 	my $point = shift;
-	
+  
 	# remap my_searches target for moves into "My Searches"
 	$target = $self->my_searches_target if ($target =~ /my_searches/);
 	
@@ -290,15 +288,16 @@ sub move_to_private_search {
 	my $State = $self->get_node_Row($node) || die "move_to_private_search failed";
 	my @path = split(/\//,$target);
 	my $username = pop @path;
-	
+  
 	die "Missing username" unless (defined $username and $username ne '');
 	
-	my $User = $self->c->model('DB::User')->search_rs({ username => $username })->first
-		or die "Failed to find target User by username '$username'";
+	my $User = $self->UsersRs->
+    search_rs({ username => $username })->first
+      or die "Failed to find target User by username '$username'";
 	
 	my $uid = $User->get_column('id');
 	
-	$State->object->update({ owner_id => $uid });
+	$State->update({ user_id => $uid });
 	$self->unlink_search($State);
 	
 	my $order = $self->get_order_string($point_node,$point);
@@ -330,7 +329,7 @@ sub copy_node {
 	#delete $create->{$_} for(qw(id type_id name disp_name creator_id created owner_id));
 	#delete $create->{saved_state}->{$_} for(qw(id));
 	
-	my $NewRow = $self->c->model('RapidApp::CoreSchema::SavedState')->create($create);
+	my $NewRow = $self->SearchesRs->create($create);
 	
 	$self->move_node($NewRow,$target,$point,$point_node);
 	
@@ -476,7 +475,7 @@ sub get_highest_order_saved_search {
 	
 	die "Missing username" unless (defined $username and $username ne '');
 	
-	my $User = $self->c->model('DB::User')->search_rs({ username => $username })->first
+	my $User = $self->UsersRs->search_rs({ username => $username })->first
 		or die "Failed to find target User by username '$username'";
 	
 	my $ChildSearch = $self->SearchesRs->search_rs(
