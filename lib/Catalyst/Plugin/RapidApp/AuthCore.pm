@@ -14,7 +14,7 @@ Authentication
 Authorization::Roles
 Session
 Session::State::Cookie
-Session::Store::FastMmap
+Session::Store::DBIC
 /;
 
 before 'setup_dispatcher' => sub {
@@ -48,6 +48,10 @@ before 'setup_dispatcher' => sub {
           }
         }
       }
+    },
+    'Plugin::Session' => {
+      dbic_class => 'RapidApp::CoreSchema::Session',
+      expires    => 3600,
     }
   );
   
