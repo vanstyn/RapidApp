@@ -1,4 +1,4 @@
-[% SET username = c.user.get_from_storage.username1 %]
+[% SET username = c.user.get_from_storage.username %]
 
 <div class="ra-footer" style="padding:2px;text-align:right;font-weight:bolder;">
   [% IF username %][% username %] | [% END %]<a href="/auth/logout">Logout</a>
