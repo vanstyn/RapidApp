@@ -28,12 +28,32 @@ __PACKAGE__->add_columns(
     data_type => "datetime",
     datetime_undef_if_invalid => 1,
     is_nullable => 1,
-  }
+  },
+  "user_id" =>  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_nullable => 1,
+  },
 );
 
 __PACKAGE__->set_primary_key('id');
 
+__PACKAGE__->belongs_to(
+  "user",
+  "RapidApp::CoreSchema::Result::User",
+  { id => "user_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
 use DateTime;
+use MIME::Base64;
+use Storable;
+use Try::Tiny;
 
 sub insert {
   my $self = shift;
@@ -57,6 +77,18 @@ sub _set_extra_columns {
     epoch => $expires,
     time_zone => 'local'
   ) ) if ($expires);
+  
+  my $data = $self->decoded_session_data;
+  if($data) {
+    my $user_id = try{$data->{__user}{id}};
+    $self->set_column( user_id => $user_id );
+  }
+}
+
+sub decoded_session_data {
+  my $self = shift;
+  my $value = $self->get_column('session_data') or return undef;
+  return try{ Storable::thaw(MIME::Base64::decode($value)) };
 }
 
 __PACKAGE__->load_components('+RapidApp::DBIC::Component::TableSpec');
@@ -69,6 +101,11 @@ __PACKAGE__->TableSpec_set_conf(
 	#multiIconCls => 'icon-group',
 	display_column => 'id',
   priority_rel_columns => 1,
+  columns => {
+    user_id => { no_column => \1, no_multifilter => \1, no_quick_search => \1 },
+    expires_ts => { allow_add => \0, allow_edit => \0 },
+    user => { allow_add => \0, allow_edit => \0 },
+  }
 );
 
 __PACKAGE__->meta->make_immutable;

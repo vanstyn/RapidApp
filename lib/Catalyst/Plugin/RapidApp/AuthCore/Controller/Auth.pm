@@ -81,7 +81,6 @@ sub do_login {
   
 	if($c->authenticate({ username => $user, password => $pass })) {
     $c->log->info("Successfully authenticated user '$user'");
-    $c->session->{fooo} = 'blah'; 
     $c->user->update({ 
       last_login_ts => DateTime->now( time_zone => 'local' ) 
     });
