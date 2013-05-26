@@ -48,8 +48,12 @@ sub record_Request {
 	else {
 		die "Expected Request Data as either a Hash or Catalyst::Request object";
 	}
-	
-	return $self->create($data);
+  
+  return $self->create($data) if(defined wantarray);
+  
+  # populate for speed in VOID context:
+	$self->populate([$data]);
+  return 1;
 }
 
 

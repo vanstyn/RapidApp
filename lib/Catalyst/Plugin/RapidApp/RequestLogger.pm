@@ -27,6 +27,7 @@ after 'setup_components' => sub {
 before 'dispatch' => sub {
   my $c = shift;
   $c->model('RapidApp::CoreSchema::Request')->record_Request($c);
+  1;
 };
 
 1;
