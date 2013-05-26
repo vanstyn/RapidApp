@@ -1108,10 +1108,10 @@ sub chain_Rs_req_multifilter {
   # into its proper dbic column select name:
   for my $fname (keys %needed_selects) {
     my $hash = $needed_selects{$fname};
-    $hash->{select} = $self->resolve_dbic_colname($fname,{});
+    $hash->{select} = $self->resolve_dbic_colname($hash->{field},{});
   }
   # ----
-	
+
 	my $cur_select = $Rs->{attrs}->{select};
 	my $cur_as = $Rs->{attrs}->{as};
 	
