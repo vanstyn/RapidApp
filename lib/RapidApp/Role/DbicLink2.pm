@@ -1099,6 +1099,18 @@ sub chain_Rs_req_multifilter {
 
 	# Collapse uniq needed col/cond names into a Hash:
 	my %needed_selects = map { $_->{name} => $_ } @$dbf_active_conditions;
+
+  # ---- Hack/fix for searching non-active virtual columns:
+  # the problem with this $dbf_active_conditions global/local design is that
+  # it will not contain *virtual* columns that are not being selected in
+  # active columns. This breaks virtual columns from being able to be filtered
+  # while not active. To solve this we just need to manually resolve the column
+  # into its proper dbic column select name:
+  for my $fname (keys %needed_selects) {
+    my $hash = $needed_selects{$fname};
+    $hash->{select} = $self->resolve_dbic_colname($fname,{});
+  }
+  # ----
 	
 	my $cur_select = $Rs->{attrs}->{select};
 	my $cur_as = $Rs->{attrs}->{as};
