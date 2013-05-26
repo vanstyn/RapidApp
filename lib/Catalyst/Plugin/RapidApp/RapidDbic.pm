@@ -17,6 +17,14 @@ sub _navcore_enabled {
   ) ? 1 : 0;
 }
 
+sub _authcore_enabled { 
+  my $c = shift;
+  return (
+    $c->does('Catalyst::Plugin::RapidApp::AuthCore') ||
+    $c->registered_plugins('RapidApp::NavCore') #<-- this one doesn't seem to apply
+  ) ? 1 : 0;
+}
+
 before 'setup_components' => sub {
   my $c = shift;
   
@@ -30,6 +38,13 @@ before 'setup_components' => sub {
   $config->{nav_title} ||= 'Loaded DBIC Sources';
   $config->{table_class} ||= 'Catalyst::Plugin::RapidApp::RapidDbic::TableBase';
   $config->{configs} ||= {};
+  
+  # --- We're aware of the AuthCore plugin, and if it is running we automatically 
+  # set a banner with a logout link if no banner is specified:
+  if($c->_authcore_enabled) {
+    $config->{banner_template} ||= 'templates/rapidapp/simple_auth_banner.tt';
+  }
+  # ---
   
   #my $appclass = ref($c) || $c;
   #my %active_models = ();
@@ -49,6 +64,8 @@ before 'setup_components' => sub {
     }
   });
   
+  # --- We're also aware of the NavCore plugin. If it is running we stick its items
+  # at the top of the navigation tree:
   unshift @navtrees, (
     {
       module => 'navtree',
@@ -59,6 +76,7 @@ before 'setup_components' => sub {
     },
     { xtype => 'spacer', height => '5px' } 
   ) if ($c->_navcore_enabled);
+  # ---
   
   my $main_module_params = {
     title => $config->{nav_title},

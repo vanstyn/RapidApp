@@ -6,15 +6,33 @@ extends 'RapidApp::AppNavTree';
 
 use RapidApp::Include qw(sugar perlutil);
 
+has 'plugin_config', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  my $c = $self->app;
+  my $config = clone($c->config->{'Plugin::RapidApp::NavCore'} || {});
+  
+  # -- Default configs --
+  
+  # allow_manage: Whether or not to allow managing the Navtree (Organize Navtree)
+  $config->{allow_manage} //= 1;
+  
+  # user_views: Whether or not to enable saved views/searches on a per-user basis
+  # (also requires Auth to be enabled)
+  $config->{user_views} //= 1;
+  
+  return $config;
+};
+
 sub BUILD {
   my $self = shift;
   
-  $self->apply_init_modules(
-    'manager' => 'Catalyst::Plugin::RapidApp::NavCore::NavTree::Manage'
-  ) unless ($self->isa('Catalyst::Plugin::RapidApp::NavCore::NavTree::Manage'));
+  if($self->plugin_config->{allow_manage}) {
+    $self->apply_init_modules(
+      'manager' => 'Catalyst::Plugin::RapidApp::NavCore::NavTree::Manage'
+    ) unless ($self->isa('Catalyst::Plugin::RapidApp::NavCore::NavTree::Manage'));
+  }
 
 }
-
 
 #has '+module_scope', default => sub { return (shift)->parent_module };
 has '+instance_id', default => 'main-nav-tree';
@@ -50,8 +68,12 @@ sub Rs {
 has 'SearchesRs', is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	return $self->c->model('RapidApp::CoreSchema::SavedState')->search_rs(undef,
-		{ order_by => { -asc => 'me.ordering' }}
-	);
+		# First by order:
+    { order_by => { -asc => 'me.ordering' }}
+	)->search_rs(undef,
+  # Then by title:
+    { order_by => { -asc => 'me.title' }}
+  );
 };
 
 has 'UsersRs', is => 'ro', lazy => 1, default => sub {
@@ -221,30 +243,40 @@ sub can_edit_navtree { 1 }
 
 sub is_admin {
   my $self = shift;
-  return $self->c->check_user_roles('administrator');
+  
+  return $self->c->check_user_roles('administrator')
+    if ($self->c->can('check_user_roles'));
+  
+  # If we're here it means no Auth is loaded and we're in "single-user" mode
+  # (i.e. automatically an admin)
+  return 1;
 }
 
 sub TreeConfig {
 	my $self = shift;
   my @items = ();
   
-  push @items, (
-		$self->saved_search_tree_items,
-		$self->organize_navtree_node
-	) if ($self->c->user);
-	
+  if ($self->plugin_config->{user_views}) {
+    my $User = try{$self->c->user->get_from_storage};
+    push @items, $self->saved_search_tree_items($User) if ($User);
+  }
+
+	push @items, $self->organize_navtree_node 
+    if ($self->plugin_config->{allow_manage});
+
 	return \@items;
 }
 
 
 sub saved_search_tree_items {
 	my $self = shift;
+  my $User = shift;
   
 	my $saved_searches = [];
   # TODO: permissions:
 	#my $Rs = $self->c->model('DB::SavedState')->my_saved_states;
   #my $Rs = $self->c->model('RapidApp::CoreSchema::SavedState');
-  my $Rs = $self->c->user->saved_states;
+  my $Rs = $User->saved_states;
 	
 	#exclude searches with a node_id (which means they are shown in the public tree above)
 	$Rs = $Rs->search_rs({ 'me.node_id' => undef }); 

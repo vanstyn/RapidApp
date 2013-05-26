@@ -19,6 +19,22 @@ has '_navcore_enabled', is => 'ro', isa => 'Bool', lazy => 1, default => sub {
   ) ? 1 : 0;
 };
 
+has 'plugin_config', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  my $c = $self->app;
+  my $config = clone($c->config->{'Plugin::RapidApp::NavCore'} || {});
+  
+  # -- Default configs --
+  
+  # allow_manage: Whether or not to allow managing the Navtree (Organize Navtree)
+  $config->{allow_manage} //= 1;
+  
+  # user_views: Whether or not to enable saved views/searches on a per-user basis
+  # (also requires Auth to be enabled)
+  $config->{user_views} //= 1;
+  
+  return $config;
+};
 
 around 'options_menu_items' => sub {
 	my $orig = shift;
@@ -168,13 +184,22 @@ sub save_search {
     and die usererr "Search '" . $search_name . "' already exists";
 	
 	my $create = {
-    user_id => $self->c->user->get_column('id'),
     title => $search_name,
     url => $target_url,
     params => $target_params,
     iconcls => $target_iconcls,
     state_data => $state_data
 	};
+  
+  my $User = try{$self->c->user->get_from_storage};
+  if ($User && $self->plugin_config->{user_views}) {
+    # If Auth is enabled, assign the new search to the logged in User:
+    $create->{user_id} = $User->get_column('id');
+  }
+  else {
+    # Otherwise, drop it directly into the root of the Public Navtree:
+    $create->{node_id} = 0;
+  }
 	
 	# Turn off public search stuff:
 	#$create->{owner_id} = 1 if ($public);

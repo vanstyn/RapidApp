@@ -34,6 +34,11 @@ sub apply_node_navopts {}
 
 has '+fetch_nodes_deep', default => 0;
 
+sub auth_active {
+  my $self = shift;
+  return $self->c->can('user') ? 1 : 0;
+}
+
 sub BUILD {
 	my $self = shift;
 	
@@ -67,7 +72,7 @@ sub fetch_nodes {
 	my $self = shift;
 	my ($node) = @_;
 	
-	my $admin = $self->can_edit_navtree;
+	my $admin = $self->is_admin;
 
 	# Wrap the tree in another level:
 	if ($node eq 'root') {
@@ -80,34 +85,38 @@ sub fetch_nodes {
 			expanded => \1,
 			rootValidActions => \1 #<-- prevents actions that wouldn't be valid for the root node (rename, etc)
 		} if ($admin);
+    
+    if($self->auth_active) {
 		
-		my $my_searches = {
-			id => 'my_searches',
-			text => 'My Views',
-			iconCls => 'icon-folder-view',
-			expanded => \1,
-			rootValidActions => \1, #<-- prevents actions that wouldn't be valid for the root node (rename, etc)
-			allowLeafDropOnly => \1,
-			allowChildrenLeafDropOnly => \1,
-			allowDrag => \0,
-			allowAdd => \0,
-		};
-		
-		$my_searches->{cls} = 'pad-top-7px' if ($admin);
-		
-		push @$nodes, $my_searches;
-		
-		push @$nodes, {
-			id => 'user_searches',
-			text => 'Other User\'s Views',
-			iconCls => 'icon-data-views',
-			cls => 'pad-top-7px',
-			expanded => \0,
-			rootValidActions => \1, #<-- prevents actions that wouldn't be valid for the root node (rename, etc)
-			allowDrop => \0,
-			allowDrag => \0,
-			allowAdd => \0,
-		} if ($admin);
+      my $my_searches = {
+        id => 'my_searches',
+        text => 'My Views',
+        iconCls => 'icon-folder-view',
+        expanded => \1,
+        rootValidActions => \1, #<-- prevents actions that wouldn't be valid for the root node (rename, etc)
+        allowLeafDropOnly => \1,
+        allowChildrenLeafDropOnly => \1,
+        allowDrag => \0,
+        allowAdd => \0,
+      };
+      
+      $my_searches->{cls} = 'pad-top-7px' if ($admin);
+      
+      push @$nodes, $my_searches;
+      
+      push @$nodes, {
+        id => 'user_searches',
+        text => 'Other User\'s Views',
+        iconCls => 'icon-data-views',
+        cls => 'pad-top-7px',
+        expanded => \0,
+        rootValidActions => \1, #<-- prevents actions that wouldn't be valid for the root node (rename, etc)
+        allowDrop => \0,
+        allowDrag => \0,
+        allowAdd => \0,
+      } if ($admin);
+    
+    }
 		
 		return $nodes;
 	}
