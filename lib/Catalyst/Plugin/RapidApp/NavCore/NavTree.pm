@@ -312,7 +312,7 @@ sub organize_navtree_node {
 	my $self = shift;
 	return {
 		id			=> 'manager',
-		text		=> $self->is_admin ? 'Organize Navtree' : 'Organize Views',
+		text		=> $self->is_admin ? 'Organize Tree' : 'Organize Views',
 		cls		=> 'pad-top-7px-bottom-4px',
 		iconCls		=> 'icon-tree-edit',
 		module		=> 'manager',

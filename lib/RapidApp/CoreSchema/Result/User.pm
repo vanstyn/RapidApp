@@ -52,13 +52,6 @@ __PACKAGE__->has_many(
 );
 
 __PACKAGE__->has_many(
-  "navtree_nodes",
-  "RapidApp::CoreSchema::Result::NavtreeNode",
-  { "foreign.user_id" => "self.id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-__PACKAGE__->has_many(
   "saved_states",
   "RapidApp::CoreSchema::Result::SavedState",
   { "foreign.user_id" => "self.id" },
