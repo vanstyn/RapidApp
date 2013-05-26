@@ -23,10 +23,10 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_nullable => 1,
   },
-  "timestamp",
-  {
-    data_type => "datetime",
+  "timestamp" => {
+    data_type => "timestamp",
     datetime_undef_if_invalid => 1,
+    default_value => \"current_timestamp",
     is_nullable => 0,
   },
   "client_ip",
@@ -42,7 +42,7 @@ __PACKAGE__->add_columns(
   "referer",
   { data_type => "varchar", is_nullable => 1, size => 512 },
   "serialized_request",
-  { data_type => "text", is_nullable => 0 },
+  { data_type => "text", is_nullable => 1 },
     
 );
 __PACKAGE__->set_primary_key("id");

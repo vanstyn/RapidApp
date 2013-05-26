@@ -11,6 +11,8 @@ require Module::Runtime;
 require Catalyst::Utils;
 use CatalystX::InjectComponent;
 
+use Time::HiRes qw(gettimeofday tv_interval);
+
 
 after 'setup_components' => sub {
   my $c = shift;
@@ -26,7 +28,7 @@ after 'setup_components' => sub {
 
 before 'dispatch' => sub {
   my $c = shift;
-  $c->model('RapidApp::CoreSchema::Request')->record_Request($c);
+  $c->model('RapidApp::CoreSchema::Request')->record_ctx_Request($c);
   1;
 };
 

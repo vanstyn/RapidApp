@@ -3,6 +3,7 @@ use base 'DBIx::Class::ResultSet';
 
 use RapidApp::Include qw(sugar perlutil);
 
+# Flexible handling (copied from My Clippard)
 sub record_Request {
 	my $self = shift;
 	my $ReqData = shift or die "Missing Request Data";
@@ -49,6 +50,29 @@ sub record_Request {
 		die "Expected Request Data as either a Hash or Catalyst::Request object";
 	}
   
+  return $self->create($data) if(defined wantarray);
+  
+  # populate for speed in VOID context:
+	$self->populate([$data]);
+  return 1;
+}
+
+# Records the request from the catalyst context object ($c)
+sub record_ctx_Request {
+	my $self = shift;
+	my $c = shift or return undef;
+  
+  my $Request = $c->request or return undef;
+  
+  my $data = {
+    client_ip => ($Request->address || undef),
+    uri => ($Request->uri || undef),
+    method => ($Request->method || undef),
+    user_agent => ($Request->header('user-agent') || undef),
+    referer => ($Request->header('referer') || undef),
+    timestamp => DateTime->now( time_zone => 'local' )
+  };
+
   return $self->create($data) if(defined wantarray);
   
   # populate for speed in VOID context:
