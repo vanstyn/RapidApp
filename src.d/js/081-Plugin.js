@@ -3714,4 +3714,181 @@ Ext.preg('grid-edit-advanced-config',Ext.ux.RapidApp.Plugin.GridEditAdvancedConf
 
 
 
+/*
+ Ext.ux.RapidApp.Plugin.GridEditRawColumns
+ 2013-05-27 by HV
+
+ Plugin that allows editing the grid 'view' column configs
+*/
+Ext.ux.RapidApp.Plugin.GridEditRawColumns = Ext.extend(Ext.util.Observable,{
+	init: function(grid) {
+		this.grid = grid;
+		grid.on('afterrender',this.onAfterRender,this);
+	},
+	
+	onAfterRender: function(){
+		menu = this.grid.getOptionsMenu();
+		if(menu) { menu.add(this.getMenuItem()); }
+		
+		// Designed to work specifically with AppTab's context menu system:
+		if(this.grid.ownerCt) {
+			this.grid.ownerCt.getTabContextMenuItems = 
+				this.getTabContextMenuItems.createDelegate(this);
+		}
+	},
+	
+	getTabContextMenuItems: function() {
+		return [ this.getMenuItem() ];
+	},
+	
+	getMenuItem: function() {
+		return {
+			xtype: 'menuitem',
+			text: 'Edit Column Configs',
+			iconCls: 'icon-bullet-wrench',
+			handler: this.showAdvancedConfigWin,
+			scope: this
+		};
+	},
+	
+	showAdvancedConfigWin: function() {
+		
+    var column_configs = this.grid.getColumnModel().config;
+    
+    // Need to copy only certain properties; those that don't have refs
+    // that can cause deep recursion when we serialize it:
+    var safe_properties = [
+      'allow_add',
+      'allow_edit',
+      'header',
+      'hidden',
+      'no_column',
+      'no_multifilter',
+      'no_quick_search',
+      'no_summary',
+      'sortable',
+      'width'
+    ];
+    var columns = {};
+    Ext.each(column_configs,function(col){
+      var cnf = Ext.copyTo({},col,safe_properties);
+      columns[col.name] = cnf;
+    },this);
+    
+    //var json =  Ext.encode(columns);
+    var json = JSON.stringify(columns,undefined,2);
+		var fp;
+		var saveFn = function(btn) {
+			var form = fp.getForm();
+			var jsonf = form.findField('json_data');
+      
+			var data = {};
+			if(jsonf) {
+				data.json_data = jsonf.getValue();
+				data.decoded = Ext.decode(data.json_data);
+			}
+			
+			this.win.close();
+			
+			// Apply the config immediately:
+			if(btn.name == 'apply' && this.grid.ownerCt && this.grid.ownerCt.ownerCt) {
+				var tab = this.grid.ownerCt, tp = tab.ownerCt;
+				if(Ext.isFunction(tp.loadContent) && Ext.isObject(tab.loadContentCnf)) {
+					var cnf = tab.loadContentCnf;
+					tp.remove(tab);
+					tp.loadContent(cnf,{
+						update_cmpConfig: function(conf) {
+              
+              Ext.each(conf.columns,function(col){
+                var saved_col = data.decoded[col.name];
+                if(saved_col) {
+                  Ext.apply(col,saved_col);
+                }
+              },this);
+						}
+					});
+				}
+			}
+		};
+		
+		fp = new Ext.form.FormPanel({
+			xtype: 'form',
+			frame: true,
+			labelAlign: 'right',
+			
+			//plugins: ['dynamic-label-width'],
+			labelWidth: 160,
+			labelPad: 15,
+			bodyStyle: 'padding: 10px 10px 5px 5px;',
+			defaults: { anchor: '-0' },
+			autoScroll: true,
+			monitorValid: true,
+			buttonAlign: 'right',
+			minButtonWidth: 100,
+			
+			items: [
+							{
+					name: 'json_data',
+					itemId: 'json_data',
+					xtype: 'textarea',
+					style: 'font-family: monospace;',
+					fieldLabel: 'Columns JSON',
+					hideLabel: true,
+					value: json,
+					anchor: '-0 -35',
+					validator: function(v) {
+						if(!v || v == '') { return false; }
+						var obj, err;
+						try{ obj = Ext.decode(v) }catch(e){ err = e; };
+						if(err){ return err; }
+						return Ext.isObject(obj);
+					}
+				}
+			],
+			
+			buttons: [
+				{
+					name: 'apply',
+					text: 'Apply & Reload',
+					iconCls: 'icon-save',
+					width: 175,
+					formBind: true,
+					scope: this,
+					handler: saveFn
+				},
+				
+				{
+					name: 'cancel',
+					text: 'Cancel',
+					handler: function(btn) {
+						this.win.close();
+					},
+					scope: this
+				}
+			]
+		});
+		
+		if(this.win) {
+			this.win.close();
+		}
+		
+		this.win = new Ext.Window({
+			title: 'Edit Raw Column Configs (Experts Only)',
+			layout: 'fit',
+			width: 800,
+			height: 600,
+			minWidth: 400,
+			minHeight: 250,
+			closable: true,
+			closeAction: 'close',
+			modal: true,
+			items: fp
+		});
+		
+		this.win.show();
+	}
+});
+Ext.preg('grid-edit-raw-columns',Ext.ux.RapidApp.Plugin.GridEditRawColumns);
+
+
 
