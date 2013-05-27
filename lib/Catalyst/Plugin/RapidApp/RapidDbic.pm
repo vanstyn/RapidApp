@@ -34,9 +34,11 @@ before 'setup_components' => sub {
   die "Plugin::RapidApp::RapidDbic: No dbic_models specified!"
     unless ($config->{dbic_models});
   
+  $config->{dbic_tree_module_name} = 'db';
   $config->{title} ||= $c->config->{name};  
   $config->{nav_title} ||= 'Loaded DBIC Sources';
   $config->{table_class} ||= 'Catalyst::Plugin::RapidApp::RapidDbic::TableBase';
+  $config->{navcore_default_views} //= 1;
   $config->{configs} ||= {};
   
   # --- We're aware of the AuthCore plugin, and if it is running we automatically 
@@ -55,7 +57,7 @@ before 'setup_components' => sub {
   #$config->{_active_models} = \%active_models;
   
   my @navtrees = ({
-    module => 'db',
+    module => $config->{dbic_tree_module_name},
     class => 'RapidApp::AppDbicTree',
     params => {
       dbic_models => $config->{dbic_models},
@@ -177,7 +179,7 @@ before 'setup_component' => sub {
     # just a stop-gap until this functionality is factored into the RapidApp API 
     # officially, somehow...
     my $module_name = lc($model_name . '_' . $class->table);
-    my $grid_url = '/main/db/' . $module_name;
+    my $grid_url = '/main/' . $config->{dbic_tree_module_name} . '/' . $module_name;
     $class->TableSpec_set_conf(
       priority_rel_columns => 1,
       open_url_multi => $grid_url,
@@ -231,6 +233,26 @@ before 'setup_component' => sub {
       );
     }
     
+  }
+};
+
+after 'setup_finalize' => sub {
+  my $c = shift;
+  
+  my $config = $c->config->{'Plugin::RapidApp::RapidDbic'} or die
+    "No 'Plugin::RapidApp::RapidDbic' config specified!";
+  
+  # If enabled and available, initialize all rows for Default Model/Source views:
+  if($config->{navcore_default_views} && $c->_navcore_enabled) {
+    my $rootModule = $c->model('RapidApp')->rootModule;
+    
+    my $AppTree = $rootModule->Module('main')->Module($config->{dbic_tree_module_name});
+    my @source_models = $AppTree->all_source_models;
+    my $Rs = $c->model('RapidApp::CoreSchema::DefaultView');
+    $Rs->find_or_create(
+      { source_model => $_ },
+      { key => 'primary' }
+    ) for (@source_models);
   }
 };
 

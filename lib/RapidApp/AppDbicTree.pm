@@ -28,6 +28,16 @@ has 'dbic_model_tree', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, defaul
   return $list;
 };
 
+# return a flat list of all loaded source models:
+sub all_source_models {
+  my $self = shift;
+  my @list = ();
+  foreach my $hash (@{$self->dbic_model_tree}) {
+    push @list, map { $hash->{model} . '::' . $_ } @{$hash->{sources}};
+  }
+  return @list;
+}
+
 
 # General func instead of class method for use in other packages (temporary):
 sub parse_dbic_model_list {
@@ -101,7 +111,7 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
       $module_name =~ s/\:\:/_/g;
 			$self->apply_init_modules( $module_name => {
 				class => $self->table_class,
-				params => { %$cust_merged, ResultSource => $Source }
+				params => { %$cust_merged, ResultSource => $Source, source_model => $model . '::' . $source }
 			});
 			
 			my $class = $schema->class($source);
