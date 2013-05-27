@@ -3754,28 +3754,12 @@ Ext.ux.RapidApp.Plugin.GridEditRawColumns = Ext.extend(Ext.util.Observable,{
 	showAdvancedConfigWin: function() {
 		
     var column_configs = this.grid.getColumnModel().config;
-    
-    // Need to copy only certain properties; those that don't have refs
-    // that can cause deep recursion when we serialize it:
-    var safe_properties = [
-      'allow_add',
-      'allow_edit',
-      'header',
-      'hidden',
-      'no_column',
-      'no_multifilter',
-      'no_quick_search',
-      'no_summary',
-      'sortable',
-      'width'
-    ];
     var columns = {};
     Ext.each(column_configs,function(col){
-      var cnf = Ext.copyTo({},col,safe_properties);
+      var cnf = Ext.copyTo({},col,this.grid.column_allow_save_properties);
       columns[col.name] = cnf;
     },this);
     
-    //var json =  Ext.encode(columns);
     var json = JSON.stringify(columns,undefined,2);
 		var fp;
 		var saveFn = function(btn) {
