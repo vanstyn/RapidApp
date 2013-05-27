@@ -30,6 +30,9 @@ has 'get_footer_html', is => 'ro', isa => 'CodeRef', default => sub {
   }
 };
 
+# See below
+has '_build_plugins', is => 'ro', isa => 'ArrayRef', default => sub {[]};
+
 sub BUILD {
 	my $self = shift;
 	
@@ -43,12 +46,26 @@ sub BUILD {
 		$self->extconfig->{rapidapp_cfg2html_renderer}=
 			RapidApp::AppCmp::SelfConfigRender->new($self->module_path);
 	}
+  
+  if(scalar(@{$self->plugins}) > 0) {
+    # New: Save the plugins set at BUILD time for later to force them to always
+    # be applied to the content.
+    @{$self->_build_plugins} = @{$self->plugins};
+    $self->add_ONREQUEST_calls_early('_appcmp_enforce_build_plugins');
+  }
+  
+}
+
+sub _appcmp_enforce_build_plugins {
+  my $self = shift;
+  my %curPlg = map {$_=>1} @{$self->plugins};
+  $curPlg{$_} or $self->add_plugin($_) for (@{$self->_build_plugins});
 }
 
 sub content {
 	my $self = shift;
 	#return bless { %{$self->get_complete_extconfig} }, 'RapidApp::AppCmp::SelfConfigRender';
-	
+  
 	# ---
 	# optionally apply extconfig parameters stored in the stash. This was added to support
 	# dynamic dispatch functionality such as a 'RequestMapper' Catalyst controller that might
