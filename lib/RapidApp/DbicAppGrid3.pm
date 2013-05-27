@@ -59,12 +59,19 @@ around 'content' => sub {
   my $ret = $self->$orig(@_);
   
   my $resultset_condition = try{$ret->{store}->parm->{baseParams}{resultset_condition}};
-  $ret->{headerCfg} //= {
-    tag => 'div',
-    cls => 'panel-borders ra-footer',
-    style => 'padding:3px;',
-    html => '<b>Base Condition:</b> ' . $resultset_condition
-  } if ($resultset_condition);
+  if ($resultset_condition) {
+  
+    my $cls = 'blue-text';
+    $ret->{tabTitleCls} = $cls;
+    
+    $ret->{headerCfg} //= {
+      tag => 'div',
+      cls => 'panel-borders ra-footer',
+      style => 'padding:3px;',
+      html => '<i><span class="' . $cls . '"><b>Base Condition:</b></span> ' . 
+        $resultset_condition . '</i>'
+    };
+  }
   
   return $ret;
 };

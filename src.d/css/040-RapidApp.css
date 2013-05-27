@@ -29,6 +29,10 @@ pre {
 }
 
 
+.blue-text {
+  color: #083772;
+}
+
 .blue-text-code {
   color: #083772;
   font-family: "Lucida Console", Monaco, monospace;

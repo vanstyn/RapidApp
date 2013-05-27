@@ -304,6 +304,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 				// optional override if supplied in cnf:
 				var setTitle = cnf.tabTitle || this.tabTitle;
 				var setIconCls = cnf.tabIconCls || this.tabIconCls;
+        var setTitleCls = cnf.tabTitleCls || this.tabTitleCls;
 				
 				if(!setIconCls && tab.iconCls == 'icon-loading') {
 					setIconCls = 'icon-page';
@@ -319,6 +320,9 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 					setTitle = 'Untitled (' + str.split('').reverse().join('') + ')';
 				}
 				
+        if(setTitle && setTitleCls) {
+          setTitle = '<span class="' + setTitleCls + '">' + setTitle + '</span>';
+        }
 				if(setTitle) { tab.setTitle(setTitle); }
 				if(setIconCls) { tab.setIconClass(setIconCls); }
 				
