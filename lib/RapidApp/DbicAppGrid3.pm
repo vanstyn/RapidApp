@@ -48,6 +48,30 @@ sub apply_default_tabtitle {
 	# ----
 }
 
+# Show that a base condition is in effect in the panel header, unless
+# the panel header is already set. This is to help users to remember
+# that a given grid was followed from a multi-rel column, for instance
+# TODO: better styling
+around 'content' => sub {
+  my $orig = shift;
+  my $self = shift;
+  
+  my $ret = $self->$orig(@_);
+  
+  my $resultset_condition = try{$ret->{store}->parm->{baseParams}{resultset_condition}};
+  $ret->{headerCfg} //= {
+    tag => 'div',
+    cls => 'panel-borders ra-footer',
+    style => 'padding:3px;',
+    html => '<b>Base Condition:</b> ' . $resultset_condition
+  } if ($resultset_condition);
+  
+  return $ret;
+};
+
+
+
+
 
 #### --------------------- ####
 
