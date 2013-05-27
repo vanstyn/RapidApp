@@ -19,7 +19,7 @@ use Switch 'switch';
 
 has '+use_column_summaries', default => 1;
 has '+use_autosize_columns', default => 1;
-has '+auto_autosize_columns', default => 1;
+has '+auto_autosize_columns', default => 0;
 
 has 'page_class', is => 'ro', isa => 'Str', default => 'RapidApp::DbicAppPropertyPage';
 has 'page_params', is => 'ro', isa => 'HashRef', default => sub {{}};
