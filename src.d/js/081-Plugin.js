@@ -4042,6 +4042,11 @@ Ext.ux.RapidApp.Plugin.GridToggleEditCells = Ext.extend(Ext.util.Observable,{
       
 	onRender: function() {
   
+    // allow starting the toggle to off if it hasn't been set yet:
+    if( this.grid.toggle_edit_cells_init_off && 
+        typeof this.grid.store.disable_cell_editing == 'undefined'
+    ) { this.grid.store.disable_cell_editing = true; }
+  
     if(!this.grid.store.api.update || this.grid.disable_toggle_edit_cells) {
       return;
     }

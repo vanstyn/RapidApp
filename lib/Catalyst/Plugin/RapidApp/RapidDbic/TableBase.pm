@@ -84,7 +84,8 @@ sub BUILD {
 	$self->apply_extconfig(
 		use_add_form => 'tab',
 		use_edit_form => 'window',
-		autoload_added_record => \1
+		autoload_added_record => \1,
+    toggle_edit_cells_init_off => \1
 	);
 	
 	# Turn off editing for primary columns:
