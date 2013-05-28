@@ -3990,6 +3990,10 @@ Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
   },
       
 	onRender: function() {
+  
+    if(!this.grid.store.custom_headers) {
+      this.grid.store.custom_headers = {};
+    }
 		
     var hmenu = this.grid.view.hmenu;
     if(!hmenu) { return; }
