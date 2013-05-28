@@ -283,6 +283,8 @@ pre {
 .icon-tree-expand { background-image: url(/static/rapidapp/images/tree-expand.png) !important; }
 .icon-tree-collapse { background-image: url(/static/rapidapp/images/tree-collapse.png) !important; }
 .icon-textfield-edit { background-image: url(/static/rapidapp/images/textfield-edit.png) !important; }
+.icon-textfield-check { background-image: url(/static/rapidapp/images/textfield-check.png) !important; }
+.icon-textfield-cross { background-image: url(/static/rapidapp/images/textfield-cross.png) !important; }
 
 
 .tbar-title-medium {

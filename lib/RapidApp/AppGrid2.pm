@@ -295,6 +295,7 @@ sub options_menu {
 		id			=> $self->options_menu_button_Id,
 		text		=> 'Options',
 		iconCls	=> 'icon-gears',
+    itemId  => 'options-button',
 		menu => {
 			items => $items,
 			id => $menu_id

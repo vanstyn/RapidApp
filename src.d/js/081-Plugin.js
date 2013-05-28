@@ -4003,14 +4003,72 @@ Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
     hmenu.insert(index,{
       text: "Change Header",
       iconCls: 'icon-textfield-edit',
-      handler:this.promptChangeHeader, //<-- this does the full autosize which could be slow
+      handler:this.promptChangeHeader, 
       scope: this
     });
-		
 	}
-	
 });
 Ext.preg('grid-custom-headers',Ext.ux.RapidApp.Plugin.GridCustomHeaders);
 
 
+Ext.ux.RapidApp.Plugin.GridToggleEditCells = Ext.extend(Ext.util.Observable,{
+	
+	init: function(grid) {
+    this.grid = grid;
+		grid.on('render',this.onRender,this);
+	},
+  
+  onText: '<span style="color:#666666;">Cell Editing On</span>',
+  offText: '<span style="color:#666666;">Cell Editing Off</span>',
+  onIconCls: 'icon-textfield-check',
+  offIconCls: 'icon-textfield-cross',
+  
+  toggleEditing: function(btn) {
+    if(this.grid.store.disable_cell_editing) {
+      this.btn.setText(this.onText);
+      this.btn.setIconClass(this.onIconCls);
+      this.grid.store.disable_cell_editing = false;
+    }
+    else {
+      this.btn.setText(this.offText);
+      this.btn.setIconClass(this.offIconCls);
+      this.grid.store.disable_cell_editing = true;
+    }
+  },
+  
+  beforeEdit: function() {
+    return this.grid.store.disable_cell_editing ? false : true;
+  },
+      
+	onRender: function() {
+  
+    if(!this.grid.store.api.update || this.grid.disable_toggle_edit_cells) {
+      return;
+    }
+    
+    var tbar = this.grid.getTopToolbar();
+    if(! tbar) { return; }
+    var optionsBtn = tbar.getComponent('options-button');
+    if(! optionsBtn) { return; }
+    
+    var index = tbar.items.indexOf(optionsBtn) + 1;
+    
+    this.btn = new Ext.Button({
+      text: this.onText,
+      iconCls: this.onIconCls,
+      handler:this.toggleEditing, 
+      scope: this
+    });
+    
+    if(this.grid.store.disable_cell_editing) {
+      this.btn.setText(this.offText);
+      this.btn.setIconClass(this.offIconCls);
+    }
+    tbar.insert(index,this.btn);
+    
+    this.grid.on('beforeedit',this.beforeEdit,this);
+	}
+	
+});
+Ext.preg('grid-toggle-edit-cells',Ext.ux.RapidApp.Plugin.GridToggleEditCells);
 

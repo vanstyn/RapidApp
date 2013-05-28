@@ -496,7 +496,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		'advanced_config_json',
 		'advanced_config_active',
 		'quicksearch_mode',
-    'custom_headers'
+    'custom_headers',
+    'disable_cell_editing'
 	],
 	
 	// Function to get the current grid state needed to save a search
@@ -840,6 +841,13 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			this.sm = new Ext.grid.CheckboxSelectionModel();
 			this.columns.unshift(this.sm);
 		}
+    
+    // This is duplicated in the 'grid-toggle-edit-cells' plugin but is
+    // also added here to honor the setting even if the plugin (i.e. the
+    // toggle button) is not loaded/available
+    this.on('beforeedit',function(){
+       return this.store.disable_cell_editing ? false : true;
+    },this);
 
 		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.initComponent.call(this);
 	},

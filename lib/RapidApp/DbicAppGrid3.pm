@@ -14,6 +14,9 @@ sub BUILD {
 			xtype => 'appgrid2ed',
 			clicksToEdit => 1,
 		);
+    
+    # allow toggling
+    $self->add_plugin('grid-toggle-edit-cells');
 	}
 	
 	$self->apply_extconfig( setup_bbar_store_buttons => \1 );
