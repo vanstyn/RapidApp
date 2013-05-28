@@ -495,7 +495,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		'advanced_config',
 		'advanced_config_json',
 		'advanced_config_active',
-		'quicksearch_mode'
+		'quicksearch_mode',
+    'custom_headers'
 	],
 	
 	// Function to get the current grid state needed to save a search
@@ -704,6 +705,10 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 				}
 				
 				if(column.summary_functions) { column.summaryType = 'dummy'; }
+        
+        if(this.store.custom_headers && this.store.custom_headers[column.name]) {
+          column.header = this.store.custom_headers[column.name];
+        }
 				
 				new_columns.push(column);
 			}

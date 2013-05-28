@@ -113,7 +113,6 @@ __PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 	title => {
 		header => 'Title',
 		width	=> 120,
-		hidden => \1
 	},
 	
 	subtitle => {
@@ -150,7 +149,7 @@ __PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 		width	=> 250,
 		header => 'State Data',
 		renderer => 'Ext.ux.RapidApp.renderJSONjsDump',
-		allow_edit => \0,
+		#allow_edit => \0,
 		hidden => \1
 	},
 	

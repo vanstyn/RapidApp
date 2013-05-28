@@ -3876,3 +3876,141 @@ Ext.preg('grid-edit-raw-columns',Ext.ux.RapidApp.Plugin.GridEditRawColumns);
 
 
 
+Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
+	
+	init: function(grid) {
+    this.grid = grid;
+		grid.on('render',this.onRender,this);
+	},
+  
+  promptChangeHeader: function() {
+    var column = this.getActiveCol();
+    if(!column) { return; }
+    
+    var blank_str = '&#160;';
+    var current_header = column.header;
+    if (current_header == blank_str) {
+      current_header = '';
+    }
+    
+    var fp;
+    fp = new Ext.form.FormPanel({
+			xtype: 'form',
+			frame: true,
+			labelAlign: 'right',
+			
+			//plugins: ['dynamic-label-width'],
+			labelWidth: 70,
+			labelPad: 15,
+			bodyStyle: 'padding: 10px 10px 5px 5px;',
+			defaults: { anchor: '-0' },
+			autoScroll: true,
+			monitorValid: true,
+			buttonAlign: 'right',
+			minButtonWidth: 100,
+			
+			items: [
+				{
+          name: 'colname',
+          xtype: 'displayfield',
+          fieldLabel: 'Column',
+          style: 'bottom:-1px;',
+          cls: 'blue-text-code',
+          value: column.name
+        },
+        { xtype: 'spacer', height: 5 },
+        {
+					name: 'header',
+					itemId: 'header',
+					xtype: 'textfield',
+					fieldLabel: 'Header',
+					value: current_header,
+					anchor: '-0'
+				}
+			],
+			
+			buttons: [
+				{
+					name: 'apply',
+					text: 'Save',
+					iconCls: 'icon-save',
+					width: 90,
+					formBind: true,
+					scope: this,
+					handler: function() {
+            var form = fp.getForm();
+            var f = form.findField('header');
+            var value = f.getValue();
+            if(value != column.header) {
+              value = value ? value : blank_str;
+              this.grid.getColumnModel().setColumnHeader(column.id,value);
+              this.grid.store.custom_headers[column.name] = value;
+            }
+            this.win.close();
+          }
+				},
+				
+				{
+					name: 'cancel',
+					text: 'Cancel',
+					handler: function(btn) {
+						this.win.close();
+					},
+					scope: this
+				}
+			]
+		});
+		
+		if(this.win) {
+			this.win.close();
+		}
+    
+    this.win = this.win = new Ext.Window({
+			title: 'Change Column Header',
+			layout: 'fit',
+			width: 400,
+			height: 175,
+			minWidth: 300,
+			minHeight: 150,
+			closable: true,
+			closeAction: 'close',
+			modal: true,
+			items: fp
+		});
+    
+    this.win.show(); 
+  },
+      
+	getActiveCol: function() {
+    var view = this.grid.getView();
+    if (!view || view.hdCtxIndex === undefined) {
+      return null;
+    }
+    return view.cm.config[view.hdCtxIndex];
+  },
+      
+	onRender: function() {
+		
+    var hmenu = this.grid.view.hmenu;
+    if(!hmenu) { return; }
+
+    var index = 0;
+    var colsItem = hmenu.getComponent('columns');
+    if(colsItem) {
+      index = hmenu.items.indexOf(colsItem);
+    }
+    
+    hmenu.insert(index,{
+      text: "Change Header",
+      iconCls: 'icon-textfield-edit',
+      handler:this.promptChangeHeader, //<-- this does the full autosize which could be slow
+      scope: this
+    });
+		
+	}
+	
+});
+Ext.preg('grid-custom-headers',Ext.ux.RapidApp.Plugin.GridCustomHeaders);
+
+
+
