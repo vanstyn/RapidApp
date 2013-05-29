@@ -187,6 +187,14 @@ before 'setup_component' => sub {
     );
     # ----
     
+    # Nicer defaults:
+    $class->TableSpec_set_conf(
+    	title => ($class->TableSpec_get_set_conf('title') || $source_name),
+      title_multi => ($class->TableSpec_get_set_conf('title_multi') || "$source_name Rows"),
+      iconCls => ($class->TableSpec_get_set_conf('iconCls') || 'icon-pg'),
+      multiIconCls => ($class->TableSpec_get_set_conf('multiIconCls') || 'icon-pg-multi'),
+    );
+    
     # ----------------
     # Apply some column-specific defaults:
     my %col_props = ( $class->TableSpec_get_conf('column_properties') || () );
