@@ -199,12 +199,17 @@ before 'setup_component' => sub {
     # Apply some column-specific defaults:
     my %col_props = ( $class->TableSpec_get_conf('column_properties') || () );
     
+    # Set actual column headers (this is not required but real headers are displayed nicer):
+    my %col_props = ( $class->TableSpec_get_conf('column_properties') || () );
+    for my $col ($class->columns,$class->relationships) {
+      $col_props{$col}{header} ||= $col;
+    }
+    
     # For single-relationship columns (belongs_to) we want to hide
     # the underlying fk_column because the relationship column name
     # handles setting it for us. In typical RapidApps this is done manually,
     # currently...
     if($config->{hide_fk_columns}) {
-      
       for my $rel ( $class->relationships ) {
         my $rel_info = $class->relationship_info($rel);
         next unless ($rel_info->{attrs}->{accessor} eq 'single');
@@ -215,14 +220,6 @@ before 'setup_component' => sub {
           # exclude columns with the same name as the rel (see priority_rel_columns setting)
           for (grep { $_ ne $rel } keys %$fk_columns);
       }
-      $class->TableSpec_set_conf( column_properties => %col_props )
-        if (keys %col_props > 0);
-    }
-    
-    # Set actual column headers (this is not required but real headers are displayed nicer):
-    my %col_props = ( $class->TableSpec_get_conf('column_properties') || () );
-    for my $col ($class->columns,$class->relationships) {
-      $col_props{$col}{header} ||= $col;
     }
     
     $class->TableSpec_set_conf( column_properties => %col_props ) 
