@@ -3943,7 +3943,9 @@ Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
             var value = f.getValue();
             if(value != column.header) {
               value = value ? value : blank_str;
-              this.grid.getColumnModel().setColumnHeader(column.id,value);
+              var cm = this.grid.getColumnModel();
+              var indx = cm.getIndexById(column.id);
+              cm.setColumnHeader(indx,value);
               this.grid.store.custom_headers[column.name] = value;
             }
             this.win.close();
