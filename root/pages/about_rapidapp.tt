@@ -74,7 +74,8 @@
 
 <h1>In Progress!</h1>
 
-This document is just a starter and is by no means complete
+This document is just a starter and is by no means complete.
+
 
 
 <h1>Getting RapidApp</h1>
@@ -82,6 +83,12 @@ This document is just a starter and is by no means complete
 <p>RapidApp is still under development and there are many tasks and refactoring yet to be done. While it is fully functional today (we have developed a number of very successful production projects using it over the past several years), the API is not yet finalized and there are still some things in flux that has stopped us from officially releasing it to the world. However, I am happy to provide the code to anyone that is interested.</p>
 
 <p>We started developing RapidApp for our own in-house use and are now actively working on making a public release to give back to the community. However, this is a lot of work! Besides the remaining coding tasks and finalization of the API, there is a lot of documentation to write in order for it to be used effectively by developers. If you are interested in getting involved or helping us finish the public release, contact me below!</p>
+
+<ul><li><b>
+<a href="#!/main/page?file=rapidapp/roadmap.tt">Development Roadmap</a>
+</b>
+</li></ul>
+
 
 
 <h1>Author</h1>
