@@ -236,15 +236,12 @@ before 'setup_component' => sub {
     
 
     # --- apply TableSpec configs specified in the plugin config:
-    
     my $TSconfig = try{$config->{configs}->{$model_name}->{TableSpecs}->{$source_name}} || {};
     $class->TableSpec_set_conf( $_ => $TSconfig->{$_} ) for (keys %$TSconfig);
     # ---
     
-    # If there are more than 3 columns, set the editor to the full-blown (combo) grid
-    # instead of simple dropdown:
-    my @cols = $class->columns;
-    if(scalar(@cols) > 3) {
+    # Set the editor to use the grid unless auto_editor_type is already defined
+    unless($class->TableSpec_get_conf('auto_editor_type')) {
       $class->TableSpec_set_conf(
         auto_editor_type => 'custom',
         auto_editor_params => {
