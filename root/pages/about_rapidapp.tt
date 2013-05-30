@@ -6,7 +6,11 @@
 
 <div class="ra-doc">
 
-<h1>What is RapidApp?</h1>
+<div style="float:right;padding-top:5px;padding-right:20px;">
+<img src="/static/rapidapp/images/btn_120x50_powered.png">
+</div>
+
+<img src="/static/rapidapp/images/rapidapp_catalyst_logo.png" width=225>
 
 <p>RapidApp is an open-source application framework that is currently under development for quickly building dynamic Web 2.0/AJAX interfaces for various data models. It is based on the following open-source technologies:</p>
 
@@ -17,7 +21,7 @@
 <li>DBIx::Class</li>
 </ul>
 
-<p>The primary data model that RapidApp focuses on is DBIx::Class with CRUD interfaces and that is what this demo primarily showcases. However, RapidApp is a general framework and supports all kinds of interfaces and models. At its core, RapidApp is just an extension to Catalyst with an ExtJS client container structure, so it can do anything that Catalyst and ExtJS can do.</p>
+<p>The primary data model that RapidApp focuses on is DBIx::Class with CRUD interfaces and that is what this demo primarily showcases. However, RapidApp is a general framework and supports all kinds of interfaces and models. At its core, RapidApp is just an extension to Catalyst with an ExtJS client container/navigation structure, so it can do anything that Catalyst and ExtJS can do.</p>
 
 <h3>Understands the DBIC data model</h3>
 
@@ -75,19 +79,27 @@ This document is just a starter and is by no means complete
 
 <h1>Getting RapidApp</h1>
 
-<p>RapidApp is still under development and there are many tasks and refactoring yet to be done. While it is fully functional today, and we have developed a number of very successful projects using it over the past several years, the API is not yet finalized and there are still some things in flux that has stopped us from officially releasing it to the world. However, I am happy to provide the code to anyone that is interested.</p>
+<p>RapidApp is still under development and there are many tasks and refactoring yet to be done. While it is fully functional today (we have developed a number of very successful production projects using it over the past several years), the API is not yet finalized and there are still some things in flux that has stopped us from officially releasing it to the world. However, I am happy to provide the code to anyone that is interested.</p>
 
-<p>We started developing RapidApp for our own in-house use and are now actively working on making a public release to give back to the community. This is a lot of work! Besides the remaining coding tasks and finalization of the API, there is lots of documentation to write. If you are interested in getting involved or helping us finish the public release, contact me below!</p>
+<p>We started developing RapidApp for our own in-house use and are now actively working on making a public release to give back to the community. However, this is a lot of work! Besides the remaining coding tasks and finalization of the API, there is a lot of documentation to write in order for it to be used effectively by developers. If you are interested in getting involved or helping us finish the public release, contact me below!</p>
 
 
 <h1>Author</h1>
 
-Henry Van Styn <br>
-<a href="mailto:vanstyn@cpan.org">vanstyn@cpan.org</a><br>
-IntelliTree Solutions<br>
-<a target="_blank" href="http://www.intellitree.com">www.intellitree.com</a>
+<div style="padding-left:10px;padding-bottom:10px;">
+  <p>
+    <span style="font-size:1.1em;font-weight:bolder;font-family:Verdana;color:#3B4B21;">
+      Henry Van Styn
+    </span> 
+    <span class="monospace" style="font-size:1.1em;">
+      &lt;<a href="mailto:vanstyn@intellitree.com">vanstyn@intellitree.com</a>&gt;
+    </span>
+  </p>
+  <a style="border-bottom:none;" target="_blank" href="http://www.intellitree.com">
+    <img src="http://www.intellitree.com/standard_web_logo.gif" width=175>
+  </a>
+</div>
 
-<br>
 
 </div>
 
