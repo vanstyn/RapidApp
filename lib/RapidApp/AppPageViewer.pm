@@ -10,8 +10,6 @@ use RapidApp::Include qw(sugar perlutil);
 use HTML::TokeParser::Simple;
 use Switch qw(switch);
 
-use Text::VimColor;
-
 has 'content_dir', is => 'ro', isa => 'Str', required => 1;
 has 'parse_title', is => 'ro', isa => 'Bool', default => 1;
 
