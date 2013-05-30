@@ -522,7 +522,10 @@ sub template_render {
 	my $template = shift;
 	my $vars = shift || {};
 	
-	$TT ||= Template->new({ INCLUDE_PATH => $c->config->{home} . '/root' });
+	$TT ||= Template->new({ 
+    INCLUDE_PATH => $c->config->{home} . '/root',
+    ABSOLUTE => 1
+  });
 	
 	my $out;
 	$TT->process($template,$vars,\$out) or die $TT->error;

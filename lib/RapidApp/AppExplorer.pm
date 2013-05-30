@@ -34,6 +34,13 @@ has 'navtrees', is => 'ro', isa => 'ArrayRef', lazy => 1, default => sub {
 has 'dashboard_class', is => 'ro', isa => 'Maybe[Str]', default => sub {undef};
 has 'dashboard_params', is => 'ro', isa => 'HashRef', lazy => 1, default => sub{{}};
 
+# Extra optional class for rendering any tt files or other files
+# Feature added with RapidApp::AppPageViewer in mind, but it doesn't
+# actually care. This module will be loaded as 'page' and nothing else
+# will be done (i.e. expects direct links from markup to access content)
+has 'page_viewer_class', is => 'ro', isa => 'Maybe[Str]', default => sub {undef};
+has 'page_viewer_params', is => 'ro', isa => 'HashRef', lazy => 1, default => sub{{}};
+
 sub BUILD {
 	my $self = shift;
 	
@@ -54,6 +61,16 @@ sub BUILD {
       dashboard => {
         class => $self->dashboard_class,
         params => $self->dashboard_params
+      }
+    );
+  }
+  
+  if ($self->page_viewer_class) {
+    Module::Runtime::require_module($self->page_viewer_class);
+    $self->apply_init_modules(
+      page => {
+        class => $self->page_viewer_class,
+        params => $self->page_viewer_params
       }
     );
   }

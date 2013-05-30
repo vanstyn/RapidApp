@@ -101,6 +101,14 @@ before 'setup_components' => sub {
   $main_module_params->{header_template} = $config->{banner_template}
     if($config->{banner_template});
   
+  # Allow accessing files in this dir under '#!/main/page?file=foo.tt'
+  if($config->{page_view_dir}) {
+    $main_module_params->{page_viewer_class} = 'RapidApp::AppPageViewer';
+    $main_module_params->{page_viewer_params} = { 
+      content_dir => $config->{page_view_dir}
+    };
+  }
+  
   
   my $cnf = {
     rootModuleClass => 'RapidApp::RootModule',

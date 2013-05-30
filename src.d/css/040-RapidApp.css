@@ -285,7 +285,7 @@ pre {
 .icon-textfield-edit { background-image: url(/static/rapidapp/images/textfield-edit.png) !important; }
 .icon-textfield-check { background-image: url(/static/rapidapp/images/textfield-check.png) !important; }
 .icon-textfield-cross { background-image: url(/static/rapidapp/images/textfield-cross.png) !important; }
-
+.icon-document { background-image: url(/static/rapidapp/images/document.png) !important; }
 
 .tbar-title-medium {
 	font-size:175% !important;
