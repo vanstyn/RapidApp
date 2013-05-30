@@ -40,14 +40,19 @@
 .ra-doc h6 {
     size: 102%;
 }
+
 .ra-doc a {
-    color: #39F;
+    color: #06e;
     text-decoration: none;
+    border-bottom: 1px dotted #06e;
 }
+
 .ra-doc a:hover {
-    color: #00F;
-    text-decoration: underline;
+    color: #00e;
+    border-bottom: 1px solid #00e;
 }
+
+
 
 .ra-doc p {
   display: block;
