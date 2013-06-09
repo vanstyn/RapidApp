@@ -7,6 +7,32 @@ extends 'RapidApp::AppBase';
 
 use RapidApp::Include qw(sugar perlutil);
 
+# New: ability to programatically set the Ext panel header/footer
+has 'header_template', is => 'ro', isa => 'Maybe[Str]', default => sub{undef};
+has 'get_header_html', is => 'ro', isa => 'CodeRef', default => sub {
+  sub {
+    my $o = shift;
+    return $o->header_template ? $o->c->template_render(
+      $o->header_template, 
+      { c => $o->c, self => $o }
+    ) : undef;
+  }
+};
+
+has 'footer_template', is => 'ro', isa => 'Maybe[Str]', default => sub{undef};
+has 'get_footer_html', is => 'ro', isa => 'CodeRef', default => sub {
+  sub {
+    my $o = shift;
+    return $o->footer_template ? $o->c->template_render(
+      $o->footer_template, 
+      { c => $o->c, self => $o }
+    ) : undef;
+  }
+};
+
+# See below
+has '_build_plugins', is => 'ro', isa => 'ArrayRef', default => sub {[]};
+
 sub BUILD {
 	my $self = shift;
 	
@@ -20,12 +46,26 @@ sub BUILD {
 		$self->extconfig->{rapidapp_cfg2html_renderer}=
 			RapidApp::AppCmp::SelfConfigRender->new($self->module_path);
 	}
+  
+  if(scalar(@{$self->plugins}) > 0) {
+    # New: Save the plugins set at BUILD time for later to force them to always
+    # be applied to the content.
+    @{$self->_build_plugins} = @{$self->plugins};
+    $self->add_ONREQUEST_calls_early('_appcmp_enforce_build_plugins');
+  }
+  
+}
+
+sub _appcmp_enforce_build_plugins {
+  my $self = shift;
+  my %curPlg = map {$_=>1} @{$self->plugins};
+  $curPlg{$_} or $self->add_plugin($_) for (@{$self->_build_plugins});
 }
 
 sub content {
 	my $self = shift;
 	#return bless { %{$self->get_complete_extconfig} }, 'RapidApp::AppCmp::SelfConfigRender';
-	
+  
 	# ---
 	# optionally apply extconfig parameters stored in the stash. This was added to support
 	# dynamic dispatch functionality such as a 'RequestMapper' Catalyst controller that might
@@ -34,7 +74,23 @@ sub content {
 	$self->apply_extconfig( %$apply_extconfig ) if (ref($apply_extconfig) eq 'HASH');
 	# ---
 
-	return $self->get_complete_extconfig;
+	my $cnf = $self->get_complete_extconfig;
+  
+  my $header_html = $self->get_header_html->($self);
+  $cnf->{headerCfg} = {
+    tag => 'div',
+    cls => 'panel-borders',
+    html => $header_html
+  } if ($header_html);
+  
+  my $footer_html = $self->get_footer_html->($self);
+  $cnf->{footerCfg} = {
+    tag => 'div',
+    cls => 'panel-borders',
+    html => $footer_html
+  } if ($footer_html);
+  
+  return $cnf;
 }
 
 # The default web-1.0 rendering for AppCmp subclasses is to generate the config, and then run it

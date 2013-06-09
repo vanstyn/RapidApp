@@ -60,7 +60,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			if(this.node_action_expandall) {
 				this.node_actions.push({
 					text: 'Expand All',
-					iconCls: 'icon-expand-all',
+					iconCls: 'icon-tree-expand',
 					handler: this.nodeExpandAll,
 					rootValid: true,
 					leafValid: false,
@@ -72,7 +72,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			if(this.node_action_collapseall) {
 				this.node_actions.push({
 					text: 'Collapse All',
-					iconCls: 'icon-collapse-all',
+					iconCls: 'icon-tree-collapse',
 					handler: this.nodeCollapseAll,
 					rootValid: true,
 					leafValid: false,

@@ -1,0 +1,112 @@
+
+<head>
+<title>About RapidApp</title>
+</head>
+
+
+<div class="ra-doc">
+
+<div style="float:right;padding-top:5px;padding-right:20px;">
+<img src="/static/rapidapp/images/btn_120x50_powered.png">
+</div>
+
+<img src="/static/rapidapp/images/rapidapp_catalyst_logo.png" width=225>
+
+<p>RapidApp is an open-source application framework that is currently under development for quickly building dynamic Web 2.0/AJAX interfaces for various data models. It is based on the following open-source technologies:</p>
+
+<ul>
+<li>Perl</li>
+<li>Catalyst</li>
+<li>ExtJS</li>
+<li>DBIx::Class</li>
+</ul>
+
+<p>The primary data model that RapidApp focuses on is DBIx::Class with CRUD interfaces and that is what this demo primarily showcases. However, RapidApp is a general framework and supports all kinds of interfaces and models. At its core, RapidApp is just an extension to Catalyst with an ExtJS client container/navigation structure, so it can do anything that Catalyst and ExtJS can do.</p>
+
+<h3>Understands the DBIC data model</h3>
+
+<p>RapidApp aims to <i>really</i> understand the DBIC schema (sources, columns and relationships) and provide a high-level declarative environment to build custom interfaces on top of. It ties Source-based views with ExtJS Data Stores, which in turn supply various ExtJS component interfaces such as Grids, Trees and DataViews. These CRUD views tie into the backend Source model and provide a virtual table interface with special types of columns:</p>
+
+<ul>
+<li>Local Columns</li>
+<li>Joined Columns</li>
+<li>Single-Relationship Columns</li>
+<li>Multi-Relationship Columns</li>
+<li>M2M-Relationship Columns</li>
+<li>Virtual Columns</li>
+</ul>
+
+<div style="padding-left:15px;padding-right:15px">
+
+<h4>Local Columns</h4>
+
+<p>These are just the normal columns in the Source</p>
+
+<h4>Joined Columns</h4>
+
+<p>These are columns of other sources that have been joined. Joined columns can be any depth following through DBIC relationships</p>
+
+<h4>Single-Relationship Columns</h4>
+
+<p>These are "belongs_to" relationships represented as columns. The value shown is a representation of the related row (its configured display column) and optionally an inline link to naviagte to the related row. When editing a Single-Relationship column an appropriate editor is supplied, such as a dropdown. </p>
+
+<h4>Multi-Relationship Columns</h4>
+
+<p>These are "has_many" relationships represented as columns. The value shown is a representation of the related <i>ResultSet</i> with a row count and an optional link to view the related rows.</p>
+
+<h4>M2M-Relationship Columns</h4>
+
+<p>These are "many_to_many" relationships represented as columns. The value shown is a representation of the related rows (currently this is limited to a comma-separated list). When editing a many to many selector is provided, such as a lust of checkboxes.
+
+<h4>Virtual Columns</h4>
+
+<p>These are arbitrary user-defined columns that can be configured as an SQL literal with 'self' psudoname translations so they work in table/query view with multiple rows. Optional update code can also be supplied to perform custom business logic for creating/changing a value.
+
+</div>
+
+<p>These columns can be custom configured on the back end via a delcarative syntax and details such as rendering, editing, validating, and so forth can all be controlled and customized. However, because RapidApp understands the schema, useful base defaults are automatically configured, such as column data data type, relationship info, and so on.</p>
+
+<p>RapidApp also provides mechanisms for automatic configuration of interfaces such as grids and page-views making it possible to get an application running with just a DBIC Schema and few lines of code</p>
+
+<p>There are lots of other features of RapidApp and possible interfaces that can be built. Again, RapidApp is a <i>framework</i> not a admin utility like PHP My Admin, although admin apps like that can certainly be made (quickly, and a lot better). This demo showcases some other features, such as saved views, automatic authentication db, navigation trees, and so on. Explore the app by clicking the items on the left. </p>
+
+<br>
+
+<h1>In Progress!</h1>
+
+This document is just a starter and is by no means complete.
+
+
+
+<h1>Getting RapidApp</h1>
+
+<p>RapidApp is still under development and there are many tasks and refactoring yet to be done. While it is fully functional today (we have developed a number of very successful production projects using it over the past several years), the API is not yet finalized and there are still some things in flux that has stopped us from officially releasing it to the world. However, I am happy to provide the code to anyone that is interested.</p>
+
+<p>We started developing RapidApp for our own in-house use and are now actively working on making a public release to give back to the community. However, this is a lot of work! Besides the remaining coding tasks and finalization of the API, there is a lot of documentation to write in order for it to be used effectively by developers. If you are interested in getting involved or helping us finish the public release, contact me below!</p>
+
+<ul><li><b>
+<a href="#!/main/page?file=rapidapp/roadmap.tt">Development Roadmap</a>
+</b>
+</li></ul>
+
+
+
+<h1>Author</h1>
+
+<div style="padding-left:10px;padding-bottom:10px;">
+  <p>
+    <span style="font-size:1.1em;font-weight:bolder;font-family:Verdana;color:#3B4B21;">
+      Henry Van Styn
+    </span> 
+    <span class="monospace" style="font-size:1.1em;">
+      &lt;<a href="mailto:vanstyn@intellitree.com">vanstyn@intellitree.com</a>&gt;
+    </span>
+  </p>
+  <a style="border-bottom:none;" target="_blank" href="http://www.intellitree.com">
+    <img src="http://www.intellitree.com/standard_web_logo.gif" width=175>
+  </a>
+</div>
+
+
+</div>
+

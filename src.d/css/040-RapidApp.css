@@ -29,6 +29,10 @@ pre {
 }
 
 
+.blue-text {
+  color: #083772;
+}
+
 .blue-text-code {
   color: #083772;
   font-family: "Lucida Console", Monaco, monospace;
@@ -276,6 +280,14 @@ pre {
 .icon-catalyst { background-image: url(/static/rapidapp/images/catalyst-icon.png) !important; }
 .icon-catalyst-transparent { background-image: url(/static/rapidapp/images/catalyst-icon-transparent.png) !important; }
 .icon-pencil { background-image: url(/static/rapidapp/images/pencil.png) !important; }
+.icon-tree-edit { background-image: url(/static/rapidapp/images/tree-edit.png) !important; }
+.icon-tree-expand { background-image: url(/static/rapidapp/images/tree-expand.png) !important; }
+.icon-tree-collapse { background-image: url(/static/rapidapp/images/tree-collapse.png) !important; }
+.icon-textfield-edit { background-image: url(/static/rapidapp/images/textfield-edit.png) !important; }
+.icon-textfield-check { background-image: url(/static/rapidapp/images/textfield-check.png) !important; }
+.icon-textfield-cross { background-image: url(/static/rapidapp/images/textfield-cross.png) !important; }
+.icon-document { background-image: url(/static/rapidapp/images/document.png) !important; }
+
 
 
 .tbar-title-medium {

@@ -608,8 +608,8 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 
 
 
-//This is currently set by RapidApp::AppAuth:
-Ext.ux.RapidApp.loginUrl = '/main/banner/auth/login';
+//Default for RapidApp::AuthCore plugin:
+Ext.ux.RapidApp.loginUrl = '/auth/reauth';
 
 Ext.ux.RapidApp.ReAuthPrompt = function(success_callback) {
 
@@ -1202,7 +1202,8 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 	};
 
 	var win = new Ext.Window({
-		title: cfg.title,
+		manager: Ext.ux.RapidApp.CustomPromptWindowGroup,
+    title: cfg.title,
 		id: winId,
 		layout: 'fit',
 		width: cfg.width,
@@ -2984,7 +2985,15 @@ Ext.ux.RapidApp.form.DateTime2 = Ext.extend(Ext.ux.form.DateTime ,{
 		
 		this.setMinMax(newDate);
 		this.fireEvent('updated',this);
-	}
+	},
+  
+  // New: return formatted date string instead of Date object
+  // this prevents the system seeing the value as changed when
+  // it hasn't and producing a db update
+  getValue: function() {
+    var dt = this.dateValue ? new Date(this.dateValue) : null;
+    return dt ? dt.format(this.hiddenFormat) : '';
+  }
 });
 Ext.reg('xdatetime2', Ext.ux.RapidApp.form.DateTime2);
 

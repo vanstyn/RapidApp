@@ -304,6 +304,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 				// optional override if supplied in cnf:
 				var setTitle = cnf.tabTitle || this.tabTitle;
 				var setIconCls = cnf.tabIconCls || this.tabIconCls;
+        var setTitleCls = cnf.tabTitleCls || this.tabTitleCls;
 				
 				if(!setIconCls && tab.iconCls == 'icon-loading') {
 					setIconCls = 'icon-page';
@@ -319,6 +320,9 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 					setTitle = 'Untitled (' + str.split('').reverse().join('') + ')';
 				}
 				
+        if(setTitle && setTitleCls) {
+          setTitle = '<span class="' + setTitleCls + '">' + setTitle + '</span>';
+        }
 				if(setTitle) { tab.setTitle(setTitle); }
 				if(setIconCls) { tab.setIconClass(setIconCls); }
 				
@@ -491,7 +495,9 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		'advanced_config',
 		'advanced_config_json',
 		'advanced_config_active',
-		'quicksearch_mode'
+		'quicksearch_mode',
+    'custom_headers',
+    'disable_cell_editing'
 	],
 	
 	// Function to get the current grid state needed to save a search
@@ -700,6 +706,10 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 				}
 				
 				if(column.summary_functions) { column.summaryType = 'dummy'; }
+        
+        if(this.store.custom_headers && this.store.custom_headers[column.name]) {
+          column.header = this.store.custom_headers[column.name];
+        }
 				
 				new_columns.push(column);
 			}
@@ -831,6 +841,13 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			this.sm = new Ext.grid.CheckboxSelectionModel();
 			this.columns.unshift(this.sm);
 		}
+    
+    // This is duplicated in the 'grid-toggle-edit-cells' plugin but is
+    // also added here to honor the setting even if the plugin (i.e. the
+    // toggle button) is not loaded/available
+    this.on('beforeedit',function(){
+       return this.store.disable_cell_editing ? false : true;
+    },this);
 
 		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.initComponent.call(this);
 	},

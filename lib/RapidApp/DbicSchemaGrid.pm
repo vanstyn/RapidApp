@@ -9,6 +9,7 @@ has '+auto_autosize_columns', default => 1; #<-- not working
 
 has 'Schema', is => 'ro', isa => 'Object', required => 1;
 has '+record_pk', default => 'source';
+has 'exclude_sources', is => 'ro', isa => 'ArrayRef', default => sub {[]};
 
 has 'tabTitle', is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
@@ -101,9 +102,15 @@ sub schema_source_rows {
 			rows => $Source->resultset->count
 		};
 		
-	} $self->Schema->sources;
+	} $self->sources;
 }
 
+
+sub sources {
+  my $self = shift;
+  my %excl_sources = map {$_=>1} @{$self->exclude_sources};
+  return grep { ! $excl_sources{$_} } $self->Schema->sources;
+}
 
 
 #### --------------------- ####

@@ -3714,4 +3714,372 @@ Ext.preg('grid-edit-advanced-config',Ext.ux.RapidApp.Plugin.GridEditAdvancedConf
 
 
 
+/*
+ Ext.ux.RapidApp.Plugin.GridEditRawColumns
+ 2013-05-27 by HV
+
+ Plugin that allows editing the grid 'view' column configs
+*/
+Ext.ux.RapidApp.Plugin.GridEditRawColumns = Ext.extend(Ext.util.Observable,{
+	init: function(grid) {
+		this.grid = grid;
+		grid.on('afterrender',this.onAfterRender,this);
+	},
+	
+	onAfterRender: function(){
+		menu = this.grid.getOptionsMenu();
+		if(menu) { menu.add(this.getMenuItem()); }
+		
+		// Designed to work specifically with AppTab's context menu system:
+		if(this.grid.ownerCt) {
+			this.grid.ownerCt.getTabContextMenuItems = 
+				this.getTabContextMenuItems.createDelegate(this);
+		}
+	},
+	
+	getTabContextMenuItems: function() {
+		return [ this.getMenuItem() ];
+	},
+	
+	getMenuItem: function() {
+		return {
+			xtype: 'menuitem',
+			text: 'Edit Column Configs',
+			iconCls: 'icon-bullet-wrench',
+			handler: this.showAdvancedConfigWin,
+			scope: this
+		};
+	},
+	
+	showAdvancedConfigWin: function() {
+		
+    var column_configs = this.grid.getColumnModel().config;
+    var columns = {};
+    Ext.each(column_configs,function(col){
+      var cnf = Ext.copyTo({},col,this.grid.column_allow_save_properties);
+      columns[col.name] = cnf;
+    },this);
+    
+    var json = JSON.stringify(columns,undefined,2);
+		var fp;
+		var saveFn = function(btn) {
+			var form = fp.getForm();
+			var jsonf = form.findField('json_data');
+      
+			var data = {};
+			if(jsonf) {
+				data.json_data = jsonf.getValue();
+				data.decoded = Ext.decode(data.json_data);
+			}
+			
+			this.win.close();
+			
+			// Apply the config immediately:
+			if(btn.name == 'apply' && this.grid.ownerCt && this.grid.ownerCt.ownerCt) {
+				var tab = this.grid.ownerCt, tp = tab.ownerCt;
+				if(Ext.isFunction(tp.loadContent) && Ext.isObject(tab.loadContentCnf)) {
+					var cnf = tab.loadContentCnf;
+					tp.remove(tab);
+					tp.loadContent(cnf,{
+						update_cmpConfig: function(conf) {
+              
+              Ext.each(conf.columns,function(col){
+                var saved_col = data.decoded[col.name];
+                if(saved_col) {
+                  Ext.apply(col,saved_col);
+                }
+              },this);
+						}
+					});
+				}
+			}
+		};
+		
+		fp = new Ext.form.FormPanel({
+			xtype: 'form',
+			frame: true,
+			labelAlign: 'right',
+			
+			//plugins: ['dynamic-label-width'],
+			labelWidth: 160,
+			labelPad: 15,
+			bodyStyle: 'padding: 10px 10px 5px 5px;',
+			defaults: { anchor: '-0' },
+			autoScroll: true,
+			monitorValid: true,
+			buttonAlign: 'right',
+			minButtonWidth: 100,
+			
+			items: [
+							{
+					name: 'json_data',
+					itemId: 'json_data',
+					xtype: 'textarea',
+					style: 'font-family: monospace;',
+					fieldLabel: 'Columns JSON',
+					hideLabel: true,
+					value: json,
+					anchor: '-0 -35',
+					validator: function(v) {
+						if(!v || v == '') { return false; }
+						var obj, err;
+						try{ obj = Ext.decode(v) }catch(e){ err = e; };
+						if(err){ return err; }
+						return Ext.isObject(obj);
+					}
+				}
+			],
+			
+			buttons: [
+				{
+					name: 'apply',
+					text: 'Apply & Reload',
+					iconCls: 'icon-save',
+					width: 175,
+					formBind: true,
+					scope: this,
+					handler: saveFn
+				},
+				
+				{
+					name: 'cancel',
+					text: 'Cancel',
+					handler: function(btn) {
+						this.win.close();
+					},
+					scope: this
+				}
+			]
+		});
+		
+		if(this.win) {
+			this.win.close();
+		}
+		
+		this.win = new Ext.Window({
+			title: 'Edit Raw Column Configs (Experts Only)',
+			layout: 'fit',
+			width: 800,
+			height: 600,
+			minWidth: 400,
+			minHeight: 250,
+			closable: true,
+			closeAction: 'close',
+			modal: true,
+			items: fp
+		});
+		
+		this.win.show();
+	}
+});
+Ext.preg('grid-edit-raw-columns',Ext.ux.RapidApp.Plugin.GridEditRawColumns);
+
+
+
+Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
+	
+	init: function(grid) {
+    this.grid = grid;
+		grid.on('render',this.onRender,this);
+	},
+  
+  promptChangeHeader: function() {
+    var column = this.getActiveCol();
+    if(!column) { return; }
+    
+    var blank_str = '&#160;';
+    var current_header = column.header;
+    if (current_header == blank_str) {
+      current_header = '';
+    }
+    
+    var fp;
+    fp = new Ext.form.FormPanel({
+			xtype: 'form',
+			frame: true,
+			labelAlign: 'right',
+			
+			//plugins: ['dynamic-label-width'],
+			labelWidth: 70,
+			labelPad: 15,
+			bodyStyle: 'padding: 10px 10px 5px 5px;',
+			defaults: { anchor: '-0' },
+			autoScroll: true,
+			monitorValid: true,
+			buttonAlign: 'right',
+			minButtonWidth: 100,
+			
+			items: [
+				{
+          name: 'colname',
+          xtype: 'displayfield',
+          fieldLabel: 'Column',
+          style: 'bottom:-1px;',
+          cls: 'blue-text-code',
+          value: column.name
+        },
+        { xtype: 'spacer', height: 5 },
+        {
+					name: 'header',
+					itemId: 'header',
+					xtype: 'textfield',
+					fieldLabel: 'Header',
+					value: current_header,
+					anchor: '-0'
+				}
+			],
+			
+			buttons: [
+				{
+					name: 'apply',
+					text: 'Save',
+					iconCls: 'icon-save',
+					width: 90,
+					formBind: true,
+					scope: this,
+					handler: function() {
+            var form = fp.getForm();
+            var f = form.findField('header');
+            var value = f.getValue();
+            if(value != column.header) {
+              value = value ? value : blank_str;
+              var cm = this.grid.getColumnModel();
+              var indx = cm.getIndexById(column.id);
+              cm.setColumnHeader(indx,value);
+              this.grid.store.custom_headers[column.name] = value;
+            }
+            this.win.close();
+          }
+				},
+				
+				{
+					name: 'cancel',
+					text: 'Cancel',
+					handler: function(btn) {
+						this.win.close();
+					},
+					scope: this
+				}
+			]
+		});
+		
+		if(this.win) {
+			this.win.close();
+		}
+    
+    this.win = this.win = new Ext.Window({
+			title: 'Change Column Header',
+			layout: 'fit',
+			width: 400,
+			height: 175,
+			minWidth: 300,
+			minHeight: 150,
+			closable: true,
+			closeAction: 'close',
+			modal: true,
+			items: fp
+		});
+    
+    this.win.show(); 
+  },
+      
+	getActiveCol: function() {
+    var view = this.grid.getView();
+    if (!view || view.hdCtxIndex === undefined) {
+      return null;
+    }
+    return view.cm.config[view.hdCtxIndex];
+  },
+      
+	onRender: function() {
+  
+    if(!this.grid.store.custom_headers) {
+      this.grid.store.custom_headers = {};
+    }
+		
+    var hmenu = this.grid.view.hmenu;
+    if(!hmenu) { return; }
+
+    var index = 0;
+    var colsItem = hmenu.getComponent('columns');
+    if(colsItem) {
+      index = hmenu.items.indexOf(colsItem);
+    }
+    
+    hmenu.insert(index,{
+      text: "Change Header",
+      iconCls: 'icon-textfield-edit',
+      handler:this.promptChangeHeader, 
+      scope: this
+    });
+	}
+});
+Ext.preg('grid-custom-headers',Ext.ux.RapidApp.Plugin.GridCustomHeaders);
+
+
+Ext.ux.RapidApp.Plugin.GridToggleEditCells = Ext.extend(Ext.util.Observable,{
+	
+	init: function(grid) {
+    this.grid = grid;
+		grid.on('render',this.onRender,this);
+	},
+  
+  onText: '<span style="color:#666666;">Cell Editing On</span>',
+  offText: '<span style="color:#666666;">Cell Editing Off</span>',
+  onIconCls: 'icon-textfield-check',
+  offIconCls: 'icon-textfield-cross',
+  
+  toggleEditing: function(btn) {
+    if(this.grid.store.disable_cell_editing) {
+      this.btn.setText(this.onText);
+      this.btn.setIconClass(this.onIconCls);
+      this.grid.store.disable_cell_editing = false;
+    }
+    else {
+      this.btn.setText(this.offText);
+      this.btn.setIconClass(this.offIconCls);
+      this.grid.store.disable_cell_editing = true;
+    }
+  },
+  
+  beforeEdit: function() {
+    return this.grid.store.disable_cell_editing ? false : true;
+  },
+      
+	onRender: function() {
+  
+    // allow starting the toggle to off if it hasn't been set yet:
+    if( this.grid.toggle_edit_cells_init_off && 
+        typeof this.grid.store.disable_cell_editing == 'undefined'
+    ) { this.grid.store.disable_cell_editing = true; }
+  
+    if(!this.grid.store.api.update || this.grid.disable_toggle_edit_cells) {
+      return;
+    }
+    
+    var tbar = this.grid.getTopToolbar();
+    if(! tbar) { return; }
+    var optionsBtn = tbar.getComponent('options-button');
+    if(! optionsBtn) { return; }
+    
+    var index = tbar.items.indexOf(optionsBtn) + 1;
+    
+    this.btn = new Ext.Button({
+      text: this.onText,
+      iconCls: this.onIconCls,
+      handler:this.toggleEditing, 
+      scope: this
+    });
+    
+    if(this.grid.store.disable_cell_editing) {
+      this.btn.setText(this.offText);
+      this.btn.setIconClass(this.offIconCls);
+    }
+    tbar.insert(index,this.btn);
+    
+    this.grid.on('beforeedit',this.beforeEdit,this);
+	}
+	
+});
+Ext.preg('grid-toggle-edit-cells',Ext.ux.RapidApp.Plugin.GridToggleEditCells);
 

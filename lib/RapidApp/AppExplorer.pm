@@ -8,7 +8,7 @@ package RapidApp::AppExplorer;
 use strict;
 use warnings;
 use Moose;
-extends 'RapidApp::AppBase';
+extends 'RapidApp::AppCmp';
 
 use RapidApp::Include qw(sugar perlutil);
 
@@ -18,29 +18,72 @@ has 'title', is => 'ro', default => 'AppExplorer';
 has 'right_footer', is => 'ro', lazy => 1, default => sub {(shift)->title};
 has 'iconCls', is => 'ro',	default => 'icon-server_database';
 
-has 'navtree_class', is => 'ro', isa => 'Str', required => 1;
+has 'navtree_class', is => 'ro', isa => 'Maybe[Str]', default => sub{undef};
 has 'navtree_params', is => 'ro', isa => 'HashRef', lazy => 1, default => sub{{}};
+
+has 'navtrees', is => 'ro', isa => 'ArrayRef', lazy => 1, default => sub {
+  my $self = shift;
+  die "either navtrees or navtree_class is required" unless ($self->navtree_class);
+  return [{
+    module => 'navtree',
+    class => $self->navtree_class,
+    params => $self->navtree_params
+  }];
+};
+
+has 'dashboard_class', is => 'ro', isa => 'Maybe[Str]', default => sub {undef};
+has 'dashboard_params', is => 'ro', isa => 'HashRef', lazy => 1, default => sub{{}};
+
+# Extra optional class for rendering any tt files or other files
+# Feature added with RapidApp::AppPageViewer in mind, but it doesn't
+# actually care. This module will be loaded as 'page' and nothing else
+# will be done (i.e. expects direct links from markup to access content)
+has 'page_viewer_class', is => 'ro', isa => 'Maybe[Str]', default => sub {undef};
+has 'page_viewer_params', is => 'ro', isa => 'HashRef', lazy => 1, default => sub{{}};
 
 sub BUILD {
 	my $self = shift;
 	
-	Module::Runtime::require_module($self->navtree_class);
-	
-	$self->apply_init_modules(
-		navtree => {
-			class => $self->navtree_class,
-			params => $self->navtree_params
-		}
-		#dashboard => 'RaSakila::Modules::Dashboard'
-	);
+  my %seen = ();
+  for my $cnf (@{$self->navtrees}) {
+    my $name = $cnf->{module} or next;
+    my $class = $cnf->{class} or die "Missing class name";
+    my $params = $cnf->{params} || {};
+    die "Duplicate module '$name'" if ($seen{$name}++);
+    
+    Module::Runtime::require_module($class);
+    $self->apply_init_modules( $name => { class => $class, params => $params } );
+  }
+  
+  if ($self->dashboard_class) {
+    Module::Runtime::require_module($self->dashboard_class);
+    $self->apply_init_modules(
+      dashboard => {
+        class => $self->dashboard_class,
+        params => $self->dashboard_params
+      }
+    );
+  }
+  
+  if ($self->page_viewer_class) {
+    Module::Runtime::require_module($self->page_viewer_class);
+    $self->apply_init_modules(
+      page => {
+        class => $self->page_viewer_class,
+        params => $self->page_viewer_params
+      }
+    );
+  }
 }
 
 
-sub content {
-	my $self = shift;
+around 'content' => sub {
+	my $orig = shift;
+  my $self = shift;
+  
+  my $cnf = $self->$orig(@_);
 
-	return {
-		#id			=> $self->instance_id,
+	return { %$cnf,
 		id			=> 'explorer-id',
 		xtype		=> 'panel',
 		layout	=> 'border',
@@ -48,6 +91,7 @@ sub content {
 			$self->content_area,
 			{
 				region	=> 'west',
+        id => 'main-navtrees-container',
 				title		=> $self->title,
 				iconCls		=> $self->iconCls,
 				collapsible => \1,
@@ -55,12 +99,12 @@ sub content {
 				minSize => 150,
 				width	=> 240,
 				margins => '3 3 3 3',
-				layout	=> 'fit',
-				#tools => [{
-				#	id => 'refresh',
-				#	qtip => 'Refresh Nav Tree',
-				#	handler => jsfunc 'Ext.ux.RaSakila.reloadMainNavTreeOnly'
-				#}],
+				layout	=> 'anchor',
+				tools => [{
+					id => 'refresh',
+					qtip => 'Refresh Nav Tree',
+					handler => jsfunc 'Ext.ux.RapidApp.NavCore.reloadMainNavTrees'
+				}],
 				collapseFirst => \0,
 				items => $self->west_area_items,
 			}
@@ -85,40 +129,48 @@ sub content {
 }
 		},
 	};
-}
+};
 
 
 sub west_area_items {
 	my $self = shift;
-	
-	return $self->Module('navtree')->content;
+  
+  # Dynamic "typing" (of sorts). Allow raw ExtJS configs to
+  # be interspersed among module cnfs 
+  return [ map {
+    $_->{module} ? $self->Module($_->{module})->content : $_
+  } @{$self->navtrees} ];
 }
 
 
 sub content_area {
 	my $self = shift;
+	
+	my $cnf = {
+		# main-load-target is looked for by RapidApp js functions:
+		id => 'main-load-target',
+		region		=> 'center',
+		margins		=> '3 3 3 0',
+		bodyCssClass		=> 'sbl-panel-body-noborder',
+	};
+	
+	#$cnf->{margins} = '3 3 3 3' unless ($self->show_navtree);
+  
+  $cnf->{initLoadTabs} = [
+    {
+      title	=> '<img src="/static/rapidapp/images/toolbar_home.png" height=15 width=16>',
+      iconCls => '',
+      closable	=> \0,
+      autoLoad => {
+        url 	=> $self->Module('dashboard')->base_url,
+        params	=> {}
+      }
+    }
+  ] if ($self->dashboard_class);
+	
 	return  RapidApp::JSONFunc->new(
 		func => 'new Ext.ux.RapidApp.AppTab.TabPanel',
-		parm => {
-			# main-load-target is looked for by RapidApp js functions:
-			id => 'main-load-target',
-			region		=> 'center',
-			margins		=> '3 3 3 0',
-			bodyCssClass		=> 'sbl-panel-body-noborder',
-			
-			#initLoadTabs => [
-			#	{
-			#		title	=> 'Dashboard',
-			#		#iconCls	=> 'icon-text-rich-colored',
-			#		iconCls => 'icon-server_database',
-			#		closable	=> \0,
-			#		autoLoad => {
-			#			url 	=> $self->Module('dashboard')->base_url,
-			#			params	=> {}
-			#		}
-			#	}
-			#]
-		}
+		parm => $cnf
 	);
 }
 

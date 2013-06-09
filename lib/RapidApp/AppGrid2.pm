@@ -124,7 +124,7 @@ sub BUILD {
 		use_multifilters		=> \1,
 		gridsearch				=> \1,
 		gridsearch_remote		=> \1,
-		column_allow_save_properties => [ 'width','hidden' ], #<-- is this still doing anything?
+		column_allow_save_properties => [qw(width hidden)], 
 		use_column_summaries => $self->use_column_summaries ? \1 : \0,
 		use_autosize_columns => $self->use_autosize_columns ? \1 : \0,
 		auto_autosize_columns => $self->auto_autosize_columns ? \1 : \0,
@@ -295,6 +295,7 @@ sub options_menu {
 		id			=> $self->options_menu_button_Id,
 		text		=> 'Options',
 		iconCls	=> 'icon-gears',
+    itemId  => 'options-button',
 		menu => {
 			items => $items,
 			id => $menu_id

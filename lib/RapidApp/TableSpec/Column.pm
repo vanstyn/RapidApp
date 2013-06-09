@@ -178,7 +178,10 @@ sub DEFAULT_PROFILES {{
 		},
 		zipcode => {
 			editor => { vtype => 'zipcode' }
-		}
+		},
+    filesize => {
+      renderer => 'Ext.util.Format.fileSize',
+    }
 
 }};
 

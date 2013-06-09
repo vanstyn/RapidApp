@@ -1,0 +1,76 @@
+/* Simple context text CSS styles for documentation pages */
+
+.ra-doc {
+    color: #2F2F2F;
+    font-size: small;
+    font-family: arial, verdana, tahoma, sans-serif;
+    display: block;
+    margin: 8px;
+}
+.ra-doc h1 {
+  display: block;
+  font-weight: bold;
+  margin: 0.67em 0;
+  font-size: 1.8em;
+  border-bottom: 1px solid #888;
+  color: #30418C;
+}
+.ra-doc h2 {
+    font-size: 1.4em;
+    border-bottom: 1px solid #888;
+    display: block;
+    font-weight: bold;
+    margin: 0.83em 0;
+    color: #30418C;
+}
+.ra-doc h3 {
+    font-size: 1.2em;
+    display: block;
+    font-weight: bold;
+    margin: 1em 0;
+    color: #EB8C28
+}
+.ra-doc h4 {
+    font-size: 1.1em;
+    border-bottom: 1px solid #888;
+}
+.ra-doc h5 {
+    size: 105%;
+}
+.ra-doc h6 {
+    size: 102%;
+}
+
+.ra-doc a {
+    color: #06e;
+    text-decoration: none;
+    border-bottom: 1px dotted #06e;
+}
+
+.ra-doc a:hover {
+    color: #00e;
+    border-bottom: 1px solid #00e;
+}
+
+
+
+.ra-doc p {
+  display: block;
+  margin: 1em 0;
+}
+
+.ra-doc ul, .ra-doc menu, .ra-doc dir {
+  -moz-padding-start: 40px;
+  display: block;
+  list-style-type: disc;
+  margin: 1em 0;
+}
+
+.ra-doc li {
+  display: list-item;
+}
+
+.ra-doc .monospace {
+  font-family: Consolas, Menlo, Monaco, 'Lucida Console', 'Liberation Mono', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', 'Courier New', monospace, serif;
+}
+

@@ -1,0 +1,47 @@
+
+<head>
+<title>Roadmap</title>
+</head>
+
+
+<div class="ra-doc">
+
+<h2>RapidApp Development Roadmap</h2>
+
+<h3>RapidApp 1</h3>
+
+The current version of RapidApp (RapidApp 1) needs a couple of things done before being publically released as-is.
+
+<ul>
+  <li>Clean up CSS/JS and convert to use 
+    <a target="_blank" href="https://metacpan.org/module/Catalyst::Controller::AutoAssets">Catalyst::Controller::AutoAssets</a>
+  </li>
+  <li>
+    Untangle current symlink-based setup process and allow to function as a proper installable perl/CPAN package
+  </li>
+</ul>
+
+<h3>RapidApp 2 (refactor)</h3>
+
+<ul>
+  <li>
+    Clean up, finalize, normalize and document APIs
+  </li>
+  <li>
+    Upgrade to ExtJS 4
+  </li>
+  <li>
+    Factor out custom "Modules" and convert to use normal Catalyst Controllers
+  </li>
+  <li>
+    Move "TableSpec" from the Schema class layer to the Catalyst DBIC model layer 
+    (this is currently emulated by the RapidDbic plugin in RapidApp 1)
+  </li>
+  <li>
+    Make Multi-rel columns extensions of Virtual Columns and consider separating multi-rel columns from DBIC multi-relationships (for example, support for multi-rels across multiple joins and/or arbitrary ResultSets)
+  </li>
+  <li>...</li>
+</ul>
+
+</div>
+

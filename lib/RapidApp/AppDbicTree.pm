@@ -11,12 +11,32 @@ require Module::Runtime;
 
 has 'dbic_models', is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default => undef;
 has 'table_class', is => 'ro', isa => 'Str', required => 1;
+has 'configs', is => 'ro', isa => 'HashRef', default => sub {{}};
 
 has 'dbic_model_tree', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => sub {
 	my $self = shift;
 	die "Must supply either 'dbic_models' or 'dbic_model_tree'" unless ($self->dbic_models);
-	return parse_dbic_model_list($self->app,@{$self->dbic_models});
+	my $list = parse_dbic_model_list($self->app,@{$self->dbic_models});
+  
+  # strip excludes:
+  for my $itm (@$list) {
+    my $exclude_sources = try{$self->configs->{$itm->{model}}{exclude_sources}} || [];
+    my %excl_sources = map { $_ => 1 } @$exclude_sources;
+    @{$itm->{sources}} = grep { ! $excl_sources{$_} } @{$itm->{sources}};
+  }
+  
+  return $list;
 };
+
+# return a flat list of all loaded source models:
+sub all_source_models {
+  my $self = shift;
+  my @list = ();
+  foreach my $hash (@{$self->dbic_model_tree}) {
+    push @list, map { $hash->{model} . '::' . $_ } @{$hash->{sources}};
+  }
+  return @list;
+}
 
 
 # General func instead of class method for use in other packages (temporary):
@@ -28,9 +48,16 @@ sub parse_dbic_model_list {
 	my %sources = ();
 	my @list = ();
 	for my $model (@models) {
-		die "Bad argument" if (ref $model);
-		my ($schema,$result) = split(/\:\:/,$model,2);
-		
+    die "Bad argument" if (ref $model);
+    my $Model = $c->model($model) or die "No such model '$model'";
+    my ($schema, $result) = ($model);
+    
+    if($Model->isa('DBIx::Class::ResultSet')){
+      my @parts = split(/\:\:/,$model);
+      $result = pop @parts;
+      $schema = join('::',@parts);
+    }
+  
 		my $M = $c->model($schema) or die "No such model '$schema'";
 		die "Model '$schema' does not appear to be a DBIC Schema Model." 
 			unless ($M->can('schema'));
@@ -70,13 +97,21 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 		my $model = $s->{model};
 		my $schema = $self->app->model($model)->schema;
 		my @children = ();
-		for my $source (@{$s->{sources}}) {
+		for my $source (sort @{$s->{sources}}) {
 			my $Source = $schema->source($source) or die "Source $source not found!";
 			
+      my $cust_def_config = try{$self->configs->{$model}{grid_params}{'*defaults'}} || {};
+      my $cust_config = try{$self->configs->{$model}{grid_params}{$source}} || {};
+      # since we're using these params over and over we need to protect refs in deep params
+      # since currently DataStore/TableSpec modules modify params like include_colspec in
+      # place (note this probably needs to be fixed in there for exactly this reason)
+      my $cust_merged = clone( Catalyst::Utils::merge_hashes($cust_def_config,$cust_config) );
+      
 			my $module_name = lc($model . '_' . $Source->from);
+      $module_name =~ s/\:\:/_/g;
 			$self->apply_init_modules( $module_name => {
 				class => $self->table_class,
-				params => { ResultSource => $Source }
+				params => { %$cust_merged, ResultSource => $Source, source_model => $model . '::' . $source }
 			});
 			
 			my $class = $schema->class($source);
@@ -93,25 +128,34 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 			}
 		}
 		
-		my $iconcls = 'icon-server_database';
+    my $exclude_sources = try{$self->configs->{$model}{exclude_sources}} || [];
+		my $expand = (try{$self->configs->{$model}{expand}}) ? 1 : 0;
+    my $iconcls = (try{$self->configs->{$model}{iconCls}}) || 'icon-server_database';
+    my $text = (try{$self->configs->{$model}{text}}) || $model;
+    my $template = try{$self->configs->{$model}{template}};
 		
 		my $module_name = lc($model);
+    $module_name =~ s/\:\:/_/g;
 		$self->apply_init_modules( $module_name => {
 			class => 'RapidApp::DbicSchemaGrid',
 			params => { 
 				Schema => $self->app->model($model)->schema,
-				tabTitle => $model,
-				tabIconCls => $iconcls
+				tabTitle => $text,
+				tabIconCls => $iconcls,
+        exclude_sources => $exclude_sources,
+        header_template => $template
 			}
 		});
-		
+    
+    my $itm_id = lc($model) . '_tables';
+    $itm_id =~ s/\:\:/_/g;
 		push @items, {
-			id		=> lc($model) . '_tables',
-			text	=> $model,
+			id		=> $itm_id,
+			text	=> $text,
 			iconCls	=> $iconcls,
 			module		=> $module_name,
 			params	=> {},
-			expand	=> 0,
+			expand	=> $expand,
 			children	=> \@children
 		};
 	}
