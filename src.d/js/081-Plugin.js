@@ -4045,6 +4045,20 @@ Ext.ux.RapidApp.Plugin.GridToggleEditCells = Ext.extend(Ext.util.Observable,{
   beforeEdit: function() {
     return this.grid.store.disable_cell_editing ? false : true;
   },
+  
+  countEditableColumns: function() {
+    var count = 0;
+    var cm = this.grid.getColumnModel();
+    Ext.each(cm.config,function(col,index){
+      // Note: this is specific to the RapidApp1/DataStorePlus API which
+      // will change in RapidApp2
+      if(typeof col.allow_edit !== "undefined" && !col.allow_edit) { return; }
+      // Sadly, isCellEditable() is not consistent because of special DataStorePlus
+      // code for 'allow_edit' which is handled above
+      if(cm.isCellEditable(index,0)) { count++; }
+    },this);
+    return count;
+  },
       
 	onRender: function() {
   
@@ -4056,6 +4070,9 @@ Ext.ux.RapidApp.Plugin.GridToggleEditCells = Ext.extend(Ext.util.Observable,{
     if(!this.grid.store.api.update || this.grid.disable_toggle_edit_cells) {
       return;
     }
+    
+    // Check that there are actually editable columns:
+    if(this.countEditableColumns() == 0) { return; }
     
     var tbar = this.grid.getTopToolbar();
     if(! tbar) { return; }
