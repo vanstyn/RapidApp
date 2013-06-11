@@ -81,6 +81,11 @@ has 'inc', is => 'ro', lazy => 1, isa => 'Str', default => sub {
 		$home . '/root/static/ext/src/debug.js', #<-- TODO: option alternate debug version
 		$home . '/root/static/ext/examples/ux/fileuploadfield/FileUploadField.js'
 	);
+  
+  
+  
+  @globs = ();
+  
 	
 	my @files = qw(*.js *.css js/*.js css/*.css);
 	my @dirs = ($home . '/rapidapp/src.d/', $home . '/root/src.d/');

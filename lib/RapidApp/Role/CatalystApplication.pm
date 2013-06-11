@@ -184,9 +184,10 @@ sub _rapidapp_top_level_dispatch {
 	$c->stack_traces([ RapidApp::TraceCapture::collectTraces ])
 		if $c->rapidApp->enableTraceCapture;
 	
-	if (!scalar(@{$c->error}) && !defined $c->response->body) {
-		$c->error('Body was not defined!  (discovered at '.__FILE__.' '.__LINE__.')');
-	}
+	# this check is crap and I finally am killing it (2013-06-10 by HV)
+	#if (!scalar(@{$c->error}) && !defined $c->response->body) {
+	#	$c->error('Body was not defined!  (discovered at '.__FILE__.' '.__LINE__.')');
+	#}
 	
 	if (scalar(@{$c->error})) {
 		$c->onError;
