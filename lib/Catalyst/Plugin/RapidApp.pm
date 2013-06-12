@@ -6,7 +6,6 @@ use namespace::autoclean;
 with qw(
  RapidApp::Role::CatalystApplication
  RapidApp::CatalystX::SimpleCAS
- RapidApp::CatalystX::AutoAssets
  RapidApp::Role::AssetControllers
 );
 

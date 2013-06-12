@@ -4,7 +4,7 @@ package RapidApp::Catalyst;
 use Catalyst qw(
 +RapidApp::Role::CatalystApplication
 +RapidApp::CatalystX::SimpleCAS
-+RapidApp::CatalystX::AutoAssets
++RapidApp::Role::AssetControllers
 );
 
 use Moose;

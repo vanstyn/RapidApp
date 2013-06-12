@@ -7,9 +7,7 @@
 <title>[% title %]</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 
-[% c.extjs_include_tags %]
-
-[% c.autoasset_include_tags %]
+[% c.all_html_head_tags %]
 
 <!-- default favicon -->
 [% SET favicon = '/static/rapidapp/images/rapidapp_icon_small.ico' %]
