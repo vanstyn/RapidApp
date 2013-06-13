@@ -13,6 +13,7 @@ use CatalystX::InjectComponent;
 use Catalyst::Utils;
 use Path::Class qw(dir);
 
+use Catalyst::Controller::AutoAssets 0.19;
 with 'Catalyst::Plugin::AutoAssets';
 
 before 'inject_asset_controllers' => sub {
@@ -26,7 +27,7 @@ before 'inject_asset_controllers' => sub {
   my $assets = [
     {
       controller => 'Assets::ExtJS',
-      type => 'directory',
+      type => 'Directory',
       include => 'ext-3.4.0',
       html_head_css_subfiles =>[qw(
         resources/css/ext-all.css
@@ -42,12 +43,12 @@ before 'inject_asset_controllers' => sub {
     },
     {
       controller => 'Assets::RapidApp::CSS',
-      type => 'css',
+      type => 'CSS',
       include => 'rapidapp/src.d/css',
     },
     {
       controller => 'Assets::RapidApp::JS',
-      type => 'js',
+      type => 'JS',
       include => 'rapidapp/src.d/js',
     }  
   ];
@@ -55,13 +56,13 @@ before 'inject_asset_controllers' => sub {
   # Add local assets if src include dirs exist in the App directory
   push @$assets, {
     controller => 'Assets::Local::CSS',
-    type => 'css',
+    type => 'CSS',
     include => 'root/src.d/css',
   } if (-d dir($c->config->{home})->subdir('root/src.d/css'));
   
   push @$assets, {
     controller => 'Assets::Local::JS',
-    type => 'js',
+    type => 'JS',
     include => 'root/src.d/js',
   } if (-d dir($c->config->{home})->subdir('root/src.d/js'));
   
