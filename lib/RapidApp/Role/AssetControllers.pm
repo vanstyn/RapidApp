@@ -66,16 +66,14 @@ before 'inject_asset_controllers' => sub {
     include => 'root/src.d/js',
   } if (-d dir($c->config->{home})->subdir('root/src.d/js'));
   
+  # Check for any configs in the existing local app config:
+  my $existing = $c->config->{'Plugin::AutoAssets'}->{assets};
+  push @$assets, @$existing if ($existing);
+  
   # apply defaults:
   %$_ = (%defaults,%$_) for (@$assets);
   
-
-  $c->config( 'Plugin::AutoAssets' => 
-    Catalyst::Utils::merge_hashes(
-      { assets => $assets }, 
-      $c->config->{'Plugin::AutoAssets'} || {} 
-    )
-  );
+  $c->config( 'Plugin::AutoAssets' => { assets => $assets } );
 };
 
 
