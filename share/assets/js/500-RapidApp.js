@@ -5071,7 +5071,7 @@ Ext.ux.RapidApp.DbicRelRestRender = function(c) {
 	return disp + "&nbsp;" + Ext.ux.RapidApp.inlineLink(
 		url,
 		"<span>open</span>",
-		"magnify-link-tiny",
+		"icon-magnify-tiny",
 		null,
 		"Open/view: " + disp
 	);
@@ -5130,7 +5130,7 @@ Ext.ux.RapidApp.DbicSingleRelationshipColumnRender = function(c) {
 	return disp + "&nbsp;" + Ext.ux.RapidApp.inlineLink(
 		url,
 		"<span>open</span>",
-		"magnify-link-tiny",
+		"icon-magnify-tiny",
 		null,
 		"Open/view: " + disp
 	);

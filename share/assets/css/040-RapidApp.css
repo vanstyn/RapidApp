@@ -128,70 +128,6 @@ pre {
 	user-select: none;
 }
 
-.icon-server_database { background-image: url(/static/rapidapp/images/server_database.png) !important; }
-.icon-arrow_refresh_small { background-image: url(/static/rapidapp/images/arrow_refresh_small.png) !important; }
-.icon-database { background-image: url(/static/rapidapp/images/database.png) !important; }
-.icon-database_table { background-image: url(/static/rapidapp/images/database_table.png) !important; }
-.icon-application_view_detail { background-image: url(/static/rapidapp/images/application_view_detail.png) !important; }
-.icon-resultset_next { background-image: url(/static/rapidapp/images/resultset_next.png) !important; }
-.icon-application_edit { background-image: url(/static/rapidapp/images/application_edit.png) !important; }
-.icon-application_form_edit { background-image: url(/static/rapidapp/images/application_form_edit.png) !important; }
-.icon-cross { background-image: url(/static/rapidapp/images/cross.png) !important; }
-.icon-key_go { background-image: url(/static/rapidapp/images/key_go.png) !important; }
-.icon-key { background-image: url(/static/rapidapp/images/key.png) !important; }
-.icon-logout { background-image: url(/static/rapidapp/images/Log-Out-icon.png) !important; }
-.icon-computer { background-image: url(/static/rapidapp/images/computer-126t.gif) !important; }
-.icon-vnc { background-image: url(/static/rapidapp/images/vnc_icon.png) !important; }
-.icon-ssh { background-image: url(/static/rapidapp/images/application_osx_terminal.png) !important; }
-
-.icon-myteams { background-image: url(/static/rapidapp/images/book.png) !important; }
-.icon-team { background-image: url(/static/rapidapp/images/book_open.png) !important; }
-.icon-team-arrow { background-image: url(/static/rapidapp/images/book_next.png) !important; }
-.icon-users { background-image: url(/static/rapidapp/images/group.png) !important; }
-.icon-user { background-image: url(/static/rapidapp/images/user.png) !important; }
-.icon-user-add { background-image: url(/static/rapidapp/images/user_add.png) !important; }
-.icon-report { background-image: url(/static/rapidapp/images/chart_curve.png) !important; }
-.icon-record { background-image: url(/static/rapidapp/images/time.png) !important; }
-.icon-record-go { background-image: url(/static/rapidapp/images/table_go.png) !important; }
-.icon-manage-activities { background-image: url(/static/rapidapp/images/table_gear.png) !important; }
-.icon-players { background-image: url(/static/rapidapp/images/status_online.png) !important; }
-.icon-add { background-image: url(/static/rapidapp/images/add.png) !important; }
-.icon-activity { background-image: url(/static/rapidapp/images/table.png) !important; }
-
-.icon-folder { background-image: url(/static/rapidapp/images/folder.png) !important; }
-
-.icon-delete { background-image: url(/static/rapidapp/images/cross.png) !important; }
-.icon-edit { background-image: url(/static/rapidapp/images/application_edit.png) !important; }
-.icon-save { background-image: url(/static/rapidapp/images/disk_blue_ok.png) !important; }
-
-.icon-log { background-image: url(/static/rapidapp/images/report.png) !important; }
-.icon-form-add { background-image: url(/static/rapidapp/images/application_form_add.png) !important; }
-.icon-printer { background-image: url(/static/rapidapp/images/printer.png) !important; }
-.icon-help { background-image: url(/static/rapidapp/images/help.png) !important; }
-.icon-bullet_delete { background-image: url(/static/rapidapp/images/bullet_delete.png) !important; }
-.icon-form_green { background-image: url(/static/rapidapp/images/form_green.png) !important; }
-.icon-book_green { background-image: url(/static/rapidapp/images/book_green.png) !important; }
-
-.icon-data-view { background-image: url(/static/rapidapp/images/data_view.png) !important; }
-.icon-folder-view { background-image: url(/static/rapidapp/images/folder_view.png) !important; }
-.icon-save-as { background-image: url(/static/rapidapp/images/save_as.png) !important; }
-
-.icon-funnel { background-image: url(/static/rapidapp/images/funnel.png) !important; }
-.icon-funnel-edit { background-image: url(/static/rapidapp/images/funnel_edit.png) !important; }
-.icon-funnel-new { background-image: url(/static/rapidapp/images/funnel_new.png) !important; }
-.icon-funnel-new-edit { background-image: url(/static/rapidapp/images/funnel_new_edit.png) !important; }
-
-.icon-expand-all { background-image: url(/static/rapidapp/images/expand-all.gif) !important; }
-.icon-collapse-all { background-image: url(/static/rapidapp/images/collapse-all.gif) !important; }
-
-.icon-page-white-world { background-image: url(/static/rapidapp/images/page_white_world.png) !important; }
-.icon-textfield-rename { background-image: url(/static/rapidapp/images/textfield_rename.png) !important; }
-
-.icon-element-copy { background-image: url(/static/rapidapp/images/element_copy.png) !important; }
-.icon-element-into { background-image: url(/static/rapidapp/images/element_into.png) !important; }
-.icon-bullet-arrow-down { background-image: url(/static/rapidapp/images/bullet_arrow_down.png) !important; }
-
-.icon-cog { background-image: url(/static/rapidapp/images/cog.png) !important; }
 
 .x-logical-checkbox {
 	width: 16px;
@@ -199,10 +135,6 @@ pre {
 	cursor:pointer;
 	float: left;
 }
-.icon-checkbox-yes { background-image: url(/static/rapidapp/images/checkbox_yes.png) !important; }
-.icon-checkbox-no { background-image: url(/static/rapidapp/images/checkbox_no.png) !important; }
-.icon-checkbox { background-image: url(/static/rapidapp/images/checkbox.png) !important; }
-.icon-checkbox-clear { background-image: url(/static/rapidapp/images/checkbox_clear.png) !important; }
 
 .icon-bullet_key {
 	background-image: url(/static/rapidapp/images/bullet_key.png) !important;
@@ -213,80 +145,6 @@ pre {
 }
 
 
-.icon-save-24x24 { background-image: url(/static/rapidapp/images/disk_blue_24x24.png) !important; }
-.icon-add-24x24 { background-image: url(/static/rapidapp/images/disk_blue_ok_24x24.png) !important; }
-.icon-refresh-24x24 { background-image: url(/static/rapidapp/images/refresh_24x24.png) !important; }
-
-.icon-excel { background-image: url(/static/rapidapp/images/page_excel.png) !important; }
-
-.icon-arrow-up { background-image: url(/static/rapidapp/images/arrow_up.png) !important; }
-.icon-arrow-down { background-image: url(/static/rapidapp/images/arrow_down.png) !important; }
-.icon-arrow-left { background-image: url(/static/rapidapp/images/arrow_left.png) !important; }
-.icon-arrow-right { background-image: url(/static/rapidapp/images/arrow_right.png) !important; }
-.icon-arrow-divide { background-image: url(/static/rapidapp/images/arrow_divide.png) !important; }
-
-.icon-gears { background-image: url(/static/rapidapp/images/gears.png) !important; }
-.icon-gears-24x24 { background-image: url(/static/rapidapp/images/gears_24x24.png) !important; }
-
-.icon-loading { background-image: url(/static/ext/resources/images/default/grid/loading.gif) !important; }
-.icon-refresh { background-image: url(/static/ext/resources/images/gray/grid/refresh.gif) !important; }
-
-.icon-checkmark { background-image: url(/static/rapidapp/images/checkmark.png) !important; }
-.icon-cross-light { background-image: url(/static/rapidapp/images/cross_light.png) !important; }
-.icon-checkmark-12x12 { background-image: url(/static/rapidapp/images/checkmark_12x12.png) !important; }
-.icon-cross-light-12x12 { background-image: url(/static/rapidapp/images/cross_light_12x12.png) !important; }
-.icon-gray-pencil { background-image: url(/static/rapidapp/images/gray_pencil.png) !important; }
-.icon-gray-down { background-image: url(/static/rapidapp/images/gray_down.png) !important; }
-.icon-gray-down-with-pencil { background-image: url(/static/rapidapp/images/gray_down_with_pencil.png) !important; }
-.icon-arrow-undo { background-image: url(/static/rapidapp/images/arrow_undo.png) !important; }
-.icon-cross-tiny { background-image: url(/static/rapidapp/images/cross_tiny.png) !important; }
-.icon-cross-tiny-light { background-image: url(/static/rapidapp/images/cross_tiny_light.png) !important; }
-.icon-tick-tiny { background-image: url(/static/rapidapp/images/tick_tiny.png) !important; }
-.icon-tick-tiny-light { background-image: url(/static/rapidapp/images/tick_tiny_light.png) !important; }
-.icon-function { background-image: url(/static/rapidapp/images/function.png) !important; }
-.icon-function-clear { background-image: url(/static/rapidapp/images/function_clear.png) !important; }
-.icon-function-small { background-image: url(/static/rapidapp/images/function_small.png) !important; }
-.icon-left-right { background-image: url(/static/rapidapp/images/left_right.png) !important; }
-.icon-table-selection-all { background-image: url(/static/rapidapp/images/table_selection_all.png) !important; }
-.icon-table-selection-row { background-image: url(/static/rapidapp/images/table_selection_row.png) !important; }
-.icon-table-edit-all { background-image: url(/static/rapidapp/images/table_edit_all.png) !important; }
-.icon-table-edit-row { background-image: url(/static/rapidapp/images/table_edit_row.png) !important; }
-.icon-table-sql-edit { background-image: url(/static/rapidapp/images/table_sql_edit.png) !important; }
-.icon-clock-run { background-image: url(/static/rapidapp/images/clock_run.png) !important; }
-.icon-tool-close { background-image: url(/static/rapidapp/images/tool_close.png) !important; }
-.icon-selection { background-image: url(/static/rapidapp/images/selection.png) !important; }
-.icon-selection-up { background-image: url(/static/rapidapp/images/selection_up.png) !important; }
-.icon-selection-up-blue { background-image: url(/static/rapidapp/images/selection_up_blue.png) !important; }
-.icon-selection-add { background-image: url(/static/rapidapp/images/selection_add.png) !important; }
-.icon-selection-new { background-image: url(/static/rapidapp/images/selection_new.png) !important; }
-.icon-progress-green-blocks { background-image: url(/static/rapidapp/images/progress_green_blocks.gif) !important; }
-.icon-pg { background-image: url(/static/rapidapp/images/pg.png) !important; }
-.icon-pg-multi { background-image: url(/static/rapidapp/images/pg_multi.png) !important; }
-.icon-accept { background-image: url(/static/rapidapp/images/accept.png) !important; }
-.icon-tabs-delete { background-image: url(/static/rapidapp/images/tabs_delete.png) !important; }
-.icon-tab-go { background-image: url(/static/rapidapp/images/tab_go.png) !important; }
-.icon-remove-sort { background-image: url(/static/rapidapp/images/remove_sort.png) !important; }
-.icon-bullet-wrench { background-image: url(/static/rapidapp/images/bullet_wrench.png) !important; }
-.icon-wrench { background-image: url(/static/rapidapp/images/wrench.png) !important; }
-.icon-paste-plain { background-image: url(/static/rapidapp/images/paste_plain.png) !important; }
-.icon-paste-document { background-image: url(/static/rapidapp/images/paste_document.png) !important; }
-.icon-page-white-zip-link { background-image: url(/static/rapidapp/images/page_white_zip_link.png) !important; }
-.icon-document-save { background-image: url(/static/rapidapp/images/document_save.png) !important; }
-.icon-cancel { background-image: url(/static/rapidapp/images/cancel.png) !important; }
-.icon-page { background-image: url(/static/rapidapp/images/page.png) !important; }
-.icon-magnify-tiny { background-image: url(/static/rapidapp/images/magnify.gif) !important; }
-.icon-magnifier { background-image: url(/static/rapidapp/images/magnifier.png) !important; }
-.icon-warning { background-image: url(/static/rapidapp/images/warning.png) !important; }
-.icon-catalyst { background-image: url(/static/rapidapp/images/catalyst-icon.png) !important; }
-.icon-catalyst-transparent { background-image: url(/static/rapidapp/images/catalyst-icon-transparent.png) !important; }
-.icon-pencil { background-image: url(/static/rapidapp/images/pencil.png) !important; }
-.icon-tree-edit { background-image: url(/static/rapidapp/images/tree-edit.png) !important; }
-.icon-tree-expand { background-image: url(/static/rapidapp/images/tree-expand.png) !important; }
-.icon-tree-collapse { background-image: url(/static/rapidapp/images/tree-collapse.png) !important; }
-.icon-textfield-edit { background-image: url(/static/rapidapp/images/textfield-edit.png) !important; }
-.icon-textfield-check { background-image: url(/static/rapidapp/images/textfield-check.png) !important; }
-.icon-textfield-cross { background-image: url(/static/rapidapp/images/textfield-cross.png) !important; }
-.icon-document { background-image: url(/static/rapidapp/images/document.png) !important; }
 
 
 
@@ -310,19 +168,11 @@ pre {
 	font-weight: bolder !important;
 }
 
-.icon-engineering { background-image: url(/static/images/hammer2.png) !important; }
-.icon-sales { background-image: url(/static/images/businessmen.png) !important; }
-.icon-pricing { background-image: url(/static/images/percent.png) !important; }
 
-.icon-history { background-image: url(/static/images/history.png) !important; }
-.icon-history-add { background-image: url(/static/images/history_add.png) !important; }
-.icon-history-24x24 { background-image: url(/static/images/history_24x24.png) !important; }
-.icon-history-add-24x24 { background-image: url(/static/images/history_add_24x24.png) !important; }
-.icon-history-32x32 { background-image: url(/static/images/history_32x32.png) !important; }
-.icon-history-add-32x32 { background-image: url(/static/images/history_add_32x32.png) !important; }
-
-
-a.magnify-link-tiny {
+/* Update: renamed from 'magnify-link-tiny' - merged with auto generated icon class 
+   2013-06-22 by HV
+*/
+a.icon-magnify-tiny {
   /* -- for IE, magic!! Without this, the "filter/opacity" is ignored and other misc problems,
    this magically makes the element have a "Layout"
    see: http://www.satzansatz.de/cssd/onhavinglayout.html,
@@ -330,7 +180,6 @@ a.magnify-link-tiny {
   zoom: 1; 
   /* -- */
   
-  background-image: url(/static/rapidapp/images/magnify.gif) !important;
   background-repeat:no-repeat;
   background-position: 0% 90%;
   padding-left: 10px;
@@ -344,17 +193,17 @@ a.magnify-link-tiny {
   opacity:0.4;
   filter:alpha(opacity=40); /* For IE8 and earlier */
 }
-a.magnify-link-tiny:hover {
+a.icon-magnify-tiny:hover {
   margin-bottom: 1px;
   border-bottom: 1px dotted;
   color: blue;
   opacity:1.0;
   filter:alpha(opacity=100); /* For IE8 and earlier */
 }
-a.magnify-link-tiny span {
+a.icon-magnify-tiny span {
 	visibility: hidden;
 }
-a.magnify-link-tiny:hover span {
+a.icon-magnify-tiny:hover span {
 	visibility: visible;
 }
 

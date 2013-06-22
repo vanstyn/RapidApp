@@ -950,7 +950,7 @@ sub apply_row_methods {
 		inlineNavLink => sub {
 			my $self = shift;
 			my $text = shift || '<span>open</span>';
-			my %attrs = ( class => "magnify-link-tiny", @_ );
+			my %attrs = ( class => "icon-magnify-tiny", @_ );
 
 			my $title = $self->getDisplayValue or return undef;
 			my $url = $self->getRestPath or return undef;

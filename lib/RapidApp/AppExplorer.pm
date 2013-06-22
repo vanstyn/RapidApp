@@ -16,7 +16,7 @@ require Module::Runtime;
 
 has 'title', is => 'ro', default => 'AppExplorer';
 has 'right_footer', is => 'ro', lazy => 1, default => sub {(shift)->title};
-has 'iconCls', is => 'ro',	default => 'icon-server_database';
+has 'iconCls', is => 'ro',	default => 'icon-server-database';
 
 has 'navtree_class', is => 'ro', isa => 'Maybe[Str]', default => sub{undef};
 has 'navtree_params', is => 'ro', isa => 'HashRef', lazy => 1, default => sub{{}};

@@ -1232,7 +1232,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				
 				var btn = cmp.store.buttonConstructor(Ext.apply({
 					tooltip: 'Save',
-					iconCls: 'icon-save',
+					iconCls: 'icon-save-ok',
 					disabled: true,
 					handler: function(btn) {
 						var store = cmp.store;

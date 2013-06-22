@@ -331,7 +331,7 @@ sub excel_export_btn {
 		func => 'new Ext.Button', 
 		parm => {
 			text 		=> 'Excel Export',
-			iconCls	=> 'icon-excel',
+			iconCls	=> 'icon-page-excel',
 			handler 	=> RapidApp::JSONFunc->new( 
 				raw => 1, 
 				func => 'function(btn) { ' . 

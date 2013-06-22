@@ -2598,7 +2598,7 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 				{
 					name: 'save',
 					text: 'Apply Changes (0 fields)',
-					iconCls: 'icon-save',
+					iconCls: 'icon-save-ok',
 					width: 175,
 					formBind: true,
 					disabled: true,
@@ -3664,7 +3664,7 @@ Ext.ux.RapidApp.Plugin.GridEditAdvancedConfig = Ext.extend(Ext.util.Observable,{
 				{
 					name: 'apply',
 					text: 'Save &amp; Apply',
-					iconCls: 'icon-save',
+					iconCls: 'icon-save-ok',
 					width: 175,
 					formBind: true,
 					scope: this,
@@ -3673,7 +3673,7 @@ Ext.ux.RapidApp.Plugin.GridEditAdvancedConfig = Ext.extend(Ext.util.Observable,{
 				{
 					name: 'save',
 					text: 'Save',
-					iconCls: 'icon-save',
+					iconCls: 'icon-save-ok',
 					width: 100,
 					formBind: true,
 					scope: this,
@@ -3834,7 +3834,7 @@ Ext.ux.RapidApp.Plugin.GridEditRawColumns = Ext.extend(Ext.util.Observable,{
 				{
 					name: 'apply',
 					text: 'Apply & Reload',
-					iconCls: 'icon-save',
+					iconCls: 'icon-save-ok',
 					width: 175,
 					formBind: true,
 					scope: this,
@@ -3933,7 +3933,7 @@ Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
 				{
 					name: 'apply',
 					text: 'Save',
-					iconCls: 'icon-save',
+					iconCls: 'icon-save-ok',
 					width: 90,
 					formBind: true,
 					scope: this,

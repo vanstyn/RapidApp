@@ -238,7 +238,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		buttons.push({
 			xtype: 'button',
 			text: 'Save and Close',
-			iconCls: 'icon-save',
+			iconCls: 'icon-save-ok',
 			handler: function(btn) {
 				var win = btn.ownerCt.ownerCt;
 				var set = win.getComponent('filSet');

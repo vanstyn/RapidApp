@@ -253,7 +253,7 @@ has 'add_edit_formpanel_defaults', is => 'ro', isa => 'HashRef', lazy => 1, defa
 		{
 			name => 'save',
 			text => 'Save',
-			iconCls => 'icon-save',
+			iconCls => 'icon-save-ok',
 			formBind => \1
 		},
 		{

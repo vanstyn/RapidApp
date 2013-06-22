@@ -136,7 +136,7 @@ sub _build_save_button {
 
 
 has 'add_button_text' => ( is => 'ro',	default => ' Add '	);
-has 'add_button_iconCls' => ( is => 'ro',	default => 'icon-add-24x24'	);
+has 'add_button_iconCls' => ( is => 'ro',	default => 'icon-save-ok-24x24'	);
 has 'add_button' => ( is => 'ro',	lazy_build => 1	);
 sub _build_add_button {
 	my $self = shift;

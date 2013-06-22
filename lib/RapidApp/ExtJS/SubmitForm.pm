@@ -31,7 +31,7 @@ has 'autoScroll'				=> ( is => 'ro',	default => 1 		 								);
 has 'items'						=> ( is => 'ro',	default => sub {[]} 								);
 
 has 'submit_btn_text'		=> ( is => 'ro',	default => 'Save'	 								);
-has 'submit_btn_iconCls'	=> ( is => 'ro',	default => 'icon-save'	 						);
+has 'submit_btn_iconCls'	=> ( is => 'ro',	default => 'icon-save-ok'	 						);
 has 'cancel_btn_text'		=> ( is => 'ro',	default => 'Cancel' 								);
 has 'cancel_btn_iconCls'	=> ( is => 'ro',	default => undef	 								);
 

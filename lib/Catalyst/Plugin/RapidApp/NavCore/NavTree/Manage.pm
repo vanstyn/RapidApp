@@ -81,7 +81,7 @@ sub fetch_nodes {
 		push @$nodes, {
 			id => 'manage/root', #<-- because the id ends in "root" the root nodes will be fetched into this node
 			text	=> 'Public Navigation Tree',
-			iconCls => 'icon-server_database',
+			iconCls => 'icon-server-database',
 			expanded => \1,
 			rootValidActions => \1 #<-- prevents actions that wouldn't be valid for the root node (rename, etc)
 		} if ($admin);

@@ -97,7 +97,7 @@ around 'content' => sub {
 			{
 				%{ $self->Module('data_tab')->content },
 				title => 'Data',
-				iconCls => 'icon-database_table',
+				iconCls => 'icon-database-table',
 				layout => 'anchor',
 				border => \0,
 				autoHeight => \1,

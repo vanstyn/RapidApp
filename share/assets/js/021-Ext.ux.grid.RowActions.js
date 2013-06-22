@@ -213,7 +213,7 @@ Ext.extend(Ext.ux.grid.RowActions, Ext.util.Observable, {
 	 * <pre>
 	 * callbacks:{
 	 * &nbsp;    'icon-open':function(...) {...}
-	 * &nbsp;   ,'icon-save':function(...) {...}
+	 * &nbsp;   ,'icon-save-ok':function(...) {...}
 	 * }
 	 * </pre>
 	 */

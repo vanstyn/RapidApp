@@ -50,6 +50,11 @@ before 'inject_asset_controllers' => sub {
       controller => 'Assets::RapidApp::JS',
       type => 'JS',
       include => 'rapidapp/share/assets/js',
+    },
+    {
+      controller => 'Assets::RapidApp::Icons',
+      type => 'IconSet',
+      include => 'rapidapp/share/assets/icons',
     }  
   ];
   

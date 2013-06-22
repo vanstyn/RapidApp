@@ -130,7 +130,7 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 		
     my $exclude_sources = try{$self->configs->{$model}{exclude_sources}} || [];
 		my $expand = (try{$self->configs->{$model}{expand}}) ? 1 : 0;
-    my $iconcls = (try{$self->configs->{$model}{iconCls}}) || 'icon-server_database';
+    my $iconcls = (try{$self->configs->{$model}{iconCls}}) || 'icon-server-database';
     my $text = (try{$self->configs->{$model}{text}}) || $model;
     my $template = try{$self->configs->{$model}{template}};
 		
