@@ -1496,4 +1496,8 @@ TODO: make sure this doesn't cause problems someplace else
   hyphens: auto;
 }
 
+.ra-icon-actioncolumn {
+  height: 16px;
+  width: 16px;
+}
 

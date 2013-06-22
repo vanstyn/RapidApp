@@ -29,7 +29,7 @@ before 'inject_asset_controllers' => sub {
       controller => 'Assets::ExtJS',
       type => 'Directory',
       include => 'ext-3.4.0',
-      html_head_css_subfiles =>[qw(
+      html_head_css_subfiles => [qw(
         resources/css/ext-all.css
         resources/css/xtheme-gray.css
         examples/ux/fileuploadfield/css/fileuploadfield.css
@@ -55,7 +55,13 @@ before 'inject_asset_controllers' => sub {
       controller => 'Assets::RapidApp::Icons',
       type => 'IconSet',
       include => 'rapidapp/share/assets/icons',
-    }  
+    },
+    {
+      controller => 'Assets::RapidApp::Filelink',
+      type => 'Directory',
+      include => 'rapidapp/share/assets/filelink',
+      html_head_css_subfiles => ['filelink.css']
+    },
   ];
   
   # Add local assets if src include dirs exist in the App directory

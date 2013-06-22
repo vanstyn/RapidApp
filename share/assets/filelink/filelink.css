@@ -1,0 +1,99 @@
+
+
+a.filelink {
+	font-family: Arial;
+	font-weight: bold;
+	font-size: 12px;
+	text-decoration: none !important;
+	padding-left: 16px;
+	cursor: pointer !important;
+	border-bottom-style: dotted;
+	border-bottom-width: 1px;
+	border-color: blue;
+	background-image: url(document_14x14.png) !important;
+	background-repeat:no-repeat;
+}
+
+a.filelink.txt, a.filelink.css, a.filelink.text {
+	background-image: url(page_white_text_14x14.png) !important;
+}
+
+a.filelink.pl, a.filelink.pm, a.filelink.ry, a.filelink.rb, a.filelink.py, a.filelink.sh, a.filelink.c, a.filelink.h, a.filelink.au3, a.filelink.xml, a.filelink.js {
+	background-image: url(page_code_14x14.png) !important;
+}
+
+a.filelink.ini, a.filelink.cnf, a.filelink.conf {
+	background-image: url(page_white_wrench_14x14.png) !important;
+}
+
+a.filelink.doc {
+	background-image: url(page_white_word_14x14.png) !important;
+}
+
+a.filelink.docx {
+	background-image: url(page_word_14x14.png) !important;
+}
+
+a.filelink.xls {
+	background-image: url(page_white_excel_14x14.png) !important;
+}
+
+a.filelink.xlsx {
+	background-image: url(page_excel_14x14.png) !important;
+}
+
+a.filelink.ppt, a.filelink.pptx {
+	background-image: url(page_white_powerpoint_14x14.png) !important;
+}
+
+a.filelink.pdf {
+	background-image: url(page_white_acrobat_14x14.png) !important;
+}
+
+a.filelink.png, a.filelink.jpg, a.filelink.jpeg, a.filelink.gif, a.filelink.tiff, a.filelink.tif, a.filelink.jpe, a.filelink.bmp, a.filelink.psd {
+	background-image: url(picture_14x14.png) !important;
+}
+
+a.filelink.avi, a.filelink.mpg, a.filelink.mpeg, a.filelink.mp4, a.filelink.mov, a.filelink.wmv, a.filelink.m4v, a.filelink.asf {
+	background-image: url(film_14x14.png) !important;
+}
+
+a.filelink.mp3, a.filelink.wav, a.filelink.ogg {
+	background-image: url(music_14x14.png) !important;
+}
+
+a.filelink.msg, a.filelink.email {
+	background-image: url(email_14x14.png) !important;
+}
+
+a.filelink.iso {
+	background-image: url(page_white_dvd_14x14.png) !important;
+}
+
+a.filelink.exe, a.filelink.com, a.filelink.bat {
+	background-image: url(application_14x14.png) !important;
+}
+
+a.filelink.html, a.filelink.htm {
+	background-image: url(page_white_world_14x14.png) !important;
+}
+
+a.filelink.mhtml, a.filelink.mht {
+	background-image: url(page_world_14x14.png) !important;
+}
+
+a.filelink.vcard, a.filelink.vcs {
+	background-image: url(vcard_14x14.png) !important;
+}
+
+a.filelink.ical, a.filelink.ics {
+	background-image: url(date_14x14.png) !important;
+}
+
+a.filelink.zip, a.filelink.zipx  {
+	background-image: url(page_white_compressed_14x14.png) !important;
+}
+
+a.filelink.bz2, a.filelink.tgz, a.filelink.gz, a.filelink.pkg  {
+	background-image: url(page_white_zip_14x14.png) !important;
+}

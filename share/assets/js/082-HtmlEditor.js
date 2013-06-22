@@ -465,7 +465,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile = Ext.extend(Ext.util.Observable, {
 		
 		var getDocMarkup_orig = this.cmp.getDocMarkup;
 		this.cmp.getDocMarkup = function() {
-			return '<link rel="stylesheet" type="text/css" href="/static/rapidapp/css/filelink.css" />' +
+			return '<link rel="stylesheet" type="text/css" href="/assets/rapidapp/filelink/current/filelink.css" />' +
 				getDocMarkup_orig.apply(this,arguments);
 		}
 	},

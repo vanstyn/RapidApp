@@ -959,7 +959,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 						'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
 						'<i>Open Item Column</i></span>',
 					items: [{
-						icon: '/static/rapidapp/images/magnifier.png',
+            iconCls: 'icon-magnifier ra-icon-actioncolumn',
 						tooltip: 'Open Item',
 						handler: this.row_open_handler,
 						scope: this
