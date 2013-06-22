@@ -44,12 +44,12 @@ before 'inject_asset_controllers' => sub {
     {
       controller => 'Assets::RapidApp::CSS',
       type => 'CSS',
-      include => 'rapidapp/src.d/css',
+      include => 'rapidapp/share/assets/css',
     },
     {
       controller => 'Assets::RapidApp::JS',
       type => 'JS',
-      include => 'rapidapp/src.d/js',
+      include => 'rapidapp/share/assets/js',
     }  
   ];
   
