@@ -105,7 +105,8 @@ before 'setup_components' => sub {
   if($config->{page_view_dir}) {
     $main_module_params->{page_viewer_class} = 'RapidApp::AppPageViewer';
     $main_module_params->{page_viewer_params} = { 
-      content_dir => $config->{page_view_dir}
+      content_dir => $config->{page_view_dir},
+      alias_dirs => { rapidapp => 'rapidapp/share/pages' }
     };
   }
   

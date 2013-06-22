@@ -12,16 +12,23 @@ use Switch qw(switch);
 
 has 'content_dir', is => 'ro', isa => 'Str', required => 1;
 has 'parse_title', is => 'ro', isa => 'Bool', default => 1;
+has 'alias_dirs', is => 'ro', isa => 'HashRef', default => sub {{}};
 
 sub _requested_file {
   my $self = shift;
   my $dir = $self->content_dir;
-  $dir = $self->c->config->{home} . '/' . $dir unless ($dir =~ /^\//);
   
   my $file = $self->c->req->params->{file} or die usererr
     "No file specified", title => "No file specified";
   
   my $path = "$dir/$file";
+  
+  # Optionally remap if file matches a configured alias_dir:
+  my @parts = split(/\//,$file);
+  my $alias = $self->alias_dirs->{(shift @parts)};
+  $path = join('/',$alias,@parts) if ($alias && scalar(@parts > 0));
+
+  $path = $self->c->config->{home} . '/' . $path unless ($path =~ /^\//);
   
   die usererr "$file not found", title => "No such file"
     unless (-f $path);
