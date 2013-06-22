@@ -201,14 +201,14 @@ has 'edit_bigfield' => (
 			
 #			'<div class="appdv-click ' . $self->AppDV->get_extconfig_param('id') . '">' .
 #			
-#				#'<div class="appdv-click-el edit:' . $Column->name . '" style="float: right;padding-top:4px;padding-left:4px;cursor:pointer;"><img src="/assets/rapidapp/images/static/pencil_tiny.png"></div>' .
+#				#'<div class="appdv-click-el edit:' . $Column->name . '" style="float: right;padding-top:4px;padding-left:4px;cursor:pointer;"><img src="/assets/rapidapp/misc/static/images/pencil_tiny.png"></div>' .
 #				'<div class="appdv-field-value ' . $Column->name . '" style="position:relative;">' .
 #				#'<div style="overflow:auto;">' .
 #					'<div class="data">{' . $display . '}</div>' .
 #					'<div class="fieldholder"></div>' .
 #					'<div class="appdv-click-el edit:' . $Column->name . ' appdv-edit-box">edit</div>' .
 #					'<div class="appdv-click-el edit:' . $Column->name . ' appdv-edit-box save">save</div>' .
-#					'<div class="appdv-click-el edit:' . $Column->name . ' appdv-edit-box cancel"><img class="cancel" src="/assets/rapidapp/images/static/cross_tiny.png"></div>' .
+#					'<div class="appdv-click-el edit:' . $Column->name . ' appdv-edit-box cancel"><img class="cancel" src="/assets/rapidapp/misc/static/images/cross_tiny.png"></div>' .
 #				'</div>' .
 #			'</div>';
 

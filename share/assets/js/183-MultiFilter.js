@@ -174,7 +174,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		};
 
 		var get_header_html = function(size){
-			return '<img src="/assets/rapidapp/images/static/simple_new.png" style="padding-bottom:3px;">&nbsp;&nbsp;' +
+			return '<img src="/assets/rapidapp/misc/static/images/simple_new.png" style="padding-bottom:3px;">&nbsp;&nbsp;' +
 				size + '&nbsp; Frozen (hidden) Filter Conditions Applied';
 		};
 		

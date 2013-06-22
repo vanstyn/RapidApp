@@ -438,7 +438,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHelp = Ext.extend(Ext.util.Observable, {
 			title: this.title,
 			height: this.height,
 			width: this.width,
-			src: '/static/rapidapp/html/htmleditor_load_download_help.html'
+			src: '/assets/rapidapp/misc/static/html/htmleditor_load_download_help.html'
 		});
 	}
 	

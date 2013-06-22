@@ -12,7 +12,7 @@ use RapidApp::ExtJS;
 
 
 has 'login_iconCls'			=> ( is => 'ro',	default => 'icon-key' );
-has 'login_logo'				=> ( is => 'ro',	default => '/assets/rapidapp/images/static/sportsrite_tiny.png' );
+has 'login_logo'				=> ( is => 'ro',	default => '/assets/rapidapp/misc/static/images/sportsrite_tiny.png' );
 has 'login_title'				=> ( is => 'ro',	default => 'Login' );
 has 'login_width'				=> ( is => 'ro',	default => 350 );
 has 'login_height'			=> ( is => 'ro',	default => 230 );

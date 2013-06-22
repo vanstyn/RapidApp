@@ -21,7 +21,8 @@ before 'inject_asset_controllers' => sub {
   
   my %defaults = (
     persist_state => 1,
-    sha1_string_length => 15
+    sha1_string_length => 15,
+    use_etags => 1,
   );
   
   my $assets = [
@@ -63,12 +64,13 @@ before 'inject_asset_controllers' => sub {
       html_head_css_subfiles => ['filelink.css']
     },
     {
-      controller => 'Assets::RapidApp::Images',
-      type => 'ImageSet',
-      include => 'rapidapp/share/assets/images',
+      controller => 'Assets::RapidApp::Misc',
+      type => 'Directory',
+      include => 'rapidapp/share/assets/misc',
       allow_static_requests => 1,
+      use_etags => 1,
       static_response_headers => {
-        'Cache-Control' => 'max-age=3600, must-revalidate'
+        'Cache-Control' => 'max-age=3600, must-revalidate, public'
       }
     },
   ];

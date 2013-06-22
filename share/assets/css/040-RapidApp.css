@@ -14,7 +14,7 @@ pre {
 	background-repeat: no-repeat;
 	background-position: center center;
 	background-color: white;
-	background-image: url(/assets/rapidapp/images/static/indicator.gif) !important;
+	background-image: url(/assets/rapidapp/misc/static/images/indicator.gif) !important;
 }
 
 .rapp-margin-bottom-0 {
@@ -137,7 +137,7 @@ pre {
 }
 
 .icon-bullet_key {
-	background-image: url(/assets/rapidapp/images/static/bullet_key.png) !important;
+	background-image: url(/assets/rapidapp/misc/static/images/bullet_key.png) !important;
 	background-repeat:no-repeat;
 	padding-right: 18px;
 	padding-top: 9px;
@@ -305,7 +305,7 @@ a.icon-magnify-tiny:hover span {
 
 
 .x-grid3-row-expander {
-	background-image: url(/assets/rapidapp/images/static/row-expand-sprite-arrow.gif) !important;
+	background-image: url(/assets/rapidapp/misc/static/images/row-expand-sprite-arrow.gif) !important;
 }
 
 .x-grid3-row-selected {
@@ -316,11 +316,11 @@ a.icon-magnify-tiny:hover span {
 
 /*
 .x-grid3-row-collapsed .x-grid3-row-expander {
-	background-image: url(/assets/rapidapp/images/static/bullet_arrow_up_sm.png) !important;
+	background-image: url(/assets/rapidapp/misc/static/images/bullet_arrow_up_sm.png) !important;
 	display: inline;
 }
 .x-grid3-row-expanded  .x-grid3-row-expander {
-	background-image: url(/assets/rapidapp/images/static/bullet_arrow_down_sm.png) !important;
+	background-image: url(/assets/rapidapp/misc/static/images/bullet_arrow_down_sm.png) !important;
 	display: inline;
 }
 
@@ -376,7 +376,7 @@ img {
 //.x-grid3-hd-PRI_KEY { padding: 0px 0px 0px 0px; }
 
 .x-grid3-td-editIcon .x-grid3-cell-inner {
-	background-image: url(/assets/rapidapp/images/static/table_edit.png) !important;
+	background-image: url(/assets/rapidapp/misc/static/images/table_edit.png) !important;
 	background-position:center center;
 	background-repeat:no-repeat;
 	padding-left: 2px;
@@ -459,7 +459,7 @@ html, body { height:100%; }
 	padding:1px 5px 1px 20px;
 	color:#4e79b2;
 	border:1px solid #c3daf9;
-	background:#fff url(/assets/rapidapp/images/static/form-collapse-icon.gif) no-repeat 2px 0;
+	background:#fff url(/assets/rapidapp/misc/static/images/form-collapse-icon.gif) no-repeat 2px 0;
 }
 
 /* Copied from x-plain (for IE + layouts to work) */
@@ -520,7 +520,7 @@ html, body { height:100%; }
 	z-index:500;
 	font-size: 10px;
 	font-family: arial;
-	background:url(/assets/rapidapp/images/static/pencil_tiny.png) center right no-repeat floralwhite;
+	background:url(/assets/rapidapp/misc/static/images/pencil_tiny.png) center right no-repeat floralwhite;
 	padding:1px 14px 1px 1px;
 	white-space:nowrap;
 	color: blue;
@@ -551,7 +551,7 @@ html, body { height:100%; }
 }
 
 .editing .appdv-edit-box + .save {
-	background:url(/assets/rapidapp/images/static/bullet_disk.png) center right no-repeat floralwhite;
+	background:url(/assets/rapidapp/misc/static/images/bullet_disk.png) center right no-repeat floralwhite;
 	padding-right: 15px;
 	float:left;
 }
@@ -619,15 +619,15 @@ html, body { height:100%; }
 }
 
 .appdv-tt-generated .edit-record-toggle .edit {
-	background:url(/assets/rapidapp/images/static/pencil_tiny.png) center right no-repeat;
+	background:url(/assets/rapidapp/misc/static/images/pencil_tiny.png) center right no-repeat;
 }
 
 .appdv-tt-generated .edit-record-toggle .save {
-	background:url(/assets/rapidapp/images/static/bullet_disk.png) center right no-repeat;
+	background:url(/assets/rapidapp/misc/static/images/bullet_disk.png) center right no-repeat;
 }
 
 .appdv-tt-generated .edit-record-toggle .cancel {
-	background:url(/assets/rapidapp/images/static/cross_tiny.png) center right no-repeat;
+	background:url(/assets/rapidapp/misc/static/images/cross_tiny.png) center right no-repeat;
 }
 
 /******************  END edit-record-toggle  *****************/
@@ -637,7 +637,7 @@ html, body { height:100%; }
 /******************  record-delete  *****************/
 
 .appdv-tt-generated .delete-record, .appdv-tt-generated .print-view {
-	background:url(/assets/rapidapp/images/static/cross.png) center right no-repeat;
+	background:url(/assets/rapidapp/misc/static/images/cross.png) center right no-repeat;
 	padding:4px 18px 1px 1px;
 	width: 30;
 	cursor:	pointer;
@@ -654,7 +654,7 @@ html, body { height:100%; }
 }
 
 .appdv-tt-generated .print-view {
-    background:url(/assets/rapidapp/images/static/printer.png) center right no-repeat;
+    background:url(/assets/rapidapp/misc/static/images/printer.png) center right no-repeat;
 }
 
 .rapidapp-printview .appdv-tt-generated .print-view {
@@ -688,7 +688,7 @@ html, body { height:100%; }
 }
 
 .appdv-editable-value:hover {
-	background:url(/assets/rapidapp/images/static/pencil_tiny.png) center right no-repeat;
+	background:url(/assets/rapidapp/misc/static/images/pencil_tiny.png) center right no-repeat;
 	cursor:	pointer;
 }
 
@@ -720,15 +720,15 @@ html, body { height:100%; }
 
 .appdv-edit-field td.icons .edit {
   width: 14px;
-	background:url(/assets/rapidapp/images/static/pencil_tiny.png) right center no-repeat;
+	background:url(/assets/rapidapp/misc/static/images/pencil_tiny.png) right center no-repeat;
 }
 
 .appdv-edit-field td.icons .save {
-	background:url(/assets/rapidapp/images/static/bullet_disk.png) center center no-repeat;
+	background:url(/assets/rapidapp/misc/static/images/bullet_disk.png) center center no-repeat;
 }
 
 .appdv-edit-field td.icons .cancel {
-	background:url(/assets/rapidapp/images/static/cross_tiny.png) center center no-repeat;
+	background:url(/assets/rapidapp/misc/static/images/cross_tiny.png) center center no-repeat;
 }
 
 .appdv-edit-field:hover td.icons .edit {
@@ -797,16 +797,16 @@ div.appdv-edit-bigfield {
 }
 
 .appdv-edit-bigfield .icons .edit {
-	background:url(/assets/rapidapp/images/static/pencil_tiny.png) center right no-repeat floralwhite;
+	background:url(/assets/rapidapp/misc/static/images/pencil_tiny.png) center right no-repeat floralwhite;
 }
 
 .appdv-edit-bigfield .icons .save {
-	background:url(/assets/rapidapp/images/static/bullet_disk.png) center right no-repeat floralwhite;
+	background:url(/assets/rapidapp/misc/static/images/bullet_disk.png) center right no-repeat floralwhite;
 	padding-right: 15px;
 }
 
 .appdv-edit-bigfield .icons .cancel {
-	background:url(/assets/rapidapp/images/static/cross_tiny.png) center right no-repeat floralwhite;
+	background:url(/assets/rapidapp/misc/static/images/cross_tiny.png) center right no-repeat floralwhite;
 	padding-right: 15px;
 }
 
@@ -845,7 +845,7 @@ div.appdv-edit-bigfield {
 }
 
 .appdv-tt-generated .clickable .editable-value .data:hover {
-	background:url(/assets/rapidapp/images/static/pencil_tiny.png) center right no-repeat;
+	background:url(/assets/rapidapp/misc/static/images/pencil_tiny.png) center right no-repeat;
 	cursor:	pointer;
 }
 
@@ -866,7 +866,7 @@ div.appdv-edit-bigfield {
 	z-index:500;
 	font-size: 10px;
 	font-family: arial;
-	background:url(/assets/rapidapp/images/static/pencil_tiny.png) center right no-repeat floralwhite;
+	background:url(/assets/rapidapp/misc/static/images/pencil_tiny.png) center right no-repeat floralwhite;
 	padding:1px 14px 1px 1px;
 	white-space:nowrap;
 	color: blue;
@@ -973,11 +973,11 @@ table.GSprop tbody.GSprop, table.GSprop thead.GSprop {border-left: 1px solid #EA
 table.GSprop tbody.GSprop {border-bottom: 1px solid #EAECEE!important;}
 
 table.GSprop tbody.GSprop td.GSprop, table.GSprop tbody.GSprop {
-padding: 5px!important; background: url("/assets/rapidapp/images/static/td_back.gif") repeat-x!important; text-align: left!important;
+padding: 5px!important; background: url("/assets/rapidapp/misc/static/images/td_back.gif") repeat-x!important; text-align: left!important;
 }
 
 th.GSprop, table.GSprop tbody.GSprop {
-padding: 5px!important; background: url("/assets/rapidapp/images/static/td_back.gif") repeat-x!important;
+padding: 5px!important; background: url("/assets/rapidapp/misc/static/images/td_back.gif") repeat-x!important;
 }
 
 th.GSprop { font-weight: bolder!important; margin: 5px !important; white-space:nowrap !important; padding: 2px!important;}
@@ -1079,7 +1079,7 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 
 
 .appsuperbox-create-item {
-	background:url(/assets/rapidapp/images/static/add.png) center right no-repeat;
+	background:url(/assets/rapidapp/misc/static/images/add.png) center right no-repeat;
 	padding:0px 18px 0px 1px;
 	width: 30;
 	cursor:	pointer;
@@ -1131,7 +1131,7 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 	font-weight: bold;
 	background-repeat: no-repeat;
 	background-position: right center;
-	background-image: url(/assets/rapidapp/images/static/checkbox_yes.png);
+	background-image: url(/assets/rapidapp/misc/static/images/checkbox_yes.png);
 }
 
 
@@ -1169,7 +1169,7 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
   font-size: 11px;
   font-family: arial,tahoma,verdana,helvetica;
   color: #333333;
-  background-image: url(/assets/rapidapp/images/static/clock_run_24x24.png);
+  background-image: url(/assets/rapidapp/misc/static/images/clock_run_24x24.png);
 	background-repeat: no-repeat;
 	background-position: 4px 2px;
 }
@@ -1266,7 +1266,7 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 
 .ra-footer td.left {
   text-align:left;
-  background-image: url(/assets/rapidapp/images/static/rapidapp_powered_logo_tiny.png);
+  background-image: url(/assets/rapidapp/misc/static/images/rapidapp_powered_logo_tiny.png);
   background-repeat: no-repeat;
   background-position: left center;
 }
@@ -1294,7 +1294,7 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
   border: 1px solid;
   border-color: #C1C1C1;
   min-height: 15px;
-  background-image: url(/assets/rapidapp/images/static/bullet_arrow_down.png);
+  background-image: url(/assets/rapidapp/misc/static/images/bullet_arrow_down.png);
   background-repeat: no-repeat;
   background-position: 2px center;
   font: 11px tahoma,arial,helvetica,sans-serif;
@@ -1314,7 +1314,7 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 }
 
 .ra-datastore-app-field-updating {
-  background-image: url(/assets/rapidapp/images/static/progress_green_blocks.gif) !important;
+  background-image: url(/assets/rapidapp/misc/static/images/progress_green_blocks.gif) !important;
   background-position: 4px center;
   padding-right: 2px !important;
   padding-left: 30px !important;
