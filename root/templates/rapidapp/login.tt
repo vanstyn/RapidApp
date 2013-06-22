@@ -45,7 +45,7 @@
 								<div class="cf" style="height:80px;">
                             <h2 class="lb_ribbon lb_blue">
 										<div style="padding-top:3px;">
-											<img src="/static/rapidapp/images/iconLoggedOut.png" style="vertical-align:middle;padding-bottom:5px;padding-right:9px;">
+											<img src="/assets/rapidapp/images/static/iconLoggedOut.png" style="vertical-align:middle;padding-bottom:5px;padding-right:9px;">
 											<span style="padding-right:11px;font-weight:bold;font-size:1.1em;">Sign in</span>
 										</div>
 									</h2>
@@ -136,7 +136,7 @@
 							<a target="_blank" href="http://www.intellitree.com/">
 								<img 
 									width="165" height="25" border="0" 
-									src="/static/rapidapp/images/rapidapp_powered_logo_small.png"
+									src="/assets/rapidapp/images/static/rapidapp_powered_logo_small.png"
 								>
 							</a>
 						</div> 

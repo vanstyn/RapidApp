@@ -10,7 +10,7 @@ extends 'RapidApp::AppGrid::AddItem';
 ################################################################
 ################################################################
 
-has 'tbar_icon' => ( is => 'ro', default => '/static/rapidapp/images/table_sql_create_32x32.png' );
+has 'tbar_icon' => ( is => 'ro', default => '/assets/rapidapp/images/static/table_sql_create_32x32.png' );
 has 'tbar_title' => ( is => 'ro', lazy_build => 1 );
 sub _build_tbar_title {
 	my $self = shift;

@@ -30,7 +30,7 @@ has 'login_banner' => ( is => 'ro',	default => sub {
 });
 
 has 'login_iconCls'			=> ( is => 'ro',	default => 'icon-key' );
-has 'login_logo'				=> ( is => 'ro',	default => '/static/rapidapp/images/sportsrite_tiny.png' );
+has 'login_logo'				=> ( is => 'ro',	default => '/assets/rapidapp/images/static/sportsrite_tiny.png' );
 has 'login_title'				=> ( is => 'ro',	default => 'Login' );
 has 'login_width'				=> ( is => 'ro',	default => 350 );
 has 'login_height'			=> ( is => 'ro',	default => 230 );
@@ -225,7 +225,7 @@ sub IntelliTree_logo {
 
 	return 
 		'<div class="intellitreeLogo">' . 
-			'<a href="http://www.intellitree.com/" target="_blank"><img src="/static/rapidapp/images/intellitreeLogo.png" alt="Intellitree Logo" width="111" height="59" border="0" /></a>' .
+			'<a href="http://www.intellitree.com/" target="_blank"><img src="/assets/rapidapp/images/static/intellitreeLogo.png" alt="Intellitree Logo" width="111" height="59" border="0" /></a>' .
 		'</div>';
 }
 #);
@@ -401,7 +401,7 @@ has 'xtemplate_cnf_old' => ( is => 'ro', lazy => 1, default => sub {
 				'</ul>
 			</div>			
 			<div class="title">' . $self->banner_title . '</div>
-			<div class="intellitreeLogo"><a href="http://www.intellitree.com/" target="_blank"><img src="/static/rapidapp/images/intellitreeLogo.png" alt="Intellitree Logo" width="111" height="59" border="0" /></a></div>
+			<div class="intellitreeLogo"><a href="http://www.intellitree.com/" target="_blank"><img src="/assets/rapidapp/images/static/intellitreeLogo.png" alt="Intellitree Logo" width="111" height="59" border="0" /></a></div>
 			
 			<div class="tabsContainer">' .
 			
@@ -462,7 +462,7 @@ has 'xtemplate_cnf_older' => ( is => 'ro', lazy => 1, default => sub {
 	<tr>
 		<td class="middle">
 			<div class="title">' . $self->banner_title . '</div>
-			<div class="intellitreeLogo"><a href="http://www.intellitree.com/" target="_blank"><img src="/static/rapidapp/images/intellitreeLogo.png" alt="Intellitree Logo" width="111" height="59" border="0" /></a></div>
+			<div class="intellitreeLogo"><a href="http://www.intellitree.com/" target="_blank"><img src="/assets/rapidapp/images/static/intellitreeLogo.png" alt="Intellitree Logo" width="111" height="59" border="0" /></a></div>
 			<div class="tabsContainer">' .
 			
 			

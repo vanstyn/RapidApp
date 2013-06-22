@@ -55,7 +55,7 @@ sub main_toolbar {
 					top		=> 6,
 					bottom	=> 4
 				},
-				#html		=> '<img src="/static/rapidapp/images/dbi_explorer_logo.gif">',
+				#html		=> '<img src="/assets/rapidapp/images/static/dbi_explorer_logo.gif">',
 				html		=> '<img src="' . $self->logo . '">',
 				
 			},

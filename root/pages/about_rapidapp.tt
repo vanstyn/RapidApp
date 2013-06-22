@@ -7,10 +7,10 @@
 <div class="ra-doc">
 
 <div style="float:right;padding-top:5px;padding-right:20px;">
-<img src="/static/rapidapp/images/btn_120x50_powered.png">
+<img src="/assets/rapidapp/images/static/btn_120x50_powered.png">
 </div>
 
-<img src="/static/rapidapp/images/rapidapp_catalyst_logo.png" width=225>
+<img src="/assets/rapidapp/images/static/rapidapp_catalyst_logo.png" width=225>
 
 <p>RapidApp is an open-source application framework that is currently under development for quickly building dynamic Web 2.0/AJAX interfaces for various data models. It is based on the following open-source technologies:</p>
 

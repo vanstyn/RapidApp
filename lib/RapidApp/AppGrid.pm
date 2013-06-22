@@ -584,7 +584,7 @@ has 'fields_hash' => ( is => 'ro', lazy => 1, isa => 'HashRef', default => sub {
 
 
 
-sub check_on 		{ '<img src="/static/rapidapp/images/checkmark.png">';				}
+sub check_on 		{ '<img src="/assets/rapidapp/images/static/checkmark.png">';				}
 sub check_off 		{ '';																		}
 
 

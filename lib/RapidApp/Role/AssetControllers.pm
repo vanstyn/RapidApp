@@ -13,7 +13,7 @@ use CatalystX::InjectComponent;
 use Catalyst::Utils;
 use Path::Class qw(dir);
 
-use Catalyst::Controller::AutoAssets 0.19;
+use Catalyst::Controller::AutoAssets 0.21;
 with 'Catalyst::Plugin::AutoAssets';
 
 before 'inject_asset_controllers' => sub {
@@ -62,7 +62,17 @@ before 'inject_asset_controllers' => sub {
       include => 'rapidapp/share/assets/filelink',
       html_head_css_subfiles => ['filelink.css']
     },
+    {
+      controller => 'Assets::RapidApp::Images',
+      type => 'ImageSet',
+      include => 'rapidapp/share/assets/images',
+      allow_static_requests => 1,
+      static_response_headers => {
+        'Cache-Control' => 'max-age=3600, must-revalidate'
+      }
+    },
   ];
+  
   
   # Add local assets if src include dirs exist in the App directory
   push @$assets, {

@@ -105,7 +105,7 @@ has 'listeners' => ( is => 'ro', lazy => 1, default => sub {
 
 });
 
-has 'ed_icon' => ( is => 'ro', default =>'<img src="/static/rapidapp/images/pencil_tiny.png">' );
+has 'ed_icon' => ( is => 'ro', default =>'<img src="/assets/rapidapp/images/static/pencil_tiny.png">' );
 
 sub fieldMarkup {
 	my $self = shift;
