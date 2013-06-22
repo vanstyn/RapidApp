@@ -9,8 +9,17 @@ use RapidApp::Include qw(sugar perlutil);
 
 use RapidApp::DbicAppPropertyPage;
 
-has 'tt_include_path', is => 'ro', lazy => 1, default => sub { (shift)->app->config->{root}->stringify . '/templates' };
 has 'tt_file', is => 'ro', isa => 'Str', required => 1;
+
+has 'tt_include_path' => ( 
+	is => 'ro', 
+	isa => 'Str', 
+	lazy => 1,
+	default => sub {
+		my $self = shift;
+    return $self->app->default_tt_include_path;
+	}
+);
 
 # if true, page will be wrapped into a tab panel with an extra "Data" tab (RapidApp::DbicAppPropertyPage)
 has 'tabify_data', is => 'ro', isa => 'Bool', default => 0;

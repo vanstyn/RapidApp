@@ -514,7 +514,14 @@ before 'setup_plugins' => sub {
 };
 # --
 
-
+# TEMP!!! To be updated to call dist_dir (share dir)
+sub default_tt_include_path {
+  my $c = shift;
+  return join(':',
+    $c->config->{home} . '/root',
+    $c->config->{home} . '/rapidapp/share' #<-- Temp!
+  );
+}
 
 # convenience util function
 my $TT;
@@ -522,9 +529,9 @@ sub template_render {
 	my $c = shift;
 	my $template = shift;
 	my $vars = shift || {};
-	
+  
 	$TT ||= Template->new({ 
-    INCLUDE_PATH => $c->config->{home} . '/root',
+    INCLUDE_PATH => $c->default_tt_include_path,
     ABSOLUTE => 1
   });
 	
@@ -533,6 +540,24 @@ sub template_render {
 
 	return $out;
 }
+
+# Temp hack to set the include path for our TT Views. These Views will be
+# totally refactored in RapidApp 2. This will remain until then:
+before 'setup_components' => sub {
+  my $c = shift;
+  my @views = qw(
+    View::RapidApp::TT
+    View::RapidApp::Viewport
+    View::RapidApp::Printview
+    View::RapidApp::HttpStatus
+  );
+  
+  $c->config( $_ => { 
+    INCLUDE_PATH => $c->default_tt_include_path,
+    ABSOLUTE => 1
+  }) for (@views);
+};
+
 
 our $ON_FINALIZE_SUCCESS = [];
 
