@@ -14,7 +14,7 @@ use Catalyst::Utils;
 use Path::Class qw(dir);
 use RapidApp;
 
-use Catalyst::Controller::AutoAssets 0.21;
+use Catalyst::Controller::AutoAssets 0.22;
 with 'Catalyst::Plugin::AutoAssets';
 
 sub get_extjs_dir {
