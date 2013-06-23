@@ -1531,7 +1531,7 @@ sub delete_items_button {
 		func => 'new Ext.Button', 
 		parm => {
 			text		=> 'delete',
-			iconCls	=> 'icon-bullet_delete',
+			iconCls	=> 'icon-bullet-delete',
 			handler	=> RapidApp::JSONFunc->new( raw => 1, func => 
 				'function(btn) { ' . 
 		

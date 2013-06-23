@@ -1156,7 +1156,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				
 				var btn = cmp.store.buttonConstructor(Ext.apply({
 					tooltip: 'Edit',
-					iconCls: 'icon-application_form_edit',
+					iconCls: 'icon-application-form-edit',
 					handler: function(btn) {
 						var store = cmp.store;
 						if(store.proxy.getConnection().isLoading()) { return; }

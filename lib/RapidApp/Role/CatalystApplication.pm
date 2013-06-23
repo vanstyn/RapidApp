@@ -520,7 +520,9 @@ my $share_dir = dist_dir('RapidApp');
 sub default_tt_include_path {
   my $c = shift;
   return join(':',
+    $c->config->{home} . '/root/templates',
     $c->config->{home} . '/root',
+    $share_dir . '/templates',
     $share_dir
   );
 }

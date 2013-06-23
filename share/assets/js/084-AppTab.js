@@ -785,7 +785,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			var storeId = this.store.storeId;
 			var deleteBtn = new Ext.Button({
 				text: 'delete',
-				iconCls: 'icon-bullet_delete',
+				iconCls: 'icon-bullet-delete',
 				handler: function(btn) {
 					var grid = btn.ownerCt.ownerCt;
 					var Records = grid.getSelectionModel().getSelections();
