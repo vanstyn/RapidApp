@@ -8,7 +8,11 @@ use strict;
 use warnings;
 use Moose;
 extends 'Catalyst::Model';
-with 'RapidApp::Role::TopController';
+
+# Don't think this class is being used
+
+# This is gone:
+#with 'RapidApp::Role::TopController';
 
 
 our $VERSION = '0.1';

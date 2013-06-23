@@ -12,6 +12,7 @@ use RapidApp::Include qw(sugar perlutil);
 use CatalystX::InjectComponent;
 use Catalyst::Utils;
 use Path::Class qw(dir);
+use File::ShareDir qw(dist_dir);
 
 use Catalyst::Controller::AutoAssets 0.21;
 with 'Catalyst::Plugin::AutoAssets';
@@ -24,6 +25,8 @@ before 'inject_asset_controllers' => sub {
     sha1_string_length => 15,
     use_etags => 1,
   );
+  
+  my $share_dir = dist_dir('RapidApp');
   
   my $assets = [
     {
@@ -45,28 +48,28 @@ before 'inject_asset_controllers' => sub {
     {
       controller => 'Assets::RapidApp::CSS',
       type => 'CSS',
-      include => 'rapidapp/share/assets/css',
+      include => $share_dir . '/assets/css',
     },
     {
       controller => 'Assets::RapidApp::JS',
       type => 'JS',
-      include => 'rapidapp/share/assets/js',
+      include => $share_dir . '/assets/js',
     },
     {
       controller => 'Assets::RapidApp::Icons',
       type => 'IconSet',
-      include => 'rapidapp/share/assets/icons',
+      include => $share_dir . '/assets/icons',
     },
     {
       controller => 'Assets::RapidApp::Filelink',
       type => 'Directory',
-      include => 'rapidapp/share/assets/filelink',
+      include => $share_dir . '/assets/filelink',
       html_head_css_subfiles => ['filelink.css']
     },
     {
       controller => 'Assets::RapidApp::Misc',
       type => 'Directory',
-      include => 'rapidapp/share/assets/misc',
+      include => $share_dir . '/assets/misc',
       allow_static_requests => 1,
       use_etags => 1,
       static_response_headers => {

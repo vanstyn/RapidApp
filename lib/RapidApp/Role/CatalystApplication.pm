@@ -13,6 +13,7 @@ use RapidApp::Log;
 use RapidApp::Debug 'DEBUG';
 use Text::SimpleTable::AutoWidth;
 
+use File::ShareDir qw(dist_dir);
 use Template;
 
 # initialize properties of our debug messages
@@ -514,12 +515,13 @@ before 'setup_plugins' => sub {
 };
 # --
 
-# TEMP!!! To be updated to call dist_dir (share dir)
+
+my $share_dir = dist_dir('RapidApp');
 sub default_tt_include_path {
   my $c = shift;
   return join(':',
     $c->config->{home} . '/root',
-    $c->config->{home} . '/rapidapp/share' #<-- Temp!
+    $share_dir
   );
 }
 
