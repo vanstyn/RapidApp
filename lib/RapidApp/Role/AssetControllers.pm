@@ -12,7 +12,7 @@ use RapidApp::Include qw(sugar perlutil);
 use CatalystX::InjectComponent;
 use Catalyst::Utils;
 use Path::Class qw(dir);
-use File::ShareDir qw(dist_dir);
+use RapidApp;
 
 use Catalyst::Controller::AutoAssets 0.21;
 with 'Catalyst::Plugin::AutoAssets';
@@ -21,12 +21,11 @@ before 'inject_asset_controllers' => sub {
   my $c = shift;
   
   my %defaults = (
-    persist_state => 1,
     sha1_string_length => 15,
     use_etags => 1,
   );
   
-  my $share_dir = dist_dir('RapidApp');
+  my $share_dir = RapidApp->share_dir;
   
   my $assets = [
     {
@@ -43,7 +42,8 @@ before 'inject_asset_controllers' => sub {
         ext-all-debug.js
         src/debug.js
         examples/ux/fileuploadfield/FileUploadField.js
-      )]
+      )],
+      persist_state => 1,
     },
     {
       controller => 'Assets::RapidApp::CSS',

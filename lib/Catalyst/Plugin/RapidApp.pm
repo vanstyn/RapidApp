@@ -2,6 +2,8 @@ package Catalyst::Plugin::RapidApp;
 use Moose::Role;
 use namespace::autoclean;
 
+use RapidApp;
+
 # Built-in plugins required for all RapidApp Applications:
 with qw(
  RapidApp::Role::CatalystApplication

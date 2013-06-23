@@ -8,8 +8,6 @@ use RapidApp::Include qw(sugar perlutil);
 require Module::Runtime;
 require Catalyst::Utils;
 
-use File::ShareDir qw(dist_dir);
-
 sub _navcore_enabled { 
   my $c = shift;
   return (
@@ -102,7 +100,7 @@ before 'setup_components' => sub {
   $main_module_params->{header_template} = $config->{banner_template}
     if($config->{banner_template});
   
-  my $share_dir = dist_dir('RapidApp');
+  my $share_dir = RapidApp->share_dir;
   
   # Allow accessing files in this dir under '#!/main/page?file=foo.tt'
   if($config->{page_view_dir}) {
