@@ -17,6 +17,11 @@ use RapidApp;
 use Catalyst::Controller::AutoAssets 0.21;
 with 'Catalyst::Plugin::AutoAssets';
 
+sub get_extjs_dir {
+  my $c = shift;
+  return $c->config->{extjs_dir} || 'ext-3.4.0';
+}
+
 before 'inject_asset_controllers' => sub {
   my $c = shift;
   
@@ -31,7 +36,7 @@ before 'inject_asset_controllers' => sub {
     {
       controller => 'Assets::ExtJS',
       type => 'Directory',
-      include => 'ext-3.4.0',
+      include => $c->get_extjs_dir,
       html_head_css_subfiles => [qw(
         resources/css/ext-all.css
         resources/css/xtheme-gray.css
