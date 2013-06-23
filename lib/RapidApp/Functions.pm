@@ -8,7 +8,7 @@ use Term::ANSIColor qw(:constants);
 use Data::Dumper;
 use RapidApp::RootModule;
 use Clone qw(clone);
-use JSON::PP qw(encode_json);
+use RapidApp::JSON::MixedEncoder qw(encode_json);
 use Try::Tiny;
 use Time::HiRes qw(gettimeofday tv_interval);
 use Text::SimpleTable;
@@ -333,7 +333,7 @@ sub func_debug_around {
 			
 		local $Data::Dumper::Maxdepth = $opt{dump_maxdepth};
 		return Dumper(@_) unless ($opt{use_json});
-		#return JSON::PP->new->allow_blessed->convert_blessed->allow_nonref->encode(\@_);
+		#return RapidApp::JSON::MixedEncoder->new->allow_blessed->convert_blessed->allow_nonref->encode(\@_);
 		return encode_json(\@_);
 	} unless ($opt{dump_func});
 

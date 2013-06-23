@@ -5,7 +5,7 @@ use warnings;
 use Moose;
 
 use DateTime;
-use JSON::PP 'encode_json', 'decode_json';
+use RapidApp::JSON::MixedEncoder 'encode_json', 'decode_json';
 use DateTime::Format::Flexible;
 use Scalar::Util 'blessed';
 
@@ -189,7 +189,7 @@ around BUILDARGS => sub {
 	# if 'params' is given, split it out
 	if (defined $params->{params}) {
 		my $p= $params->{params};
-		ref $p eq 'HASH' or $p= JSON::PP::decode_json($p);
+		ref $p eq 'HASH' or $p= RapidApp::JSON::MixedEncoder::decode_json($p);
 		$params->{auth}=          $p->{auth}  if defined $p->{auth};
 		$params->{target}=        $p->{url}   if defined $p->{url};
 		$params->{requestParams}= $p->{req}   if defined $p->{req};
@@ -307,11 +307,11 @@ This function is a convenience method to get or set params as a JSON string.
 sub paramsJson {
 	my ($self, $param)= @_;
 	if (defined $param) {
-		$self->params(JSON::PP::decode_json($param));
+		$self->params(RapidApp::JSON::MixedEncoder::decode_json($param));
 		return $param;
 	}
 	else {
-		return JSON::PP::encode_json $self->params;
+		return RapidApp::JSON::MixedEncoder::encode_json $self->params;
 	}
 }
 

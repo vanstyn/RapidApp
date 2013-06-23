@@ -1841,12 +1841,12 @@ sub get_multi_relationship_column_cnf {
 				#'var key_key = ' .
 				'var key_val = record.data["' . $self->column_prefix . $rel_data->{self} . '"];' .
 				
-				'var attr = ' . JSON::PP::encode_json($rel_data->{attrs}) . ';' .
+				'var attr = ' . RapidApp::JSON::MixedEncoder::encode_json($rel_data->{attrs}) . ';' .
 				
 				( # TODO: needs to be generalized better
 					$conf->{open_url_multi} ?
 						'if(key_val && value && value > 0 && !Ext.ux.RapidApp.NO_DBIC_REL_LINKS) {' .
-							'var loadCfg = ' . JSON::PP::encode_json($loadCfg) . ';' .
+							'var loadCfg = ' . RapidApp::JSON::MixedEncoder::encode_json($loadCfg) . ';' .
 							
 							'var join_name = "' . $conf->{open_url_multi_rs_join_name} . '";' .
 							

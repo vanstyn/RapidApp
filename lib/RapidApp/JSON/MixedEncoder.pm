@@ -30,13 +30,28 @@ sub new {
 	return bless JSON::PP->new->allow_blessed->convert_blessed->allow_nonref, __PACKAGE__;
 }
 
+
+# We need to do this so that JSON won't quote the output of our
+# TO_JSON method and will allow us to return invalid JSON...
+# In this case, we're actually using the JSON lib to generate
+# JavaScript (with functions), not JSON
 sub object_to_json {
 	my ($self, $obj)= @_;
+  
+  my $type = ref($obj);
+    
+  # Convert \'NULL' into undef (this came up after switing from MySQL to SQLite??)
+  $obj = undef if ($type eq 'SCALAR' && $$obj eq 'NULL');
+  
+  # FIXME: This is another SQLite-ism: There are probably more
+  $obj = undef if ($type eq 'SCALAR' && $$obj eq 'current_timestamp');
+  
 	if (blessed($obj)) {
 		my $method= $obj->can('TO_JSON_RAW');
 		return $method->($obj) if defined $method;
 	}
-	return $self->SUPER::object_to_json($obj);
+  
+  return $self->SUPER::object_to_json($obj);
 }
 
 1;

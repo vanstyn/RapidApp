@@ -175,7 +175,7 @@ sub _build_base_params {
 
 	my $encoded = $self->c->req->params->{base_params};
 	if (defined $encoded) {
-		my $decoded = JSON::PP::decode_json($encoded) or die "Failed to decode base_params JSON";
+		my $decoded = RapidApp::JSON::MixedEncoder::decode_json($encoded) or die "Failed to decode base_params JSON";
 		foreach my $k (keys %$decoded) {
 			$params->{$k} = $decoded->{$k};
 		}
@@ -191,7 +191,7 @@ sub _build_base_params {
 	
 	my $orig_params = {};
 	my $orig_params_enc = $self->c->req->params->{orig_params};
-	$orig_params = JSON::PP::decode_json($orig_params_enc) if (defined $orig_params_enc);
+	$orig_params = RapidApp::JSON::MixedEncoder::decode_json($orig_params_enc) if (defined $orig_params_enc);
 	
 	foreach my $key (@$keys) {
 		$params->{$key} = $orig_params->{$key} if (defined $orig_params->{$key});

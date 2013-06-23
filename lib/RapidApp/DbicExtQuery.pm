@@ -160,13 +160,13 @@ sub build_data_fetch_resultset {
 	#delete $params->{columns} if (defined $params->{query});
 
 	#Add all the fields (assciated with string search/query) This replaces the above delete $params->{columns} 
-	push @{$params->{columns}},@{JSON::PP::decode_json($params->{fields})} if (defined $params->{query} and defined $params->{fields});
+	push @{$params->{columns}},@{RapidApp::JSON::MixedEncoder::decode_json($params->{fields})} if (defined $params->{query} and defined $params->{fields});
 
 	# If there is a filter, we need to make sure that column is included if we have a 
 	# limited set of columns:
 	if($params->{columns} and $params->{filter}) {
 		my $filters = $params->{filter};
-		$filters = JSON::PP::decode_json($params->{filter}) unless (ref($filters));
+		$filters = RapidApp::JSON::MixedEncoder::decode_json($params->{filter}) unless (ref($filters));
 		foreach my $filter (@$filters) {
 			push @{$params->{columns}}, $filter->{field} if ($filter->{field});
 		}
@@ -232,7 +232,7 @@ sub Attr_spec {
 	# Most of this logic is duplicated in the Search_spec method. Would be nice to find a 
 	# better way to handle this:
 	if($params->{multifilter}) {
-		my $multifilter = JSON::PP::decode_json($params->{multifilter});
+		my $multifilter = RapidApp::JSON::MixedEncoder::decode_json($params->{multifilter});
 
 		my $multi_dbfnames;
 		$multi_dbfnames = sub {
@@ -433,7 +433,7 @@ sub Search_spec {
 	#my $set_filters = {};
 	if (defined $params->{filter}) {
 		my $filters = $params->{filter};
-		$filters = JSON::PP::decode_json($params->{filter}) unless (ref($filters) eq 'ARRAY');
+		$filters = RapidApp::JSON::MixedEncoder::decode_json($params->{filter}) unless (ref($filters) eq 'ARRAY');
 		if (defined $filters and ref($filters) eq 'ARRAY') {
 			foreach my $filter (@$filters) {
 				my $field = $filter->{field};
@@ -514,7 +514,7 @@ sub Search_spec {
 	
 	my $search = [];
 	if (defined $params->{fields} and defined $params->{query} and $params->{query} ne '') {
-		my $fields = JSON::PP::decode_json($params->{fields});
+		my $fields = RapidApp::JSON::MixedEncoder::decode_json($params->{fields});
 		if (defined $fields and ref($fields) eq 'ARRAY') {
 			foreach my $field (@$fields) {
 				next unless $self->search_permitted($field);
@@ -535,7 +535,7 @@ sub Search_spec {
 	my $Search;
 	
 	if($params->{multifilter}) {
-		my $multifilter = JSON::PP::decode_json($params->{multifilter});
+		my $multifilter = RapidApp::JSON::MixedEncoder::decode_json($params->{multifilter});
 	
 		my $map_dbfnames;
 		$map_dbfnames = sub {

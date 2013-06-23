@@ -10,7 +10,7 @@ package RapidApp::ExtJS;
 
 
 use strict;
-use JSON::PP;
+use RapidApp::JSON::MixedEncoder;
 
 use Moose;
 
@@ -157,7 +157,7 @@ sub Window_code {
 	}
 	
 	$code .= 'var ' . $Params->{name} . ' = ' . 
-		'new Ext.Window(' . JSON::PP::encode_json($Params) . '); ';
+		'new Ext.Window(' . RapidApp::JSON::MixedEncoder::encode_json($Params) . '); ';
 	
 	$code .= $Params->{name} . '.show();' unless ($no_show);
 	

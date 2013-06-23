@@ -5,7 +5,7 @@ package RapidApp::Role::Controller;
 
 
 use strict;
-use JSON::PP;
+use RapidApp::JSON::MixedEncoder;
 use Moose::Role;
 with 'RapidApp::Role::Module';
 

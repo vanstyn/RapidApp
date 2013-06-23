@@ -9,7 +9,7 @@ BEGIN { extends 'Catalyst::Controller' }
 
 use RapidApp::CatalystX::SimpleCAS::Content;
 use RapidApp::CatalystX::SimpleCAS::Store::File;
-use JSON::PP;
+use RapidApp::JSON::MixedEncoder;
 use MIME::Base64;
 use Image::Resize;
 use String::Random;
@@ -140,7 +140,7 @@ sub upload_image: Local  {
 		filename => $self->safe_filename($upload->filename),
 	};
 	
-	return $c->res->body(JSON::PP::encode_json($packet));
+	return $c->res->body(RapidApp::JSON::MixedEncoder::encode_json($packet));
 }
 
 
@@ -210,7 +210,7 @@ sub upload_file : Local {
 		css_class => $Content->filelink_css_class,
 	};
 	
-	return $c->res->body(JSON::PP::encode_json($packet));
+	return $c->res->body(RapidApp::JSON::MixedEncoder::encode_json($packet));
 }
 
 
@@ -238,7 +238,7 @@ sub upload_echo_base64: Local  {
 		echo_content => $base64
 	};
 	
-	return $c->res->body(JSON::PP::encode_json($packet));
+	return $c->res->body(RapidApp::JSON::MixedEncoder::encode_json($packet));
 }
 
 1;
