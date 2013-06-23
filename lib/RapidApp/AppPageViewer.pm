@@ -24,9 +24,9 @@ sub _requested_file {
   my $path = "$dir/$file";
   
   # Optionally remap if file matches a configured alias_dir:
-  my @parts = split(/\//,$file);
-  my $alias = $self->alias_dirs->{(shift @parts)};
-  $path = join('/',$alias,@parts) if ($alias && scalar(@parts > 0));
+  my @p = split(/\//,$file);
+  my $alias = $self->alias_dirs->{(shift @p)};
+  $path = join('/',$alias,@p) if ($alias && scalar(@p > 0));
 
   $path = $self->c->config->{home} . '/' . $path unless ($path =~ /^\//);
   

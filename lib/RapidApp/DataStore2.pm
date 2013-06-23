@@ -454,6 +454,7 @@ sub apply_coderef_columns {
 
 sub set_sort {
 	my $self = shift;
+  return $self->apply_config( sort_spec => {} ) unless (defined $_[0]);
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	return $self->apply_config( sort_spec => { %opt } );
 }

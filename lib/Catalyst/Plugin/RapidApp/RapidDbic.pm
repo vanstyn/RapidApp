@@ -207,8 +207,7 @@ before 'setup_component' => sub {
     
     # ----------------
     # Apply some column-specific defaults:
-    my %col_props = ( $class->TableSpec_get_conf('column_properties') || () );
-    
+
     # Set actual column headers (this is not required but real headers are displayed nicer):
     my %col_props = ( $class->TableSpec_get_conf('column_properties') || () );
     for my $col ($class->columns,$class->relationships) {

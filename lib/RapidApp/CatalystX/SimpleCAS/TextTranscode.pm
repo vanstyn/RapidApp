@@ -331,9 +331,15 @@ sub parse_html_get_styles {
 	my $styles = '';
 	my $newhtml = '';
 	while (my $tag = $parser->get_token) {
-		$in_style = 0 and next if ($tag->is_end_tag('style'));
+    if ($tag->is_end_tag('style')) {
+      $in_style = 0;
+      next;
+    }
 		$styles .= $tag->as_is and next if ($in_style);
-		$in_style = 1 and next if ($tag->is_start_tag('style'));
+    if ($tag->is_start_tag('style')) {
+      $in_style = 1; 
+      next;
+    }
 		$newhtml .= $tag->as_is if($strip && !$tag->is_tag('style'));
 	};
 	return undef if ($styles eq '');
