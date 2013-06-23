@@ -90,7 +90,7 @@ sub _set_menu_select_editor {
 			$val_to_disp{$sel->{value}} = '<div class="with-icon ' . $sel->{iconCls} . '">' . $sel->{text} . '</div>'
 				if($sel->{iconCls});
 				
-			$val_to_disp{$sel->{value}} = '<img src="/static/ext/resources/images/default/s.gif" class="icon-centered-16x16 ' . $sel->{iconCls} . '">'
+			$val_to_disp{$sel->{value}} = '<img src="/assets/rapidapp/misc/static/s.gif" class="icon-centered-16x16 ' . $sel->{iconCls} . '">'
 				if($sel->{iconCls} and jstrue($new->{render_icon_only}));
 		};
 	}

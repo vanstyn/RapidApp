@@ -268,7 +268,9 @@ a.icon-magnify-tiny:hover span {
 
 
 /* This is needed only with gray theme: */
+/*
 .x-toolbar .xtb-sep { background-image: url(/static/ext/resources/images/default/grid/grid-split.gif) !important }
+*/
 
 .x-tab-panel-header { border-bottom: 0px; }
 
@@ -1003,7 +1005,7 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 
 
 .x-superboxselect-x-flag, body.ext-ie7 .x-superboxselect-x-flag, body.ext-ie6 .x-superboxselect-x-flag {
-	background-image: url(/static/ext/resources/images/default/s.gif);
+	background-image: url(/assets/rapidapp/misc/static/s.gif);
 	background-repeat: no-repeat;
 	background-position:  2px center;
 	padding-left: 21px !important;
@@ -1119,9 +1121,9 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 /* alternative to x-grid3-dirty-cell, not currently in use */
 .border-dirty {
   border-width:5px 0px 0px 5px;
-  -moz-border-image:url("/static/ext/resources/images/default/grid/dirty.gif") 50% 50% 50% 50% stretch;
-  -webkit-border-image:url("/static/ext/resources/images/default/grid/dirty.gif") 50% 50% 50% 50% stretch;
-  border-image: url("/static/ext/resources/images/default/grid/dirty.gif") 50% 50% 50% 50% stretch;
+  -moz-border-image:url("/assets/rapidapp/misc/static/images/dirty.gif") 50% 50% 50% 50% stretch;
+  -webkit-border-image:url("/assets/rapidapp/misc/static/images/dirty.gif") 50% 50% 50% 50% stretch;
+  border-image: url("/assets/rapidapp/misc/static/images/dirty.gif") 50% 50% 50% 50% stretch;
 }
 
 
@@ -1341,7 +1343,7 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 }
 
 .ra-exception-heading {
-  background-image: url(/static/ext/resources/images/gray/window/icon-error.gif);
+  background-image: url(/assets/rapidapp/misc/static/icon-error.gif);
   background-repeat: no-repeat;
   background-position: 10px center;
   padding-left:60px;
