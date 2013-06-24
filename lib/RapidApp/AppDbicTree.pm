@@ -18,6 +18,16 @@ has 'dbic_model_tree', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, defaul
 	die "Must supply either 'dbic_models' or 'dbic_model_tree'" unless ($self->dbic_models);
 	my $list = parse_dbic_model_list($self->app,@{$self->dbic_models});
   
+  # validate models:
+  for my $itm (@$list) {
+    my $Model = $self->app->model($itm->{model});
+    die "Error: model '$itm->{model}' is not a Catalyst::Model::DBIC::Schema"
+      unless ($Model->isa('Catalyst::Model::DBIC::Schema'));
+    
+    die "Error: model '$itm->{model}' must be configured with quote_names => 1 in connect_info " .
+      "for RapidApp to function correctly." unless $Model->connect_info->{quote_names};
+  }
+  
   # strip excludes:
   for my $itm (@$list) {
     my $exclude_sources = try{$self->configs->{$itm->{model}}{exclude_sources}} || [];
