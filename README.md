@@ -20,12 +20,14 @@ First, clone the repo:
 ```
 
 RapidApp can either be installed as a module or simply ran directly out of a local directory. 
-To install as a module (recommended, to auto install dependencies):
+To install as a module (recommended, to auto install dependencies - requires Dist::Zilla):
 
 ```
   dzil build
   cpanm RapidApp-0.99004.tar.gz  # or whatever the current version is
 ```
+
+Obviously, once RapidApp is on CPAN it will just be ```cpanm RapidApp```
 
 Alternatively, to just run out of the local directory, you just need to add the lib directory to your @INC and also set the environment variable for the share_dir. For example:
 
@@ -159,7 +161,7 @@ This doc is very much in progress....
 
 ## SUPPORT
 
-This is a brand new project and is still in the process of getting organized. If you are interested in learning more or getting involved, or just have questions, you can find me in the new channel #rapidapp I started on irc.perl.org or via E-Mail at vanstyn@cpan.org.
+This is a brand new project and is still in the process of getting organized. If you are interested in learning more or getting involved, or just have questions, you can find me in the new channel **#rapidapp** I started on irc.perl.org or via E-Mail at vanstyn@cpan.org.
 
 ## AUTHOR
 
