@@ -19,12 +19,15 @@ First, clone the repo:
   cd RapidApp
 ```
 
-RapidApp can either be installed as a module or simply ran directly out of a local directory. To install as a module:
+RapidApp can either be installed as a module or simply ran directly out of a local directory. 
+To install as a module (recommended, to auto install dependencies - requires Dist::Zilla):
 
 ```
   dzil build
   cpanm RapidApp-0.99005.tar.gz  # or whatever the current version is
 ```
+
+Obviously, once RapidApp is on CPAN it will just be ```cpanm RapidApp```
 
 Alternatively, to just run out of the local directory, you just need to add the lib directory to your @INC and also set the environment variable for the share_dir. For example:
 
@@ -138,7 +141,7 @@ The above is a fully working application. Start the test server:
   script/myapp_server.pl
 ```
 
-The above is just the barebones configuration, is read-only, etc. There are many more options that can be passed to the 'Plugin::RapidApp::RapidDbic' config to control all aspects of the CRUD, grid display, columns, and so on. I'm still working on documenting these, but for now, see MimeCas for a running example with lots of example options.
+The above is just the barebones configuration, is read-only, etc. There are many more options that can be passed to the 'Plugin::RapidApp::RapidDbic' config to control all aspects of the CRUD, grid display, columns, and so on. I'm still working on documenting these, but for now, see **[MimeCas](https://github.com/vanstyn/MimeCas)** for a running example with lots of example options.
 
 ### Optional plugins
 
@@ -158,7 +161,7 @@ This doc is very much in progress....
 
 ## SUPPORT
 
-This is a brand new project and is still in the process of getting organized. If you are interested in learning more or getting involved, or just have questions, you can find me in the new channel #rapidapp I started on irc.perl.org or via E-Mail at vanstyn@cpan.org.
+This is a brand new project and is still in the process of getting organized. If you are interested in learning more or getting involved, or just have questions, you can find me in the new channel **#rapidapp** I started on irc.perl.org or via E-Mail at vanstyn@cpan.org.
 
 ## AUTHOR
 
