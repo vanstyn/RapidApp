@@ -13,12 +13,16 @@
 The current version of RapidApp (RapidApp 1) needs a couple of things done before being publically released as-is.
 
 <ul>
-  <li>Clean up CSS/JS and convert to use 
+  <li><strike>Clean up CSS/JS and convert to use 
     <a target="_blank" href="https://metacpan.org/module/Catalyst::Controller::AutoAssets">Catalyst::Controller::AutoAssets</a>
-  </li>
-  <li>
+  </strike></li>
+  <li><strike>
     Untangle current symlink-based setup process and allow to function as a proper installable perl/CPAN package
+  </strike></li>
+  <li>
+    Add more docs...
   </li>
+  <li>...</li>
 </ul>
 
 <h3>RapidApp 2 (refactor)</h3>
