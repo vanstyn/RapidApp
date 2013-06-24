@@ -23,7 +23,7 @@ RapidApp can either be installed as a module or simply ran directly out of a loc
 
 ```
   dzil build
-  cpanm RapidApp-0.99004.tar.gz  # or whatever the current version is
+  cpanm RapidApp-0.99005.tar.gz  # or whatever the current version is
 ```
 
 Alternatively, to just run out of the local directory, you just need to add the lib directory to your @INC and also set the environment variable for the share_dir. For example:

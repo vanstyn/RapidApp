@@ -9,6 +9,11 @@ require Module::Runtime;
 require Catalyst::Utils;
 use CatalystX::InjectComponent;
 
+require Catalyst::Plugin::Session::Store::DBIC;
+require Catalyst::Plugin::Session::State::Cookie;
+require Catalyst::Plugin::Authorization::Roles;
+require Catalyst::Authentication::Store::DBIx::Class;
+
 my @req_plugins = qw/
 Authentication
 Authorization::Roles
