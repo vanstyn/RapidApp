@@ -19,7 +19,8 @@ First, clone the repo:
   cd RapidApp
 ```
 
-RapidApp can either be installed as a module or simply ran directly out of a local directory. To install as a module:
+RapidApp can either be installed as a module or simply ran directly out of a local directory. 
+To install as a module (recommended, to auto install dependencies):
 
 ```
   dzil build
@@ -138,7 +139,7 @@ The above is a fully working application. Start the test server:
   script/myapp_server.pl
 ```
 
-The above is just the barebones configuration, is read-only, etc. There are many more options that can be passed to the 'Plugin::RapidApp::RapidDbic' config to control all aspects of the CRUD, grid display, columns, and so on. I'm still working on documenting these, but for now, see MimeCas for a running example with lots of example options.
+The above is just the barebones configuration, is read-only, etc. There are many more options that can be passed to the 'Plugin::RapidApp::RapidDbic' config to control all aspects of the CRUD, grid display, columns, and so on. I'm still working on documenting these, but for now, see **[MimeCas](https://github.com/vanstyn/MimeCas)** for a running example with lots of example options.
 
 ### Optional plugins
 
