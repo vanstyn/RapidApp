@@ -8,6 +8,10 @@ use RapidApp::Include qw(sugar perlutil);
 # Module allows viewing pages in a tab by file name
 
 use HTML::TokeParser::Simple;
+use Text::Markdown 'markdown';
+use PPI;
+use PPI::HTML;
+use Path::Class qw(file);
 use Switch qw(switch);
 
 has 'content_dir', is => 'ro', isa => 'Str', required => 1;
@@ -28,6 +32,10 @@ sub _requested_file {
   my $alias = $self->alias_dirs->{(shift @p)};
   $path = join('/',$alias,@p) if ($alias && scalar(@p > 0));
 
+  $path = $self->c->config->{home} . '/' . $path unless ($path =~ /^\//);
+  
+  # quick/dirty symlink support:
+  $path = readlink($path) if (-l $path);
   $path = $self->c->config->{home} . '/' . $path unless ($path =~ /^\//);
   
   die usererr "$file not found", title => "No such file"
@@ -61,6 +69,9 @@ sub html {
     case('pm') {
       return $self->_get_syntax_highlighted_perl($path);
     }
+    case('md') {
+      return $self->_render_markdown($path);
+    }
     ##
     ## TODO: may support non-templates in the future
     
@@ -93,12 +104,26 @@ sub _parse_get_title {
 }
 
 
+sub _render_markdown {
+  my $self = shift;
+  my $path = shift;
+  
+  my $markdown = file($path)->slurp;
+  my $html = markdown( $markdown );
+  
+  return join("\n",
+    '<div class="ra-doc">',
+    $html,
+    '</div>'
+  );
+}
+
 sub _get_syntax_highlighted_perl {
   my $self = shift;
   my $path = shift;
   
-  Module::Runtime::require_module('PPI');
-  Module::Runtime::require_module('PPI::HTML');
+  #Module::Runtime::require_module('PPI');
+  #Module::Runtime::require_module('PPI::HTML');
   
   # Load your Perl file
   my $Document = PPI::Document->new( $path );
@@ -115,6 +140,7 @@ sub _get_syntax_highlighted_perl {
   return $content;
 }
 
+# This is an ugly temp hack:
 
 sub _ppi_css {
   return qq~
