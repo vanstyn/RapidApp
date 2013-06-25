@@ -17,13 +17,14 @@ use Switch qw(switch);
 has 'content_dir', is => 'ro', isa => 'Str', required => 1;
 has 'parse_title', is => 'ro', isa => 'Bool', default => 1;
 has 'alias_dirs', is => 'ro', isa => 'HashRef', default => sub {{}};
+has '+accept_subargs', default => 1;
 
 sub _requested_file {
   my $self = shift;
   my $dir = $self->content_dir;
   
-  my $file = $self->c->req->params->{file} or die usererr
-    "No file specified", title => "No file specified";
+  my $file = join('/',$self->local_args) || $self->c->req->params->{file} 
+    or die usererr "No file specified", title => "No file specified";
   
   my $path = "$dir/$file";
   
