@@ -35,6 +35,7 @@ has connect_info => (
     return {
       dsn => $self->dsn,
       quote_names => 1,
+      on_connect_call => 'use_foreign_keys'
     };
   }
 );

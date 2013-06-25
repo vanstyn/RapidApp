@@ -13,14 +13,13 @@ use CatalystX::InjectComponent;
 use Catalyst::Utils;
 use Path::Class qw(dir);
 use RapidApp;
+use JavaScript::ExtJS::V3;
 
 use Catalyst::Controller::AutoAssets 0.22;
 with 'Catalyst::Plugin::AutoAssets';
 
-sub get_extjs_dir {
-  my $c = shift;
-  return $c->config->{extjs_dir} || 'ext-3.4.0';
-}
+sub get_extjs_dir { JavaScript::ExtJS::V3->dir->stringify }
+
 
 before 'inject_asset_controllers' => sub {
   my $c = shift;

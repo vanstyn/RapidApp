@@ -2,13 +2,14 @@ package RapidApp;
 use strict;
 use warnings;
 
-our $VERSION = 0.99005;
+our $VERSION = 0.99006;
 
 # ABSTRACT: Turnkey ajaxy webapps
 
 # use to require some modules:
 use SQL::Translator 0.11016;
 use DateTime::Format::SQLite;
+use JavaScript::ExtJS::V3 '3.4.0';
 
 use File::ShareDir qw(dist_dir);
 
