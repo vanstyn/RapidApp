@@ -24,7 +24,7 @@ To install as a module (recommended, to auto install dependencies - requires Dis
 
 ```
   dzil build
-  cpanm RapidApp-0.99005.tar.gz  # or whatever the current version is
+  cpanm RapidApp-0.99006.tar.gz  # or whatever the current version is
 ```
 
 Obviously, once RapidApp is on CPAN it will just be ```cpanm RapidApp```
@@ -34,14 +34,6 @@ Alternatively, to just run out of the local directory, you just need to add the 
 ```
   export PERLLIB="/some/path/RapidApp/lib"
   export RAPIDAPP_SHARE_DIR="/some/path/RapidApp/share"
-```
-
-You also need ExtJS 3.4:
-
-```
-  cd /some/path
-  wget http://cdn.sencha.com/ext/gpl/ext-3.4.1.1-gpl.zip
-  unzip ext-3.4.1.1-gpl.zip  # will extract to something like 'ext-3.4.1'
 ```
 
 ## SETUP AN APPLICATION
@@ -116,8 +108,6 @@ Setup lib/MyApp.pm:
       name => 'MyApp',
       # Disable deprecated behavior needed by old applications
       disable_component_resolution_regex_fallback => 1,
-      
-      extjs_dir => '/some/path/ext-3.4.1',
       
       'Plugin::RapidApp::RapidDbic' => {
         dbic_models => [
