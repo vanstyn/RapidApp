@@ -16,6 +16,8 @@ use Switch qw(switch);
 
 has 'content_dir', is => 'ro', isa => 'Str', required => 1;
 has 'parse_title', is => 'ro', isa => 'Bool', default => 1;
+has 'parse_icon_class', is => 'ro', isa => 'Bool', default => 1;
+has 'parse_title_style', is => 'ro', isa => 'Bool', default => 1;
 has 'alias_dirs', is => 'ro', isa => 'HashRef', default => sub {{}};
 has '+accept_subargs', default => 1;
 
@@ -24,6 +26,8 @@ has 'allow_inline_files', is => 'ro', isa => 'Bool', default => 1;
 
 sub _requested_file {
   my ($self, @path) = @_;
+  
+  # TODO/FIXME: protect against injection (i.e. what happens if ../../ is supplied?)
   
   my $file =
     # Path from arguments (i.e. called from code)
@@ -98,11 +102,12 @@ sub html {
   
   # Only set the tab title if this is not a nested call (i.e. inline_file from a template)
   unless ($INLINE_FILE_DEPTH) {
-    my $title = $self->parse_title ? $self->_parse_get_title(\$content) : undef;
-    $title ||= $file;
+    my $title = $self->parse_title ? $self->_parse_get_title(\$content) : {};
+    $title->{text} ||= $file;
+    $title->{class} ||= 'icon-document';
     $self->apply_extconfig(
-      tabTitle => '<span style="color:darkgreen;">' . $title . '</span>',
-      tabIconCls => 'icon-document'
+      tabTitle => '<span style="color:darkgreen;">' . $title->{text} . '</span>',
+      tabIconCls => $title->{class}
     );
   }
   
@@ -113,10 +118,23 @@ sub _parse_get_title {
   my $self = shift;
   my $htmlref = shift;
   
-  # quick/simple: return the inner text of the first <title> tag seen
+  # Parse tabTitle data from the first <title> tag seen in the html content.
+  # Supports special attrs not normally in a <title> tag to also set the
+  # tab icon and tab text style, e.g.:
+  #  <title class="icon-group" style="color:red">Users</title>
   my $parser = HTML::TokeParser::Simple->new($htmlref);
   while (my $tag = $parser->get_tag) {
-    return $parser->get_token->as_is if($tag->is_tag('title')); 
+    if ($tag->is_tag('title')) {
+      my $title = { text => $parser->get_token->as_is };
+      my $attr = $tag->get_attr;
+      $title->{class} = $attr->{class};
+       
+      $title->{text} = join('','<span style="', $attr->{style}, '">',
+        $title->{text},'</span>'
+      ) if ($attr->{style});
+      
+      return $title;
+    }
   }
 
   return undef;
