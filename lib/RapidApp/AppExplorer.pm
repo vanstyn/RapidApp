@@ -158,7 +158,8 @@ sub content_area {
   
   $cnf->{initLoadTabs} = [
     {
-      title	=> '<img src="/assets/rapidapp/misc/static/images/toolbar_home.png" height=15 width=16>',
+      title	=> '<img src="/assets/rapidapp/misc/static/images/toolbar_home.png" ' .
+        ' style="margin-bottom: -2px;" height=15 width=16>',
       iconCls => '',
       closable	=> \0,
       autoLoad => {

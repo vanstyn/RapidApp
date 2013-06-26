@@ -1505,3 +1505,5 @@ TODO: make sure this doesn't cause problems someplace else
 
 /* Needed to fix new default in Ext 3.4.1 */
 a:hover, a:hover * { cursor: pointer; }
+.x-tab-strip-active a:hover, .x-tab-strip-active a:hover * { cursor: default; }
+
