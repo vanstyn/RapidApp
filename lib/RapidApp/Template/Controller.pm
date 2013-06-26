@@ -16,39 +16,53 @@ use RapidApp::Template::Provider;
 
 BEGIN { extends 'Catalyst::Controller' }
 
-has 'Provider', is => 'ro', isa => 'Template::Provider', lazy => 1, default => sub {
+# Maintain two separate Template instances - one that wraps divs and one that
+# doesn't. Can't use the same one because compiled templates are cached
+has 'Template_raw', is => 'ro', isa => 'Template', lazy => 1, default => sub {
   my $self = shift;
-  my $c = $self->_app;
-  return RapidApp::Template::Provider->new({
-    INCLUDE_PATH => $c->default_tt_include_path,
-    CACHE_SIZE => 64,
-  });
+  return $self->_new_Template({ div_wrap => 0 });
 };
 
-has 'Template', is => 'ro', isa => 'Template', lazy => 1, default => sub {
+has 'Template_wrap', is => 'ro', isa => 'Template', lazy => 1, default => sub {
   my $self = shift;
-  return Template->new({ LOAD_TEMPLATES => [$self->Provider] });
+  return $self->_new_Template({ div_wrap => 1 });
 };
+
+sub _new_Template {
+  my ($self,$opt) = @_;
+  return Template->new({ 
+    LOAD_TEMPLATES => [
+      RapidApp::Template::Provider->new({
+        INCLUDE_PATH => $self->_app->default_tt_include_path,
+        CACHE_SIZE => 64,
+        %{ $opt || {} }
+      })
+    ] 
+  });
+}
 
 # TODO: see about rendering with Catalyst::View::TT or a custom View
 sub view :Local {
   my ($self, $c, @args) = @_;
   
   my $template = join('/',@args);
+  my $output;
+  my $vars = { c => $c };
   
   my $ra_req = $c->req->headers->{'x-rapidapp-requestcontenttype'};
-  unless($ra_req && $ra_req eq 'JSON') {
+  if($ra_req && $ra_req eq 'JSON') {
+    # This is a call from within ExtJS, wrap divs to id the templates from javascript
+    $output = $self->_render_template('Template_wrap',$template,$vars);
+  }
+  else {
     # This is a direct browser call, need to include js/css
     my $text = join("\n",
       '<head>[% c.all_html_head_tags %]</head>',
       '[% INCLUDE ' . $template . ' %]',
     );
-    $template = \$text;
+    $output = $self->_render_template('Template_raw',\$text,$vars);
   }
-    
-  my $vars = { c => $c };
-  my $output = $self->_render_template($template,$vars);
-
+  
   $c->response->content_type('text/html; charset=utf-8');
   $c->response->body($output);
 
@@ -57,11 +71,13 @@ sub view :Local {
 
 
 sub _render_template {
-  my ($self, $template, $vars) = @_;
+  my ($self, $meth, $template, $vars) = @_;
+  
+  my $TT = $self->$meth;
   
   my $output;
-  $self->Template->process( $template, $vars, \$output )
-    or die $self->Template->error;
+  $TT->process( $template, $vars, \$output )
+    or die $TT->error;
 
   return $output;
 }
