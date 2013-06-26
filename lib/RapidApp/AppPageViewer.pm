@@ -19,13 +19,20 @@ has 'parse_title', is => 'ro', isa => 'Bool', default => 1;
 has 'alias_dirs', is => 'ro', isa => 'HashRef', default => sub {{}};
 has '+accept_subargs', default => 1;
 
+# Allow templates to inline other files via [% inline_file('some/other/file.tt') %]
+has 'allow_inline_files', is => 'ro', isa => 'Bool', default => 1;
+
 sub _requested_file {
-  my $self = shift;
-  my $dir = $self->content_dir;
+  my ($self, @path) = @_;
   
-  my $file = join('/',$self->local_args) || $self->c->req->params->{file} 
+  my $file =
+    # Path from arguments (i.e. called from code)
+    join('/',@path)
+    || join('/',$self->local_args) 
+    || $self->c->req->params->{file} 
     or die usererr "No file specified", title => "No file specified";
   
+  my $dir = $self->content_dir;
   my $path = "$dir/$file";
   
   # Optionally remap if file matches a configured alias_dir:
@@ -48,20 +55,27 @@ sub _requested_file {
   return ($path, $file,$ext);
 }
 
+our $INLINE_FILE_DEPTH = 0;
 sub html {  
-  my $self = shift;
-  my ($path, $file, $ext) = $self->_requested_file;
-  
-  $self->apply_extconfig(
-    tabTitle => '<span style="color:darkgreen;">' . $file . '</span>',
-    tabIconCls => 'icon-document'
-  );
+  my ($self, @args) = @_;
+  my ($path, $file, $ext) = $self->_requested_file(@args);
   
   my $content;
   
   switch(lc($ext)) {
     case('tt') {
       my $vars = { c => $self->c };
+      
+      # Closure to support nested/recursive calls from templates to be able to
+      # inline the content of other files within the same content_dir scope:
+      $vars->{inline_file} = sub { 
+        die "('$file')->inline_file(): missing arguments" unless (scalar @_ > 0);
+        local $INLINE_FILE_DEPTH;
+        die "('$file')->inline_file(): too many recursive calls"
+          if (++$INLINE_FILE_DEPTH > 5);
+        return $self->html(@_);
+      } if ($self->allow_inline_files);
+      
       $content = $self->c->template_render($path,$vars);
     }
     case('pl') {
@@ -82,13 +96,17 @@ sub html {
     }
   }
   
-  my $title = $self->parse_title ? $self->_parse_get_title(\$content) : undef;
-  $self->apply_extconfig(
-    tabTitle => '<span style="color:darkgreen;">' . $title . '</span>',
-  ) if ($title);
+  # Only set the tab title if this is not a nested call (i.e. inline_file from a template)
+  unless ($INLINE_FILE_DEPTH) {
+    my $title = $self->parse_title ? $self->_parse_get_title(\$content) : undef;
+    $title ||= $file;
+    $self->apply_extconfig(
+      tabTitle => '<span style="color:darkgreen;">' . $title . '</span>',
+      tabIconCls => 'icon-document'
+    );
+  }
   
   return $content;
-
 }
 
 sub _parse_get_title {
