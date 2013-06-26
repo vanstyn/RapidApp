@@ -35,9 +35,20 @@ sub view :Local {
   my ($self, $c, @args) = @_;
   
   my $template = join('/',@args);
+  
+  my $ra_req = $c->req->headers->{'x-rapidapp-requestcontenttype'};
+  unless($ra_req && $ra_req eq 'JSON') {
+    # This is a direct browser call, need to include js/css
+    my $text = join("\n",
+      '<head>[% c.all_html_head_tags %]</head>',
+      '[% INCLUDE ' . $template . ' %]',
+    );
+    $template = \$text;
+  }
+    
   my $vars = { c => $c };
   my $output = $self->_render_template($template,$vars);
-  
+
   $c->response->content_type('text/html; charset=utf-8');
   $c->response->body($output);
 
@@ -46,8 +57,7 @@ sub view :Local {
 
 
 sub _render_template {
-  my ($self, $template, $vars, $opts) = @_;
-  $opts ||= {};
+  my ($self, $template, $vars) = @_;
   
   my $output;
   $self->Template->process( $template, $vars, \$output )
