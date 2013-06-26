@@ -1815,23 +1815,59 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 			disableCaching: true,
 			render: function(el, response, updater, callback) {
 				if (!updater.isUpdating() && el.dom) {
-					var conf = Ext.decode(response.responseText);
-					Ext.apply(conf,container.cmpConfig);
 					
-					// new: 'update_cmpConfig' - same thing as cmpConfig except it is a
-					// function-based api which allows updating the config based on 
-					// the existing config instead of blindly like cmpConfig does
-					if(Ext.isFunction(container.update_cmpConfig)) {
-						container.update_cmpConfig(conf);
-					}
-					
-					if(container.cmpListeners) {
-						conf.initComponent = function() {
-							this.on(container.cmpListeners);
-							this.constructor.prototype.initComponent.call(this);
-						};
-					}
-
+          var conf, content_type = response.getResponseHeader('Content-Type');
+          var cont_parts = content_type.split(';');
+          
+          // Expected content-type returned by a RapidApp module:
+          if(cont_parts[0] == 'text/javascript') {
+            conf = Ext.decode(response.responseText);
+          }
+          else {
+            var html;
+            var icon = 'icon-document';
+            if (cont_parts[0] == 'text/html') {
+              icon = 'icon-page-white-world';
+              html = response.responseText;
+            }
+            else if (cont_parts[0] == 'text/plain') {
+              icon = 'icon-page-white-text';
+              html = Ext.util.Format.nl2br(Ext.util.Format.htmlEncode(response.responseText));
+            }
+            else {
+              icon: 'icon-page-white';
+              html = '<b>Warning, Unknown Content-Type: ' + content_type + 
+                '</b><br><br><pre>' + response.responseText + '</pre>';
+            }
+            
+            var title = cont_parts[0];
+            var size = response.getResponseHeader('Content-Length');
+            if(size) { title = title + ' [' + Ext.util.Format.fileSize(size) + ']'; }
+            
+            conf = {
+              xtype: 'panel',
+              tabTitle: '<span style="font-weight:lighter;font-family:arial;">' + title + '</span>',
+              tabIconCls: icon,
+              html: '<div style="padding:5px;">' + html + '</div>' 
+            };
+          }
+          
+          Ext.apply(conf,container.cmpConfig);
+            
+          // new: 'update_cmpConfig' - same thing as cmpConfig except it is a
+          // function-based api which allows updating the config based on 
+          // the existing config instead of blindly like cmpConfig does
+          if(Ext.isFunction(container.update_cmpConfig)) {
+            container.update_cmpConfig(conf);
+          }
+          
+          if(container.cmpListeners) {
+            conf.initComponent = function() {
+              this.on(container.cmpListeners);
+              this.constructor.prototype.initComponent.call(this);
+            };
+          }
+          
 					container.setBodyConf.call(container,conf,el);
 					
 					// This is legacy and should probably be removed:
