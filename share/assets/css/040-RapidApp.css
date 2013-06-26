@@ -1503,3 +1503,5 @@ TODO: make sure this doesn't cause problems someplace else
   width: 16px;
 }
 
+/* Needed to fix new default in Ext 3.4.1 */
+a:hover, a:hover * { cursor: pointer; }
