@@ -1846,6 +1846,7 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
             
             conf = {
               xtype: 'panel',
+              autoScroll: true,
               tabTitle: '<span style="font-weight:lighter;font-family:arial;">' + title + '</span>',
               tabIconCls: icon,
               html: '<div style="padding:5px;">' + html + '</div>' 
