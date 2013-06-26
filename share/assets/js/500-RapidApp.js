@@ -1824,11 +1824,27 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
             conf = Ext.decode(response.responseText);
           }
           else {
-            var html;
-            var icon = 'icon-document';
+            var html, title, icon = 'icon-document', 
+              style = "font-weight:lighter;font-family:arial;";
             if (cont_parts[0] == 'text/html') {
               icon = 'icon-page-white-world';
               html = response.responseText;
+              
+              // --- Support special syntax to parse tab title/icon/style
+              var div = document.createElement('div');
+              var El = new Ext.Element(div);
+              El.createChild({
+                tag: 'div',
+                html: '<div style="padding:5px;">' + html + '</div>'
+              });
+              var titleEl = El.child('title');
+              if(titleEl) {
+                title = titleEl.dom.innerHTML;
+                icon = titleEl.getAttribute('class') || icon;
+                style = titleEl.getAttribute('style') || style;
+              }
+             
+              // ---
             }
             else if (cont_parts[0] == 'text/plain') {
               icon = 'icon-page-white-text';
@@ -1840,16 +1856,18 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
                 '</b><br><br><pre>' + response.responseText + '</pre>';
             }
             
-            var title = cont_parts[0];
-            var size = response.getResponseHeader('Content-Length');
-            if(size) { title = title + ' [' + Ext.util.Format.fileSize(size) + ']'; }
+            if(!title) {
+              title = cont_parts[0];
+              var size = response.getResponseHeader('Content-Length');
+              if(size) { title = title + ' [' + Ext.util.Format.fileSize(size) + ']'; }
+            }
             
             conf = {
               xtype: 'panel',
               autoScroll: true,
-              tabTitle: '<span style="font-weight:lighter;font-family:arial;">' + title + '</span>',
+              tabTitle: '<span style="' + style + '">' + title + '</span>',
               tabIconCls: icon,
-              html: '<div style="padding:5px;">' + html + '</div>' 
+              html: '<div style="padding:5px;">' + html + '</div>'
             };
           }
           
