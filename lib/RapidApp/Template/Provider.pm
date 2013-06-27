@@ -42,7 +42,7 @@ around '_template_content' => sub {
       '</div>',
       
       '<div class="highlight">',
-        '<div class="edit icon-edit-pictogram"></div>',
+        '<div title="Edit" class="edit icon-edit-pictogram"></div>',
       '</div>',
       
       '<div class="content">', $data, '</div>',

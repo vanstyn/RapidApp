@@ -46,13 +46,22 @@ sub view :Local {
   my ($self, $c, @args) = @_;
   
   my $template = join('/',@args);
-  my $output;
+  my ($output,$content_type);
   my $vars = { c => $c };
   
   my $ra_req = $c->req->headers->{'x-rapidapp-requestcontenttype'};
   if($ra_req && $ra_req eq 'JSON') {
     # This is a call from within ExtJS, wrap divs to id the templates from javascript
-    $output = $self->_render_template('Template_wrap',$template,$vars);
+    my $html = $self->_render_template('Template_wrap',$template,$vars);
+    
+    # This is doing the same thing that the overly complex 'Module' controller does:
+    $content_type = 'text/javascript; charset=utf-8';
+    $output = encode_json_utf8({
+      xtype => 'panel',
+      autopanel_parse_title => \1,
+      plugins => ['template-controller-panel'],
+      html => $html
+    });
   }
   else {
     # This is a direct browser call, need to include js/css
@@ -60,12 +69,12 @@ sub view :Local {
       '<head>[% c.all_html_head_tags %]</head>',
       '[% INCLUDE ' . $template . ' %]',
     );
+    $content_type = 'text/html; charset=utf-8';
     $output = $self->_render_template('Template_raw',\$text,$vars);
   }
   
-  $c->response->content_type('text/html; charset=utf-8');
+  $c->response->content_type($content_type);
   $c->response->body($output);
-
   return $c->detach;
 }
 

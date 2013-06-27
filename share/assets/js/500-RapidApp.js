@@ -1887,6 +1887,28 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
             };
           }
           
+          // ------------------------------------
+          // TODO/FIXME: new feature - deduplicate/refactor/merge with above -
+          //  Allow regular JSON configs to also tap into the tab title/icon/style
+          //  via parsing html content with special param 'autopanel_parse_title'
+          if(conf.autopanel_parse_title && conf.html) {
+            var div = document.createElement('div');
+            var El = new Ext.Element(div);
+            El.createChild({
+              tag: 'div',
+              html: conf.html
+            });
+            var titleEl = El.child('title');
+            if(titleEl) {
+              var style = titleEl.getAttribute('style');
+              var title = titleEl.dom.innerHTML;
+              title = style ? '<span style="' + style + '">' + title + '</span>' : title;
+              conf.tabTitle = conf.tabTitle || title;
+              conf.tabIconCls = conf.tabIconCls || titleEl.getAttribute('class') || 'icon-page-white-world';
+            }
+          }
+          // ------------------------------------
+          
 					container.setBodyConf.call(container,conf,el);
 					
 					// This is legacy and should probably be removed:
