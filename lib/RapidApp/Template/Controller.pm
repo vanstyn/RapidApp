@@ -44,8 +44,8 @@ sub _new_Template {
 # TODO: see about rendering with Catalyst::View::TT or a custom View
 sub view :Local {
   my ($self, $c, @args) = @_;
-  
   my $template = join('/',@args);
+  
   my ($output,$content_type);
   my $vars = { c => $c };
   
@@ -60,6 +60,7 @@ sub view :Local {
       xtype => 'panel',
       autopanel_parse_title => \1,
       plugins => ['template-controller-panel'],
+      template_controller_url => '/' . $self->action_namespace($c),
       html => $html
     });
   }
@@ -90,5 +91,46 @@ sub _render_template {
 
   return $output;
 }
+
+# Read (not compiled/rendered) raw templates:
+sub get :Local {
+  my ($self, $c, @args) = @_;
+  my $template = join('/',@args);
+  
+  scream($template);
+  
+  my $Provider = $self->Template_raw->context->{LOAD_TEMPLATES}->[0];
+  
+  my ($data, $error) = $Provider->load($template);
+  
+  scream($data);
+
+
+  $c->response->content_type('text/plain charset=utf-8');
+  $c->response->body($data);
+  return $c->detach;
+}
+
+# Update raw templates:
+sub set :Local {
+  my ($self, $c, @args) = @_;
+  my $template = join('/',@args);
+  
+  # TODO: perm check, etc
+  
+  my $content = $c->req->params->{content};
+  
+  scream_color(RED.BOLD,$template,$content);
+
+
+
+  $c->response->content_type('text/plain charset=utf-8');
+  $c->response->body('foo');
+  return $c->detach;
+
+}
+
+
+
 
 1;
