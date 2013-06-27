@@ -1,0 +1,36 @@
+/* Styles for inline Template editing (RapidApp::Template::Controller) */
+
+.ra-template {
+  position: relative;
+  min-height: 40px;
+  min-width: 40px;
+}
+
+.ra-template>.highlight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-width: 1px;
+  border-style: dotted;
+  display:none;
+}
+
+.ra-template:hover>.highlight {
+  display: block;
+}
+
+.edit {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 40px;
+  width: 40px;
+  opacity: 0.6;
+}
+
+.edit:hover {
+  cursor: pointer;
+  opacity: 1;
+}

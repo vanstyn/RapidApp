@@ -36,10 +36,17 @@ around '_template_content' => sub {
   # Wrap with div selectors for processing in JS:
   $data = join("\n",
     '<div class="ra-template">',
+      
       '<div class="meta" style="display:none;">',
         '<div class="template-name">', $template, '</div>',
       '</div>',
+      
+      '<div class="highlight">',
+        '<div class="edit icon-edit-pictogram"></div>',
+      '</div>',
+      
       '<div class="content">', $data, '</div>',
+      
     '</div>'
   ) if ($self->div_wrap);
 
