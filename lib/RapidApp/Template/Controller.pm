@@ -64,6 +64,7 @@ sub view :Local {
     $content_type = 'text/javascript; charset=utf-8';
     $output = encode_json_utf8({
       xtype => 'panel',
+      autoScroll => \1,
       autopanel_parse_title => \1,
       plugins => ['template-controller-panel'],
       template_controller_url => '/' . $self->action_namespace($c),
