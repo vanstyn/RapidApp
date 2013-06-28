@@ -41,7 +41,7 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
   loadEditor: function(tplEl,name,content) {
   
   
-    var fp;
+    var fp, panel = this.panel;
 		
 		var saveFn = function(btn) {
 			var form = fp.getForm();
@@ -59,7 +59,15 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
         success: function(response,options) {
           this.win.close();
           
-          // TODO: reload the template element or the page
+          // Reload the tab
+          var tab = panel.ownerCt, tp = tab.ownerCt;
+          if(Ext.isFunction(tp.loadContent) && Ext.isObject(tab.loadContentCnf)) {
+            var cnf = tab.loadContentCnf;
+            tp.remove(tab);
+            tp.loadContent(cnf);
+          }
+          
+          // TODO: reload the template element if nested template
           
         },
         failure: function(response,options) {
