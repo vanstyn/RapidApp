@@ -58,9 +58,18 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
         params: { content: content },
         success: function(response,options) {
           this.win.close();
+          
+          // TODO: reload the template element or the page
+          
         },
         failure: function(response,options) {
-          alert("Failed - not implemented");
+          Ext.Msg.show({
+            title: 'Template Error',
+            msg: Ext.util.Format.nl2br(response.responseText),
+            buttons: Ext.Msg.OK,
+            icon: Ext.Msg.ERROR,
+            minWidth: 275
+          });
         },
         scope: this
       });

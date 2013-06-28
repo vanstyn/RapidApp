@@ -3,6 +3,7 @@ use strict;
 use warnings;
 
 use RapidApp::Include qw(sugar perlutil);
+use Try::Tiny;
 
 # New unified controller for displaying and editing TT templates on a site-wide
 # basis. This is an experiment that breaks with the previous RapidApp 'Module'
@@ -41,18 +42,23 @@ sub _new_Template {
   });
 }
 
+sub get_Provider {
+  my $self = shift;
+  return $self->Template_raw->context->{LOAD_TEMPLATES}->[0];
+}
+
 # TODO: see about rendering with Catalyst::View::TT or a custom View
 sub view :Local {
   my ($self, $c, @args) = @_;
   my $template = join('/',@args);
   
   my ($output,$content_type);
-  my $vars = { c => $c };
+  
   
   my $ra_req = $c->req->headers->{'x-rapidapp-requestcontenttype'};
   if($ra_req && $ra_req eq 'JSON') {
     # This is a call from within ExtJS, wrap divs to id the templates from javascript
-    my $html = $self->_render_template('Template_wrap',$template,$vars);
+    my $html = $self->_render_template('Template_wrap',$template,$c);
     
     # This is doing the same thing that the overly complex 'Module' controller does:
     $content_type = 'text/javascript; charset=utf-8';
@@ -71,7 +77,7 @@ sub view :Local {
       '[% INCLUDE ' . $template . ' %]',
     );
     $content_type = 'text/html; charset=utf-8';
-    $output = $self->_render_template('Template_raw',\$text,$vars);
+    $output = $self->_render_template('Template_raw',\$text,$c);
   }
   
   $c->response->content_type($content_type);
@@ -80,32 +86,13 @@ sub view :Local {
 }
 
 
-sub _render_template {
-  my ($self, $meth, $template, $vars) = @_;
-  
-  my $TT = $self->$meth;
-  
-  my $output;
-  $TT->process( $template, $vars, \$output )
-    or die $TT->error;
-
-  return $output;
-}
-
 # Read (not compiled/rendered) raw templates:
 sub get :Local {
   my ($self, $c, @args) = @_;
   my $template = join('/',@args);
   
-  scream($template);
+  my ($data, $error) = $self->get_Provider->load($template);
   
-  my $Provider = $self->Template_raw->context->{LOAD_TEMPLATES}->[0];
-  
-  my ($data, $error) = $Provider->load($template);
-  
-  scream($data);
-
-
   $c->response->content_type('text/plain charset=utf-8');
   $c->response->body($data);
   return $c->detach;
@@ -116,21 +103,43 @@ sub set :Local {
   my ($self, $c, @args) = @_;
   my $template = join('/',@args);
   
-  # TODO: perm check, etc
+  $c->response->content_type('text/plain charset=utf-8');
   
+  # TODO: perm check, etc
   my $content = $c->req->params->{content};
   
-  scream_color(RED.BOLD,$template,$content);
-
-
-
-  $c->response->content_type('text/plain charset=utf-8');
-  $c->response->body('foo');
+  try {
+    # Test that the template is valid:
+    $self->_render_template('Template_raw',\$content,$c);
+    
+    # Update the template (note that this is beyond the normal Template::Provider API)
+    $self->get_Provider->_update_template($template,$content);
+  }
+  catch {
+    # Send back the template error:
+    $c->response->status(500);
+    $c->response->body("$_");
+    return $c->detach;
+  };
+  
+  $c->response->body('Updated');
   return $c->detach;
-
 }
 
 
+
+sub _render_template {
+  my ($self, $meth, $template, $c) = @_;
+  
+  my $TT = $self->$meth;
+  my $vars = { c => $c };
+  
+  my $output;
+  $TT->process( $template, $vars, \$output )
+    or die $TT->error;
+
+  return $output;
+}
 
 
 1;
