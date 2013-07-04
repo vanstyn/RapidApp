@@ -9,25 +9,47 @@ use Path::Class qw(file);
 use Moo;
 extends 'Template::Provider';
 
+=pod
+
+=head1 DESCRIPTION
+
+Base Template Provider class with extended API for updating templates. Extends L<Template::Provider>
+and, like that class, works with filesystem based templates, including updating of filesystem
+templates. Designed specifically to work with RapidApp::Template::Controller.
+
+=cut
+
+# The RapidApp::Template::Controller instance
+has 'Controller', is => 'ro', required => 1;
+
+# Whether or not to wrap writable templates in a special <div> tag for target/selection
+# in JavaScript client (for creating edit selector/tool GUI)
 has 'div_wrap', is => 'ro', default => sub{0};
+
+# $c - localized by RapidApp::Template::Controller specifically
+sub catalyst_context { (shift)->Controller->{_current_context} }
+
+# Global setting (delegated to the Controller)
+sub writable { (shift)->Controller->writable }
+
 
 around 'fetch' => sub {
   my ($orig, $self, $name) = @_;
   
-  # Save the fetch name:
+  # Save the template fetch name:
   local $self->{template_fetch_name} = $name;
   return $self->$orig($name);
 };
 
+# For reference: this method needs to be overridden for custom Provider
+# returns an mtime/serial
 around '_template_modified' => sub {
   my ($orig, $self, @args) = @_;
-
   my $ret = $self->$orig(@args);
-  
   return $ret;
 };
 
-
+# Wraps writable templates with a div (if enabled)
 around '_template_content' => sub {
   my ($orig, $self, @args) = @_;
   my $template = $self->{template_fetch_name} || join('/',@args);
@@ -47,19 +69,61 @@ around '_template_content' => sub {
       '<div class="content">', $data, '</div>',
       
     '</div>'
-  ) if ($self->div_wrap);
+  ) if ($self->div_wrap && $self->_template_writable($template));
 
   return wantarray
     ? ( $data, $error, $mod_date )
     : $data;
 };
 
-# Over and above the Template::Provider API:
+
+###
+### Over and above the methods in the Template::Provider API:
+###
+
+
+# normalized function interface (pass through to coderef)
+# DO NOT OVERRIDE
+sub _template_writable { 
+  my $self = shift;
+  return $self->writable ? #<-- check global writable setting
+    $self->template_writable_coderef->($self,@_) : 0;
+}
+
+# CodeRef to determine if a given template is allowed to be updated:
+has 'template_writable_coderef', is => 'ro', default => sub {
+  return sub {
+    my $self = shift;
+    # default pass-through to class method:
+    return $self->template_writable(@_);
+  };
+};
+
+# optional class/method function to override 
+# (instead of supplying template_writable_coderef)
+sub template_writable {
+  my ($self,@args) = @_;
+  my $template = join('/',@args);
+  
+  # Default allows all
+  return 1;
+}
+
+# Pre-check writable permission
+# DO NOT OVERRIDE:
+sub _update_template {
+  my ($self, $template, $content) = @_;
+  
+  die "_update_template(): '$template' is not writable"
+    unless $self->_template_writable($template);
+ 
+  return $self->update_template($template,$content);
+}
 
 # This is just proof-of-concept support for writing to filesystem-based templates,
 # (the built-in mode of Template::Provider). This could be *very* dangerous, 
 #  REMOVE BEFORE PRODUCTION RELEASE
-sub _update_template {
+sub update_template {
   my ($self, $template, $content) = @_;
   
   my $path = $self->get_template_path($template);

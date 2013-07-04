@@ -17,6 +17,10 @@ use RapidApp::Template::Provider;
 
 BEGIN { extends 'Catalyst::Controller' }
 
+# Global setting - all editing turned off by default for safety:
+# (this setting is queried by the Provider)
+has 'writable', is => 'ro', isa => 'Bool', default => 0;
+
 # Maintain two separate Template instances - one that wraps divs and one that
 # doesn't. Can't use the same one because compiled templates are cached
 has 'Template_raw', is => 'ro', isa => 'Template', lazy => 1, default => sub {
@@ -34,6 +38,7 @@ sub _new_Template {
   return Template->new({ 
     LOAD_TEMPLATES => [
       RapidApp::Template::Provider->new({
+        Controller => $self,
         INCLUDE_PATH => $self->_app->default_tt_include_path,
         CACHE_SIZE => 64,
         %{ $opt || {} }
@@ -136,6 +141,7 @@ sub _render_template {
   my $vars = { c => $c };
   
   my $output;
+  local $self->{_current_context} = $c;
   $TT->process( $template, $vars, \$output )
     or die $TT->error;
 
