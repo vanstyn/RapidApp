@@ -26,7 +26,17 @@ has 'Controller', is => 'ro', required => 1;
 # in JavaScript client (for creating edit selector/tool GUI)
 has 'div_wrap', is => 'ro', default => sub{0};
 
-# We need to be able to check template permissions
+# This only applies to filesystem-based templates and when creatable templates are enabled:
+has 'new_template_path', is => 'ro', lazy => 1, default => sub{
+  my $self = shift;
+  # default to the first include path
+  my $paths = $self->paths or die "paths() didn't return a true value";
+  return $paths->[0];
+};
+
+has 'default_new_template_content', is => 'ro', default => sub{'BLANK TEMPLATE'};
+
+# We need to be able to check certain template permissions for special markup
 # Actual permission checks happen in the RapidApp::Template::Controller
 sub template_writable { (shift)->Controller->Access->template_writable(@_) }
 sub template_creatable { (shift)->Controller->Access->template_creatable(@_) }
@@ -138,7 +148,6 @@ sub update_template {
   return $File->spew($content);
 }
 
-
 sub template_exists {
   my ($self, $template) = @_;
   local $self->{template_exists_call} = 1;
@@ -179,6 +188,25 @@ sub get_template_path {
   #######
 
   return $path;
+}
+
+sub create_template {
+  my ($self, $template, $content) = @_;
+ 
+  my $File = file($self->new_template_path,$template);
+  die "create_templete(): ERROR - $File already exists!" if (-f $File);
+  
+  my $Dir = $File->parent;
+  unless (-d $Dir) {
+    $Dir->mkpath or die "create_templete(): mkpath failed for '$Dir'";
+  }
+  
+  $content = $self->default_new_template_content
+    unless (defined $content);
+
+  $File->spew($content);
+  
+  return -f $File ? 1 : 0;
 }
 
 1;

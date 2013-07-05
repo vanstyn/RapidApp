@@ -124,7 +124,7 @@ sub get :Local {
   
   my ($data, $error) = $self->get_Provider->load($template);
   
-  $c->response->content_type('text/plain charset=utf-8');
+  $c->response->content_type('text/plain; charset=utf-8');
   $c->response->body($data);
   return $c->detach;
 }
@@ -136,7 +136,7 @@ sub set :Local {
   
   local $self->{_current_context} = $c;
   
-  $c->response->content_type('text/plain charset=utf-8');
+  $c->response->content_type('text/plain; charset=utf-8');
   my $content = $c->req->params->{content};
   
   # TODO: handle invalid template exceptions differently than 
@@ -163,6 +163,28 @@ sub set :Local {
 }
 
 
+sub create :Local {
+  my ($self, $c, @args) = @_;
+  my $template = join('/',@args);
+  
+  local $self->{_current_context} = $c;
+  
+  $c->response->content_type('text/plain; charset=utf-8');
+  
+  die "Create template '$template' - Permission denied" 
+    unless $self->Access->template_creatable($template);
+  
+  my $Provider = $self->get_Provider;
+  
+  die "Create template '$template' - already exists" 
+    if $Provider->template_exists($template);
+  
+  $Provider->create_template($template)
+    or die "Failed to create template '$template'";
+
+  $c->response->body("Created template '$template'");
+  return $c->detach;
+}
 
 sub _render_template {
   my ($self, $meth, $template, $c) = @_;
