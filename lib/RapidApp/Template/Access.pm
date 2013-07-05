@@ -5,6 +5,7 @@ use warnings;
 use RapidApp::Include qw(sugar perlutil);
 
 use Moo;
+use MooX::Types::MooseLike::Base 0.23 qw(:all);
 
 =pod
 
@@ -26,7 +27,7 @@ Provides 3 access types:
 =cut
 
 # The RapidApp::Template::Controller instance
-has 'Controller', is => 'ro', required => 1;
+has 'Controller', is => 'ro', required => 1, isa => InstanceOf['RapidApp::Template::Controller'];
 
 # $c - localized by RapidApp::Template::Controller specifically for use 
 # in this (or derived) class:
@@ -37,7 +38,7 @@ sub catalyst_context { (shift)->Controller->{_current_context} }
 
 # Normal viewing of compiled/rendered templates. It doesn't make
 # much sense for this to ever be false.
-has 'viewable', is => 'ro', default => sub{1};
+has 'viewable', is => 'ro', isa => Bool, default => sub{1};
 
 has 'readable', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
@@ -51,7 +52,7 @@ has 'readable', is => 'ro', lazy => 1, default => sub {
     $self->writable_regex ||
     $self->writable
   ) ? 1 : 0;
-};
+}, isa => Bool;
 
 has 'writable', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
@@ -61,19 +62,19 @@ has 'writable', is => 'ro', lazy => 1, default => sub {
     $self->writable_coderef ||
     $self->writable_regex
   ) ? 1 : 0;
-};
+}, isa => Bool;
 # -----
 
 
 # Optional CodeRef interfaces:
-has 'viewable_coderef', is => 'ro', default => sub {undef};
-has 'readable_coderef', is => 'ro', default => sub {undef};
-has 'writable_coderef', is => 'ro', default => sub {undef};
+has 'viewable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
+has 'readable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
+has 'writable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
 
 # Optional Regex interfaces:
-has 'viewable_regex', is => 'ro', default => sub {undef};
-has 'readable_regex', is => 'ro', default => sub {undef};
-has 'writable_regex', is => 'ro', default => sub {undef};
+has 'viewable_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
+has 'readable_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
+has 'writable_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
 
 
 # Compiled regexes:
@@ -81,19 +82,19 @@ has '_viewable_regexp', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   my $str = $self->viewable_regex or return undef;
   return qr/$str/;
-};
+}, isa => Maybe[RegexpRef];
 
 has '_readable_regexp', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   my $str = $self->readable_regex or return undef;
   return qr/$str/;
-};
+}, isa => Maybe[RegexpRef];
 
 has '_writable_regexp', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   my $str = $self->writable_regex or return undef;
   return qr/$str/;
-};
+}, isa => Maybe[RegexpRef];
 
 
 

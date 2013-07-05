@@ -18,9 +18,13 @@ use namespace::autoclean;
 
 BEGIN { extends 'Catalyst::Controller' }
 
+use RapidApp::Template::Provider;
+use RapidApp::Template::Access;
+
 has 'provider_class', is => 'ro', default => 'RapidApp::Template::Provider';
 has 'access_class', is => 'ro', default => 'RapidApp::Template::Access';
 has 'access_params', is => 'ro', isa => 'HashRef', default => sub {{}};
+
 
 has 'Access', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
