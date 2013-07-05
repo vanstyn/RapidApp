@@ -72,7 +72,7 @@ sub view :Local {
   local $self->{_current_context} = $c;
   
   die "Permission denied - template '$template'" 
-    unless $self->Access->template_readable($template);
+    unless $self->Access->template_viewable($template);
   
   my ($output,$content_type);
   
