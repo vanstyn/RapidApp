@@ -10,6 +10,7 @@ use Try::Tiny;
 # design. It also is breaking away from DataStore2 for editing nested templates
 
 use Moose;
+with 'RapidApp::Role::AuthController';
 use namespace::autoclean;
 
 use Template;
