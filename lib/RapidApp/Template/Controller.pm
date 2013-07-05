@@ -4,41 +4,52 @@ use warnings;
 
 use RapidApp::Include qw(sugar perlutil);
 use Try::Tiny;
+use Template;
+use Module::Runtime;
 
 # New unified controller for displaying and editing TT templates on a site-wide
 # basis. This is an experiment that breaks with the previous RapidApp 'Module'
-# design. It also is breaking away from DataStore2 for editing nested templates
+# design. It also is breaking away from DataStore2 for editing in order to support
+# nested templates (i.e. tree structure instead of table/row structure)
 
 use Moose;
 with 'RapidApp::Role::AuthController';
 use namespace::autoclean;
 
-use Template;
-use RapidApp::Template::Provider;
-
 BEGIN { extends 'Catalyst::Controller' }
 
-# Global setting - all editing turned off by default for safety:
-# (this setting is queried by the Provider)
-has 'writable', is => 'ro', isa => 'Bool', default => 0;
+has 'provider_class', is => 'ro', default => 'RapidApp::Template::Provider';
+has 'access_class', is => 'ro', default => 'RapidApp::Template::Access';
+has 'access_params', is => 'ro', isa => 'HashRef', default => sub {{}};
+
+has 'Access', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  Module::Runtime::require_module($self->access_class);
+  return $self->access_class->new({ 
+    %{ $self->access_params },
+    Controller => $self 
+  });
+}, isa => 'RapidApp::Template::Access';
+
 
 # Maintain two separate Template instances - one that wraps divs and one that
 # doesn't. Can't use the same one because compiled templates are cached
-has 'Template_raw', is => 'ro', isa => 'Template', lazy => 1, default => sub {
+has 'Template_raw', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   return $self->_new_Template({ div_wrap => 0 });
-};
+}, isa => 'Template';
 
-has 'Template_wrap', is => 'ro', isa => 'Template', lazy => 1, default => sub {
+has 'Template_wrap', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   return $self->_new_Template({ div_wrap => 1 });
-};
+}, isa => 'Template';
 
 sub _new_Template {
   my ($self,$opt) = @_;
+  Module::Runtime::require_module($self->provider_class);
   return Template->new({ 
     LOAD_TEMPLATES => [
-      RapidApp::Template::Provider->new({
+      $self->provider_class->new({
         Controller => $self,
         INCLUDE_PATH => $self->_app->default_tt_include_path,
         CACHE_SIZE => 64,
@@ -59,7 +70,6 @@ sub view :Local {
   my $template = join('/',@args);
   
   my ($output,$content_type);
-  
   
   my $ra_req = $c->req->headers->{'x-rapidapp-requestcontenttype'};
   if($ra_req && $ra_req eq 'JSON') {

@@ -26,13 +26,6 @@ has 'Controller', is => 'ro', required => 1;
 # in JavaScript client (for creating edit selector/tool GUI)
 has 'div_wrap', is => 'ro', default => sub{0};
 
-# $c - localized by RapidApp::Template::Controller specifically
-sub catalyst_context { (shift)->Controller->{_current_context} }
-
-# Global setting (delegated to the Controller)
-sub writable { (shift)->Controller->writable }
-
-
 around 'fetch' => sub {
   my ($orig, $self, $name) = @_;
   
@@ -81,33 +74,9 @@ around '_template_content' => sub {
 ### Over and above the methods in the Template::Provider API:
 ###
 
+sub _template_writable { (shift)->Controller->Access->_template_writable(@_) }
+sub _template_readable { (shift)->Controller->Access->_template_readable(@_) }
 
-# normalized function interface (pass through to coderef)
-# DO NOT OVERRIDE
-sub _template_writable { 
-  my $self = shift;
-  return $self->writable ? #<-- check global writable setting
-    $self->template_writable_coderef->($self,@_) : 0;
-}
-
-# CodeRef to determine if a given template is allowed to be updated:
-has 'template_writable_coderef', is => 'ro', default => sub {
-  return sub {
-    my $self = shift;
-    # default pass-through to class method:
-    return $self->template_writable(@_);
-  };
-};
-
-# optional class/method function to override 
-# (instead of supplying template_writable_coderef)
-sub template_writable {
-  my ($self,@args) = @_;
-  my $template = join('/',@args);
-  
-  # Default allows all
-  return 1;
-}
 
 # Pre-check writable permission
 # DO NOT OVERRIDE:
