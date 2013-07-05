@@ -29,22 +29,9 @@ has 'writable', is => 'ro', default => sub{0};
 # Global setting required to allow any read access
 has 'readable', is => 'ro', default => sub{1};
 
-# normalized function interface (pass through to coderef)
-# DO NOT OVERRIDE
-sub _template_writable { 
-  my $self = shift;
-  return $self->writable ? #<-- check global writable setting
-    $self->template_writable_coderef->($self,@_) : 0;
-}
-
-# CodeRef to determine if a given template is allowed to be updated:
-has 'template_writable_coderef', is => 'ro', default => sub {
-  return sub {
-    my $self = shift;
-    # default pass-through to class method:
-    return $self->template_writable(@_);
-  };
-};
+# Optional CodeRef interface:
+has 'template_writable_coderef', is => 'ro', default => sub {undef};
+has 'template_readable_coderef', is => 'ro', default => sub {undef};
 
 # optional class/method function to override 
 # (instead of supplying template_writable_coderef)
@@ -52,27 +39,15 @@ sub template_writable {
   my ($self,@args) = @_;
   my $template = join('/',@args);
   
+  #check global writable setting
+  return 0 unless ($self->writable);
+  
+  return $self->template_writable_coderef->($self,$template)
+    if($self->template_writable_coderef);
+  
   # Default allows all
   return 1;
 }
-
-
-# normalized function interface (pass through to coderef)
-# DO NOT OVERRIDE
-sub _template_readable { 
-  my $self = shift;
-  return $self->readable ? #<-- check global writable setting
-    $self->template_readable_coderef->($self,@_) : 0;
-}
-
-# CodeRef to determine if a given template is allowed to be read:
-has 'template_readable_coderef', is => 'ro', default => sub {
-  return sub {
-    my $self = shift;
-    # default pass-through to class method:
-    return $self->template_writable(@_);
-  };
-};
 
 # optional class/method function to override 
 # (instead of supplying template_writable_coderef)
@@ -80,8 +55,15 @@ sub template_readable {
   my ($self,@args) = @_;
   my $template = join('/',@args);
   
+  #check global writable setting
+  return 0 unless ($self->readable);
+  
+  return $self->template_readable_coderef->($self,$template)
+    if($self->template_readable_coderef);
+  
   # Default allows all
   return 1;
 }
+
 
 1;

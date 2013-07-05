@@ -69,6 +69,11 @@ sub view :Local {
   my ($self, $c, @args) = @_;
   my $template = join('/',@args);
   
+  local $self->{_current_context} = $c;
+  
+  die "Permission denied - template '$template'" 
+    unless $self->Access->template_readable($template);
+  
   my ($output,$content_type);
   
   my $ra_req = $c->req->headers->{'x-rapidapp-requestcontenttype'};
@@ -108,6 +113,11 @@ sub get :Local {
   my ($self, $c, @args) = @_;
   my $template = join('/',@args);
   
+  local $self->{_current_context} = $c;
+  
+  die "Permission denied - template '$template'" 
+    unless $self->Access->template_readable($template);
+  
   my ($data, $error) = $self->get_Provider->load($template);
   
   $c->response->content_type('text/plain charset=utf-8');
@@ -120,17 +130,22 @@ sub set :Local {
   my ($self, $c, @args) = @_;
   my $template = join('/',@args);
   
-  $c->response->content_type('text/plain charset=utf-8');
+  local $self->{_current_context} = $c;
   
-  # TODO: perm check, etc
+  $c->response->content_type('text/plain charset=utf-8');
   my $content = $c->req->params->{content};
   
+  # TODO: handle invalid template exceptions differently than 
+  # permission/general exceptions:
   try {
+    die "Modify template '$template' - Permission denied" 
+      unless $self->Access->template_writable($template);
+    
     # Test that the template is valid:
     $self->_render_template('Template_raw',\$content,$c);
     
     # Update the template (note that this is beyond the normal Template::Provider API)
-    $self->get_Provider->_update_template($template,$content);
+    $self->get_Provider->update_template($template,$content);
   }
   catch {
     # Send back the template error:
@@ -152,7 +167,6 @@ sub _render_template {
   my $vars = { c => $c };
   
   my $output;
-  local $self->{_current_context} = $c;
   $TT->process( $template, $vars, \$output )
     or die $TT->error;
 

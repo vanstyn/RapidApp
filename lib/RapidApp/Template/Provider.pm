@@ -42,6 +42,10 @@ around '_template_modified' => sub {
   return $ret;
 };
 
+# We need to be able to check template_writable only for the div wrap.
+# Actual permission checks happen in the RapidApp::Template::Controller
+sub template_writable { (shift)->Controller->Access->template_writable(@_) }
+
 # Wraps writable templates with a div (if enabled)
 around '_template_content' => sub {
   my ($orig, $self, @args) = @_;
@@ -62,7 +66,7 @@ around '_template_content' => sub {
       '<div class="content">', $data, '</div>',
       
     '</div>'
-  ) if ($self->div_wrap && $self->_template_writable($template));
+  ) if ($self->div_wrap && $self->template_writable($template));
 
   return wantarray
     ? ( $data, $error, $mod_date )
@@ -74,24 +78,11 @@ around '_template_content' => sub {
 ### Over and above the methods in the Template::Provider API:
 ###
 
-sub _template_writable { (shift)->Controller->Access->_template_writable(@_) }
-sub _template_readable { (shift)->Controller->Access->_template_readable(@_) }
 
-
-# Pre-check writable permission
-# DO NOT OVERRIDE:
-sub _update_template {
-  my ($self, $template, $content) = @_;
-  
-  die "_update_template(): '$template' is not writable"
-    unless $self->_template_writable($template);
- 
-  return $self->update_template($template,$content);
-}
-
-# This is just proof-of-concept support for writing to filesystem-based templates,
-# (the built-in mode of Template::Provider). This could be *very* dangerous, 
-#  REMOVE BEFORE PRODUCTION RELEASE
+# Simple support for writing to filesystem-based templates to match the
+# default Template::Provider for reading filesystem-based templates. Note
+# that the permission check happens in the RapidApp::Template::Controller,
+# before this method is called.
 sub update_template {
   my ($self, $template, $content) = @_;
   
