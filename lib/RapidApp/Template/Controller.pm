@@ -26,6 +26,53 @@ has 'access_class', is => 'ro', default => 'RapidApp::Template::Access';
 has 'access_params', is => 'ro', isa => 'HashRef', default => sub {{}};
 
 
+##################
+# --- BUG:
+# Want to initialize these objects (specifically the Access object) in
+# BUILD to force any errors, such as bad access_params, to be thrown 
+# during app start up instead of later on the first request. However,
+# the error that gets thrown is not helpful when it happens in BUILD.
+# as a test, I set writable => 'foo' in the app config, which should
+# throw this:
+#
+#  isa check for "writable" failed: foo is not a Boolean!
+#
+# However, when the exception is thrown from BUILD as shown below during
+# app startup this is the error that is thrown:
+#
+#  "Can't use string ("DEFAULT") as a subroutine ref while "strict refs" in 
+#  use at /usr/lib/perl5/site_perl/5.12.3/Catalyst/ScriptRunner.pm line 20
+#
+# If I use Carp::Always, however, the exception is thrown properly.
+#
+# no idea if this is a bug in:
+#  * RapidApp
+#  * Catalyst 5.90002
+#  * MooX::Types::MooseLike::Base 0.23
+#  * Moo 1.000007
+#  * or something else...
+#
+sub BUILD {
+  my $self = shift;
+  
+  # However, if I just throw an exception like this, 'Blah' is shown...
+  # so it has to be some interaction with MooX::Types::MooseLike::Base...
+  #die "Blah";
+  
+  
+  # init to force any config errors to happen at start-up:
+  
+  # If a type check fails when initializing 'Access' the useless error
+  # described above (Can't use string ("DEFAULT")...) is thrown:
+  $self->Access;
+  
+  $self->Template_raw;
+  $self->Template_wrap;
+}
+# ---
+##################
+
+
 has 'Access', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   Module::Runtime::require_module($self->access_class);
