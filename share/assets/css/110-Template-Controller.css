@@ -24,3 +24,24 @@
   cursor: pointer;
   opacity: 1;
 }
+
+.ra-template>.not-exist {
+  margin: 10px;
+  padding: 15px;
+  border-width: 2px;
+  border-color: orange;
+  border-style: dashed;
+  color: #2F2F2F;
+  font-size: 16px;
+  font-weight: bolder;
+  font-family: arial, verdana, tahoma, sans-serif;
+  display: block;
+}
+
+.ra-template>.not-exist>.tpl-name {
+  font-size: 18px;
+  padding-left: 4px;
+  padding-right: 4px;
+  color: navy;
+  font-family: Consolas, Menlo, Monaco, 'Lucida Console', 'Liberation Mono', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', 'Courier New', monospace, serif;
+}

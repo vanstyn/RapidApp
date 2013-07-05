@@ -74,19 +74,22 @@ around '_template_content' => sub {
 
   my ($data, $error, $mod_date); 
   
-  if(! $self->template_exists($template) && $self->template_creatable($template)) {
-    # Return virtual content to enable on-the-fly creating the template:
-    ($data, $error, $mod_date) = (
-      $self->_creatable_content($template),
-      undef, 1
-    );
-  }
-  else {
+  if($self->template_exists($template)) {
     ($data, $error, $mod_date) = $self->$orig(@args);
     
     # Wrap with div selectors for processing in JS:
     $data = $self->_div_wrap_content($template, $data)
       if ($self->div_wrap && $self->template_writable($template));
+  }
+  else {
+    # Return virtual non-existent content, optionally with markup 
+    # to enable on-the-fly creating the template:
+    ($data, $error, $mod_date) = (
+      $self->_not_exist_content(
+        $template, 
+        $self->template_creatable($template)
+      ), undef, 1
+    );  
   }
   
   return wantarray
@@ -112,17 +115,26 @@ sub _div_wrap_content {
   );
 }
 
-sub _creatable_content {
-  my ($self, $template) = @_;
-join("\n",
+sub _not_exist_content {
+  my ($self, $template,$creatable) = @_;
+  
+  my $inner = $creatable
+    ? 'Template <span class="tpl-name">' . $template . '</span> doesn\'t exist yet'
+    : 'Template <span class="tpl-name">' . $template . '</span> doesn\'t exist';
+  
+  my $outer = $creatable
+    ? '<div class="not-exist creatable">' . $inner . '</div>'
+    : '<div class="not-exist">' . $inner . '</div>';
+  
+  return join("\n",
     '<div class="ra-template">',
       
       '<div class="meta" style="display:none;">',
         '<div class="template-name">', $template, '</div>',
       '</div>',
       
-      '<h1>Template "' . $template . '" does not exist...</h1>',
-      
+      $outer,
+
     '</div>'
   );
 }
