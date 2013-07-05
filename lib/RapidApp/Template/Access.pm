@@ -63,6 +63,16 @@ has 'writable', is => 'ro', lazy => 1, default => sub {
     $self->writable_regex
   ) ? 1 : 0;
 }, isa => Bool;
+
+has 'creatable', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+
+  # Defaults to off unless an express writable option is supplied:
+  return (
+    $self->creatable_coderef ||
+    $self->creatable_regex
+  ) ? 1 : 0;
+}, isa => Bool;
 # -----
 
 
@@ -70,11 +80,13 @@ has 'writable', is => 'ro', lazy => 1, default => sub {
 has 'viewable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
 has 'readable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
 has 'writable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
+has 'creatable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
 
 # Optional Regex interfaces:
 has 'viewable_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
 has 'readable_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
 has 'writable_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
+has 'creatable_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
 
 
 # Compiled regexes:
@@ -96,6 +108,11 @@ has '_writable_regexp', is => 'ro', lazy => 1, default => sub {
   return qr/$str/;
 }, isa => Maybe[RegexpRef];
 
+has '_creatable_regexp', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  my $str = $self->creatable_regex or return undef;
+  return qr/$str/;
+}, isa => Maybe[RegexpRef];
 
 
 # Class/method interfaces to override in derived class when additional
@@ -122,6 +139,12 @@ sub template_writable {
   return $self->_access_test($template,'writable',1);
 }
 
+sub template_creatable {
+  my ($self,@args) = @_;
+  my $template = join('/',@args);
+  
+  return $self->_access_test($template,'creatable',1);
+}
 
 sub _access_test {
   my ($self,$template,$perm,$default) = @_;

@@ -26,6 +26,11 @@ has 'Controller', is => 'ro', required => 1;
 # in JavaScript client (for creating edit selector/tool GUI)
 has 'div_wrap', is => 'ro', default => sub{0};
 
+# We need to be able to check template permissions
+# Actual permission checks happen in the RapidApp::Template::Controller
+sub template_writable { (shift)->Controller->Access->template_writable(@_) }
+sub template_creatable { (shift)->Controller->Access->template_creatable(@_) }
+
 around 'fetch' => sub {
   my ($orig, $self, $name) = @_;
   
@@ -34,27 +39,55 @@ around 'fetch' => sub {
   return $self->$orig($name);
 };
 
-# For reference: this method needs to be overridden for custom Provider
-# returns an mtime/serial
 around '_template_modified' => sub {
   my ($orig, $self, @args) = @_;
-  my $ret = $self->$orig(@args);
-  return $ret;
+  my $template = $self->{template_fetch_name} || join('/',@args);
+  
+  my $modified = $self->$orig(@args);
+  
+  # Need to return a virtual value to enable the virtual content for
+  # creating non-extistent templates
+  $modified = 1 if (
+    ! $modified &&
+    ! $self->{template_exists_call} && #<-- localized in template_exists() below
+    ! $self->template_exists($template) &&
+    $self->template_creatable($template)
+  );
+  
+  return $modified;
 };
-
-# We need to be able to check template_writable only for the div wrap.
-# Actual permission checks happen in the RapidApp::Template::Controller
-sub template_writable { (shift)->Controller->Access->template_writable(@_) }
 
 # Wraps writable templates with a div (if enabled)
 around '_template_content' => sub {
   my ($orig, $self, @args) = @_;
   my $template = $self->{template_fetch_name} || join('/',@args);
 
-  my ( $data, $error, $mod_date ) = $self->$orig(@args);
+  my ($data, $error, $mod_date); 
   
-  # Wrap with div selectors for processing in JS:
-  $data = join("\n",
+  if(! $self->template_exists($template) && $self->template_creatable($template)) {
+    # Return virtual content to enable on-the-fly creating the template:
+    ($data, $error, $mod_date) = (
+      $self->_creatable_content($template),
+      undef, 1
+    );
+  }
+  else {
+    ($data, $error, $mod_date) = $self->$orig(@args);
+    
+    # Wrap with div selectors for processing in JS:
+    $data = $self->_div_wrap_content($template, $data)
+      if ($self->div_wrap && $self->template_writable($template));
+  }
+  
+  return wantarray
+    ? ( $data, $error, $mod_date )
+    : $data;
+};
+
+
+sub _div_wrap_content {
+  my ($self, $template, $content) = @_;
+  join("\n",
     '<div class="ra-template">',
       
       '<div class="meta" style="display:none;">',
@@ -63,15 +96,26 @@ around '_template_content' => sub {
       
       '<div title="Edit \'' . $template . '\'" class="edit icon-edit-pictogram"></div>',
       
-      '<div class="content">', $data, '</div>',
+      '<div class="content">', $content, '</div>',
       
     '</div>'
-  ) if ($self->div_wrap && $self->template_writable($template));
+  );
+}
 
-  return wantarray
-    ? ( $data, $error, $mod_date )
-    : $data;
-};
+sub _creatable_content {
+  my ($self, $template) = @_;
+join("\n",
+    '<div class="ra-template">',
+      
+      '<div class="meta" style="display:none;">',
+        '<div class="template-name">', $template, '</div>',
+      '</div>',
+      
+      '<h1>Template "' . $template . '" does not exist...</h1>',
+      
+    '</div>'
+  );
+}
 
 
 ###
@@ -94,6 +138,12 @@ sub update_template {
   return $File->spew($content);
 }
 
+
+sub template_exists {
+  my ($self, $template) = @_;
+  local $self->{template_exists_call} = 1;
+  return $self->get_template_path($template) ? 1 : 0;
+}
 
 # Copied from Template::Provider::load
 sub get_template_path {

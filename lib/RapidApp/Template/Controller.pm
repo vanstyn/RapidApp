@@ -77,7 +77,7 @@ sub view :Local {
   
   die "Permission denied - template '$template'" 
     unless $self->Access->template_viewable($template);
-  
+
   my ($output,$content_type);
   
   my $ra_req = $c->req->headers->{'x-rapidapp-requestcontenttype'};
