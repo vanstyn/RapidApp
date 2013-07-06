@@ -28,7 +28,8 @@
 .ra-template>.not-exist {
   margin: 10px;
   padding: 15px;
-  border-width: 2px;
+  border-width: 1px;
+  background-color: #FAFAFA;
   border-color: orange;
   border-style: dashed;
   color: #2F2F2F;
