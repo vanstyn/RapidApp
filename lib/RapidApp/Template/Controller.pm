@@ -25,6 +25,10 @@ has 'provider_class', is => 'ro', default => 'RapidApp::Template::Provider';
 has 'access_class', is => 'ro', default => 'RapidApp::Template::Access';
 has 'access_params', is => 'ro', isa => 'HashRef', default => sub {{}};
 
+# If true, mouse-over edit controls will always be available for editable
+# templates. Otherwise, query string ?editable=1 is required. Note that
+# editable controls are *only* available in the context of an AutoPanel tab
+has 'auto_editable', is => 'ro', isa => 'Bool', default => 0;
 
 has 'Access', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
@@ -68,6 +72,22 @@ sub get_Provider {
   return $self->Template_raw->context->{LOAD_TEMPLATES}->[0];
 }
 
+# Checks if the editable toggle/switch is on for this request. Note that
+# this has *nothing* to do with actual editability of a given template,
+# just whether or not edit controls should be available for templates that
+# are allowed to be edited
+sub is_editable_request {
+  my ($self, $c) = @_;
+  
+  # check several mechanisms to turn on editing (mouse-over edit controls)
+  return (
+    $self->auto_editable ||
+    $c->req->params->{editable} || 
+    $c->req->params->{edit} ||
+    $c->stash->{editable}
+  );
+}
+
 # TODO: see about rendering with Catalyst::View::TT or a custom View
 sub view :Local {
   my ($self, $c, @args) = @_;
@@ -77,17 +97,20 @@ sub view :Local {
   
   die "Permission denied - template '$template'" 
     unless $self->Access->template_viewable($template);
-
+  
+  my $editable = $self->is_editable_request($c);
+  
   my ($output,$content_type);
   
   my $ra_req = $c->req->headers->{'x-rapidapp-requestcontenttype'};
   if($ra_req && $ra_req eq 'JSON') {
     # This is a call from within ExtJS, wrap divs to id the templates from javascript
-    my $html = $self->_render_template('Template_wrap',$template,$c);
+    my $html = $self->_render_template(
+      $editable ? 'Template_wrap' : 'Template_raw',
+      $template, $c
+    );
     
-    # This is doing the same thing that the overly complex 'Module' controller does:
-    $content_type = 'text/javascript; charset=utf-8';
-    $output = encode_json_utf8({
+    my $cnf = {
       xtype => 'panel',
       autoScroll => \1,
       
@@ -98,10 +121,16 @@ sub view :Local {
       tabTitle => $template,
       tabIconCls => 'icon-page-white-world',
       
-      plugins => ['template-controller-panel'],
       template_controller_url => '/' . $self->action_namespace($c),
       html => $html
-    });
+    };
+    
+    # No reason to load the plugin unless we're editable:
+    $cnf->{plugins} = ['template-controller-panel'] if ($editable);
+    
+    # This is doing the same thing that the overly complex 'Module' controller does:
+    $content_type = 'text/javascript; charset=utf-8';
+    $output = encode_json_utf8($cnf);
   }
   else {
     # This is a direct browser call, need to include js/css
