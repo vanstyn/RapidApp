@@ -25,7 +25,7 @@
   opacity: 1;
 }
 
-.ra-template>.not-exist {
+.ra-template>.not-exist, .ra-template>.tpl-error {
   margin: 10px;
   padding: 15px;
   border-width: 1px;
@@ -39,7 +39,19 @@
   display: block;
 }
 
-.ra-template>.not-exist>.tpl-name {
+.ra-template>.tpl-error {
+  border-color: crimson;
+}
+
+.ra-template>.tpl-error>.error-msg {
+  color: crimson;
+  font-size: 13px;
+  padding-top: 10px;
+  padding-left: 20px;
+  padding-bottom: 5px;
+}
+
+.ra-template .tpl-name {
   font-size: 18px;
   padding-left: 4px;
   padding-right: 4px;

@@ -230,9 +230,13 @@ sub _render_template {
   my $vars = { c => $c };
   
   my $output;
-  $TT->process( $template, $vars, \$output )
-    or die $TT->error;
-
+  $output = $self->get_Provider->_template_error_content(
+    $template, $TT->error, (
+      $self->is_editable_request($c) &&
+      $self->Access->template_writable($template)
+    )
+  ) unless $TT->process( $template, $vars, \$output );
+  
   return $output;
 }
 

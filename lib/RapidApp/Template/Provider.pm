@@ -140,6 +140,28 @@ sub _not_exist_content {
   );
 }
 
+sub _template_error_content {
+  my ($self, $template, $error, $editable) = @_;
+  join("\n",
+    '<div class="ra-template">',
+      
+      '<div class="meta" style="display:none;">',
+        '<div class="template-name">', $template, '</div>',
+      '</div>',
+      
+      ( $editable 
+        ? '<div title="Edit \'' . $template . '\'" class="edit icon-edit-pictogram"></div>'
+        : ''
+      ),
+      
+      '<div class="tpl-error">', 
+        'Template error &nbsp;&ndash; <span class="tpl-name">' . $template . '</span>',
+        '<div class="error-msg">',$error,'</div>',
+      '</div>',
+      
+    '</div>'
+  );
+}
 
 ###
 ### Over and above the methods in the Template::Provider API:
