@@ -210,7 +210,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 
 	loadContent: function() {
 		this.fireEvent( 'navload' );
-		this.loadTab.apply(this,arguments);
+		return this.loadTab.apply(this,arguments);
 	},
 
 	loadTab: function(cnf,extra_cnf) {
@@ -348,7 +348,8 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 			this.tabCrcMap[tabCrc] = tabId;
 		}
 		
-		return this.activate(new_tab);
+		this.activate(new_tab);
+    return new_tab;
 	},
 	
 	getLoadCrc: function(load) {

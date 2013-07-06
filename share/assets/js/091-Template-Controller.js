@@ -79,11 +79,12 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
   },
   
   tabReload: function() {
-    var tab = this.panel.ownerCt, tp = tab.ownerCt;
+    var tab = this.tab || this.panel.ownerCt;
+    var tp = tab.ownerCt;
     if(Ext.isFunction(tp.loadContent) && Ext.isObject(tab.loadContentCnf)) {
       var cnf = tab.loadContentCnf;
       tp.remove(tab);
-      tp.loadContent(cnf);
+      this.tab = tp.loadContent(cnf);
     }
   },
   
