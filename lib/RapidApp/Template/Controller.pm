@@ -90,7 +90,14 @@ sub view :Local {
     $output = encode_json_utf8({
       xtype => 'panel',
       autoScroll => \1,
+      
+      # try to set the title/icon by finding/parsing <title> in the 'html'
       autopanel_parse_title => \1,
+      
+      # These will only be the title/icon if there is no parsable <title>
+      tabTitle => $template,
+      tabIconCls => 'icon-page-white-world',
+      
       plugins => ['template-controller-panel'],
       template_controller_url => '/' . $self->action_namespace($c),
       html => $html

@@ -1891,6 +1891,8 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
           // TODO/FIXME: new feature - deduplicate/refactor/merge with above -
           //  Allow regular JSON configs to also tap into the tab title/icon/style
           //  via parsing html content with special param 'autopanel_parse_title'
+          // UPDATE: this new option now takes precidence over 'tabTitle', which is
+          // now different than above
           if(conf.autopanel_parse_title && conf.html) {
             var div = document.createElement('div');
             var El = new Ext.Element(div);
@@ -1903,8 +1905,8 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
               var style = titleEl.getAttribute('style');
               var title = titleEl.dom.innerHTML;
               title = style ? '<span style="' + style + '">' + title + '</span>' : title;
-              conf.tabTitle = conf.tabTitle || title;
-              conf.tabIconCls = conf.tabIconCls || titleEl.getAttribute('class') || 'icon-page-white-world';
+              conf.tabTitle = title || conf.tabTitle;
+              conf.tabIconCls = titleEl.getAttribute('class') || conf.tabIconCls || 'icon-page-white-world';
             }
           }
           // ------------------------------------
