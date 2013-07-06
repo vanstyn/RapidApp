@@ -87,7 +87,7 @@ around '_template_content' => sub {
     ($data, $error, $mod_date) = (
       $self->_not_exist_content(
         $template, 
-        $self->template_creatable($template)
+        ($self->div_wrap && $self->template_creatable($template))
       ), undef, 1
     );  
   }
@@ -119,7 +119,8 @@ sub _not_exist_content {
   my ($self, $template,$creatable) = @_;
   
   my $inner = $creatable
-    ? 'Template <span class="tpl-name">' . $template . '</span> doesn\'t exist yet'
+    ? 'Template <span class="tpl-name">' . $template . '</span> doesn\'t exist yet' .
+        '<div title="Create \'' . $template . '\'" class="create with-icon icon-selection-add">Create Now</div>'
     : 'Template <span class="tpl-name">' . $template . '</span> doesn\'t exist';
   
   my $outer = $creatable

@@ -13,24 +13,39 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
         var tplEl = El.parent('div.ra-template');
         if (tplEl) { return this.editTplEl(tplEl); }
       }
+      else if (El.hasClass('create')) {
+        var tplEl = El.parent('div.ra-template');
+        if (tplEl) { return this.createTplEl(tplEl); }
+      }
     },this);
 	},
   
-  editTplEl: function(tplEl) {
+  getTplElMeta: function(tplEl) {
     var metaEl = tplEl.child('div.meta');
     var name = metaEl.child('div.template-name').dom.innerHTML;
     name = name.replace(/(\r\n|\n|\r)/gm,""); // <-- strip newlines
-    var get_url = [
+    return {
+      name: name
+    };
+  },
+  
+  editTplEl: function(tplEl) {
+    var meta = this.getTplElMeta(tplEl);
+    return this.editTemplate(meta);
+  },
+  
+  editTemplate: function(meta) {
+    var url = [
       this.panel.template_controller_url,
-      'get', name
+      'get', meta.name
     ].join('/');
     
     var success_fn = function(response,options) {
-      this.loadEditor(tplEl,name,response.responseText);
+      this.loadEditor(meta.name,response.responseText);
     };
     
     Ext.Ajax.request({
-      url: get_url,
+      url: url,
       method: 'GET',
       success: success_fn,
       //failure: failure_fn
@@ -38,8 +53,41 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
     });
   },
   
-  loadEditor: function(tplEl,name,content) {
+  createTplEl: function(tplEl) {
+    var meta = this.getTplElMeta(tplEl);
+    return this.createTemplate(meta);
+  },
   
+  createTemplate: function(meta) {
+    var url = [
+      this.panel.template_controller_url,
+      'create', meta.name
+    ].join('/');
+    
+    var success_fn = function(response,options) {
+      this.tabReload();
+      this.editTemplate(meta);
+    };
+    
+    Ext.Ajax.request({
+      url: url,
+      method: 'GET',
+      success: success_fn,
+      //failure: failure_fn
+      scope: this
+    });
+  },
+  
+  tabReload: function() {
+    var tab = this.panel.ownerCt, tp = tab.ownerCt;
+    if(Ext.isFunction(tp.loadContent) && Ext.isObject(tab.loadContentCnf)) {
+      var cnf = tab.loadContentCnf;
+      tp.remove(tab);
+      tp.loadContent(cnf);
+    }
+  },
+  
+  loadEditor: function(name,content) {
   
     var fp, panel = this.panel;
 		
@@ -60,12 +108,7 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
           this.win.close();
           
           // Reload the tab
-          var tab = panel.ownerCt, tp = tab.ownerCt;
-          if(Ext.isFunction(tp.loadContent) && Ext.isObject(tab.loadContentCnf)) {
-            var cnf = tab.loadContentCnf;
-            tp.remove(tab);
-            tp.loadContent(cnf);
-          }
+          this.tabReload();
           
           // TODO: reload the template element if nested template
           

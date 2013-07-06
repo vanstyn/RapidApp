@@ -45,3 +45,20 @@
   color: navy;
   font-family: Consolas, Menlo, Monaco, 'Lucida Console', 'Liberation Mono', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', 'Courier New', monospace, serif;
 }
+
+.ra-template>.not-exist>.create {
+  margin: 5px;
+  padding-bottom: 1px;
+  padding-top: 4px;
+  padding-right: 5px;
+  padding-left: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #06e;
+  border-bottom: 1px dotted #888;
+}
+
+.ra-template>.not-exist>.create:hover {
+  color: #00e;
+  border-bottom: 1px solid #00e;
+}
