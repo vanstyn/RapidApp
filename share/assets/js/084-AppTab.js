@@ -317,7 +317,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 					if(url_st.length > max_len) { 
 						str = url_st.substring(0,max_len) + '...'; 
 					}
-					setTitle = 'Untitled (' + str.split('').reverse().join('') + ')';
+					setTitle = 'Untitled (' + decodeURIComponent(str.split('').reverse().join('')) + ')';
 				}
 				
         if(setTitle && setTitleCls) {
