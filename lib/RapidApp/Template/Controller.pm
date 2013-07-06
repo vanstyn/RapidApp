@@ -59,6 +59,7 @@ sub _new_Template {
     LOAD_TEMPLATES => [
       $self->provider_class->new({
         Controller => $self,
+        Access => $self->Access,
         INCLUDE_PATH => $self->_app->default_tt_include_path,
         CACHE_SIZE => 64,
         %{ $opt || {} }

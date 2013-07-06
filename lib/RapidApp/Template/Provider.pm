@@ -22,6 +22,11 @@ templates. Designed specifically to work with RapidApp::Template::Controller.
 # The RapidApp::Template::Controller instance
 has 'Controller', is => 'ro', required => 1;
 
+# The RapidApp::Template::Access instance:
+# We need to be able to check certain template permissions for special markup
+# Actual permission checks happen in the RapidApp::Template::Controller
+has 'Access', is => 'ro', required => 1;
+
 # Whether or not to wrap writable templates in a special <div> tag for target/selection
 # in JavaScript client (for creating edit selector/tool GUI)
 has 'div_wrap', is => 'ro', default => sub{0};
@@ -35,11 +40,6 @@ has 'new_template_path', is => 'ro', lazy => 1, default => sub{
 };
 
 has 'default_new_template_content', is => 'ro', default => sub{'BLANK TEMPLATE'};
-
-# We need to be able to check certain template permissions for special markup
-# Actual permission checks happen in the RapidApp::Template::Controller
-sub template_writable { (shift)->Controller->Access->template_writable(@_) }
-sub template_creatable { (shift)->Controller->Access->template_creatable(@_) }
 
 around 'fetch' => sub {
   my ($orig, $self, $name) = @_;
@@ -61,7 +61,7 @@ around '_template_modified' => sub {
     ! $modified &&
     ! $self->{template_exists_call} && #<-- localized in template_exists() below
     ! $self->template_exists($template) &&
-    $self->template_creatable($template)
+    $self->Access->template_creatable($template)
   );
   
   return $modified;
@@ -79,7 +79,7 @@ around '_template_content' => sub {
     
     # Wrap with div selectors for processing in JS:
     $data = $self->_div_wrap_content($template, $data)
-      if ($self->div_wrap && $self->template_writable($template));
+      if ($self->div_wrap && $self->Access->template_writable($template));
   }
   else {
     # Return virtual non-existent content, optionally with markup 
@@ -87,7 +87,7 @@ around '_template_content' => sub {
     ($data, $error, $mod_date) = (
       $self->_not_exist_content(
         $template, 
-        ($self->div_wrap && $self->template_creatable($template))
+        ($self->div_wrap && $self->Access->template_creatable($template))
       ), undef, 1
     );  
   }
