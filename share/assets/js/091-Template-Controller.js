@@ -23,7 +23,7 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
   getTplElMeta: function(tplEl) {
     var metaEl = tplEl.child('div.meta');
     var name = metaEl.child('div.template-name').dom.innerHTML;
-    name = name.replace(/(\r\n|\n|\r)/gm,""); // <-- strip newlines
+    name = name.replace(/(\r\n|\n|\r|\s)/gm,""); // <-- strip newlines & whitespace
     return {
       name: name
     };
@@ -196,7 +196,7 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
 					fieldLabel: 'Template',
 					hideLabel: true,
 					value: content,
-					anchor: '-0 -0',
+					anchor: '-0 -0'
 				}
 			],
 			
