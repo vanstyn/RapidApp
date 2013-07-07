@@ -89,6 +89,25 @@ sub is_editable_request {
   );
 }
 
+
+## -----
+## Top level alias URL paths 
+#   TODO: add these programatically via config
+#   see register_action_methods()
+sub tpl :Path('/tpl') {
+  my ($self, $c) = @_;
+  $c->forward('view');
+}
+
+# Edit alias
+sub tple :Path('/tple') {
+  my ($self, $c) = @_;
+  $c->stash->{editable} = 1;
+  $c->forward('view');
+}
+## -----
+
+
 # TODO: see about rendering with Catalyst::View::TT or a custom View
 sub view :Local {
   my ($self, $c, @args) = @_;
