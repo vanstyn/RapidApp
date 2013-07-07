@@ -1959,7 +1959,12 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 		this.setTitle(opt.tabTitle);
 		this.setIconClass(opt.tabIconCls);
 		this.setBodyConf(opt.bodyConf,this.getEl());
-	}
+	},
+  
+  reload: function() {
+    this.load(this.autoLoad);
+  }
+  
 });
 Ext.reg('autopanel',Ext.ux.AutoPanel);
 

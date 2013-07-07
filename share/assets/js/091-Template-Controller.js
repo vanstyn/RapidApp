@@ -79,13 +79,17 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
   },
   
   tabReload: function() {
-    var tab = this.tab || this.panel.ownerCt;
-    var tp = tab.ownerCt;
-    if(Ext.isFunction(tp.loadContent) && Ext.isObject(tab.loadContentCnf)) {
-      var cnf = tab.loadContentCnf;
-      tp.remove(tab);
-      this.tab = tp.loadContent(cnf);
-    }
+    // reload() is a new feature of AutoPanel:
+    return this.panel.ownerCt.reload();
+    
+    /* This is the old way which closes and loads a new Tab: */
+    //var tab = this.tab || this.panel.ownerCt;
+    //var tp = tab.ownerCt;
+    //if(Ext.isFunction(tp.loadContent) && Ext.isObject(tab.loadContentCnf)) {
+    //  var cnf = tab.loadContentCnf;
+    //  tp.remove(tab);
+    //  this.tab = tp.loadContent(cnf);
+    //}
   },
   
   setTemplate: function(name,content,skip_validate) {
