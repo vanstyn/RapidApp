@@ -538,8 +538,11 @@ Ext.ux.RapidApp.HtmlEditor = Ext.extend(Ext.form.HtmlEditor,{
 		var plugins = this.plugins || [];
 		if(!Ext.isArray(plugins)) { plugins = [ this.plugins ]; }
 		
+    if(! this.no_autosizers){
+      plugins.push('htmleditor-autosizers');
+    }
+    
 		plugins.push(
-			'htmleditor-autosizers',
 			new Ext.ux.form.HtmlEditor.Break(),
 			'htmleditor-toolsmenu',
 			'htmleditor-loadhtml',

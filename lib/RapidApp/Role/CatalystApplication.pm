@@ -106,6 +106,9 @@ sub setupRapidApp {
 	injectUnlessExist( 'RapidApp::View::Web1Render', 'View::RapidApp::Web1Render' );
 	injectUnlessExist( 'RapidApp::View::HttpStatus', 'View::RapidApp::HttpStatus' );
 	injectUnlessExist( 'RapidApp::View::OnError', 'View::RapidApp::OnError' );
+  
+  # New experimental Template controller:
+  injectUnlessExist( 'RapidApp::Template::Controller', 'Controller::RapidApp::Template' );
 };
 
 sub injectUnlessExist {

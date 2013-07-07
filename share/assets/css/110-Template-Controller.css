@@ -1,0 +1,77 @@
+/* Styles for inline Template editing (RapidApp::Template::Controller) */
+
+.ra-template {
+  position: relative;
+  min-height: 40px;
+  min-width: 40px;
+}
+
+.ra-template>.edit {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 40px;
+  width: 40px;
+  opacity: 0.2;
+  display:none;
+}
+
+.ra-template:hover>.edit {
+  display: block;
+}
+
+.ra-template>.edit:hover {
+  cursor: pointer;
+  opacity: 1;
+}
+
+.ra-template>.not-exist, .ra-template>.tpl-error {
+  margin: 10px;
+  padding: 15px;
+  border-width: 1px;
+  background-color: #FAFAFA;
+  border-color: orange;
+  border-style: dashed;
+  color: #2F2F2F;
+  font-size: 16px;
+  font-weight: bolder;
+  font-family: arial, verdana, tahoma, sans-serif;
+  display: block;
+}
+
+.ra-template>.tpl-error {
+  border-color: crimson;
+}
+
+.ra-template>.tpl-error>.error-msg {
+  color: crimson;
+  font-size: 13px;
+  padding-top: 10px;
+  padding-left: 20px;
+  padding-bottom: 5px;
+}
+
+.ra-template .tpl-name {
+  font-size: 18px;
+  padding-left: 4px;
+  padding-right: 4px;
+  color: navy;
+  font-family: Consolas, Menlo, Monaco, 'Lucida Console', 'Liberation Mono', 'DejaVu Sans Mono', 'Bitstream Vera Sans Mono', 'Courier New', monospace, serif;
+}
+
+.ra-template>.not-exist>.create {
+  margin: 5px;
+  padding-bottom: 1px;
+  padding-top: 4px;
+  padding-right: 5px;
+  padding-left: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  color: #06e;
+  border-bottom: 1px dotted #888;
+}
+
+.ra-template>.not-exist>.create:hover {
+  color: #00e;
+  border-bottom: 1px solid #00e;
+}

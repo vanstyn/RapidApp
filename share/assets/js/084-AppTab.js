@@ -210,7 +210,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 
 	loadContent: function() {
 		this.fireEvent( 'navload' );
-		this.loadTab.apply(this,arguments);
+		return this.loadTab.apply(this,arguments);
 	},
 
 	loadTab: function(cnf,extra_cnf) {
@@ -317,7 +317,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 					if(url_st.length > max_len) { 
 						str = url_st.substring(0,max_len) + '...'; 
 					}
-					setTitle = 'Untitled (' + str.split('').reverse().join('') + ')';
+					setTitle = 'Untitled (' + decodeURIComponent(str.split('').reverse().join('')) + ')';
 				}
 				
         if(setTitle && setTitleCls) {
@@ -348,7 +348,8 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 			this.tabCrcMap[tabCrc] = tabId;
 		}
 		
-		return this.activate(new_tab);
+		this.activate(new_tab);
+    return new_tab;
 	},
 	
 	getLoadCrc: function(load) {

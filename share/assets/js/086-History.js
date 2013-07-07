@@ -105,13 +105,20 @@ Ext.ux.RapidApp.HashNav = {
 		var autoLoad = Ext.isString(load) ? {url:load,params:{}} : load;
 		var hashpath = Ext.ux.RapidApp.HashNav.autoLoad_to_hashpath(autoLoad);
 		if(hashpath && decodeURIComponent(window.location.hash) !== decodeURIComponent(hashpath)) {
-			Ext.ux.RapidApp.HashNav.ignoreHashChange = true;
+			// Git Issue #1
+      // This setting was an ugly attempt to track state, but in certain cases it
+      // is not properly reset causing a manual URL change by the user to be ignored.
+      // Furthermore, I don't *think* that this is even needed anymore because the
+      // AppTab is smarter now to do the right thing, but I am not sure. I am turning
+      // this off for now to see if it causes problems and if it doesn't I will come 
+      // back later and remove the rest of the 'ignoreHashChange' checks below
+      //Ext.ux.RapidApp.HashNav.ignoreHashChange = true;
 			window.location.hash = hashpath;
 		}
 	},
 	
 	handleHashChange: function(hashpath) {
-		if(Ext.ux.RapidApp.HashNav.ignoreHashChange) {
+    if(Ext.ux.RapidApp.HashNav.ignoreHashChange) {
 			Ext.ux.RapidApp.HashNav.ignoreHashChange = false;
 			return;
 		}
