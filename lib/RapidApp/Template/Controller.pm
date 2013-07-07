@@ -96,8 +96,9 @@ sub view :Local {
   
   local $self->{_current_context} = $c;
   
-  die "Permission denied - template '$template'" 
-    unless $self->Access->template_viewable($template);
+  $self->Access->template_viewable($template)
+    or die "Permission denied - template '$template'";
+  #  or return $self->_detach_response($c,403,"Permission denied - template '$template'");
   
   my $editable = $self->is_editable_request($c);
   
@@ -143,9 +144,7 @@ sub view :Local {
     $output = $self->_render_template('Template_raw',\$text,$c);
   }
   
-  $c->response->content_type($content_type);
-  $c->response->body($output);
-  return $c->detach;
+  return $self->_detach_response($c,200,$output,$content_type);
 }
 
 
@@ -156,14 +155,12 @@ sub get :Local {
   
   local $self->{_current_context} = $c;
   
-  die "Permission denied - template '$template'" 
-    unless $self->Access->template_readable($template);
+  $self->Access->template_readable($template)
+    or return $self->_detach_response($c,403,"Permission denied - template '$template'");
   
   my ($data, $error) = $self->get_Provider->load($template);
   
-  $c->response->content_type('text/plain; charset=utf-8');
-  $c->response->body($data);
-  return $c->detach;
+  return $self->_detach_response($c,200,$data);
 }
 
 # Update raw templates:
@@ -173,32 +170,24 @@ sub set :Local {
   
   local $self->{_current_context} = $c;
   
-  $c->response->content_type('text/plain; charset=utf-8');
+  exists $c->req->params->{content}
+    or return $self->_detach_response($c,400,"Template 'content' required");
+  
+  $self->Access->template_writable($template)
+    or return $self->_detach_response($c,403,"Modify template '$template' - Permission denied");
+  
   my $content = $c->req->params->{content};
   
-  # TODO: handle invalid template exceptions differently than 
-  # permission/general exceptions:
-  try {
-    die "Modify template '$template' - Permission denied" 
-      unless $self->Access->template_writable($template);
-    
-    # Test that the template is valid:
-    $self->_render_template('Template_raw',\$content,$c);
-    
-    # Update the template (note that this is beyond the normal Template::Provider API)
-    $self->get_Provider->update_template($template,$content);
+  # Special status 418 means the supplied content is a bad template
+  unless ($c->req->params->{skip_validate}) {
+    my $err = $self->_get_template_error('Template_raw',\$content,$c);
+    return $self->_detach_response($c,418,$err) if ($err);
   }
-  catch {
-    # Send back the template error:
-    $c->response->status(500);
-    $c->response->body("$_");
-    return $c->detach;
-  };
   
-  $c->response->body('Updated');
-  return $c->detach;
+  $self->get_Provider->update_template($template,$content);
+  
+  return $self->_detach_response($c,200,'Template Updated');
 }
-
 
 sub create :Local {
   my ($self, $c, @args) = @_;
@@ -206,10 +195,8 @@ sub create :Local {
   
   local $self->{_current_context} = $c;
   
-  $c->response->content_type('text/plain; charset=utf-8');
-  
-  die "Create template '$template' - Permission denied" 
-    unless $self->Access->template_creatable($template);
+  $self->Access->template_creatable($template)
+    or return $self->_detach_response($c,403,"Create template '$template' - Permission denied");
   
   my $Provider = $self->get_Provider;
   
@@ -219,7 +206,15 @@ sub create :Local {
   $Provider->create_template($template)
     or die "Failed to create template '$template'";
 
-  $c->response->body("Created template '$template'");
+  return $self->_detach_response($c,200,"Created template '$template'");
+}
+
+sub _detach_response {
+  my ($self, $c, $status, $body, $content_type) = @_;
+  $content_type ||= 'text/plain; charset=utf-8';
+  $c->response->content_type($content_type);
+  $c->response->status($status);
+  $c->response->body($body);
   return $c->detach;
 }
 

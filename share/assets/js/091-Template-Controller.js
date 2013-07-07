@@ -88,46 +88,81 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
     }
   },
   
+  setTemplate: function(name,content,skip_validate) {
+  
+    var set_url = [
+      this.panel.template_controller_url,
+      'set', name
+    ].join('/');
+    
+    var params = { content: content };
+    if(skip_validate) {
+      params.skip_validate = 1;
+    }
+    
+    Ext.Ajax.request({
+      url: set_url,
+      method: 'POST',
+      params: params,
+      success: function(response,options) {
+        this.win.close();
+        
+        // Reload the tab
+        this.tabReload();
+        
+        // TODO: reload the template element if nested template
+        
+      },
+      failure: function(response,options) {
+        if(response.status == 418) {
+          Ext.Msg.show({
+            title: 'Errors in template',
+            msg: [
+              '<br><b>Template contains errors:</b><br><br>',
+              '<div class="ra-template">',
+                '<div class="tpl-error">',
+                  '<div class="error-msg">',
+                    Ext.util.Format.nl2br(response.responseText),
+                  '</div>',
+                '</div>',
+              '</div>',
+              '<br>',
+              '<b>Save anyway?</b><br>'
+            ].join(''),
+            buttons: Ext.Msg.YESNO,
+            icon: Ext.Msg.WARNING,
+            minWidth: 275,
+            fn: function(button_id) {
+              if(button_id == 'yes') {
+                // Call again, this time with skip_validate:
+                this.setTemplate(name,content,true);
+              }
+            },
+            scope: this
+          });
+        }
+        else {
+          Ext.Msg.show({
+            title: 'Error',
+            msg: Ext.util.Format.nl2br(response.responseText),
+            buttons: Ext.Msg.OK,
+            icon: Ext.Msg.ERROR,
+            minWidth: 275
+          });
+        }
+      },
+      scope: this
+    });
+  },
+  
   loadEditor: function(name,content) {
   
     var fp, panel = this.panel;
 		
 		var saveFn = function(btn) {
 			var form = fp.getForm();
-			var content = form.findField('content').getRawValue();
-			
-      var set_url = [
-        this.panel.template_controller_url,
-        'set', name
-      ].join('/');
-      
-      Ext.Ajax.request({
-        url: set_url,
-        method: 'POST',
-        params: { content: content },
-        success: function(response,options) {
-          this.win.close();
-          
-          // Reload the tab
-          this.tabReload();
-          
-          // TODO: reload the template element if nested template
-          
-        },
-        failure: function(response,options) {
-          Ext.Msg.show({
-            title: 'Template Error',
-            msg: Ext.util.Format.nl2br(response.responseText),
-            buttons: Ext.Msg.OK,
-            icon: Ext.Msg.ERROR,
-            minWidth: 275
-          });
-        },
-        scope: this
-      });
-      
-			
-			
+			var data = form.findField('content').getRawValue();
+      return this.setTemplate(name,data);
 		};
 		
 		fp = new Ext.form.FormPanel({
@@ -182,8 +217,6 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
 			]
 		});
   
-  
-  
     if(this.win) { 
       this.win.close(); 
     }
@@ -202,8 +235,6 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
 		});
     
     this.win.show();
-  
-  
   }
 	
 });
