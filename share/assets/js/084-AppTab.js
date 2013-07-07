@@ -120,6 +120,14 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 				this.setVisible(tp.items.getCount() >= 2);
 			}
 		};
+    
+    var reload_item = Ext.isFunction(tab.reload) ? {
+			itemId: 'reload_item',
+			text: 'Reload',
+			iconCls: 'icon-refresh',
+			scope: tp,
+			handler: tab.reload.createDelegate(tab)
+		} : null;
 
 		var open_item = tab.loadContentCnf ? {
 			itemId: 'open_item',
@@ -130,7 +138,9 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		} : null;
 		
 		if(close_item)	{ items.push(close_item); }
+    if(reload_item) { items.push(reload_item); }
 		if(open_item)	{ items.push(open_item); }
+    
 		
 		// -- New: Optionally get additional menu items defined in the tab itself:
 		if(Ext.isFunction(tab.getTabContextMenuItems)) {
@@ -166,8 +176,10 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 			menuItems.push(item);
 		},this);
 		
-		menuItems = menuItems.length == 2 ? [menuItems[0],'-',menuItems[1]] : menuItems;
-		
+    if(menuItems.length > 1) {
+      menuItems.splice(1,0,'-');
+    }
+    
 		// Make sure the tab is activated so it is clear which is the Tab that
 		// will *not* be closed
 		tp.activate(tab);
