@@ -230,33 +230,12 @@ sub _render_template {
   my $vars = $self->_get_template_vars($c);
   my $output;
   
-  # If there are errors in the template, it might be caused by
-  # errors within a sub template rather than the top-level
-  # template. In this case, we want to find the actual offender
-  # and render it inline. Normally the Provider has no idea if
-  # a template has errors or not, however, the machinery for
-  # wrapping/replacing templates is located within the extended
-  # Provider class. Also, we don't want to have the Provider
-  # compile/check the template automatically because, besides the
-  # deep recursion issue, this would be a big performance hit
-  # because every template would always have to be compiled twice...
-  #
-  # To reconcile this, what we do here is first try to process the
-  # template normally, and *if* (and only if) it fails do we turn
-  # on the "pre_validate" functionality within the Provider by
-  # localizing a hash key (template_pre_validate) that the Provider
-  # looks for and uses to pre_validate the template. This enables
-  # the Provider to replace only the template(s) with errors with
-  # a pretty message, and not have the expense of the extra 
-  # validation when it's not needed (the case most of the time).
-  unless ( $TT->process($template,$vars,\$output) ) {
-    die $TT->error if ($self->{template_pre_validate});
-    local $self->{template_pre_validate} = sub {
-      my $tpl = shift;
-      return $self->_get_template_error($meth,$tpl,$c);
-    };
-    return $self->_render_template($meth,$template,$c);
-  }
+  $output = $self->get_Provider->_template_error_content(
+    $template, $TT->error, (
+      $self->is_editable_request($c) &&
+      $self->Access->template_writable($template)
+    )
+  ) unless $TT->process( $template, $vars, \$output );
   
   return $output;
 }

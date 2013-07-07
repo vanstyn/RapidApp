@@ -76,18 +76,9 @@ around '_template_content' => sub {
   
   if($self->template_exists($template)) {
     my $editable = $self->div_wrap && $self->Access->template_writable($template);
-    my $pre_error = $self->_pre_validate_template($template);
-    if ($pre_error) {
-      ($data, $error, $mod_date) = (
-        $self->_template_error_content($template,$pre_error,$editable),
-        undef, 1
-      );
-    }
-    else {
-      ($data, $error, $mod_date) = $self->$orig(@args);
-      # Wrap with div selectors for processing in JS:
-      $data = $self->_div_wrap_content($template, $data) if $editable;
-    }
+    ($data, $error, $mod_date) = $self->$orig(@args);
+    # Wrap with div selectors for processing in JS:
+    $data = $self->_div_wrap_content($template, $data) if $editable;
   }
   else {
     # Return virtual non-existent content, optionally with markup 
@@ -104,17 +95,6 @@ around '_template_content' => sub {
     ? ( $data, $error, $mod_date )
     : $data;
 };
-
-
-# See _render_template() in RapidApp::Template::Controller for
-# an explination of this special check:
-sub _pre_validate_template {
-  my ($self, $template) = @_;
-  my $code = $self->Controller->{template_pre_validate} or return undef;
-  return undef if ($self->{_pre_validate_template_call}{$template});
-  local $self->{_pre_validate_template_call}{$template} = 1;
-  return $code->($template);
-}
 
 
 sub _div_wrap_content {
