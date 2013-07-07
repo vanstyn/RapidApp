@@ -97,6 +97,10 @@ before 'setup_components' => sub {
     };
   }
   
+  # NEW
+  $main_module_params->{dashboard_url} = $config->{dashboard_url}
+    if($config->{dashboard_url});
+  
   $main_module_params->{header_template} = $config->{banner_template}
     if($config->{banner_template});
   

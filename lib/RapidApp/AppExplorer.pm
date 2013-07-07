@@ -34,6 +34,9 @@ has 'navtrees', is => 'ro', isa => 'ArrayRef', lazy => 1, default => sub {
 has 'dashboard_class', is => 'ro', isa => 'Maybe[Str]', default => sub {undef};
 has 'dashboard_params', is => 'ro', isa => 'HashRef', lazy => 1, default => sub{{}};
 
+# NEW
+has 'dashboard_url', is => 'ro', isa => 'Maybe[Str]', default => sub {undef};
+
 # Extra optional class for rendering any tt files or other files
 # Feature added with RapidApp::AppPageViewer in mind, but it doesn't
 # actually care. This module will be loaded as 'page' and nothing else
@@ -168,6 +171,22 @@ sub content_area {
       }
     }
   ] if ($self->dashboard_class);
+  
+  # ---- NEW ----
+  $cnf->{initLoadTabs} = [
+    {
+      title	=> '<img src="/assets/rapidapp/misc/static/images/toolbar_home.png" ' .
+        ' style="margin-bottom: -2px;" height=15 width=16>',
+      iconCls => '',
+      closable	=> \0,
+      autopanel_ignore_tabtitle => \1,
+      autoLoad => {
+        url 	=> $self->dashboard_url,
+        params	=> {}
+      }
+    }
+  ] if ($self->dashboard_url);
+  # ----
 	
 	return  RapidApp::JSONFunc->new(
 		func => 'new Ext.ux.RapidApp.AppTab.TabPanel',

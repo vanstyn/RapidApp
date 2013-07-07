@@ -1911,6 +1911,14 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
           }
           // ------------------------------------
           
+          // NEW: optional override option to disable any tab title/icon 
+          // configured in returned page
+          if(container.autopanel_ignore_tabtitle) {
+            if(conf.tabTitle) { delete conf.tabTitle; }
+            if(conf.tabIconCls) { delete conf.tabIconCls; }
+            if(conf.tabTitleCls) { delete conf.tabTitleCls; }
+          }
+          
 					container.setBodyConf.call(container,conf,el);
 					
 					// This is legacy and should probably be removed:
