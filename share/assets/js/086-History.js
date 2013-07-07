@@ -76,10 +76,12 @@ Ext.ux.RapidApp.HashNav = {
 	
 	autoLoad_to_hashpath: function(autoLoad){
 		if(Ext.isObject(autoLoad) && Ext.isString(autoLoad.url)) { 
-			// Ignore if url doesn't start with /:
-			if(autoLoad.url.search('/') !== 0) { return null; }
+			// We never want to see %2ff type characters (needed for chrome in certain places)
+      var url = decodeURIComponent( autoLoad.url );
+      // Ignore if url doesn't start with /:
+			if(url.search('/') !== 0) { return null; }
 			
-			var hashpath = '#!' + autoLoad.url;
+			var hashpath = '#!' + url;
 			if(Ext.ux.RapidApp.HashNav.isParamsUrlSafe(autoLoad.params)) {
 				// Use standard url encoded query string:
 				var encParams = autoLoad.params ? Ext.urlEncode(autoLoad.params) : '';
@@ -106,12 +108,17 @@ Ext.ux.RapidApp.HashNav = {
 		var hashpath = Ext.ux.RapidApp.HashNav.autoLoad_to_hashpath(autoLoad);
 		if(hashpath && decodeURIComponent(window.location.hash) !== decodeURIComponent(hashpath)) {
 			// Git Issue #1
-      // This setting was an ugly attempt to track state, but in certain cases it
-      // is not properly reset causing a manual URL change by the user to be ignored.
-      // Furthermore, I don't *think* that this is even needed anymore because the
-      // AppTab is smarter now to do the right thing, but I am not sure. I am turning
-      // this off for now to see if it causes problems and if it doesn't I will come 
-      // back later and remove the rest of the 'ignoreHashChange' checks below
+      //  This setting was an ugly attempt to track state, but in certain cases it
+      //  is not properly reset causing a manual URL change by the user to be ignored.
+      //  Furthermore, I don't *think* that this is even needed anymore because the
+      //  AppTab is smarter now to do the right thing, but I am not sure. I am turning
+      //  this off for now to see if it causes problems and if it doesn't I will come 
+      //  back later and remove the rest of the 'ignoreHashChange' checks below
+      // UPDATE: ignoreHashChange *was* very much still needed for Chrome. Without it,
+      //  infinate tabs can open! -- but, this appears to be caused from improper url %
+      //  encode/decode... Updated 'autoLoad_to_hashpath' below to wrap decodeURIComponent
+      //  which appears to have fixed this and allowed ignoreHashChange to remain disabled.
+      //  will still need to keep an eye and do more testing before removing for good...
       //Ext.ux.RapidApp.HashNav.ignoreHashChange = true;
 			window.location.hash = hashpath;
 		}
