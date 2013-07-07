@@ -160,8 +160,6 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		// from opening:
 		e.stopEvent();
 		
-		if(!tab.closable) { return; }
-		
 		var items = this.getContextMenuItems(tp,tab);
 		if(items.length == 0) { return; }
 		
@@ -172,6 +170,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 			}
 			if(item.itemId == 'open_item') { 
 				item.text = 'Open Another <b>' + tab.title + '</b>';
+        if(!tab.closable) { return; }
 			}
 			menuItems.push(item);
 		},this);
