@@ -1261,16 +1261,26 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 
 .ra-footer td {
   vertical-align:middle;
-  padding-left:5px;
   padding-right:5px;
   white-space: nowrap;
 }
 
 .ra-footer td.left {
+  padding-left:5px;
   text-align:left;
   background-image: url(/assets/rapidapp/misc/static/images/rapidapp_powered_logo_tiny.png);
   background-repeat: no-repeat;
   background-position: left center;
+}
+
+.ra-footer td a.left {
+  text-align:left;
+  background-image: url(/assets/rapidapp/misc/static/images/rapidapp_powered_logo_tiny.png);
+  background-repeat: no-repeat;
+  background-position: left center;
+  display: block;
+  width:99px;
+  height:14px;
 }
 
 .ra-footer td.center {

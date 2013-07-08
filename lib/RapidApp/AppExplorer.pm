@@ -118,8 +118,8 @@ around 'content' => sub {
 			html => q{
 <div class="ra-footer no-text-select"><div class="wrap">
 	<table width="100%"><tr>
-		<td width="25%" class="left">
-		
+		<td width="25%">
+      <a class="left" href="#!/tpl/rapidapp/pages/about_rapidapp.tt"></a>
 		</td>
 		<td width="50%" class="center">
 			<div id="infostatus"></div>

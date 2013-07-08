@@ -4,13 +4,16 @@
 
 
 
-<div class="ra-doc">
+<div id="ext-gen809" class="ra-doc">
 
 <div style="float:right;padding-top:5px;padding-right:20px;">
 <img src="/assets/rapidapp/misc/static/images/btn_120x50_powered.png">
 </div>
 
 <img src="/assets/rapidapp/misc/static/images/rapidapp_catalyst_logo.png" width="225">
+<span style="color:#666666;font-size:.8em;padding-left:20px;">
+[% rapidapp_version %]
+</span>
 
 <p>RapidApp is an open-source application framework that is currently under development for quickly building dynamic Web 2.0/AJAX interfaces for various data models. It is based on the following open-source technologies:</p>
 
@@ -29,7 +32,7 @@
 </h3>
 
 
-<h2>Features</h2>
+<h2 id="ext-gen1086">Features</h2>
 
 <p>The primary data model that RapidApp focuses on is DBIx::Class with CRUD interfaces and that is what this demo primarily showcases. However, RapidApp is a general framework and supports all kinds of interfaces and models. At its core, RapidApp is just an extension to Catalyst with an ExtJS client container/navigation structure, so it can do anything that Catalyst and ExtJS can do.</p>
 
