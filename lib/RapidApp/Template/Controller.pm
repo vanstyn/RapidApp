@@ -25,6 +25,8 @@ has 'provider_class', is => 'ro', default => 'RapidApp::Template::Provider';
 has 'access_class', is => 'ro', default => 'RapidApp::Template::Access';
 has 'access_params', is => 'ro', isa => 'HashRef', default => sub {{}};
 
+has 'default_template_extension', is => 'ro', isa => 'Maybe[Str]', default => 'tt';
+
 # If true, mouse-over edit controls will always be available for editable
 # templates. Otherwise, query string ?editable=1 is required. Note that
 # editable controls are *only* available in the context of an AutoPanel tab
@@ -107,12 +109,26 @@ sub tple :Path('/tple') {
 }
 ## -----
 
+sub _resolve_template_name {
+  my ($self, @args) = @_;
+  return undef unless (defined $args[0]);
+  my $template = join('/',@args); 
+  
+  $template .= '.' . $self->default_template_extension if (
+    $self->default_template_extension &&
+    ! ( $template =~ /\./ ) #<-- doesn't contain a dot '.'
+  );
+  
+  return $template;
+}
+
 
 # TODO: see about rendering with Catalyst::View::TT or a custom View
 sub view :Local {
   my ($self, $c, @args) = @_;
-  my $template = join('/',@args);
-  
+  my $template = $self->_resolve_template_name(@args)
+    or die "No template specified";
+    
   local $self->{_current_context} = $c;
   
   $self->Access->template_viewable($template)
@@ -139,7 +155,7 @@ sub view :Local {
       autopanel_parse_title => \1,
       
       # These will only be the title/icon if there is no parsable <title>
-      tabTitle => $template,
+      tabTitle => join('/',@args), #<-- not using $template to preserve the orig req name
       tabIconCls => 'icon-page-white-world',
       
       template_controller_url => '/' . $self->action_namespace($c),
@@ -170,7 +186,8 @@ sub view :Local {
 # Read (not compiled/rendered) raw templates:
 sub get :Local {
   my ($self, $c, @args) = @_;
-  my $template = join('/',@args);
+  my $template = $self->_resolve_template_name(@args)
+    or die "No template specified";
   
   local $self->{_current_context} = $c;
   
@@ -185,7 +202,8 @@ sub get :Local {
 # Update raw templates:
 sub set :Local {
   my ($self, $c, @args) = @_;
-  my $template = join('/',@args);
+  my $template = $self->_resolve_template_name(@args)
+    or die "No template specified";
   
   local $self->{_current_context} = $c;
   
@@ -210,7 +228,8 @@ sub set :Local {
 
 sub create :Local {
   my ($self, $c, @args) = @_;
-  my $template = join('/',@args);
+  my $template = $self->_resolve_template_name(@args)
+    or die "No template specified";
   
   local $self->{_current_context} = $c;
   
