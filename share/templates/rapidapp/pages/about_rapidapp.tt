@@ -1,7 +1,7 @@
 
-<head>
-<title>About RapidApp</title>
-</head>
+
+<title class="icon-document" style="color:darkgreen;">About RapidApp</title>
+
 
 
 <div class="ra-doc">
@@ -10,7 +10,7 @@
 <img src="/assets/rapidapp/misc/static/images/btn_120x50_powered.png">
 </div>
 
-<img src="/assets/rapidapp/misc/static/images/rapidapp_catalyst_logo.png" width=225>
+<img src="/assets/rapidapp/misc/static/images/rapidapp_catalyst_logo.png" width="225">
 
 <p>RapidApp is an open-source application framework that is currently under development for quickly building dynamic Web 2.0/AJAX interfaces for various data models. It is based on the following open-source technologies:</p>
 
@@ -58,11 +58,11 @@
 
 <p>These are "many_to_many" relationships represented as columns. The value shown is a representation of the related rows (currently this is limited to a comma-separated list). When editing a many to many selector is provided, such as a lust of checkboxes.
 
-<h4>Virtual Columns</h4>
+</p><h4>Virtual Columns</h4>
 
 <p>These are arbitrary user-defined columns that can be configured as an SQL literal with 'self' psudoname translations so they work in table/query view with multiple rows. Optional update code can also be supplied to perform custom business logic for creating/changing a value.
 
-</div>
+</p></div>
 
 <p>These columns can be custom configured on the back end via a delcarative syntax and details such as rendering, editing, validating, and so forth can all be controlled and customized. However, because RapidApp understands the schema, useful base defaults are automatically configured, such as column data data type, relationship info, and so on.</p>
 
@@ -85,7 +85,7 @@ This document is just a starter and is by no means complete.
 <p>We started developing RapidApp for our own in-house use and are now actively working on making a public release to give back to the community. However, this is a lot of work! Besides the remaining coding tasks and finalization of the API, there is a lot of documentation to write in order for it to be used effectively by developers. If you are interested in getting involved or helping us finish the public release, contact me below!</p>
 
 <ul><li><b>
-<a href="#!/main/page?file=rapidapp/roadmap.tt">Development Roadmap</a>
+<a href="#!/tple/rapidapp/pages/roadmap.tt">Development Roadmap</a>
 </b>
 </li></ul>
 
@@ -103,7 +103,7 @@ This document is just a starter and is by no means complete.
     </span>
   </p>
   <a style="border-bottom:none;" target="_blank" href="http://www.intellitree.com">
-    <img src="http://www.intellitree.com/standard_web_logo.gif" width=175>
+    <img src="http://www.intellitree.com/standard_web_logo.gif" width="175">
   </a>
 </div>
 
