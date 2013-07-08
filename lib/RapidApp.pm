@@ -6,7 +6,9 @@ our $VERSION = 0.99007;
 
 # ABSTRACT: Turnkey ajaxy webapps
 
-# use to require some modules:
+# use to require some modules with specific min versions:
+use Catalyst 5.90002;
+use DBIx::Class 0.08250;
 use SQL::Translator 0.11016;
 use DateTime::Format::SQLite;
 use JavaScript::ExtJS::V3 '3.4.0';
