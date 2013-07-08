@@ -237,22 +237,12 @@ sub _detach_response {
   return $c->detach;
 }
 
-# TODO: add a permission layer to control access/calls to objects in
-# the template variables. This will be very IMPORTANT to allow non-admins
-# access to edit templates
-sub _get_template_vars {
-  my ($self, $c) = @_;
-  return { 
-    c => $c,
-    rapidapp_version => $RapidApp::VERSION
-  }
-}
-
 sub _render_template {
   my ($self, $meth, $template, $c) = @_;
   
   my $TT = $self->$meth;
-  my $vars = $self->_get_template_vars($c);
+  local $self->{_current_context} = $c;
+  my $vars = $self->Access->get_template_vars($template);
   my $output;
   
   $output = $self->get_Provider->_template_error_content(
@@ -269,7 +259,8 @@ sub _render_template {
 sub _get_template_error {
   my ($self, $meth, $template, $c) = @_;
   my $TT = $self->$meth;
-  my $vars = $self->_get_template_vars($c);
+  local $self->{_current_context} = $c;
+  my $vars = $self->Access->get_template_vars($template);
   my $output;
   return $TT->process( $template, $vars, \$output ) ? undef : $TT->error;
 }

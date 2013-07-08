@@ -77,6 +77,7 @@ has 'creatable', is => 'ro', lazy => 1, default => sub {
 
 
 # Optional CodeRef interfaces:
+has 'get_template_vars_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
 has 'viewable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
 has 'readable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
 has 'writable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
@@ -118,6 +119,37 @@ has '_creatable_regexp', is => 'ro', lazy => 1, default => sub {
 # Class/method interfaces to override in derived class when additional
 # calculations are needed beyond the simple, built-in options (i.e. 
 # user/role based checks. Note: get '$c' via $self->catalyst_context :
+
+# NOTE: if non-admins are granted access to write templates in a production
+# system a custom get_template_vars should be supplied because the default
+# provides full access to the Catalyst Context object ($c)
+sub get_template_vars {
+  my ($self,@args) = @_;
+  
+  # Note that the default get_template_vars() doesn't care about the 
+  # template (all of them get the same vars) but the API accpets the
+  # template as an arg so derived classes can apply template-specific
+  # rules/permissions to the vars supplied to the template
+  my $template = join('/',@args);
+  
+  # defer to coderef, if supplied:
+  return $self->get_template_vars_coderef->($self,$template)
+    if ($self->get_template_vars_coderef);
+  
+  return $self->_get_default_template_vars($template);
+}
+
+sub _get_default_template_vars {
+  my $self = shift;
+  return {
+    c => $self->catalyst_context,
+    rapidapp_version => $RapidApp::VERSION
+  };  
+}
+
+
+# Simple bool permission methods:
+
 sub template_viewable {
   my ($self,@args) = @_;
   my $template = join('/',@args);
