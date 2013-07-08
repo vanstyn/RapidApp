@@ -98,7 +98,7 @@ This document is just a starter and is by no means complete.
 </p><p>We started developing RapidApp for our own in-house use and are now actively working on making a public release to give back to the community. However, this is a lot of work! Besides the remaining coding tasks and finalization of the API, there is a lot of documentation to write in order for it to be used effectively by developers. If you are interested in getting involved or helping us finish the public release, contact me below!</p>
 
 <ul><li><b>
-<a href="#!/tple/rapidapp/pages/roadmap.tt">Development Roadmap</a>
+<a href="#!/tple/rapidapp/pages/roadmap">Development Roadmap</a>
 </b>
 </li></ul>
 
