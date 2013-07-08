@@ -10,8 +10,12 @@ our $VERSION = 0.99007;
 use Catalyst 5.90002;
 use DBIx::Class 0.08250;
 use SQL::Translator 0.11016;
+use Template 2.24;
 use DateTime::Format::SQLite;
 use JavaScript::ExtJS::V3 '3.4.0';
+
+# quick Module version check cmd:
+#   perl -M"Catalyst 999" -e1
 
 use File::ShareDir qw(dist_dir);
 
