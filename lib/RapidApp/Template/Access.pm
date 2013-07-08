@@ -73,6 +73,35 @@ has 'creatable', is => 'ro', lazy => 1, default => sub {
     $self->creatable_regex
   ) ? 1 : 0;
 }, isa => Bool;
+
+# By default, all templates are considered 'admin' templates. Admin templates
+# are templates which are provided with admin template vars (most notably, [% c %])
+# when they are rendered. It is very important that only admins have access to
+# write to admin templates because only admins should be able to access the
+# Catalyst CONTEXT object $c. It is safe to allow all templates to be admin
+# templates as long as there is no write access provided (which is the default)
+#  TODO: consider defaulting admin_tpl off when any create/write options are
+#  enabled...
+has 'admin_tpl', is => 'ro', isa => Bool, default => sub{1};
+
+
+# By default, all templates are considered 'admin' templates... option to specify
+# via exclude rather than include. For example, to safely provide editable templates
+# to non-admin or anonymous users you might specify these options together:
+#
+#   writable_regex      => '^wiki',
+#   creatable_regex     => '^wiki',
+#   non_admin_tpl_regex => '^wiki',
+#
+has 'non_admin_tpl', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+
+  # Defaults to off unless an express non_admin_tpl option is supplied:
+  return (
+    $self->non_admin_tpl_coderef ||
+    $self->non_admin_tpl_regex
+  ) ? 1 : 0;
+}, isa => Bool;
 # -----
 
 
@@ -82,12 +111,16 @@ has 'viewable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef
 has 'readable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
 has 'writable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
 has 'creatable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
+has 'admin_tpl_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
+has 'non_admin_tpl_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
 
 # Optional Regex interfaces:
 has 'viewable_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
 has 'readable_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
 has 'writable_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
 has 'creatable_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
+has 'admin_tpl_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
+has 'non_admin_tpl_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
 
 
 # Compiled regexes:
@@ -115,6 +148,17 @@ has '_creatable_regexp', is => 'ro', lazy => 1, default => sub {
   return qr/$str/;
 }, isa => Maybe[RegexpRef];
 
+has '_admin_tpl_regexp', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  my $str = $self->admin_tpl_regex or return undef;
+  return qr/$str/;
+}, isa => Maybe[RegexpRef];
+
+has '_non_admin_tpl_regexp', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  my $str = $self->non_admin_tpl_regex or return undef;
+  return qr/$str/;
+}, isa => Maybe[RegexpRef];
 
 # Class/method interfaces to override in derived class when additional
 # calculations are needed beyond the simple, built-in options (i.e. 
@@ -122,7 +166,8 @@ has '_creatable_regexp', is => 'ro', lazy => 1, default => sub {
 
 # NOTE: if non-admins are granted access to write templates in a production
 # system a custom get_template_vars should be supplied because the default
-# provides full access to the Catalyst Context object ($c)
+# provides full access to the Catalyst Context object ($c) - or, the supplied
+# 'admin_tpl' or 'non_admin_tpl' permissions need to be configured accordingly
 sub get_template_vars {
   my ($self,@args) = @_;
   
@@ -136,16 +181,31 @@ sub get_template_vars {
   return $self->get_template_vars_coderef->($self,$template)
     if ($self->get_template_vars_coderef);
   
-  return $self->_get_default_template_vars($template);
+  return $self->template_admin_tpl($template)
+    ? $self->_get_admin_template_vars($template)
+    : $self->_get_default_template_vars($template);
 }
 
 sub _get_default_template_vars {
   my $self = shift;
   return {
-    c => $self->catalyst_context,
+    # TODO: figure out what other variables would be safe to provide to
+    # non-admin templates (i.e. templates
     rapidapp_version => $RapidApp::VERSION
   };  
 }
+
+# Admin templates get access to the context object. Only admin users
+# should be able to write admin templates for obvious reasons
+sub _get_admin_template_vars {
+  my $self = shift;
+  return {
+    %{ $self->_get_default_template_vars(@_) },
+    c => $self->catalyst_context,
+  };  
+}
+
+
 
 
 # Simple bool permission methods:
@@ -176,6 +236,21 @@ sub template_creatable {
   my $template = join('/',@args);
   
   return $self->_access_test($template,'creatable',1);
+}
+
+sub template_admin_tpl {
+  my ($self,@args) = @_;
+  my $template = join('/',@args);
+  
+  return $self->template_non_admin_tpl($template)
+    ? 0 : $self->_access_test($template,'admin_tpl',1);
+}
+
+sub template_non_admin_tpl {
+  my ($self,@args) = @_;
+  my $template = join('/',@args);
+  
+  return $self->_access_test($template,'non_admin_tpl',1);
 }
 
 sub _access_test {
