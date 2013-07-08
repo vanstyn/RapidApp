@@ -137,8 +137,8 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 			handler: tp.openAnother.createDelegate(tp,[tab])
 		} : null;
 		
-		if(close_item)	{ items.push(close_item); }
     if(reload_item) { items.push(reload_item); }
+		if(close_item)	{ items.push(close_item); }
 		if(open_item)	{ items.push(open_item); }
     
 		
