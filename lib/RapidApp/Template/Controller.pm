@@ -144,7 +144,7 @@ sub view :Local {
     # This is a call from within ExtJS, wrap divs to id the templates from javascript
     my $html = $self->_render_template(
       $editable ? 'Template_wrap' : 'Template_raw',
-      $template, $c
+      $template, $c, { tpl_editable => $editable }
     );
     
     my $cnf = {
@@ -257,11 +257,12 @@ sub _detach_response {
 }
 
 sub _render_template {
-  my ($self, $meth, $template, $c) = @_;
+  my ($self, $meth, $template, $c, $extra_vars) = @_;
   
   my $TT = $self->$meth;
   local $self->{_current_context} = $c;
   my $vars = $self->Access->get_template_vars($template);
+  %$vars = ( %$vars, %$extra_vars ) if ($extra_vars);
   my $output;
   
   $output = $self->get_Provider->_template_error_content(
@@ -276,10 +277,11 @@ sub _render_template {
 
 # Returns undef if the template is valid or the error
 sub _get_template_error {
-  my ($self, $meth, $template, $c) = @_;
+  my ($self, $meth, $template, $c, $extra_vars) = @_;
   my $TT = $self->$meth;
   local $self->{_current_context} = $c;
   my $vars = $self->Access->get_template_vars($template);
+  %$vars = ( %$vars, %$extra_vars ) if ($extra_vars);
   my $output;
   return $TT->process( $template, $vars, \$output ) ? undef : $TT->error;
 }

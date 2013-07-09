@@ -41,6 +41,8 @@ has 'new_template_path', is => 'ro', lazy => 1, default => sub{
 
 has 'default_new_template_content', is => 'ro', default => sub{'BLANK TEMPLATE'};
 
+has 'wrapper_template_name', is => 'ro', default => sub{ '___internal_template_wrapper___' };
+
 around 'fetch' => sub {
   my ($orig, $self, $name) = @_;
   
@@ -52,6 +54,8 @@ around 'fetch' => sub {
 around '_template_modified' => sub {
   my ($orig, $self, @args) = @_;
   my $template = $self->{template_fetch_name} || join('/',@args);
+  
+  return 1 if ($template eq $self->wrapper_template_name);
   
   my $modified = $self->$orig(@args);
   
@@ -74,27 +78,52 @@ around '_template_content' => sub {
 
   my ($data, $error, $mod_date); 
   
-  if($self->template_exists($template)) {
-    my $editable = $self->div_wrap && $self->Access->template_writable($template);
-    ($data, $error, $mod_date) = $self->$orig(@args);
-    # Wrap with div selectors for processing in JS:
-    $data = $self->_div_wrap_content($template, $data) if $editable;
+  if($template eq $self->wrapper_template_name) {
+    ($data, $error, $mod_date) = (
+      $self->_get_wrapper_template, undef, 1
+    );
   }
   else {
-    # Return virtual non-existent content, optionally with markup 
-    # to enable on-the-fly creating the template:
-    ($data, $error, $mod_date) = (
-      $self->_not_exist_content(
-        $template, 
-        ($self->div_wrap && $self->Access->template_creatable($template))
-      ), undef, 1
-    );  
+  
+  
+  
+    if($self->template_exists($template)) {
+      my $editable = $self->div_wrap && $self->Access->template_writable($template);
+      ($data, $error, $mod_date) = $self->$orig(@args);
+      # Wrap with div selectors for processing in JS:
+      $data = $self->_div_wrap_content($template, $data) if $editable;
+    }
+    else {
+      # Return virtual non-existent content, optionally with markup 
+      # to enable on-the-fly creating the template:
+      ($data, $error, $mod_date) = (
+        $self->_not_exist_content(
+          $template, 
+          ($self->div_wrap && $self->Access->template_creatable($template))
+        ), undef, 1
+      );  
+    }
+    
+    $data = $self->_new_wrap_content($template,$data);
+  
   }
   
   return wantarray
     ? ( $data, $error, $mod_date )
     : $data;
 };
+
+
+sub _new_wrap_content {
+ my ($self, $template, $content) = @_;
+  join(" ",
+    '[% WRAPPER',$self->wrapper_template_name,
+      'template ="',$template,'" %]',
+      $content,
+    '[% END %]'
+  );
+}
+
 
 
 sub _div_wrap_content {
@@ -165,6 +194,18 @@ sub _template_error_content {
 ###
 ### Over and above the methods in the Template::Provider API:
 ###
+
+
+
+sub _get_wrapper_template {
+<<'--END--',
+[% IF tpl_editable %]
+##### start [% template %] #####
+[% content %]
+##### end [% template %] #####
+[% ELSE %][% content %][% END %]
+--END--
+}
 
 
 # Simple support for writing to filesystem-based templates to match the
