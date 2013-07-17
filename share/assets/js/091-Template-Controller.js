@@ -24,8 +24,17 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
     var metaEl = tplEl.child('div.meta');
     var name = metaEl.child('div.template-name').dom.innerHTML;
     name = name.replace(/(\r\n|\n|\r|\s)/gm,""); // <-- strip newlines & whitespace
+    
+    var format = null;
+    var format_node = metaEl.child('div.template-format');
+    if (format_node) {
+      format = format_node.dom.innerHTML;
+      format = format.replace(/(\r\n|\n|\r|\s)/gm,""); // <-- strip newlines & whitespace
+    }
+    
     return {
-      name: name
+      name: name,
+      format: format
     };
   },
   
@@ -41,7 +50,7 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
     ].join('/');
     
     var success_fn = function(response,options) {
-      this.loadEditor(meta.name,response.responseText);
+      this.loadEditor(meta.name,response.responseText,meta.format);
     };
     
     Ext.Ajax.request({
@@ -159,7 +168,25 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
     });
   },
   
-  loadEditor: function(name,content) {
+  getFormatEditorCnf: function(format) {
+    if (format == 'html') {
+      return {
+        // Only use the HtmlEditor for html format.
+        // TODO: a new HtmlEditor is badly needed. This one is pretty limited:
+        xtype: 'ra-htmleditor',
+        no_autosizers: true
+      };
+    }
+    else {
+      // TODO: add smart editors for various other formats, like markdown
+      return {
+        xtype: 'textarea',
+        style: 'font-family: monospace;'
+      };
+    }
+  },
+  
+  loadEditor: function(name,content,format) {
   
     var fp, panel = this.panel;
 		
@@ -168,6 +195,18 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
 			var data = form.findField('content').getRawValue();
       return this.setTemplate(name,data);
 		};
+    
+    // Common config:
+    var editField = {
+      name: 'content',
+      itemId: 'content',
+      fieldLabel: 'Template',
+      hideLabel: true,
+      value: content,
+      anchor: '-0 -0'
+    };
+    // Format-specific config:
+    Ext.apply(editField,this.getFormatEditorCnf(format));
 		
 		fp = new Ext.form.FormPanel({
 			xtype: 'form',
@@ -185,21 +224,8 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
 			buttonAlign: 'right',
 			minButtonWidth: 100,
 			
-			items: [
-				{
-					name: 'content',
-					itemId: 'content',
-          xtype: 'ra-htmleditor',
-          no_autosizers: true,
-					//xtype: 'textarea',
-					//style: 'font-family: monospace;',
-					fieldLabel: 'Template',
-					hideLabel: true,
-					value: content,
-					anchor: '-0 -0'
-				}
-			],
-			
+			items: [ editField ],
+
 			buttons: [
 				{
 					name: 'save',
