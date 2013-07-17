@@ -9,6 +9,20 @@ use Text::Markdown 1.000031 'markdown';
 use Moo;
 extends 'Template::Context';
 
+# The RapidApp::Template::Controller instance
+has 'Controller', is => 'ro', required => 1;
+
+# The RapidApp::Template::Access instance:
+# We need to be able to check certain template permissions for special markup
+# Actual permission checks happen in the RapidApp::Template::Controller
+has 'Access', is => 'ro', required => 1;
+
+sub div_wrap {
+  my ($self,$template) = @_;
+  return 0 unless $self->Controller->{_div_wrap}; #<-- localized in RapidApp::Template::Controller
+  return $self->Access->template_writable($template);
+}
+
 around 'process' => sub {
   my ($orig, $self, @args) = @_;
 
@@ -26,10 +40,30 @@ sub post_process_output {
   
   # just for testing, parse markdown for *.md templates:
   if ($template =~ /\.md$/) {
-    return markdown($$output_ref);
+    $$output_ref = markdown($$output_ref);
   }
+  
+  return $self->div_wrap($template)
+    ? $self->_div_wrap_content($template,$$output_ref)
+    : $$output_ref;
+}
 
-  return $$output_ref;
+
+sub _div_wrap_content {
+  my ($self, $template, $content) = @_;
+  join("\n",
+    '<div class="ra-template">',
+      
+      '<div class="meta" style="display:none;">',
+        '<div class="template-name">', $template, '</div>',
+      '</div>',
+      
+      '<div title="Edit \'' . $template . '\'" class="edit icon-edit-pictogram"></div>',
+      
+      '<div class="content">', $content, '</div>',
+      
+    '</div>'
+  );
 }
 
 1;

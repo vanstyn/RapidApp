@@ -72,47 +72,22 @@ around '_template_content' => sub {
   my ($orig, $self, @args) = @_;
   my $template = $self->{template_fetch_name} || join('/',@args);
 
-  my ($data, $error, $mod_date); 
-  
-  if($self->template_exists($template)) {
-    my $editable = $self->div_wrap && $self->Access->template_writable($template);
-    ($data, $error, $mod_date) = $self->$orig(@args);
-    # Wrap with div selectors for processing in JS:
-    $data = $self->_div_wrap_content($template, $data) if $editable;
-  }
-  else {
-    # Return virtual non-existent content, optionally with markup 
-    # to enable on-the-fly creating the template:
-    ($data, $error, $mod_date) = (
-      $self->_not_exist_content(
-        $template, 
-        ($self->div_wrap && $self->Access->template_creatable($template))
-      ), undef, 1
-    );  
-  }
+  return $self->$orig(@args) if ($self->template_exists($template));
+
+  # Return virtual non-existent content, optionally with markup 
+  # to enable on-the-fly creating the template:
+  my ($data, $error, $mod_date) = (
+    $self->_not_exist_content(
+      $template, 
+      ($self->div_wrap && $self->Access->template_creatable($template))
+    ), undef, 1
+  );  
   
   return wantarray
     ? ( $data, $error, $mod_date )
     : $data;
 };
 
-
-sub _div_wrap_content {
-  my ($self, $template, $content) = @_;
-  join("\n",
-    '<div class="ra-template">',
-      
-      '<div class="meta" style="display:none;">',
-        '<div class="template-name">', $template, '</div>',
-      '</div>',
-      
-      '<div title="Edit \'' . $template . '\'" class="edit icon-edit-pictogram"></div>',
-      
-      '<div class="content">', $content, '</div>',
-      
-    '</div>'
-  );
-}
 
 sub _not_exist_content {
   my ($self, $template,$creatable) = @_;

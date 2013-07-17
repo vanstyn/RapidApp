@@ -61,6 +61,8 @@ sub _new_Template {
   Module::Runtime::require_module($self->provider_class);
   return Template->new({ 
     CONTEXT => $self->context_class->new({
+      Controller => $self,
+      Access => $self->Access,
       LOAD_TEMPLATES => [
         $self->provider_class->new({
           Controller => $self,
@@ -265,6 +267,7 @@ sub _render_template {
   
   my $TT = $self->$meth;
   local $self->{_current_context} = $c;
+  local $self->{_div_wrap} = 1 if ($meth eq 'Template_wrap');
   my $vars = $self->Access->get_template_vars($template);
   my $output;
   
@@ -283,6 +286,7 @@ sub _get_template_error {
   my ($self, $meth, $template, $c) = @_;
   my $TT = $self->$meth;
   local $self->{_current_context} = $c;
+  local $self->{_div_wrap} = 1 if ($meth eq 'Template_wrap');
   my $vars = $self->Access->get_template_vars($template);
   my $output;
   return $TT->process( $template, $vars, \$output ) ? undef : $TT->error;
