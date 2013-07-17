@@ -107,6 +107,9 @@ has 'non_admin_tpl', is => 'ro', lazy => 1, default => sub {
 
 # Optional CodeRef interfaces:
 has 'get_template_vars_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
+has 'get_template_format_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
+
+# common handling for specific bool 'permissions':
 has 'viewable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
 has 'readable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
 has 'writable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
@@ -278,5 +281,26 @@ sub _access_test {
   # Default:
   return $default;
 }
+
+
+# New: returns a format string to be included in the template metadata
+sub get_template_format {
+  my ($self,@args) = @_;
+  my $template = join('/',@args);
+  
+  # defer to coderef, if supplied:
+  return $self->get_template_format_coderef->($self,$template)
+    if ($self->get_template_format_coderef);
+  
+  # By default we treat any *.md templates as markdown
+  return 'markdown' if ($template =~ /\.md$/i);
+  
+  # TODO: add other formats here ...
+  
+  # The default format should always be 'html':
+  return 'html';
+}
+
+
 
 1;
