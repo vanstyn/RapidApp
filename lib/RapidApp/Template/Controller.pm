@@ -18,9 +18,11 @@ use namespace::autoclean;
 
 BEGIN { extends 'Catalyst::Controller' }
 
+use RapidApp::Template::Context;
 use RapidApp::Template::Provider;
 use RapidApp::Template::Access;
 
+has 'context_class', is => 'ro', default => 'RapidApp::Template::Context';
 has 'provider_class', is => 'ro', default => 'RapidApp::Template::Provider';
 has 'access_class', is => 'ro', default => 'RapidApp::Template::Access';
 has 'access_params', is => 'ro', isa => 'HashRef', default => sub {{}};
@@ -41,7 +43,6 @@ has 'Access', is => 'ro', lazy => 1, default => sub {
   });
 }, isa => 'RapidApp::Template::Access';
 
-
 # Maintain two separate Template instances - one that wraps divs and one that
 # doesn't. Can't use the same one because compiled templates are cached
 has 'Template_raw', is => 'ro', lazy => 1, default => sub {
@@ -56,18 +57,21 @@ has 'Template_wrap', is => 'ro', lazy => 1, default => sub {
 
 sub _new_Template {
   my ($self,$opt) = @_;
+  Module::Runtime::require_module($self->context_class);
   Module::Runtime::require_module($self->provider_class);
   return Template->new({ 
-    LOAD_TEMPLATES => [
-      $self->provider_class->new({
-        Controller => $self,
-        Access => $self->Access,
-        INCLUDE_PATH => $self->_app->default_tt_include_path,
-        CACHE_SIZE => 64,
-        %{ $opt || {} }
-      })
-    ] 
-  });
+    CONTEXT => $self->context_class->new({
+      LOAD_TEMPLATES => [
+        $self->provider_class->new({
+          Controller => $self,
+          Access => $self->Access,
+          INCLUDE_PATH => $self->_app->default_tt_include_path,
+          CACHE_SIZE => 64,
+          %{ $opt || {} }
+        })
+      ] 
+    })
+  })
 }
 
 sub get_Provider {
