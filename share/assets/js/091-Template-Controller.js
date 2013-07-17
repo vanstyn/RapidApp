@@ -88,8 +88,13 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
   },
   
   tabReload: function() {
+    
+    // Needed to keep a reference to the ownerCt for next time:
+    var ownerCt = this.ownerCt || this.panel.ownerCt;
+    this.ownerCt = ownerCt;
+  
     // reload() is a new feature of AutoPanel:
-    return this.panel.ownerCt.reload();
+    return ownerCt.reload();
     
     /* This is the old way which closes and loads a new Tab: */
     //var tab = this.tab || this.panel.ownerCt;
