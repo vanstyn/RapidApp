@@ -156,6 +156,7 @@ sub view :Local {
     my $cnf = {
       xtype => 'panel',
       autoScroll => \1,
+      cls => 'ra-scoped-reset',
       
       # try to set the title/icon by finding/parsing <title> in the 'html'
       autopanel_parse_title => \1,
@@ -179,7 +180,9 @@ sub view :Local {
     # This is a direct browser call, need to include js/css
     my $text = join("\n",
       '<head>[% c.all_html_head_tags %]</head>',
+      '<div class="ra-scoped-reset">',
       '[% INCLUDE ' . $template . ' %]',
+      '</div>'
     );
     $content_type = 'text/html; charset=utf-8';
     $output = $self->_render_template('Template_raw',\$text,$c);

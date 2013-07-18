@@ -15,7 +15,7 @@ use Path::Class qw(dir);
 use RapidApp;
 use JavaScript::ExtJS::V3;
 
-use Catalyst::Controller::AutoAssets 0.22;
+use Catalyst::Controller::AutoAssets 0.23;
 with 'Catalyst::Plugin::AutoAssets';
 
 sub get_extjs_dir { JavaScript::ExtJS::V3->dir->stringify }
@@ -53,6 +53,12 @@ before 'inject_asset_controllers' => sub {
       controller => 'Assets::RapidApp::CSS',
       type => 'CSS',
       include => $share_dir . '/assets/css',
+    },
+    {
+      controller => 'Assets::RapidApp::CSS::ScopedReset',
+      type => 'CSS',
+      include => $share_dir . '/assets/ra-scoped-reset.css',
+      scopify => ['.ra-scoped-reset', merge => ['html','body']]
     },
     {
       controller => 'Assets::RapidApp::JS',

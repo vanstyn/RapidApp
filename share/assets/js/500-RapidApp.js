@@ -1919,6 +1919,13 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
             if(conf.tabTitleCls) { delete conf.tabTitleCls; }
           }
           
+          // New: If this is html content (i.e. not an Ext container/panel)
+          // set the default cls to 'ra-scoped-reset' to escape from the
+          // global ExtJS CSS which does not have useful defaults for this case
+          if(conf.html && !conf.cls) {
+            conf.cls = 'ra-scoped-reset';
+          }
+          
 					container.setBodyConf.call(container,conf,el);
 					
 					// This is legacy and should probably be removed:
