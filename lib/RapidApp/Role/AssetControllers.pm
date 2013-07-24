@@ -15,7 +15,7 @@ use Path::Class qw(dir);
 use RapidApp;
 use JavaScript::ExtJS::V3;
 
-use Catalyst::Controller::AutoAssets 0.23;
+use Catalyst::Controller::AutoAssets 0.24;
 with 'Catalyst::Plugin::AutoAssets';
 
 sub get_extjs_dir { JavaScript::ExtJS::V3->dir->stringify }
