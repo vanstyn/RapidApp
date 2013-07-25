@@ -105,7 +105,8 @@ sub _not_exist_content {
     '<div class="ra-template">',
       
       '<div class="meta" style="display:none;">',
-        '<div class="template-name">', $template, '</div>',
+        #'<div class="template-name">', $template, '</div>',
+        encode_json_utf8({ name => $template }),
       '</div>',
       
       $outer,
@@ -120,7 +121,8 @@ sub _template_error_content {
     '<div class="ra-template">',
       
       '<div class="meta" style="display:none;">',
-        '<div class="template-name">', $template, '</div>',
+        #'<div class="template-name">', $template, '</div>',
+        encode_json_utf8({ name => $template }),
       '</div>',
       
       ( $editable 

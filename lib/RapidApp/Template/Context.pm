@@ -72,8 +72,12 @@ sub _div_wrap_content {
     '<div class="ra-template">',
       
       '<div class="meta" style="display:none;">',
-        '<div class="template-name">' . $template . '</div>',
-        '<div class="template-format">' . $format . '</div>',
+        #'<div class="template-name">' . $template . '</div>',
+        #'<div class="template-format">' . $format . '</div>',
+        encode_json_utf8({ 
+          name => $template,
+          format => $format
+        }),
       '</div>',
       
       '<div title="Edit \'' . $template . '\'" class="edit icon-edit-pictogram"></div>',

@@ -22,20 +22,14 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
   
   getTplElMeta: function(tplEl) {
     var metaEl = tplEl.child('div.meta');
-    var name = metaEl.child('div.template-name').dom.innerHTML;
-    name = name.replace(/(\r\n|\n|\r|\s)/gm,""); // <-- strip newlines & whitespace
-    
-    var format = null;
-    var format_node = metaEl.child('div.template-format');
-    if (format_node) {
-      format = format_node.dom.innerHTML;
-      format = format.replace(/(\r\n|\n|\r|\s)/gm,""); // <-- strip newlines & whitespace
+    var meta;
+    try {
+      meta = Ext.decode(metaEl.dom.innerHTML);
     }
-    
-    return {
-      name: name,
-      format: format
-    };
+    catch(err) {
+      return Ext.Msg.alert("Bad template meta data",err);
+    }
+    return meta;
   },
   
   editTplEl: function(tplEl) {
