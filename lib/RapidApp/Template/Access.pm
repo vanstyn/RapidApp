@@ -208,13 +208,14 @@ sub get_template_vars {
 }
 
 sub _get_default_template_vars {
-  my $self = shift;
+  my ($self, $template) = @_;
   my $c = $self->catalyst_context;
   my $Provider = $self->Controller->get_Provider;
   my $vars = {};
   $vars = {
     # TODO: figure out what other variables would be safe to provide to
     # non-admin templates
+    template_name => $template,
     rapidapp_version => $RapidApp::VERSION,
     
     list_templates => sub { $Provider->list_templates(@_) },
