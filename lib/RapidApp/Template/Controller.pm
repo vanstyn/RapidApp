@@ -6,6 +6,7 @@ use RapidApp::Include qw(sugar perlutil);
 use Try::Tiny;
 use Template;
 use Module::Runtime;
+use Path::Class qw(file dir);
 
 # New unified controller for displaying and editing TT templates on a site-wide
 # basis. This is an experiment that breaks with the previous RapidApp 'Module'
@@ -67,7 +68,11 @@ sub _new_Template {
         $self->provider_class->new({
           Controller => $self,
           Access => $self->Access,
-          INCLUDE_PATH => $self->_app->default_tt_include_path,
+          #INCLUDE_PATH => $self->_app->default_tt_include_path,
+          INCLUDE_PATH => [
+            dir($self->_app->config->{home},'root/templates')->stringify,
+            dir(RapidApp->share_dir,'templates')->stringify
+          ],
           CACHE_SIZE => 64,
           %{ $opt || {} }
         })
