@@ -8,12 +8,40 @@
 
 .ra-template>.edit {
   position: absolute;
+  z-index: 100;
   top: 0;
   right: 0;
   height: 40px;
   width: 40px;
   opacity: 0.2;
   display:none;
+}
+
+/* Nesting - handled up to 5 levels deep */
+.ra-template .ra-template>.edit {
+  top: 2px;
+  right: 15px;
+  opacity: 0.16;
+}
+.ra-template .ra-template .ra-template>.edit {
+  top: 4px;
+  right: 30px;
+  opacity: 0.12;
+}
+.ra-template .ra-template .ra-template .ra-template>.edit {
+  top: 6px;
+  right: 45px;
+  opacity: 0.08;
+}
+.ra-template .ra-template .ra-template .ra-template .ra-template>.edit {
+  top: 8px;
+  right: 60px;
+  opacity: 0.04;
+}
+.ra-template .ra-template .ra-template .ra-template .ra-template .ra-template>.edit {
+  top: 10px;
+  right: 75px;
+  opacity: 0.02;
 }
 
 .ra-template:hover>.edit {
