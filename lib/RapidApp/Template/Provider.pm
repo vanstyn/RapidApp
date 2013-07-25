@@ -106,7 +106,10 @@ sub _not_exist_content {
       
       '<div class="meta" style="display:none;">',
         #'<div class="template-name">', $template, '</div>',
-        encode_json_utf8({ name => $template }),
+        encode_json_utf8({ 
+          name => $template,
+          format => $self->Access->get_template_format($template)
+        }),
       '</div>',
       
       $outer,
@@ -122,7 +125,11 @@ sub _template_error_content {
       
       '<div class="meta" style="display:none;">',
         #'<div class="template-name">', $template, '</div>',
-        encode_json_utf8({ name => $template }),
+        encode_json_utf8({ 
+          name => $template,
+          format => $self->Access->get_template_format($template),
+          deletable => $self->Access->template_deletable($template)
+        }),
       '</div>',
       
       ( $editable 
@@ -218,6 +225,18 @@ sub create_template {
   $File->spew($content);
   
   return -f $File ? 1 : 0;
+}
+
+sub delete_template {
+  my ($self, $template) = @_;
+ 
+  my $File = file($self->get_template_path($template));
+  die "delete_templete(): ERROR - $File doesn't exist or is not a regular file" 
+    unless (-f $File);
+    
+  unlink($File) or die "delete_templete(): unlink failed for '$File'";
+  
+  return -f $File ? 0 : 1;
 }
 
 

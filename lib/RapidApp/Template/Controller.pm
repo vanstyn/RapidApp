@@ -262,6 +262,27 @@ sub create :Local {
   return $self->_detach_response($c,200,"Created template '$template'");
 }
 
+sub delete :Local {
+  my ($self, $c, @args) = @_;
+  my $template = $self->_resolve_template_name(@args)
+    or die "No template specified";
+  
+  local $self->{_current_context} = $c;
+  
+  $self->Access->template_deletable($template)
+    or return $self->_detach_response($c,403,"Delete template '$template' - Permission denied");
+  
+  my $Provider = $self->get_Provider;
+  
+  die "Delete template '$template' - doesn't exists" 
+    unless $Provider->template_exists($template);
+  
+  $Provider->delete_template($template)
+    or die "Failed to delete template '$template'";
+
+  return $self->_detach_response($c,200,"Deleted template '$template'");
+}
+
 sub _detach_response {
   my ($self, $c, $status, $body, $content_type) = @_;
   $content_type ||= 'text/plain; charset=utf-8';

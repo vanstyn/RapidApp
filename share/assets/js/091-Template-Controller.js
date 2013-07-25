@@ -44,7 +44,7 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
     ].join('/');
     
     var success_fn = function(response,options) {
-      this.loadEditor(meta.name,response.responseText,meta.format);
+      this.loadEditor(meta.name,response.responseText,meta);
     };
     
     Ext.Ajax.request({
@@ -167,6 +167,24 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
     });
   },
   
+  deleteTemplate: function(name) {
+  
+    var delete_url = [
+      this.panel.template_controller_url,
+      'delete', name
+    ].join('/');
+    
+    Ext.Ajax.request({
+      url: delete_url,
+      method: 'GET',
+      scope: this,
+      success: function(response,options) {
+        this.win.close();
+        this.tabReload();
+      }
+    });
+  },
+  
   getFormatEditorCnf: function(format) {
     if (format == 'html') {
       return {
@@ -185,14 +203,34 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
     }
   },
   
-  loadEditor: function(name,content,format) {
+  loadEditor: function(name,content,meta) {
   
+    var format = meta.format;
     var fp, panel = this.panel;
 		
 		var saveFn = function(btn) {
 			var form = fp.getForm();
 			var data = form.findField('content').getRawValue();
       return this.setTemplate(name,data);
+		};
+    
+    var deleteFn = function(btn) {
+			Ext.Msg.show({
+        title: 'Confirm Delete Template',
+        msg: [
+          '<br><b>Really delete </b><span class="tpl-name">',
+          name,'</span> <b>?</b><br><br>'
+        ].join(''),
+        buttons: Ext.Msg.YESNO,
+        icon: Ext.Msg.WARNING,
+        minWidth: 350,
+        fn: function(button_id) {
+          if(button_id == 'yes') {
+            this.deleteTemplate(name);
+          }
+        },
+        scope: this
+      });
 		};
     
     // Common config:
@@ -206,6 +244,39 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
     };
     // Format-specific config:
     Ext.apply(editField,this.getFormatEditorCnf(format));
+    
+    var buttons = [
+      '->',
+      {
+        name: 'save',
+        text: 'Save',
+        iconCls: 'icon-save-ok',
+        width: 100,
+        formBind: true,
+        scope: this,
+        handler: saveFn
+      },
+      {
+        name: 'cancel',
+        text: 'Cancel',
+        handler: function(btn) {
+          this.win.close();
+        },
+        scope: this
+      }
+    ];
+    
+    if(meta.deletable) {
+      buttons.unshift({
+        name: 'delete',
+        text: 'Delete',
+        iconCls: 'icon-garbage',
+        width: 100,
+        formBind: true,
+        scope: this,
+        handler: deleteFn
+      });
+    }
 		
 		fp = new Ext.form.FormPanel({
 			xtype: 'form',
@@ -220,30 +291,12 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
 			defaults: { anchor: '-0' },
 			autoScroll: true,
 			monitorValid: true,
-			buttonAlign: 'right',
+			buttonAlign: 'left',
 			minButtonWidth: 100,
 			
 			items: [ editField ],
 
-			buttons: [
-				{
-					name: 'save',
-					text: 'Save',
-					iconCls: 'icon-save-ok',
-					width: 100,
-					formBind: true,
-					scope: this,
-					handler: saveFn
-				},
-				{
-					name: 'cancel',
-					text: 'Cancel',
-					handler: function(btn) {
-						this.win.close();
-					},
-					scope: this
-				}
-			]
+			buttons: buttons
 		});
   
     if(this.win) { 

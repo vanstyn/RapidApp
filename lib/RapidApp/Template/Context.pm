@@ -76,7 +76,8 @@ sub _div_wrap_content {
         #'<div class="template-format">' . $format . '</div>',
         encode_json_utf8({ 
           name => $template,
-          format => $format
+          format => $format,
+          deletable => $self->Access->template_deletable($template)
         }),
       '</div>',
       
