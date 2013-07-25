@@ -301,7 +301,9 @@ sub _render_template {
   my $vars = $self->Access->get_template_vars($template);
   my $output;
   
-  $output = $self->get_Provider->_template_error_content(
+  # TODO/FIXME: this is duplicate logic that has to be handled for the
+  # top-level template which doesn't seem to go through process() in Context:
+  $output = $self->Template_raw->context->_template_error_content(
     $template, $TT->error, (
       $self->is_editable_request($c) &&
       $self->Access->template_writable($template)

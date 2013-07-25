@@ -118,33 +118,6 @@ sub _not_exist_content {
   );
 }
 
-sub _template_error_content {
-  my ($self, $template, $error, $editable) = @_;
-  join("\n",
-    '<div class="ra-template">',
-      
-      '<div class="meta" style="display:none;">',
-        #'<div class="template-name">', $template, '</div>',
-        encode_json_utf8({ 
-          name => $template,
-          format => $self->Access->get_template_format($template),
-          deletable => $self->Access->template_deletable($template)
-        }),
-      '</div>',
-      
-      ( $editable 
-        ? '<div title="Edit \'' . $template . '\'" class="edit icon-edit-pictogram"></div>'
-        : ''
-      ),
-      
-      '<div class="tpl-error">', 
-        'Template error &nbsp;&ndash; <span class="tpl-name">' . $template . '</span>',
-        '<div class="error-msg">',$error,'</div>',
-      '</div>',
-      
-    '</div>'
-  );
-}
 
 ###
 ### Over and above the methods in the Template::Provider API:

@@ -6,6 +6,7 @@ use autodie;
 use RapidApp::Include qw(sugar perlutil);
 use Text::Markdown 1.000031 'markdown';
 use Switch qw(switch);
+use Try::Tiny;
 
 use Moo;
 extends 'Template::Context';
@@ -22,6 +23,8 @@ Designed specifically to work with RapidApp::Template::Controller.
 
 # The RapidApp::Template::Controller instance
 has 'Controller', is => 'ro', required => 1;
+
+sub catalyst_context { (shift)->Controller->{_current_context} }
 
 # The RapidApp::Template::Access instance:
 # We need to be able to check certain template permissions for special markup
@@ -45,9 +48,20 @@ around 'process' => sub {
   # This is probably a Template::Document object:
   my $template = blessed $args[0] ? $args[0]->name : $args[0];
   
-  my $output = $self->$orig(@args);
+  my $output;
+  try {
+    $output = $self->$orig(@args);
+    $output = $self->post_process_output($template,\$output);
+  }
+  catch {
+    my $err = shift;
+    $output = $self->_template_error_content(
+      $template, $err,
+      $self->Access->template_writable($template)
+    );
+  };
   
-  return $self->post_process_output($template,\$output);
+  return $output;
 };
 
 
@@ -97,6 +111,43 @@ sub _div_wrap_content {
       ),
       
       '<div class="content">', $content, '</div>',
+      
+    '</div>'
+  );
+}
+
+sub _template_error_content {
+  my ($self, $template, $error, $editable) = @_;
+  
+  # Editable override: don't allow edit unless the actual request is
+  # in a editable context. This is a bit ugly as it violates the
+  # separation of concerns, but this needs to be here to support
+  # nested template errors
+  $editable = 0 unless (
+    $self->Controller->is_editable_request($self->catalyst_context)
+  );
+  
+  join("\n",
+    '<div class="ra-template">',
+      
+      '<div class="meta" style="display:none;">',
+        #'<div class="template-name">', $template, '</div>',
+        encode_json_utf8({ 
+          name => $template,
+          format => $self->Access->get_template_format($template),
+          deletable => $self->Access->template_deletable($template)
+        }),
+      '</div>',
+      
+      ( $editable 
+        ? '<div title="Edit \'' . $template . '\'" class="edit icon-edit-pictogram"></div>'
+        : ''
+      ),
+      
+      '<div class="tpl-error">', 
+        'Template error &nbsp;&ndash; <span class="tpl-name">' . $template . '</span>',
+        '<div class="error-msg">',$error,'</div>',
+      '</div>',
       
     '</div>'
   );

@@ -10,7 +10,7 @@ our $VERSION = 0.99010;
 use Catalyst 5.90002;
 use DBIx::Class 0.08250;
 use SQL::Translator 0.11016;
-use Template 2.24;
+use Template 2.25;
 use DateTime::Format::SQLite;
 use JavaScript::ExtJS::V3 '3.4.0';
 
