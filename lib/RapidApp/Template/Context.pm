@@ -28,6 +28,11 @@ has 'Controller', is => 'ro', required => 1;
 # Actual permission checks happen in the RapidApp::Template::Controller
 has 'Access', is => 'ro', required => 1;
 
+sub get_Provider {
+  my $self = shift;
+  return $self->{LOAD_TEMPLATES}->[0];
+}
+
 sub div_wrap {
   my ($self,$template) = @_;
   return 0 unless $self->Controller->{_div_wrap}; #<-- localized in RapidApp::Template::Controller
@@ -68,20 +73,28 @@ sub post_process_output {
 
 sub _div_wrap_content {
   my ($self, $template, $format, $content) = @_;
+  
+  my $exists = $self->get_Provider->template_exists($template);
+  my $meta = { 
+    name => $template,
+    format => $format,
+    deletable => $exists ? $self->Access->template_deletable($template) : 0
+  };
+  
   join("\n",
     '<div class="ra-template">',
       
       '<div class="meta" style="display:none;">',
         #'<div class="template-name">' . $template . '</div>',
         #'<div class="template-format">' . $format . '</div>',
-        encode_json_utf8({ 
-          name => $template,
-          format => $format,
-          deletable => $self->Access->template_deletable($template)
-        }),
+        encode_json_utf8($meta),
       '</div>',
       
-      '<div title="Edit \'' . $template . '\'" class="edit icon-edit-pictogram"></div>',
+      (
+        $exists ?
+        '<div title="Edit \'' . $template . '\'" class="edit icon-edit-pictogram"></div>' :
+        ''
+      ),
       
       '<div class="content">', $content, '</div>',
       
