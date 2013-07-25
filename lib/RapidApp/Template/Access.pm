@@ -193,8 +193,9 @@ sub _get_default_template_vars {
   my $self = shift;
   return {
     # TODO: figure out what other variables would be safe to provide to
-    # non-admin templates (i.e. templates
-    rapidapp_version => $RapidApp::VERSION
+    # non-admin templates
+    rapidapp_version => $RapidApp::VERSION,
+    list_templates => sub { $self->Controller->get_Provider->list_templates(@_) }
   };  
 }
 

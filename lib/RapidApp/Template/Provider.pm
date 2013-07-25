@@ -4,7 +4,7 @@ use warnings;
 use autodie;
 
 use RapidApp::Include qw(sugar perlutil);
-use Path::Class qw(file);
+use Path::Class qw(file dir);
 
 use Moo;
 extends 'Template::Provider';
@@ -219,5 +219,52 @@ sub create_template {
   
   return -f $File ? 1 : 0;
 }
+
+
+sub list_templates {
+  my ($self, @regexes) = @_;
+  
+  my @re = map { qr/$_/ } @regexes;
+  my @files = ();
+  
+  my $paths = $self->{INCLUDE_PATH};
+  $paths = [$paths] unless (ref $paths);
+  
+  my %seen = ();
+  for my $dir (map { dir($_) } @$paths) {
+    $dir->recurse(
+      preorder => 1,
+      depthfirst => 1,
+      callback => sub {
+        my $child = shift;
+        return if ($child->is_dir);
+        my $tpl = $child->relative($dir)->stringify;
+        
+        # If regex(es) were supplied, check that the template matches
+        # all of them
+        !($tpl =~ $_) and return for (@re);
+        
+        ## If regex(es) were supplied, check that the template matches
+        ## at least *one* of them
+        #if(scalar(@re) > 0) {
+        #  my $m = 0;
+        #  for my $r (@re) {
+        #    $m++ if ($tpl =~ $r);
+        #    last if ($m);
+        #  }
+        #  return unless ($m > 0);
+        #}
+        
+        # Make sure we include the same physical template only once:
+        return if ($seen{$child->absolute->stringify}++);
+        
+        push @files, $tpl;
+      }
+    );
+  }
+  
+  return \@files;
+}
+
 
 1;
