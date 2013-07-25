@@ -191,12 +191,31 @@ sub get_template_vars {
 
 sub _get_default_template_vars {
   my $self = shift;
-  return {
+  my $c = $self->catalyst_context;
+  my $Provider = $self->Controller->get_Provider;
+  my $vars = {};
+  $vars = {
     # TODO: figure out what other variables would be safe to provide to
     # non-admin templates
     rapidapp_version => $RapidApp::VERSION,
-    list_templates => sub { $self->Controller->get_Provider->list_templates(@_) }
-  };  
+    
+    list_templates => sub { $Provider->list_templates(@_) },
+    
+    # Return the url for the supplied template, 
+    # relative to the current request action:
+    template_url => sub { 
+      my $tpl = shift;
+      return join('','/',$c->req->action,"/$tpl");
+    },
+    
+    template_link => sub {
+      my $tpl = shift;
+      my $url = $vars->{template_url}->($tpl);
+      return join('','<a href="#!',$url,'">',$tpl,'</a>');
+    }
+  };
+  
+  return $vars;
 }
 
 # Admin templates get access to the context object. Only admin users
