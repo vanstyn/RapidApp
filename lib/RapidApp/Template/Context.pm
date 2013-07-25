@@ -47,6 +47,7 @@ around 'process' => sub {
 
   # This is probably a Template::Document object:
   my $template = blessed $args[0] ? $args[0]->name : $args[0];
+  $template = $self->Controller->_resolve_template_name($template);
   
   my $output;
   try {

@@ -44,6 +44,8 @@ has 'default_new_template_content', is => 'ro', default => sub{'BLANK TEMPLATE'}
 around 'fetch' => sub {
   my ($orig, $self, $name) = @_;
   
+  $name = $self->Controller->_resolve_template_name($name);
+  
   # Save the template fetch name:
   local $self->{template_fetch_name} = $name;
   return $self->$orig($name);
