@@ -1920,10 +1920,10 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
           }
           
           // New: If this is html content (i.e. not an Ext container/panel)
-          // set the default cls to 'ra-scoped-reset' to escape from the
+          // set the default body class to 'ra-scoped-reset' to escape from the
           // global ExtJS CSS which does not have useful defaults for this case
-          if(conf.html && !conf.cls) {
-            conf.cls = 'ra-scoped-reset';
+          if(conf.html && !conf.bodyCssClass) {
+            conf.bodyCssClass = 'ra-scoped-reset';
           }
           
 					container.setBodyConf.call(container,conf,el);

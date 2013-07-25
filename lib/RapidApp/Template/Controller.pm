@@ -156,7 +156,7 @@ sub view :Local {
     my $cnf = {
       xtype => 'panel',
       autoScroll => \1,
-      cls => 'ra-scoped-reset',
+      bodyCssClass => 'ra-scoped-reset',
       
       # try to set the title/icon by finding/parsing <title> in the 'html'
       autopanel_parse_title => \1,
