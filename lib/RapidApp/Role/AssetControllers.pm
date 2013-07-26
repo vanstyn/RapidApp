@@ -88,19 +88,45 @@ before 'inject_asset_controllers' => sub {
     },
   ];
   
+  ## -----------
+  # Easy automatic setup of local assets
   
-  # Add local assets if src include dirs exist in the App directory
-  push @$assets, {
-    controller => 'Assets::Local::CSS',
-    type => 'CSS',
-    include => 'root/src.d/css',
-  } if (-d dir($c->config->{home})->subdir('root/src.d/css'));
+  # Default to true if not set(i.e. can be set to 0/false to disable)
+  my $auto_setup = (
+    ! exists $c->config->{'Model::RapidApp'}->{auto_local_assets} ||
+    $c->config->{'Model::RapidApp'}->{auto_local_assets}
+  ) ? 1 : 0;
   
-  push @$assets, {
-    controller => 'Assets::Local::JS',
-    type => 'JS',
-    include => 'root/src.d/js',
-  } if (-d dir($c->config->{home})->subdir('root/src.d/js'));
+  if($auto_setup) {
+  
+    # New, automatic 'local_asset_dir' can now be specified via config:
+    my $dir = $c->config->{'Model::RapidApp'}
+      ->{local_assets_dir} || 'root/assets';
+    
+    # If relative, make relative to app home:
+    $dir = $dir =~ /^\// ? dir($dir) : dir($c->config->{home})->subdir($dir);
+    
+    # Add local assets if asset include dirs exist in the App directory
+    push @$assets, {
+      controller => 'Assets::Local::CSS',
+      type => 'CSS',
+      include => "$dir/css",
+    } if (-d $dir->subdir('css'));
+    
+    push @$assets, {
+      controller => 'Assets::Local::JS',
+      type => 'JS',
+      include => "$dir/js",
+    } if (-d $dir->subdir('js'));
+    
+    push @$assets, {
+      controller => 'Assets::Local::Icons',
+      type => 'IconSet',
+      include => "$dir/icons",
+    } if (-d $dir->subdir('icons'));
+  }
+  #
+  ## -----------
   
   # Check for any configs in the existing local app config:
   my $existing = $c->config->{'Plugin::AutoAssets'}->{assets};
