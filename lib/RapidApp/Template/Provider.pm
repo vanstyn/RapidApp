@@ -39,8 +39,6 @@ has 'new_template_path', is => 'ro', lazy => 1, default => sub{
   return $paths->[0];
 };
 
-has 'default_new_template_content', is => 'ro', default => sub{'BLANK TEMPLATE'};
-
 around 'fetch' => sub {
   my ($orig, $self, $name) = @_;
   
@@ -194,8 +192,8 @@ sub create_template {
     $Dir->mkpath or die "create_templete(): mkpath failed for '$Dir'";
   }
   
-  $content = $self->default_new_template_content
-    unless (defined $content);
+  # TODO: formalize a way to dynamically set/specify the new/init content
+  $content = "New Template '$template'" unless (defined $content);
 
   $File->spew($content);
   
