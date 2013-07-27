@@ -8,36 +8,37 @@
 
 <script type="text/javascript">
 
-	Ext.onReady(function(){
+  Ext.onReady(function(){
 
-        Ext.ux.RapidApp.HistoryInit();
+    Ext.ux.RapidApp.HistoryInit();
 
-		[% IF onReady_first %] [% onReady_first %] [% END %]
+    [% IF onReady_first %] [% onReady_first %] [% END %]
 
-		var config_url = '[% config_url %]';
-		var config_params = [% IF config_params %] [% config_params %] [% ELSE %] {} [% END %] ;
-		
-		new Ext.Viewport({
-			layout : 'fit',
-			hideBorders : true,
-			defaults : {
-				frame : true,
-				plit : true
-			},
-			items : {
-				xtype: 'dyncontainer',
-				layout: 'fit',
-				id: 'maincontainer',
-				itemsurl: config_url,
-				urlparams: config_params,
-				autoEl: {},
-				items: {
-					autoEl: {},
-					html: 'Loading, please wait...'
-				}
-			}
-		});
-	});
+    var config_url = '[% config_url %]';
+    var config_params = [% IF config_params %] [% config_params %] [% ELSE %] {} [% END %] ;
+
+    new Ext.ux.RapidApp.Viewport({
+      transform_links: true,
+      layout : 'fit',
+      hideBorders : true,
+      defaults : {
+        frame : true,
+        plit : true
+      },
+      items : {
+        xtype: 'dyncontainer',
+        layout: 'fit',
+        id: 'maincontainer',
+        itemsurl: config_url,
+        urlparams: config_params,
+        autoEl: {},
+        items: {
+          autoEl: {},
+          html: 'Loading, please wait...'
+        }
+      }
+    });
+  });
 
 </script>
 

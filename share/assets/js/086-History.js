@@ -22,10 +22,12 @@ Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.HistoryInit = function() {
 	Ext.History.init();
 	Ext.History.on('change', Ext.ux.RapidApp.HashNav.handleHashChange);
+  Ext.ux.RapidApp.HashNav.INITIALIZED = true;
 }
 
 Ext.ux.RapidApp.HashNav = {
 	
+  INITIALIZED: false,
 	INIT_LOCATION_HASH: window.location.hash,
 	INIT_TITLE: document.title,
 	ignoreHashChange: false,
@@ -221,7 +223,30 @@ Ext.ux.RapidApp.HashNav = {
 		else {
 			document.title = title + ' - ' + Ext.ux.RapidApp.HashNav.INIT_TITLE;
 		}
-	}
+	},
+  
+  // New: util function - converts a normal URL into a hashpath
+  urlToHashPath: function(url) {
+    //absolute: 
+    var hashpath = '#!' + url;
+    
+    // relative:
+    if(url.search('/') !== 0) {
+      var parts = window.location.hash.split('/');
+      if(parts[0] == '#!') {
+        // If we're already at a hashnav path, use it as the base:
+        parts.pop();
+        parts.push(url);
+        hashpath = parts.join('/');
+      }
+      else {
+        // make absolute:
+        hashpath = '#!/' + url
+      }
+    }
+    
+    return hashpath;
+  }
 };
 
 

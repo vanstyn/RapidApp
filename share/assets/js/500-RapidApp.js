@@ -5412,3 +5412,50 @@ Ext.ux.RapidApp.jsonArrArrToHtmlTable = function(v) {
 	return table_markup ? table_markup : v;
 }
 
+
+Ext.ux.RapidApp.Viewport = Ext.extend(Ext.Viewport, {
+
+  transform_links: false,
+
+  initComponent: function() {
+    if(this.transform_links && Ext.ux.RapidApp.HashNav.INITIALIZED) {
+      this.on('afterrender',function(){
+        this.getEl().on('click',this.clickInterceptor,this);
+      },this);
+    }
+    return Ext.ux.RapidApp.Viewport.superclass.initComponent.call(this);
+  },
+  
+  // TODO: why doesn't '^\w+://' work????? - Would like to match 'foo://'
+  externalUrlRe: new RegExp('^(http|https)://'),
+  
+  clickInterceptor: function(event) {
+    
+    var target = event.getTarget(null,null,true);
+    var match = ( target
+      // Is a link (<a> tag):
+      && target.is('a')
+      
+      // has no target attribute (i.e. target="_blank" or the like specified)
+      && ! target.getAttribute('target')
+    );
+    if(!match) { return; }
+    
+    var href = target.getAttribute('href');
+    match = ( href
+      // Is not already a hash url:
+      && href.search('#') !== 0
+      
+      // URL is local (does not start with http://, https://)
+      && ! this.externalUrlRe.test(href)
+    );
+    
+    if(match) {
+      // Stop the link click event and convert to hashpath:
+      event.stopEvent();
+      var hashpath = Ext.ux.RapidApp.HashNav.urlToHashPath(href);
+      window.location.hash = hashpath;
+    }
+  }
+
+});
