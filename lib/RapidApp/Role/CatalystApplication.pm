@@ -16,6 +16,8 @@ use Text::SimpleTable::AutoWidth;
 use RapidApp;
 use Template;
 
+sub rapidapp_version { $RapidApp::VERSION }
+
 # initialize properties of our debug messages
 RapidApp::Debug->default_instance->applyChannelConfig({
 	'auth'          => { color => GREEN,     },

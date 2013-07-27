@@ -4,6 +4,9 @@ Ext.ns('Ext.log');
 Ext.log = function() {};
 
 Ext.ns('Ext.ux.RapidApp');
+
+// This should be set dynamically by the server:
+Ext.ux.RapidApp.VERSION = Ext.ux.RapidApp.VERSION || 0;
 	
 /* Global Server Event Object */
 Ext.ux.RapidApp.EventObjectClass = Ext.extend(Ext.util.Observable,{
@@ -246,6 +249,7 @@ Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
 Ext.ux.RapidApp.ajaxRequestContentType = function(conn,options) {
 	if (!options.headers) { options.headers= {}; }
 	options.headers['X-RapidApp-RequestContentType']= 'JSON';
+  options.headers['X-RapidApp-VERSION'] = Ext.ux.RapidApp.VERSION;
 };
 
 Ext.Ajax.on('requestcomplete',Ext.ux.RapidApp.ajaxCheckException);

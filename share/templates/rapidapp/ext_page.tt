@@ -20,9 +20,10 @@
 
 
 <script type="text/javascript">
-	Ext.BLANK_IMAGE_URL = '/assets/rapidapp/misc/static/s.gif';
-	Ext.chart.Chart.CHART_URL = '/assets/rapidapp/misc/static/charts.swf';
-	Ext.QuickTips.init();
+  Ext.ux.RapidApp.VERSION = [% c.rapidapp_version %];
+  Ext.BLANK_IMAGE_URL = '/assets/rapidapp/misc/static/s.gif';
+  Ext.chart.Chart.CHART_URL = '/assets/rapidapp/misc/static/charts.swf';
+  Ext.QuickTips.init();
 </script>
 
 </head>
