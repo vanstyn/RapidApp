@@ -184,14 +184,13 @@ sub view :Local {
   }
   else {
     # This is a direct browser call, need to include js/css
-    my $text = join("\n",
-      '<head>[% c.all_html_head_tags %]</head>',
+    $output = join("\n",
+      '<head>', $c->all_html_head_tags, '</head>',
       '<div class="ra-scoped-reset">',
-      '[% INCLUDE ' . $template . ' %]',
+      $self->_render_template('Template_raw',$template,$c),
       '</div>'
     );
     $content_type = 'text/html; charset=utf-8';
-    $output = $self->_render_template('Template_raw',\$text,$c);
   }
   
   return $self->_detach_response($c,200,$output,$content_type);
