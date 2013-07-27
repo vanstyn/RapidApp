@@ -159,24 +159,42 @@ sub view :Local {
       $template, $c
     );
     
-    my $cnf = {
-      xtype => 'panel',
-      autoScroll => \1,
-      bodyCssClass => 'ra-scoped-reset',
-      
-      # try to set the title/icon by finding/parsing <title> in the 'html'
-      autopanel_parse_title => \1,
-      
-      # These will only be the title/icon if there is no parsable <title>
-      tabTitle => join('/',@args), #<-- not using $template to preserve the orig req name
-      tabIconCls => 'ra-icon-page-white-world',
-      
-      template_controller_url => '/' . $self->action_namespace($c),
-      html => $html
-    };
+    my $cnf = {};
     
-    # No reason to load the plugin unless we're editable:
-    $cnf->{plugins} = ['template-controller-panel'] if ($editable);
+    # EXPERIMENTAL IFRAME OPTION:
+    if($c->req->params->{iframe}) {
+      $cnf = {
+        xtype => 'iframepanel',
+        tabTitle => '[' . join('/',@args) . ']', #<-- not using $template to preserve the orig req name
+        tabIconCls => 'ra-icon-page-white',
+        style => 'top: 0; left: 0; bottom: 0; right: 0;',
+        autoScroll => \1,
+        bodyStyle => 'border: 1px solid #D0D0D0;background-color:white;',
+        loadMask => \1,
+        # TODO: merge all query params into url:
+        defaultSrc => "" . $c->req->uri . ""
+      };
+    }
+    else {
+      $cnf = {
+        xtype => 'panel',
+        autoScroll => \1,
+        bodyCssClass => 'ra-scoped-reset',
+        
+        # try to set the title/icon by finding/parsing <title> in the 'html'
+        autopanel_parse_title => \1,
+        
+        # These will only be the title/icon if there is no parsable <title>
+        tabTitle => join('/',@args), #<-- not using $template to preserve the orig req name
+        tabIconCls => 'ra-icon-page-white-world',
+        
+        template_controller_url => '/' . $self->action_namespace($c),
+        html => $html
+      };
+      
+      # No reason to load the plugin unless we're editable:
+      $cnf->{plugins} = ['template-controller-panel'] if ($editable);
+    }
     
     # This is doing the same thing that the overly complex 'Module' controller does:
     $content_type = 'text/javascript; charset=utf-8';
