@@ -192,7 +192,7 @@ sub column_model {
 		
 		# ---- Shouldn't be doing this here, bad:
 		if ($h->{id} eq 'PRI_KEY') {
-			$h->{header} =  $h->{header} . '<img class="icon-bullet_key" src="/static/extjs/resources/images/default/s.gif">' ;
+			$h->{header} =  $h->{header} . '<img class="ra-icon-bullet_key" src="/static/extjs/resources/images/default/s.gif">' ;
 		}
 		# ----
 		

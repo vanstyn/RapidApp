@@ -45,11 +45,11 @@ has 'title' 							=> ( is => 'ro',	default => '',	isa => 'Str'						);
 has 'title_icon_href' 				=> ( is => 'ro',	default => '',	isa => 'Str'						);
 
 has 'edit_label' 						=> ( is => 'ro',	default => 'Update',		isa => 'Str'			);
-has 'edit_label_iconCls' 			=> ( is => 'ro',	default => 'icon-edit',	isa => 'Str'			);
+has 'edit_label_iconCls' 			=> ( is => 'ro',	default => 'ra-icon-edit',	isa => 'Str'			);
 has 'edit_icon_text' 				=> ( is => 'ro',	default => undef										);
 has 'edit_window_title' 			=> ( is => 'ro',	lazy => 1, default => sub { 'Edit ' . (shift)->item_title; } 	);
 has 'add_label' 						=> ( is => 'ro',	default => 'Add',			isa => 'Str'			);
-has 'add_label_iconCls' 			=> ( is => 'ro',	default => 'icon-add',	isa => 'Str'			);
+has 'add_label_iconCls' 			=> ( is => 'ro',	default => 'ra-icon-add',	isa => 'Str'			);
 has 'edit_window_height' 			=> ( is => 'ro',	default => 300											);
 has 'edit_window_width' 			=> ( is => 'ro',	default => 400											);
 has 'item_title' 						=> ( is => 'ro',	default => 'Item',		isa => 'Str'			);
@@ -262,7 +262,7 @@ sub BUILD {
 	my $actions = {
 		'main'												=> sub { $self->JSON_encode($self->DynGrid->Params);		},
 		#'action_' . $self->edit_label_iconCls		=> sub { $self->action_icon_edit; 								},
-		'action_icon-delete'								=> sub { $self->action_icon_delete;								},
+		'action_ra-icon-delete'								=> sub { $self->action_icon_delete;								},
 		'action_delete'									=> sub { $self->action_delete;										},
 		'batch_delete'										=> sub { $self->batch_delete_submit;								},
 		'action_batch_delete'							=> sub { $self->action_batch_delete;								},
@@ -331,7 +331,7 @@ sub excel_export_btn {
 		func => 'new Ext.Button', 
 		parm => {
 			text 		=> 'Excel Export',
-			iconCls	=> 'icon-page-excel',
+			iconCls	=> 'ra-icon-page-excel',
 			handler 	=> RapidApp::JSONFunc->new( 
 				raw => 1, 
 				func => 'function(btn) { ' . 
@@ -414,7 +414,7 @@ sub save_search_btn {
 		func => 'new Ext.Button', 
 		parm => {
 			text 		=> 'Save Search',
-			iconCls	=> 'icon-save-as',
+			iconCls	=> 'ra-icon-save-as',
 			handler 	=> RapidApp::JSONFunc->new( 
 				raw => 1, 
 				func => 'function(btn) { ' . 
@@ -455,7 +455,7 @@ sub save_search_btn_old {
 		func => 'new Ext.Button', 
 		parm => {
 			text 		=> 'Save Search',
-			iconCls	=> 'icon-save-as',
+			iconCls	=> 'ra-icon-save-as',
 			handler 	=> RapidApp::JSONFunc->new( 
 				raw => 1, 
 				func => 'function(btn) { ' . 
@@ -509,7 +509,7 @@ sub delete_search_btn {
 		func => 'new Ext.Button', 
 		parm => {
 			text 		=> 'Delete Search',
-			iconCls	=> 'icon-delete',
+			iconCls	=> 'ra-icon-delete',
 			#id 		=> ,
 			#scale		=> $self->button_scale,
 			handler 	=> RapidApp::JSONFunc->new( 
@@ -881,7 +881,7 @@ sub rowactions {
 	} if (defined $self->edit_item_coderef);
 	
 	push @{$ra->{actions}}, {
-		iconCls => 'icon-delete',
+		iconCls => 'ra-icon-delete',
 		tooltip => 'delete',
 	} if (defined $self->delete_item_coderef);
 	
@@ -1346,8 +1346,8 @@ sub add_submitform {
 	$config->{extra_buttons} = [{
 		xtype				=> 'dbutton',
 		text				=> 'Help',
-		iconCls			=> 'icon-help',
-		handler_func	=> q~new Ext.Window({iconCls: 'icon-help', autoScroll: true, height: 400, width: 350, html: '~ . $self->add_item_help_html . q~'}).show()~
+		iconCls			=> 'ra-icon-help',
+		handler_func	=> q~new Ext.Window({iconCls: 'ra-icon-help', autoScroll: true, height: 400, width: 350, html: '~ . $self->add_item_help_html . q~'}).show()~
 	}] if (defined $self->add_item_help_html);
 	
 	$config->{items} = $self->custom_add_form_items if (defined $self->custom_add_form_items);
@@ -1531,7 +1531,7 @@ sub delete_items_button {
 		func => 'new Ext.Button', 
 		parm => {
 			text		=> 'delete',
-			iconCls	=> 'icon-bullet-delete',
+			iconCls	=> 'ra-icon-bullet-delete',
 			handler	=> RapidApp::JSONFunc->new( raw => 1, func => 
 				'function(btn) { ' . 
 		

@@ -40,8 +40,8 @@ sub apply_TableSpecs {
 		my %conf = (
 			title => $table,
 			title_multi => $table . ' set',
-			#iconCls => 'icon-page-white',
-			#multiIconCls => 'icon-folder',
+			#iconCls => 'ra-icon-page-white',
+			#multiIconCls => 'ra-icon-folder',
 			display_column => $disp,
 		);
 		

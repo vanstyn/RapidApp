@@ -298,7 +298,7 @@ sub saved_search_tree_items {
 	return {
 		id			=> 'my-saved-searches',
 		text		=> 'My Views',
-		iconCls		=> 'icon-folder-view',
+		iconCls		=> 'ra-icon-folder-view',
 		expand		=> 1,
 		children	=> $saved_searches
 	};
@@ -314,7 +314,7 @@ sub organize_navtree_node {
 		id			=> 'manager',
 		text		=> $self->is_admin ? 'Organize Tree' : 'Organize Views',
 		cls		=> 'pad-top-7px-bottom-4px',
-		iconCls		=> 'icon-tree-edit',
+		iconCls		=> 'ra-icon-tree-edit',
 		module		=> 'manager',
 		params		=> {},
 		expand		=> 1,
@@ -326,7 +326,7 @@ sub organize_navtree_node {
 #	id			=> 'deleted_objects',
 #	text		=> 'Deleted Objects',
 #	cls		=> 'pad-top-bottom-4px',
-#	iconCls	=> 'icon-garbage-full',
+#	iconCls	=> 'ra-icon-garbage-full',
 #	module	=> 'deleted_objects',
 #	params	=> {},
 #	expand	=> 1,

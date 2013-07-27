@@ -57,8 +57,8 @@ $col_props->{deployed_ddl}->{hidden} = \1;
 __PACKAGE__->TableSpec_set_conf( 
 	title => 'Deploy Info',
 	title_multi => 'Deploy Info',
-	#iconCls => 'icon-data-view',
-	#multiIconCls => 'icon-data-views',
+	#iconCls => 'ra-icon-data-view',
+	#multiIconCls => 'ra-icon-data-views',
 	display_column => 'md5',
   columns => $col_props
 );

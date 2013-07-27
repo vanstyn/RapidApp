@@ -169,7 +169,7 @@ sub view :Local {
       
       # These will only be the title/icon if there is no parsable <title>
       tabTitle => join('/',@args), #<-- not using $template to preserve the orig req name
-      tabIconCls => 'icon-page-white-world',
+      tabIconCls => 'ra-icon-page-white-world',
       
       template_controller_url => '/' . $self->action_namespace($c),
       html => $html

@@ -320,7 +320,7 @@ sub print_view_button {
 	return {
 		xtype	=> 'button',
 		text => 'Print View',
-		iconCls => 'icon-printer',
+		iconCls => 'ra-icon-printer',
 		handler => jsfunc 'Ext.ux.RapidApp.winLoadUrlGET.createCallback(' . $json . ')'
 	};
 }

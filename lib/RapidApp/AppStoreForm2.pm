@@ -96,7 +96,7 @@ has 'button_text_cls' => ( is => 'ro', default => 'tbar-button-medium' );
 has 'button_scale' => ( is => 'ro',	default => 'medium'	);
 
 has 'reload_button_text' => ( is => 'ro',	default => ' Reload '	);
-has 'reload_button_iconCls' => ( is => 'ro',	default => 'icon-refresh-24x24'	);
+has 'reload_button_iconCls' => ( is => 'ro',	default => 'ra-icon-refresh-24x24'	);
 has 'reload_button' => ( is => 'ro',	lazy_build => 1	);
 sub _build_reload_button {
 	my $self = shift;
@@ -113,7 +113,7 @@ sub _build_reload_button {
 }
 
 has 'save_button_text' => ( is => 'ro',	default => ' Save '	);
-has 'save_button_iconCls' => ( is => 'ro',	default => 'icon-save-24x24'	);
+has 'save_button_iconCls' => ( is => 'ro',	default => 'ra-icon-save-24x24'	);
 has 'save_button' => ( is => 'ro',	lazy_build => 1	);
 sub _build_save_button {
 	my $self = shift;
@@ -136,7 +136,7 @@ sub _build_save_button {
 
 
 has 'add_button_text' => ( is => 'ro',	default => ' Add '	);
-has 'add_button_iconCls' => ( is => 'ro',	default => 'icon-save-ok-24x24'	);
+has 'add_button_iconCls' => ( is => 'ro',	default => 'ra-icon-save-ok-24x24'	);
 has 'add_button' => ( is => 'ro',	lazy_build => 1	);
 sub _build_add_button {
 	my $self = shift;
@@ -196,7 +196,7 @@ sub options_menu {
 		xtype    => 'button',
 		id			=> $buttonId,
 		text     => '<div class="'.$self->button_text_cls.'">Options</div>',
-		iconCls  => 'icon-gears-24x24',
+		iconCls  => 'ra-icon-gears-24x24',
 		scale    => $self->button_scale,
 		menu => {
 			buttonId => $buttonId,

@@ -11,7 +11,7 @@ use RapidApp::Include qw(sugar perlutil);
 #has '+show_root_node' => ( default => 1 );
 
 #has '+add_button_text' => ( default => 'Add Category' );
-#has '+add_button_iconCls' => ( default => 'icon-folder-add' );
+#has '+add_button_iconCls' => ( default => 'ra-icon-folder-add' );
 
 has '+use_contextmenu' => ( default => 1 );
 has '+no_dragdrop_menu' => ( default => 1 );
@@ -45,7 +45,7 @@ sub BUILD {
 	$self->apply_extconfig(
 		border => \1,
     tabTitle => 'Organize Navtree',
-    tabIconCls => 'icon-tree-edit'
+    tabIconCls => 'ra-icon-tree-edit'
 	);
 	
 	# Automatically reload the main nav tree when closed:
@@ -81,7 +81,7 @@ sub fetch_nodes {
 		push @$nodes, {
 			id => 'manage/root', #<-- because the id ends in "root" the root nodes will be fetched into this node
 			text	=> 'Public Navigation Tree',
-			iconCls => 'icon-server-database',
+			iconCls => 'ra-icon-server-database',
 			expanded => \1,
 			rootValidActions => \1 #<-- prevents actions that wouldn't be valid for the root node (rename, etc)
 		} if ($admin);
@@ -91,7 +91,7 @@ sub fetch_nodes {
       my $my_searches = {
         id => 'my_searches',
         text => 'My Views',
-        iconCls => 'icon-folder-view',
+        iconCls => 'ra-icon-folder-view',
         expanded => \1,
         rootValidActions => \1, #<-- prevents actions that wouldn't be valid for the root node (rename, etc)
         allowLeafDropOnly => \1,
@@ -107,7 +107,7 @@ sub fetch_nodes {
       push @$nodes, {
         id => 'user_searches',
         text => 'Other User\'s Views',
-        iconCls => 'icon-data-views',
+        iconCls => 'ra-icon-data-views',
         cls => 'pad-top-7px',
         expanded => \0,
         rootValidActions => \1, #<-- prevents actions that wouldn't be valid for the root node (rename, etc)
@@ -196,7 +196,7 @@ sub user_searches_nodes {
 		my $data = {
 			id => $path,
 			text => $User->full_name . ' [' . $User->username . ']',
-			iconCls => 'icon-user',
+			iconCls => 'ra-icon-user',
 			rootValidActions => \1, #<-- prevents actions that wouldn't be valid for the root node (rename, etc)
 			#allowDrop => \0,
 			allowLeafDropOnly => \1,

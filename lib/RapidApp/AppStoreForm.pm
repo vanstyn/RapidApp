@@ -85,7 +85,7 @@ has 'button_scale' => ( is => 'ro',	default => 'medium'	);
 
 has 'reload_button_text' => ( is => 'ro',	default => ' Reload '	);
 #has 'reload_button_iconCls' => ( is => 'ro',	default => 'x-tbar-loading'	);
-has 'reload_button_iconCls' => ( is => 'ro',	default => 'icon-refresh-24x24'	);
+has 'reload_button_iconCls' => ( is => 'ro',	default => 'ra-icon-refresh-24x24'	);
 has 'reload_button_id' => ( is => 'ro',	lazy_build => 1	);
 sub _build_reload_button_id {
 	my $self = shift;
@@ -110,7 +110,7 @@ sub _build_reload_button {
 }
 
 has 'save_button_text' => ( is => 'ro',	default => ' Save '	);
-has 'save_button_iconCls' => ( is => 'ro',	default => 'icon-save-24x24'	);
+has 'save_button_iconCls' => ( is => 'ro',	default => 'ra-icon-save-24x24'	);
 has 'save_button_id' => ( is => 'ro',	lazy_build => 1	);
 sub _build_save_button_id {
 	my $self = shift;
@@ -138,7 +138,7 @@ sub _build_save_button {
 
 
 has 'add_button_text' => ( is => 'ro',	default => ' Add '	);
-has 'add_button_iconCls' => ( is => 'ro',	default => 'icon-save-ok-24x24'	);
+has 'add_button_iconCls' => ( is => 'ro',	default => 'ra-icon-save-ok-24x24'	);
 has 'add_button_id' => ( is => 'ro',	lazy_build => 1	);
 sub _build_add_button_id {
 	my $self = shift;

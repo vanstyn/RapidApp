@@ -45,8 +45,8 @@ __PACKAGE__->apply_TableSpec;
 __PACKAGE__->TableSpec_set_conf( 
 	title => 'Nav Node to Role Link',
 	title_multi => 'Nav Node to Role Links',
-	#iconCls => 'icon-arrow-sprocket',
-	#multiIconCls => 'icon-arrow-sprockets',
+	#iconCls => 'ra-icon-arrow-sprocket',
+	#multiIconCls => 'ra-icon-arrow-sprockets',
 	display_column => 'node_id',
 	priority_rel_columns => 1,
 );

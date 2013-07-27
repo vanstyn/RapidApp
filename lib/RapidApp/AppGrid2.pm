@@ -36,14 +36,14 @@ has 'store_autoLoad' => ( is => 'ro', default => sub {\0} );
 has 'add_loadContentCnf' => ( is => 'ro', default => sub {
 	{
 		title		=> 'Add',
-		iconCls	=> 'icon-add'
+		iconCls	=> 'ra-icon-add'
 	}
 });
 
 has 'add_button_cnf' => ( is => 'ro', default => sub {
 	{
 		text		=> 'Add',
-		iconCls	=> 'icon-add'
+		iconCls	=> 'ra-icon-add'
 	}
 });
 
@@ -294,7 +294,7 @@ sub options_menu {
 		xtype		=> 'button',
 		id			=> $self->options_menu_button_Id,
 		text		=> 'Options',
-		iconCls	=> 'icon-gears',
+		iconCls	=> 'ra-icon-gears',
     itemId  => 'options-button',
 		menu => {
 			items => $items,

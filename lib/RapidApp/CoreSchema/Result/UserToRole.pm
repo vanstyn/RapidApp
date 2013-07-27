@@ -39,8 +39,8 @@ __PACKAGE__->apply_TableSpec;
 __PACKAGE__->TableSpec_set_conf( 
 	title => 'UserToRole',
 	title_multi => 'UserToRoles',
-	#iconCls => 'icon-node',
-	#multiIconCls => 'icon-user1-preferences-many',
+	#iconCls => 'ra-icon-node',
+	#multiIconCls => 'ra-icon-user1-preferences-many',
 	display_column => 'role',
   priority_rel_columns => 1
 );

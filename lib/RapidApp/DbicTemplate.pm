@@ -96,7 +96,7 @@ around 'content' => sub {
 		items => [
 			{
 				title => $content->{title} || $content->{tabTitle} || 'Main',
-				iconCls => $content->{iconCls} || $content->{tabIconCls} || 'icon-application-view-detail',
+				iconCls => $content->{iconCls} || $content->{tabIconCls} || 'ra-icon-application-view-detail',
 				layout => 'anchor',
 				autoHeight => \1,
 				autoWidth => \1,
@@ -106,7 +106,7 @@ around 'content' => sub {
 			{
 				%{ $self->Module('data_tab')->content },
 				title => 'Data',
-				iconCls => 'icon-database-table',
+				iconCls => 'ra-icon-database-table',
 				layout => 'anchor',
 				border => \0,
 				autoHeight => \1,

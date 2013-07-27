@@ -82,7 +82,7 @@ before 'setup_components' => sub {
   my $main_module_params = {
     title => $config->{nav_title},
     right_footer => $config->{title},
-    iconCls => 'icon-catalyst-transparent',
+    iconCls => 'ra-icon-catalyst-transparent',
     navtrees => \@navtrees
   };
   
@@ -205,8 +205,8 @@ before 'setup_component' => sub {
     $class->TableSpec_set_conf(
     	title => ($class->TableSpec_get_set_conf('title') || $source_name),
       title_multi => ($class->TableSpec_get_set_conf('title_multi') || "$source_name Rows"),
-      iconCls => ($class->TableSpec_get_set_conf('iconCls') || 'icon-pg'),
-      multiIconCls => ($class->TableSpec_get_set_conf('multiIconCls') || 'icon-pg-multi'),
+      iconCls => ($class->TableSpec_get_set_conf('iconCls') || 'ra-icon-pg'),
+      multiIconCls => ($class->TableSpec_get_set_conf('multiIconCls') || 'ra-icon-pg-multi'),
     );
     
     # ----------------

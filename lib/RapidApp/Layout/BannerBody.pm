@@ -123,7 +123,7 @@ sub login_button {
 	return {
 		xtype				=> 'dbutton',
 		text				=> 'Login',
-		iconCls			=> 'icon-key',
+		iconCls			=> 'ra-icon-key',
 		boxMaxWidth		=> 100,
 		handler_func	=> q~Ext.ux.FetchEval('/object/login_window/');~
 	};
@@ -138,7 +138,7 @@ sub logout_button {
 	return {
 		xtype				=> 'dbutton',
 		text				=> 'Logout',
-		iconCls			=> 'icon-logout',
+		iconCls			=> 'ra-icon-logout',
 		boxMaxWidth		=> 100,
 		handler_func	=> q~Ext.ux.FetchEval('/object/logout_window/');~
 	};
@@ -151,7 +151,7 @@ sub change_password_button {
 	return {
 		xtype				=> 'dbutton',
 		text				=> 'Change Password',
-		iconCls			=> 'icon-key',
+		iconCls			=> 'ra-icon-key',
 		boxMaxWidth		=> 100,
 		handler_func	=> q~Ext.ux.FetchEval('/change_pw_window/');~
 	};

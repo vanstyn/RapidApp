@@ -101,7 +101,7 @@ Ext.ux.RapidApp.genericChangePW = function(username,post_url) {
 			{
 				name: 'ok',
 				text: 'Ok',
-				iconCls: 'icon-key',
+				iconCls: 'ra-icon-key',
 				formBind: true,
 				handler: doChange
 			},

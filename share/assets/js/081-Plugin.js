@@ -192,7 +192,7 @@ Ext.ux.RapidApp.Plugin.Combo.AppSuperBox = Ext.extend(Ext.ux.RapidApp.Plugin.Com
 		Ext.apply(this.cmp,{
 			xtype: 'superboxselect', // <-- no effect, the xtype should be set to this in the consuming class
 			extraItemCls: 'x-superboxselect-x-flag',
-			expandBtnCls: 'icon-roles_expand_sprite',
+			expandBtnCls: 'ra-icon-roles_expand_sprite',
 			listEmptyText: '(no more available ' + this.itemLabel + ')',
 			emptyText: '(none)',
 			listAlign: 'tr?',
@@ -314,9 +314,9 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 	,position:'bottom'
 
 	/**
-	 * @cfg {String} iconCls Icon class for menu button (defaults to "icon-magnifier")
+	 * @cfg {String} iconCls Icon class for menu button (defaults to "ra-icon-magnifier")
 	 */
-	//,iconCls:'icon-magnifier'
+	//,iconCls:'ra-icon-magnifier'
 	,iconCls: null
 
 	/**
@@ -532,7 +532,7 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		this.outerMenu.add(
 			{
 				text: 'Mode',
-				iconCls: 'icon-preferences',
+				iconCls: 'ra-icon-preferences',
 				hideOnClick: false,
 				menu: this.modeMenu
 			},
@@ -1031,7 +1031,7 @@ Ext.ux.RapidApp.Plugin.GridHmenuClearSort = Ext.extend(Ext.util.Observable,{
 		return {
 			text: 'Clear Current Sort',
 			itemId: 'clear-sort',
-			iconCls: 'icon-remove-sort',
+			iconCls: 'ra-icon-remove-sort',
 			handler: function() {
 				this.cmp.store.setDefaultSort(null);
 				this.cmp.store.reload();
@@ -1300,7 +1300,7 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 	menuSummaryText : 'Summary Function',
 	headerIcoDomCfg: {
 		tag: 'div',
-		cls: 'icon-function-small',
+		cls: 'ra-icon-function-small',
 		style: 'float:left;width:10px;height:12px;'
 	},
 	allow_cust_funcs: true,
@@ -1598,7 +1598,7 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 			});
 			
 			this.clearAllItem = hmenu.add({
-				iconCls: 'icon-function-clear',
+				iconCls: 'ra-icon-function-clear',
 				itemId: 'clear-all',
 				text: 'Clear All Summaries',
 				handler: this.clearAllSummaries,
@@ -1607,7 +1607,7 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 			
 			this.menu = hmenu.add({
 				hideOnClick: false,
-				iconCls: 'icon-checkbox-no',
+				iconCls: 'ra-icon-checkbox-no',
 				itemId: 'summary',
 				text: this.menuSummaryText,
 				menu: this.summaryMenu
@@ -1699,8 +1699,8 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		if(summary_data) {
 			var val = summary_data['function'], title = summary_data['title'];
 			if(val && val !== '') {
-				//menu.setIconClass('icon-checkbox-yes');
-				menu.setIconClass('icon-function');
+				//menu.setIconClass('ra-icon-checkbox-yes');
+				menu.setIconClass('ra-icon-function');
 				field.setValue(val);
 				tfield.setValue(title);
 				if(seen_funcs[val]) {
@@ -1717,7 +1717,7 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		}
 		else {
 			combo.setValue('(None)');
-			menu.setIconClass('icon-checkbox-no');
+			menu.setIconClass('ra-icon-checkbox-no');
 			field.setVisible(false);
 			tfield.setVisible(false);
 			tfield.setValue(null);
@@ -2077,7 +2077,7 @@ Ext.ux.RapidApp.Plugin.AppGridAutoColWidth = Ext.extend(Ext.util.Observable,{
 			
 			hmenu.insert(index,{
 				text: "AutoSize Columns",
-				iconCls: 'icon-left-right',
+				iconCls: 'ra-icon-left-right',
 				handler:this.autoSizeColumns, //<-- this does the full autosize which could be slow
 				scope: this
 			});
@@ -2355,7 +2355,7 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 		
 		var menuItems = [{
 			text: 'Batch Modify Selected Records (' + count + ')',
-			iconCls: 'icon-table-edit-row',
+			iconCls: 'ra-icon-table-edit-row',
 			scope: this,
 			handler: this.doBatchEditSelected
 		}];
@@ -2371,20 +2371,20 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 		if(!this.editMenu) {
 			this.editMenu = new Ext.menu.Item({
 				text: 'Batch Modify',
-				iconCls: 'icon-table-sql-edit',
+				iconCls: 'ra-icon-table-sql-edit',
 				hideOnClick: false,
 				menu: [
 					{
 						itemId: 'all',
 						text: 'All Active Records',
-						iconCls: 'icon-table-edit-all',
+						iconCls: 'ra-icon-table-edit-all',
 						scope: this,
 						handler: this.doBatchEditAll
 					},
 					{
 						itemId: 'selected',
 						text: 'Selected Records',
-						iconCls: 'icon-table-edit-row',
+						iconCls: 'ra-icon-table-edit-row',
 						scope: this,
 						handler: this.doBatchEditSelected
 					}
@@ -2598,7 +2598,7 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 				{
 					name: 'save',
 					text: 'Apply Changes (0 fields)',
-					iconCls: 'icon-save-ok',
+					iconCls: 'ra-icon-save-ok',
 					width: 175,
 					formBind: true,
 					disabled: true,
@@ -3129,7 +3129,7 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 					
 					newEl = existBtn.insertSibling({ tag: 'div', style: 'float:right;' },'after');
 					var relBtn = new Ext.Button({
-						iconCls: 'icon-clock-run',
+						iconCls: 'ra-icon-clock-run',
 						text: 'Relative Date',
 						handler: this.showRelativeDateMenu,
 						scope: this
@@ -3558,7 +3558,7 @@ Ext.ux.RapidApp.Plugin.GridEditAdvancedConfig = Ext.extend(Ext.util.Observable,{
 		return {
 			xtype: 'menuitem',
 			text: 'Edit Advanced Config',
-			iconCls: 'icon-bullet-wrench',
+			iconCls: 'ra-icon-bullet-wrench',
 			handler: this.showAdvancedConfigWin,
 			scope: this
 		};
@@ -3664,7 +3664,7 @@ Ext.ux.RapidApp.Plugin.GridEditAdvancedConfig = Ext.extend(Ext.util.Observable,{
 				{
 					name: 'apply',
 					text: 'Save &amp; Apply',
-					iconCls: 'icon-save-ok',
+					iconCls: 'ra-icon-save-ok',
 					width: 175,
 					formBind: true,
 					scope: this,
@@ -3673,7 +3673,7 @@ Ext.ux.RapidApp.Plugin.GridEditAdvancedConfig = Ext.extend(Ext.util.Observable,{
 				{
 					name: 'save',
 					text: 'Save',
-					iconCls: 'icon-save-ok',
+					iconCls: 'ra-icon-save-ok',
 					width: 100,
 					formBind: true,
 					scope: this,
@@ -3745,7 +3745,7 @@ Ext.ux.RapidApp.Plugin.GridEditRawColumns = Ext.extend(Ext.util.Observable,{
 		return {
 			xtype: 'menuitem',
 			text: 'Edit Column Configs',
-			iconCls: 'icon-bullet-wrench',
+			iconCls: 'ra-icon-bullet-wrench',
 			handler: this.showAdvancedConfigWin,
 			scope: this
 		};
@@ -3834,7 +3834,7 @@ Ext.ux.RapidApp.Plugin.GridEditRawColumns = Ext.extend(Ext.util.Observable,{
 				{
 					name: 'apply',
 					text: 'Apply & Reload',
-					iconCls: 'icon-save-ok',
+					iconCls: 'ra-icon-save-ok',
 					width: 175,
 					formBind: true,
 					scope: this,
@@ -3933,7 +3933,7 @@ Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
 				{
 					name: 'apply',
 					text: 'Save',
-					iconCls: 'icon-save-ok',
+					iconCls: 'ra-icon-save-ok',
 					width: 90,
 					formBind: true,
 					scope: this,
@@ -4008,7 +4008,7 @@ Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
     
     hmenu.insert(index,{
       text: "Change Header",
-      iconCls: 'icon-textfield-edit',
+      iconCls: 'ra-icon-textfield-edit',
       handler:this.promptChangeHeader, 
       scope: this
     });
@@ -4026,8 +4026,8 @@ Ext.ux.RapidApp.Plugin.GridToggleEditCells = Ext.extend(Ext.util.Observable,{
   
   onText: '<span style="color:#666666;">Cell Editing On</span>',
   offText: '<span style="color:#666666;">Cell Editing Off</span>',
-  onIconCls: 'icon-textfield-check',
-  offIconCls: 'icon-textfield-cross',
+  onIconCls: 'ra-icon-textfield-check',
+  offIconCls: 'ra-icon-textfield-cross',
   
   toggleEditing: function(btn) {
     if(this.grid.store.disable_cell_editing) {

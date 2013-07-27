@@ -3,22 +3,22 @@ Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	
 	add_node_text: 'Add',
-	add_node_iconCls: 'icon-add',
+	add_node_iconCls: 'ra-icon-add',
 	add_node_url: null,
 	
 	delete_node_text: 'Delete',
-	delete_node_iconCls: 'icon-delete',
+	delete_node_iconCls: 'ra-icon-delete',
 	delete_node_url: null,
 	
 	rename_node_text: 'Rename',
-	rename_node_iconCls: 'icon-textfield-rename',
+	rename_node_iconCls: 'ra-icon-textfield-rename',
 	rename_node_url: null,
 	
 	reload_node_text: 'Reload',
-	reload_node_iconCls: 'icon-refresh',
+	reload_node_iconCls: 'ra-icon-refresh',
 	
 	copy_node_text: 'Copy',
-	copy_node_iconCls: 'icon-element-copy',
+	copy_node_iconCls: 'ra-icon-element-copy',
 	copy_node_url: null,
 	
 	node_action_reload: true,
@@ -60,7 +60,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			if(this.node_action_expandall) {
 				this.node_actions.push({
 					text: 'Expand All',
-					iconCls: 'icon-tree-expand',
+					iconCls: 'ra-icon-tree-expand',
 					handler: this.nodeExpandAll,
 					rootValid: true,
 					leafValid: false,
@@ -72,7 +72,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			if(this.node_action_collapseall) {
 				this.node_actions.push({
 					text: 'Collapse All',
-					iconCls: 'icon-tree-collapse',
+					iconCls: 'ra-icon-tree-collapse',
 					handler: this.nodeCollapseAll,
 					rootValid: true,
 					leafValid: false,
@@ -302,7 +302,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		if(this.copy_node_url && !this.no_dragdrop_menu) {
 			menuItems.push({
 				text: 'Copy here',
-				iconCls: 'icon-element-copy',
+				iconCls: 'ra-icon-element-copy',
 				handler: function(no_reloads) { 
 					this.nodeCopyMove(node,target,this.copy_node_url,false,point,point_node,no_reloads); 
 				},
@@ -313,7 +313,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		if(this.move_node_url) {
 			menuItems.push({
 				text: 'Move here',
-				iconCls: 'icon-element-into',
+				iconCls: 'ra-icon-element-into',
 				handler: function(no_reloads) { 
 					this.nodeCopyMove(node,target,this.move_node_url,true,point,point_node,no_reloads); 
 				},
@@ -856,7 +856,7 @@ Ext.ux.RapidApp.AppTree_contextmenu_handler = function(node,e) {
 
 		var menu = new Ext.menu.Menu({
 			items: [{
-				iconCls: 'icon-textfield-rename',
+				iconCls: 'ra-icon-textfield-rename',
 				text: 'Rename',
 				handler: function(item) {
 					Ext.ux.RapidApp.AppTree_rename_node(node);

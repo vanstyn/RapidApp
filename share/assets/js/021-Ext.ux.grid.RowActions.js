@@ -212,8 +212,8 @@ Ext.extend(Ext.ux.grid.RowActions, Ext.util.Observable, {
 	 * @cfg {Object} callbacks iconCls keyed object that contains callback functions. For example:
 	 * <pre>
 	 * callbacks:{
-	 * &nbsp;    'icon-open':function(...) {...}
-	 * &nbsp;   ,'icon-save-ok':function(...) {...}
+	 * &nbsp;    'ra-icon-open':function(...) {...}
+	 * &nbsp;   ,'ra-icon-save-ok':function(...) {...}
 	 * }
 	 * </pre>
 	 */

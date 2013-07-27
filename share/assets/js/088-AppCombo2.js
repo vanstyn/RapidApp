@@ -203,7 +203,7 @@ Ext.ux.RapidApp.AppCombo2.IconCombo = Ext.extend(Ext.ux.RapidApp.AppCombo2.CssCo
 		Ext.ux.RapidApp.AppCombo2.IconCombo.superclass.initComponent.apply(this,arguments);
 	}
 });
-Ext.reg('icon-combo',Ext.ux.RapidApp.AppCombo2.IconCombo);
+Ext.reg('ra-icon-combo',Ext.ux.RapidApp.AppCombo2.IconCombo);
 
 // TODO: remove Ext.ux.MultiFilter.StaticCombo and reconfigure MultiFilter
 // to use this here as a general purpose component
@@ -335,7 +335,7 @@ Ext.ux.RapidApp.StaticCombo = Ext.extend(Ext.ux.RapidApp.AppCombo2.CssCombo,{
 			var el = mitem.getEl();
 			if(mitem.value == cur_val) {
 				el.setStyle('font-weight','bold');
-				mitem.setIconClass('icon-checkbox-yes');
+				mitem.setIconClass('ra-icon-checkbox-yes');
 			}
 			else {
 				el.setStyle('font-weight','normal');
@@ -637,7 +637,7 @@ Ext.ux.RapidApp.ClickMenuField = Ext.extend(Ext.ux.RapidApp.ClickCycleField,{
 				cnf.items = [
 					{
 						canActivate: false,
-						iconCls : 'icon-bullet-arrow-down',
+						iconCls : 'ra-icon-bullet-arrow-down',
 						style: 'font-weight:bold;color:#333333;cursor:auto;padding-right:5px;',
 						text: this.header + ':',
 						hideOnClick: true
@@ -1085,7 +1085,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 			var select_btn = new Ext.Button({
 				text: '&nbsp;Select',
 				width: 90,
-				iconCls: 'icon-selection-up-blue',
+				iconCls: 'ra-icon-selection-up-blue',
 				handler: function(){ select_fn(null); },
 				scope: this,
 				disabled: true
@@ -1093,7 +1093,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 			
 			var add_btn = new Ext.Button({
 				text: '<span style="font-weight:bold;font-size:1.1em;">Add New</span>',
-				iconCls: 'icon-selection-add',
+				iconCls: 'ra-icon-selection-add',
 				handler: Ext.emptyFn,
 				hidden: true
 			});
@@ -1107,7 +1107,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 			if(this.allowBlank){
 				buttons.unshift(new Ext.Button({
 					text: 'Select None (empty)',
-					iconCls: 'icon-selection',
+					iconCls: 'ra-icon-selection',
 					handler: function(){
 						//field.dataValue = null;
 						//field.setValue(null);
@@ -1157,7 +1157,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 				// Modify the add_form when (if) it is prepared, setting text more specific to this 
 				// context than its defaults:
 				add_form_onPrepare: function(cfg) {
-					cfg.title = '<span style="font-weight:bold;font-size:1.2em;" class="with-icon icon-selection-add">' +
+					cfg.title = '<span style="font-weight:bold;font-size:1.2em;" class="with-icon ra-icon-selection-add">' +
 						'&nbsp;Add &amp; Select New ';
 					if(field.header) { cfg.title += field.header; };
 					cfg.title += '</span>';
@@ -1165,7 +1165,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 						if(btn_cfg.name == 'save') {
 							Ext.apply(btn_cfg,{
 								text: '<span style="font-weight:bold;font-size:1.1em;">&nbsp;Save &amp; Select</span>',
-								iconCls: 'icon-selection-new',
+								iconCls: 'ra-icon-selection-new',
 								width: 150
 							});
 						}
@@ -1620,7 +1620,7 @@ Ext.ux.RapidApp.ListEditField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 			items.push('-',{
 				style: 'font-weight:bold;color:#333333;',
 				text: '&nbsp;OK',
-				iconCls: 'icon-accept',
+				iconCls: 'ra-icon-accept',
 				hideOnClick: false,
 				handler: this.applyMenuSelections,
 				scope: this

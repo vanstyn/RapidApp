@@ -293,8 +293,8 @@ sub default_TableSpec_cnf  {
 	# This is one of the reasons the whole TableSpec design needs to be refactored
 	my %defaults = ();
 	$defaults{iconCls} = $data->{singleIconCls} if ($data->{singleIconCls} and ! $data->{iconCls});
-	$defaults{iconCls} = $defaults{iconCls} || $data->{iconCls} || 'icon-pg';
-	$defaults{multiIconCls} = $data->{multiIconCls} || 'icon-pg-multi';
+	$defaults{iconCls} = $defaults{iconCls} || $data->{iconCls} || 'ra-icon-pg';
+	$defaults{multiIconCls} = $data->{multiIconCls} || 'ra-icon-pg-multi';
 	$defaults{singleIconCls} = $data->{singleIconCls} || $defaults{iconCls};
 	$defaults{title} = $data->{title} || $table;
 	$defaults{title_multi} = $data->{title_multi} || $defaults{title};
@@ -950,7 +950,7 @@ sub apply_row_methods {
 		inlineNavLink => sub {
 			my $self = shift;
 			my $text = shift || '<span>open</span>';
-			my %attrs = ( class => "icon-magnify-tiny", @_ );
+			my %attrs = ( class => "ra-icon-magnify-tiny", @_ );
 
 			my $title = $self->getDisplayValue or return undef;
 			my $url = $self->getRestPath or return undef;

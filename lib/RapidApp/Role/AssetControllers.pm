@@ -69,6 +69,8 @@ before 'inject_asset_controllers' => sub {
       controller => 'Assets::RapidApp::Icons',
       type => 'IconSet',
       include => $share_dir . '/assets/icons',
+      css_file_name => 'ra-icons.css',
+      icon_name_prefix => 'ra-icon-'
     },
     {
       controller => 'Assets::RapidApp::Filelink',

@@ -33,7 +33,7 @@ sub Login_Window_code {
 	$Params->{title} 		= 'Login'			unless (defined $Params->{title});
 	$Params->{height}		= 230 				unless (defined $Params->{height});
 	$Params->{width} 		= 300 				unless (defined $Params->{width});
-	$Params->{iconCls}	= 'icon-key' 		unless (defined $Params->{iconCls});
+	$Params->{iconCls}	= 'ra-icon-key' 		unless (defined $Params->{iconCls});
 	$Params->{banner} 	= 'Login' 			unless (defined $Params->{banner});
 	
 	$Params->{username_label} 	= 'username' 			unless (defined $Params->{username_label});

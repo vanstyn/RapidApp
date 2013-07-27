@@ -87,9 +87,9 @@ Ext.extend(Ext.ux.grid.Search, Ext.util.Observable, {
 	,position:'bottom'
 
 	/**
-	 * @cfg {String} iconCls Icon class for menu button (defaults to "icon-magnifier")
+	 * @cfg {String} iconCls Icon class for menu button (defaults to "ra-icon-magnifier")
 	 */
-	,iconCls:'icon-magnifier'
+	,iconCls:'ra-icon-magnifier'
 
 	/**
 	 * @cfg {String/Array} checkIndexes Which indexes to check by default. Can be either 'all' for all indexes

@@ -19,7 +19,7 @@ sub BUILD {
 	$self->apply_extconfig(
 		xtype => 'iframepanel',
 		title => $self->title,
-		iconCls => 'icon-email',
+		iconCls => 'ra-icon-email',
 		collapsible => \1,
 		titleCollapse => \1,
 		style => 'height: 100%;',

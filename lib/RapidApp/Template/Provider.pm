@@ -94,7 +94,7 @@ sub _not_exist_content {
   
   my $inner = $creatable
     ? 'Template <span class="tpl-name">' . $template . '</span> doesn\'t exist yet' .
-        '<div title="Create \'' . $template . '\'" class="create with-icon icon-selection-add">Create Now</div>'
+        '<div title="Create \'' . $template . '\'" class="create with-icon ra-icon-selection-add">Create Now</div>'
     : 'Template <span class="tpl-name">' . $template . '</span> doesn\'t exist';
   
   my $outer = $creatable

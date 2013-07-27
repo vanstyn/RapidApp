@@ -97,8 +97,8 @@ __PACKAGE__->apply_TableSpec;
 __PACKAGE__->TableSpec_set_conf( 
 	title => 'Session',
 	title_multi => 'Sessions',
-	#iconCls => 'icon-user',
-	#multiIconCls => 'icon-group',
+	#iconCls => 'ra-icon-user',
+	#multiIconCls => 'ra-icon-group',
 	display_column => 'id',
   priority_rel_columns => 1,
   columns => {

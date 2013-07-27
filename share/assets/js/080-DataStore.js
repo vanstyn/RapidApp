@@ -1125,7 +1125,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				
 				var btn = cmp.store.buttonConstructor(Ext.apply({
 					tooltip: 'Add',
-					iconCls: 'icon-add',
+					iconCls: 'ra-icon-add',
 					handler: function(btn) {
 						var store = cmp.store;
 						if(store.proxy.getConnection().isLoading()) { return; }
@@ -1156,7 +1156,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				
 				var btn = cmp.store.buttonConstructor(Ext.apply({
 					tooltip: 'Edit',
-					iconCls: 'icon-application-form-edit',
+					iconCls: 'ra-icon-application-form-edit',
 					handler: function(btn) {
 						var store = cmp.store;
 						if(store.proxy.getConnection().isLoading()) { return; }
@@ -1185,7 +1185,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				
 				var btn = cmp.store.buttonConstructor(Ext.apply({
 					tooltip: 'Delete',
-					iconCls: 'icon-delete',
+					iconCls: 'ra-icon-delete',
 					disabled: true,
 					handler: function(btn) {
 						var store = cmp.store;
@@ -1232,7 +1232,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				
 				var btn = cmp.store.buttonConstructor(Ext.apply({
 					tooltip: 'Save',
-					iconCls: 'icon-save-ok',
+					iconCls: 'ra-icon-save-ok',
 					disabled: true,
 					handler: function(btn) {
 						var store = cmp.store;
@@ -1283,7 +1283,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				
 				var btn = cmp.store.buttonConstructor(Ext.apply({
 					tooltip: 'Undo',
-					iconCls: 'icon-arrow-undo',
+					iconCls: 'ra-icon-arrow-undo',
 					disabled: true,
 					handler: function(btn) {
 						var store = cmp.store;

@@ -108,7 +108,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		var close_item = {
 			itemId: 'close_item',
 			text: 'Close Other Tabs',
-			iconCls: 'icon-tabs-delete',
+			iconCls: 'ra-icon-tabs-delete',
 			scope: tp,
 			handler: tp.closeAll.createDelegate(tp,[tab]),
 			hideShow: function(){
@@ -124,7 +124,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
     var reload_item = Ext.isFunction(tab.reload) ? {
 			itemId: 'reload_item',
 			text: 'Reload',
-			iconCls: 'icon-refresh',
+			iconCls: 'ra-icon-refresh',
 			scope: tp,
 			handler: tab.reload.createDelegate(tab)
 		} : null;
@@ -132,7 +132,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		var open_item = tab.loadContentCnf ? {
 			itemId: 'open_item',
 			text: 'Open in a New Tab',
-			iconCls: 'icon-tab-go',
+			iconCls: 'ra-icon-tab-go',
 			scope: tp,
 			handler: tp.openAnother.createDelegate(tp,[tab])
 		} : null;
@@ -256,7 +256,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 			layout: 'fit',
 			closable: true,
 			title: 'Loading',
-			iconCls: 'icon-loading',
+			iconCls: 'ra-icon-loading',
 			autoLoad: {}
 		},cnf);
 			
@@ -317,8 +317,8 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 				var setIconCls = cnf.tabIconCls || this.tabIconCls;
         var setTitleCls = cnf.tabTitleCls || this.tabTitleCls;
 				
-				if(!setIconCls && tab.iconCls == 'icon-loading') {
-					setIconCls = 'icon-page';
+				if(!setIconCls && tab.iconCls == 'ra-icon-loading') {
+					setIconCls = 'ra-icon-page';
 				}
 				
 				if(!setTitle && tab.title == 'Loading') {
@@ -775,7 +775,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		if (this.gridsearch && this.tbar) {
 
 			var grid_search_cnf = {
-				//iconCls:'icon-zoom',
+				//iconCls:'ra-icon-zoom',
 				autoFocus:false,
 				mode: 'local', // local or remote
 				width: 250,
@@ -797,7 +797,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			var storeId = this.store.storeId;
 			var deleteBtn = new Ext.Button({
 				text: 'delete',
-				iconCls: 'icon-bullet-delete',
+				iconCls: 'ra-icon-bullet-delete',
 				handler: function(btn) {
 					var grid = btn.ownerCt.ownerCt;
 					var Records = grid.getSelectionModel().getSelections();
@@ -962,7 +962,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 					hidden: this.open_record_column_hidden,
 					header: '<span ' +
 							'style="padding-left:0px;height:12px;color:#666666;" ' +
-							'class="with-icon icon-magnify-tiny"' + 
+							'class="with-icon ra-icon-magnify-tiny"' + 
 						'>' +
 						// using a bunch of &nbsp; instead of padding-left for IE. Idea is to push the 
 						// header text to the right far enough so it can't be seen in the column header,
@@ -971,7 +971,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 						'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
 						'<i>Open Item Column</i></span>',
 					items: [{
-            iconCls: 'icon-magnifier ra-icon-actioncolumn',
+            iconCls: 'ra-icon-magnifier ra-ra-icon-actioncolumn',
 						tooltip: 'Open Item',
 						handler: this.row_open_handler,
 						scope: this
@@ -1096,7 +1096,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu = Ext.extend(Ext.menu.Menu,{
 			{
 				//text: 'This Page, Active Columns',
 				text: 'Current Page',
-				iconCls: 'icon-table-selection-row',
+				iconCls: 'ra-icon-table-selection-row',
 				handler: function(item) {
 					var cmp = item.ownerCt;
 					Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler.call(this,cmp,cmp.url,false,false);
@@ -1116,7 +1116,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu = Ext.extend(Ext.menu.Menu,{
 			{
 				//text: 'All Pages, Active Columns',
 				text: 'All Pages',
-				iconCls: 'icon-table-selection-all',
+				iconCls: 'ra-icon-table-selection-all',
 				handler: function(item) {
 					var cmp = item.ownerCt;
 					Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler(cmp,cmp.url,true,false);

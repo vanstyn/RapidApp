@@ -26,7 +26,7 @@ around 'options_menu_items' => sub {
 	push @$items, {
 		text => 'Excel Export',
 		hideOnClick => \0,
-		iconCls	=> 'icon-page-excel',
+		iconCls	=> 'ra-icon-page-excel',
 		menu => RapidApp::JSONFunc->new( func => 'new Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu',
 			parm => {
 				url	=> $self->suburl('/excel_read'),

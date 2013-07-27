@@ -96,8 +96,8 @@ __PACKAGE__->apply_TableSpec;
 __PACKAGE__->TableSpec_set_conf( 
 	title => 'Navtree Node',
 	title_multi => 'Navtree Nodes',
-	#iconCls => 'icon-folder',
-	#multiIconCls => 'icon-folders',
+	#iconCls => 'ra-icon-folder',
+	#multiIconCls => 'ra-icon-folders',
 	display_column => 'text'
 );
 

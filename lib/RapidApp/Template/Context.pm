@@ -107,7 +107,7 @@ sub _div_wrap_content {
       
       (
         $exists ?
-        '<div title="Edit \'' . $template . '\'" class="edit icon-edit-pictogram"></div>' :
+        '<div title="Edit \'' . $template . '\'" class="edit ra-icon-edit-pictogram"></div>' :
         ''
       ),
       
@@ -141,7 +141,7 @@ sub _template_error_content {
       '</div>',
       
       ( $editable 
-        ? '<div title="Edit \'' . $template . '\'" class="edit icon-edit-pictogram"></div>'
+        ? '<div title="Edit \'' . $template . '\'" class="edit ra-icon-edit-pictogram"></div>'
         : ''
       ),
       

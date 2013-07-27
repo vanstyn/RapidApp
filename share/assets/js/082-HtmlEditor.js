@@ -21,7 +21,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.ToolsMenu = Ext.extend(Ext.util.Observable, {
 		this.cmp.ToolsMenu = new Ext.menu.Menu();
 		var tb = this.cmp.getToolbar();
 		this.btn = tb.addButton({
-			iconCls: 'icon-bullet-wrench',
+			iconCls: 'ra-icon-bullet-wrench',
 			style: 'font-size:1.9em;',
 			text: this.text,
 			menu: this.cmp.ToolsMenu
@@ -304,7 +304,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHtmlFile = Ext.extend(Ext.util.Observable,
 	
 	onRender: function() {
 		var itm = {
-			iconCls: 'icon-paste-document',
+			iconCls: 'ra-icon-paste-document',
 			handler: this.selectHtmlFile,
 			text: this.title,
 			scope: this
@@ -367,7 +367,7 @@ Ext.preg('htmleditor-loadhtml',Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHtmlFile);
 Ext.ux.RapidApp.Plugin.HtmlEditor.SaveMhtml = Ext.extend(Ext.util.Observable, {
 	
 	title: 'Download as File',
-	iconCls: 'icon-document-save',
+	iconCls: 'ra-icon-document-save',
 	
 	constructor: function(cnf) {
 		Ext.apply(this,cnf);
@@ -420,7 +420,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHelp = Ext.extend(Ext.util.Observable, {
 	
 	onRender: function() {
 		var itm = {
-			iconCls: 'icon-help',
+			iconCls: 'ra-icon-help',
 			handler: this.showWindow,
 			text: this.title,
 			scope: this
@@ -472,7 +472,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile = Ext.extend(Ext.util.Observable, {
 	
 	onRender: function() {
 		this.btn = this.cmp.getToolbar().addButton({
-				iconCls: 'icon-page-white-zip-link',
+				iconCls: 'ra-icon-page-white-zip-link',
 				handler: this.selectFile,
 				text: this.title,
 				scope: this

@@ -6,9 +6,9 @@ use RapidApp::Include qw(sugar perlutil);
 
 
 has 'add_button_text' => ( is => 'ro', isa => 'Str', default => 'Add' );
-has 'add_button_iconCls' => ( is => 'ro', isa => 'Str', default => 'icon-add' );
+has 'add_button_iconCls' => ( is => 'ro', isa => 'Str', default => 'ra-icon-add' );
 has 'delete_button_text' => ( is => 'ro', isa => 'Str', default => 'Delete' );
-has 'delete_button_iconCls' => ( is => 'ro', isa => 'Str', default => 'icon-delete' );
+has 'delete_button_iconCls' => ( is => 'ro', isa => 'Str', default => 'ra-icon-delete' );
 
 has 'use_contextmenu' => ( is => 'ro', isa => 'Bool', default => 0 );
 has 'no_dragdrop_menu' => ( is => 'ro', isa => 'Bool', default => 0 );

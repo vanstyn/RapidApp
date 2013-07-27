@@ -1054,7 +1054,7 @@ Ext.ux.RapidApp.winDownload = function (url,params,msg,timeout) {
 		buttons:[{
 			width: 150,
 			text: 'Close',
-			iconCls: 'icon-cross',
+			iconCls: 'ra-icon-cross',
 			handler: function(){ win.hide(); win.close(); }
 		}],
 		listeners: {
@@ -1771,7 +1771,7 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 			 '<br>' + retry_text;
 			var opt = { 
 				tabTitle: '<span style="color:gray;">(load failed)</span>',
-				tabIconCls: 'icon-warning' 
+				tabIconCls: 'ra-icon-warning' 
 			};
 			
 			// All-purpose timeout message:
@@ -1824,10 +1824,10 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
             conf = Ext.decode(response.responseText);
           }
           else {
-            var html, title, icon = 'icon-document', 
+            var html, title, icon = 'ra-icon-document', 
               style = "font-weight:lighter;font-family:arial;";
             if (cont_parts[0] == 'text/html') {
-              icon = 'icon-page-white-world';
+              icon = 'ra-icon-page-white-world';
               html = response.responseText;
               
               // --- Support special syntax to parse tab title/icon/style
@@ -1847,11 +1847,11 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
               // ---
             }
             else if (cont_parts[0] == 'text/plain') {
-              icon = 'icon-page-white-text';
+              icon = 'ra-icon-page-white-text';
               html = Ext.util.Format.nl2br(Ext.util.Format.htmlEncode(response.responseText));
             }
             else {
-              icon: 'icon-page-white';
+              icon: 'ra-icon-page-white';
               html = '<b>Warning, Unknown Content-Type: ' + content_type + 
                 '</b><br><br><pre>' + response.responseText + '</pre>';
             }
@@ -1906,7 +1906,7 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
               var title = titleEl.dom.innerHTML;
               title = style ? '<span style="' + style + '">' + title + '</span>' : title;
               conf.tabTitle = title || conf.tabTitle;
-              conf.tabIconCls = titleEl.getAttribute('class') || conf.tabIconCls || 'icon-page-white-world';
+              conf.tabIconCls = titleEl.getAttribute('class') || conf.tabIconCls || 'ra-icon-page-white-world';
             }
           }
           // ------------------------------------
@@ -1948,7 +1948,7 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 		opt = opt || {};
 		opt = Ext.apply({
 			tabTitle: 'Load Failed',
-			tabIconCls: 'icon-cancel',
+			tabIconCls: 'ra-icon-cancel',
 			html: '<div class="ra-autopanel-error">' +
 				'<div class="ra-exception-heading">' + title + '</div>' +
 				'<div class="msg">' + msg + '</div>' +
@@ -2056,7 +2056,7 @@ Ext.ux.DynGridPanel = Ext.extend(Ext.grid.GridPanel, {
 		if (this.gridsearch) {
 
 			var grid_search_cnf = {
-				iconCls:'icon-zoom',
+				iconCls:'ra-icon-zoom',
 				//,readonlyIndexes:['note']
 				//,disableIndexes:['pctChange']
 				//minChars:3, 		// characters to type before the request is made. If undefined (the default)
@@ -3099,7 +3099,7 @@ Ext.reg('xdatetime2', Ext.ux.RapidApp.form.DateTime2);
 
 /*
  Creates a "tool" button just like the tools from "tools" in Ext.Panel
- Inspired by: http://www.sencha.com/forum/showthread.php?119956-use-x-tool-close-icon-in-toolbar&highlight=tool+button
+ Inspired by: http://www.sencha.com/forum/showthread.php?119956-use-x-tool-close-ra-icon-in-toolbar&highlight=tool+button
 */
 Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.ClickBox = Ext.extend(Ext.BoxComponent, {
@@ -3243,7 +3243,7 @@ Ext.reg('ajaxcmp',Ext.ux.RapidApp.AjaxCmp);
  I couldn't get normal checkbox to work properly within AppDV - 2011-05-29 by HV
 */
 Ext.ux.RapidApp.LogicalCheckbox = Ext.extend(Ext.form.Checkbox,{
-	defaultAutoCreate : { tag: 'div', cls: 'x-logical-checkbox icon-checkbox-clear' },
+	defaultAutoCreate : { tag: 'div', cls: 'x-logical-checkbox ra-icon-checkbox-clear' },
 	
 	onRender: function(ct, position) {
 		if(this.value == "0") { this.value = false; }
@@ -3254,10 +3254,10 @@ Ext.ux.RapidApp.LogicalCheckbox = Ext.extend(Ext.form.Checkbox,{
 	setValue: function(v) {
 		Ext.ux.RapidApp.LogicalCheckbox.superclass.setValue.apply(this,arguments);
 		if (v) {
-			this.el.replaceClass('icon-checkbox-clear','icon-checkbox');
+			this.el.replaceClass('ra-icon-checkbox-clear','ra-icon-checkbox');
 		}
 		else {
-			this.el.replaceClass('icon-checkbox','icon-checkbox-clear');
+			this.el.replaceClass('ra-icon-checkbox','ra-icon-checkbox-clear');
 		}
 	},
 	onClick: function() {
@@ -3295,7 +3295,7 @@ Ext.ux.RapidApp.menu.ToggleSubmenuItem = Ext.extend(Ext.menu.Item,{
 	
 	submenuShowPending: false,
 	showMenuLoadMask: null,
-	loadingIconCls: 'icon-loading', // <-- set this to null to disable the loading icon feature
+	loadingIconCls: 'ra-icon-loading', // <-- set this to null to disable the loading icon feature
 	
 	initComponent: function() {
 		if(this.menu && !this.handler) {
@@ -3463,9 +3463,9 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 	dblclickRemove: false,
 	
 	leftTitle: 'Selected',
-	leftIconCls: 'icon-checkbox-yes',
+	leftIconCls: 'ra-icon-checkbox-yes',
 	rightTitle: 'Not Selected',
-	rightIconCls: 'icon-checkbox-no',
+	rightIconCls: 'ra-icon-checkbox-no',
 	
 	showCountsInTitles: true,
 	
@@ -3537,7 +3537,7 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 		
 		this.addButton = new Ext.Button({
 			text: 'Add',
-			iconCls: 'icon-arrow-left',
+			iconCls: 'ra-icon-arrow-left',
 			iconAlign: 'left',
 			handler: function() {
 				cmp.addRowsSelected.call(cmp);
@@ -3547,7 +3547,7 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 		
 		this.removeButton = new Ext.Button({
 			text: 'Remove',
-			iconCls: 'icon-arrow-right',
+			iconCls: 'ra-icon-arrow-right',
 			iconAlign: 'right',
 			handler: function() {
 				cmp.removeRowsSelected.call(cmp);
@@ -4510,9 +4510,9 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 				}
 				
 				xtype = field.editor.field.xtype;
-				wrapcss = ' with-background-right-image icon-gray-pencil';
+				wrapcss = ' with-background-right-image ra-icon-gray-pencil';
 				if (xtype == 'combo' || xtype == 'appcombo2') {
-					wrapcss = ' with-background-right-image icon-gray-down';
+					wrapcss = ' with-background-right-image ra-icon-gray-down';
 				}
 
 				this.editable_fields[field.name] = 1;
@@ -4680,9 +4680,9 @@ Ext.ux.RapidApp.renderRed = function(val) {
 
 Ext.ux.RapidApp.boolCheckMark = function(val) {
 	if (val == null || val === "" || val <= 0) { 
-		return '<img src="/assets/rapidapp/misc/static/s.gif" class="icon-12x12 icon-cross-light-12x12">';
+		return '<img src="/assets/rapidapp/misc/static/s.gif" class="ra-icon-12x12 ra-icon-cross-light-12x12">';
 	}
-	return '<img src="/assets/rapidapp/misc/static/s.gif" class="icon-12x12 icon-checkmark-12x12">';
+	return '<img src="/assets/rapidapp/misc/static/s.gif" class="ra-icon-12x12 ra-icon-checkmark-12x12">';
 }
 
 // Returns a date formatter function based on the supplied format:
@@ -4698,7 +4698,7 @@ Ext.ux.RapidApp.getDateFormatter = function(format) {
 
 Ext.ux.RapidApp.renderPencil = function(val) {
 	return '<span>' + val + '</span>' + 
-		'<img src="/assets/rapidapp/misc/static/s.gif" class="icon-14x14 icon-gray-pencil">';
+		'<img src="/assets/rapidapp/misc/static/s.gif" class="ra-icon-14x14 ra-icon-gray-pencil">';
 }
 
 
@@ -5170,7 +5170,7 @@ Ext.ux.RapidApp.DbicRelRestRender = function(c) {
 	return disp + "&nbsp;" + Ext.ux.RapidApp.inlineLink(
 		url,
 		"<span>open</span>",
-		"icon-magnify-tiny",
+		"ra-icon-magnify-tiny",
 		null,
 		"Open/view: " + disp
 	);
@@ -5229,7 +5229,7 @@ Ext.ux.RapidApp.DbicSingleRelationshipColumnRender = function(c) {
 	return disp + "&nbsp;" + Ext.ux.RapidApp.inlineLink(
 		url,
 		"<span>open</span>",
-		"icon-magnify-tiny",
+		"ra-icon-magnify-tiny",
 		null,
 		"Open/view: " + disp
 	);

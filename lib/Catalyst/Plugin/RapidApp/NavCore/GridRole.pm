@@ -63,7 +63,7 @@ around 'options_menu_items' => sub {
 	
 	push @$items, {
 		text		=> 'Save Search',
-		iconCls	=> 'icon-save-as',
+		iconCls	=> 'ra-icon-save-as',
 		handler	=> RapidApp::JSONFunc->new( raw => 1, func =>
 			'function(cmp) { Ext.ux.RapidApp.NavCore.SaveSearchHandler(cmp,' . $self->json->encode($save_cnf) . '); }'
 		)
@@ -73,7 +73,7 @@ around 'options_menu_items' => sub {
 	if ($self->c->req->params->{search_id}) {
 		push @$items, {
 			text	=> 'Delete Search',
-			iconCls	=> 'icon-delete',
+			iconCls	=> 'ra-icon-delete',
 			handler	=> RapidApp::JSONFunc->new( raw => 1, func =>
 				'function(cmp) { Ext.ux.RapidApp.NavCore.DeleteSearchHandler(cmp,"' . 
           $self->suburl('/delete_search') . '","' . $self->c->req->params->{search_id} . '"); }'

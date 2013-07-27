@@ -112,16 +112,16 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 	
 	updateFilterBtn: function() {
 		var text = 'Filters';
-		var iconCls = 'icon-funnel'; //<-- no filters
+		var iconCls = 'ra-icon-funnel'; //<-- no filters
 		var count = this.filterCount();
 		var fcount = this.filterCount(true);
 		if(count) {
 			text = 'Filters (' + count + ')';
-			iconCls = 'icon-funnel-edit'; //<-- only normal filters
-			if(fcount) { iconCls = 'icon-funnel-new-edit'; } //<-- both normal + frozen
+			iconCls = 'ra-icon-funnel-edit'; //<-- only normal filters
+			if(fcount) { iconCls = 'ra-icon-funnel-new-edit'; } //<-- both normal + frozen
 		}
 		else if(fcount) {
-			iconCls = 'icon-funnel-new'; //<-- only frozen filters
+			iconCls = 'ra-icon-funnel-new'; //<-- only frozen filters
 		}
 		
 		this.filtersBtn.setIconClass(iconCls);
@@ -192,7 +192,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		if(this.grid.allow_edit_frozen) {
 			buttons.push( freeze_btn = new Ext.Button({
 				text: 'Freeze Conditions',
-				iconCls: 'icon-arrow-up',
+				iconCls: 'ra-icon-arrow-up',
 				handler: function(btn) {
 					var win = btn.ownerCt.ownerCt,
 						set = win.getComponent('filSet'),
@@ -216,7 +216,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 				xtype: 'button',
 				style: 'padding-left:5px;',
 				text: 'Un-Freeze Conditions',
-				iconCls: 'icon-arrow-down',
+				iconCls: 'ra-icon-arrow-down',
 				handler: function(btn) {
 					var win = btn.ownerCt.ownerCt.ownerCt,
 						set = win.getComponent('filSet');
@@ -238,7 +238,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		buttons.push({
 			xtype: 'button',
 			text: 'Save and Close',
-			iconCls: 'icon-save-ok',
+			iconCls: 'ra-icon-save-ok',
 			handler: function(btn) {
 				var win = btn.ownerCt.ownerCt;
 				var set = win.getComponent('filSet');
@@ -257,7 +257,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		{
 			xtype: 'button',
 			text: 'Cancel',
-			//iconCls: 'icon-close',
+			//iconCls: 'ra-icon-close',
 			handler: function(btn) {
 				btn.ownerCt.ownerCt.close();
 			}
@@ -896,7 +896,7 @@ Ext.ux.MultiFilter.Filter = Ext.extend(Ext.Container,{
 			
 			{
 				//xtype: 'button',
-				//iconCls: 'icon-arrow-down',
+				//iconCls: 'ra-icon-arrow-down',
 				xtype: 'boxtoolbtn',
 				toolType: 'down',
 				flex: 0,
@@ -913,7 +913,7 @@ Ext.ux.MultiFilter.Filter = Ext.extend(Ext.Container,{
 			
 			{
 				//xtype: 'button',
-				//iconCls: 'icon-arrow-up',
+				//iconCls: 'ra-icon-arrow-up',
 				xtype: 'boxtoolbtn',
 				toolType: 'up',
 				flex: 0,
@@ -930,7 +930,7 @@ Ext.ux.MultiFilter.Filter = Ext.extend(Ext.Container,{
 			
 			{
 				//xtype: 'button',
-				//iconCls: 'icon-delete',
+				//iconCls: 'ra-icon-delete',
 				xtype: 'boxtoolbtn',
 				toolType: 'close',
 				flex: 0,
@@ -1020,7 +1020,7 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 		var add_filter = {
 			xtype: 'button',
 			text: 'Add',
-			iconCls: 'icon-add',
+			iconCls: 'ra-icon-add',
 			//handler: function(btn) {
 			//	btn.ownerCt.ownerCt.addFilter();
 			//},
@@ -1031,7 +1031,7 @@ Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
 		var add_set = {
 			xtype: 'button',
 			text: 'Add Set',
-			iconCls: 'icon-add',
+			iconCls: 'ra-icon-add',
 			//handler: function(btn) {
 			//	btn.ownerCt.ownerCt.addFilterSet();
 			//},

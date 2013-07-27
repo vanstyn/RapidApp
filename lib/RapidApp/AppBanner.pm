@@ -29,7 +29,7 @@ has 'login_banner' => ( is => 'ro',	default => sub {
 	return 'Login to the system';
 });
 
-has 'login_iconCls'			=> ( is => 'ro',	default => 'icon-key' );
+has 'login_iconCls'			=> ( is => 'ro',	default => 'ra-icon-key' );
 has 'login_logo'				=> ( is => 'ro',	default => '/assets/rapidapp/misc/static/images/sportsrite_tiny.png' );
 has 'login_title'				=> ( is => 'ro',	default => 'Login' );
 has 'login_width'				=> ( is => 'ro',	default => 350 );
@@ -160,7 +160,7 @@ sub login_button {
 	return {
 		xtype				=> 'dbutton',
 		text				=> 'Login',
-		iconCls			=> 'icon-key',
+		iconCls			=> 'ra-icon-key',
 		boxMaxWidth		=> 100,
 		handler_func	=> q~Ext.ux.FetchEval('~ . $self->base_url . q~/auth/login_window');~
 	};
@@ -175,7 +175,7 @@ sub logout_button {
 	return {
 		xtype				=> 'dbutton',
 		text				=> 'Logout',
-		iconCls			=> 'icon-logout',
+		iconCls			=> 'ra-icon-logout',
 		boxMaxWidth		=> 100,
 		handler_func	=> q~Ext.ux.FetchEval('~ . $self->base_url . q~/auth/logout_window');~
 	};
@@ -188,7 +188,7 @@ sub change_password_button {
 	return {
 		xtype				=> 'dbutton',
 		text				=> 'Change Password',
-		iconCls			=> 'icon-key',
+		iconCls			=> 'ra-icon-key',
 		boxMaxWidth		=> 100,
 		handler_func	=> q~Ext.ux.FetchEval('~ . $self->base_url . q~/auth/change_pw_window_window');~
 	};

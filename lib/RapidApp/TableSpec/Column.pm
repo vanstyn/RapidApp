@@ -81,14 +81,14 @@ sub DEFAULT_PROFILES {{
 			
 				selections => [
 					{
-						iconCls => "icon-cross-light-12x12",
-						#iconCls => "icon-cross-tiny",
+						iconCls => "ra-icon-cross-light-12x12",
+						#iconCls => "ra-icon-cross-tiny",
 						text	=> 'No',
 						value	=> 0
 					},
 					{
-						iconCls => "icon-checkmark-12x12",
-						#iconCls => "icon-tick-tiny",
+						iconCls => "ra-icon-checkmark-12x12",
+						#iconCls => "ra-icon-tick-tiny",
 						text	=> 'Yes',
 						value	=> 1
 					}

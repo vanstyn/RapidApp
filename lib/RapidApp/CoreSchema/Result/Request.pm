@@ -85,8 +85,8 @@ __PACKAGE__->apply_TableSpec;
 __PACKAGE__->TableSpec_set_conf( 
 	title => 'HTTP Request',
 	title_multi => 'HTTP Requests',
-	#iconCls => 'icon-world-go',
-	#multiIconCls => 'icon-world-gos',
+	#iconCls => 'ra-icon-world-go',
+	#multiIconCls => 'ra-icon-world-gos',
 	display_column => 'timestamp',
 	priority_rel_columns => 1,
 );

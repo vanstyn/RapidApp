@@ -104,7 +104,7 @@ sub html {
   unless ($INLINE_FILE_DEPTH) {
     my $title = $self->parse_title ? $self->_parse_get_title(\$content) : {};
     $title->{text} ||= $file;
-    $title->{class} ||= 'icon-document';
+    $title->{class} ||= 'ra-icon-document';
     $self->apply_extconfig(
       tabTitle => '<span style="color:darkgreen;">' . $title->{text} . '</span>',
       tabIconCls => $title->{class}
@@ -121,7 +121,7 @@ sub _parse_get_title {
   # Parse tabTitle data from the first <title> tag seen in the html content.
   # Supports special attrs not normally in a <title> tag to also set the
   # tab icon and tab text style, e.g.:
-  #  <title class="icon-group" style="color:red">Users</title>
+  #  <title class="ra-icon-group" style="color:red">Users</title>
   my $parser = HTML::TokeParser::Simple->new($htmlref);
   while (my $tag = $parser->get_tag) {
     if ($tag->is_tag('title')) {
