@@ -165,7 +165,11 @@ sub view :Local {
     if($c->req->params->{iframe}) {
       $cnf = {
         xtype => 'iframepanel',
-        tabTitle => '[' . join('/',@args) . ']', #<-- not using $template to preserve the orig req name
+        tabTitle => join('',
+          '<span style="color:purple;">',
+            'iframe:[' . join('/',@args) . ']', #<-- not using $template to preserve the orig req name
+          '</span>'
+        ),
         tabIconCls => 'ra-icon-page-white',
         style => 'top: 0; left: 0; bottom: 0; right: 0;',
         autoScroll => \1,
