@@ -64,7 +64,8 @@ sub _new_Template {
     CONTEXT => $self->context_class->new({
       Controller => $self,
       Access => $self->Access,
-      STRICT => 1,
+      # TODO: turn STRICT back on once I figure out how to make the errors useful:
+      #STRICT => 1,
       LOAD_TEMPLATES => [
         $self->provider_class->new({
           Controller => $self,
