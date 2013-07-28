@@ -5426,8 +5426,8 @@ Ext.ux.RapidApp.Viewport = Ext.extend(Ext.Viewport, {
     return Ext.ux.RapidApp.Viewport.superclass.initComponent.call(this);
   },
   
-  // TODO: why doesn't '^\w+://' work????? - Would like to match 'foo://'
-  externalUrlRe: new RegExp('^(http|https)://'),
+  // matches http://, https://, foo://, etc
+  externalUrlRe: new RegExp('^\\w+://'),
   
   clickInterceptor: function(event) {
     
@@ -5446,7 +5446,7 @@ Ext.ux.RapidApp.Viewport = Ext.extend(Ext.Viewport, {
       // Is not already a hash url:
       && href.search('#') !== 0
       
-      // URL is local (does not start with http://, https://)
+      // URL is local (does not start with http://, https://, etc)
       && ! this.externalUrlRe.test(href)
     );
     
