@@ -104,6 +104,9 @@ before 'setup_components' => sub {
   $main_module_params->{header_template} = $config->{banner_template}
     if($config->{banner_template});
   
+  $main_module_params->{navtree_footer_template} = $config->{navtree_footer_template}
+    if($config->{navtree_footer_template});
+  
   my $share_dir = RapidApp->share_dir;
   
   # Allow accessing files in this dir under '#!/main/page?file=foo.tt'

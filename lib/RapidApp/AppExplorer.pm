@@ -37,6 +37,9 @@ has 'dashboard_params', is => 'ro', isa => 'HashRef', lazy => 1, default => sub{
 # NEW
 has 'dashboard_url', is => 'ro', isa => 'Maybe[Str]', default => sub {undef};
 
+# New:
+has 'navtree_footer_template', is => 'ro', isa => 'Maybe[Str]', default => sub {undef};
+
 # Extra optional class for rendering any tt files or other files
 # Feature added with RapidApp::AppPageViewer in mind, but it doesn't
 # actually care. This module will be loaded as 'page' and nothing else
@@ -85,32 +88,59 @@ around 'content' => sub {
   my $self = shift;
   
   my $cnf = $self->$orig(@_);
-
+  
+  my $west = {
+    region	=> 'west',
+    id => 'main-navtrees-container',
+    title		=> $self->title,
+    iconCls		=> $self->iconCls,
+    collapsible => \1,
+    split => \1,
+    minSize => 150,
+    width	=> 240,
+    margins => '3 3 3 3',
+    layout	=> 'anchor',
+    tools => [{
+      id => 'refresh',
+      qtip => 'Refresh Nav Tree',
+      handler => jsfunc 'Ext.ux.RapidApp.NavCore.reloadMainNavTrees'
+    }],
+    collapseFirst => \0,
+    items => $self->west_area_items,
+    autoScroll => \1
+  };
+  
+  # Render a custom footer at the bottom of the navtree
+  if($self->navtree_footer_template) {
+    my $html;
+    try{
+      $html = $self->c->template_render(
+        $self->navtree_footer_template
+      );
+    }
+    catch {
+      my $err = shift;
+      $html = "$err";
+    };
+    
+    $west = { %$west,
+      bodyStyle => 'border-bottom: 0px;',
+      footer => \1,
+      footerCfg => {
+        tag => 'div',
+        cls => 'x-panel-body',
+        html => $html
+      }
+    };
+  }
+  
 	return { %$cnf,
 		id			=> 'explorer-id',
 		xtype		=> 'panel',
 		layout	=> 'border',
 		items		=> [
 			$self->content_area,
-			{
-				region	=> 'west',
-        id => 'main-navtrees-container',
-				title		=> $self->title,
-				iconCls		=> $self->iconCls,
-				collapsible => \1,
-				split => \1,
-				minSize => 150,
-				width	=> 240,
-				margins => '3 3 3 3',
-				layout	=> 'anchor',
-				tools => [{
-					id => 'refresh',
-					qtip => 'Refresh Nav Tree',
-					handler => jsfunc 'Ext.ux.RapidApp.NavCore.reloadMainNavTrees'
-				}],
-				collapseFirst => \0,
-				items => $self->west_area_items,
-			}
+			$west
 		],
 		footer => \1,
 		footerCfg => {
