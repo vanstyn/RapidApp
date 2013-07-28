@@ -126,6 +126,13 @@ before 'inject_asset_controllers' => sub {
       type => 'IconSet',
       include => "$dir/icons",
     } if (-d $dir->subdir('icons'));
+    
+    push @$assets, {
+      controller => 'Assets::Local::Misc',
+      type => 'Directory',
+      include => "$dir/misc",
+      allow_static_requests => 1,
+    } if (-d $dir->subdir('misc'));
   }
   #
   ## -----------
