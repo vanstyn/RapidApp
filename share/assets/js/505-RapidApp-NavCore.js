@@ -104,8 +104,7 @@ Ext.ux.RapidApp.NavCore.SaveSearchHandler = function(cmp,cnf) {
 		success: function(response) {
 			var loadTarget = grid.findParentByType("apptabpanel");
 			// Reload/refresh the tree:
-      // TODO!!
-			//Ext.ux.GreenSheet.reloadMainNavTree();
+      Ext.ux.RapidApp.NavCore.reloadMainNavTrees();
 			
 			if (response && response.responseText) {
 				var res = Ext.decode(response.responseText);
