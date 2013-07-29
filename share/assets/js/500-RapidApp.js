@@ -1843,7 +1843,9 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
               });
               var titleEl = El.child('title');
               if(titleEl) {
-                title = titleEl.dom.innerHTML;
+                title = titleEl.dom.innerHTML || '';
+                title.replace('^\\s+',''); // strip leading whitespace
+                title.replace('\\s+$',''); // strip trailing whitespace
                 icon = titleEl.getAttribute('class') || icon;
                 style = titleEl.getAttribute('style') || style;
               }
@@ -1860,7 +1862,7 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
                 '</b><br><br><pre>' + response.responseText + '</pre>';
             }
             
-            if(!title) {
+            if(!title || title == '') {
               title = cont_parts[0];
               var size = response.getResponseHeader('Content-Length');
               if(size) { title = title + ' [' + Ext.util.Format.fileSize(size) + ']'; }
@@ -1907,7 +1909,10 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
             var titleEl = El.child('title');
             if(titleEl) {
               var style = titleEl.getAttribute('style');
-              var title = titleEl.dom.innerHTML;
+              var title = titleEl.dom.innerHTML || '';
+              title.replace('^\\s+',''); // strip leading whitespace
+              title.replace('\\s+$',''); // strip trailing whitespace
+              title = title || conf.tabTitle;
               title = style ? '<span style="' + style + '">' + title + '</span>' : title;
               conf.tabTitle = title || conf.tabTitle;
               conf.tabIconCls = titleEl.getAttribute('class') || conf.tabIconCls || 'ra-icon-page-white-world';
