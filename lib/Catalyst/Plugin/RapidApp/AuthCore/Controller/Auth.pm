@@ -145,6 +145,10 @@ sub render_login_page {
   my $c = shift;
 	my $cnf = shift || {};
   
+  my $config = $c->config->{'Plugin::RapidApp::AuthCore'} || {};
+  $config->{login_template} ||= 'templates/rapidapp/login.tt';
+  
+  
   my $ver_string = ref $c;
   my $ver = eval('$' . $ver_string . '::VERSION');
   $ver_string .= ' v' . $ver if ($ver);
@@ -154,7 +158,8 @@ sub render_login_page {
 	
 	%{$c->stash} = (
 		%{$c->stash},
-		template 	=> 'templates/rapidapp/login.tt',
+		template => $config->{login_template},
+    login_logo_url => $config->{login_logo_url}, #<-- default undef
     form_post_url => '/auth/login',
 		ver_string	=> $ver_string,
     title => $ver_string . ' - Login',
