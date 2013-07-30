@@ -105,6 +105,35 @@ sub is_editable_request {
   );
 }
 
+sub is_iframe_request {
+  my ($self, $c) = @_;
+  
+  return (
+    $c->req->params->{iframe} || 
+    $c->stash->{iframe}
+  );
+}
+
+sub is_external_template {
+  my ($self, $c, $template) = @_;
+  
+  # Allow params/stash override:
+  return $c->req->params->{external} if (exists $c->req->params->{external});
+  return $c->stash->{external} if (exists $c->stash->{external});
+  
+  my $external = (
+    # hard-coded external templates:
+    $template =~ /^rapidapp\/public\// ||
+    $self->Access->template_external_tpl($template)
+  ) ? 1 : 0;
+
+  return (
+    $external &&
+    # don't treat non-existing templates as external
+    $self->get_Provider->template_exists($template)
+  ) ? 1 : 0;
+}
+
 
 ## -----
 ## Top level alias URL paths 
@@ -137,6 +166,7 @@ sub _resolve_template_name {
 }
 
 
+
 # TODO: see about rendering with Catalyst::View::TT or a custom View
 sub view :Local {
   my ($self, $c, @args) = @_;
@@ -147,24 +177,23 @@ sub view :Local {
   
   $self->Access->template_viewable($template)
     or die "Permission denied - template '$template'";
-  #  or return $self->_detach_response($c,403,"Permission denied - template '$template'");
-  
+
+  my $external = $self->is_external_template($c,$template);
+  my $iframe = $external || $self->is_iframe_request($c); # <-- external must use iframe
   my $editable = $self->is_editable_request($c);
   
   my ($output,$content_type);
   
-  my $ra_req = $c->req->headers->{'x-rapidapp-requestcontenttype'};
+  my $ra_req = $c->req->header('X-RapidApp-RequestContentType');
   if($ra_req && $ra_req eq 'JSON') {
     # This is a call from within ExtJS, wrap divs to id the templates from javascript
-    my $html = $self->_render_template(
-      $editable ? 'Template_wrap' : 'Template_raw',
-      $template, $c
-    );
     
     my $cnf = {};
     
-    # EXPERIMENTAL IFRAME OPTION:
-    if($c->req->params->{iframe}) {
+    if($iframe) {
+      # This is an iframe request. Build an iframe panel which will make the request 
+      # again but without the X-RapidApp-RequestContentType header which will be 
+      # handled as a direct browser request (see logic further down)
       
       my %params = ( %{$c->req->params}, editable => $editable, iframe => 1 );
       my $qs = join('&',map { $_ . '=' . uri_escape($params{$_}) } keys %params);
@@ -175,7 +204,7 @@ sub view :Local {
         plugins => ['ra-link-click-catcher'],
         tabTitle => join('',
           '<span style="color:purple;">',
-            'iframe:[' . join('/',@args) . ']', #<-- not using $template to preserve the orig req name
+            '[' . join('/',@args) . ']', #<-- not using $template to preserve the orig req name
           '</span>'
         ),
         tabIconCls => 'ra-icon-page-white',
@@ -187,6 +216,12 @@ sub view :Local {
       };
     }
     else {
+    
+      my $html = $self->_render_template(
+        $editable ? 'Template_wrap' : 'Template_raw',
+        $template, $c
+      );
+    
       $cnf = {
         xtype => 'panel',
         autoScroll => \1,
@@ -215,20 +250,48 @@ sub view :Local {
     $output = encode_json_utf8($cnf);
   }
   else {
-    # This is a direct browser call, need to include js/css
-    $output = join("\n",
-      '<head>', 
-        ( $c->req->params->{iframe} ? '<base target="_blank" />' : '' ),
-        $c->all_html_head_tags, 
-      '</head>',
-      '<div class="ra-scoped-reset">',
-      #$self->_render_template('Template_raw',$template,$c),
-      $self->_render_template(
-        $editable ? 'Template_wrap' : 'Template_raw',
-        $template, $c
-      ),
-      '</div>'
+    # This is a direct browser call:
+    
+    my $html = $self->_render_template(
+      $editable ? 'Template_wrap' : 'Template_raw',
+      $template, $c
     );
+    
+    my @head = ();
+    
+    # If we're in an iframe tab, we want to make sure we set the base target
+    # to prevent the chance of trying to load a link inside the frame (even
+    # though local links are already hanlded/converted - we still need to
+    # protect against external/global links).
+    push @head, '<base target="_blank" />' if $iframe;
+    
+    if($external) {
+      # We still need to include CSS for template edit controls, if we're editable:
+      # TODO: basically including everything but ExtJS CSS. This is ugly and should
+      # be generalized/available in the Asset system as a simpler function call:
+      push @head, (
+        $c->controller('Assets::RapidApp::CSS')->html_head_tags,
+        $c->controller('Assets::RapidApp::Icons')->html_head_tags,
+        $c->controller('Assets::ExtJS')->html_head_tags( js => [
+          'adapter/ext/ext-base.js',
+          'ext-all-debug.js',
+          'src/debug.js'
+        ]),
+        $c->controller('Assets::RapidApp::JS')->html_head_tags
+      ) if $editable;
+    }
+    else {
+      # Include all the ExtJS, RapidApp and local app CSS/JS
+      push @head, $c->all_html_head_tags;
+    }
+    
+    # Only include the RapidApp/ExtJS assets and wrap 'ra-scoped-reset' if
+    # this is *not* an external template:
+    $output = $external ? join("\n",@head,$html) : join("\n",
+      '<head>', @head, '</head>',
+      '<div class="ra-scoped-reset">', $html, '</div>'
+    );
+    
     $content_type = 'text/html; charset=utf-8';
   }
   

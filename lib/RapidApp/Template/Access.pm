@@ -115,6 +115,22 @@ has 'non_admin_tpl', is => 'ro', lazy => 1, default => sub {
 # -----
 
 
+# 'External' templates are those designed to be viewed outside of RapidApp and
+# are by default publically accessible (i.e. don't require a logged-in session)
+# These templates cannot be safely viewed within the context of the RapidApp
+# styles, even when wrapped with 'ra-scoped-reset', and thus must be viewed
+# in an iframe tab when viewed within the RapidApp/ExtJS interface
+has 'external_tpl', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+
+  # Defaults to off unless an express external_tpl option is supplied:
+  return (
+    $self->external_tpl_coderef ||
+    $self->external_tpl_regex
+  ) ? 1 : 0;
+}, isa => Bool;
+
+
 # Optional CodeRef interfaces:
 has 'get_template_vars_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
 has 'get_template_format_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
@@ -127,6 +143,7 @@ has 'creatable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {unde
 has 'deletable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
 has 'admin_tpl_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
 has 'non_admin_tpl_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
+has 'external_tpl_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
 
 # Optional Regex interfaces:
 has 'viewable_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
@@ -136,6 +153,7 @@ has 'creatable_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
 has 'deletable_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
 has 'admin_tpl_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
 has 'non_admin_tpl_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
+has 'external_tpl_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
 
 
 # Compiled regexes:
@@ -178,6 +196,12 @@ has '_admin_tpl_regexp', is => 'ro', lazy => 1, default => sub {
 has '_non_admin_tpl_regexp', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   my $str = $self->non_admin_tpl_regex or return undef;
+  return qr/$str/;
+}, isa => Maybe[RegexpRef];
+
+has '_external_tpl_regexp', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  my $str = $self->external_tpl_regex or return undef;
   return qr/$str/;
 }, isa => Maybe[RegexpRef];
 
@@ -300,6 +324,13 @@ sub template_non_admin_tpl {
   my $template = join('/',@args);
   
   return $self->_access_test($template,'non_admin_tpl',1);
+}
+
+sub template_external_tpl {
+  my ($self,@args) = @_;
+  my $template = join('/',@args);
+  
+  return $self->_access_test($template,'external_tpl',1);
 }
 
 sub _access_test {
