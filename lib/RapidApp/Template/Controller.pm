@@ -166,7 +166,7 @@ sub view :Local {
     # EXPERIMENTAL IFRAME OPTION:
     if($c->req->params->{iframe}) {
       
-      my %params = ( %{$c->req->params}, editable => $editable );
+      my %params = ( %{$c->req->params}, editable => $editable, iframe => 1 );
       my $qs = join('&',map { $_ . '=' . uri_escape($params{$_}) } keys %params);
       my $iframe_src = join('/','',$self->action_namespace($c),'view',$template) . '?' . $qs;
 
@@ -217,7 +217,10 @@ sub view :Local {
   else {
     # This is a direct browser call, need to include js/css
     $output = join("\n",
-      '<head>', $c->all_html_head_tags, '</head>',
+      '<head>', 
+        ( $c->req->params->{iframe} ? '<base target="_blank" />' : '' ),
+        $c->all_html_head_tags, 
+      '</head>',
       '<div class="ra-scoped-reset">',
       #$self->_render_template('Template_raw',$template,$c),
       $self->_render_template(

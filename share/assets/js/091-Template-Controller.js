@@ -17,7 +17,7 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
     if(this.isIframe()) {
       var iFrameEl = this.panel.getFrame();
       El = new Ext.Element(
-        iFrameEl.dom.contentDocument.activeElement
+        iFrameEl.dom.contentWindow.document.body
       );
     }
     

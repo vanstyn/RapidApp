@@ -4112,21 +4112,17 @@ Ext.ux.RapidApp.Plugin.LinkClickCatcher = Ext.extend(Ext.util.Observable,{
     this.cmp = cmp;
     if(Ext.ux.RapidApp.HashNav.INITIALIZED) {
     
-      var eventName = Ext.isFunction(this.cmp.getFrame)
-        ? 'domready'
-        : 'afterrender';
-    
+      var eventName = this.isIframe() ? 'domready' : 'afterrender';
       this.cmp.on(eventName,function(){
         
         var El = this.cmp.getEl();
         
         // For the special ManagedIFrame case, reach into the iframe
         // and get the inner <body> element to attach the listener:
-        if(Ext.isFunction(this.cmp.getFrame)) {
+        if(this.isIframe()) {
           var iFrameEl = this.cmp.getFrame();
-          El = new Ext.Element(
-            iFrameEl.dom.contentDocument.activeElement
-          );
+          var doc = iFrameEl.dom.contentWindow.document;
+          El = new Ext.Element(doc.body);
         }
         
         El.on('click',this.clickInterceptor,this);
@@ -4135,28 +4131,28 @@ Ext.ux.RapidApp.Plugin.LinkClickCatcher = Ext.extend(Ext.util.Observable,{
     }
   },
   
+  isIframe: function() { return Ext.isFunction(this.cmp.getFrame); },
+  
   externalUrlRe: new RegExp('^\\w+://'),
   
   clickInterceptor: function(event) {
-    
     var target = event.getTarget(null,null,true);
-    var match = ( target
-      // Is a link (<a> tag):
-      && target.is('a')
-      
-      // has no target attribute (i.e. target="_blank" or the like specified)
-      && ! target.getAttribute('target')
-    );
-    if(!match) { return; }
+    // Is a link (<a> tag):
+    if(target && target.is('a')) {
     
-    var href = target.getAttribute('href');
+      // Unless we're an iframe, ignore links with a target attribute 
+      // (i.e. target="_blank" or the like specified)
+      if(! this.isIframe() && ! target.getAttribute('target')) { return; }
+    
+      var href = target.getAttribute('href');
 
-    // URL is local (does not start with http://, https://, etc)
-    if(! this.externalUrlRe.test(href)) {
-      // Stop the link click event and convert to hashpath:
-      event.stopEvent();
-      var hashpath = Ext.ux.RapidApp.HashNav.urlToHashPath(href);
-      window.location.hash = hashpath;
+      // URL is local (does not start with http://, https://, etc)
+      if(! this.externalUrlRe.test(href)) {
+        // Stop the link click event and convert to hashpath:
+        event.stopEvent();
+        var hashpath = Ext.ux.RapidApp.HashNav.urlToHashPath(href);
+        window.location.hash = hashpath;
+      }
     }
   }
   
