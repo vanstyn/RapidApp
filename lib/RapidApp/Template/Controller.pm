@@ -84,10 +84,32 @@ sub _new_Template {
   })
 }
 
+# hook for RapidApp::Role::AuthController:
+# abort enforce_session for 'external' templates being accessed externally:
+around 'enforce_rapidapp_session' => sub {
+  my ( $orig, $self, $c, @args ) = @_;
+  my $template = join('/',@{$c->req->args});
+  return $self->$orig($c,@args) unless (
+    ! $c->req->header('X-RapidApp-RequestContentType')
+    && $self->is_external_template($c,$template)
+  );
+};
+
 sub get_Provider {
   my $self = shift;
   return $self->Template_raw->context->{LOAD_TEMPLATES}->[0];
 }
+
+# request lifetime cached:
+sub _template_exists {
+  my ($self, $c, $template) = @_;
+  die "missing template arg" unless ($template);
+  $c->stash->{_template_exists}{$template} = 
+    $self->get_Provider->template_exists($template)
+      unless (exists $c->stash->{_template_exists}{$template});
+  return $c->stash->{_template_exists}{$template};
+}
+
 
 # Checks if the editable toggle/switch is on for this request. Note that
 # this has *nothing* to do with actual editability of a given template,
@@ -114,24 +136,30 @@ sub is_iframe_request {
   );
 }
 
+# request lifetime cached:
 sub is_external_template {
   my ($self, $c, $template) = @_;
+  die "missing template arg" unless ($template);
   
+  $c->stash->{is_external_template}{$template} = do {
   # Allow params/stash override:
-  return $c->req->params->{external} if (exists $c->req->params->{external});
-  return $c->stash->{external} if (exists $c->stash->{external});
-  
-  my $external = (
-    # hard-coded external templates:
-    $template =~ /^rapidapp\/public\// ||
-    $self->Access->template_external_tpl($template)
-  ) ? 1 : 0;
+    return $c->req->params->{external} if (exists $c->req->params->{external});
+    return $c->stash->{external} if (exists $c->stash->{external});
+    
+    my $external = (
+      # hard-coded external templates:
+      $template =~ /^rapidapp\/public\// ||
+      $self->Access->template_external_tpl($template)
+    ) ? 1 : 0;
 
-  return (
-    $external &&
-    # don't treat non-existing templates as external
-    $self->get_Provider->template_exists($template)
-  ) ? 1 : 0;
+    return (
+      $external &&
+      # don't treat non-existing templates as external
+      $self->_template_exists($c,$template)
+    ) ? 1 : 0;
+  } unless (exists $c->stash->{is_external_template}{$template});
+  
+  return $c->stash->{is_external_template}{$template};
 }
 
 
@@ -352,12 +380,10 @@ sub create :Local {
   $self->Access->template_creatable($template)
     or return $self->_detach_response($c,403,"Create template '$template' - Permission denied");
   
-  my $Provider = $self->get_Provider;
-  
   die "Create template '$template' - already exists" 
-    if $Provider->template_exists($template);
+    if $self->_template_exists($c,$template);
   
-  $Provider->create_template($template)
+  $self->get_Provider->create_template($template)
     or die "Failed to create template '$template'";
 
   return $self->_detach_response($c,200,"Created template '$template'");
@@ -373,12 +399,10 @@ sub delete :Local {
   $self->Access->template_deletable($template)
     or return $self->_detach_response($c,403,"Delete template '$template' - Permission denied");
   
-  my $Provider = $self->get_Provider;
-  
   die "Delete template '$template' - doesn't exists" 
-    unless $Provider->template_exists($template);
+    unless $self->_template_exists($c,$template);;
   
-  $Provider->delete_template($template)
+  $self->get_Provider->delete_template($template)
     or die "Failed to delete template '$template'";
 
   return $self->_detach_response($c,200,"Deleted template '$template'");
