@@ -17,8 +17,8 @@
     var config_url = '[% config_url %]';
     var config_params = [% IF config_params %] [% config_params %] [% ELSE %] {} [% END %] ;
 
-    new Ext.ux.RapidApp.Viewport({
-      transform_links: true,
+    new Ext.Viewport({
+      plugins: ['ra-link-click-catcher'],
       layout : 'fit',
       hideBorders : true,
       defaults : {

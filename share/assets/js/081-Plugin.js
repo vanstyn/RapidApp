@@ -4100,3 +4100,50 @@ Ext.ux.RapidApp.Plugin.GridToggleEditCells = Ext.extend(Ext.util.Observable,{
 });
 Ext.preg('grid-toggle-edit-cells',Ext.ux.RapidApp.Plugin.GridToggleEditCells);
 
+
+
+Ext.ux.RapidApp.Plugin.LinkClickCatcher = Ext.extend(Ext.util.Observable,{
+  
+  init: function(cmp) {
+    this.cmp = cmp;
+    if(Ext.ux.RapidApp.HashNav.INITIALIZED) {
+      this.cmp.on('afterrender',function(){
+        this.cmp.getEl().on('click',this.clickInterceptor,this);
+      },this);
+    }
+  },
+  
+  externalUrlRe: new RegExp('^\\w+://'),
+  
+  clickInterceptor: function(event) {
+    
+    var target = event.getTarget(null,null,true);
+    var match = ( target
+      // Is a link (<a> tag):
+      && target.is('a')
+      
+      // has no target attribute (i.e. target="_blank" or the like specified)
+      && ! target.getAttribute('target')
+    );
+    if(!match) { return; }
+    
+    var href = target.getAttribute('href');
+    match = ( href
+      // Is not already a hash url:
+      && href.search('#') !== 0
+      
+      // URL is local (does not start with http://, https://, etc)
+      && ! this.externalUrlRe.test(href)
+    );
+    
+    if(match) {
+      // Stop the link click event and convert to hashpath:
+      event.stopEvent();
+      var hashpath = Ext.ux.RapidApp.HashNav.urlToHashPath(href);
+      window.location.hash = hashpath;
+    }
+  }
+  
+});
+Ext.preg('ra-link-click-catcher',Ext.ux.RapidApp.Plugin.LinkClickCatcher);
+
