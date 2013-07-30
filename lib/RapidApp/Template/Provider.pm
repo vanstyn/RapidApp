@@ -5,6 +5,7 @@ use autodie;
 
 use RapidApp::Include qw(sugar perlutil);
 use Path::Class qw(file dir);
+use RapidApp::Template::Access::Dummy;
 
 use Moo;
 extends 'Template::Provider';
@@ -26,6 +27,25 @@ has 'Controller', is => 'ro', required => 1;
 # We need to be able to check certain template permissions for special markup
 # Actual permission checks happen in the RapidApp::Template::Controller
 has 'Access', is => 'ro', required => 1;
+
+# -------
+# The "DummyAccess" API is a quick/dirty way to turn off all access checks
+# This was added after the fact to be able to safely render templates outside
+# of "request" context without requiring the Access API to handle situations
+# where $c is null. See new template_render() method in Template::Controller
+has '_DummyAccess', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  return RapidApp::Template::Access::Dummy->new({
+    Controller => $self->Controller
+  });
+};
+around 'Access' => sub {
+  my ($orig,$self) = @_;
+  return $self->Controller->{_dummy_access} 
+    ? $self->_DummyAccess
+    : $self->$orig
+};
+# -------
 
 # Whether or not to wrap writable templates in a special <div> tag for target/selection
 # in JavaScript client (for creating edit selector/tool GUI)

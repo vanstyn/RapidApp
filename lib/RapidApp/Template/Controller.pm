@@ -456,5 +456,34 @@ sub _get_template_error {
   return $TT->process( $template, $vars, \$output ) ? undef : $TT->error;
 }
 
+# Internal render function - designed to be called interactively
+# from other parts of the application to render a template (i.e.
+# not associated with a Template::Controller request)
+# 
+# TODO: This function will replace/merge with $c->template_render
+# in RapidApp::Role::CatalystApplication
+sub template_render {
+	my ($self, $template, $vars, $c) = @_;
+  $vars ||= {};
+  
+  # The current context may not be available:
+  # see DummyAccess in RapidApp::Template::Access:
+  local $self->{_dummy_access} = 1 unless ($c);
+  local $self->{_current_context} = $c || $self->_app;
+  
+  # The get_template_vars() API in the Access class expects
+  # to have access to the catalyst context (i.e. request) so
+  # we only call it and merge it in if we have $c, which is
+  # optional in this method
+  %$vars = (%{ $self->Access->get_template_vars($template) }, %$vars) 
+    if ($c);
+  
+  my $TT = $self->Template_raw;
+
+	my $out;
+	$TT->process($template,$vars,\$out) or die $TT->error;
+
+	return $out;
+}
 
 1;

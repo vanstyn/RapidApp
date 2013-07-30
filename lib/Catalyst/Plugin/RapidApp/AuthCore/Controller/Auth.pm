@@ -146,7 +146,7 @@ sub render_login_page {
 	my $cnf = shift || {};
   
   my $config = $c->config->{'Plugin::RapidApp::AuthCore'} || {};
-  $config->{login_template} ||= 'templates/rapidapp/public/login.tt';
+  $config->{login_template} ||= 'rapidapp/public/login.tt';
   
   my $ver_string = ref $c;
   my $ver = eval('$' . $ver_string . '::VERSION');
@@ -154,18 +154,33 @@ sub render_login_page {
 	
 	$cnf->{error_status} = delete $c->session->{login_error}
 		if($c->session && $c->session->{login_error});
-	
-	%{$c->stash} = (
-		%{$c->stash},
-		template => $config->{login_template},
+  
+  # New: preliminary rendering through the new Template::Controller:
+  my $TC = $c->template_controller;
+  my $body = $TC->template_render($config->{login_template},{
     login_logo_url => $config->{login_logo_url}, #<-- default undef
     form_post_url => '/auth/login',
 		ver_string	=> $ver_string,
     title => $ver_string . ' - Login',
 		%$cnf
-	);
+  },$c);
+  
+  $c->response->content_type('text/html; charset=utf-8');
+  $c->response->status(200);
+  $c->response->body($body);
+  return $c->detach;
 	
-	return $c->detach( $c->view('RapidApp::TT') );
+	#%{$c->stash} = (
+	#	%{$c->stash},
+	#	template => $config->{login_template},
+  #  login_logo_url => $config->{login_logo_url}, #<-- default undef
+  #  form_post_url => '/auth/login',
+	#	ver_string	=> $ver_string,
+  #  title => $ver_string . ' - Login',
+	#	%$cnf
+	#);
+	#
+	#return $c->detach( $c->view('RapidApp::TT') );
 }
 #######################################
 #######################################

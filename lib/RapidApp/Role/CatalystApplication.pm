@@ -520,6 +520,9 @@ before 'setup_plugins' => sub {
 };
 # --
 
+# New: convenience method to get the main 'Template::Controller' which
+# is being made into a core function of rapidapp:
+sub template_controller { (shift)->controller('RapidApp::Template') }
 
 my $share_dir = RapidApp->share_dir;
 sub default_tt_include_path {
@@ -533,6 +536,8 @@ sub default_tt_include_path {
 }
 
 # convenience util function
+## TODO: This is to be replaced with a call to template_render() within
+## the new Template::Controller (see template_controller() above)
 my $TT;
 sub template_render {
 	my $c = shift;
