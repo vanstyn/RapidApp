@@ -118,6 +118,12 @@ sub _template_exists {
 sub is_editable_request {
   my ($self, $c) = @_;
   
+  # Never editable externally, unless this is an iframe request
+  return 0 unless (
+    $c->req->header('X-RapidApp-RequestContentType') ||
+    $c->req->params->{iframe} eq 'request'
+  );
+  
   # check several mechanisms to turn on editing (mouse-over edit controls)
   return (
     $self->auto_editable ||
@@ -206,13 +212,14 @@ sub view :Local {
   $self->Access->template_viewable($template)
     or die "Permission denied - template '$template'";
 
+  my $ra_req = $c->req->header('X-RapidApp-RequestContentType');
+
   my $external = $self->is_external_template($c,$template);
   my $iframe = $external || $self->is_iframe_request($c); # <-- external must use iframe
   my $editable = $self->is_editable_request($c);
   
   my ($output,$content_type);
   
-  my $ra_req = $c->req->header('X-RapidApp-RequestContentType');
   if($ra_req && $ra_req eq 'JSON') {
     # This is a call from within ExtJS, wrap divs to id the templates from javascript
     
@@ -223,7 +230,7 @@ sub view :Local {
       # again but without the X-RapidApp-RequestContentType header which will be 
       # handled as a direct browser request (see logic further down)
       
-      my %params = ( %{$c->req->params}, editable => $editable, iframe => 1 );
+      my %params = ( %{$c->req->params}, editable => $editable, iframe => 'request' );
       my $qs = join('&',map { $_ . '=' . uri_escape($params{$_}) } keys %params);
       my $iframe_src = join('/','',$self->action_namespace($c),'view',$template) . '?' . $qs;
 

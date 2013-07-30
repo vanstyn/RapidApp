@@ -4142,7 +4142,7 @@ Ext.ux.RapidApp.Plugin.LinkClickCatcher = Ext.extend(Ext.util.Observable,{
     
       // Unless we're an iframe, ignore links with a target attribute 
       // (i.e. target="_blank" or the like specified)
-      if(! this.isIframe() && ! target.getAttribute('target')) { return; }
+      if(! this.isIframe() && target.getAttribute('target')) { return; }
     
       var href = target.getAttribute('href');
 
