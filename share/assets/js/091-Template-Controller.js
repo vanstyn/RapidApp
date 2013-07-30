@@ -1,12 +1,31 @@
 Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,{
-	
-	init: function(panel) {
+
+  init: function(panel) {
     this.panel = panel;
-		panel.on('afterrender',this.onAfterRender,this);
-	},
+    var eventName = this.isIframe() ? 'domready' : 'afterrender';
+    this.panel.on(eventName,this.attachClickListener,this);
+  },
+  
+  isIframe: function() { return Ext.isFunction(this.panel.getFrame); },
+  
+  getBodyEl: function() {
+    // Standard, normal panel
+    var El = this.panel.getEl();
+    
+    // For the special ManagedIFrame case, reach into the iframe
+    // and get its inner <body> element:
+    if(this.isIframe()) {
+      var iFrameEl = this.panel.getFrame();
+      El = new Ext.Element(
+        iFrameEl.dom.contentDocument.activeElement
+      );
+    }
+    
+    return El;
+  },
  
-	onAfterRender: function() {
-    this.panel.getEl().on('click',function(event,node) {
+	attachClickListener: function() {
+    this.getBodyEl().on('click',function(event,node) {
       var target = event.getTarget(null,null,true);
       var El = new Ext.Element(target);
       if (El.hasClass('edit')) {

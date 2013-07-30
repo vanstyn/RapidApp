@@ -7,6 +7,7 @@ use Try::Tiny;
 use Template;
 use Module::Runtime;
 use Path::Class qw(file dir);
+use URI::Escape;
 
 # New unified controller for displaying and editing TT templates on a site-wide
 # basis. This is an experiment that breaks with the previous RapidApp 'Module'
@@ -164,6 +165,11 @@ sub view :Local {
     
     # EXPERIMENTAL IFRAME OPTION:
     if($c->req->params->{iframe}) {
+      
+      my %params = ( %{$c->req->params}, editable => $editable );
+      my $qs = join('&',map { $_ . '=' . uri_escape($params{$_}) } keys %params);
+      my $iframe_src = join('/','',$self->action_namespace($c),'view',$template) . '?' . $qs;
+
       $cnf = {
         xtype => 'iframepanel',
         plugins => ['ra-link-click-catcher'],
@@ -177,8 +183,7 @@ sub view :Local {
         autoScroll => \1,
         bodyStyle => 'border: 1px solid #D0D0D0;background-color:white;',
         loadMask => \1,
-        # TODO: merge all query params into url:
-        defaultSrc => "" . $c->req->uri . ""
+        defaultSrc => $iframe_src
       };
     }
     else {
@@ -194,12 +199,15 @@ sub view :Local {
         tabTitle => join('/',@args), #<-- not using $template to preserve the orig req name
         tabIconCls => 'ra-icon-page-white-world',
         
-        template_controller_url => '/' . $self->action_namespace($c),
         html => $html
       };
-      
-      # No reason to load the plugin unless we're editable:
-      $cnf->{plugins} = ['template-controller-panel'] if ($editable);
+    }
+    
+    # No reason to load the plugin unless we're editable:
+    if ($editable) {
+      $cnf->{plugins} ||= [];
+      push @{$cnf->{plugins}}, 'template-controller-panel';
+      $cnf->{template_controller_url} = '/' . $self->action_namespace($c);
     }
     
     # This is doing the same thing that the overly complex 'Module' controller does:
@@ -211,7 +219,11 @@ sub view :Local {
     $output = join("\n",
       '<head>', $c->all_html_head_tags, '</head>',
       '<div class="ra-scoped-reset">',
-      $self->_render_template('Template_raw',$template,$c),
+      #$self->_render_template('Template_raw',$template,$c),
+      $self->_render_template(
+        $editable ? 'Template_wrap' : 'Template_raw',
+        $template, $c
+      ),
       '</div>'
     );
     $content_type = 'text/html; charset=utf-8';
