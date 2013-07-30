@@ -166,6 +166,7 @@ sub view :Local {
     if($c->req->params->{iframe}) {
       $cnf = {
         xtype => 'iframepanel',
+        plugins => ['ra-link-click-catcher'],
         tabTitle => join('',
           '<span style="color:purple;">',
             'iframe:[' . join('/',@args) . ']', #<-- not using $template to preserve the orig req name

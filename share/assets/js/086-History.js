@@ -227,6 +227,9 @@ Ext.ux.RapidApp.HashNav = {
   
   // New: util function - converts a normal URL into a hashpath
   urlToHashPath: function(url) {
+    // Return urls that already start with '#' as-is
+    if(url.search('#') == 0) { return url; }
+    
     //absolute: 
     var hashpath = '#!' + url;
     

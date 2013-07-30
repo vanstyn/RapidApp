@@ -4101,14 +4101,36 @@ Ext.ux.RapidApp.Plugin.GridToggleEditCells = Ext.extend(Ext.util.Observable,{
 Ext.preg('grid-toggle-edit-cells',Ext.ux.RapidApp.Plugin.GridToggleEditCells);
 
 
-
+// This plugin is uses with the top-level Viewport to convert links to
+// hashpath URLs to stay within the Ext/RapidApp tab system. For instance,
+// clicking <a href="/foo">foo</a> would be translated to '#!/foo'
+//
+// Designed to work with normal panels or ManagedIFrames:
 Ext.ux.RapidApp.Plugin.LinkClickCatcher = Ext.extend(Ext.util.Observable,{
   
   init: function(cmp) {
     this.cmp = cmp;
     if(Ext.ux.RapidApp.HashNav.INITIALIZED) {
-      this.cmp.on('afterrender',function(){
-        this.cmp.getEl().on('click',this.clickInterceptor,this);
+    
+      var eventName = Ext.isFunction(this.cmp.getFrame)
+        ? 'domready'
+        : 'afterrender';
+    
+      this.cmp.on(eventName,function(){
+        
+        var El = this.cmp.getEl();
+        
+        // For the special ManagedIFrame case, reach into the iframe
+        // and get the inner <body> element to attach the listener:
+        if(Ext.isFunction(this.cmp.getFrame)) {
+          var iFrameEl = this.cmp.getFrame();
+          El = new Ext.Element(
+            iFrameEl.dom.contentDocument.activeElement
+          );
+        }
+        
+        El.on('click',this.clickInterceptor,this);
+        
       },this);
     }
   },
@@ -4128,15 +4150,9 @@ Ext.ux.RapidApp.Plugin.LinkClickCatcher = Ext.extend(Ext.util.Observable,{
     if(!match) { return; }
     
     var href = target.getAttribute('href');
-    match = ( href
-      // Is not already a hash url:
-      && href.search('#') !== 0
-      
-      // URL is local (does not start with http://, https://, etc)
-      && ! this.externalUrlRe.test(href)
-    );
-    
-    if(match) {
+
+    // URL is local (does not start with http://, https://, etc)
+    if(! this.externalUrlRe.test(href)) {
       // Stop the link click event and convert to hashpath:
       event.stopEvent();
       var hashpath = Ext.ux.RapidApp.HashNav.urlToHashPath(href);
