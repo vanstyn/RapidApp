@@ -146,8 +146,7 @@ sub render_login_page {
 	my $cnf = shift || {};
   
   my $config = $c->config->{'Plugin::RapidApp::AuthCore'} || {};
-  $config->{login_template} ||= 'templates/rapidapp/login.tt';
-  
+  $config->{login_template} ||= 'templates/rapidapp/public/login.tt';
   
   my $ver_string = ref $c;
   my $ver = eval('$' . $ver_string . '::VERSION');
