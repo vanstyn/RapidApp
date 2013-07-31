@@ -49,8 +49,8 @@
 }
 
 .ra-template>.edit:hover {
-  cursor: pointer;
-  opacity: 1;
+  cursor: pointer !important;
+  opacity: 1 !important;
 }
 
 .ra-template>.not-exist, .ra-template>.tpl-error {
