@@ -56,7 +56,10 @@ before 'setup_dispatcher' => sub {
     },
     'Plugin::Session' => {
       dbic_class => 'RapidApp::CoreSchema::Session',
-      expires    => 3600,
+      # TODO/FIXME: something is broken that prevents sessions from being
+      # extended which forces the user to reauth every 'expires' seconds
+      # regardless of recent requests. Need to dig into Plugin::Session
+      expires    => 60*60*8, #<-- 8 hours
     }
   );
   
