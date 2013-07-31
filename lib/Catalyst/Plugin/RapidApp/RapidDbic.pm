@@ -47,15 +47,10 @@ before 'setup_components' => sub {
   }
   # ---
   
-  #my $appclass = ref($c) || $c;
-  #my %active_models = ();
-  #foreach my $model (@{$config->{dbic_models}}) {
-  #  my ($schema,$result) = split(/\:\:/,$model,2);
-  #  $active_models{$appclass."::Model::".$schema}++;
-  #}
-  #$config->{_active_models} = \%active_models;
+  my @navtrees = ();
   
-  my @navtrees = ({
+  # These are the main navtrees containing the DBIC grid links:
+  push @navtrees, ({
     module => $config->{dbic_tree_module_name},
     class => 'RapidApp::AppDbicTree',
     params => {
@@ -65,8 +60,21 @@ before 'setup_components' => sub {
     }
   });
   
+  if($config->{template_navtree_regex}) {
+   push @navtrees, ({
+      module => 'tpl_navtree',
+      class => 'RapidApp::AppTemplateTree',
+      params => {
+        template_regex => $config->{template_navtree_regex}
+      }
+    });
+  }
+  
+  # New: add custom navtrees by config:
+  push @navtrees, @{$config->{navtrees}} if (exists $config->{navtrees});
+  
   # --- We're also aware of the NavCore plugin. If it is running we stick its items
-  # at the top of the navigation tree:
+  # at the **top** of the navigation tree:
   unshift @navtrees, (
     {
       module => 'navtree',
