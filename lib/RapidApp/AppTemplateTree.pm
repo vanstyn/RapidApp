@@ -18,10 +18,12 @@ use RapidApp::Include qw(sugar perlutil);
 has '+fetch_nodes_deep', default => 0;
 has 'template_regex', is => 'ro', isa => 'Maybe[Str]', default => sub {undef};
 
+sub TC { (shift)->c->template_controller }
+
 sub template_tree_items {
 	my $self = shift;
   
-  my $TC = $self->c->template_controller;
+  my $TC = $self->TC;
   my $templates = $TC->get_Provider->list_templates($self->template_regex);
   
   my $items = [];
@@ -29,28 +31,34 @@ sub template_tree_items {
     my $cnf = {
       id => 'tpl-' . $template,
       leaf => \1,
+      name => $template,
       text => $template,
       iconCls => 'ra-icon-page-white-world',
       href => '#!/tple/' . $template,
       loaded => \1
     };
     
-    # Show 'external' templates differently:
-    if($TC->Access->template_external_tpl($template)) {
-      $cnf->{iconCls} = 'ra-icon-page-white';
-      $cnf->{text} = join('',
-        '<span style="color:purple;">',
-        $cnf->{text},
-        '</span>'
-      )
-    }
-    
+    $self->apply_tpl_node($cnf);
     push @$items, $cnf;
   }
   
   return $items;
 }
 
+
+sub apply_tpl_node {
+  my ($self, $node) = @_;
+  my $template = $node->{name} or return;
+  
+  %$node = ( %$node,
+    iconCls => 'ra-icon-page-white',
+    text => join('',
+      '<span style="color:purple;">',
+      $node->{text},
+      '</span>'
+    )
+  ) if $self->TC->Access->template_external_tpl($template);
+}
 
 
 sub fetch_nodes {
@@ -67,7 +75,52 @@ sub fetch_nodes {
   
 	# The only other possible request is for the children of 
   # 'root/tpl-list' above:
-	return $self->template_tree_items;
+  my $items = $self->template_tree_items;
+  
+  #return $items;
+  return $self->folder_convert($items);
+}
+
+# Splits and converts a flat list into an ExtJS tree/folder structure
+sub folder_convert {
+  my ($self, $items) = @_;
+  
+  my $root = [];
+  my %seen = ( '' => $root );
+  
+  foreach my $item (@$items) {
+    my @parts = split(/\//,$item->{name});
+    my $leaf = pop @parts;
+    
+    my @stack = ();
+    foreach my $part (@parts) {
+      my $parent = join('/',@stack) || '';
+      push @stack, $part;
+      my $folder = join('/',@stack);
+      
+      unless($seen{$folder}) {
+        my $cnf = {
+          id => 'tpl-' . $folder . '/',
+          name => $folder . '/',
+          text => $part,
+          children => []
+        };
+        $self->apply_tpl_node($cnf);
+        delete $cnf->{iconCls} if (exists $cnf->{iconCls});
+        $seen{$folder} = $cnf->{children};
+        push @{$seen{$parent}}, $cnf;
+      }
+    }
+    
+    my $folder = join('/',@stack);
+    my $new = {
+      %$item,
+      text => $leaf
+    };
+    $self->apply_tpl_node($new);
+    push @{$seen{$folder}}, $new;
+  }
+  return $root;
 }
 
 
