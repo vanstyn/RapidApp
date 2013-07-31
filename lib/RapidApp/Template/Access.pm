@@ -372,6 +372,9 @@ sub get_template_format {
   # By default we treat any *.md templates as markdown
   return 'markdown' if ($template =~ /\.md$/i);
   
+  # html-snippet can be safely edited by the HtmlEditor
+  return 'html-snippet' if ($template =~ /\.tt$/i);
+  
   # TODO: add other formats here ...
   
   # The default format should always be 'html':

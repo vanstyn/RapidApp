@@ -298,10 +298,11 @@ sub view :Local {
     # to prevent the chance of trying to load a link inside the frame (even
     # though local links are already hanlded/converted - we still need to
     # protect against external/global links).
-    push @head, '<base target="_blank" />' if $iframe;
+    push @head, '<base target="_blank" />' 
+      if ($c->req->params->{iframe} eq 'request');
     
     if($external) {
-      # We still need to include CSS for template edit controls, if we're editable:
+      # If we're editable and external we need to include CSS for template edit controls:
       # TODO: basically including everything but ExtJS CSS. This is ugly and should
       # be generalized/available in the Asset system as a simpler function call:
       push @head, (

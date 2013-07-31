@@ -205,7 +205,7 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
   },
   
   getFormatEditorCnf: function(format) {
-    if (format == 'html') {
+    if (format == 'html-snippet') {
       return {
         // Only use the HtmlEditor for html format.
         // TODO: a new HtmlEditor is badly needed. This one is pretty limited:
