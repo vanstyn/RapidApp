@@ -6,35 +6,15 @@ RapidApp is an open-source application framework that is currently under develop
 - Catalyst
 - ExtJS
 - DBIx::Class
+- Template::Toolkit
 
 This is a development release and the API is not yet complete and likely to change. Documentation is also still lacking.
 
 ## INSTALLATION
 
-First, clone the repo:
+Simply install from CPAN:
 
-```
-  cd /some/path
-  git clone https://github.com/vanstyn/RapidApp
-  cd RapidApp
-```
-
-RapidApp can either be installed as a module or simply ran directly out of a local directory. 
-To install as a module (recommended, to auto install dependencies - requires Dist::Zilla):
-
-```
-  dzil build
-  cpanm RapidApp-0.99006.tar.gz  # or whatever the current version is
-```
-
-Obviously, once RapidApp is on CPAN it will just be ```cpanm RapidApp```
-
-Alternatively, to just run out of the local directory, you just need to add the lib directory to your @INC and also set the environment variable for the share_dir. For example:
-
-```
-  export PERLLIB="/some/path/RapidApp/lib"
-  export RAPIDAPP_SHARE_DIR="/some/path/RapidApp/share"
-```
+ ```cpanm RapidApp```
 
 ## SETUP AN APPLICATION
 

@@ -2,7 +2,7 @@ package RapidApp;
 use strict;
 use warnings;
 
-our $VERSION = 0.99013;
+our $VERSION = 0.99014;
 
 # ABSTRACT: Turnkey ajaxy webapps
 
@@ -26,5 +26,36 @@ sub share_dir {
 
 
 1;
+
+
+__END__
+
+=pod
+
+=head1 NAME
+
+RapidApp - Turnkey ajaxy webapps
+
+=head1 DESCRIPTION
+
+Preliminary release of the RapidApp framework. More documentation TBD.
+
+For more information and example usage, please see the RapidApp 
+GitHub page: L<https://github.com/vanstyn/RapidApp>.
+
+
+=head1 AUTHOR
+
+Henry Van Styn <vanstyn@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2013 by IntelliTree Solutions llc.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
+
 
 
