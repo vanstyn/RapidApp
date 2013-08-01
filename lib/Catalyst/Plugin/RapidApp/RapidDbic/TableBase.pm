@@ -87,6 +87,8 @@ sub BUILD {
 		autoload_added_record => \1,
     toggle_edit_cells_init_off => \1
 	);
+  
+  $self->add_plugin('grid-custom-headers');
 	
 	# Turn off editing for primary columns:
 	$self->apply_columns( $_ => { allow_edit => \0 } ) for ($self->ResultSource->primary_columns);
