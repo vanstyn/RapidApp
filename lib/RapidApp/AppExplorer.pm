@@ -186,38 +186,26 @@ sub content_area {
 		margins		=> '3 3 3 0',
 		bodyCssClass		=> 'sbl-panel-body-noborder',
 	};
-	
-	#$cnf->{margins} = '3 3 3 3' unless ($self->show_navtree);
   
-  $cnf->{initLoadTabs} = [
-    {
-      title	=> '<img src="/assets/rapidapp/misc/static/images/toolbar_home.png" ' .
-        ' style="margin-bottom: -2px;" height=15 width=16>',
-      iconCls => '',
-      closable	=> \0,
-      autoLoad => {
-        url 	=> $self->Module('dashboard')->base_url,
-        params	=> {}
-      }
+  my $initTab = {
+    title	=> '&nbsp;',
+    iconCls => 'ra-tab-icon-only-16px ra-icon-home',
+    closable	=> \0,
+    autoLoad => {
+      params	=> {}
     }
-  ] if ($self->dashboard_class);
+  };
+
+  if ($self->dashboard_class) {
+    $initTab->{autoLoad}{url} = $self->Module('dashboard')->base_url;
+    $cnf->{initLoadTabs} = [$initTab];
+  }
+  elsif ($self->dashboard_url) {
+    $initTab->{autopanel_ignore_tabtitle} = \1;
+    $initTab->{autoLoad}{url} = $self->dashboard_url;
+    $cnf->{initLoadTabs} = [$initTab];
+  }
   
-  # ---- NEW ----
-  $cnf->{initLoadTabs} = [
-    {
-      title	=> '<img src="/assets/rapidapp/misc/static/images/toolbar_home.png" ' .
-        ' style="margin-bottom: -2px;" height=15 width=16>',
-      iconCls => '',
-      closable	=> \0,
-      autopanel_ignore_tabtitle => \1,
-      autoLoad => {
-        url 	=> $self->dashboard_url,
-        params	=> {}
-      }
-    }
-  ] if ($self->dashboard_url);
-  # ----
-	
 	return  RapidApp::JSONFunc->new(
 		func => 'new Ext.ux.RapidApp.AppTab.TabPanel',
 		parm => $cnf

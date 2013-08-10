@@ -1517,3 +1517,17 @@ TODO: make sure this doesn't cause problems someplace else
 a:hover, a:hover * { cursor: pointer; }
 .x-tab-strip-active a:hover, .x-tab-strip-active a:hover * { cursor: default; }
 
+
+/* 
+  Use this class (with an icon class) in iconCls for the special 
+  case where you want a tab to have an icon only, no text title, and
+  have the icon display nicely centered in the tab. This is hard
+  coded for 16px width icons. Note that you *must* also set the 'title' to
+  &nbsp; for the proper/consistent height. This is used by AppExplorer for
+  the dashboard tab (home icon)
+*/
+.ra-tab-icon-only-16px {
+  background-position: 4px 3px !important;
+  padding-left: 0px !important;
+  width: 20px !important;
+}
