@@ -244,7 +244,7 @@ has 'max_recursive_fetch_depth', is => 'ro', isa => 'Int', default => 10;
 
 our $DEEP_FETCH_DEPTH = 0;
 
-sub call_fetch_nodes :Debug(list_args=>1) {
+sub call_fetch_nodes {
 	my $self = shift;
 	my $node = shift || $self->c->req->params->{node};
 	
