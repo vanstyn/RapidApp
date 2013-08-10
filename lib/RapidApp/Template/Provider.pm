@@ -243,7 +243,7 @@ sub list_templates {
   $paths = [$paths] unless (ref $paths);
   
   my %seen = ();
-  for my $dir (map { dir($_) } @$paths) {
+  for my $dir (grep { -d $_ } map { dir($_) } @$paths) {
     $dir->recurse(
       preorder => 1,
       depthfirst => 1,
