@@ -224,7 +224,12 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		return this.loadTab.apply(this,arguments);
 	},
 
-	loadTab: function(cnf,extra_cnf) {
+	loadTab: function(cnfo,extra_cnf) {
+		
+		// Clone to protect original references:
+		var enc_orig_cnf = Ext.encode(cnfo);
+		var cnf = Ext.decode(enc_orig_cnf);
+		var orig_cnf = Ext.decode(enc_orig_cnf);
 		
 		if(cnf.newtab) { //<-- the newtab param is set by the "open another tab" plugin
 			delete cnf.newtab;
@@ -234,14 +239,6 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 			cnf.autoLoad.params = cnf.autoLoad.params || {};
 			cnf.autoLoad.params['_seq'] = cnf.seq.toString();
 		}
-		
-		var orig_cnf = Ext.decode(Ext.encode(cnf));
-		
-		// What was this for? Removed 2012-08-19 by HV because this breaks cnf.closable = false
-		// prune falsy properties (object version of Ext.clean)
-		//Ext.iterate(cnf,function(k,v){
-		//	if(!v) { delete cnf[k]; }
-		//},this);
 		
 		// -- New: apply optional second cnf argument:
 		if(Ext.isObject(extra_cnf)) {
@@ -367,7 +364,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		if(Ext.isString(load) || Ext.isObject(load)) {
 			var autoLoad = Ext.isString(load) ? {url:load,params:{}} : load;
 			return 'tab-crc' + crc32(Ext.encode(
-				[autoLoad.url,autoLoad.params]
+				[decodeURIComponent(autoLoad.url),autoLoad.params]
 			));
 		}
 		return null;

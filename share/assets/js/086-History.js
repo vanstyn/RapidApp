@@ -80,10 +80,11 @@ Ext.ux.RapidApp.HashNav = {
 		if(Ext.isObject(autoLoad) && Ext.isString(autoLoad.url)) { 
 			// We never want to see %2ff type characters (needed for chrome in certain places)
       var url = decodeURIComponent( autoLoad.url );
+      
       // Ignore if url doesn't start with /:
-			if(url.search('/') !== 0) { return null; }
-			
-			var hashpath = '#!' + url;
+      if(url.search('/') !== 0) { return null; }
+      var hashpath = '#!' + url;
+
 			if(Ext.ux.RapidApp.HashNav.isParamsUrlSafe(autoLoad.params)) {
 				// Use standard url encoded query string:
 				var encParams = autoLoad.params ? Ext.urlEncode(autoLoad.params) : '';

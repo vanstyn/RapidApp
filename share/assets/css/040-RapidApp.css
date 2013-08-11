@@ -1353,7 +1353,7 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 }
 
 .ra-exception-heading {
-  background-image: url(/assets/rapidapp/misc/static/ra-icon-error.gif);
+  background-image: url(/assets/rapidapp/misc/static/icon-error.gif);
   background-repeat: no-repeat;
   background-position: 10px center;
   padding-left:60px;
