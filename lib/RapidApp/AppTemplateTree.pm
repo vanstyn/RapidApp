@@ -34,7 +34,7 @@ sub template_tree_items {
       name => $template,
       text => $template,
       iconCls => 'ra-icon-page-white-world',
-      href => '#!/tple/' . $template,
+      loadContentCnf => { autoLoad => { url => '/tple/' . $template }},
       loaded => \1
     };
     
