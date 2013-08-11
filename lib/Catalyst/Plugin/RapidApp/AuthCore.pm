@@ -88,6 +88,8 @@ after 'setup_finalize' => sub {
   
   #$c->session_expire_key( __user => 3600 );
   
+  my $config = $class->config->{'Plugin::RapidApp::AuthCore'} || {};
+  
   $class->rapidApp->rootModule->_around_Controller(sub {
     my $orig = shift;
     my $self = shift;
@@ -100,11 +102,19 @@ after 'setup_finalize' => sub {
     
     $c->res->header('X-RapidApp-Authenticated' => 0);
     
-    # only for the root / path when there is no session
+    my $template;
+ 
     my $args = $c->req->arguments;
-    return $c->controller('Auth')->render_login_page($c) if(@$args == 0);
+    if(@$args == 0) {
+      $template = $config->{public_root_template};
+    }
+    elsif($config->{public_template_prefix}) {
+      $template = $config->{public_template_prefix} . join('/',@$args);
+    }
     
-    return $self->render_data('');
+    return $template
+      ? $c->template_controller->view($c, $template )
+      : $c->controller('Auth')->render_login_page($c);
   });
 };
 

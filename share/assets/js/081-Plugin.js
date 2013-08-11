@@ -4136,18 +4136,31 @@ Ext.ux.RapidApp.Plugin.LinkClickCatcher = Ext.extend(Ext.util.Observable,{
   externalUrlRe: new RegExp('^\\w+://'),
   
   clickInterceptor: function(event) {
-    var target = event.getTarget(null,null,true);
-    if(! target) { return; }
+    var node = event.getTarget(null,null,true);
+
+    if(! node) { return; }
     
     // Is a link (<a> tag) or is a child of a link tag:
-    target = target.is('a') ? target : target.parent('a');
-    if(! target) { return; }
+    node = node.is('a') ? node : node.parent('a');
+    if(! node) { return; }
     
-    // Unless we're an iframe, ignore links with a target attribute 
-    // (i.e. target="_blank" or the like specified)
-    if(! this.isIframe() && target.getAttribute('target')) { return; }
-  
-    var href = target.getAttribute('href');
+    var targetAttr = node.getAttribute('target');
+    if(targetAttr) {
+      // If we're in an iFrame, ignore links with a target defined *IF* they
+      // are iFrame-specific (target='_top' or '_parent'). We never want an
+      // iFrame to reload to a new URL, but this won't happen with _top/_parent
+      // and in these cases we can still safely honor the target
+      if(this.isIframe()) {
+        if(targetAttr == '_top' && targetAttr !== '_parent') { return; }
+      }
+      // If we're not in an iFrame, ignore links with any target at all
+      // (i.e. target="_blank", etc):
+      else {
+        return;
+      }
+    }
+    
+    var href = node.getAttribute('href');
     
     // URL is local (does not start with http://, https://, etc)
     if(! this.externalUrlRe.test(href)) {

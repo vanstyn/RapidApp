@@ -1,5 +1,3 @@
-[% SET username = c.user.get_from_storage.username %]
-
 <div class="ra-footer" style="padding:2px;text-align:right;font-weight:bolder;">
-  [% IF username %][% username %] | [% END %]<a target="_self" href="/auth/logout">Logout</a>
+[% INCLUDE rapidapp/public/log_in_out_control.tt %]
 </div>

@@ -1,0 +1,6 @@
+[% SET username = c.user.get_from_storage.username %]
+[% IF username %]
+ [% username %] | <a target="_top" href="/auth/logout">Logout</a>
+[% ELSE %]
+ (not logged in) | <a target="_top" href="/auth/login">Login</a>
+[% END %]
