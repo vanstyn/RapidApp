@@ -4137,22 +4137,24 @@ Ext.ux.RapidApp.Plugin.LinkClickCatcher = Ext.extend(Ext.util.Observable,{
   
   clickInterceptor: function(event) {
     var target = event.getTarget(null,null,true);
-    // Is a link (<a> tag):
-    if(target && target.is('a')) {
+    if(! target) { return; }
     
-      // Unless we're an iframe, ignore links with a target attribute 
-      // (i.e. target="_blank" or the like specified)
-      if(! this.isIframe() && target.getAttribute('target')) { return; }
+    // Is a link (<a> tag) or is a child of a link tag:
+    target = target.is('a') ? target : target.parent('a');
+    if(! target) { return; }
     
-      var href = target.getAttribute('href');
-
-      // URL is local (does not start with http://, https://, etc)
-      if(! this.externalUrlRe.test(href)) {
-        // Stop the link click event and convert to hashpath:
-        event.stopEvent();
-        var hashpath = Ext.ux.RapidApp.HashNav.urlToHashPath(href);
-        window.location.hash = hashpath;
-      }
+    // Unless we're an iframe, ignore links with a target attribute 
+    // (i.e. target="_blank" or the like specified)
+    if(! this.isIframe() && target.getAttribute('target')) { return; }
+  
+    var href = target.getAttribute('href');
+    
+    // URL is local (does not start with http://, https://, etc)
+    if(! this.externalUrlRe.test(href)) {
+      // Stop the link click event and convert to hashpath:
+      event.stopEvent();
+      var hashpath = Ext.ux.RapidApp.HashNav.urlToHashPath(href);
+      window.location.hash = hashpath;
     }
   }
   
