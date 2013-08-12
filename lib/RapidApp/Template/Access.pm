@@ -255,7 +255,15 @@ sub _get_default_template_vars {
       my $tpl = shift;
       my $url = $vars->{template_url}->($tpl);
       return join('','<a href="#!',$url,'">',$tpl,'</a>');
+    },
+    
+    local_uri => sub { 
+      return undef unless ($c);
+      my $uri_str = $c->req->uri->rel($c->req->base)->as_string;
+      $uri_str = '' if ($uri_str eq './');
+      return "/$uri_str";
     }
+    
   };
   
   return $vars;
