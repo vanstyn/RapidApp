@@ -2,7 +2,7 @@ package RapidApp;
 use strict;
 use warnings;
 
-our $VERSION = 0.99014;
+our $VERSION = 0.99015;
 
 # ABSTRACT: Turnkey ajaxy webapps
 
@@ -41,7 +41,7 @@ RapidApp - Turnkey ajaxy webapps
 Preliminary release of the RapidApp framework. More documentation TBD.
 
 For more information and example usage, please see the RapidApp 
-GitHub page: L<https://github.com/vanstyn/RapidApp>.
+homepage: L<http://www.rapidapp.info>.
 
 
 =head1 AUTHOR
