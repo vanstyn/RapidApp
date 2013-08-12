@@ -86,37 +86,48 @@ after 'setup_components' => sub {
 after 'setup_finalize' => sub {
   my $class = shift;
   
-  #$c->session_expire_key( __user => 3600 );
-  
-  my $config = $class->config->{'Plugin::RapidApp::AuthCore'} || {};
-  
   $class->rapidApp->rootModule->_around_Controller(sub {
     my $orig = shift;
     my $self = shift;
     my $c = $self->c;
+    my $args = $c->req->arguments;
+    
+    my $do_auth = 0;
+    my $browser_req = $c->req->header('X-RapidApp-RequestContentType') ? 0 : 1;
     
     if ($c->session_is_valid and $c->user_exists) {
       $c->res->header('X-RapidApp-Authenticated' => $c->user->username);
-      return $self->$orig(@_);
+    }
+    else {
+      $c->res->header('X-RapidApp-Authenticated' => 0);
+      $do_auth = 1 if (
+        # Only do auth for browser requests:
+        $browser_req &&
+        $class->_is_auth_required_path($self,@$args)
+      );
     }
     
-    $c->res->header('X-RapidApp-Authenticated' => 0);
-    
-    my $template;
- 
-    my $args = $c->req->arguments;
-    if(@$args == 0) {
-      $template = $config->{public_root_template};
-    }
-    elsif($config->{public_template_prefix}) {
-      $template = $config->{public_template_prefix} . join('/',@$args);
-    }
-    
-    return $template
-      ? $c->template_controller->view($c, $template )
-      : $c->controller('Auth')->render_login_page($c);
+    return $do_auth ? $c->controller('Auth')->render_login_page($c) : $self->$orig(@_);
   });
 };
+
+
+sub _is_auth_required_path {
+  my ($c, $rootModule, @path) = @_;
+  
+  # Always require auth on requests to RapidApp Modules:
+  return 1 if ($path[0] && $rootModule->has_subarg($path[0]));
+  
+  # Special handling for '/' - require auth unless a root template has
+  # been defined
+  return 1 if (
+    @path == 0 &&
+    ! $c->config->{'Model::RapidApp'}->{root_template}
+  );
+  
+  # Temp - no auth on other paths (template alias paths)
+  return 0;
+}
 
 
 1;

@@ -39,8 +39,7 @@ Ext.ux.RapidApp.HashNav = {
 		if(hashpath.search('#') == 0) { token = hashpath.substring(1); }
 		
 		// valid hashpaths must start with '!/'
-    // NEW: also disable root '!/' <-- FIXME later
-		if(token.search('!/') !== 0 || token == '!/') { return null; }
+		if(token.search('!/') !== 0) { return null; }
 		
 		var url = token.substring(1); // strip leading !
 		var params = {};

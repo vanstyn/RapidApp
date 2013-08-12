@@ -229,7 +229,7 @@ sub Controller {
   my ($opt) = @args;
   if ($opt && $c->req->method eq 'GET' && ! $c->req->header('X-RapidApp-RequestContentType')) {
     # Only for paths which are actually registered modules/actions:
-    if($self->_load_module($opt) || $self->has_action($opt)) {
+    if($self->has_subarg($opt)) {
       my $url = join('/','/#!',@args);
       my %params = %{$c->req->params};
       if(keys %params > 0) {
@@ -264,6 +264,16 @@ sub Controller {
 
 	$self->controller_dispatch(@args);
 }
+
+# module or action:
+sub has_subarg {
+  my ($self, $opt) = @_;
+  return ($opt && (
+    $self->has_module($opt) ||
+    $self->has_action($opt)
+  )) ? 1 : 0;
+}
+
 
 has 'get_local_args', is => 'ro', isa => 'Maybe[CodeRef]', lazy => 1, default => undef;
 

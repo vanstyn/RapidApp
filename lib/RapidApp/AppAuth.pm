@@ -1,5 +1,9 @@
 package RapidApp::AppAuth;
 
+# DEPRICATED
+1; __END__
+
+
 use strict;
 use warnings;
 use Moose;

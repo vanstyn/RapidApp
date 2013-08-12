@@ -74,17 +74,42 @@ sub BUILD {
 	## ---
 }
 
-# another ugly hack, added to make it easier to hook/wrap the top Controller
-# Added for Plugin::AuthCore
-has '_around_Controller', is => 'rw', isa => 'Maybe[CodeRef]', default => undef;
+# Another ugly hack, added to make it easier to hook/wrap the top Controller.
+# Does nothing but call the original by default, but can be changed.
+# (Added for Plugin::AuthCore)
+has '_around_Controller', is => 'rw', isa => 'CodeRef', default => sub { sub {
+  my ($orig,$self,@args) = @_;
+  return $self->$orig(@args);
+}};
 
 around 'Controller' => sub {
-	my $orig = shift;
-  my $self = shift;
-	$self->c->stash->{title} = $self->app_title;
-	return $self->_around_Controller ? 
-    $self->_around_Controller->($orig,$self,@_) :
-    $self->$orig(@_);
+	my ($orig,$self,@a) = @_;
+  my $c = $self->c;
+  my $config = $c->config->{'Model::RapidApp'};
+  
+	$c->stash->{title} = $self->app_title;
+  
+  # Also ugly - double-nested around. We're doing it this way because we
+  # want the '_around_Controller' to take priority over this code, which
+  # still takes priority over the original.
+  return $self->_around_Controller->(sub {
+    my $args = $c->req->arguments;
+    my ($opt) = @$args;
+    
+    # SPECIAL HANDLING FOR ROOT ('/') REQUEST:
+    return $self->content unless ($opt || $c->session->{RapidApp_username});
+    
+    return $self->$orig(@a) unless (
+      $opt && !$self->has_subarg($opt) &&
+      $config->{root_template_prefix}
+    );
+    
+    $c->stash->{editable} = 1; # <-- Enable template editing (if has perms)
+    my $template = $config->{root_template_prefix} . join('/',@$args);
+    return $c->template_controller->view($c, $template);
+    
+    return $self->$orig(@a);
+  },$self,@a);
 };
 
 # build a HTML viewport for the ExtJS content
@@ -95,6 +120,25 @@ sub viewport {
 	$self->c->stash->{config_url} = $self->base_url . '/' . $self->default_module;
 	return $ret;
 };
+
+
+# NEW: handle root ('/') request with a template instead of error:
+sub content {
+  my $self = shift;
+  my $c = $self->c;
+  my $config = $c->config->{'Model::RapidApp'};
+  
+  $c->stash->{editable} = 1; # <-- Enable template editing (if has perms)
+  my $template = $config->{root_template};
+  
+  unless ($template) {
+    $template = 'rapidapp/default_root_template.html';
+    $c->stash->{editable} = 0;
+  }
+
+  return $c->template_controller->view($c, $template);
+}
+
 
 no Moose;
 __PACKAGE__->meta->make_immutable;

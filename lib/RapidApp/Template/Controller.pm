@@ -121,7 +121,7 @@ sub is_editable_request {
   # Never editable externally, unless this is an iframe request
   return 0 unless (
     $c->req->header('X-RapidApp-RequestContentType') ||
-    $c->req->params->{iframe} eq 'request'
+    (exists $c->req->params->{iframe} && $c->req->params->{iframe} eq 'request')
   );
   
   # check several mechanisms to turn on editing (mouse-over edit controls)
@@ -298,8 +298,10 @@ sub view :Local {
     # to prevent the chance of trying to load a link inside the frame (even
     # though local links are already hanlded/converted - we still need to
     # protect against external/global links).
-    push @head, '<base target="_blank" />' 
-      if ($c->req->params->{iframe} eq 'request');
+    push @head, '<base target="_blank" />' if (
+      exists $c->req->params->{iframe} &&
+      $c->req->params->{iframe} eq 'request'
+    );
     
     if($external) {
       # If we're editable and external we need to include CSS for template edit controls:

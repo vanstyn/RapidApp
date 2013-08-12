@@ -87,6 +87,7 @@ sub do_login {
 	my $pass = shift;
   
 	if($c->authenticate({ username => $user, password => $pass })) {
+    $c->session->{RapidApp_username} = $user;
     $c->log->info("Successfully authenticated user '$user'");
     $c->user->update({ 
       last_login_ts => DateTime->now( time_zone => 'local' ) 
