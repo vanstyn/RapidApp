@@ -102,11 +102,12 @@ around 'content' => sub {
 		footer => \1,
 		footerCfg => {
 			tag => 'div',
+      # FIXME: convert to template
 			html => q{
 <div class="ra-footer no-text-select"><div class="wrap">
 	<table width="100%"><tr>
 		<td width="25%">
-      <a class="left" href="#!/tpl/rapidapp/pages/about_rapidapp"></a>
+      <a class="left" target="_blank" href="http://www.rapidapp.info"></a>
 		</td>
 		<td width="50%" class="center">
 			<div id="infostatus"></div>
