@@ -13,6 +13,25 @@
 
 [% ELSE %]
 
+  <script type="text/javascript">
+    Ext.onReady(function(){
+      var hiddenEl = Ext.get('hashpath');
+      // Pass the current value of the hashpath through the login:
+      var persist_hash = function() {
+        if(hiddenEl) {
+          hiddenEl.dom.setAttribute('value',window.location.hash);
+        }
+      };
+      
+      persist_hash();
+      window.onhashchange = persist_hash;
+      
+      // Focus the username field:
+      var el = Ext.get('username');
+      if(el) { el.focus(); }
+    });
+  </script>
+
   <form action="[% form_post_url %]" method="post" class="nice" id="l_form">
 
     <input type="hidden" id="hashpath" name="hashpath" value="#">

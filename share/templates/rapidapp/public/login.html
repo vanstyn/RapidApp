@@ -11,18 +11,6 @@
 
   [% c.all_html_head_tags %]
 
-  <script type="text/javascript">
-    Ext.onReady(function(){
-      var el = Ext.get('username');
-      if(el) {
-        el.focus();
-        // Pass the current value of the hashpath through the login:
-        var hiddenEl = Ext.get('hashpath');
-        hiddenEl.dom.setAttribute('value',window.location.hash);
-      }
-    });
-  </script>
-
   <title>[% title %]</title>
 
   <!-- Foundation framework -->
