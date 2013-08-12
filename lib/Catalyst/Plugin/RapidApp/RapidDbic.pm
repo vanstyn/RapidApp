@@ -105,27 +105,28 @@ before 'setup_components' => sub {
     };
   }
   
-  # NEW
-  $main_module_params->{dashboard_url} = $config->{dashboard_url}
-    if($config->{dashboard_url});
-  
+  # remap banner_template -> header_template
   $main_module_params->{header_template} = $config->{banner_template}
     if($config->{banner_template});
   
-  $main_module_params->{navtree_footer_template} = $config->{navtree_footer_template}
-    if($config->{navtree_footer_template});
+  my @copy_params = qw(
+    dashboard_url
+    navtree_footer_template
+    navtree_load_collapsed
+    navtree_disabled
+  );
+  $config->{$_} and $main_module_params->{$_} = $config->{$_} for (@copy_params);
   
-  my $share_dir = RapidApp->share_dir;
-  
-  # Allow accessing files in this dir under '#!/main/page?file=foo.tt'
-  if($config->{page_view_dir}) {
-    $main_module_params->{page_viewer_class} = 'RapidApp::AppPageViewer';
-    $main_module_params->{page_viewer_params} = { 
-      content_dir => $config->{page_view_dir},
-      alias_dirs => { rapidapp => $share_dir . '/pages' }
-    };
-  }
-  
+  # DEPRICATED BY Template::Controller
+  #my $share_dir = RapidApp->share_dir;
+  ## Allow accessing files in this dir under '#!/main/page?file=foo.tt'
+  #if($config->{page_view_dir}) {
+  #  $main_module_params->{page_viewer_class} = 'RapidApp::AppPageViewer';
+  #  $main_module_params->{page_viewer_params} = { 
+  #    content_dir => $config->{page_view_dir},
+  #    alias_dirs => { rapidapp => $share_dir . '/pages' }
+  #  };
+  #}
   
   my $cnf = {
     rootModuleClass => 'RapidApp::RootModule',
