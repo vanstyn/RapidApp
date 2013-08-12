@@ -14,11 +14,12 @@
   <script type="text/javascript">
     Ext.onReady(function(){
       var el = Ext.get('username');
-      if(el) { el.focus(); }
-      
-      // Pass the current value of the hashpath through the login:
-      var hiddenEl = Ext.get('hashpath');
-      hiddenEl.dom.setAttribute('value',window.location.hash);
+      if(el) {
+        el.focus();
+        // Pass the current value of the hashpath through the login:
+        var hiddenEl = Ext.get('hashpath');
+        hiddenEl.dom.setAttribute('value',window.location.hash);
+      }
     });
   </script>
 
@@ -79,29 +80,7 @@
             <div class="row m_cont">
               <div class="eight columns centered">
                 <div class="l_pane">
-                  <form action="[% form_post_url %]" method="post" class="nice" id="l_form">
-                  
-                    <input type="hidden" id="hashpath" name="hashpath" value="#">
-                  
-                    <div class="sepH_c">
-                      <div class="elVal">
-                        <label for="username">Username</label>
-                        <input type="text" id="username"  name="username" class="oversize expand input-text" />
-                      </div>
-                      <div class="elVal">
-                        <label for="password">Password</label>
-                        <input type="password" id="password"  name="password" class="oversize expand input-text" />
-                      </div>
-                    </div>
-
-                    <div class="cf" style="padding-bottom:30px;">
-                      <!--
-                      <label for="remember" class="left"><input type="checkbox" id="remember"> Remember me</label>
-                      -->
-                      <input type="submit" class="button small radius right black" value="Login" />
-                    </div>
-
-                  </form>
+                  [% INCLUDE rapidapp/public/login_form.tt %]
                 </div>
                 
                 <!--

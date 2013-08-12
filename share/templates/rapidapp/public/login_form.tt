@@ -1,0 +1,40 @@
+[% SET username = c.user.get_from_storage.username %]
+[% IF username %]
+
+  <center>
+    <p>
+      <h5>Logged in as: [% username %]</h5>
+    </p>
+    <p>
+      <h4><a target="_top" href="/auth/logout?redirect=/auth/login">Logout</a></h4>
+    </p>
+  </center>
+  <br>
+
+[% ELSE %]
+
+  <form action="[% form_post_url %]" method="post" class="nice" id="l_form">
+
+    <input type="hidden" id="hashpath" name="hashpath" value="#">
+
+    <div class="sepH_c">
+      <div class="elVal">
+        <label for="username">Username</label>
+        <input type="text" id="username"  name="username" class="oversize expand input-text" />
+      </div>
+      <div class="elVal">
+        <label for="password">Password</label>
+        <input type="password" id="password"  name="password" class="oversize expand input-text" />
+      </div>
+    </div>
+
+    <div class="cf" style="padding-bottom:30px;">
+      <!--
+      <label for="remember" class="left"><input type="checkbox" id="remember"> Remember me</label>
+      -->
+      <input type="submit" class="button small radius right black" value="Login" />
+    </div>
+
+  </form>
+
+[% END %]

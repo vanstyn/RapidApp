@@ -41,8 +41,10 @@ sub logout :Local :Args(0) {
   $c->logout;
   $c->delete_session('logout');
   
-  $c->response->redirect('/');
-  $c->response->body(' ');
+  my $redirect = $c->req->params->{redirect} || '/';
+  $redirect = "/$redirect" unless ($redirect =~ /^\//); #<-- enforce local
+  
+  $c->response->redirect($redirect);
   return $c->detach;
 }
 
