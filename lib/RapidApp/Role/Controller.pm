@@ -257,10 +257,10 @@ sub Controller {
 	
 	# dispatch the request to the appropriate handler
 	
-	$self->c->log->debug('--> ' . 
+	$c->log->debug('--> ' . 
 		GREEN.BOLD . ref($self) . CLEAR . '  ' . 
 		GREEN . join('/',@args) . CLEAR
-	);
+	) if ($c->debug);
 
 	$self->controller_dispatch(@args);
 }
@@ -359,11 +359,13 @@ sub controller_dispatch {
 		}
 	}
 	elsif ($ct ne 'JSON' && $ct ne 'text/x-rapidapp-form-response' && $self->auto_web1) {
-		$self->c->log->debug("--> " . GREEN . BOLD . "[web1_content]" . CLEAR . ". (no action)");
+		$self->c->log->debug("--> " . GREEN . BOLD . "[web1_content]" . CLEAR . ". (no action)")
+      if($self->c->debug);
 		return $self->web1_content;
 	}
 	else {
-		$self->c->log->debug("--> " . GREEN . BOLD . "[content]" . CLEAR . ". (no action)");
+		$self->c->log->debug("--> " . GREEN . BOLD . "[content]" . CLEAR . ". (no action)")
+      if($self->c->debug);
 		return $self->render_data($self->content);
 	}
 	
@@ -386,7 +388,7 @@ sub process_action {
 		GREEN.BOLD . ref($self) . CLEAR . '  ' . 
 		GREEN . "action{ " . $opt . " }" . CLEAR . '  ' . 
 		GREEN . join('/',@args) . CLEAR
-	);
+	) if ($self->c->debug);
 	
 	my $coderef = $self->get_action($opt) or die "No action named $opt";
 	
