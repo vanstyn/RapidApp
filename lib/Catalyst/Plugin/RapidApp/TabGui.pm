@@ -47,7 +47,8 @@ before 'setup_components' => sub {
       module => 'tpl_navtree',
       class => 'RapidApp::AppTemplateTree',
       params => {
-        template_regex => $config->{template_navtree_regex}
+        template_regex => $config->{template_navtree_regex},
+        default_expanded => $config->{template_navtree_expanded} || 0
       }
     });
   }

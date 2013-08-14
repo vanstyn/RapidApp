@@ -20,6 +20,12 @@ has 'template_regex', is => 'ro', isa => 'Maybe[Str]', default => sub {undef};
 
 sub TC { (shift)->c->template_controller }
 
+sub folder_template_tree_items {
+  my $self = shift;
+  my $items = $self->template_tree_items;
+  return $self->folder_convert($items);
+}
+
 sub template_tree_items {
 	my $self = shift;
   
@@ -65,20 +71,26 @@ sub fetch_nodes {
 	my $self = shift;
 	my ($node) = @_;
   
+  my $items;
+  
   # Return the root node without children to spare the
-  # template query until it is actually expanded:
-  return [{
-		id			=> 'tpl-list',
-		text		=> 'Templates',
-		expand		=> 0,
-	}] if ($node eq 'root');
+  # template query until it is actually expanded (unless default_expanded is set):
+  if ($node eq 'root') {
+    $items = [{
+      id			=> 'tpl-list',
+      text		=> 'Templates',
+      expanded	=> $self->default_expanded ? \1 : \0,
+    }];
+    $items->[0]->{children} = $self->folder_template_tree_items
+      if ($self->default_expanded);
+  }
+  else {
+    # The only other possible request is for the children of 
+    # 'root/tpl-list' above:
+    $items = $self->folder_template_tree_items;
+  }
   
-	# The only other possible request is for the children of 
-  # 'root/tpl-list' above:
-  my $items = $self->template_tree_items;
-  
-  #return $items;
-  return $self->folder_convert($items);
+  return $items;
 }
 
 # Splits and converts a flat list into an ExtJS tree/folder structure
@@ -103,6 +115,7 @@ sub folder_convert {
           id => 'tpl-' . $folder . '/',
           name => $folder . '/',
           text => $part,
+          expanded	=> $self->default_expanded ? \1 : \0,
           children => []
         };
         $self->apply_tpl_node($cnf);
