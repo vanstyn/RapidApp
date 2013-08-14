@@ -70,6 +70,9 @@ before 'setup_components' => sub {
   ) if ($c->_navcore_enabled);
   # ---
   
+  # Turn off the navtree if it has no items:
+  $config->{navtree_disabled} = 1 unless (@navtrees > 0);
+  
   my $main_module_params = {
     title => $config->{nav_title},
     right_footer => $config->{title},
