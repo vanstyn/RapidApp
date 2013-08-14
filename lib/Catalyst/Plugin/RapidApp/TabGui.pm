@@ -31,7 +31,7 @@ before 'setup_components' => sub {
     "No 'Plugin::RapidApp::TabGui' config specified!";
   
   $config->{title} ||= $c->config->{name};  
-  $config->{nav_title} ||= 'TabGui Navtree';
+  $config->{nav_title} ||= $config->{title};
   
   # --- We're aware of the AuthCore plugin, and if it is running we automatically 
   # set a banner with a logout link if no banner is specified:
