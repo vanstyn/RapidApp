@@ -346,7 +346,7 @@ sub controller_dispatch {
 	# if there were unprocessed arguments which were not an action, and there was no default action, generate a 404
 	# UPDATE: unless new 'accept_subargs' attr is true (see attribute declaration above)
 	if (defined $opt && !$self->accept_subargs) {
-		$self->c->log->debug("--> " . RED . BOLD . "unknown action: $opt" . CLEAR);
+		$self->c->log->debug("--> " . RED . BOLD . "unknown action: $opt" . CLEAR) if($self->c->debug);
 		if ($ct eq 'text/x-RapidApp-FormSubmitResponse'
 			|| $ct eq 'JSON'
 		) {
