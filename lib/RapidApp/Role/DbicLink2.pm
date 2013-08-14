@@ -253,7 +253,12 @@ sub prepare_rest_request {
 	# ignore paths that match store CRUD actions (store/create, store/read, store/update or store/destroy)
 	# (TODO: what happens on the off chance that there is a key named 'store' and a value named 'read'?)
 	my @crud = qw(create read update destroy);
-	return if ($rargs[1] eq 'store' && $rargs[0] ~~ @crud);
+  my %crudI = map {$_=>1} @crud;
+	return if (
+    $rargs[0] && $rargs[1] && 
+    $rargs[1] eq 'store' && 
+    $crudI{$rargs[0]}
+  );
 	
 	# -- peel of the rs (resultset) args if present:
 	my $rs;
