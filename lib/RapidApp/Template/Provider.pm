@@ -62,6 +62,8 @@ has 'new_template_path', is => 'ro', lazy => 1, default => sub{
 around 'fetch' => sub {
   my ($orig, $self, $name) = @_;
   
+  return $self->$orig($name) if (ref $name eq 'SCALAR');
+  
   $name = $self->Controller->_resolve_template_name($name);
   
   # Save the template fetch name:
@@ -90,6 +92,7 @@ around '_template_modified' => sub {
 # Wraps writable templates with a div (if enabled)
 around '_template_content' => sub {
   my ($orig, $self, @args) = @_;
+  
   my $template = $self->{template_fetch_name} || join('/',@args);
 
   return $self->$orig(@args) if ($self->template_exists($template));
