@@ -42,8 +42,42 @@ sub div_wrap {
   return $self->Access->template_writable($template);
 }
 
+#########################
+### FIXME FIXME FIXME ###
+## This is a fix for a problem that I do not fully understand. Sometimes
+## throwing an exception **causes** another exception to be thrown with
+## a bizarre message referencing Try::Tiny::Catch and not being able to
+## call ->type() without a package or object reference... This is **UGLY**
+## in that it just always throws the first exception encountered. $LAST_ERR
+## is reset in-place as well as at the top of process() but I'm not sure
+## how safe this is. It is not possible to localize it. The purpose of the
+## fix is just to show the actual/useful error instead of the bizarre one.
+our $LAST_ERR;
+around throw => sub {
+  my ($orig, $self, @args) = @_;
+  
+  try {
+    $self->$orig(@args);
+  }
+  catch {
+    my $err = shift;
+    if($LAST_ERR) {
+      $err = $LAST_ERR;
+      $LAST_ERR = undef;
+      die $err;
+    }
+
+    $LAST_ERR = $err;
+    die $err;
+  };
+};
+###
+#########################
+
 around 'process' => sub {
   my ($orig, $self, @args) = @_;
+  
+  $LAST_ERR = undef; #<-- FIXME!! (see around throw above)
 
   # This is probably a Template::Document object:
   my $template = blessed $args[0] ? $args[0]->name : $args[0];
@@ -153,5 +187,35 @@ sub _template_error_content {
     '</div>'
   );
 }
+
+
+######################
+# DISABLE ALL PLUGINS AND FILTERS -- NEEDED FOR SECURITY FOR NON-PRIV USERS --
+# TODO/FIXME: 
+#   1. Make this specific to non_admin templates only
+#   2. Add config option(s) to allow specific, known safe plugins/filters
+#
+around 'plugin' => sub {
+  my ($orig, $self, $name, @args) = @_;
+  
+  # All plugins disabled:
+  return $self->throw(
+    Template::Constants::ERROR_PLUGIN, 
+    "Load Plugin: '$name' - permission denied"
+  );
+};
+around 'filter' => sub {
+  my ($orig, $self, $name, @args) = @_;
+  
+  # All filters disabled:
+  return $self->throw(
+    Template::Constants::ERROR_FILTER, 
+    "Load Filter: '$name' - permission denied"
+  );
+};
+#
+######################
+
+
 
 1;
