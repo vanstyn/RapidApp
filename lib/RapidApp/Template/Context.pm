@@ -90,6 +90,11 @@ around 'process' => sub {
   }
   catch {
     my $err = shift;
+    
+    # Rethrow if this flag is set. This is needed specifically for
+    # the special _get_template_error() case in RapidApp::Template::Controller
+    die $err if ($self->Controller->{_no_exception_error_content});
+    
     $output = $self->_template_error_content(
       $template, $err,
       $self->Access->template_writable($template)

@@ -456,6 +456,7 @@ sub _get_template_error {
   local $self->{_div_wrap} = 1 if ($meth eq 'Template_wrap');
   my $vars = $self->Access->get_template_vars($template);
   my $output;
+  local $self->{_no_exception_error_content} = 1;
   return $TT->process( $template, $vars, \$output ) ? undef : $TT->error;
 }
 
