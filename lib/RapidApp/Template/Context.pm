@@ -194,32 +194,42 @@ sub _template_error_content {
 }
 
 
-######################
-# DISABLE ALL PLUGINS AND FILTERS -- NEEDED FOR SECURITY FOR NON-PRIV USERS --
-# TODO/FIXME: 
-#   1. Make this specific to non_admin templates only
-#   2. Add config option(s) to allow specific, known safe plugins/filters
-#
+##################################################
+# -- NEEDED FOR SECURITY FOR NON-PRIV USERS --
+#  DISABLE ALL PLUGINS AND FILTERS EXCEPT THOSE 
+#  SPECIFICALLY CONFIGURED TO BE ALLOWED
+has '_allowed_plugins_hash', default => sub {
+  my $self = shift;
+  return { map {lc($_)=>1} @{$self->Controller->allowed_plugins} };
+}, is => 'ro', lazy => 1;
+
+has '_allowed_filters_hash', default => sub {
+  my $self = shift;
+  return { map {lc($_)=>1} @{$self->Controller->allowed_filters} };
+}, is => 'ro', lazy => 1;
+
 around 'plugin' => sub {
   my ($orig, $self, $name, @args) = @_;
   
-  # All plugins disabled:
   return $self->throw(
     Template::Constants::ERROR_PLUGIN, 
-    "Load Plugin: '$name' - permission denied"
-  );
+    "USE '$name' - permission denied"
+  ) unless ($self->_allowed_plugins_hash->{lc($name)});
+    
+  return $self->$orig($name,@args);
 };
+
 around 'filter' => sub {
   my ($orig, $self, $name, @args) = @_;
   
-  # All filters disabled:
   return $self->throw(
     Template::Constants::ERROR_FILTER, 
-    "Load Filter: '$name' - permission denied"
-  );
+    "Load Filter '$name' - permission denied"
+  ) unless ($self->_allowed_filters_hash->{lc($name)});
+    
+  return $self->$orig($name,@args);
 };
-#
-######################
+##################################################
 
 
 

@@ -29,6 +29,33 @@ has 'provider_class', is => 'ro', default => 'RapidApp::Template::Provider';
 has 'access_class', is => 'ro', default => 'RapidApp::Template::Access';
 has 'access_params', is => 'ro', isa => 'HashRef', default => sub {{}};
 
+# -- 
+# Only these TT plugins and filters will be allowed in Templates
+# This is *very* important for security if non-admin users will
+# have access to modify templates. These templates and filters
+# are from the built-in list and are known to be safe. Examples
+# of unsafe plugins are things like 'Datafile' and 'DBI', and
+# examples of unsafe filters are things like 'eval', 'redirect', etc.
+# It is critical that these types of things are never exposed
+# to web interfaces. It is also important to note that TT was
+# not originally designed with "limited" access in mind - it was
+# only meant to be used by the programmer, not users. In hindsight,
+# it might have been better to go with Text::Xslate for this reason
+#
+# (note: these get accessed/used within RapidApp::Template::Context)
+has 'allowed_plugins', is => 'ro', default => sub {[qw(
+  Assert Date Dumper Format HTML Iterator 
+  Scalar String Table URL Wrap
+)]}, isa => 'ArrayRef';
+
+has 'allowed_filters', is => 'ro', default => sub {[qw(
+  format upper lower ucfirst lcfirst trim collapse 
+  html html_entity xml html_para html_break 
+  html_para_break html_line_break uri url indent 
+  truncate repeat remove replace null
+)]}, isa => 'ArrayRef';
+# --
+
 has 'default_template_extension', is => 'ro', isa => 'Maybe[Str]', default => 'tt';
 
 # If true, mouse-over edit controls will always be available for editable
