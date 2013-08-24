@@ -2,17 +2,16 @@ package Catalyst::Plugin::RapidApp::AuthCore;
 use Moose::Role;
 use namespace::autoclean;
 
-with 'Catalyst::Plugin::RapidApp';
+with 'Catalyst::Plugin::RapidApp::CoreSchema';
 
 use RapidApp::Include qw(sugar perlutil);
-require Module::Runtime;
 require Catalyst::Utils;
 use CatalystX::InjectComponent;
 
-require Catalyst::Plugin::Session::Store::DBIC;
-require Catalyst::Plugin::Session::State::Cookie;
-require Catalyst::Plugin::Authorization::Roles;
-require Catalyst::Authentication::Store::DBIx::Class;
+use Catalyst::Plugin::Session::Store::DBIC 0.14;
+use Catalyst::Plugin::Session::State::Cookie 0.17;
+use Catalyst::Plugin::Authorization::Roles 0.09;
+use Catalyst::Authentication::Store::DBIx::Class 0.1505;
 
 my @req_plugins = qw/
 Authentication
@@ -28,9 +27,6 @@ before 'setup_dispatcher' => sub {
   $c->setup_plugins($plugins) if (scalar(@$plugins) > 0);
   
   $c->config(
-    'Controller::Login' => {
-      #traits => ['-RenderAsTTTemplate'],
-    },
     'Plugin::Authentication' => {
       default_realm	=> 'progressive',
       realms => {
@@ -70,17 +66,10 @@ after 'setup_components' => sub {
   my $c = shift;
   
   CatalystX::InjectComponent->inject(
-    into => $c,
-    component => 'Catalyst::Model::RapidApp::CoreSchema',
-    as => 'Model::RapidApp::CoreSchema'
-  ) unless ($c->model('RapidApp::CoreSchema'));
-  
-  CatalystX::InjectComponent->inject(
       into => $c,
       component => 'Catalyst::Plugin::RapidApp::AuthCore::Controller::Auth',
       as => 'Controller::Auth'
   );
-  
 };
 
 after 'setup_finalize' => sub {
