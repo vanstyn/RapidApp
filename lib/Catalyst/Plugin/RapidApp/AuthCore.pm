@@ -21,43 +21,58 @@ Session::State::Cookie
 Session::Store::DBIC
 /;
 
+sub _authcore_config {
+  my $c = shift;
+  
+  $c->config->{'Plugin::RapidApp::AuthCore'} ||= {};
+  my $config = $c->config->{'Plugin::RapidApp::AuthCore'};
+  
+  $config->{credential} ||= {
+    class => 'Password',
+    password_field => 'password',
+    password_type => 'clear'
+  };
+  
+  $config->{store} ||= {
+    class => 'DBIx::Class',
+    user_model => 'RapidApp::CoreSchema::User',
+    role_relation => 'roles',
+    role_field => 'role',
+    use_userdata_from_session => '1',
+  };
+
+  return $config;
+}
+
 before 'setup_dispatcher' => sub {
   my $c = shift;
   my $plugins = [ grep { ! $c->registered_plugins($_) } @req_plugins ];
   $c->setup_plugins($plugins) if (scalar(@$plugins) > 0);
   
-  $c->config(
-    'Plugin::Authentication' => {
-      default_realm	=> 'progressive',
-      realms => {
-        progressive => {
-          class => 'Progressive',
-          realms => ['dbic'],
-        },
-        dbic => {
-          credential => {
-            class => 'Password',
-            password_field => 'password',
-            password_type => 'clear'
-          },
-          store => {
-            class => 'DBIx::Class',
-            user_model => 'RapidApp::CoreSchema::User',
-            role_relation => 'roles',
-            role_field => 'role',
-            use_userdata_from_session => '1',
-          }
-        }
+  my $config = $c->_authcore_config;
+  
+  # Allow the user to totally override the auto config:
+  $c->config->{'Plugin::Authentication'} ||= {
+    default_realm	=> 'progressive',
+    realms => {
+      progressive => {
+        class => 'Progressive',
+        realms => ['dbic'],
+      },
+      dbic => {
+        credential => $config->{credential},
+        store => $config->{store}
       }
-    },
-    'Plugin::Session' => {
-      dbic_class => 'RapidApp::CoreSchema::Session',
-      # TODO/FIXME: something is broken that prevents sessions from being
-      # extended which forces the user to reauth every 'expires' seconds
-      # regardless of recent requests. Need to dig into Plugin::Session
-      expires    => 60*60*8, #<-- 8 hours
     }
-  );
+  };
+  
+  $c->config->{'Plugin::Session'} ||= {
+    dbic_class => 'RapidApp::CoreSchema::Session',
+    # TODO/FIXME: something is broken that prevents sessions from being
+    # extended which forces the user to reauth every 'expires' seconds
+    # regardless of recent requests. Need to dig into Plugin::Session
+    expires    => 60*60*8, #<-- 8 hours
+  };
   
 };
 
