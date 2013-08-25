@@ -283,6 +283,7 @@ sub prepare_rest_request {
 	}
 	# ---
 	
+  return unless ($args[0]);
 	my $key = lc($args[0]) or return;
 	my $val = $args[1];
 	
@@ -1809,7 +1810,8 @@ sub apply_virtual_rel_col_update {
 		my @rrows = $Rs->search_rs({ $keycol => { '-in' => \@ids }})->all;
 		my $count = scalar @rrows;
 		
-		scream_color(WHITE.ON_BLUE.BOLD,"  --> Setting '$colname' m2m links (count: $count)");
+		scream_color(WHITE.ON_BLUE.BOLD,"  --> Setting '$colname' m2m links (count: $count)")
+      if($self->c->debug);
 		
 		$UpdRow->$method(\@rrows);
 	}
@@ -1849,7 +1851,7 @@ sub prepare_record_updates {
 		if($rel && !$UpdRow && $rel ~~ @{$self->update_create_rels} && $_{depth} == 1){
 			$UpdRow = $Row->create_related($rel,{})->get_from_storage;
 			my $msg = 'Auto CREATED RELATED -> ' . $self->get_Row_Rs_label($UpdRow) . "\n";
-			scream_color(WHITE.ON_GREEN.BOLD,$msg);
+			scream_color(WHITE.ON_GREEN.BOLD,$msg) if($self->c->debug);
 		}
 		#
 		# ----
@@ -1870,7 +1872,8 @@ sub prepare_record_updates {
 		# ---
 		
 		unless (defined $UpdRow) {
-			scream('NOTICE: Relationship/row "' . $rel . '" is not defined',\@columns); 
+			scream('NOTICE: Relationship/row "' . $rel . '" is not defined',\@columns)
+        if($self->c->debug);
 			
 			# New: Throw an error when trying to update a column through a missing relationship so
 			# the user knows instead of silenting ignoring those columns.
@@ -1888,7 +1891,8 @@ sub prepare_record_updates {
 		
 		# This should throw an error to the user, too:
 		if ($UpdRow->isa('DBIx::Class::ResultSet')) {
-			scream('NOTICE: Skipping multi relationship "' . $rel . '"'); 
+			scream('NOTICE: Skipping multi relationship "' . $rel . '"')
+        if($self->c->debug); 
 			return ' ';
 		}
 
@@ -1926,7 +1930,7 @@ sub prepare_record_updates {
 			else {
 				$msg .= 'No Changes';
 			}
-			scream_color(WHITE.ON_BLUE.BOLD,$msg);
+			scream_color(WHITE.ON_BLUE.BOLD,$msg) if($self->c->debug);
 		}
 		
 		push @update_queue,{ row => $UpdRow, change => $change };
@@ -2038,7 +2042,7 @@ sub _dbiclink_create_records {
 				else {
 					$msg .= 'Empty Record';
 				}
-				scream_color(WHITE.ON_GREEN.BOLD,$msg);
+				scream_color(WHITE.ON_GREEN.BOLD,$msg) if($self->c->debug);
 				my $Row = $Rs->create($create);
 				
 				push @updated_keyvals, $self->generate_record_pk_value({ $Row->get_columns });
@@ -2090,10 +2094,11 @@ sub _dbiclink_destroy_records {
 					
 					my $relObj = $Row->$rel;
 					
-					scream_color(WHITE.ON_RED.BOLD,'DbicLink2 DESTROY --> ' . ref($Row) . '->' . $rel . ' --> ' .$self->get_Row_Rs_label($relObj,1) . "\n");
+					scream_color(WHITE.ON_RED.BOLD,'DbicLink2 DESTROY --> ' . ref($Row) . '->' . $rel . ' --> ' .$self->get_Row_Rs_label($relObj,1) . "\n") if($self->c->debug);
 					$relObj->can('delete_all') ? $relObj->delete_all : $relObj->delete;
 				}
-				scream_color(WHITE.ON_RED.BOLD,'DbicLink2 DESTROY --> ' . $self->get_Row_Rs_label($Row,1) . "\n");
+				scream_color(WHITE.ON_RED.BOLD,'DbicLink2 DESTROY --> ' . $self->get_Row_Rs_label($Row,1) . "\n")
+          if($self->c->debug);
 				$Row->delete;
 			}
 		});

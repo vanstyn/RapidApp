@@ -604,7 +604,8 @@ sub enforce_max_pagesize {
 		%$new_params
 	);
 	
-	$self->c->log->info(ref($self) . '->enforce_max_pagesize: request params modified: ' . Dumper($new_params)); 
+	$self->c->log->info(ref($self) . '->enforce_max_pagesize: request params modified: ' . Dumper($new_params))
+    if($self->c->debug); 
 }
 
 sub read_raw {
