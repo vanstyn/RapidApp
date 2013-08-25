@@ -8,6 +8,10 @@ use RapidApp::Include qw(sugar perlutil);
 require Catalyst::Utils;
 use CatalystX::InjectComponent;
 
+use Switch qw(switch);
+use Digest;
+use RapidApp::CoreSchema;
+
 use Catalyst::Plugin::Session::Store::DBIC 0.14;
 use Catalyst::Plugin::Session::State::Cookie 0.17;
 use Catalyst::Plugin::Authorization::Roles 0.09;
@@ -34,17 +38,56 @@ sub _authcore_load_plugins {
   $c->setup_plugins($plugins) if (scalar(@$plugins) > 0);
 }
 
-sub _authcore_config {
+before 'setup_dispatcher' => sub {
   my $c = shift;
+  
+  # FIXME: see comments in Catalyst::Plugin::RapidApp::AuthCore::PlugHook
+  $c->_authcore_load_plugins;
   
   $c->config->{'Plugin::RapidApp::AuthCore'} ||= {};
   my $config = $c->config->{'Plugin::RapidApp::AuthCore'};
   
-  $config->{credential} ||= {
+  # Passthrough config:
+  if($config->{init_admin_password}) {
+    $c->config->{'Model::RapidApp::CoreSchema'} ||= {};
+    my $cs_cnf = $c->config->{'Model::RapidApp::CoreSchema'};
+    die "Conflicting 'init_admin_password' cnf (AuthCore/CoreSchema)" 
+      if ($cs_cnf->{init_admin_password});
+    $cs_cnf->{init_admin_password} = $config->{init_admin_password};
+  }
+  
+  die "AuthCore: don't use 'pw_type' with 'credential' config opts" if (
+    exists $config->{pw_type} && exists $config->{credential}
+  );
+  
+  my $cred = {
     class => 'Password',
-    password_field => 'password',
-    password_type => 'clear'
+    password_field => 'password'
   };
+  
+  # Combining password_type/password_hash_type into a single,
+  # simpler AuthCore-specific config that supports specific
+  # options (currently only 'clear'), with any other value 
+  # taken to be a hash type (i.e. 'SHA-1', 'MD5', etc). 
+  # Note that the whole 'credential' config can still be set 
+  # to override this, and the whole 'Plugin::Authentication'
+  # config can be set to override that...
+  # We're provide multiple layers of config overrides....
+  $config->{pw_type} ||= 'clear';
+  switch ($config->{pw_type}) {
+    case 'clear' {
+      $cred->{password_type} = 'clear';
+    }
+    else {
+      %$cred = ( %$cred,
+        password_type => 'hashed',
+        password_hash_type => $config->{pw_type}
+      );
+    }
+  }
+  
+  # pw_type is ignored if 'credential' is set
+  $config->{credential} ||= $cred;
   
   $config->{store} ||= {
     class => 'DBIx::Class',
@@ -56,36 +99,69 @@ sub _authcore_config {
   
   # Default session expire 1 hour
   $config->{expires} ||= 60*60;
-
-  return $config;
-}
-
-
-
-before 'setup_dispatcher' => sub {
-  my $c = shift;
   
-  # FIXME: see comments in Catalyst::Plugin::RapidApp::AuthCore::PlugHook
-  $c->_authcore_load_plugins;
+  # ---
+  # Setup the password_hasher() to be used when administratively setting
+  # passwords via the 'set_pw' virtual column. This provides a mechanism
+  # for changing paswords via the raw/default CoreSchema grid interface.
+  # Values entered in the column 'set_pw' are set in the 'password' column
+  # after being passed through the password_hasher coderef/function, which
+  # we are dynamically setting to match the supplied 'password_hash_type'
+  my $pw_hash_type = (
+    ! $c->config->{'Plugin::Authentication'} &&
+    $config->{credential}{password_type} &&
+    $config->{credential}{password_type} eq 'hashed'
+  ) ? $config->{credential}{password_hash_type} : undef;
   
-  my $config = $c->_authcore_config;
+  if($pw_hash_type) {
+    my $Digest = Digest->new($pw_hash_type);
+    # FIXME: this is ugly/global/evil. But it works... Assumes
+    # that the CoreSchema classes are only used here, which
+    # is a reasonable assumtion but technically the end-user
+    # app could be loading it too in which case this change would
+    # also reach into and effect other parts of the app.
+    RapidApp::CoreSchema::Result::User->password_hasher(sub {
+      my $new_pass = shift;
+      $Digest->reset->add($new_pass)->hexdigest;
+    });
+  }
+  # ---
+  
+  # Admin/backdoor option. This is useful if the pw_type is changed
+  # after the user database is already setup to be able to login and
+  # set the password to be hashed by the new function.
+  if($config->{no_validate_passwords} && !$c->config->{'Plugin::Authentication'}) {
+    $c->log->warn(join("\n",'',
+      ' AuthCore: WARNING: "no_validate_passwords" enabled. Any password',
+      ' typed will be accepted for any valid username. This is meant for',
+      ' temp admin access, don\'t forget to turn this back off!',''
+    ));
+    $config->{credential}{password_type} = 'none';
+  }
+  
+  $c->log->warn(
+    ' AuthCore: WARNING: using custom "Plugin::Authentication" config'
+  ) if ($c->config->{'Plugin::Authentication'});
   
   # Allow the user to totally override the auto config:
   $c->config->{'Plugin::Authentication'} ||= {
     default_realm	=> 'dbic',
     realms => {
       dbic => {
-        credential => $config->{credential},
-        store => $config->{store}
+        credential  => $config->{credential},
+        store       => $config->{store}
       }
     }
   };
   
-  $c->config->{'Plugin::Session'} ||= {
-    dbic_class => 'RapidApp::CoreSchema::Session',
-    expires => $config->{expires}
-  };
+  $c->log->warn(
+    ' AuthCore: WARNING: using custom "Plugin::Session" config'
+  ) if ($c->config->{'Plugin::Session'});
   
+  $c->config->{'Plugin::Session'} ||= {
+    dbic_class  => 'RapidApp::CoreSchema::Session',
+    expires     => $config->{expires}
+  };
 };
 
 

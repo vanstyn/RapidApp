@@ -4,6 +4,8 @@ use Moose;
 use strict;
 use warnings;
 
+use RapidApp::Include qw(sugar perlutil);
+
 extends 'Catalyst::Model::DBIC::Schema';
 
 use Catalyst::Model::DBIC::Schema::Types
@@ -39,6 +41,8 @@ has connect_info => (
     };
   }
 );
+
+has 'init_admin_password', is => 'ro', isa => Str, default => 'pass';
 
 has 'db_file', is => 'ro', isa => 'Str', default => 'rapidapp_coreschema.db';
 has 'dsn', is => 'ro', isa => 'Str', lazy => 1, default => sub { 
@@ -134,7 +138,7 @@ sub _insert_default_rows {
   
   $schema->resultset('User')->create({
     username => 'admin',
-    password => 'pass'
+    set_pw => $self->init_admin_password
   });
   
   $schema->resultset('Role')->create({
