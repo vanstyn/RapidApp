@@ -75,6 +75,7 @@ has '_rapiddbic_default_views_model_name', is => 'ro', isa => 'Maybe[Str]', lazy
   ) ? 'RapidApp::CoreSchema::DefaultView' : undef;
 };
 
+has 'toggle_edit_cells_init_off', is => 'ro', isa => 'Bool', default => 1;
 
 sub BUILD {
 	my $self = shift;
@@ -85,7 +86,7 @@ sub BUILD {
 		use_add_form => 'tab',
 		use_edit_form => 'window',
 		autoload_added_record => \1,
-    toggle_edit_cells_init_off => \1
+    toggle_edit_cells_init_off => $self->toggle_edit_cells_init_off ? \1 : \0,
 	);
   
   $self->add_plugin('grid-custom-headers');

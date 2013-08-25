@@ -44,12 +44,12 @@ before 'setup_components' => sub {
       },
       Role => {
         no_page => 1,
-        persist_immediately => {
-          create => \0,
-          update => \0,
-          destroy	=> \0
-        },
+        persist_immediately => { create => \0, update => \0, destroy	=> \0 },
         extra_extconfig => { use_add_form => \0 }
+      },
+      User => {
+        no_page => 1,
+        toggle_edit_cells_init_off => 0
       }
     }
   };

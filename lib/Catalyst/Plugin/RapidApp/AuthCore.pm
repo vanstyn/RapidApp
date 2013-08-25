@@ -10,6 +10,7 @@ use CatalystX::InjectComponent;
 
 use Switch qw(switch);
 use Digest;
+use Digest::SHA1 2.13;
 use RapidApp::CoreSchema;
 
 use Catalyst::Plugin::Session::Store::DBIC 0.14;
@@ -73,7 +74,7 @@ before 'setup_dispatcher' => sub {
   # to override this, and the whole 'Plugin::Authentication'
   # config can be set to override that...
   # We're provide multiple layers of config overrides....
-  $config->{pw_type} ||= 'clear';
+  $config->{pw_type} ||= 'SHA1';
   switch ($config->{pw_type}) {
     case 'clear' {
       $cred->{password_type} = 'clear';
