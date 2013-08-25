@@ -19,7 +19,20 @@ Authorization::Roles
 Session
 Session::State::Cookie
 Session::Store::DBIC
+RapidApp::AuthCore::PlugHook
 /;
+
+sub _authcore_load_plugins {
+  my $c = shift;
+  
+  # Note: these plugins have to be loaded like this because they
+  # aren't Moose Roles. But this causes load order issues that
+  # we overcome by loading our own extra plugin, 'RapidApp::AuthCore::PlugHook'
+  # which contains extra method modifiers that need to be applied
+  # after the other plugins are loaded.
+  my $plugins = [ grep { ! $c->registered_plugins($_) } @req_plugins ];
+  $c->setup_plugins($plugins) if (scalar(@$plugins) > 0);
+}
 
 sub _authcore_config {
   my $c = shift;
@@ -40,25 +53,27 @@ sub _authcore_config {
     role_field => 'role',
     use_userdata_from_session => '1',
   };
+  
+  # Default session expire 1 hour
+  $config->{expires} ||= 60*60;
 
   return $config;
 }
 
+
+
 before 'setup_dispatcher' => sub {
   my $c = shift;
-  my $plugins = [ grep { ! $c->registered_plugins($_) } @req_plugins ];
-  $c->setup_plugins($plugins) if (scalar(@$plugins) > 0);
+  
+  # FIXME: see comments in Catalyst::Plugin::RapidApp::AuthCore::PlugHook
+  $c->_authcore_load_plugins;
   
   my $config = $c->_authcore_config;
   
   # Allow the user to totally override the auto config:
   $c->config->{'Plugin::Authentication'} ||= {
-    default_realm	=> 'progressive',
+    default_realm	=> 'dbic',
     realms => {
-      progressive => {
-        class => 'Progressive',
-        realms => ['dbic'],
-      },
       dbic => {
         credential => $config->{credential},
         store => $config->{store}
@@ -68,20 +83,17 @@ before 'setup_dispatcher' => sub {
   
   $c->config->{'Plugin::Session'} ||= {
     dbic_class => 'RapidApp::CoreSchema::Session',
-    # TODO/FIXME: something is broken that prevents sessions from being
-    # extended which forces the user to reauth every 'expires' seconds
-    # regardless of recent requests. Need to dig into Plugin::Session
-    expires    => 60*60*8, #<-- 8 hours
+    expires => $config->{expires}
   };
   
 };
 
 
 after 'setup_components' => sub {
-  my $c = shift;
+  my $class = shift;
   
   CatalystX::InjectComponent->inject(
-      into => $c,
+      into => $class,
       component => 'Catalyst::Plugin::RapidApp::AuthCore::Controller::Auth',
       as => 'Controller::Auth'
   );
@@ -100,6 +112,7 @@ after 'setup_finalize' => sub {
     my $browser_req = $c->req->header('X-RapidApp-RequestContentType') ? 0 : 1;
     
     if ($c->session_is_valid and $c->user_exists) {
+      $c->delete_expired_sessions;
       $c->res->header('X-RapidApp-Authenticated' => $c->user->username);
     }
     else {
