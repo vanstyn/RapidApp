@@ -1915,6 +1915,7 @@ sub prepare_record_updates {
 			
 			$change = {};
 			foreach my $col (keys %update) {
+        no warnings 'uninitialized';
 				next unless (exists $current{$col});
 				next if (! defined $update{$col} and ! defined $current{$col});
 				next if ($update{$col} eq $current{$col});
