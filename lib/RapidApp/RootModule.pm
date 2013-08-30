@@ -97,7 +97,10 @@ around 'Controller' => sub {
     my ($opt) = @$args;
     
     # SPECIAL HANDLING FOR ROOT ('/') REQUEST:
-    return $self->content unless ($opt || $c->session->{RapidApp_username});
+    return $self->content unless ($opt || !$c->can('session') || (
+      $c->can('session') && $c->session &&
+      $c->session->{RapidApp_username}
+    ));
     
     return $self->$orig(@a) unless (
       $opt && !$self->has_subarg($opt) &&
