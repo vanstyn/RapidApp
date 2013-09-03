@@ -39,6 +39,14 @@ sub read_records {
 	# DbicLink2 methods
 	$Rs = $self->RapidApp::Role::DbicLink2::chain_Rs_req_explicit_resultset($Rs);
 	
+  
+  # -- NEW: if no order_by is defined, set it to by on the displayField
+  # which is the most obvious/useful behavior:
+  $Rs = $Rs->search_rs(undef,{
+    order_by => $self->displayField
+  }) unless (exists $Rs->{attrs}{order_by});
+  # --
+  
 	my @rows = ();
 	foreach my $row ($Rs->all) {
 		my $data = { $row->get_columns };
