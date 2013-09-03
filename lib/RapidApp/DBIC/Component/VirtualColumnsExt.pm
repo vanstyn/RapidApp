@@ -3,6 +3,9 @@ package RapidApp::DBIC::Component::VirtualColumnsExt;
 # this is for Attribute::Handlers:
 require base; base->import('DBIx::Class');
 
+use strict;
+use warnings;
+
 use RapidApp::Include qw(sugar perlutil);
 
 # Load the vanilla/original DBIx::Class::VirtualColumns component:
@@ -107,7 +110,7 @@ sub init_virtual_column_value {
 	my $Source = $self->result_source;
 	my $cond = { map { $rel . '.' . $_ => $self->get_column($_) } $Source->primary_columns };
 	my $attr = {
-		select => [{ '' => \"($sql)", -as => $col }],
+		select => [{ '' => \"($sql)", -as => $column }],
 		as => [$column],
 		result_class => 'DBIx::Class::ResultClass::HashRefInflator'
 	};
@@ -118,7 +121,8 @@ sub init_virtual_column_value {
 	# optionally update a supplied reference, passed by argument:
 	$$valref = $row->{$column} if (ref($valref) eq 'SCALAR');
 	
-	return $self->store_column($column,$row->{$column});
+  local $self->{_virtual_columns_no_prepare_set} = 1;
+  return $self->store_column($column,$row->{$column});
 }
 
 
@@ -130,7 +134,10 @@ sub init_virtual_column_value {
 sub prepare_set {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-	
+  
+  # Check special flag to abort preparing set functions
+  return if ($self->{_virtual_columns_no_prepare_set});
+  
 	return unless (defined $self->_virtual_columns);
 	$self->{_virtual_columns_pending_set_function} ||= {};
 	foreach my $column (keys %opt) {
@@ -152,43 +159,45 @@ sub execute_pending_set_functions {
 	}
 }
 
-# Updated: removed 'store_column' hook because it is redundant,
-# and worse appears to get called for columns that aren't actually
-# being changed. This causes virtual columns with set functions to
-# clobber any other columns they might modify, regardless of 
-# whether or not the virtual column is actually being changed
-#sub store_column {
-#   my ($self, $column, $value) = @_;
-#   $self->prepare_set($column,$value);
-#   return $self->next::method($column, $value);
-#}
+sub store_column {
+   my ($self, $column, $value) = @_;
+   $self->prepare_set($column,$value);
+   return $self->next::method($column, $value);
+}
 
 sub set_column {
-    my ($self, $column, $value) = @_;
-	$self->prepare_set($column,$value);
-    return $self->next::method($column, $value);
+  my ($self, $column, $value) = @_;
+  $self->prepare_set($column,$value);
+  return $self->next::method($column, $value);
 }
 
 sub update {
-    my $self = shift;
-	$self->prepare_set(@_);
- 
-    # Do regular update
-    $self->next::method(@_);
+  my $self = shift;
+  $self->prepare_set(@_);
+  
+  # Disable preparing any more set functions. We need to do this
+  # because update() will call store_column() on every column (which
+  # in turn calls prepare_set). We only want to prepare_set for 
+  # virtual columns which are actually being changed, and that has
+  # already happened by this point.
+  local $self->{_virtual_columns_no_prepare_set} = 1;
+  
+  # Do regular update
+  $self->next::method(@_);
     
-	$self->execute_pending_set_functions;
-    return $self;
+  $self->execute_pending_set_functions;
+  return $self;
 }
 
 sub insert {
-    my $self = shift;
-	$self->prepare_set(@_);
+  my $self = shift;
+  $self->prepare_set(@_);
  
-    # Do regular insert
-    $self->next::method(@_);
+  # Do regular insert
+  $self->next::method(@_);
     
-	$self->execute_pending_set_functions;
-    return $self;
+  $self->execute_pending_set_functions;
+  return $self;
 }
 
 
