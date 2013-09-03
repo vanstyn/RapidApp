@@ -152,11 +152,16 @@ sub execute_pending_set_functions {
 	}
 }
 
-sub store_column {
-    my ($self, $column, $value) = @_;
-	$self->prepare_set($column,$value);
-    return $self->next::method($column, $value);
-}
+# Updated: removed 'store_column' hook because it is redundant,
+# and worse appears to get called for columns that aren't actually
+# being changed. This causes virtual columns with set functions to
+# clobber any other columns they might modify, regardless of 
+# whether or not the virtual column is actually being changed
+#sub store_column {
+#   my ($self, $column, $value) = @_;
+#   $self->prepare_set($column,$value);
+#   return $self->next::method($column, $value);
+#}
 
 sub set_column {
     my ($self, $column, $value) = @_;
