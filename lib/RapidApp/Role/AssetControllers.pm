@@ -148,4 +148,13 @@ before 'inject_asset_controllers' => sub {
 };
 
 
+after 'setup_components' => sub {
+  my $c = shift;
+  
+  # Call to throw any exceptions at start-up:
+  $c->all_html_head_tags;
+  
+  1;
+};
+
 1;
