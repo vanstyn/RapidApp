@@ -2,7 +2,8 @@ package RapidApp::Spreadsheet::ParseExcelExt;
 
 1;
 
-package Spreadsheet::ParseExcel::Worksheet;
+package # Hide from PAUSE
+  Spreadsheet::ParseExcel::Worksheet;
 
 sub cell_text {
 	my $self= shift;
