@@ -9,8 +9,7 @@ require Catalyst::Utils;
 use CatalystX::InjectComponent;
 
 use Switch qw(switch);
-use Digest;
-use Digest::SHA1 2.13;
+use Module::Runtime;
 use RapidApp::CoreSchema;
 
 use Catalyst::Plugin::Session::Store::DBIC 0.14;
@@ -61,34 +60,14 @@ before 'setup_dispatcher' => sub {
     exists $config->{pw_type} && exists $config->{credential}
   );
   
-  my $cred = {
+  # Default session expire 1 hour
+  $config->{expires} ||= 60*60;
+  
+  $config->{credential} ||= {
     class => 'Password',
-    password_field => 'password'
+    password_field => 'password',
+    password_type => 'self_check'
   };
-  
-  # Combining password_type/password_hash_type into a single,
-  # simpler AuthCore-specific config that supports specific
-  # options (currently only 'clear'), with any other value 
-  # taken to be a hash type (i.e. 'SHA-1', 'MD5', etc). 
-  # Note that the whole 'credential' config can still be set 
-  # to override this, and the whole 'Plugin::Authentication'
-  # config can be set to override that...
-  # We're provide multiple layers of config overrides....
-  $config->{pw_type} ||= 'SHA1';
-  switch ($config->{pw_type}) {
-    case 'clear' {
-      $cred->{password_type} = 'clear';
-    }
-    else {
-      %$cred = ( %$cred,
-        password_type => 'hashed',
-        password_hash_type => $config->{pw_type}
-      );
-    }
-  }
-  
-  # pw_type is ignored if 'credential' is set
-  $config->{credential} ||= $cred;
   
   $config->{store} ||= {
     class => 'DBIx::Class',
@@ -98,35 +77,16 @@ before 'setup_dispatcher' => sub {
     use_userdata_from_session => '1',
   };
   
-  # Default session expire 1 hour
-  $config->{expires} ||= 60*60;
-  
-  # ---
-  # Setup the password_hasher() to be used when administratively setting
-  # passwords via the 'set_pw' virtual column. This provides a mechanism
-  # for changing paswords via the raw/default CoreSchema grid interface.
-  # Values entered in the column 'set_pw' are set in the 'password' column
-  # after being passed through the password_hasher coderef/function, which
-  # we are dynamically setting to match the supplied 'password_hash_type'
-  my $pw_hash_type = (
-    ! $c->config->{'Plugin::Authentication'} &&
-    $config->{credential}{password_type} &&
-    $config->{credential}{password_type} eq 'hashed'
-  ) ? $config->{credential}{password_hash_type} : undef;
-  
-  if($pw_hash_type) {
-    my $Digest = Digest->new($pw_hash_type);
-    # FIXME: this is ugly/global/evil. But it works... Assumes
-    # that the CoreSchema classes are only used here, which
-    # is a reasonable assumtion but technically the end-user
-    # app could be loading it too in which case this change would
-    # also reach into and effect other parts of the app.
-    RapidApp::CoreSchema::Result::User->password_hasher(sub {
-      my $new_pass = shift;
-      $Digest->reset->add($new_pass)->hexdigest;
-    });
+  if($config->{passphrase_class}) {
+    Module::Runtime::require_module($config->{passphrase_class});
+    my $rclass = 'RapidApp::CoreSchema::Result::User';
+    $rclass->authen_passphrase_class($config->{passphrase_class});
+    if(exists $config->{passphrase_params}) {
+      die "passphrase_params must be a HashRef" 
+        unless (ref $config->{passphrase_params} eq 'HASH');
+      $rclass->authen_passphrase_params($config->{passphrase_params});
+    }
   }
-  # ---
   
   # Admin/backdoor option. This is useful if the pw_type is changed
   # after the user database is already setup to be able to login and

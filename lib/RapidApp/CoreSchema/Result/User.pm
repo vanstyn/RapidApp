@@ -8,7 +8,9 @@ use MooseX::NonMoose;
 use namespace::autoclean;
 extends 'DBIx::Class::Core';
 
-__PACKAGE__->load_components("InflateColumn::DateTime");
+use DBIx::Class::PassphraseColumn 0.02;
+
+__PACKAGE__->load_components("InflateColumn::DateTime","PassphraseColumn");
 
 __PACKAGE__->table('user');
 
@@ -22,8 +24,23 @@ __PACKAGE__->add_columns(
   },
   "username",
   { data_type => "varchar", is_nullable => 0, size => 32 },
-  "password",
-  { data_type => "varchar", is_nullable => 1, size => 255 },
+  #"password",
+  #{ data_type => "varchar", is_nullable => 1, size => 255 },
+  
+  password => {
+    is_serializable => 1,
+    data_type => 'varchar',
+    is_nullable => 1,
+    size => 'max',
+    passphrase => 'rfc2307',
+    passphrase_class => 'BlowfishCrypt',
+    passphrase_args => {
+      cost        => 9,
+      salt_random => 1,
+    },
+    passphrase_check_method => 'check_password',
+  },
+  
   "full_name",
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "last_login_ts",
@@ -72,11 +89,11 @@ __PACKAGE__->TableSpec_m2m( roles => "user_to_roles", 'role');
 # ----
 # TODO/FIXME: This is ugly/global, but works. This virtual column
 # provides a column-based interface to set the password, optionally
-# passing it through a custom password hasher function. The ugly
-# part is that the password hasher is set on the class...
+# passing it through a custom Authen::Passphrase class. The ugly
+# part is that the Authen::Passphrase class setting is set on the class...
 # This is being set by Catalyst::Plugin::RapidApp::AuthCore
-__PACKAGE__->mk_classdata( 'password_hasher' );
-__PACKAGE__->password_hasher( sub { (shift) } ); # 'clear'
+__PACKAGE__->mk_classdata( 'authen_passphrase_class' );
+__PACKAGE__->mk_classdata( 'authen_passphrase_params' );
 __PACKAGE__->add_virtual_columns( set_pw => {
 	data_type => "varchar", 
 	is_nullable => 1, 
@@ -84,8 +101,26 @@ __PACKAGE__->add_virtual_columns( set_pw => {
   set_function => sub {
     my ($self,$pw) = @_;
     if($pw && $pw ne '') {
-      my $pass = $self->password_hasher->($pw) || $pw;
-      $self->set_column( password => $pass );
+      if($self->authen_passphrase_class) {
+        my %params = (
+          %{ $self->authen_passphrase_params || {} },
+          passphrase => $pw
+        );
+        
+        $pw = $self->authen_passphrase_class->new(%params);
+        
+        # TODO/FIXME: I thought I could pass an Authen::Passphrase object
+        # to the PassphraseColumn, but it seemed to always only create the
+        # default set in passphrase_class, so I am just doing it manually
+        my $pf = $pw->can('as_rfc2307') 
+          ? $pw->as_rfc2307 : join('','{CRYPT}',$pw->as_crypt);
+        
+        $self->store_column( password => $pf );
+        $self->make_column_dirty('password');
+      }
+      else {
+        $self->password($pw);
+      }
       $self->update;
     }
   }
@@ -103,8 +138,8 @@ __PACKAGE__->TableSpec_set_conf(
   priority_rel_columns => 1,
   columns => {
     id            => { width => 40,   profiles => ['noedit'] },
-    username      => { width => 90,    },
-    password      => { width => 70, profiles => ['noedit']   },
+    username      => { width => 90,   },
+    password      => { width => 70,    profiles => ['noedit'] },
     full_name     => { width => 120, hidden => \1   },
     
     last_login_ts => { 
