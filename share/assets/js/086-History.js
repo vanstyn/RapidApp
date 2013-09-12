@@ -124,6 +124,10 @@ Ext.ux.RapidApp.HashNav = {
 			window.location.hash = hashpath;
 		}
 	},
+  
+  clearHashpath: function() {
+    window.location.hash = '';
+  },
 	
 	handleHashChange: function(hashpath) {
     if(Ext.ux.RapidApp.HashNav.ignoreHashChange) {

@@ -53,6 +53,11 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 				var load = tab.autoLoad;
 				Ext.ux.RapidApp.HashNav.setHashpath(load);
 			}
+      else {
+        // Only happens when all tabs are closed (which means
+        // there is no dashboard - or it has been made closable)
+        Ext.ux.RapidApp.HashNav.clearHashpath();
+      }
 			
 			var title = tab ? tab.title : null;
 			Ext.ux.RapidApp.HashNav.updateTitle(title);
