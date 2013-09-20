@@ -87,6 +87,15 @@ sub BUILD {
 		use_edit_form => 'window',
 		autoload_added_record => \1,
     toggle_edit_cells_init_off => $self->toggle_edit_cells_init_off ? \1 : \0,
+    
+    # Nice default for the add tab:
+    store_button_cnf => {
+      add => {
+        text    => 'Add ' . $self->ResultClass->TableSpec_get_conf('title'),
+        iconCls => 'ra-icon-add'
+      },
+    }
+    
 	);
   
   $self->add_plugin('grid-custom-headers');
