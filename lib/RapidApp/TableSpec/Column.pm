@@ -171,6 +171,9 @@ sub DEFAULT_PROFILES {{
 			 renderer => ['Ext.ux.RapidApp.num2pct'],
 			 summary_functions => \@number_summary_funcs
 		},
+		noadd => {
+			allow_add => \0,
+		},
 		noedit => {
 			editor => '',
 			allow_edit => \0,
