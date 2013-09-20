@@ -298,6 +298,7 @@ sub get_add_edit_form_items {
 		$field->{header} = $Cnf->{header} if(defined $Cnf->{header});
 		$field->{header} = $colname unless (defined $field->{header} and $field->{header} ne '');
 		$field->{fieldLabel} = $field->{header};
+    $field->{anchor} = '-20';
 		
 		push @items, $field;
 	}
