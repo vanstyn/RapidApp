@@ -854,11 +854,12 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 	win_height: 450,
 	value: null,
 	preloadAppWindow: true,
-	displayCache: {},
 	queryResolveInterval: 50,
 	
 	initComponent: function() {
 		Ext.ux.RapidApp.DataStoreAppField.superclass.initComponent.call(this);
+    
+    this.displayCache = {};
 		
 		if(!this.valueField || !this.displayField || this.valueField == this.displayField) {
 			this.noDisplayLookups = true;
