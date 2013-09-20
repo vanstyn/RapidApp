@@ -1204,6 +1204,16 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 					layout: 'fit',
 					cmpListeners: {
 						afterrender: function(){
+            
+              // If this is a grid, take over its rowdblclick event to
+              // make it call the select_fn function
+              if(this.hasListener('rowdblclick')) {
+                // Clear all existing rowdblclick events
+                this.events.rowdblclick = true;
+                this.on('rowdblclick',function(grid,rowIndex,e){
+                  select_fn(null);
+                },this);
+              }
 							
 							// Save references in the window and field:
 							win.app = this, field.appStore = this.store;
@@ -1339,7 +1349,6 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 							this.loadTargetObj = null;
 							
 						},
-						rowdblclick: function(){ select_fn(null); }
 					},
 					cmpConfig: cmpConfig,
 					update_cmpConfig: update_cmpConfig
