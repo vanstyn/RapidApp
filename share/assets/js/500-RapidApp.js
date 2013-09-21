@@ -3333,9 +3333,20 @@ Ext.ux.RapidApp.menu.ToggleSubmenuItem = Ext.extend(Ext.menu.Item,{
 					this.origMenu.show.defer(100,this.origMenu,[btn.getEl(),'tr?']);
 				}
 			}
+      
+      this.on('afterrender',this.hookParentMenu,this);
 		}
 		Ext.ux.RapidApp.menu.ToggleSubmenuItem.superclass.initComponent.call(this);
 	},
+  
+  // Manually hook into the parent menu and hide when it does. We broke
+  // ties with the parent menu on purpose to achieve the toggle functionality
+  // so we need to manually reconnect with the hide event
+  hookParentMenu: function() {
+    if(this.parentMenu) {
+      this.parentMenu.on('hide',this.origMenu.hide,this.origMenu);
+    }
+  },
 	
 	onSubmenuShow: function() {
 		this.setShowPending(false);
