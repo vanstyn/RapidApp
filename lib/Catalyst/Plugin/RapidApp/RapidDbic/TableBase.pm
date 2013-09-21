@@ -17,17 +17,9 @@ with
 use RapidApp::Include qw(sugar perlutil);
 use Switch 'switch';
 
-has '+use_add_form', default => 'tab';
-has '+use_edit_form', default => 'window';
-has '+autoload_added_record', default => 1;
-has '+use_column_summaries', default => 1;
-has '+use_autosize_columns', default => 1;
-has '+auto_autosize_columns', default => 0;
-
 has 'page_class', is => 'ro', isa => 'Str', default => 'RapidApp::DbicAppPropertyPage';
 has 'page_params', is => 'ro', isa => 'HashRef', default => sub {{}};
 has 'no_page', is => 'ro', isa => 'Bool', default => 0;
-
 has 'source_model', is => 'ro', isa => 'Maybe[Str]', default => undef;
 
 # This is an option of RapidApp::AppGrid2 that will allow double-click to open Rows:
@@ -63,6 +55,19 @@ has '+persist_immediately', default => sub {{
 	destroy	=> \0
 }};
 
+has '+use_add_form', default => sub {
+  my $self = shift;
+  # Default to tab unless 'create' is not set to persist_immediately
+  return (
+    $self->persist_all_immediately ||
+    jstrue( $self->persist_immediately->{create} )
+  ) ? 'tab' : undef;
+};
+
+has '+use_edit_form', default => 'window';
+has '+use_column_summaries', default => 1;
+has '+use_autosize_columns', default => 1;
+has '+auto_autosize_columns', default => 0;
 
 has 'extra_extconfig', is => 'ro', isa => 'HashRef', default => sub {{}};
 
@@ -78,30 +83,14 @@ has '_rapiddbic_default_views_model_name', is => 'ro', isa => 'Maybe[Str]', lazy
   ) ? 'RapidApp::CoreSchema::DefaultView' : undef;
 };
 
-has 'toggle_edit_cells_init_off', is => 'ro', isa => 'Bool', default => 1;
+
 
 sub BUILD {
 	my $self = shift;
   
-	# Need to turn on "use_add_form" (tab or window) to use a form to create new rows.
-	# without this the new row would be created with empty default values, instantly
-	$self->apply_extconfig(
-		
-    toggle_edit_cells_init_off => $self->toggle_edit_cells_init_off ? \1 : \0,
-    
-    # Nice default for the add tab:
-    store_button_cnf => {
-      add => {
-        text    => 'Add ' . $self->ResultClass->TableSpec_get_conf('title'),
-        iconCls => 'ra-icon-add'
-      },
-    }
-    
-	);
-  
   $self->add_plugin('grid-custom-headers');
 	
-	# Turn off editing for primary columns:
+	# Turn off editing for primary columns: (FIXME!)
 	$self->apply_columns( $_ => { allow_edit => \0 } ) for ($self->ResultSource->primary_columns);
 	
 	

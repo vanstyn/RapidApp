@@ -8,6 +8,14 @@ use RapidApp::Include qw(sugar perlutil);
 
 has 'show_base_conditions_in_header', is => 'ro', isa => 'Bool', default => 1;
 
+has 'toggle_edit_cells_init_off', default => sub {
+  my $self = shift;
+  # Set to the same value as 'use_add_form' (defaults to false, see DataStore2).
+  # If there is no add form, it doesn't make sense to have cell editing
+  # off by default. Otherwise, intial edit state defaults to off
+  return $self->use_add_form ? 1 : 0;
+}, is => 'ro', isa => 'Bool', lazy => 1;
+
 sub BUILD {
 	my $self = shift;
 	
@@ -21,7 +29,18 @@ sub BUILD {
     $self->add_plugin('grid-toggle-edit-cells');
 	}
 	
-	$self->apply_extconfig( setup_bbar_store_buttons => \1 );
+	$self->apply_extconfig( 
+    setup_bbar_store_buttons => \1,
+    toggle_edit_cells_init_off => $self->toggle_edit_cells_init_off ? \1 : \0,
+    
+    # Sane default for the add button/tab:
+    store_button_cnf => {
+      add => {
+        text    => 'Add ' . $self->ResultClass->TableSpec_get_conf('title'),
+        iconCls => 'ra-icon-add'
+      },
+    }
+  );
 	
 	$self->apply_default_tabtitle;
 	

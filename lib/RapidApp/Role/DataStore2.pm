@@ -27,14 +27,17 @@ has 'persist_immediately' => ( is => 'ro', isa => 'HashRef', default => sub{{
 }});
 
 # use_add_form/use_edit_form: 'tab', 'window' or undef
-has 'use_add_form', is => 'ro', isa => 'Maybe[Str]', default => undef;
-has 'use_edit_form', is => 'ro', isa => 'Maybe[Str]', default => undef;
-has 'autoload_added_record', is => 'ro', isa => 'Bool', default => 0;
+has 'use_add_form', is => 'ro', isa => 'Maybe[Str]', lazy => 1, default => undef;
+has 'use_edit_form', is => 'ro', isa => 'Maybe[Str]', lazy => 1, default => undef;
+has 'autoload_added_record', default => sub {
+  my $self = shift;
+  # Default to the same value as 'use_add_form'
+  return $self->use_add_form ? 1 : 0;
+}, is => 'ro', isa => 'Bool', lazy => 1;
+
 has 'allow_batch_update', is => 'ro', isa => 'Bool', default => 1;
 has 'batch_update_max_rows', is => 'ro', isa => 'Int', default => 500;
 has 'confirm_on_destroy', is => 'ro', isa => 'Bool', default => 1;
-
-
 
 # not implimented yet:
 #has 'batch_update_warn_rows', is => 'ro', isa => 'Int', default => 100;
