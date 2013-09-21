@@ -26,10 +26,15 @@ has 'persist_immediately' => ( is => 'ro', isa => 'HashRef', default => sub{{
 	destroy	=> \0
 }});
 
+# use_add_form/use_edit_form: 'tab', 'window' or undef
+has 'use_add_form', is => 'ro', isa => 'Maybe[Str]', default => undef;
+has 'use_edit_form', is => 'ro', isa => 'Maybe[Str]', default => undef;
+has 'autoload_added_record', is => 'ro', isa => 'Bool', default => 0;
 has 'allow_batch_update', is => 'ro', isa => 'Bool', default => 1;
 has 'batch_update_max_rows', is => 'ro', isa => 'Int', default => 500;
-
 has 'confirm_on_destroy', is => 'ro', isa => 'Bool', default => 1;
+
+
 
 # not implimented yet:
 #has 'batch_update_warn_rows', is => 'ro', isa => 'Int', default => 100;
@@ -160,6 +165,9 @@ after 'BUILD' => sub {
 	$self->apply_extconfig(
 		persist_all_immediately => \scalar($self->persist_all_immediately),
 		persist_immediately => $self->persist_immediately,
+    use_add_form => $self->use_add_form,
+    use_edit_form => $self->use_edit_form,
+    autoload_added_record => $self->autoload_added_record ? \1 : \0,
 		cache_total_count => $self->cache_total_count ? \1 : \0,
 		confirm_on_destroy => $self->confirm_on_destroy ? \1 : \0
 	);

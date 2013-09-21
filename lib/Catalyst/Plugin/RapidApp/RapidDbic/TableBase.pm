@@ -17,6 +17,9 @@ with
 use RapidApp::Include qw(sugar perlutil);
 use Switch 'switch';
 
+has '+use_add_form', default => 'tab';
+has '+use_edit_form', default => 'window';
+has '+autoload_added_record', default => 1;
 has '+use_column_summaries', default => 1;
 has '+use_autosize_columns', default => 1;
 has '+auto_autosize_columns', default => 0;
@@ -83,9 +86,7 @@ sub BUILD {
 	# Need to turn on "use_add_form" (tab or window) to use a form to create new rows.
 	# without this the new row would be created with empty default values, instantly
 	$self->apply_extconfig(
-		use_add_form => 'tab',
-		use_edit_form => 'window',
-		autoload_added_record => \1,
+		
     toggle_edit_cells_init_off => $self->toggle_edit_cells_init_off ? \1 : \0,
     
     # Nice default for the add tab:
