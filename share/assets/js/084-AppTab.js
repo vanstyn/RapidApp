@@ -1192,13 +1192,21 @@ Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler = function(cmp,url,all_pages,
 			options.params.export_filename = export_filename;
 			
 			var timeout = 900000; // 15-minutes
-
-			if(Ext.isGecko) { // FireFox
+      
+      // ---------------
+      // 2013-09-21 by HV:
+      // CUSTOM FIREFOX HANDLING BYPASSED/DISABLED (See Github Issue #7)
+      //  This interactive mode is better, but only ever worked in
+      //  FireFox, but recently, it has stopped working there too, so
+      //  this code is just being bypassed for now, but I'm leaving the
+      //  code here for reference later on
+			if(false && Ext.isGecko) { // FireFox (<-- now always false)
 				// Interactive window download:
 				return Ext.ux.RapidApp.winDownload(
 					url,options.params,"Exporting data to Excel...",timeout
 				);
 			}
+      // ---------------
 			else {
 				// Background download, since non-FF browsers can't detect download complete and
 				// close the window:
