@@ -1024,7 +1024,11 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			});
 		});
 		
-		store.on('exception',store.undoChanges,store);
+    // Removed this exception hook because it is redundant and can cause
+    // problems when rolling back certain changes. The store already fully
+    // handles reverting itself when a save/persist operation fails.
+    // Fixes Github Issue #11
+    //store.on('exception',store.undoChanges,store);
 	},
 	
 	// Only applies to Editor Grids implementing the 'beforeedit' event
