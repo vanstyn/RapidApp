@@ -1725,9 +1725,8 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		}
 	},
 	
-	hdIcos: {},
-	
 	updateColumnHeadings: function () {
+    this.hdIcos = this.hdIcos || {};
 		var view = this.grid.getView(),
 			hds, i, len, summary_data;
 		if (view.mainHd) {

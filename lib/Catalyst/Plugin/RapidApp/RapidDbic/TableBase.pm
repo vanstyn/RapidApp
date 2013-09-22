@@ -84,10 +84,6 @@ sub BUILD {
   
   $self->add_plugin('grid-custom-headers');
 	
-	# Turn off editing for primary columns: (FIXME!)
-	$self->apply_columns( $_ => { allow_edit => \0 } ) for ($self->ResultSource->primary_columns);
-	
-	
 	# Apply a width to all columns:
 	#$self->apply_to_all_columns({ width => 130 });
 	(exists $self->columns->{$_}->{width}) or $self->apply_columns( $_ => { width => 130 } )
