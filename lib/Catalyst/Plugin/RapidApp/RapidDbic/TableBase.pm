@@ -47,7 +47,16 @@ has '+include_colspec', default => sub{[qw(*)]};
 has '+updatable_colspec', default => undef;
 has '+creatable_colspec', default => undef;
 has '+destroyable_relspec', default => undef;
-has '+persist_all_immediately', default => 1;
+
+# Note: setting the default individually instead of setting
+# persist_all_immediately because the latter takes priority
+# and we want our consumers to be able to set these without
+# having to also set 'persist_all_immediately => 0'
+has '+persist_immediately', default => sub {{
+  create => 1,
+  update => 1,
+  destroy => 1
+}};
 
 has '+use_add_form', default => sub {
   my $self = shift;
