@@ -930,6 +930,15 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		else {
 			this.store.load({ params: store_load_parms });
 		}
+    
+    // -- Hooks to update the edit headers (pencil icon in column headers)
+    this.updateEditHeaders();
+    this.on('reconfigure',this.updateEditHeaders,this);
+    this.getView().on('refresh', this.updateEditHeaders, this);
+    if(this.ownerCt) {
+      this.ownerCt.on('show',this.updateEditHeaders,this);
+    }
+    // --
 		
 		Ext.ux.RapidApp.AppTab.AppGrid2.superclass.onRender.apply(this, arguments);
 	},
@@ -1077,7 +1086,34 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 				optionsMenu.on('beforeshow',item.hideShow,item);
 			}
 		},this);
-	}
+	},
+  
+  editHeaderIcoDomCfg: {
+		tag: 'div',
+		cls: 'ra-icon-gray-pencil-tiny',
+		style: 'float:right;width:7px;height:7px;'
+	},
+  
+  updateEditHeaders: function() {
+    this.hdEdIcos = this.hdEdIcos || {};
+    var view = this.getView(),hds, i, len;
+    if (view.mainHd) {
+
+      hds = view.mainHd.select('td');
+      for (i = 0, len = view.cm.config.length; i < len; i++) {
+        var itm = hds.item(i);
+        
+        if(this.hdEdIcos[i]) { this.hdEdIcos[i].remove(); delete this.hdEdIcos[i]; }
+        var column = view.cm.config[i];
+        var editable = this.getStore().isEditableColumn(column.name);
+        if (editable) {
+          //console.dir([itm.child('div')]);
+          this.hdEdIcos[i] = itm.child('div').insertFirst(this.editHeaderIcoDomCfg);
+        }
+      }
+    }
+  
+  }
 };
 
 Ext.ux.RapidApp.AppTab.AppGrid2 = Ext.extend(Ext.grid.GridPanel,Ext.ux.RapidApp.AppTab.AppGrid2Def);

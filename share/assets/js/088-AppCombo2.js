@@ -1348,7 +1348,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 							// any existing double-click open setting. TODO: do this properly
 							this.loadTargetObj = null;
 							
-						},
+						}
 					},
 					cmpConfig: cmpConfig,
 					update_cmpConfig: update_cmpConfig

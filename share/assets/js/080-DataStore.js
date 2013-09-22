@@ -457,23 +457,32 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			}
 			return store.columns_map[name];
 		};
+    
+    store.isEditableColumn = function(name) {
+      return store.editable_columns_map[name] ? true : false;
+    };
 		
 		// ----
 		// New: track 'loaded_columns' from the server (see metaData in DataStore2)
 		store.on('metachange',function(ds,meta){
 
 			if(meta.loaded_columns){
+        // New: track individual editable columns:
+        store.editable_columns_map = {};
 				var loaded_map = {}, edit_count = 0;
 				Ext.each(meta.loaded_columns,function(f){
 					loaded_map[f] = true; 
-					if(store.api.update) { 
+					if(store.api.update) {
 						var column = store.getColumnConfig(f);
 						if(!column){ return; }
 						var editable = (column.editor && !column.no_column);
 						if(typeof column.allow_edit != 'undefined' && !column.allow_edit) {
 							editable = false;
 						}
-						if(editable || column.allow_edit || column.allow_batchedit) { edit_count++; }
+						if(editable || column.allow_edit || column.allow_batchedit) { 
+              edit_count++;
+              store.editable_columns_map[f] = true;
+            }
 					}
 				},this);
 				store.loaded_columns_map = loaded_map;
