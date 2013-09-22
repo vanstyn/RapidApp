@@ -1223,6 +1223,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				return btn;
 			},
 			
+      // Note: this is *not* the refresh button in the grid toolbar/pager because
+      // it already provides its own
 			reload: function(cnf,cmp,showtext) {
 				
 				return cmp.store.buttonConstructor(Ext.apply({

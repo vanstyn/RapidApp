@@ -3860,7 +3860,17 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 			paging.queryTimeLabel.setText('--');
 		},this);
 
-	}
+	},
+  
+  doRefresh: function() {
+    // Added for Github Issue #13
+    // Special handling for DataStorePlus cached total counts. Clear
+    // it whenever the user manually clicks 'Refresh' in the toolbar
+    if(this.store.cached_total_count) {
+      delete this.store.cached_total_count;
+    }
+    return Ext.ux.RapidApp.PagingToolbar.superclass.doRefresh.apply(this,arguments);
+  }
 });
 Ext.reg('rapidapp-paging',Ext.ux.RapidApp.PagingToolbar);
 
