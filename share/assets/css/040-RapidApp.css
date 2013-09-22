@@ -1531,3 +1531,18 @@ a:hover, a:hover * { cursor: pointer; }
   padding-left: 0px !important;
   width: 20px !important;
 }
+
+/* Added to fix Github Issue #12 - we want to make sure any
+   spans *inside* tab titles are inline instead of block so
+   they don't wrap   */
+.x-tab-strip .x-tab-strip-text span { display: inline; }
+
+/* used for the red asterisk appended to tabs with unsaved changes:
+   #c00000 (shade of red) is the same color as 'dirty.gif'  
+   (dirty cell corner triangle icon) */
+.ra-tab-dirty-flag {
+  font-weight:bold;
+  font-size:1.2em;
+  line-height: 1em;
+  color:#c00000;
+}

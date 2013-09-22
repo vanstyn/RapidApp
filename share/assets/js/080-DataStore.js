@@ -1244,11 +1244,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				var title_parent = cmp.findParentBy(function(c){
 					return (c.title && c.setTitle)  ? true : false;
 				},this);
-				var modified_suffix = '&nbsp;' +
-					// #c00000 (shade of red) is the same color as 'dirty.gif'  (dirty cell corner triangle icon)
-					'<span style="font-weight:bold;font-size:1.2em;color:#c00000;display:inline;line-height:15px;">' +
-						'*' +
-					'</span>';
+
+				var modified_suffix = '&nbsp;<span class="ra-tab-dirty-flag">*</span>';
 
 				cmp.cascade(function(){
 					if(!this.store || !this.store.addTrackedToggleFunc){ return; }
