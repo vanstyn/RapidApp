@@ -1091,7 +1091,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
   editHeaderIcoDomCfg: {
 		tag: 'div',
 		cls: 'ra-icon-gray-pencil-tiny',
-		style: 'float:right;width:7px;height:7px;'
+		style: 'position:absolute;right:1px;top:1px;width:7px;height:7px;'
 	},
   
   updateEditHeaders: function() {
