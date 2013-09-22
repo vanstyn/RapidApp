@@ -47,13 +47,7 @@ has '+include_colspec', default => sub{[qw(*)]};
 has '+updatable_colspec', default => undef;
 has '+creatable_colspec', default => undef;
 has '+destroyable_relspec', default => undef;
-
-has '+persist_all_immediately', default => 0;
-has '+persist_immediately', default => sub {{
-	create	=> \1,
-	update	=> \1,
-	destroy	=> \0
-}};
+has '+persist_all_immediately', default => 1;
 
 has '+use_add_form', default => sub {
   my $self = shift;
