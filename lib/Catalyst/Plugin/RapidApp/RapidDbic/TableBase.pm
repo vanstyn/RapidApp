@@ -93,14 +93,6 @@ sub BUILD {
   
   $self->add_plugin('grid-custom-headers');
 	
-	# Apply a width to all columns:
-	#$self->apply_to_all_columns({ width => 130 });
-	(exists $self->columns->{$_}->{width}) or $self->apply_columns( $_ => { width => 130 } )
-		for @{$self->column_order};
-	
-	# Apply a larger width to rel columns:
-	$self->apply_columns( $_ => { width => 175 } ) for ($self->ResultSource->relationships);
-	
 	# Init joined columns hidden:
 	$self->apply_columns( $_ => { hidden => \1 } ) 
 		for (grep { $_ =~ /__/ } @{$self->column_order});

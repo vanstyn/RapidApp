@@ -452,6 +452,10 @@ sub default_TableSpec_cnf_columns {
 					$cols->{$col}->{open_url_multi_rs_join_name} = 
 						$self->TableSpec_related_get_set_conf($col,'open_url_multi_rs_join_name') || 'me';
 				}
+        
+        # New: add the 'relcol' profile to relationship columns:
+        $cols->{$col}->{profiles} ||= [];
+        push @{$cols->{$col}->{profiles}}, 'relcol';
 			}
 			next;
 		}
