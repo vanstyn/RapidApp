@@ -583,6 +583,12 @@ sub read {
 	return $self->meta_json_packet($data);
 }
 
+# This is a safety measure to always apply a 'limit' to all requests to
+# prevent a huge number of rows from being inadvertantly being fetched.
+# It works by modifying the request params directly, which may not be
+# the best solution, however it is being done here (and not in DbicLink2,
+# for example) to apply this protection to *all* DataStores, not just
+# DBIC-driven ones
 sub enforce_max_pagesize {
 	my ($self, $params)= @_;
 	
@@ -603,9 +609,6 @@ sub enforce_max_pagesize {
 		%$params,
 		%$new_params
 	);
-	
-	$self->c->log->info(ref($self) . '->enforce_max_pagesize: request params modified: ' . Dumper($new_params))
-    if($self->c->debug); 
 }
 
 sub read_raw {
