@@ -2143,7 +2143,7 @@ sub handle_dbic_exception {
 
 	my $html = '<pre>' . $msg . $exception . "</pre>";
 	
-	die usererr rawhtml $html, title => "DbicLink2 Database Error $append_exception_title";
+	die usererr rawhtml $html, title => "Database Error $append_exception_title";
 	
 	#die $exception if (ref($exception) =~ /^RapidApp\:\:Responder/);
 	#die usererr rawhtml $self->make_dbic_exception_friendly($exception), title => 'DbicLink2 Database Error';
