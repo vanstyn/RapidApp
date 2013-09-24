@@ -484,7 +484,14 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			refresh: function(v) {
 				v.scroller.dom.scrollTop = v.scrollTop + 
 				(v.scrollTop == 0 ? 0 : v.scroller.dom.scrollHeight - v.scrollHeight);
-			}
+			},
+      rowsinserted: function(v,fNdx,lNdx) {
+        // Scroll new/added rows into view (Github Issue #19):
+        v.focusCell(lNdx,0);
+        var sm = v.grid.getSelectionModel();
+        // Select/highlight the new rows:
+        sm.selectRange(fNdx,lNdx);
+      }
 		}
 		// --
 	},
