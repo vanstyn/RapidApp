@@ -3881,6 +3881,23 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
       delete this.store.cached_total_count;
     }
     return Ext.ux.RapidApp.PagingToolbar.superclass.doRefresh.apply(this,arguments);
+  },
+  
+  // NEW: override private method 'updateInfo()' to commify values 
+  // (Added for Github Issue #15)
+  updateInfo : function(){
+    if(this.displayItem){
+      var count = this.store.getCount();
+      var msg = count == 0 ?
+        this.emptyMsg :
+        String.format(
+          this.displayMsg,
+          Ext.util.Format.number(this.cursor+1,'0,000'), 
+          Ext.util.Format.number(this.cursor+count,'0,000'), 
+          Ext.util.Format.number(this.store.getTotalCount(),'0,000')
+        );
+      this.displayItem.setText(msg);
+    }
   }
 });
 Ext.reg('rapidapp-paging',Ext.ux.RapidApp.PagingToolbar);
