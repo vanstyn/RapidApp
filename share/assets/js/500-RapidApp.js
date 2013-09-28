@@ -3859,7 +3859,18 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 		this.store.on('exception',function(store) {
 			paging.queryTimeLabel.setText('--');
 		},this);
-
+    
+    // --- NEW: update paging counts in-place (Github Issue #18)
+    this.store.on('add',function(store,records,index) {
+      this.store.totalLength = this.store.totalLength + records.length;
+      this.updateInfo();
+    },this);
+    
+    this.store.on('remove',function(store,record,index) {
+      this.store.totalLength--;
+      this.updateInfo();
+    },this);
+    // ---
 	},
   
   doRefresh: function() {
