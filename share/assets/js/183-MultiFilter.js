@@ -69,7 +69,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 		this.filtersBtn = new Ext.Button({
 			text: 'Filters',
 			handler: function(btn) {
-				var win = btn.ownerCt.ownerCt.multifilter.showFilterWindow();
+				var win = grid.multifilter.showFilterWindow();
 			},
 			hidden: grid.hide_multifilter_button ? true: false
 		});

@@ -3755,6 +3755,7 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 
 	allowChangePageSize: true,
 	maxPageSize: 500,
+  enableOverflow: true,
 
 	initComponent: function() {
 
@@ -3783,9 +3784,13 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 									var size = field.getValue();
 									if (size != paging.pageSize) {
 										paging.pageSize = size;
-										var btn = field.ownerCt.ownerCt;
-										btn.setText(size + suffix_str);
+                    paging.pageSizeButton.setText(size + suffix_str);
 										paging.doLoad();
+                    var ovrMenu = field.ownerCt.parentMenu;
+                    // Handle special overflow case: hide the menu
+                    if(ovrMenu) {
+                      ovrMenu.hide();
+                    }
 									}
 									field.ownerCt.hide();
 								}
@@ -3801,9 +3806,7 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 			var orig_text = this.beforePageText;
 			if(paging.pageSize) { orig_text = paging.pageSize + suffix_str; }
 			
-			//this.beforePageText = {
-			var page_btn = {
-				xtype: 'button',
+			this.pageSizeButton = new Ext.Button({
 				text: orig_text,
 				style: 'font-size:.9em;',
 				menu: {
@@ -3823,7 +3826,7 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 						}
 					}
 				}
-			};
+			});
 		}
 		
 		
@@ -3841,7 +3844,7 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 		
 		Ext.ux.RapidApp.PagingToolbar.superclass.initComponent.call(this);
 		
-		this.insert(this.items.getCount() - 1,page_btn,' ');
+    this.insert(this.items.getCount() - 1,this.pageSizeButton,' ');
 		
 		this.store.on('load',function(store) {
 			if(store.reader && store.reader.jsonData) {

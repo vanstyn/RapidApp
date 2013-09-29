@@ -936,6 +936,12 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			if (!showtext && cnf.text) {
 				delete cnf.text;
 			}
+      
+      // Added for Github Issue #21 - set the overflow text to
+      // match the tooltip when showtext (for the button) is false
+      if(!showtext && cnf.tooltip) {
+        cnf.overflowText = cnf.tooltip;
+      }
 			
 			return new Ext.Button(cnf);
 		};
