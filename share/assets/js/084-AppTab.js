@@ -743,6 +743,18 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			this.columns[0].hidden = false;
 		}
 		// --
+    
+    var tbar_items = [];
+    if(Ext.isArray(this.tbar)) { tbar_items = this.tbar; }
+    
+    this.tbar = {
+      xtype: 'toolbar',
+      // TODO: enable overflow on top toolbar. 
+      //   The Quick Search box will need to be adapted 
+      //   to work in the overflow menu before this can be set
+      //enableOverflow: true,
+      items: tbar_items
+    };
 		
 		var bbar_items = [];
 		if(Ext.isArray(this.bbar)) { bbar_items = this.bbar; }

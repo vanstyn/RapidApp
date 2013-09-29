@@ -3918,6 +3918,7 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
     // Max width 60px (enough for 8 digits)
     if (size > 60) { size = 60; }
     this.inputItem.setWidth(size);
+    this.syncSize();
   },
 
   onPageDataChange: function(tb,d) {
@@ -3929,6 +3930,8 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 
     // Update the max value of the input item:
     this.inputItem.setMaxValue(d.pages);
+    
+    this.syncSize();
   }
 
 });
