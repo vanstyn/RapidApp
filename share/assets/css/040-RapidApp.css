@@ -1546,3 +1546,14 @@ a:hover, a:hover * { cursor: pointer; }
   line-height: 1em;
   color:#c00000;
 }
+
+.ra-grid-tb-query-time {
+  /* light gray */
+  color:#b3b3b3 !important;
+  font-size:0.85em !important;
+}
+
+/* padding only in the toolbar; not in the overflow menu: */
+.xtb-text.ra-grid-tb-query-time {
+  padding-left:6px !important;
+}

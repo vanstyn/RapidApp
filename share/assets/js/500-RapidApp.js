@@ -3757,7 +3757,9 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 	maxPageSize: 500,
   enableOverflow: true,
 
+
 	initComponent: function() {
+    this.layout = 'ra_toolbar';
 
 		if(this.allowChangePageSize) {
 
@@ -3836,9 +3838,9 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 		// place the query time label immediately after 'refresh'
 		this.prependButtons = false;
 		this.items = this.items || [];
-		paging.queryTimeLabel = new Ext.form.Label({
-			html: '',
-			style: 'color:#b3b3b3;font-size:0.85em;padding-left:10px;' // light gray
+		paging.queryTimeLabel = new Ext.Toolbar.TextItem({
+			text: '',
+      cls: 'ra-grid-tb-query-time'
 		});
 		this.items.unshift(paging.queryTimeLabel);
 		
