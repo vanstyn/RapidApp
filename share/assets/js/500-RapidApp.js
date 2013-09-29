@@ -3854,25 +3854,31 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 					paging.queryTimeLabel.setText('');
 				}
 			}
+      this.autoSizeInputItem();
 		},this);
 		
 		this.store.on('exception',function(store) {
 			paging.queryTimeLabel.setText('--');
 		},this);
-    
+
     // --- NEW: update paging counts in-place (Github Issue #18)
     this.store.on('add',function(store,records,index) {
       this.store.totalLength = this.store.totalLength + records.length;
       this.updateInfo();
     },this);
-    
+
     this.store.on('remove',function(store,record,index) {
       this.store.totalLength--;
       this.updateInfo();
     },this);
     // ---
+
+    this.inputItem.on('afterrender',this.autoSizeInputItem,this);
+    this.inputItem.on('keydown',this.autoSizeInputItem,this,{buffer:20});
+    this.inputItem.on('blur',this.autoSizeInputItem,this);
+    this.on('change',this.onPageDataChange,this);
 	},
-  
+
   doRefresh: function() {
     // Added for Github Issue #13
     // Special handling for DataStorePlus cached total counts. Clear
@@ -3882,7 +3888,7 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
     }
     return Ext.ux.RapidApp.PagingToolbar.superclass.doRefresh.apply(this,arguments);
   },
-  
+
   // NEW: override private method 'updateInfo()' to commify values 
   // (Added for Github Issue #15)
   updateInfo : function(){
@@ -3898,7 +3904,30 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
         );
       this.displayItem.setText(msg);
     }
+  },
+
+  // Sets the width of the input (current page) dynamically
+  autoSizeInputItem: function() {
+    var val = this.inputItem.getValue();
+    // 14px wide, plus 6px for each character:
+    var size = 14 + (6 * [val].join('').length);
+    if (size < 20) { size = 20; }
+    // Max width 60px (enough for 8 digits)
+    if (size > 60) { size = 60; }
+    this.inputItem.setWidth(size);
+  },
+
+  onPageDataChange: function(tb,d) {
+    // Set the "afterPageText" again, but this time commified:
+    this.afterTextItem.setText(String.format(
+      this.afterPageText,
+      Ext.util.Format.number(d.pages,'0,000')
+    ));
+
+    // Update the max value of the input item:
+    this.inputItem.setMaxValue(d.pages);
   }
+
 });
 Ext.reg('rapidapp-paging',Ext.ux.RapidApp.PagingToolbar);
 
