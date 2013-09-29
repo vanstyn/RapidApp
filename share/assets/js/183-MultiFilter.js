@@ -250,6 +250,13 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 				win.multifilter.updateFilterBtn();
 				
 				win.close();
+        
+        // Added for Github Issue #20 (and copied from Quick Search code)
+        // clear start (necessary if we have paging) - resets to page 1
+        if(store.lastOptions && store.lastOptions.params) {
+          store.lastOptions.params[store.paramNames.start] = 0;
+        }
+        
 				store.reload();
 			}
 		},
