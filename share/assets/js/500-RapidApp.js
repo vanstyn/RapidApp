@@ -3853,7 +3853,7 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 				//'query_time' is returned from the server, see DbicLink2
 				var query_time = store.reader.jsonData.query_time;
 				if(query_time) {
-					paging.queryTimeLabel.setText('query time ' + query_time);
+					paging.queryTimeLabel.setText('query&nbsp;time ' + query_time);
 				}
 				else {
 					paging.queryTimeLabel.setText('');

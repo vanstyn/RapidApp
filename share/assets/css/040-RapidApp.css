@@ -1551,9 +1551,15 @@ a:hover, a:hover * { cursor: pointer; }
   /* light gray */
   color:#b3b3b3 !important;
   font-size:0.85em !important;
+  line-height: 0.93em !important;
 }
 
 /* padding only in the toolbar; not in the overflow menu: */
 .xtb-text.ra-grid-tb-query-time {
   padding-left:6px !important;
+  padding-bottom:4px !important;
+  min-width: 50px;
+  white-space: normal;
+  word-wrap: break-word;
+  text-align: center;
 }

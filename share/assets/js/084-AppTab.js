@@ -799,7 +799,6 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 				//iconCls:'ra-icon-zoom',
 				autoFocus:false,
 				mode: 'local', // local or remote
-				width: 250,
 				position: 'top'
 			};
 

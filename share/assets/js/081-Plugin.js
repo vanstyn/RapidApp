@@ -386,7 +386,7 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 	/**
 	 * @cfg {Number} width Width of input field in pixels (defaults to 100)
 	 */
-	,width:100
+	,width:200
 
 	/**
 	 * @cfg {String} xtype xtype is usually not used to instantiate this plugin but you have a chance to identify it
