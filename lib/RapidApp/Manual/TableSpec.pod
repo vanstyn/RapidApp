@@ -1,0 +1,147 @@
+=head1 NAME
+ 
+RapidApp::Manual::TableSpec - RapidApp/DBIC metadata config options
+ 
+=head1 DESCRIPTION
+ 
+TableSpecs are RapidApp-specific metadata associated with DBIx::Class 
+Result Classes which effect the behavior of automatically generated 
+interfaces, interacting with the given source, throughout the RapidApp 
+application.
+
+TableSpecs also provide additional Row methods to Result Classes when 
+loaded.
+
+TableSpecs can be loaded via C<load_components>, however loading is
+handled atomatically by higher-level APIs, namely RapidDbic. See
+L<RapidApp::Manual::RapidDbic> for where and how to supply TableSpec
+params.
+
+=head1 SOURCE CONFIG PARAMS
+ 
+=head2 title
+ 
+Friendly title associated with the source in single row context (i.e. singular). This is a label common to all the rows in the source. This is very often the same as the source name (the default), such as 'Album', but could be more verbose, such as 'Music Album'.
+
+=head2 title_multi
+ 
+Friendly title associated with the source in multiple row, or set context (i.e. plural). This might be 'Albums' or 'Music Albums' for the source 'Album'. This is used when showing lists of rows from the given source.
+
+Defaults to 'SOURCE_NAME Rows' (i.e. 'Album Rows').
+
+=head2 iconCls
+ 
+Icon associated with the source in single row context (i.e. singular). This should be a CSS class name in the same format as 'iconCls' in ExtJS. This is typically something like C<icon-apple> where the associated class defines a background image. Expects a 16x16 icon.
+
+This icon is displayed in various single-row contexts, such as in tab titles (for row pages) or inline in various places.
+
+See L<RapidApp::Manual::Assets> for information on setup of icon assets and icon CSS classes in RapidApp.
+
+Defaults to 'ra-icon-pg'
+
+=head2 multiIconCls
+ 
+Icon associated with the source in multiple row, or set context (i.e. plural). This should be a CSS class name in the same format as 'iconCls' in ExtJS. This is typically something like C<icon-apples> where the associated class defines a background image. Expects a 16x16 icon.
+
+See L<RapidApp::Manual::Assets> for information on setup of icon assets and icon CSS classes in RapidApp.
+
+Defaults to 'ra-icon-pg-multi'
+
+=head2 display_column
+
+Column used when displaying an individual row. Used when this source is the target of a single relationship (i.e. belongs_to)
+
+Defaults to the first primary key column, or the first column if there are no primary keys.
+
+=head2 auto_editor_type
+
+Default editor interface to use when selecting a row from this source (i.e. setting/changing a single relationship, or belongs_to). Current supported values are C<grid>, C<combo> and C<custom>.
+
+In RapidDbic this is set to C<custom> with an automatic config that attaches to the default grid for the source. This is effectively the same as C<grid> but without configuring a separate RapidApp module.
+
+C<combo> sets up a simple dropdown box, with the items listed showing the value of the C<display_column> for each row. C<combo> is a nice alternative to C<grid> when there is a limited number of rows to select from.
+
+=head2 columns
+
+HashRef of column names to TableSpec column configs. See COLUMN CONFIG PARAMS below.
+
+=head1 COLUMN CONFIG PARAMS
+
+These config settings apply to individual columns within the source. Most of the config options from B<Ext.grid.Column> are supported here with some additional custom behaviors. Many of these options are automatically configured based on the column type from the schema.
+
+=head2 header
+
+Friendly name associated with the given column. Used in labels such as grid column headers.
+
+Defaults to the column name. 
+
+=head2 width
+
+Default size in pixels. Default value based on the column type and length.
+
+=head2 editor
+
+HashRef config of an ExtJS Field/Component. This is automatically setup based on column type, nullability, auto_editor_type for relationship columns, etc, but can be overridden here. If this is set to a false or empty value it will disable editing for the column across the board.
+
+=head2 renderer
+
+String or ArrayRef of Strings containing a valid JavaScript function name(s). The function should accept the value as the only argument and return the formatted value. (For example, C<'Ext.util.Format.usMoney'>. If multiple functions are supplied, the functions are chained, with the return value of the previous becoming the input to the next.
+
+Again, this is automatically configured based on the column type info.
+
+=head2 validator
+
+JavaScript function name used to validate a value (form/input) for the column. See C<validator> in B<Ext.form.Field>.
+
+=head2 profiles
+
+ArrayRef list of column profile names. Column profiles are macros/sets of column configs to apply multiple options at once. Many of these are automatically set according to the column type.
+
+Column profiles are defined in L<RapidApp::TableSpec::Column>.
+
+Currently available column profiles:
+
+=over 4
+
+=item * relcol
+
+=item * nullable
+
+=item * notnull
+
+=item * number
+
+=item * int
+
+=item * bool
+
+=item * text
+
+=item * bigtext
+
+=item * html
+
+=item * email
+
+=item * datetime
+
+=item * date
+
+=item * money
+
+=item * percent
+
+=item * noadd
+
+=item * noedit
+
+=item * zipcode
+
+=item * filesize
+
+=back
+
+=cut
+
+
+
