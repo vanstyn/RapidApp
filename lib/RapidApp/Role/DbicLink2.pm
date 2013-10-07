@@ -513,6 +513,11 @@ sub read_records {
 	my $params = shift || $self->c->req->params;
 	
 	my $Rs = $self->get_read_records_Rs($params);
+  
+  # -- Github Issue #10 - SQLite-specific fix --
+  local $Rs->result_source->storage->dbh
+    ->{sqlite_see_if_its_a_number} = 1;
+  # --
 	
 	$Rs = $Rs->search_rs({},{rows => 1}) if ($self->single_record_fetch);
 	
