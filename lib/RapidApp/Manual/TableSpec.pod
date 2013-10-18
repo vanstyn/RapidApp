@@ -79,6 +79,35 @@ Defaults to the column name.
 
 Default size in pixels. Default value based on the column type and length.
 
+=head2 sortable
+
+Boolean. Defines whether or not the column will be sortable in contexts such as
+grids. Defaults to true.
+
+=head2 no_column
+
+Boolean. Hides the column from being shown/selected as a column in grid views. Does not effect other contexts,
+such as Quick Search and MultiFilters (see C<no_quick_search>/C<no_multifilter> options). Defaults to false.
+
+=head2 no_quick_search
+
+Boolean. Excludes the column from the Quick Search in grids. Defaults to false.
+
+=head2 no_multifilter
+
+Boolean. Excludes the column from the MultiFilter Search in grids (Filter button). Defaults to false.
+
+=head2 allow_add
+
+Boolean. Determines if an individual column is allowed to be used when adding new rows. This setting
+is not relevant when the column is not already included by the C<creatable_colspec>. Defaults to true.
+
+=head2 allow_edit
+
+Boolean. Determines if an individual column is allowed to be changed when editing a row. This setting
+is not relevant when the column is not already included by the C<updatable_colspec>, or when there is no
+C<editor> defined. Defaults to true. 
+
 =head2 editor
 
 HashRef config of an ExtJS Field/Component. This is automatically setup based on column type, nullability, auto_editor_type for relationship columns, etc, but can be overridden here. If this is set to a false or empty value it will disable editing for the column across the board.
