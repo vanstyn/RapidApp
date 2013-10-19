@@ -97,6 +97,10 @@ Boolean. Excludes the column from the Quick Search in grids. Defaults to false.
 
 Boolean. Excludes the column from the MultiFilter Search in grids (Filter button). Defaults to false.
 
+=head2 no_summary
+
+Boolean. Excludes the column from column summaries in grids. Defaults to false.
+
 =head2 allow_add
 
 Boolean. Determines if an individual column is allowed to be used when adding new rows. This setting
