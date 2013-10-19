@@ -188,6 +188,11 @@ sub DEFAULT_PROFILES {{
 		},
     filesize => {
       renderer => 'Ext.util.Format.fileSize',
+    },
+    autoinc => {
+      allow_add => \0,
+      allow_edit => \0,
+      allow_batchedit => \0
     }
 
 }};

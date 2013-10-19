@@ -1517,9 +1517,17 @@ sub get_relationship_column_cnf {
 	if($relTS) {
 		my $relconf = $relTS->Cnf_columns->{$conf->{displayField}};
 		$conf->{profiles} = $relconf->{profiles} || $conf->{profiles};
+    
+    # New: special exception - do not assume the 'autoinc' profile which
+    # disables add/edit for the purposes of the *local* table. This does
+    # not apply to the relationship column context, and we need to remove
+    # it to prevent relationship columns with auto_increment display_column
+    # from being forced read-only. This is a bit hackish - TODO/FIXME
+    @{$conf->{profiles}} = grep { $_ ne 'autoinc' } @{$conf->{profiles}}
+      if($conf->{profiles});
 	}
 	# --
-	
+  
 	my $colname = $self->column_prefix . $rel;
 	
 	# -- 

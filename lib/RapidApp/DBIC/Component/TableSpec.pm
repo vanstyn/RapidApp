@@ -253,7 +253,7 @@ sub create_result_TableSpec {
 		my @profiles = ();
 		
 		push @profiles, $info->{is_nullable} ? 'nullable' : 'notnull';
-    push @profiles, 'noadd','noedit' if ($info->{is_auto_increment});
+    push @profiles, 'autoinc' if ($info->{is_auto_increment});
 		
 		my $type_profile = $data_types->{$info->{data_type}} || ['text'];
 		$type_profile = [ $type_profile ] unless (ref $type_profile);
@@ -465,7 +465,7 @@ sub default_TableSpec_cnf_columns {
 		my @profiles = ();
 			
 		push @profiles, $info->{is_nullable} ? 'nullable' : 'notnull';
-    push @profiles, 'noadd','noedit' if ($info->{is_auto_increment});
+    push @profiles, 'autoinc' if ($info->{is_auto_increment});
 		
 		my $type_profile = $data_types->{$info->{data_type}} || ['text'];
 		$type_profile = [ $type_profile ] unless (ref $type_profile);
