@@ -112,6 +112,17 @@ Boolean. Determines if an individual column is allowed to be changed when editin
 is not relevant when the column is not already included by the C<updatable_colspec>, or when there is no
 C<editor> defined. Defaults to true. 
 
+=head2 allow_view
+
+Boolean. Same as C<no_column> setting (but inversed), but for page context (i.e. single row) instead of grid/multi context.
+Defaults to false when C<no_column> is set, but true when C<allow_edit> is set. Different combinations of the 3
+can be used to accomplish various scenarios. For example, these settings will hide a column from grids but show it 
+on the row page read-only:
+
+  no_column  => 1,
+  allow_edit => 0,
+  allow_view => 1
+
 =head2 editor
 
 HashRef config of an ExtJS Field/Component. This is automatically setup based on column type, nullability, auto_editor_type for relationship columns, etc, but can be overridden here. If this is set to a false or empty value it will disable editing for the column across the board.
@@ -171,6 +182,8 @@ Currently available column profiles:
 =item * zipcode
 
 =item * filesize
+
+=item * autoinc
 
 =back
 
