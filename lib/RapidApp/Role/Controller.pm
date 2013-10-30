@@ -16,6 +16,11 @@ use Data::Dumper;
 use URI::Escape;
 
 use Term::ANSIColor qw(:constants);
+# TODO/FIXME: for some reason that I haven't taken the time to
+# figure out, the 'scream' util function can't be called within
+# the request logic. That's why this module isn't loading the
+# RapidApp::Include, like most places.
+#use RapidApp::Include qw(sugar perlutil);
 
 use RapidApp::Error;
 use Exception::Class (
@@ -227,9 +232,14 @@ sub Controller {
   ### NEW: detect direct browser GET requests (i.e. not from the ExtJS client):
   ### and redirect them back to the #! hashnav path
   my ($opt) = @args;
-  if ($opt && $c->req->method eq 'GET' && ! $c->req->header('X-RapidApp-RequestContentType')) {
-    # Only for paths which are actually registered modules/actions:
-    if($self->has_subarg($opt)) {
+  if (
+    $opt && $c->req->method eq 'GET'
+    && ! $c->req->header('X-RapidApp-RequestContentType')
+    && ! exists $c->req->params->{__no_hashnav_redirect} #<-- new: check for special exclude param
+  ) {
+    # Only for paths which are actually registered modules
+    # (new: no longer redirect for actions)
+    if($self->has_module($opt)) {
       my $url = join('/','/#!',@args);
       my %params = %{$c->req->params};
       if(keys %params > 0) {

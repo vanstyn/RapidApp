@@ -38,9 +38,13 @@ sub BUILD {
 
 before content => sub {
 	my $self = shift;
-	
 	my $id = $self->get_id or return undef;
-	$self->apply_extconfig( defaultSrc => $self->suburl('mime_content') . '?id=' . $id );
+  my $url = join('',
+    $self->suburl('mime_content'),
+    '?id=',$id,
+    '&__no_hashnav_redirect=1'
+  );
+	$self->apply_extconfig( defaultSrc => $url );
 };
 
 
@@ -153,7 +157,12 @@ sub cid_to_real_url {
 	
 	my ($junk,$cid) = split(/\:/,$url);
 	
-	return $self->suburl('mime_content') . '?cid=' . $cid . '&id=' . $self->c->req->params->{id};
+	return join('',
+    $self->suburl('mime_content'),
+    '?cid=',$cid,
+    '&id=',$self->c->req->params->{id},
+    '&__no_hashnav_redirect=1'
+  );
 }
 
 
