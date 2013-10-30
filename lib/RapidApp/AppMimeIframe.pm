@@ -16,20 +16,33 @@ sub get_content { my $self = shift; return $self->get_content_code->($self,@_); 
 sub BUILD {
 	my $self = shift;
 	
-	$self->apply_extconfig(
-		xtype => 'iframepanel',
-		title => $self->title,
-		iconCls => 'ra-icon-email',
-		collapsible => \1,
-		titleCollapse => \1,
-		style => 'height: 100%;',
-		bodyStyle => 'border: 1px solid #D0D0D0;background-color:white;',
-		loadMask => \1,
-		height => 400 #<-- initial height, should be adjusted by 'iframe-autoheight' below
-	);
-	
-	$self->add_plugin( 'titlecollapseplus' );
-	$self->add_plugin( 'iframe-autoheight' );
+	#$self->apply_extconfig(
+	#	xtype => 'iframepanel',
+	#	title => $self->title,
+	#	iconCls => 'ra-icon-email',
+	#	collapsible => \1,
+	#	titleCollapse => \1,
+	#	style => 'height: 100%;',
+	#	bodyStyle => 'border: 1px solid #D0D0D0;background-color:white;',
+	#	loadMask => \1,
+	#	height => 400 #<-- initial height, should be adjusted by 'iframe-autoheight' below
+	#);
+  
+  #$self->add_plugin( 'titlecollapseplus' );
+  #$self->add_plugin( 'iframe-autoheight' );
+  
+  # New: use the iframepanel style technique for autosizing from
+  # Template::Controller
+  $self->apply_extconfig(
+    xtype => 'iframepanel',
+    plugins => ['ra-link-click-catcher'],
+    tabTitle => $self->title,
+    tabIconCls => 'ra-icon-email',
+    style => 'top: 0; left: 0; bottom: 0; right: 0;',
+    autoScroll => \1,
+    bodyStyle => 'border: 1px solid #D0D0D0;background-color:white;',
+    loadMask => \1
+  );
 	
 	$self->apply_actions( mime_content => 'mime_content' );
 }
