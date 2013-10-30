@@ -1806,6 +1806,10 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 		this.on('render',function(){
 			thisEl = this.getEl();
 			thisEl.addClass('no-text-select');
+      
+      this.on('resize',this.setSafesizeClasses,this);
+      this.setSafesizeClasses();
+      
 		},this);
 		// Allowing highlighting within the panel once loading is complete:
 		this.on('afterlayout',function(){
@@ -1979,6 +1983,97 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
   
   reload: function() {
     this.load(this.autoLoad);
+  },
+  
+  
+  // This method sets 5 informational CSS classes on the body element
+  // pertaining to the current size of the element within the browser.
+  // There is no active RapidApp code that takes any action based on
+  // the presence of these classes, however, it is available to
+  // user-defined CSS/HTML. Each class is 1 of a predefined set of possible
+  // values defining the "safesize" that inner content can be set to in order
+  // to be visible without scrolling. These are for width alone, height
+  // alone, and heightXwidth(ws), each of which might be useful in different
+  // ways for CSS rules. For example, 'ra-safesize-w640' means that content
+  // up to at least 640 pixels wide will be viewable without scrolling.
+  // On the other hand, 'ra-safesize-800x600' means that at least that size
+  // **sqaure** (i.e. 2-dimensions instead of 1) will be visible. CSS rules
+  // can then take action to adjust inner content accordingly, such as
+  // making sure a video in an iFrame will always display w/o scrolling
+  //
+  // There is also a 5th more general class set to one of:
+  //   * ra-safesize-small
+  //   * ra-safesize-medium
+  //   * ra-safesize-large
+  //
+  // These are provided to limit the number of rules required to cover the
+  // entire spectrum of sizes w/o gaps. They can be used alone, or in combination with 
+  // the more-specific resolution values to zero in on the size at one end
+  // of the size spectrum and not the other (for example, custom CSS could
+  // be set for several different small styles and single rules for medium/large)
+  setSafesizeClasses: function() {
+    var El = this.getEl();
+    var width = El.getWidth() + 4;
+    var height = El.getHeight() + 4;
+    
+    // 4x3
+    var xWidth = parseInt(height/0.75);
+    if(xWidth > width) { xWidth = width; }
+    
+    //16x9
+    var xwWidth = parseInt(height/0.5625);
+    if(xwWidth > width) { xwWidth = width; }
+    
+    var wClass, hClass, xClass, xwClass, smlClass;
+    
+    wClass = 'ra-safesize-w0';
+    if(width > 100)  { wClass = 'ra-safesize-w100'; }
+    if(width > 320)  { wClass = 'ra-safesize-w320'; }
+    if(width > 480)  { wClass = 'ra-safesize-w480'; }
+    if(width > 640)  { wClass = 'ra-safesize-w640'; }
+    if(width > 800)  { wClass = 'ra-safesize-w800'; }
+    if(width > 1024) { wClass = 'ra-safesize-w1024'; }
+    if(width > 1400) { wClass = 'ra-safesize-w1400'; }
+    
+    hClass = 'ra-safesize-h0';
+    if(height > 50)  { hClass = 'ra-safesize-h50'; }
+    if(height > 120) { hClass = 'ra-safesize-h120'; }
+    if(height > 240) { hClass = 'ra-safesize-h240'; }
+    if(height > 360) { hClass = 'ra-safesize-h360'; }
+    if(height > 480) { hClass = 'ra-safesize-h480'; }
+    if(height > 600) { hClass = 'ra-safesize-h600'; }
+    if(height > 768) { hClass = 'ra-safesize-h768'; }
+    if(height > 1050) { hClass = 'ra-safesize-h768'; }
+    
+    xClass = 'ra-safesize-0x0';
+    if(xWidth > 200)  { xClass = 'ra-safesize-200x150'; }
+    if(xWidth > 320)  { xClass = 'ra-safesize-320x240'; }
+    if(xWidth > 480)  { xClass = 'ra-safesize-480x360'; }
+    if(xWidth > 640)  { xClass = 'ra-safesize-640x480'; }
+    if(xWidth > 800)  { xClass = 'ra-safesize-800x600'; }
+    if(xWidth > 1024) { xClass = 'ra-safesize-1024x768'; }
+    if(xWidth > 1400) { xClass = 'ra-safesize-1400x1050'; }
+    
+    xwClass = 'ra-safesize-0x0ws';
+    if(xwWidth > 320)  { xwClass = 'ra-safesize-320x200ws'; }
+    if(xwWidth > 480)  { xwClass = 'ra-safesize-480x270ws'; }
+    if(xwWidth > 640)  { xwClass = 'ra-safesize-640x360ws'; }
+    if(xwWidth > 800)  { xwClass = 'ra-safesize-800x450ws'; }
+    if(xwWidth > 1024) { xwClass = 'ra-safesize-1024x576ws'; }
+    if(xwWidth > 1280) { xwClass = 'ra-safesize-1280x720ws'; }
+    if(xwWidth > 1920) { xwClass = 'ra-safesize-1920x1080ws'; }
+    
+    // Alternate broader small/medium/large
+    smlClass = 'ra-safesize-small';
+    if(xWidth > 480)  { smlClass = 'ra-safesize-medium'; }
+    if(xWidth > 800)  { smlClass = 'ra-safesize-large'; }
+    
+    if(this.current_safesize_Classes) {
+      El.removeClass(this.current_safesize_Classes);
+    }
+    
+    this.current_safesize_Classes = [wClass,hClass,xClass,xwClass,smlClass];
+    El.addClass(this.current_safesize_Classes);
   }
   
 });
