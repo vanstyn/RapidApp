@@ -38,13 +38,29 @@ sub read_records {
 	# TODO: Get this duplicate crap out of here and make this work natively with
 	# DbicLink2 methods
 	$Rs = $self->RapidApp::Role::DbicLink2::chain_Rs_req_explicit_resultset($Rs);
-	
   
   # -- NEW: if no order_by is defined, set it to by on the displayField
   # which is the most obvious/useful behavior:
-  $Rs = $Rs->search_rs(undef,{
-    order_by => $self->displayField
-  }) unless (exists $Rs->{attrs}{order_by});
+  #   TODO/FIXME: This is using a tmp/hack in order to support the case
+  #   where the displayField is a Virtual Column. See the notes with the
+  #   RapidApp::DBIC::Component::VirtualColumnsExt::_virtual_column_select()
+  #   method, .... and actually, really address this. This has been a known
+  #   thing for a long time, and is the reason this default order_by wasn't
+  #   enabled in the first place. But I don't want this practical/useful/common-sense
+  #   feature to be held up. So this is about being practical (and is also
+  #   a useful REMINDER that this still needs to be addressed)
+  unless (exists $Rs->{attrs}{order_by}) {
+    my $col_select = $self->displayField;
+    my $Source = $Rs->result_source;
+    my $source_name = $Rs->result_source->source_name;
+    my $class = $Source->schema->class($source_name);
+    if($class->can('_virtual_column_select')) {
+      $col_select = $class->_virtual_column_select($col_select);
+    }
+    $Rs = $Rs->search_rs(undef,{
+      order_by => { '-asc' => $col_select }
+    });
+  }
   # --
   
 	my @rows = ();

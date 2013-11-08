@@ -96,6 +96,37 @@ sub get_columns {
 }
 
 
+# ---
+# Get the safe "select" string for any column. For virtual columns,
+# this will be a special SQLT-style reference, for normal columns
+# just the column name. TODO/FIXME: this code is not complete as
+# it is currently hard-coded for 'me' -- which means it will break
+# if 'me' isn't the alias, or if joined. This is just partial/demo
+# code for now... Need to actually learn the right DBIC way to do
+# this. This is a BUG. This code has been added for 2 reasons:
+#   1. As a reminder to fix this
+#   2. As a stop-gap for RapidApp::DbicAppCombo2 (sort), which is also
+#      in a tmp/in-flux state. Otherwise, this code would just be
+#      there, but it is here as a reminder. No other code should be
+#      calling this **private** method which WILL change when this
+#      is actually addressed for real.
+sub _virtual_column_select {
+	my ($self, $column) = @_;
+  if ($self->has_virtual_column($column)) {
+    my $info = $self->column_info($column);
+    my $sql = $info->{sql} or die "Missing virtual column 'sql' attr in info";
+    my $rel = 'me';
+    $sql =~ s/self\./${rel}\./g;
+    $sql =~ s/\`self\`\./\`${rel}\`\./g; #<-- also support backtic quoted form (quote_sep)
+    return \"($sql)";
+  }
+  elsif($self->has_column($column)) {
+    return "me.$column";
+  }
+  die "_virtual_column_select(): Unknown column '$column'";
+}
+# ---
+
 
 sub init_virtual_column_value {
 	my ($self, $column,$valref) = @_;
@@ -103,6 +134,7 @@ sub init_virtual_column_value {
 	my $info = try{$self->column_info($column)} or return;
 	my $sql = $info->{sql} or return;
 	
+  # Duplicated from _virtual_column_select() above. TODO/FIXME
 	my $rel = 'me';
 	$sql =~ s/self\./${rel}\./g;
 	$sql =~ s/\`self\`\./\`${rel}\`\./g; #<-- also support backtic quoted form (quote_sep)
