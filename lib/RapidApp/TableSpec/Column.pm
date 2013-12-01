@@ -122,6 +122,12 @@ sub DEFAULT_PROFILES {{
 			editor		=> { xtype => 'textarea', grow => \1 },
 			summary_functions => \@text_summary_funcs 
 		},
+    monotext => {
+      width => 150,
+			renderer 	=> 'Ext.ux.RapidApp.renderMonoText',,
+			editor		=> { xtype => 'textarea', grow => \1 },
+			summary_functions => \@text_summary_funcs 
+		},
 		html => {
 			width => 200,
       # We need this renderer in case the 'bigtext' profile above has been applied
