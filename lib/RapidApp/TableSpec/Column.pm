@@ -48,7 +48,8 @@ push @number_summary_funcs, (
 # with the definitions below if supplied by name in the property 'profiles'
 sub DEFAULT_PROFILES {{
 		
-		BASE => { 
+		BASE => {
+      is_nullable => 1, #<-- initial/default
 			renderer => ['Ext.ux.showNull'] ,
 			editor => { xtype => 'textfield', minWidth => 80, minHeight => 22 },
 			summary_functions => \@text_summary_funcs
@@ -59,10 +60,12 @@ sub DEFAULT_PROFILES {{
     },
 		
 		nullable => {
+      is_nullable => 1, #<-- redundant/default
 			editor => { allowBlank => \1, plugins => [ 'emptytonull' ] }
 		},
 		
 		notnull => {
+      is_nullable => 0,
 			editor => { allowBlank => \0, plugins => [ 'nulltoempty' ] }
 		},
 		

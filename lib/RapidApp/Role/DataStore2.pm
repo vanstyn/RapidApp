@@ -302,6 +302,10 @@ sub get_add_edit_form_items {
 		my $field = clone($Cnf->{editor});
 		$field->{name} = $colname;
 		$field->{allowBlank} = \1 unless (defined $field->{allowBlank});
+    
+    # New, extra check for newly added 'is_nullable' column attr (Github Issue #33)
+    $field->{allowBlank} = \0 unless ($Cnf->{is_nullable});
+    
 		unless (jstrue $field->{allowBlank}) {
 			$field->{labelStyle} = '' unless (defined $field->{labelStyle});
 			$field->{labelStyle} .= 'font-weight:bold;';
