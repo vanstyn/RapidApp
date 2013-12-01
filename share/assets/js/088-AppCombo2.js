@@ -543,10 +543,10 @@ Ext.ux.RapidApp.ClickCycleField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 		var renderVal = v;
 		if(this.valueMap[v]) { 
 			var itm = this.valueMap[v];
-			renderVal = itm.text;
-			if(itm.cls) {
-				renderVal = '<div class="with-icon ' + itm.cls + '">' + itm.text + '</div>';
-			}
+      var text = itm.text || v;
+      // New: always render with an icon (related to Github Issue #30)
+      var icon_cls = itm.cls || 'ra-icon-bullet-arrow-down';
+      renderVal = '<div class="with-icon ' + icon_cls + '">' + text + '</div>';
 		}
 		return this.nativeSetValue(renderVal);
 	},
