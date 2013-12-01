@@ -1035,6 +1035,17 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
     // handles reverting itself when a save/persist operation fails.
     // Fixes Github Issue #11
     //store.on('exception',store.undoChanges,store);
+    store.on('exception',function(ds,res,action){
+      // NEW/UPDATE from #11 change above:
+      // it turns out the undoChanges call wasn't so redundant after all, and
+      // removing it caused the regression described in GitHub Issue #32.
+      // The store *does* automatically roll itself back for update/delete,
+      // but not for 'create' so now we call it specifically for that case.
+      // This fixes #32, and keeps #11 fixed.
+      if(action == 'create') {
+        store.undoChanges.call(store);
+      }
+    },store);
 	},
 	
 	// Only applies to Editor Grids implementing the 'beforeedit' event
