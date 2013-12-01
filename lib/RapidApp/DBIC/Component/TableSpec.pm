@@ -531,7 +531,8 @@ sub default_TableSpec_cnf_columns {
       my $selections = [];
       # Null choice:
       push @$selections, {
-        text => '(Null)', value => undef
+        # #A9A9A9 = light grey
+        text => '<span style="color:#A9A9A9;">(None)</span>', value => undef
       } if ($info->{is_nullable});
       
       push @$selections, map {
