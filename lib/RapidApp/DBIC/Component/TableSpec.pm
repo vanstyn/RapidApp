@@ -257,7 +257,7 @@ sub create_result_TableSpec {
 		
 		my $type_profile = $data_types->{$info->{data_type}} || ['text'];
 		$type_profile = [ $type_profile ] unless (ref $type_profile);
-		push @profiles, @$type_profile; 
+		push @profiles, @$type_profile;
 		
 		$TableSpec->add_columns( { name => $col, profiles => \@profiles } ); 
 	}
@@ -522,7 +522,30 @@ sub default_TableSpec_cnf_columns {
 				editor => $editor
 			});
 		}
-		## -- 
+		## --
+    
+    # --vv-- NEW: handling for 'enum' columns (Github Issue #30):
+    if($info->{data_type} eq 'enum' && $info->{extra} && $info->{extra}{list}) {
+      my $list = $info->{extra}{list};
+      
+      my $selections = [];
+      # Null choice:
+      push @$selections, {
+        text => '(Null)', value => undef
+      } if ($info->{is_nullable});
+      
+      push @$selections, map {
+        { text => $_, value => $_ }
+      } @$list;
+    
+      $cols->{$col}{menu_select_editor} = {
+        #mode: 'combo', 'menu' or 'cycle':
+        mode        => 'menu',
+        selections  => $selections
+			};
+    }
+    # --^^--
+    
 	}
 	
 	return {
