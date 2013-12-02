@@ -439,6 +439,9 @@ Ext.ux.RapidApp.AppTab.cnt_init_loadTarget = function(cnt) {
 Ext.ux.RapidApp.AppTab.gridrow_nav = function(grid,index,e) {
 	var loadTarget = grid.loadTargetObj;
 	var Record = grid.getStore().getAt(index);
+  // -- NEW: ignore phantom records (Github Issue #26)
+  if(Record.phantom) { return; }
+  // --
 	return Ext.ux.RapidApp.AppTab.tryLoadTargetRecord(loadTarget,Record,grid);
 }
 
@@ -1015,6 +1018,11 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	rest_open_record: function(rec) {
 		// Support argument as either index or actual Record:
 		var Record = Ext.isNumber(rec) ? this.store.getAt(rec) : rec;
+    
+    // -- NEW: ignore phantom records (Github Issue #26)
+    if(Record.phantom) { return; }
+    // --
+    
 		var key = this.open_record_rest_key ? this.open_record_rest_key : 'id';
 		var val = this.open_record_rest_key ? Record.data[key] : Record.id;
 		
