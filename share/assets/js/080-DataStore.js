@@ -275,10 +275,22 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		if(this.autoload_added_record) {
 			cmp.store.on('write',function(store,action,result,res,Record){
 				if(action == "create" && Ext.isObject(Record) && !Record.phantom && Record.data.loadContentCnf){
-					var loadTarget = Ext.getCmp("main-load-target");
-					return Ext.ux.RapidApp.AppTab.tryLoadTargetRecord(loadTarget,Record,cmp);
+					//var loadTarget = Ext.getCmp("main-load-target");
+					//return Ext.ux.RapidApp.AppTab.tryLoadTargetRecord(loadTarget,Record,cmp);
+          // NEW: consolidated open via improved gridrow_nav (Github Issue #34)
+          return Ext.ux.RapidApp.AppTab.gridrow_nav(cmp,Record);
 				}
-			});
+      // New: added tiny delay to prevent race condition (Github Issue #34)
+      // Now that we're calling gridrow_nav which now does a REST nav (hashpath)
+      // we need to add a delay to prevent a race condition when the add form
+      // is in a tab, because it closes after successful create (exactly the same
+      // event as this listener) which triggers a hashnav event (by AppTab).
+      // Without the delay, the AppTab change of window.location.hash beats the
+      // gridrow_nav one, which makes it appear as though it never happened at all
+      // (the browser doesn't even see the hash 'change' event). 
+      // TODO: I *think* that adding any delay here solves the problem, even if systems
+      // are slow/bogged down, but I am not 100% sure...
+			},cmp.store,{ delay: 10 });
 		}
 		
 		// -- Display a page-wide mask during save

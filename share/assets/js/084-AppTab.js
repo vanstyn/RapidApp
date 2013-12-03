@@ -436,14 +436,34 @@ Ext.ux.RapidApp.AppTab.cnt_init_loadTarget = function(cnt) {
 }
 */
 
-Ext.ux.RapidApp.AppTab.gridrow_nav = function(grid,index,e) {
-	var loadTarget = grid.loadTargetObj;
-	var Record = grid.getStore().getAt(index);
+Ext.ux.RapidApp.AppTab.gridrow_nav = function(grid,rec) {
+  // Support argument as either index or actual Record:
+  var Record = Ext.isNumber(rec) ? grid.store.getAt(rec) : rec;
+
   // -- NEW: ignore phantom records (Github Issue #26)
   if(Record.phantom) { return; }
   // --
-	return Ext.ux.RapidApp.AppTab.tryLoadTargetRecord(loadTarget,Record,grid);
+
+  // --- NEW: try to use REST nav (Github Issue #34)
+  if(grid.open_record_via_rest && grid.open_record_url) {
+    var key = grid.open_record_rest_key ? grid.open_record_rest_key : 'id';
+    var val = grid.open_record_rest_key ? Record.data[key] : Record.id;
+    
+    if(!val) { throw 'gridrow_nav/REST open: failed to identify Record value!'; }
+
+    //var hashpath = '#!' + this.open_record_url + '/' + key + '/' + val;
+    var hashpath = '#!' + grid.open_record_url + '/' + val;
+    window.location.hash = hashpath;
+  }
+  // ---
+  else {
+    // Original, pre-REST design
+    var loadTarget = grid.loadTargetObj;
+    return Ext.ux.RapidApp.AppTab.tryLoadTargetRecord(loadTarget,Record,grid);
+  }
 }
+
+
 
 Ext.ux.RapidApp.AppTab.tryLoadTargetRecord = function(loadTarget,Record,cmp) {
 	if(!loadTarget) { return; }
@@ -966,15 +986,9 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	
 	init_open_record_handler: function() {
 		if(this.open_record_url) {
-			if(this.open_record_via_rest) {
-				this.row_open_handler = function(grid,index,e){
-					this.rest_open_record(index);
-				};
-			}
-			else {
-				// Original LoadContentCnf double-click handler, moved out of AppGrid2.pm:
-				this.row_open_handler = Ext.ux.RapidApp.AppTab.gridrow_nav;
-			}
+      // Consolidated back into single function for REST or loadTarget
+      // (Github Issue #34)
+      this.row_open_handler = Ext.ux.RapidApp.AppTab.gridrow_nav;
 			
 			if(this.open_record_column) {
 				// optionally set the hidden status param from the store 
@@ -1013,24 +1027,6 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			
 			this.on('rowdblclick',this.row_open_handler,this);
 		}
-	},
-	
-	rest_open_record: function(rec) {
-		// Support argument as either index or actual Record:
-		var Record = Ext.isNumber(rec) ? this.store.getAt(rec) : rec;
-    
-    // -- NEW: ignore phantom records (Github Issue #26)
-    if(Record.phantom) { return; }
-    // --
-    
-		var key = this.open_record_rest_key ? this.open_record_rest_key : 'id';
-		var val = this.open_record_rest_key ? Record.data[key] : Record.id;
-		
-		if(!val) { throw 'rest_open_record(): failed to identify Record value!'; }
-		
-		//var hashpath = '#!' + this.open_record_url + '/' + key + '/' + val;
-		var hashpath = '#!' + this.open_record_url + '/' + val;
-		window.location.hash = hashpath;
 	},
 	
 	alwaysRequestColumns: {},

@@ -127,7 +127,7 @@ sub DEFAULT_PROFILES {{
 		},
     monotext => {
       width => 150,
-			renderer 	=> 'Ext.ux.RapidApp.renderMonoText',,
+			renderer 	=> ['Ext.ux.RapidApp.renderMonoText'],
 			editor		=> { xtype => 'textarea', grow => \1 },
 			summary_functions => \@text_summary_funcs 
 		},
