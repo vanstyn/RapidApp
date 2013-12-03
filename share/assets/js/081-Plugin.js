@@ -3883,6 +3883,8 @@ Ext.preg('grid-edit-raw-columns',Ext.ux.RapidApp.Plugin.GridEditRawColumns);
 
 Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
 	
+  menu_item_id: 'change-column-header',
+  
 	init: function(grid) {
     this.grid = grid;
 		grid.on('render',this.onRender,this);
@@ -4006,6 +4008,10 @@ Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
 		
     var hmenu = this.grid.view.hmenu;
     if(!hmenu) { return; }
+    
+    // New: check for duplicates, which can happen if the plugin
+    // is accidently loaded more than once
+    if(hmenu.getComponent(this.menu_item_id)) { return; }
 
     var index = 0;
     var colsItem = hmenu.getComponent('columns');
@@ -4015,6 +4021,7 @@ Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
     
     hmenu.insert(index,{
       text: "Change Header",
+      itemId: this.menu_item_id,
       iconCls: 'ra-icon-textfield-edit',
       handler:this.promptChangeHeader, 
       scope: this
