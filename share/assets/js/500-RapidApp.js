@@ -5180,7 +5180,7 @@ Ext.ux.RapidApp.renderJSONjsDump = function(v) {
 }
 
 Ext.ux.RapidApp.renderMonoText = function(v) {
-  return '<pre>' + v + '</pre>';
+  return '<pre class="ra-pre-wrap">' + v + '</pre>';
 }
 
 Ext.ux.RapidApp.getWithIconClsRenderer = function(icon_cls) {
