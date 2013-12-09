@@ -5555,8 +5555,13 @@ Ext.ux.RapidApp.renderDurationSuf = function(seconds) {
 }
 
 Ext.ux.RapidApp.renderDurationPastSuf = function(v) {
-	var seconds = Math.abs(Number(v));
-	return Ext.ux.RapidApp.renderDurationSuf(-seconds);
+  if(typeof v != 'undefined' && v != null && moment) {
+    var seconds = Math.abs(Number(v));
+    return Ext.ux.RapidApp.renderDurationSuf(-seconds);
+  }
+  else {
+    return Ext.ux.showNull(v);
+  }
 }
 
 
