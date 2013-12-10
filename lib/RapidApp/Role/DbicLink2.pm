@@ -2026,7 +2026,7 @@ sub _dbiclink_create_records {
 				
 				foreach my $rel (keys %$relspecs) {
 					$create_hash->{$rel} = {} unless (defined $create_hash->{$rel}); 
-					$data->{$_->{orig_colname}} and $create_hash->{$rel}->{$_->{local_colname}} = $data->{$_->{orig_colname}} 
+					defined $data->{$_->{orig_colname}} and $create_hash->{$rel}->{$_->{local_colname}} = $data->{$_->{orig_colname}} 
 						for (@{$relspecs->{$rel}});
 				}
 				
