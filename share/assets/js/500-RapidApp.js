@@ -5565,6 +5565,41 @@ Ext.ux.RapidApp.renderDurationPastSuf = function(v) {
 }
 
 
+// Renders a short, human-readable duration/elapsed string from seconds.
+// The seconds are divided up into 5 units - years, days, hours, minutes and seconds -
+// but only the first two are shown for readability, since if its '2y, 35d',
+// you probably don't care about the exact hours minutes and seconds ( i.e.
+// '2y, 35d, 2h, 4m, 8s' isn't all that useful and a lot longer)
+Ext.ux.RapidApp.renderSecondsElapsed = function(s) {
+
+  if(!s) {
+    return Ext.ux.showNull(s);
+  }
+
+  var years = Math.floor    ( s / (365*24*60*60));
+  var days  = Math.floor   (( s % (365*24*60*60)) / (24*60*60));
+  var hours = Math.floor  ((( s % (365*24*60*60)) % (24*60*60)) / (60*60));
+  var mins  = Math.floor (((( s % (365*24*60*60)) % (24*60*60)) % (60*60)  / 60));
+  var secs  =             ((( s % (365*24*60*60)) % (24*60*60)) % (60*60)) % 60;
+  
+  var list = [];
+  if(years) { list.push(years + 'y'); }
+  if(days)  { list.push(days  + 'd'); }
+  if(hours) { list.push(hours + 'h'); }
+  if(mins)  { list.push(mins  + 'm'); }
+  if(secs)  { list.push(secs  + 's'); }
+  
+  if (list.length == 0) {
+    return Ext.ux.showNull(s);
+  }
+  else if (list.length == 1) {
+    return list[0];
+  }
+  else {
+    return list[0] + ', ' + list[1];
+  }
+}
+
 // renders a json array of arrays into an HTML Table
 Ext.ux.RapidApp.jsonArrArrToHtmlTable = function(v) {
 
