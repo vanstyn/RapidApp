@@ -42,4 +42,18 @@
 
 </script>
 
-[% END %]
+[% IF precache_imgs %]
+<!-- 
+ Hidden prefetch images: (Github Issue #24)
+ These images are used in the basic elements of the interface and
+ so we're preloading them upfront so the UI will always display
+ correctly, even if the server becomes slow or busy
+-->
+<div style="display:none;">
+  [%- FOREACH url IN precache_imgs %]
+    <img src="[% url %]">
+  [%- END %]
+</div>
+[%- END -%]
+
+[%- END -%]

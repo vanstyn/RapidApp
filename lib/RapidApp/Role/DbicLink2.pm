@@ -1239,12 +1239,12 @@ has 'multifilter_keymap', is => 'ro', default => sub {{
   'not equal to'    => '!=',
   'is not equal to' => '!=',
 	
-	"doesn't contain"		=> 'not_contain',
-	'starts with'			=> 'starts_with',
-	'ends with'				=> 'ends_with',
-	"doesn't start with"	=> 'not_starts_with',
-	"doesn't end with"		=> 'not_ends_with',
-	'ends with'				=> 'ends_with',
+	"doesn't contain"     => 'not_contain',
+	'starts with'         => 'starts_with',
+	'ends with'           => 'ends_with',
+	"doesn't start with"  => 'not_starts_with',
+	"doesn't end with"    => 'not_ends_with',
+	'ends with'           => 'ends_with',
 	
 	'contains'				=> sub { ('like','%'.$_->{v}.'%') },
 	'starts_with'			=> sub { ('like',$_->{v}.'%') },
