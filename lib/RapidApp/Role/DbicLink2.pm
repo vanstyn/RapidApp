@@ -1228,15 +1228,16 @@ sub multifilter_to_dbf {
 # below for the values supplied to the CddeRef in '$_' (as a HashRef)
 has 'multifilter_keymap', is => 'ro', default => sub {{
 	
-	'is'					=> '=',
-	'equal to'				=> '=',
-	'is equal to'			=> '=',
-	'before'				=> '<',
-	'less than'				=> '<',
-	'greater than'			=> '>',
-	'after'					=> '>',
-	'not equal to'			=> '!=',
-	'is not equal to'		=> '!=',
+  'is'              => '=',
+  'equal to'        => '=',
+  'is equal to'     => '=',
+  'exactly'         => '=',
+  'before'          => '<',
+  'less than'       => '<',
+  'greater than'    => '>',
+  'after'           => '>',
+  'not equal to'    => '!=',
+  'is not equal to' => '!=',
 	
 	"doesn't contain"		=> 'not_contain',
 	'starts with'			=> 'starts_with',

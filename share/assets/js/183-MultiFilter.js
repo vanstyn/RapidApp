@@ -413,15 +413,17 @@ Ext.ux.MultiFilter.defaultTypeToConditionMap = {
 		'greater than'			: '>'
 	},
 	
-	date: {
-		'before'					: '<',
-		'after'					: '>'
-	},
+  date: {
+    'before'  : '<',
+    'after'   : '>',
+    'exactly' : '='
+  },
 	
-	datetime: {
-		'before'					: '<',
-		'after'					: '>'
-	},
+  datetime: {
+    'before'  : '<',
+    'after'   : '>',
+    'exactly' : '='
+  },
 	
 	number: {
 		'less than'				: '<',
