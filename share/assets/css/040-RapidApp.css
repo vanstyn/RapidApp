@@ -1391,6 +1391,11 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 .ra-autopanel-error {
   padding: 10px;
   font-size: 1.2em;
+  position:absolute;
+  top: 0px;
+  right: 25px;
+  bottom: 0px;
+  left:5px;
 }
 
 .ra-autopanel-error .msg {
@@ -1398,7 +1403,19 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
   font-size: 1.2em;
   font-family: Consolas,Menlo,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New,monospace,serif;
   color: gray;
+  position:absolute;
+  top: 55px;
+  right: 0px;
+  bottom: 0px;
+  left:0px;
+  min-height: 200px;
+}
 
+.ra-autopanel-error .retry-foot {
+  position:absolute;
+  right: 0px;
+  bottom: 10px;
+  left:0px;
 }
 
 
@@ -1573,4 +1590,15 @@ a:hover, a:hover * { cursor: pointer; }
   white-space: normal;
   word-wrap: break-word;
   text-align: center;
+}
+
+
+.ra-autopanel-reloader {
+	color: navy;
+}
+
+.ra-autopanel-reloader:hover {
+	color: blue;
+	cursor:pointer;
+	text-decoration:underline;
 }

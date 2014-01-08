@@ -1763,10 +1763,25 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 			) { return; }
 			// ---
 			
-			var retry_text = 'Please try again later.<br><br>' +
-			 '<span style="font-size:.7em;">' +
-			 '<i>If you continue to receive this message, please contact your ' +
-			 'System Administrator.</i></span>';
+      var retry_text = [
+       'Please try again later.&nbsp;&nbsp;',
+       '<span',
+          'class="with-icon ra-icon-refresh ra-autopanel-reloader"',
+          'style="display:inline;vertical-align:baseline;padding-left:20px;"',
+       '>Click to Retry...</span>',
+       '<div style=height:20px;"></div>',
+       '<span style="font-size:.7em;">',
+       '<i>If you continue to receive this message, please contact your ',
+       'System Administrator.</i></span>',
+       '<div class="retry-foot">',
+        '<center>',
+          '<span',
+            'class="with-icon ra-icon-refresh-24x24 ra-autopanel-reloader"',
+            'style="font-size:1.5em;display:inline;vertical-align:baseline;padding-left:40px;"',
+          '>Try Again</span>',
+        '</center>',
+       '</div>'
+      ].join(' ');
 			
 			var title = 'Load Request Failed:';
 			var msg = '<div style="padding:10px;font-size:1.3em;color:navy;">&nbsp;&nbsp;' +
@@ -1809,6 +1824,17 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
       
       this.on('resize',this.setSafesizeClasses,this);
       this.setSafesizeClasses();
+      
+      // Listen for clicks on custom 'ra-autopanel-reloader' elements
+      // to fire reload of the panel. This provides inline access to
+      // this function within the html/content of the panel. 
+      // (Added for Gitbut Issue #24)
+      thisEl.on('click',function(e,t,o) {
+        var target = e.getTarget(null,null,true);
+        if(target && target.hasClass('ra-autopanel-reloader')) {
+        this.reload();
+        }
+      }, this);
       
 		},this);
 		// Allowing highlighting within the panel once loading is complete:
@@ -1962,7 +1988,7 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 		opt = Ext.apply({
 			tabTitle: 'Load Failed',
 			tabIconCls: 'ra-icon-cancel',
-			html: '<div class="ra-autopanel-error">' +
+			html: '<div class="ra-autopanel-error" >' +
 				'<div class="ra-exception-heading">' + title + '</div>' +
 				'<div class="msg">' + msg + '</div>' +
 			'</div>'

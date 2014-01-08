@@ -49,6 +49,8 @@ sub process {
      $c->controller('Assets::RapidApp::Icons'), (qw(
       warning.png
       loading.gif
+      refresh.gif
+      refresh_24x24.png
      ))
   );
    
