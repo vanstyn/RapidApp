@@ -33,6 +33,10 @@ has 'get_footer_html', is => 'ro', isa => 'CodeRef', default => sub {
 # See below
 has '_build_plugins', is => 'ro', isa => 'ArrayRef', default => sub {[]};
 
+# New: informational only property to be added to the ext config. Currently
+# only used in some very specific places.
+has 'require_role', is => 'ro', isa => 'Maybe[Str]', default => sub{undef};
+
 sub BUILD {
 	my $self = shift;
 	
@@ -54,6 +58,10 @@ sub BUILD {
     $self->add_ONREQUEST_calls_early('_appcmp_enforce_build_plugins');
   }
   
+  $self->apply_extconfig( 
+    require_role => $self->require_role
+  ) if ($self->require_role);
+
 }
 
 sub _appcmp_enforce_build_plugins {

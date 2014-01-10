@@ -103,6 +103,13 @@ before 'setup_components' => sub {
   );
   $config->{$_} and $main_module_params->{$_} = $config->{$_} for (@copy_params);
   
+  # -- New: enable passthrough to exclude navtrees that define 
+  # a 'require_role' property (See new API in RapidApp::AppExplorer)
+  $main_module_params->{role_checker} = 
+    $c->config->{'Plugin::RapidApp::AuthCore'}{role_checker}
+    if ($c->_authcore_enabled);
+  # --
+  
   my $cnf = {
     rootModuleClass => 'RapidApp::RootModule',
     rootModuleConfig => {

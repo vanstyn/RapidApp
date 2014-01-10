@@ -47,6 +47,14 @@ before 'setup_dispatcher' => sub {
   $c->config->{'Plugin::RapidApp::AuthCore'} ||= {};
   my $config = $c->config->{'Plugin::RapidApp::AuthCore'};
   
+  # Default CodeRef used to check if the current user/request has a given role
+  #  - automatically includes administrator - Used by other modules, such as
+  # TabGui to optionally filter navtrees
+  $config->{role_checker} ||= sub {
+    my $ctx = shift; #<-- expects CONTEXT object
+    return $ctx->check_any_user_role('administrator',@_);
+  };
+  
   # Passthrough config:
   if($config->{init_admin_password}) {
     $c->config->{'Model::RapidApp::CoreSchema'} ||= {};

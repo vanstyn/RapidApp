@@ -33,7 +33,8 @@ before 'setup_components' => sub {
     params => {
       dbic_models => $config->{dbic_models},
       table_class	=> $config->{table_class},
-      configs => $config->{configs}
+      configs => $config->{configs},
+      require_role => $config->{menu_require_role}
     }
   };
 };

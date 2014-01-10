@@ -49,6 +49,14 @@ has 'navtree_footer_template', is => 'ro', isa => 'Maybe[Str]', default => sub {
 has 'page_viewer_class', is => 'ro', isa => 'Maybe[Str]', default => sub {undef};
 has 'page_viewer_params', is => 'ro', isa => 'HashRef', lazy => 1, default => sub{{}};
 
+# Generic function that can be supplied to call to test if the current request/context
+# matches a given 'role' to optionally exclude navtrees with a 'require_role' attribute.
+# This is for a simple permission API. Note that the 'role' concept is generic to support
+# any implementation, such as Catalyst Roles, or anything else. Will receive the context
+# object ($c) as the first argument and the 'require_role' value as the second.
+has 'role_checker', is => 'ro', isa => 'Maybe[CodeRef]', default => sub {undef};
+
+
 sub BUILD {
 	my $self = shift;
 	
@@ -182,9 +190,18 @@ sub west_area_items {
   
   # Dynamic "typing" (of sorts). Allow raw ExtJS configs to
   # be interspersed among module cnfs 
-  return [ map {
+  my @items = map {
     $_->{module} ? $self->Module($_->{module})->content : $_
-  } @{$self->navtrees} ];
+  } @{$self->navtrees};
+  
+  # Filter/exclude according to 'require_role' if a role_checker
+  # CodeRef is configured:
+  @items = grep {
+    ! $_->{require_role} ||
+    $self->role_checker->($self->c,$_->{require_role})
+  } @items if ($self->role_checker);
+
+  return \@items;
 }
 
 
