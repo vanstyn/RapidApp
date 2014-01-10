@@ -39,13 +39,22 @@ sub object_to_json {
 	my ($self, $obj)= @_;
   
   my $type = ref($obj);
+  
+  if($type eq 'SCALAR') {
+    my $val = $$obj;
+    $obj = undef if (
+      # Convert \'NULL' into undef (this came up after switing from MySQL to SQLite??)
+      lc($val) eq 'null' or
     
-  # Convert \'NULL' into undef (this came up after switing from MySQL to SQLite??)
-  $obj = undef if ($type eq 'SCALAR' && $$obj eq 'NULL');
-  
-  # FIXME: This is another SQLite-ism: There are probably more
-  $obj = undef if ($type eq 'SCALAR' && $$obj eq 'current_timestamp');
-  
+      # FIXME: This is another SQLite-ism: There are probably more
+      lc($val) eq 'current_timestamp'
+    );
+    
+    # TODO: any SCALAR ref value other than 1/0 will cause error. This is 
+    # currently allowed to barf to be able to find other cases besides the
+    # two above
+  }
+    
 	if (blessed($obj)) {
 		my $method= $obj->can('TO_JSON_RAW');
 		return $method->($obj) if defined $method;
