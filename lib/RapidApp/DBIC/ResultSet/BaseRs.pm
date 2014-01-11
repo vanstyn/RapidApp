@@ -42,7 +42,8 @@ our $DISABLED = 0;
 
 # Define base_rs in the consuming ResultSet class. Should return a chained
 # ResultSet object, i.e. return $self->search_rs( $SEARCH, $ATTR );
-sub base_rs { die "Virtual method!" }
+sub base_rs { return (shift) }
+
 
 sub search_rs {
 	my $self = (shift)->_get_apply_base_rs;
