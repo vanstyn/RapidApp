@@ -573,6 +573,8 @@ sub params_from_request {
 sub read {
 	# params is optional
 	my ($self, $params)= @_;
+  
+  $self->parent_module->enforce_permission;
 	
 	# only touch request if params were not supplied
 	$params ||= $self->params_from_request;
@@ -693,6 +695,8 @@ sub store_fields_from_rows {
 
 sub update {
 	my $self = shift;
+  
+  $self->parent_module->enforce_permission;
 	
 	my $params = $self->c->req->params;
 	my $rows = $self->json->decode($params->{rows});
@@ -742,6 +746,8 @@ sub update {
 
 sub create {
 	my $self = shift;
+  
+  $self->parent_module->enforce_permission;
 	
 	my $params = $self->c->req->params;
 	my $rows = $self->json->decode($params->{rows});
@@ -799,6 +805,8 @@ sub create {
 
 sub destroy {
 	my $self = shift;
+  
+  $self->parent_module->enforce_permission;
 	
 	my $params = $self->c->req->params;
 	my $rows = $self->json->decode($params->{rows});

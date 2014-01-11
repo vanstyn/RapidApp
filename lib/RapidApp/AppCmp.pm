@@ -110,7 +110,7 @@ sub allowed_content {
 sub enforce_permission {
   my $self = shift;
   $self->test_permission and return 1;
-  die "Permission denied";
+  die usererr "Permission denied";
 }
 
 sub content {
