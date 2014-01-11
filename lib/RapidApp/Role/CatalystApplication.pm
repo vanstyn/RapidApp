@@ -152,6 +152,10 @@ around 'dispatch' => \&_rapidapp_top_level_dispatch;
 
 sub _rapidapp_top_level_dispatch {
 	my ($orig, $c, @args)= @_;
+  
+  # New: simpler global to get $c in user code. can be accessed from
+  # anywhere with: 'RapidApp->active_request_context()'
+  local $RapidApp::ACTIVE_REQUEST_CONTEXT = $c;
 	
 	# put the debug flag into the stash, for easy access in templates
 	$c->stash->{debug} = $c->debug;
@@ -168,6 +172,8 @@ sub _rapidapp_top_level_dispatch {
 	
 	$c->stash->{onrequest_time_elapsed}= 0;
 	
+  # Note:, this whole system is overly complicated and will be removed.
+  # see 'RapidApp->active_request_context()' (localized above)
 	RapidApp::ScopedGlobals->applyForSub(
 		{ catalystInstance => $c, log => $c->log },
 		sub {

@@ -15,6 +15,17 @@ sub share_dir {
   return $ENV{RAPIDAPP_SHARE_DIR} || dist_dir($class);
 }
 
+# global variable localized with '$c' automatically to provide
+# simple/global API access within all code dispatched by RapidApp
+# to be able to identify if there is a current request, and if so
+# get the $c object without fuss.
+# Note: this is/was also provided by the 'RapidApp::ScopedGlobals' system
+# but that system is more complex than it needed to be and is planned
+# for deprication/removal in the future.
+our $ACTIVE_REQUEST_CONTEXT = undef;
+
+sub active_request_context { $ACTIVE_REQUEST_CONTEXT }
+
 1;
 
 
