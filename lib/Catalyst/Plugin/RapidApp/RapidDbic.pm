@@ -34,6 +34,10 @@ before 'setup_components' => sub {
       dbic_models => $config->{dbic_models},
       table_class	=> $config->{table_class},
       configs => $config->{configs},
+      # optional 'menu_require_role' will hide the *menu points*
+      # of each dbic model from the navtree, but access to the
+      # actual grids will still be allowed (i.e. via saved search)
+      menu_require_role => $config->{menu_require_role}
     }
   };
 };

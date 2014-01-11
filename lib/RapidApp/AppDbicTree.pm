@@ -12,6 +12,7 @@ require Module::Runtime;
 has 'dbic_models', is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default => undef;
 has 'table_class', is => 'ro', isa => 'Str', required => 1;
 has 'configs', is => 'ro', isa => 'HashRef', default => sub {{}};
+has 'menu_require_role', is => 'ro', isa => 'Maybe[Str]', default => sub {undef};
 
 has 'dbic_model_tree', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => sub {
 	my $self = shift;
@@ -93,6 +94,13 @@ sub BUILD {
 	my $self = shift;
 	
 	Module::Runtime::require_module($self->table_class);
+  
+  # menu_require_role only applies to the top level/navtree nodes which
+  # simply hides the links, but preserves access to the real pages/data
+  $self->apply_extconfig( require_role => $self->menu_require_role ) if (
+    ! $self->require_role &&
+    $self->menu_require_role
+  );
 	
 	# init
 	$self->TreeConfig;
@@ -108,6 +116,7 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 		my $schema = $self->app->model($model)->schema;
     
     my $require_role = $self->require_role || try{$self->configs->{$model}{require_role}};
+    my $menu_req_role = $require_role || $self->menu_require_role;
     
 		my @children = ();
 		for my $source (sort @{$s->{sources}}) {
@@ -143,7 +152,7 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 				params		=> {},
 				expand		=> 1,
 				children	=> [],
-        require_role => $require_role
+        require_role => $menu_req_role
 			}
 		}
 		
@@ -177,7 +186,7 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 			params	=> {},
 			expand	=> $expand,
 			children	=> \@children,
-      require_role => $require_role
+      require_role => $menu_req_role
 		};
 	}
 	
