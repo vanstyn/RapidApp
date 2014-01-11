@@ -261,10 +261,16 @@ sub call_fetch_nodes {
 	
 	######
 	######
-	my $nodes = $self->fetch_nodes($node);
+	my $nodes = clone($self->fetch_nodes($node));
 	######
 	######
-	
+  
+  # -- New: automatically test/exclude nodes according to 'require_role'
+  @$nodes = grep { 
+    ! $_->{require_role} or
+    $self->role_checker->($self->c,$_->{require_role})
+  } @$nodes if ($self->role_checker);
+  # --
 	
 	die "Error: 'fetch_nodes()' was supposed to return an ArrayRef, but instead it returned: " . Dumper($nodes)
 		unless (ref($nodes) eq 'ARRAY');

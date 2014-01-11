@@ -33,9 +33,30 @@ has 'get_footer_html', is => 'ro', isa => 'CodeRef', default => sub {
 # See below
 has '_build_plugins', is => 'ro', isa => 'ArrayRef', default => sub {[]};
 
-# New: informational only property to be added to the ext config. Currently
-# only used in some very specific places.
+# New: informational only property to be added to the ext config and checked
+# by the role_checker function below
 has 'require_role', is => 'ro', isa => 'Maybe[Str]', default => sub{undef};
+
+# Generic function that can be supplied to call to test if the current request/context
+# matches a given 'role' to globally deny access to this component.
+# This is for a simple permission API. Note that the 'role' concept is generic to support
+# any implementation, such as Catalyst Roles, or anything else. Will receive the context
+# object ($c) as the first argument and the 'require_role' value as the second.
+# By default, this function is set to a passthrough to a global config param or
+# just the standard 'check_any_user_role' function
+has 'role_checker', is => 'ro', isa => 'Maybe[CodeRef]', default => sub {
+  my $self = shift;
+  my $code = $self->app->config->{'Model::RapidApp'}{role_checker} || sub {
+    my $c = shift; #<-- expects CONTEXT object
+    # This default checker function always returns true if the catalyst
+    # context object lacks the check_any_user_role method (which happens
+    # when the Authorization plugin isn't loaded). This doesn't stop
+    # the developer from supplying a custom role_checker instead which
+    # could perform tests based on other criteria, even if there are no
+    # users configured (i.e. it could be based on ip address, header, etc)
+    return $c && $c->can('check_any_user_role') ? $c->check_any_user_role(@_) : 1;
+  }
+};
 
 sub BUILD {
 	my $self = shift;
@@ -70,9 +91,33 @@ sub _appcmp_enforce_build_plugins {
   $curPlg{$_} or $self->add_plugin($_) for (@{$self->_build_plugins});
 }
 
+
+sub test_permission {
+  my $self = shift;
+  return (
+    $self->c and
+    $self->role_checker and
+    $self->require_role and
+    ! $self->role_checker->($self->c,$self->require_role)
+  ) ? 0 : 1;
+}
+
+sub allowed_content {
+  my $self = shift;
+  return $self->test_permission ? $self->content : ();
+}
+
+sub enforce_permission {
+  my $self = shift;
+  $self->test_permission and return 1;
+  die "Permission denied";
+}
+
 sub content {
 	my $self = shift;
 	#return bless { %{$self->get_complete_extconfig} }, 'RapidApp::AppCmp::SelfConfigRender';
+  
+  $self->enforce_permission;
   
 	# ---
 	# optionally apply extconfig parameters stored in the stash. This was added to support

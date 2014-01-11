@@ -106,6 +106,9 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 	for my $s (@{$self->dbic_model_tree}) {
 		my $model = $s->{model};
 		my $schema = $self->app->model($model)->schema;
+    
+    my $require_role = $self->require_role || try{$self->configs->{$model}{require_role}};
+    
 		my @children = ();
 		for my $source (sort @{$s->{sources}}) {
 			my $Source = $schema->source($source) or die "Source $source not found!";
@@ -117,12 +120,17 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
       # place (note this probably needs to be fixed in there for exactly this reason)
       my $cust_merged = clone( Catalyst::Utils::merge_hashes($cust_def_config,$cust_config) );
       
-			my $module_name = lc($model . '_' . $Source->from);
+      my $module_name = lc($model . '_' . $Source->from);
       $module_name =~ s/\:\:/_/g;
-			$self->apply_init_modules( $module_name => {
-				class => $self->table_class,
-				params => { %$cust_merged, ResultSource => $Source, source_model => $model . '::' . $source }
-			});
+      $self->apply_init_modules( $module_name => {
+        class => $self->table_class,
+        params => { 
+          %$cust_merged, 
+          ResultSource => $Source, 
+          source_model => $model . '::' . $source,
+          require_role => $require_role
+        }
+      });
 			
 			my $class = $schema->class($source);
 			my $text = $class->TableSpec_get_conf('title_multi') || $source;
@@ -134,7 +142,8 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 				module		=> $module_name,
 				params		=> {},
 				expand		=> 1,
-				children	=> []
+				children	=> [],
+        require_role => $require_role
 			}
 		}
 		
@@ -153,7 +162,8 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 				tabTitle => $text,
 				tabIconCls => $iconcls,
         exclude_sources => $exclude_sources,
-        header_template => $template
+        header_template => $template,
+        require_role => $require_role
 			}
 		});
     
@@ -166,12 +176,14 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
 			module		=> $module_name,
 			params	=> {},
 			expand	=> $expand,
-			children	=> \@children
+			children	=> \@children,
+      require_role => $require_role
 		};
 	}
 	
 	return \@items;
 };
+
 
 
 #### --------------------- ####
