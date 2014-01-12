@@ -1583,6 +1583,10 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					// components (i.e. combos) will be broken as soon as the form is closed 
 					// the first time
 					if(field.store) { field.store.autoDestroy = false; }
+          // Make sure that hidden fields that can't be changed don't 
+          // block validation of the form if they are empty and erroneously
+          // set with allowBlank: false (common-sense failsafe):
+          if(field.hidden) { field.allowBlank = true; } 
 				},this);
 				
 				Ext.each(formpanel.buttons,function(button) {
@@ -1703,6 +1707,10 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					// components (i.e. combos) will be broken as soon as the form is closed 
 					// the first time
 					if(field.store) { field.store.autoDestroy = false; }
+          // Make sure that hidden fields that can't be changed don't 
+          // block validation of the form if they are empty and erroneously
+          // set with allowBlank: false (common-sense failsafe):
+          if(field.hidden) { field.allowBlank = true; } 
 					field.value = Rec.data[field.name];
 					new_items.push(field);
 				},this);
