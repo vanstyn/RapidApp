@@ -3,7 +3,7 @@ package RapidApp::Responder::UserError;
 use Moose;
 extends 'RapidApp::Responder';
 
-#use overload '""' => \&_stringify_static; # to-string operator overload
+use overload '""' => \&stringify, fallback => 1; # to-string operator overload
 use HTML::Entities;
 
 =head1 NAME
@@ -43,13 +43,7 @@ sub writeResponse {
 	}
 }
 
-sub stringify {
-	return (shift)->userMessage;
-}
-
-sub _stringify_static {
-	return (shift)->stringify;
-}
+sub stringify { (shift)->userMessage }
 
 no Moose;
 __PACKAGE__->meta->make_immutable;
