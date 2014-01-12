@@ -1151,6 +1151,7 @@ Ext.ux.RapidApp.WinFormPost
  * @cfg {Function} success success callback function
  * @cfg {Function} failure failure callback function
  * @cfg {Boolean} eval_response if true the response will be evaled
+ * @cfg {Boolean} disableBtn disables the button once clicked
 
 */
 Ext.ns('Ext.ux.RapidApp.WinFormPost');
@@ -1201,13 +1202,65 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 		
 		if (cfg.eval_response && response.responseText) { return eval(response.responseText); }
 	};
+  
+  var Btn;
+  Btn = new Ext.Button({
+    text	: cfg.submitBtnText,
+    handler	: function(btn) {
+      if(cfg.disableBtn) {
+        btn.setDisabled(true);
+        btn.setText('Wait...');
+      }
+      
+      var form = Ext.getCmp(formId).getForm();
+
+      if (cfg.useSubmit) {
+        return form.submit({
+          url: cfg.url,
+          params: cfg.params,
+          success: success_fn,
+          failure: failure_fn
+        });
+      }
+      else {
+
+        var values;
+        if (cfg.noRaw) {
+          values = form.getFieldValues();
+        }
+        else {
+          values = form.getValues();
+        }
+
+        var params = cfg.params;
+        if (cfg.encode_values) {
+          params[cfg.valuesParamName] = Ext.util.JSON.encode(values);
+        }
+        else {
+          for (i in values) {
+            if(!params[i]) { params[i] = values[i]; }
+          }
+        }
+
+        return Ext.Ajax.request({
+          url: cfg.url,
+          params: params,
+          success: success_fn,
+          failure: failure_fn
+        });
+      }
+    }
+  });
 
 	var failure_fn = function(response,options) {
-		if (cfg.failure) { cfg.failure.apply(scope,arguments); }
-	};
+    // Re-enable the button (only applies with disableBtn option)
+    Btn.setDisabled(false);
+    Btn.setText(cfg.submitBtnText);
+    if (cfg.failure) { cfg.failure.apply(scope,arguments); }
+  };
 
 	var win = new Ext.Window({
-		manager: Ext.ux.RapidApp.CustomPromptWindowGroup,
+		//manager: Ext.ux.RapidApp.CustomPromptWindowGroup,
     title: cfg.title,
 		id: winId,
 		layout: 'fit',
@@ -1224,53 +1277,7 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 			fileUpload: cfg.fileUpload,
 			baseParams: cfg.baseParams,
 			buttons: [
-				{
-					text	: cfg.submitBtnText,
-					handler	: function(btn) {
-						if(cfg.disableBtn) {
-							btn.setDisabled(true);
-							btn.setText('Wait...');
-						}
-						
-						var form = Ext.getCmp(formId).getForm();
-
-						if (cfg.useSubmit) {
-							return form.submit({
-								url: cfg.url,
-								params: cfg.params,
-								success: success_fn,
-								failure: failure_fn
-							});
-						}
-						else {
-
-							var values;
-							if (cfg.noRaw) {
-								values = form.getFieldValues();
-							}
-							else {
-								values = form.getValues();
-							}
-
-							var params = cfg.params;
-							if (cfg.encode_values) {
-								params[cfg.valuesParamName] = Ext.util.JSON.encode(values);
-							}
-							else {
-								for (i in values) {
-									if(!params[i]) { params[i] = values[i]; }
-								}
-							}
-
-							return Ext.Ajax.request({
-								url: cfg.url,
-								params: params,
-								success: success_fn,
-								failure: failure_fn
-							});
-						}
-					}
-				},
+				Btn,
 				{
 					text		: 'Cancel',
 					handler	: cancel_fn
