@@ -7,6 +7,10 @@ Ext.ns('Ext.ux.RapidApp');
 
 // This should be set dynamically by the server:
 Ext.ux.RapidApp.VERSION = Ext.ux.RapidApp.VERSION || 0;
+
+// Window Group for Custom Prompts to make them higher than other windows and load masks
+Ext.ux.RapidApp.CustomPromptWindowGroup = new Ext.WindowGroup();
+Ext.ux.RapidApp.CustomPromptWindowGroup.zseed = 20050;
 	
 /* Global Server Event Object */
 Ext.ux.RapidApp.EventObjectClass = Ext.extend(Ext.util.Observable,{
@@ -161,7 +165,8 @@ Ext.ux.RapidApp.errMsgHandler = function(title,msg,as_text) {
 	var body = as_text ? '<pre>' + Ext.util.Format.nl2br(msg) + '</pre>' : msg;
 	
 	win = new Ext.Window({
-		title: 'Exception',
+		manager: Ext.ux.RapidApp.CustomPromptWindowGroup,
+    title: 'Exception',
 		width: 600,
 		height: 400,
 		modal: true,
@@ -437,10 +442,6 @@ Ext.ux.RapidApp.handleServerCallBack = function(headerdata) {
 	}
 	return func();
 }
-
-// Window Group for Custom Prompts to make them higher than other windows and load masks
-Ext.ux.RapidApp.CustomPromptWindowGroup = new Ext.WindowGroup();
-Ext.ux.RapidApp.CustomPromptWindowGroup.zseed = 20050;
 
 Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 
