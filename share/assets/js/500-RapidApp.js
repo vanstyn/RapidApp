@@ -1151,8 +1151,9 @@ Ext.ux.RapidApp.WinFormPost
  * @cfg {Function} success success callback function
  * @cfg {Function} failure failure callback function
  * @cfg {Boolean} eval_response if true the response will be evaled
- * @cfg {Boolean} disableBtn disables the button once clicked
-
+ * @cfg {Boolean} disableBtn disables the button once clicked - note:
+                             uncaught exceptions from the server will
+                             cause the button to never be re-enabled
 */
 Ext.ns('Ext.ux.RapidApp.WinFormPost');
 Ext.ux.RapidApp.WinFormPost = function(cfg) {
