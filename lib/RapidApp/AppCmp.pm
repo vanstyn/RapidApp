@@ -98,6 +98,10 @@ sub test_permission {
     $self->c and
     $self->role_checker and
     $self->require_role and
+    # FIXME: only perform the test for valid sessions. This logic already
+    # happens (i.e. data is already protected from invalid sessions) and 
+    # will need to be updated to consider this new feature
+    $self->c->can('session_is_valid') and $self->c->session_is_valid and
     ! $self->role_checker->($self->c,$self->require_role)
   ) ? 0 : 1;
 }
