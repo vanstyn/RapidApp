@@ -21,16 +21,14 @@ There is also a convenient sugar method "rawhtml".
 
 =cut
 
-use overload '""' => \&_stringify_static; # to-string operator overload
+use overload '""' => \&stringify, fallback => 1; # to-string operator overload
 
 sub new {
 	my ($class, $html)= @_;
 	return bless \$html, $class;
 }
 
-sub _stringify_static {
-	my $self= shift;
-	$$self;
-}
+sub stringify { ${(shift) }
+
 
 1;
