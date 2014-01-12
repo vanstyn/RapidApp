@@ -28,7 +28,7 @@ sub new {
 	return bless \$html, $class;
 }
 
-sub stringify { ${(shift) }
+sub stringify { ${(shift)} }
 
 
 1;
