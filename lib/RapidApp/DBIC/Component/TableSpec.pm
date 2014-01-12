@@ -1011,8 +1011,29 @@ sub apply_row_methods {
 }
 
 
-
-
+# --------
+# NEW: EXCLUDE CODEREF RELATIONSHIPS INSTEAD OF THROWING EXCEPTION
+# This is a temp hack until support for CodeRefs in relationship
+# support is added, or until they are excluded on a non-global basis
+# (i.e. with this code the relationships are excluded from ALL locations
+# including backend code). <--- TODO/FIXME
+sub relationships {
+  my $self = shift;
+  my @rels = $self->next::method(@_);
+  return grep { ! $self->_rel_is_coderef_cond($_) } @rels;
+}
+sub has_relationship {
+  my ($self, $rel) = @_;
+  my $answer = $self->next::method($rel);
+  return 0 if ($answer && $self->_rel_is_coderef_cond($rel));
+  return $answer;
+}
+sub _rel_is_coderef_cond {
+  my ($self, $rel) = @_;
+  my $info = $self->relationship_info($rel) or return 0;
+  return ref($info->{cond}) eq 'CODE' ? 1 : 0
+}
+# --------
 
 
 ### -- old, pre-rest inlineNavLink:
