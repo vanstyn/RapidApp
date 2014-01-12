@@ -672,6 +672,7 @@ Ext.ux.RapidApp.ReAuthPrompt = function(success_callback) {
 	};
 
 	Ext.ux.RapidApp.WinFormPost({
+    manager: Ext.ux.RapidApp.CustomPromptWindowGroup,
 		title: "Session Expired",
 		height: 220,
 		width: 300,
@@ -1261,7 +1262,7 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
   };
 
 	var win = new Ext.Window({
-		//manager: Ext.ux.RapidApp.CustomPromptWindowGroup,
+		manager: cfg.manager,
     title: cfg.title,
 		id: winId,
 		layout: 'fit',
