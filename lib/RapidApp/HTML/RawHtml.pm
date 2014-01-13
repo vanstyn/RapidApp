@@ -21,7 +21,7 @@ There is also a convenient sugar method "rawhtml".
 
 =cut
 
-use overload '""' => \&stringify, fallback => 1; # to-string operator overload
+use overload '""' => \&_stringify_static, fallback => 1; # to-string operator overload
 
 sub new {
 	my ($class, $html)= @_;
@@ -30,5 +30,9 @@ sub new {
 
 sub stringify { ${(shift)} }
 
+# This method exists because 'overload' doesn't do dynamic method dispatch
+# We use a named method (rather than overload '""' => sub { ... }) to improve
+#   readibility of stack traces.
+sub _stringify_static { (shift)->stringify }
 
 1;

@@ -3,7 +3,7 @@ package RapidApp::Responder::UserError;
 use Moose;
 extends 'RapidApp::Responder';
 
-use overload '""' => \&stringify, fallback => 1; # to-string operator overload
+use overload '""' => \&_stringify_static, fallback => 1; # to-string operator overload
 use HTML::Entities;
 
 =head1 NAME
@@ -44,6 +44,11 @@ sub writeResponse {
 }
 
 sub stringify { (shift)->userMessage }
+
+# This method exists because 'overload' doesn't do dynamic method dispatch
+# We use a named method (rather than overload '""' => sub { ... }) to improve
+#   readibility of stack traces.
+sub _stringify_static { (shift)->stringify }
 
 no Moose;
 __PACKAGE__->meta->make_immutable;
