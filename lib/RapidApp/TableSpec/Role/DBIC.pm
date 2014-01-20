@@ -1626,7 +1626,7 @@ sub get_relationship_column_cnf {
 		#  automatically in normal columns in the profile stuff, but has to be done special
 		#  for relationship columns:
 		my $cinfo = exists $conf->{keyField} ? $self->ResultSource->column_info($conf->{keyField}) : undef;
-		if($cinfo and ! exists $conf->{editor}->{allowBlank}) {
+		if($cinfo and defined $cinfo->{is_nullable} and ! exists $conf->{editor}->{allowBlank}) {
 			# This logic is specific instead of being a blanket boolean choice. If there is some other,
 			# different, unexpected value for 'is_nullable', don't set allowBlank one way or the other
 			$conf->{editor}->{allowBlank} = \0 if($cinfo->{is_nullable} == 0);
