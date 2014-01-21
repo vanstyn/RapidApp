@@ -769,7 +769,7 @@ sub calculate_column_summaries {
 	}
 	
 	try {
-		my $agg_row = $Rs->search_rs(undef,{
+		my $agg_row = $Rs->as_subselect_rs->search_rs(undef,{
 			page => undef,
 			rows => undef,
 			order_by => undef,
