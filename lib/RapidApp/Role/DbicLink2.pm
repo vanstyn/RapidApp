@@ -769,14 +769,15 @@ sub calculate_column_summaries {
 	}
 	
 	try {
-		my $agg_row = $Rs->as_subselect_rs->search_rs(undef,{
-			page => undef,
-			rows => undef,
-			order_by => undef,
-			select => $select,
-			as => $as
-		})->first or return;
-	
+    my $agg_row = $Rs->search_rs(undef,{
+      page => undef,
+      rows => undef,
+      order_by => undef,
+    })->as_subselect_rs->search_rs(undef,{
+      select => $select,
+      as => $as
+    })->first or return;
+
 		$ret->{column_summaries} = { $agg_row->get_columns, %extra };
 	}
 	catch {
