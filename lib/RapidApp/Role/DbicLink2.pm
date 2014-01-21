@@ -769,15 +769,39 @@ sub calculate_column_summaries {
 	}
 	
 	try {
-    my $agg_row = $Rs->search_rs(undef,{
-      page => undef,
-      rows => undef,
-      order_by => undef,
-    })->as_subselect_rs->search_rs(undef,{
-      select => $select,
-      as => $as
-    })->first or return;
-
+  
+    my $agg_row;
+    if($Rs->{attrs}->{having}) {
+      # ---
+      # Special support for queries with HAVING clause:
+      #  This is heavily tied in with the custom building of
+      #  'having' in this class and is slated to be refactored at
+      #  some point... Conditions are converted from 'where' to
+      #  'having' for virtual columns. For this case, we need to
+      #  wrap in a subselect because the having relies on the AS
+      #  within the select, which is replaced for the summary query.
+      #  This special handling finally fixes Summary Functions when
+      #  there is a virtual column setup in MultiFilters
+      $agg_row = $Rs->search_rs(undef,{
+        page => undef,
+        rows => undef,
+        order_by => undef,
+      })->as_subselect_rs->search_rs(undef,{
+        select => $select,
+        as => $as,
+      })->first or return;
+      # ---
+    }
+    else {
+      $agg_row = $Rs->search_rs(undef,{
+        page => undef,
+        rows => undef,
+        order_by => undef,
+        select => $select,
+        as => $as
+      })->first or return;
+    }
+    
 		$ret->{column_summaries} = { $agg_row->get_columns, %extra };
 	}
 	catch {
