@@ -1155,23 +1155,27 @@ Ext.ux.RapidApp.WinFormPost
  * @cfg {Boolean} disableBtn disables the button once clicked - note:
                              uncaught exceptions from the server will
                              cause the button to never be re-enabled
+ * @cfg {String} disableBtnText Text to set in the 'Save' button when disabled
 */
 Ext.ns('Ext.ux.RapidApp.WinFormPost');
 Ext.ux.RapidApp.WinFormPost = function(cfg) {
 
-	var rand = Math.floor(Math.random()*100000);
-	var winId = 'win-' + rand;
-	var formId = 'winformpost-' + rand;
-
-	if(! cfg.title)						{ cfg.title = ''; 						}
-	if(! cfg.height)						{ cfg.height = 400; 						}
-	if(! cfg.width)						{ cfg.width = 350; 						}
-	if(! cfg.params)						{ cfg.params = {};					}
-	if(! cfg.valuesParamName)			{ cfg.valuesParamName = 'json_form_data';		}
-	if(! cfg.submitBtnText)			{ cfg.submitBtnText = 'Save';		}
-	if(! cfg.cancelHandler)			{ cfg.cancelHandler = Ext.emptyFn;	}
-	if(! typeof(cfg.closable))		{ cfg.closable = true;	}
-	
+  var rand = Math.floor(Math.random()*100000);
+  var winId = 'win-' + rand;
+  var formId = 'winformpost-' + rand;
+  
+  Ext.applyIf(cfg,{
+    title: '',
+    height: 400,
+    width: 350,
+    params: {},
+    valuesParamName: 'json_form_data',
+    submitBtnText: 'Save',
+    cancelHandler: Ext.emptyFn,
+    closable: true,
+    disableBtnText: 'Wait...',
+  });
+  
 	var cancel_fn = function(){ Ext.getCmp(winId).close(); cfg.cancelHandler(); }
 	
 	cfg.fieldset['anchor'] = '100% 100%';
@@ -1211,7 +1215,7 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
     handler	: function(btn) {
       if(cfg.disableBtn) {
         btn.setDisabled(true);
-        btn.setText('Wait...');
+        btn.setText(cfg.disableBtnText);
       }
       
       var form = Ext.getCmp(formId).getForm();
