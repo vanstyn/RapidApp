@@ -1272,9 +1272,26 @@ sub resolve_dbic_colname {
 			return $cond_data->{function}->($self,$rel,$col,$join,$cond_data,$name);
 		}
 		else {
-			# Setup the special GROUP_CONCAT render/function
 			my $m2m_attrs = $cond_data->{info}->{attrs}->{m2m_attrs};
 			if($m2m_attrs) {
+        # -- m2m relationship column --
+        #
+        # Setup the special GROUP_CONCAT render/function
+        #
+        # This is a partial implementation supporting "m2m" (many_to_many)
+        # relationship columns as added by the special result class function:
+        #  __PACKAGE__->TableSpec_m2m( 'rel' => 'linkrel', 'foreignrel' );
+        # Which needs to be used instead of the built-in __PACKAGE__->many_to_many
+        # function. (side note: this is needed for the same reason that 
+        # DBIx::Class::IntrospectableM2M was created).
+        #
+        # This function renders the values as a CSV list, so it is only suitable
+        # for many_to_many cases with a limited number of rows (e.g. roles table)
+        # which is probably the most common scenario, but certainly not the only
+        # one. Also, this CSV list is tied into the functioning of the m2m column
+        # editor. It is also db-specific, and only tested is MySQL and SQLite.
+        # All these reasons are why I say this implementation is "partial" in
+        # its current form.
 			
 				my $rinfo = $m2m_attrs->{rinfo};
 				my $rrinfo = $m2m_attrs->{rrinfo};
@@ -1321,10 +1338,20 @@ sub resolve_dbic_colname {
 				return { '' => \$sql, -as => $name };		
 			}
 			else {
+				# -- standard multi relationship column --
 				
-				#TODO: follow the native has_many accessor so we don't have to reproduce the attrs, etc!!!!
-				
-				# If not customized, we return a sub-query which counts the related items
+        # This is where the count sub-query is generated that provides
+        # the numeric count of related items for display in multi rel columns.
+        #
+        # This is also the limiting factor that prevents RapidApp from supporting
+        # CodeRef and multi-key relationships, because this code is actually manually
+        # turning the ON clause into a WHERE clause. The way this is being done could
+        # be expanded to support multi-key rels, but never CodeRef rels, so a totally
+        # different way of handling this needs to be written for full support. There
+        # is probably an easy DBIC way of doing this already that I just don't know
+        # about. We don't have the row object here, otherwise we could just call the 
+        # has_many accessor to have the rel_rs created automatically. But there has to
+        # be another way that uses the same machinery within DBIC... (Github Issue #40)
 				my $source = $self->schema->source($cond_data->{info}{source});
 				my $rel_rs= $source->resultset_class->new($source, { alias => 'inner' })->search_rs(
 					{ "inner.$cond_data->{foreign}" => \[" = $rel.$cond_data->{self}"] },
