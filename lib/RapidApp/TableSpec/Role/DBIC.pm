@@ -1342,21 +1342,28 @@ sub resolve_dbic_colname {
         
         # This is where the count sub-query is generated that provides
         # the numeric count of related items for display in multi rel columns.
-        #
-        # This is also the limiting factor that prevents RapidApp from supporting
-        # CodeRef and multi-key relationships, because this code is actually manually
-        # turning the ON clause into a WHERE clause. The way this is being done could
-        # be expanded to support multi-key rels, but never CodeRef rels, so a totally
-        # different way of handling this needs to be written for full support. There
-        # is probably an easy DBIC way of doing this already that I just don't know
-        # about. We don't have the row object here, otherwise we could just call the 
-        # has_many accessor to have the rel_rs created automatically. But there has to
-        # be another way that uses the same machinery within DBIC... (Github Issue #40)
+
         my $source = $self->schema->source($cond_data->{info}{source});
-        my $rel_rs= $source->resultset_class->new($source, { alias => 'inner' })->search_rs(
-          { "inner.$cond_data->{foreign}" => \[" = $rel.$cond_data->{self}"] },
+        
+        # --- Github Issue #40 ---
+        # This was the original, manual condition generation which only supported 
+        # single-key relationship conditions (and not multi-key or CodeRef):
+        #my $cond = { "${rel}_alias.$cond_data->{foreign}" => \[" = $rel.$cond_data->{self}"] };
+        
+        # This is the new way which uses DBIC's internal machinery in the proper way
+        # and works for any multi-rel cond type, including CodeRef:
+        my $cond = $source->_resolve_condition(
+          $cond_data->{info}{cond},
+          "${rel}_alias",
+          $rel,
+        );
+        # ---
+        
+        my $rel_rs = $source->resultset_class->new($source, { alias => "${rel}_alias" })->search_rs(
+          $cond,
           { %{$source->resultset_attributes || {}}, %{$cond_data->{info}{attrs} || {}} }
         );
+        
         return { '' => $rel_rs->count_rs->as_query, -as => $name };
       }
     }
