@@ -1305,17 +1305,18 @@ sub resolve_dbic_colname {
 				
 				# TODO: support cross-db relations
 				
-				my $sql = '(' .
-					# Generic (MySQL & SQLite):
-					'SELECT(GROUP_CONCAT(' . quote_table_strip_db($rrinfo->{table}) . '.`' . $rrinfo->{cond_info}->{foreign} . '`))' .
-					
-					' FROM ' . quote_table_strip_db($rinfo->{table}) . 
-					' JOIN ' . quote_table_strip_db($rrinfo->{table}) . ' ' . quote_table_strip_db($rrinfo->{table}) .
-					'  ON ' . quote_table_strip_db($rinfo->{table}) . '.`' . $rrinfo->{cond_info}->{self} . '`' .
-					'   = ' . quote_table_strip_db($rrinfo->{table}) . '.`' . $rrinfo->{cond_info}->{foreign} . '`' .
-					#' ON customers_to_flags.flag = flags.flag' .
-					' WHERE `' . $rinfo->{cond_info}->{foreign} . '` = `' . $rel . '`.`' . $cond_data->{self} . '`' . 
-				')';
+				# Strips <dbname>. prefix, if present:
+        my $rtable = (reverse split(/\./,$rinfo->{table}))[0];
+        my $rrtable = (reverse split(/\./,$rrinfo->{table}))[0];
+        
+        my $sql = join(' ', '(',
+          # Generic (MySQL & SQLite):
+          "SELECT(GROUP_CONCAT(`$rrtable`.`$rrinfo->{cond_info}->{foreign}`))",
+          " FROM `$rtable`",
+          " JOIN `$rrtable` `$rrtable`",
+          "  ON `$rtable`.`$rrinfo->{cond_info}->{self}` = `$rrtable`.`$rrinfo->{cond_info}->{foreign}`",
+          " WHERE `$rinfo->{cond_info}->{foreign}` = `$rel`.`$cond_data->{self}`",
+        ')');
 				
 				return { '' => \$sql, -as => $name };		
 			}
@@ -1333,12 +1334,6 @@ sub resolve_dbic_colname {
 			}
 		}
 	}
-}
-
-# NEW: Works with either 'db.table' or 'table' format:
-sub quote_table_strip_db {
-	my $table = shift;
-	return '`' . (reverse split(/\./,$table))[0] . '`';
 }
 
 sub resolve_dbic_rel_alias_by_column_name  {

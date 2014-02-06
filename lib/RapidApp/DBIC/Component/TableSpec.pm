@@ -1016,7 +1016,7 @@ sub apply_row_methods {
 # This is a temp hack until support for CodeRefs in relationship
 # support is added, or until they are excluded on a non-global basis
 # (i.e. with this code the relationships are excluded from ALL locations
-# including backend code). <--- TODO/FIXME
+# including backend code). <--- TODO/FIXME (Github Issue #40)
 sub relationships {
   my $self = shift;
   my @rels = $self->next::method(@_);
