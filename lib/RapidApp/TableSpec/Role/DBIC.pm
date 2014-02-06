@@ -1845,10 +1845,10 @@ sub get_multi_relationship_column_cnf {
 	
 	my $cur_renderer = $conf->{renderer};
 	
-	$conf->{required_fetch_columns} = [
-		$self->column_prefix . $rel_data->{self}
-	];
-	
+  $conf->{required_fetch_columns} ||= [];
+  push @{$conf->{required_fetch_columns}}, $self->column_prefix . $rel_data->{self} 
+    if ($rel_data->{self});
+
 	# not fully working yet, use_rest turned off...
 	my $use_rest = 0;
 	my $rel_rest_key = try{$self->ResultClass->getRestKey};
@@ -1870,7 +1870,7 @@ sub get_multi_relationship_column_cnf {
 	}
 	else {
 		# Fall back to the old thick, loadCnf inlineLink
-		$conf->{renderer} = jsfunc(
+		$conf->{renderer} = $rel_data->{self} ? jsfunc(
 			'function(value, metaData, record, rowIndex, colIndex, store) {' .
 				"var div_open = '$div_open';" .
 				"var disp = div_open + value + '</span>';" .
@@ -1920,7 +1920,17 @@ sub get_multi_relationship_column_cnf {
 				"disp += '</span></div>';" .
 				'return disp;' .
 			'}', $cur_renderer
-		);
+		) : jsfunc( 
+      # New: skip all the above open link logic in advance if we don't have
+      # self/foreign rel data. Added for Github Issue #40 now that it is 
+      # possible for it to be missing (just means there will be no open link):
+      join("\n", 
+        'function(value, metaData, record, rowIndex, colIndex, store) {',
+          "var div_open = '$div_open';",
+          "return div_open + value + '</span></span></div>';",
+        '}'
+      )
+   );
 	}
 	
 	

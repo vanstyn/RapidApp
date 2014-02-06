@@ -388,7 +388,7 @@ sub default_TableSpec_cnf_columns {
 				my $info = $self->relationship_info($col);
 				
 				$cols->{$col}->{relationship_info} = $info;
-				my $cond_data = $self->parse_relationship_cond($info->{cond});
+				my $cond_data = $self->parse_relationship_cond($info->{cond},$info);
 				$cols->{$col}->{relationship_cond_data} = { %$cond_data, %$info };
 				
 				if ($info->{attrs}->{accessor} eq 'single' || $info->{attrs}->{accessor} eq 'filter') {
@@ -825,23 +825,36 @@ sub get_foreign_column_from_cond {
 
 # TODO: Find a better way to handle this. Is there a real API
 # in DBIC to find this information?
+# Update: will be moving towards removing the need to collect
+# this info at all...
 sub parse_relationship_cond {
-	my $self = shift;
-	my $cond = shift;
-	
-	my $data = {};
-	
-	die "currently only single-key hashref conditions are supported" unless (
-		ref($cond) eq 'HASH' and
-		scalar keys %$cond == 1
-	);
-	
-	foreach my $i (%$cond) {
-		my ($side,$col) = split(/\./,$i);
-		$data->{$side} = $col;
-	}
-	
-	return $data;
+  my ($self,$cond,$info) = @_;
+  
+  my $single_key = (
+    ref($cond) eq 'HASH' and
+    scalar keys %$cond == 1
+  );
+  
+  if ($single_key) {
+    my $data = {};
+    foreach my $i (%$cond) {
+      my ($side,$col) = split(/\./,$i);
+      $data->{$side} = $col;
+    }
+    return $data;
+  }
+  
+  # New: allow complex conds (multi-key, CodeRef, etc) through, but 
+  # still block for single relationships since only multi rels are
+  # able to be handled so far. This is temp/stop-gap code (Github Issue #40)
+  die join("\n  ",'',
+    "currently only single-key hashref conditions are supported",
+    "for 'single' relationships (e.g. belongs_to, might_have, etc)",'',
+    "class: " . (ref($self) ? ref($self) : $self),
+    "rel info:", Dumper($info),
+  '') if ($info && $info->{attrs}{accessor} ne 'multi');
+  
+  return {};
 }
 
 # Works like an around method modifier, but $self is expected as first arg and
@@ -1012,26 +1025,29 @@ sub apply_row_methods {
 
 
 # --------
-# NEW: EXCLUDE CODEREF RELATIONSHIPS INSTEAD OF THROWING EXCEPTION
-# This is a temp hack until support for CodeRefs in relationship
+# NEW: EXCLUDE SINGLE CODEREF RELATIONSHIPS INSTEAD OF THROWING EXCEPTION
+# This is a temp hack until support for CodeRefs in single relationship
 # support is added, or until they are excluded on a non-global basis
 # (i.e. with this code the relationships are excluded from ALL locations
 # including backend code). <--- TODO/FIXME (Github Issue #40)
 sub relationships {
   my $self = shift;
   my @rels = $self->next::method(@_);
-  return grep { ! $self->_rel_is_coderef_cond($_) } @rels;
+  return grep { ! $self->_rel_is_non_multi_coderef_cond($_) } @rels;
 }
 sub has_relationship {
   my ($self, $rel) = @_;
   my $answer = $self->next::method($rel);
-  return 0 if ($answer && $self->_rel_is_coderef_cond($rel));
+  return 0 if ($answer && $self->_rel_is_non_multi_coderef_cond($rel));
   return $answer;
 }
-sub _rel_is_coderef_cond {
+sub _rel_is_non_multi_coderef_cond {
   my ($self, $rel) = @_;
   my $info = $self->relationship_info($rel) or return 0;
-  return ref($info->{cond}) eq 'CODE' ? 1 : 0
+  return (
+    ref($info->{cond}) eq 'CODE' &&
+    $info->{attrs}{accessor} ne 'multi'
+  )? 1 : 0
 }
 # --------
 
