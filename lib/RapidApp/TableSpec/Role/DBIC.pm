@@ -1247,33 +1247,33 @@ $get_render_col is a boolean of whether this function should instead return
 
 =cut
 sub resolve_dbic_colname {
-	my ($self, $name, $merge_join, $get_render_col)= @_;
-	$get_render_col ||= 0;
-	
-	my ($rel,$col,$join,$cond_data) = $self->resolve_dbic_rel_alias_by_column_name($name,$get_render_col);
+  my ($self, $name, $merge_join, $get_render_col)= @_;
+  $get_render_col ||= 0;
 
-	%$merge_join = %{ merge($merge_join,$join) }
-		if ($merge_join and $join);
+  my ($rel,$col,$join,$cond_data) = $self->resolve_dbic_rel_alias_by_column_name($name,$get_render_col);
 
-	if (!defined $cond_data) {
-		# it is a simple column
-		return "$rel.$col";
-	} else {
-		# If cond_data is defined, the relation is a multi-relation, and we need to either
-		#  join and group-by, or run a sub-query.  If join-and-group-by happens twice, it
-		#  breaks COUNT() (because the number of joined rows gets multiplied) so by default
-		#  we only use sub-queries.  In fact, join and group-by has a lot of problems on
-		#  MySQL and we should probably never use it.
-		$cond_data->{function} = $cond_data->{function} || $self->multi_rel_columns_indx->{$name};
-		
-		# Support for a custom aggregate function
-		if (ref($cond_data->{function}) eq 'CODE') {
-			# TODO: we should use hash-style parameters
-			return $cond_data->{function}->($self,$rel,$col,$join,$cond_data,$name);
-		}
-		else {
-			my $m2m_attrs = $cond_data->{info}->{attrs}->{m2m_attrs};
-			if($m2m_attrs) {
+  %$merge_join = %{ merge($merge_join,$join) }
+    if ($merge_join and $join);
+
+  if (!defined $cond_data) {
+    # it is a simple column
+    return "$rel.$col";
+  } else {
+    # If cond_data is defined, the relation is a multi-relation, and we need to either
+    #  join and group-by, or run a sub-query.  If join-and-group-by happens twice, it
+    #  breaks COUNT() (because the number of joined rows gets multiplied) so by default
+    #  we only use sub-queries.  In fact, join and group-by has a lot of problems on
+    #  MySQL and we should probably never use it.
+    $cond_data->{function} = $cond_data->{function} || $self->multi_rel_columns_indx->{$name};
+    
+    # Support for a custom aggregate function
+    if (ref($cond_data->{function}) eq 'CODE') {
+      # TODO: we should use hash-style parameters
+      return $cond_data->{function}->($self,$rel,$col,$join,$cond_data,$name);
+    }
+    else {
+      my $m2m_attrs = $cond_data->{info}->{attrs}->{m2m_attrs};
+      if($m2m_attrs) {
         # -- m2m relationship column --
         #
         # Setup the special GROUP_CONCAT render/function
@@ -1292,37 +1292,37 @@ sub resolve_dbic_colname {
         # editor. It is also db-specific, and only tested is MySQL and SQLite.
         # All these reasons are why I say this implementation is "partial" in
         # its current form.
-			
-				my $rinfo = $m2m_attrs->{rinfo};
-				my $rrinfo = $m2m_attrs->{rrinfo};
-			
-				# initial hard-coded example the dynamic logic was based on:
-				#my $sql = '(' .
-				#	# SQLite Specific:
-				#	#'SELECT(GROUP_CONCAT(flags.flag,", "))' .
-				#	
-				#	# MySQL Sepcific:
-				#	#'SELECT(GROUP_CONCAT(flags.flag SEPARATOR ", "))' .
-				#	
-				#	# Generic (MySQL & SQLite):
-				#	'SELECT(GROUP_CONCAT(flags.flag))' .
-				#	
-				#	' FROM ' . $source->from . 
-				#	' JOIN `flags` `flags` ON customers_to_flags.flag = flags.flag' .
-				#	' WHERE ' . $cond_data->{foreign} . ' = ' . $rel . '.' . $cond_data->{self} . 
-				#')';
-				
-				
-				### TODO: build this using DBIC (subselect_rs as_query? resultset_column ?)
-				### This is unfortunately database specific. It works in MySQL and SQLite, and
-				### should work in any database with the GROUP_CONCAT function. It doesn't work
-				### in PostgrSQL because it doesn't have GROUP_CONCAT. This will have to be implemented
-				### separately first each db. TODO: ask the storage engine for the db type and apply
-				### a correct version of the function:
-				
-				# TODO: support cross-db relations
-				
-				# Strips <dbname>. prefix, if present:
+
+        my $rinfo = $m2m_attrs->{rinfo};
+        my $rrinfo = $m2m_attrs->{rrinfo};
+      
+        # initial hard-coded example the dynamic logic was based on:
+        #my $sql = '(' .
+        #	# SQLite Specific:
+        #	#'SELECT(GROUP_CONCAT(flags.flag,", "))' .
+        #	
+        #	# MySQL Sepcific:
+        #	#'SELECT(GROUP_CONCAT(flags.flag SEPARATOR ", "))' .
+        #	
+        #	# Generic (MySQL & SQLite):
+        #	'SELECT(GROUP_CONCAT(flags.flag))' .
+        #	
+        #	' FROM ' . $source->from . 
+        #	' JOIN `flags` `flags` ON customers_to_flags.flag = flags.flag' .
+        #	' WHERE ' . $cond_data->{foreign} . ' = ' . $rel . '.' . $cond_data->{self} . 
+        #')';
+        
+        
+        ### TODO: build this using DBIC (subselect_rs as_query? resultset_column ?)
+        ### This is unfortunately database specific. It works in MySQL and SQLite, and
+        ### should work in any database with the GROUP_CONCAT function. It doesn't work
+        ### in PostgrSQL because it doesn't have GROUP_CONCAT. This will have to be implemented
+        ### separately first each db. TODO: ask the storage engine for the db type and apply
+        ### a correct version of the function:
+        
+        # TODO: support cross-db relations
+        
+        # Strips <dbname>. prefix, if present:
         my $rtable = (reverse split(/\./,$rinfo->{table}))[0];
         my $rrtable = (reverse split(/\./,$rrinfo->{table}))[0];
         
@@ -1334,12 +1334,12 @@ sub resolve_dbic_colname {
           "  ON `$rtable`.`$rrinfo->{cond_info}->{self}` = `$rrtable`.`$rrinfo->{cond_info}->{foreign}`",
           " WHERE `$rinfo->{cond_info}->{foreign}` = `$rel`.`$cond_data->{self}`",
         ')');
-				
-				return { '' => \$sql, -as => $name };		
-			}
-			else {
-				# -- standard multi relationship column --
-				
+        
+        return { '' => \$sql, -as => $name };		
+      }
+      else {
+        # -- standard multi relationship column --
+        
         # This is where the count sub-query is generated that provides
         # the numeric count of related items for display in multi rel columns.
         #
@@ -1352,15 +1352,15 @@ sub resolve_dbic_colname {
         # about. We don't have the row object here, otherwise we could just call the 
         # has_many accessor to have the rel_rs created automatically. But there has to
         # be another way that uses the same machinery within DBIC... (Github Issue #40)
-				my $source = $self->schema->source($cond_data->{info}{source});
-				my $rel_rs= $source->resultset_class->new($source, { alias => 'inner' })->search_rs(
-					{ "inner.$cond_data->{foreign}" => \[" = $rel.$cond_data->{self}"] },
-					{ %{$source->resultset_attributes || {}}, %{$cond_data->{info}{attrs} || {}} }
-				);
-				return { '' => $rel_rs->count_rs->as_query, -as => $name };
-			}
-		}
-	}
+        my $source = $self->schema->source($cond_data->{info}{source});
+        my $rel_rs= $source->resultset_class->new($source, { alias => 'inner' })->search_rs(
+          { "inner.$cond_data->{foreign}" => \[" = $rel.$cond_data->{self}"] },
+          { %{$source->resultset_attributes || {}}, %{$cond_data->{info}{attrs} || {}} }
+        );
+        return { '' => $rel_rs->count_rs->as_query, -as => $name };
+      }
+    }
+  }
 }
 
 sub resolve_dbic_rel_alias_by_column_name  {
