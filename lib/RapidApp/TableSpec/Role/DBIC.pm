@@ -303,9 +303,15 @@ hashash 'Cnf', lazy => 1, default => sub {
 	}
 	
 	my $cf = $class->get_built_Cnf;
-	
-	%{$self->Cnf_order} = %{ $cf->{order} || {} };
-	return $cf->{data} || {};
+  
+	#%{$self->Cnf_order} = %{ $cf->{order} || {} };
+	#return $cf->{data} || {};
+  
+  # Legacy/backcompat: simulate the olf TableSpec_cnf format:
+  my $sim_order = { columns => [ keys %{$cf->{columns}} ] };
+  
+  %{$self->Cnf_order} = %{ $sim_order || {} };
+  return $cf || {};
 };
 
 

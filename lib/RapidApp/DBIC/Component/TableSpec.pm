@@ -188,8 +188,7 @@ sub is_TableSpec_applied {
 	my $self = shift;
 	return (
 		defined $self->TableSpec_cnf and
-		defined $self->TableSpec_cnf->{data} and
-		defined $self->TableSpec_cnf->{data}->{apply_TableSpec_timestamp}
+		defined $self->TableSpec_cnf->{apply_TableSpec_timestamp}
 	);
 }
 
@@ -283,9 +282,7 @@ sub default_TableSpec_cnf  {
 	my $self = shift;
 	my $set = shift || {};
 
-	my $data = $set->{data} || {};
-	my $order = $set->{order} || {};
-	my $deref = $set->{deref} || {};
+  my $data = $set;
 	
 	
 	my $table = $self->table;
@@ -326,11 +323,12 @@ sub default_TableSpec_cnf  {
 	
 	$defaults{related_column_property_transforms} = $rel_trans;
 	
-	my $defs = { data => \%defaults };
+  my $defs = \%defaults;
 	
 	my $col_cnf = $self->default_TableSpec_cnf_columns($set);
+  
 	$defs = merge($defs,$col_cnf);
-
+  
 	return merge($defs, $set);
 }
 
@@ -338,21 +336,19 @@ sub default_TableSpec_cnf_columns {
 	my $self = shift;
 	my $set = shift || {};
 
-	my $data = $set->{data} || {};
-	my $order = $set->{order} || {};
-	my $deref = $set->{deref} || {};
+  my $data = $set;
 	
 	my @col_order = $self->default_TableSpec_cnf_column_order($set);
 	
 	my $cols = { map { $_ => {} } @col_order };
-	
+  
 	# lowest precidence:
-	$cols = merge($cols,$set->{data}->{column_properties_defaults} || {});
+	$cols = merge($cols,$set->{column_properties_defaults} || {});
 
-	$cols = merge($cols,$set->{data}->{column_properties_ordered} || {});
+	$cols = merge($cols,$set->{column_properties_ordered} || {});
 		
 	# higher precidence:
-	$cols = merge($cols,$set->{data}->{column_properties} || {});
+	$cols = merge($cols,$set->{column_properties} || {});
 
 	my $data_types = $self->TableSpec_data_type_profiles;
 	#scream(keys %$cols);
@@ -366,14 +362,14 @@ sub default_TableSpec_cnf_columns {
 		$is_local = 0 if (
 			$is_local and
 			$self->has_relationship($col) and
-			$set->{data}->{'priority_rel_columns'}
+			$set->{'priority_rel_columns'}
 		);
 		
 		# -- If priority_rel_columns is on but we need to exclude a specific column:
 		$is_local = 1 if (
 			! $is_local and
-			$set->{data}->{no_priority_rel_column} and
-			$set->{data}->{no_priority_rel_column}->{$col} and
+			$set->{no_priority_rel_column} and
+			$set->{no_priority_rel_column}->{$col} and
 			$self->has_column($col)
 		);
 		# --
@@ -549,10 +545,7 @@ sub default_TableSpec_cnf_columns {
     
 	}
 	
-	return {
-		data => { columns => $cols },
-		order => { columns => \@col_order }
-	};
+	return { columns => $cols };
 }
 
 sub TableSpec_valid_db_columns {
@@ -572,10 +565,10 @@ sub TableSpec_valid_db_columns {
 		# 'filter' means single, but the name is also a local column
 		$accessor = 'single' if (
 			$accessor eq 'filter' and
-			$self->TableSpec_cnf->{data}->{'priority_rel_columns'} and
+			$self->TableSpec_cnf->{'priority_rel_columns'} and
 			!(
-				$self->TableSpec_cnf->{data}->{'no_priority_rel_column'} and
-				$self->TableSpec_cnf->{data}->{'no_priority_rel_column'}->{$rel}
+				$self->TableSpec_cnf->{'no_priority_rel_column'} and
+				$self->TableSpec_cnf->{'no_priority_rel_column'}->{$rel}
 			) and
 			! $pri_cols{$rel} #<-- exclude primary column names. TODO: this check is performed later, fix
 		);
@@ -603,10 +596,10 @@ sub default_TableSpec_cnf_column_order {
 	my $set = shift || {};
 	
 	my @order = ();
-	push @order, @{ $self->TableSpec_get_conf('column_properties_ordered',$set) || [] };
+	#push @order, @{ $self->TableSpec_get_conf('column_properties_ordered',$set) || [] };
 	#push @order, $self->columns;
 	push @order, $self->TableSpec_valid_db_columns; # <-- native dbic column order has precidence over the column_properties order
-	push @order, @{ $self->TableSpec_get_conf('column_properties',$set) || [] };
+	#push @order, @{ $self->TableSpec_get_conf('column_properties',$set) || [] };
 		
 	# fold together removing duplicates:
 	@order = uniq @order;
@@ -660,14 +653,13 @@ sub TableSpec_set_conf {
 	return $self->TableSpec_set_hash_conf($param,$value,@_) 
 		if($hash_conf_params{$param} and @_ > 0);
 		
-	$self->TableSpec_cnf->{data}->{$param} = $value;
-	delete $self->TableSpec_cnf->{order}->{$param};
-	
+	$self->TableSpec_cnf->{$param} = $value;
+
 	return $self->TableSpec_set_conf(@_) if (@_ > 0);
 	return 1;
 }
 
-# Stores arbitrary hashes, preserving their order
+
 sub TableSpec_set_hash_conf {
 	my $self = shift;
 	my $param = shift;
@@ -677,32 +669,8 @@ sub TableSpec_set_hash_conf {
 	$self->TableSpec_built_cnf(undef);
 	
 	my %opt = get_mixed_hash_args_ordered(@_);
-	
-	my $i = 0;
-	my $order = [ grep { ++$i & 1 } @_ ]; #<--get odd elements (keys)
-	
-	my $data = \%opt;
-	
-	$self->TableSpec_cnf->{data}->{$param} = $data;
-	$self->TableSpec_cnf->{order}->{$param} = $order;
-}
-
-# Sets a reference value with flag to dereference on TableSpec_get_conf
-sub TableSpec_set_deref_conf {
-	my $self = shift;
-	my $param = shift || return undef;
-	my $value = shift || die "TableSpec_set_deref_conf(): missing value for param '$param'";
-	die "TableSpec_set_deref_conf(): value must be a SCALAR, HASH, or ARRAY ref" unless (
-		ref($value) eq 'HASH' or
-		ref($value) eq 'ARRAY' or
-		ref($value) eq 'SCALAR'
-	);
-	
-	$self->TableSpec_cnf->{deref}->{$param} = 1;
-	my $ret = $self->TableSpec_set_conf($param,$value);
-
-	return $self->TableSpec_set_deref_conf(@_) if (@_ > 0);
-	return $ret;
+  
+  $self->TableSpec_cnf->{$param} = \%opt;
 }
 
 sub TableSpec_get_conf {
@@ -710,11 +678,10 @@ sub TableSpec_get_conf {
 	my $param = shift || return undef;
 	my $storage = shift || $self->get_built_Cnf;
 	
-	return $self->TableSpec_get_hash_conf($param,$storage) if ($storage->{order}->{$param});
+	return $self->TableSpec_get_hash_conf($param,$storage) 
+    if ($hash_conf_params{$param});
 	
-	my $data = $storage->{data}->{$param};
-	return deref($data) if ($storage->{deref}->{$param});
-	return $data;
+	return $storage->{$param};
 }
 
 sub TableSpec_get_hash_conf {
@@ -722,34 +689,14 @@ sub TableSpec_get_hash_conf {
 	my $param = shift || return undef;
 	my $storage = shift || $self->get_built_Cnf;
 	
-	my $data = $storage->{data}->{$param};
-	my $order = $storage->{order}->{$param};
-	
-	ref($data) eq 'HASH' or
-		die "FATAL: Unexpected data! '$param' has a stored order, but it's data is not a HashRef!";
-		
-	ref($order) eq 'ARRAY' or
-		die "FATAL: Unexpected data! '$param' order is not an ArrayRef!";
-		
-	my %order_indx = map {$_=>1} @$order;
-	
-	# This is sometimes breaking, and this whole thing will be refactored soon...
-	#!$order_indx{$_} and
-	#	die "FATAL: Unexpected data! param '$param' - found key '$_' missing from stored order!"
-	#		for (keys %$data);
-			
-	!$data->{$_} and
-		die "FATAL: Unexpected data! param '$param' - missing declared ordered key '$_' from data!"
-			for (@$order);
-	
-	return map { $_ => $data->{$_} } @$order;
+	return $storage->{$param};
 }
 
 sub TableSpec_has_conf {
 	my $self = shift;
 	my $param = shift;
 	my $storage = shift || $self->get_built_Cnf;
-	return 1 if (exists $storage->{data}->{$param});
+	return 1 if (exists $storage->{$param});
 	return 0;
 }
 
