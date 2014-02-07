@@ -121,11 +121,6 @@ __PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 		hidden => \1
 	},
 	
-	order => {
-		header => 'Order',
-		width	=> 75,
-	},
-	
 	iconcls => {
 		width	=> 110,
 		header => 'Icon Class',

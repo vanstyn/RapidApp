@@ -596,11 +596,12 @@ sub default_TableSpec_cnf_column_order { (shift)->TableSpec_valid_db_columns }
 # properties (column TableSpecs). We are keeping track of them to
 # use to for remapping while the TableSpec_cnf refactor/consolidation
 # is underway...
-my %col_prop_names = map {$_=>1} qw(
+my @col_prop_names = qw(
 columns
 column_properties
 column_properties_ordered
 );
+my %col_prop_names = map {$_=>1} @col_prop_names;
 
 # The TableSpec_set_conf method is overly complex to allow
 # flexible arguments as either hash or hashref, and because of
@@ -610,7 +611,7 @@ column_properties_ordered
 # allowing this was probably not worth the extra maintenace/code and
 # was too fancy for its own good (since this case may or may not  
 # shift the key/value positions in the arg list) but it is a part
-# of the API for now.
+# of the API for now...
 sub TableSpec_set_conf {
   my $self = shift;
   die "TableSpec_set_conf(): bad arguments" unless (scalar(@_) > 0);
@@ -640,15 +641,36 @@ sub TableSpec_set_conf {
   
   my %cnf = @_;
   
-  # Also make sure all the keys (even positions) are simple scalars:
-  ref($_) and die join(' ',
-    'TableSpec_set_conf( %cnf ):',
-    'found ref in key position:', Dumper($_)
-  ) for (keys %cnf);
+  for my $param (keys %cnf) {
+    # Also make sure all the keys (even positions) are simple scalars:
+    die join(' ',
+      'TableSpec_set_conf( %cnf ):',
+      'found ref in key position:', Dumper($_)
+    ) if (ref($param));
   
-  $self->TableSpec_cnf->{$_} = $cnf{$_} for (keys %cnf);
+    if($col_prop_names{$param}) {
+      # Also handle column_properties specified with other params:
+      die join(' ',
+        'TableSpec_set_conf( %cnf ): Expected',
+        "HashRef value for config key '$param':", Dumper($cnf{$param})
+      ) unless (ref($cnf{$param}) eq 'HASH');
+      $self->_TableSpec_set_column_properties($cnf{$param});
+    }
+    else {
+      $self->TableSpec_cnf->{$param} = $cnf{$param} 
+    }
+  }
 }
 
+# Special new internal method for setting column properties and
+# properly handle backward compatability. Simultaneously sets/updates
+# the cnf key names for all the 'column_properties' names that are
+# currently supported by the API (as references pointing to the same
+# single config HashRef). This is only temporary and is a throwback
+# caused by the older/original API design for the TableSpec_cnf and
+# will be removed later on once the other config names can be depricated
+# along with other planned refactored. This is just a stop-gap to 
+# allow this refactor to be done in stages...
 sub _TableSpec_set_column_properties {
   my $self = shift;
   die "TableSpec_set_conf( column_properties => %cnf ): bad args" 
@@ -679,12 +701,19 @@ sub _TableSpec_set_column_properties {
   
   my %valid_colnames = map {$_=>1} ($self->TableSpec_valid_db_columns);
   
-  $self->TableSpec_cnf->{'column_properties'} ||= {};
+  my $col_props;
+  $col_props ||= $self->TableSpec_cnf->{$_} for (@col_prop_names);
+  $col_props ||= {};
+  
   for my $col (keys %cnf) {
-    warn "Ignoring config for unknown column name '$col'" and next
-      unless ($valid_colnames{$col});
-    $self->TableSpec_cnf->{'column_properties'}->{$col} = $cnf{$col};
+    warn join(' ',
+      "Ignoring config for unknown column name '$col'",
+      "in $self TableSpec config\n"
+    ) and next unless ($valid_colnames{$col});
+    $col_props->{$col} = $cnf{$col};
   }
+  
+  $self->TableSpec_cnf->{$_} = $col_props for (@col_prop_names);
 }
 
 
