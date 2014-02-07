@@ -341,6 +341,9 @@ sub default_TableSpec_cnf_columns {
 	my @col_order = $self->default_TableSpec_cnf_column_order($set);
 	
 	my $cols = { map { $_ => {} } @col_order };
+  
+	# lowest precidence:
+	$cols = merge($cols,$set->{data}->{column_properties_defaults} || {});
 
 	$cols = merge($cols,$set->{column_properties_ordered} || {});
 		
