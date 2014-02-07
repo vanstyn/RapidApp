@@ -1106,8 +1106,7 @@ sub add_related_TableSpec {
 	
 	my $class = $self->ResultClass;
 	if($class->can('TableSpec_get_conf') and $class->TableSpec_has_conf('related_column_property_transforms')) {
-		# TODO/FIXME: why is this not calling TableSpec_get_conf????
-    my $rel_transforms = $class->TableSpec_cnf->{'related_column_property_transforms'};
+    my $rel_transforms = $class->TableSpec_get_conf('related_column_property_transforms');
 		$params{column_property_transforms} = $rel_transforms->{$rel} if ($rel_transforms->{$rel});
 		
 		# -- Hard coded default 'header' transform (2011-12-25 by HV)

@@ -600,6 +600,7 @@ my @col_prop_names = qw(
 columns
 column_properties
 column_properties_ordered
+column_properties_defaults
 );
 my %col_prop_names = map {$_=>1} @col_prop_names;
 
@@ -725,7 +726,36 @@ sub TableSpec_get_conf {
   # Special: map all column prop names into 'column_properties'
   $param = 'column_properties' if ($col_prop_names{$param});
 
-  return $storage->{$param};
+  my $value = $storage->{$param};
+  
+  # FIXME FIXME FIXME
+  # In the original design of the TableSpec_cnf internals, which
+  # was too fancy for its own good, meta/type information was
+  # transparently stored to be able to do things like remember
+  # the order of keys in hashes, auto dereference, etc. This has
+  # been unfactored and converted to simple key/values since, however,
+  # places that might still call TableSpec_get_conf still expect
+  # to get back lists instead of ArrayRefs/HashRefs in certain
+  # places. These places should be very limited (part of the reason
+  # it was decided this whole thing wasn't worth it, because it just
+  # wasn't used enough), but for now, to honor the original API (mostly)
+  # we're dereferencing according to wantarray, since all the places
+  # that expect to get lists back obviously call TableSpec_get_conf
+  # in LIST context. This should not be kept this way for too long,
+  # however! It is just temporary until those outside places
+  # can be confirmed and eliminated, or a proper deprecation plan
+  # can be made, should that even be needed...
+  if(wantarray && ref($value)) {
+    warn join("\n",'',
+      "  WARNING: calling TableSpec_get_conf() in LIST context",
+      "  is deprecated, please update your code.",
+      "   --> Auto-dereferencing param '$param' $value",'',
+    '') if (ref($value) eq 'ARRAY' || ref($value) eq 'HASH');
+    return @$value if (ref($value) eq 'ARRAY');
+    return %$value if (ref($value) eq 'HASH');
+  }
+  
+  return $value;
 }
 
 

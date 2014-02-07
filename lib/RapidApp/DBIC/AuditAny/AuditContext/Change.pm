@@ -326,7 +326,7 @@ has 'fk_map', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
 has 'column_properties', is => 'ro', isa => 'HashRef', lazy => 1, default => sub {
 	my $self = shift;
 	return {} unless ($self->has_TableSpec);
-	return { $self->class->TableSpec_get_conf('columns') };
+	return clone($self->class->TableSpec_get_conf('columns'));
 };
 
 1;

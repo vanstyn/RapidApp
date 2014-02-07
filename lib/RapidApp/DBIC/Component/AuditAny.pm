@@ -3,6 +3,12 @@ package RapidApp::DBIC::Component::AuditAny;
 # this is for Attribute::Handlers:
 require base; base->import('DBIx::Class::Schema');
 
+
+### WARNING: THIS IS DEPRECATED, DO NOT USE
+### See DBIx::Class::AuditAny  instead
+###   (https://github.com/vanstyn/DBIx-Class-AuditAny)
+
+
 use RapidApp::Include qw(sugar perlutil);
 use Class::MOP::Class;
 
