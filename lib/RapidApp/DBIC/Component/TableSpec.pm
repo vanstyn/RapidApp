@@ -341,9 +341,6 @@ sub default_TableSpec_cnf_columns {
 	my @col_order = $self->default_TableSpec_cnf_column_order($set);
 	
 	my $cols = { map { $_ => {} } @col_order };
-  
-	# lowest precidence:
-	$cols = merge($cols,$set->{column_properties_defaults} || {});
 
 	$cols = merge($cols,$set->{column_properties_ordered} || {});
 		
@@ -591,106 +588,117 @@ sub TableSpec_valid_db_columns {
 	return uniq($self->columns,@single_rels,@multi_rels);
 }
 
-sub default_TableSpec_cnf_column_order {
-	my $self = shift;
-	my $set = shift || {};
-	
-	my @order = ();
-	#push @order, @{ $self->TableSpec_get_conf('column_properties_ordered',$set) || [] };
-	#push @order, $self->columns;
-	push @order, $self->TableSpec_valid_db_columns; # <-- native dbic column order has precidence over the column_properties order
-	#push @order, @{ $self->TableSpec_get_conf('column_properties',$set) || [] };
-		
-	# fold together removing duplicates:
-	@order = uniq @order;
-	
-	my $ovrs = $self->TableSpec_get_conf('column_order_overrides',$set) or return @order;
-	foreach my $ord (@$ovrs) {
-		my ($offset,$cols) = @$ord;
-		my %colmap = map { $_ => 1 } @$cols;
-		# remove colnames to be ordered differently:
-		@order = grep { !$colmap{$_} } @order;
-		
-		# If the offset is a column name prefixed with + (after) or - (before)
-		$offset =~ s/^([\+\-])//;
-		if($1) {
-			my $i = 0;
-			my $ndx = 0; # <-- default before (will become 0 below)
-			$ndx = scalar @order if ($1 eq '+'); # <-- default after
-			for my $col (@order) {
-				$ndx = $i and last if ($col eq $offset);
-				$i++;
-			}
-			$ndx++ if ($1 eq '+' and $ndx > 0);
-			$offset = $ndx;
-		}
+# There is no longer extra logic at this stage because we're
+# backing off of the entire original "ordering" design:
+sub default_TableSpec_cnf_column_order { (shift)->TableSpec_valid_db_columns }
 
-		$offset = scalar @order if ($offset > scalar @order);
-		splice(@order,$offset,0,@$cols);
-	}
-	
-	return uniq @order;
-}
-
-
-# List of specific param names that we know should be hash confs:
-my %hash_conf_params = map {$_=>1} qw(
+# Tmp code: these are all key names that may be used to set column
+# properties (column TableSpecs). We are keeping track of them to
+# use to for remapping while the TableSpec_cnf refactor/consolidation
+# is underway...
+my %col_prop_names = map {$_=>1} qw(
+columns
 column_properties
 column_properties_ordered
-column_properties_defaults
-relationship_columns
-related_column_property_transforms
-column_order_overrides
 );
 
+# The TableSpec_set_conf method is overly complex to allow
+# flexible arguments as either hash or hashref, and because of
+# the special case of setting the nested 'column_properties'
+# param, if specified as the first argument, and then be able to
+# accept its sub params as either a hash or a hashref. In hindsight, 
+# allowing this was probably not worth the extra maintenace/code and
+# was too fancy for its own good (since this case may or may not  
+# shift the key/value positions in the arg list) but it is a part
+# of the API for now.
 sub TableSpec_set_conf {
-	my $self = shift;
-	my $param = shift || return undef;
-	my $value = shift;# || die "TableSpec_set_conf(): missing value for param '$param'";
-	
-	$self->TableSpec_built_cnf(undef);
-	
-	return $self->TableSpec_set_hash_conf($param,$value,@_) 
-		if($hash_conf_params{$param} and @_ > 0);
-		
-	$self->TableSpec_cnf->{$param} = $value;
-
-	return $self->TableSpec_set_conf(@_) if (@_ > 0);
-	return 1;
-}
-
-
-sub TableSpec_set_hash_conf {
-	my $self = shift;
-	my $param = shift;
-	
-	return $self->TableSpec_set_conf($param,@_) if (@_ == 1); 
-	
-	$self->TableSpec_built_cnf(undef);
-	
-	my %opt = get_mixed_hash_args_ordered(@_);
+  my $self = shift;
+  die "TableSpec_set_conf(): bad arguments" unless (scalar(@_) > 0);
   
-  $self->TableSpec_cnf->{$param} = \%opt;
+  # First arg can be a hashref - deref and call again:
+  if(ref($_[0])) {
+    die "TableSpec_set_conf(): bad arguments" unless (
+      ref($_[0]) eq 'HASH' and
+      scalar(@_) == 1
+    );
+    return $self->TableSpec_set_conf(%{$_[0]})
+  }
+  
+  $self->TableSpec_built_cnf(undef); #<-- FIXME!!
+  
+  # Special handling for setting 'column_properties':
+  if ($col_prop_names{$_[0]}) {
+    shift @_; #<-- pull out the 'column_properties' first arg
+    return $self->_TableSpec_set_column_properties(@_);
+  };
+  
+  # Enforce even number of args for good measure:
+  die join(' ', 
+    'TableSpec_set_conf( %cnf ):',
+    "odd number of args in key/value list:", Dumper(\@_)
+  ) if (scalar(@_) & 1);
+  
+  my %cnf = @_;
+  
+  # Also make sure all the keys (even positions) are simple scalars:
+  ref($_) and die join(' ',
+    'TableSpec_set_conf( %cnf ):',
+    'found ref in key position:', Dumper($_)
+  ) for (keys %cnf);
+  
+  $self->TableSpec_cnf->{$_} = $cnf{$_} for (keys %cnf);
 }
+
+sub _TableSpec_set_column_properties {
+  my $self = shift;
+  die "TableSpec_set_conf( column_properties => %cnf ): bad args" 
+    unless (scalar(@_) > 0);
+  
+  # First arg can be a hashref - deref and call again:
+  if(ref($_[0])) {
+    die "TableSpec_set_conf( column_properties => %cnf ): bad args"  unless (
+      ref($_[0]) eq 'HASH' and
+      scalar(@_) == 1
+    );
+    return $self->_TableSpec_set_column_properties(%{$_[0]})
+  }
+  
+  # Enforce even number of args for good measure:
+  die join(' ', 
+    'TableSpec_set_conf( column_properties => %cnf ):',
+    "odd number of args in key/value list:", Dumper(\@_)
+  ) if (scalar(@_) & 1);
+  
+  my %cnf = @_;
+  
+  # Also make sure all the keys (even positions) are simple scalars:
+  ref($_) and die join(' ',
+    'TableSpec_set_conf( column_properties => %cnf ):',
+    'found ref in key position:', Dumper($_)
+  ) for (keys %cnf);
+  
+  my %valid_colnames = map {$_=>1} ($self->TableSpec_valid_db_columns);
+  
+  $self->TableSpec_cnf->{'column_properties'} ||= {};
+  for my $col (keys %cnf) {
+    warn "Ignoring config for unknown column name '$col'" and next
+      unless ($valid_colnames{$col});
+    $self->TableSpec_cnf->{'column_properties'}->{$col} = $cnf{$col};
+  }
+}
+
 
 sub TableSpec_get_conf {
-	my $self = shift;
-	my $param = shift || return undef;
-	my $storage = shift || $self->get_built_Cnf;
-	
-	return $self->TableSpec_get_hash_conf($param,$storage) 
-    if ($hash_conf_params{$param});
-	
-	return $storage->{$param};
+  my $self = shift;
+  my $param = shift || return undef;
+  my $storage = shift || $self->get_built_Cnf;
+  
+  # Special: map all column prop names into 'column_properties'
+  $param = 'column_properties' if ($col_prop_names{$param});
+
+  return $storage->{$param};
 }
 
-sub TableSpec_get_hash_conf {
-	my $self = shift;
-	my $param = shift || return undef;
-	my $storage = shift || $self->get_built_Cnf;
-	
-	return $storage->{$param};
-}
 
 sub TableSpec_has_conf {
 	my $self = shift;

@@ -287,14 +287,6 @@ hashash 'Cnf', lazy => 1, default => sub {
 	my $self = shift;
 	my $class = $self->ResultClass;
 	
-	#my $cf;
-	#if($class->can('TableSpec_cnf')) {
-	#	$cf = $class->get_built_Cnf;
-	#}
-	#else {
-	#	$cf = RapidApp::DBIC::Component::TableSpec::default_TableSpec_cnf($class);
-	#}
-	
 	# Load the TableSpec Component on the Result Class if it isn't already:
 	# (should this be done like this? this is a global change and could be an overreach)
 	unless($class->can('TableSpec_cnf')) {
@@ -314,12 +306,6 @@ hashash 'Cnf', lazy => 1, default => sub {
   return $cf || {};
 };
 
-
-
-
-
-
-
 has 'relationship_column_configs', is => 'ro', isa => 'HashRef', lazy_build => 1; 
 sub _build_relationship_column_configs {
 	my $self = shift;
@@ -331,7 +317,6 @@ sub _build_relationship_column_configs {
 	my %columns = $class->TableSpec_get_conf('columns');
 	return { map { $_ => $columns{$_} } grep { $rel_cols_indx{$_} } keys %columns };
 };
-
 
 
 # colspecs that were added solely for the relationship columns
@@ -1121,7 +1106,8 @@ sub add_related_TableSpec {
 	
 	my $class = $self->ResultClass;
 	if($class->can('TableSpec_get_conf') and $class->TableSpec_has_conf('related_column_property_transforms')) {
-		my $rel_transforms = $class->TableSpec_cnf->{'related_column_property_transforms'}->{data};
+		# TODO/FIXME: why is this not calling TableSpec_get_conf????
+    my $rel_transforms = $class->TableSpec_cnf->{'related_column_property_transforms'};
 		$params{column_property_transforms} = $rel_transforms->{$rel} if ($rel_transforms->{$rel});
 		
 		# -- Hard coded default 'header' transform (2011-12-25 by HV)
