@@ -389,6 +389,16 @@ sub default_TableSpec_cnf_columns {
 				
 				if ($info->{attrs}->{accessor} eq 'single' || $info->{attrs}->{accessor} eq 'filter') {
 					
+          # -- NEW (EXPERIMENTAL)
+          unless($cond_data->{foreign} && $cond_data->{self}) {
+            $cols->{$col}{virtualized_single_rel} = 1;
+            delete $cols->{$col}{relationship_info};
+            $cols->{$col}{allow_add} = 0;
+            $cols->{$col}{allow_edit} = 0;
+            next;
+          }
+          # --
+          
 					# Use TableSpec_related_get_set_conf instead of TableSpec_related_get_conf
 					# to prevent possible deep recursion:
 					
@@ -553,6 +563,7 @@ sub TableSpec_valid_db_columns {
 	
 	my @single_rels = ();
 	my @multi_rels = ();
+  my @virtual_single_rels = ();
 	
 	my %fk_cols = ();
 	my %pri_cols = map {$_=>1} $self->primary_columns;
@@ -574,10 +585,15 @@ sub TableSpec_valid_db_columns {
 		);
 		
 		if($accessor eq 'single') {
-			push @single_rels, $rel;
-			
-			my ($fk) = keys %{$info->{attrs}->{fk_columns}};
-			$fk_cols{$fk} = $rel if($fk);
+      my $cond_info = $self->parse_relationship_cond($info);
+      if($cond_info->{self} && $cond_info->{foreign}) {
+        push @single_rels, $rel;
+        my ($fk) = keys %{$info->{attrs}->{fk_columns}};
+        $fk_cols{$fk} = $rel if($fk);
+      }
+      else {
+        push @virtual_single_rels, $rel;
+      }
 		}
 		elsif($accessor eq 'multi') {
 			push @multi_rels, $rel;
@@ -588,7 +604,7 @@ sub TableSpec_valid_db_columns {
 	$self->TableSpec_set_conf('multi_relationship_column_names',\@multi_rels);
 	$self->TableSpec_set_conf('relationship_column_fks_map',\%fk_cols);
 	
-	return uniq($self->columns,@single_rels,@multi_rels);
+	return uniq($self->columns,@single_rels,@multi_rels,@virtual_single_rels);
 }
 
 # There is no longer extra logic at this stage because we're
@@ -860,6 +876,8 @@ sub parse_relationship_cond {
     }
     return $data;
   }
+  
+  return {};
   
   # New: allow complex conds (multi-key, CodeRef, etc) through, but 
   # still block for single relationships since only multi rels are

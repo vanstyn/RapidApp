@@ -1245,11 +1245,14 @@ sub resolve_dbic_colname {
 
   %$merge_join = %{ merge($merge_join,$join) }
     if ($merge_join and $join);
+    
+    
 
   if (!defined $cond_data) {
     # it is a simple column
     return "$rel.$col";
   } else {
+
     # If cond_data is defined, the relation is a multi-relation, and we need to either
     #  join and group-by, or run a sub-query.  If join-and-group-by happens twice, it
     #  breaks COUNT() (because the number of joined rows gets multiplied) so by default
@@ -1329,11 +1332,7 @@ sub resolve_dbic_colname {
         return { '' => \$sql, -as => $name };		
       }
       else {
-        # -- standard multi relationship column --
-        
-        # This is where the count sub-query is generated that provides
-        # the numeric count of related items for display in multi rel columns.
-
+       
         my $source = $self->schema->source($cond_data->{info}{source});
         
         # --- Github Issue #40 ---
@@ -1355,7 +1354,18 @@ sub resolve_dbic_colname {
           { %{$source->resultset_attributes || {}}, %{$cond_data->{info}{attrs} || {}} }
         );
         
-        return { '' => $rel_rs->count_rs->as_query, -as => $name };
+        if($cond_data->{info}{attrs}{accessor} eq 'multi') {
+          # -- standard multi relationship column --
+          # This is where the count sub-query is generated that provides
+          # the numeric count of related items for display in multi rel columns.
+          return { '' => $rel_rs->count_rs->as_query, -as => $name };
+        }
+        else {
+          # -- virtualized single relationship column -- EXPERIMENTAL
+          my $display_column = $source->result_class->TableSpec_get_conf('display_column')
+            or die "Failed to get display_column";
+          return { '' => $rel_rs->get_column($display_column)->as_query, -as => $name };
+        }
       }
     }
   }
@@ -1440,8 +1450,18 @@ sub resolve_dbic_rel_alias_by_column_name  {
 			return ('me',$name,$join,$cond_data);
 		}
 		## ----
+   
+    elsif($self->ResultClass->has_relationship($name)){
+      #my $cnf = $self->ResultClass->TableSpec_get_conf('columns')->{$name};
+      my $cnf = $self->Cnf_columns->{$name};
+      if ($cnf && $cnf->{virtualized_single_rel}) {
+        return ('me',$name,$join,{ 
+          relname => $name,
+          info => $self->ResultClass->relationship_info($name)
+        });
+      }
+    }
 		
-	
 		return ('me',$name,$join);
 	}
 	
@@ -1495,6 +1515,13 @@ sub get_relationship_column_cnf {
 	my $self = shift;
 	my $rel = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+  
+  # --- NEW
+  return ( 
+    %opt, 
+    name => $self->column_prefix . $rel
+  ) if ($opt{virtualized_single_rel});
+  # ---
 	
 	return $self->get_multi_relationship_column_cnf($rel,\%opt) if ($self->multi_rel_columns_indx->{$rel});
 	
