@@ -1361,7 +1361,9 @@ sub resolve_dbic_colname {
           return { '' => $rel_rs->count_rs->as_query, -as => $name };
         }
         else {
-          # -- virtualized single relationship column -- EXPERIMENTAL
+          # -- NEW: virtualized single relationship column --
+          # Returns the related display_column value as a subquery using the same
+          # technique as the count for multi-relationship columns
           my $display_column = $source->result_class->TableSpec_get_conf('display_column')
             or die "Failed to get display_column";
           return { '' => $rel_rs->get_column($display_column)->as_query, -as => $name };
@@ -1450,17 +1452,21 @@ sub resolve_dbic_rel_alias_by_column_name  {
 			return ('me',$name,$join,$cond_data);
 		}
 		## ----
-   
+    ## --- NEW: Virtual Single Relationship Column (Github Issue #40)
     elsif($self->ResultClass->has_relationship($name)){
-      #my $cnf = $self->ResultClass->TableSpec_get_conf('columns')->{$name};
       my $cnf = $self->Cnf_columns->{$name};
       if ($cnf && $cnf->{virtualized_single_rel}) {
+        # This is emulating the existing format being passed around and
+        # used for relationship columns (see multi_rel_columns_indx). This
+        # is going to be totally refactored and simplified later (also,
+        # note that 'me' has no actual meaning and is a throwback)
         return ('me',$name,$join,{ 
           relname => $name,
           info => $self->ResultClass->relationship_info($name)
         });
       }
     }
+    # ---
 		
 		return ('me',$name,$join);
 	}

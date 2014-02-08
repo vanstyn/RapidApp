@@ -389,7 +389,8 @@ sub default_TableSpec_cnf_columns {
 				
 				if ($info->{attrs}->{accessor} eq 'single' || $info->{attrs}->{accessor} eq 'filter') {
 					
-          # -- NEW (EXPERIMENTAL)
+          # -- NEW: Virtual Single Relationship - will be read-only
+          # with no open link:
           unless($cond_data->{foreign} && $cond_data->{self}) {
             $cols->{$col}{virtualized_single_rel} = 1;
             delete $cols->{$col}{relationship_info};
@@ -559,32 +560,32 @@ sub default_TableSpec_cnf_columns {
 }
 
 sub TableSpec_valid_db_columns {
-	my $self = shift;
-	
-	my @single_rels = ();
-	my @multi_rels = ();
+  my $self = shift;
+
+  my @single_rels = ();
+  my @multi_rels = ();
   my @virtual_single_rels = ();
-	
-	my %fk_cols = ();
-	my %pri_cols = map {$_=>1} $self->primary_columns;
-	
-	foreach my $rel ($self->relationships) {
-		my $info = $self->relationship_info($rel);
-		
-		my $accessor = $info->{attrs}->{accessor};
-		
-		# 'filter' means single, but the name is also a local column
-		$accessor = 'single' if (
-			$accessor eq 'filter' and
-			$self->TableSpec_cnf->{'priority_rel_columns'} and
-			!(
-				$self->TableSpec_cnf->{'no_priority_rel_column'} and
-				$self->TableSpec_cnf->{'no_priority_rel_column'}->{$rel}
-			) and
-			! $pri_cols{$rel} #<-- exclude primary column names. TODO: this check is performed later, fix
-		);
-		
-		if($accessor eq 'single') {
+
+  my %fk_cols = ();
+  my %pri_cols = map {$_=>1} $self->primary_columns;
+
+  foreach my $rel ($self->relationships) {
+    my $info = $self->relationship_info($rel);
+    
+    my $accessor = $info->{attrs}->{accessor};
+    
+    # 'filter' means single, but the name is also a local column
+    $accessor = 'single' if (
+      $accessor eq 'filter' and
+      $self->TableSpec_cnf->{'priority_rel_columns'} and
+      !(
+        $self->TableSpec_cnf->{'no_priority_rel_column'} and
+        $self->TableSpec_cnf->{'no_priority_rel_column'}->{$rel}
+      ) and
+      ! $pri_cols{$rel} #<-- exclude primary column names. TODO: this check is performed later, fix
+    );
+    
+    if($accessor eq 'single') {
       my $cond_info = $self->parse_relationship_cond($info);
       if($cond_info->{self} && $cond_info->{foreign}) {
         push @single_rels, $rel;
@@ -592,19 +593,25 @@ sub TableSpec_valid_db_columns {
         $fk_cols{$fk} = $rel if($fk);
       }
       else {
+        # (Github Issue #40)
+        # New: "virtual" single rels are relationships for which we
+        # cannot introspect in both directions (i.e. not physical
+        # foreign keys). These are still "single" in that they map to
+        # one related row, but will not be editable and not have a
+        # open link (yet) 
         push @virtual_single_rels, $rel;
       }
-		}
-		elsif($accessor eq 'multi') {
-			push @multi_rels, $rel;
-		}
-	}
-	
-	$self->TableSpec_set_conf('relationship_column_names',\@single_rels);
-	$self->TableSpec_set_conf('multi_relationship_column_names',\@multi_rels);
-	$self->TableSpec_set_conf('relationship_column_fks_map',\%fk_cols);
-	
-	return uniq($self->columns,@single_rels,@multi_rels,@virtual_single_rels);
+    }
+    elsif($accessor eq 'multi') {
+      push @multi_rels, $rel;
+    }
+  }
+
+  $self->TableSpec_set_conf('relationship_column_names',\@single_rels);
+  $self->TableSpec_set_conf('multi_relationship_column_names',\@multi_rels);
+  $self->TableSpec_set_conf('relationship_column_fks_map',\%fk_cols);
+
+  return uniq($self->columns,@single_rels,@multi_rels,@virtual_single_rels);
 }
 
 # There is no longer extra logic at this stage because we're
@@ -856,40 +863,32 @@ sub get_foreign_column_from_cond {
 	die "Failed to find forein column from condition: " . Dumper($cond);
 }
 
-# TODO: Find a better way to handle this. Is there a real API
-# in DBIC to find this information?
-# Update: will be moving towards removing the need to collect
-# this info at all...
+# This function parses 'foreign' and 'self' column names from the
+# 'cond' of a defined in a DBIC relationship into a hashref. It is
+# only able to do this for simple, single-key foreign key rels
+# of the form:    { "foreign.id_col" => "self.fk_col" }
+# All other forms, such as multi-keys and CodeRefs, will return
+# and empty HashRef. The only reason we really need this information
+# outside of DBIC is for editable single rels (FKs) to be able
+# to present selection dialogs (i.e. dropdowns) and currently
+# the "open" magnify links, but the open links are planned to be
+# changed to reference URLs based on the relationship name, which
+# will remove this dependency and allow open links for any relationship
+# column, including even those with CodeRef conditions...
 sub parse_relationship_cond {
   my ($self,$cond,$info) = @_;
   
-  my $single_key = (
+  return {} unless (
     ref($cond) eq 'HASH' and
     scalar keys %$cond == 1
   );
   
-  if ($single_key) {
-    my $data = {};
-    foreach my $i (%$cond) {
-      my ($side,$col) = split(/\./,$i);
-      $data->{$side} = $col;
-    }
-    return $data;
+  my $data = {};
+  foreach my $i (%$cond) {
+    my ($side,$col) = split(/\./,$i);
+    $data->{$side} = $col;
   }
-  
-  return {};
-  
-  # New: allow complex conds (multi-key, CodeRef, etc) through, but 
-  # still block for single relationships since only multi rels are
-  # able to be handled so far. This is temp/stop-gap code (Github Issue #40)
-  die join("\n  ",'',
-    "currently only single-key hashref conditions are supported",
-    "for 'single' relationships (e.g. belongs_to, might_have, etc)",'',
-    "class: " . (ref($self) ? ref($self) : $self),
-    "rel info:", Dumper($info),
-  '') if ($info && $info->{attrs}{accessor} ne 'multi');
-  
-  return {};
+  return $data;
 }
 
 # Works like an around method modifier, but $self is expected as first arg and
@@ -1058,33 +1057,6 @@ sub apply_row_methods {
 	# ---
 }
 
-
-# --------
-# NEW: EXCLUDE SINGLE CODEREF RELATIONSHIPS INSTEAD OF THROWING EXCEPTION
-# This is a temp hack until support for CodeRefs in single relationship
-# support is added, or until they are excluded on a non-global basis
-# (i.e. with this code the relationships are excluded from ALL locations
-# including backend code). <--- TODO/FIXME (Github Issue #40)
-sub relationships {
-  my $self = shift;
-  my @rels = $self->next::method(@_);
-  return grep { ! $self->_rel_is_non_multi_coderef_cond($_) } @rels;
-}
-sub has_relationship {
-  my ($self, $rel) = @_;
-  my $answer = $self->next::method($rel);
-  return 0 if ($answer && $self->_rel_is_non_multi_coderef_cond($rel));
-  return $answer;
-}
-sub _rel_is_non_multi_coderef_cond {
-  my ($self, $rel) = @_;
-  my $info = $self->relationship_info($rel) or return 0;
-  return (
-    ref($info->{cond}) eq 'CODE' &&
-    $info->{attrs}{accessor} ne 'multi'
-  )? 1 : 0
-}
-# --------
 
 
 ### -- old, pre-rest inlineNavLink:
