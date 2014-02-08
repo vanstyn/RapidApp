@@ -384,7 +384,7 @@ sub default_TableSpec_cnf_columns {
 				my $info = $self->relationship_info($col);
 				
 				$cols->{$col}->{relationship_info} = $info;
-				my $cond_data = $self->parse_relationship_cond($info->{cond},$info);
+				my $cond_data = $self->parse_relationship_cond($info->{cond});
 				$cols->{$col}->{relationship_cond_data} = { %$cond_data, %$info };
 				
 				if ($info->{attrs}->{accessor} eq 'single' || $info->{attrs}->{accessor} eq 'filter') {
@@ -586,7 +586,7 @@ sub TableSpec_valid_db_columns {
     );
     
     if($accessor eq 'single') {
-      my $cond_info = $self->parse_relationship_cond($info);
+      my $cond_info = $self->parse_relationship_cond($info->{cond});
       if($cond_info->{self} && $cond_info->{foreign}) {
         push @single_rels, $rel;
         my ($fk) = keys %{$info->{attrs}->{fk_columns}};
