@@ -1,0 +1,7 @@
+Revision history for RapidApp
+
+0.99030 2014-02-08
+    - Relationships with complex conditions now supported (Github Issue #40)
+    - Refactored internal TableSpec_cnf format somewhat (no API changes)
+    - Started Changes file (this file). See commit history for change log prior
+      to this version (https://github.com/vanstyn/RapidApp)
