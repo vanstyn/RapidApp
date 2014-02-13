@@ -751,10 +751,10 @@ sub TableSpec_get_conf {
   
   # Special: map all column prop names into 'column_properties'
   $param = 'column_properties' if ($col_prop_names{$param});
-
+  
   my $value = $storage->{$param};
   
-  # FIXME FIXME FIXME
+  # --- FIXME FIXME FIXME
   # In the original design of the TableSpec_cnf internals, which
   # was too fancy for its own good, meta/type information was
   # transparently stored to be able to do things like remember
@@ -771,6 +771,7 @@ sub TableSpec_get_conf {
   # however! It is just temporary until those outside places
   # can be confirmed and eliminated, or a proper deprecation plan
   # can be made, should that even be needed...
+  
   if(wantarray && ref($value)) {
     warn join("\n",'',
       "  WARNING: calling TableSpec_get_conf() in LIST context",
@@ -780,6 +781,11 @@ sub TableSpec_get_conf {
     return @$value if (ref($value) eq 'ARRAY');
     return %$value if (ref($value) eq 'HASH');
   }
+  
+  # When trying to get a param that does not exist, return an
+  # empty list if called in LIST context, otherwise undef
+  return wantarray ? () : undef unless (exists $storage->{$param});
+  # ---
   
   return $value;
 }
