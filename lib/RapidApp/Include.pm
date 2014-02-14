@@ -62,7 +62,7 @@ sub perlutil {
 	calleruse qw(Term::ANSIColor :constants);
 	calleruse 'Clone';
 	calleruse 'Hash::Merge';
-	calleruse 'Carp';
+	calleruse qw(Carp carp croak confess cluck longmess shortmess);
 }
 
 sub rapidapp_base {
