@@ -773,7 +773,7 @@ sub TableSpec_get_conf {
   # can be made, should that even be needed...
   
   if(wantarray && ref($value)) {
-    warn join("\n",'',
+    cluck join("\n",'',
       "  WARNING: calling TableSpec_get_conf() in LIST context",
       "  is deprecated, please update your code.",
       "   --> Auto-dereferencing param '$param' $value",'',
@@ -968,7 +968,7 @@ sub proxy_method_get_changed {
 	
 	@changed = @new_changed;
 	
-	my $col_props = { $self->TableSpec_get_conf('columns') };
+	my $col_props = $self->TableSpec_get_conf('columns');
 	
 	my %diff = map {
 		$_ => { 
