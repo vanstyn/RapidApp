@@ -193,6 +193,10 @@ sub west_area_items {
   # be interspersed among module cnfs 
   my @items = map {
     $_->{module} ? $self->Module($_->{module})->allowed_content : $_
+  } grep {
+    # New: exclude items where 'menu_require_role' is set but the 
+    # current user does not have the role
+    ! $_->{menu_require_role} || $self->role_checker->($self->c,$_->{menu_require_role})
   } @{$self->navtrees};
   
   return \@items;
