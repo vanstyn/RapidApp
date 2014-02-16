@@ -1093,29 +1093,6 @@ Ext.ux.winPostwith = function (url,params) {
 /* ####################################################### */
 
 
-Ext.ns('Ext.ux.iconFromFileName');
-Ext.ux.iconFromFileName = function(name) {
-
-	 var parts = name.split('.');
-	 var ext = parts.pop().toLowerCase();
-
-	 var icon_file = 'document.png';
-
-	 if(ext == 'pdf') { icon_file = 'page_white_acrobat.png'; }
-	 if(ext == 'zip') { icon_file = 'page_white_compressed.png'; }
-	 if(ext == 'xls') { icon_file = 'page_white_excel.png'; }
-	 if(ext == 'xlsx') { icon_file = 'page_excel.png'; }
-	 if(ext == 'ppt') { icon_file = 'page_white_powerpoint.png'; }
-	 if(ext == 'txt') { icon_file = 'page_white_text.png'; }
-	 if(ext == 'doc') { icon_file = 'page_white_word.png'; }
-	 if(ext == 'docx') { icon_file = 'page_word.png'; }
-	 if(ext == 'iso') { icon_file = 'page_white_cd.png'; }
-
-	 return icon_file;
-}
-
-
-
 Ext.ns('Ext.ux.Bool2yesno');
 Ext.ux.Bool2yesno = function(val) {
 	if (val == null || val === "") { return Ext.ux.showNull(val); }
@@ -5682,3 +5659,25 @@ Ext.ux.RapidApp.jsonArrArrToHtmlTable = function(v) {
 	return table_markup ? table_markup : v;
 }
 
+Ext.ux.RapidApp.withFilenameIcon = function(val) {
+  var parts = val.split('.');
+  var ext = parts.pop().toLowerCase();
+
+  var icon_cls = 'ra-icon-document';
+
+  if(ext == 'pdf')  { icon_cls = 'ra-icon-page-white-acrobat'; }
+  if(ext == 'zip')  { icon_cls = 'ra-icon-page-white-compressed'; }
+  if(ext == 'xls')  { icon_cls = 'ra-icon-page-white-excel'; }
+  if(ext == 'xlsx') { icon_cls = 'ra-icon-page-excel'; }
+  if(ext == 'ppt')  { icon_cls = 'ra-icon-page-white-powerpoint'; }
+  if(ext == 'txt')  { icon_cls = 'ra-icon-page-white-text'; }
+  if(ext == 'doc')  { icon_cls = 'ra-icon-page-white-word'; }
+  if(ext == 'docx') { icon_cls = 'ra-icon-page-word'; }
+  if(ext == 'iso')  { icon_cls = 'ra-icon-page-white-cd'; }
+
+  return [
+    '<span class="with-icon ', icon_cls,'">',
+      val,
+    '</span>'
+  ].join('');
+}
