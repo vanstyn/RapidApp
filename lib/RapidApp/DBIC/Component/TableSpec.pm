@@ -327,9 +327,11 @@ sub default_TableSpec_cnf  {
 	
 	my $col_cnf = $self->default_TableSpec_cnf_columns($set);
   
-	$defs = merge($defs,$col_cnf);
+  return { %$defs, %$col_cnf, %$set };
   
-	return merge($defs, $set);
+	#$defs = merge($defs,$col_cnf);
+  #
+	#return merge($defs, $set);
 }
 
 sub default_TableSpec_cnf_columns {
@@ -342,14 +344,17 @@ sub default_TableSpec_cnf_columns {
 	
 	my $cols = { map { $_ => {} } @col_order };
   
-	# lowest precidence:
-	$cols = merge($cols,$set->{data}->{column_properties_defaults} || {});
+  # lowest precidence:
+  #$cols = merge($cols,$set->{column_properties_defaults} || {});
+  %$cols = ( %$cols, %{ $set->{column_properties_defaults} || {}} );
 
-	$cols = merge($cols,$set->{column_properties_ordered} || {});
+  #$cols = merge($cols,$set->{column_properties_ordered} || {});
+  %$cols = ( %$cols, %{ $set->{column_properties_ordered} || {}} );
 		
 	# higher precidence:
-	$cols = merge($cols,$set->{column_properties} || {});
-
+	#$cols = merge($cols,$set->{column_properties} || {});
+  %$cols = ( %$cols, %{ $set->{column_properties} || {}} );
+  
 	my $data_types = $self->TableSpec_data_type_profiles;
 	#scream(keys %$cols);
 	
