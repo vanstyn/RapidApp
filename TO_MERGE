@@ -1,0 +1,7 @@
+This branch (Bgtask) is the last version of RapidApp
+with the 'Bgtask' submodule. This submodule has never
+been fully completed and is being removed from the
+master branch (for now) to get rid of the AnyEvent 
+dependency. This will be worked on later...
+
+2014-02-22 by HV
