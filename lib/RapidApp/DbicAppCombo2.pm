@@ -79,6 +79,9 @@ sub read_records {
 sub get_ResultSet {
 	my $self = shift;
 	my $params = $self->c->req->params;
+  
+  # See also DBIx::Class::Helper::ResultSet::SearchOr for an approach
+  # to the problem the below code is solving...
 	
 	# todo: merge this in with the id_in stuff in dbiclink... Superbox??
 	# this module is really currently built just for TableSpec...
