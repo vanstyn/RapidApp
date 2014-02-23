@@ -460,7 +460,7 @@ sub _render_template {
   my $TT = $self->$meth;
   local $self->{_current_context} = $c;
   local $self->{_div_wrap} = 1 if ($meth eq 'Template_wrap');
-  my $vars = $self->Access->get_template_vars($template);
+  my $vars = $self->get_wrapped_tt_vars($template);
   my $output;
   
   # TODO/FIXME: this is duplicate logic that has to be handled for the
@@ -481,7 +481,7 @@ sub _get_template_error {
   my $TT = $self->$meth;
   local $self->{_current_context} = $c;
   local $self->{_div_wrap} = 1 if ($meth eq 'Template_wrap');
-  my $vars = $self->Access->get_template_vars($template);
+  my $vars = $self->get_wrapped_tt_vars($template);
   my $output;
   local $self->{_no_exception_error_content} = 1;
   return $TT->process( $template, $vars, \$output ) ? undef : $TT->error;
@@ -506,7 +506,7 @@ sub template_render {
   # to have access to the catalyst context (i.e. request) so
   # we only call it and merge it in if we have $c, which is
   # optional in this method
-  %$vars = (%{ $self->Access->get_template_vars($template) }, %$vars) 
+  %$vars = (%{ $self->get_wrapped_tt_vars($template) }, %$vars) 
     if ($c);
   
   my $TT = $self->Template_raw;
@@ -515,6 +515,47 @@ sub template_render {
 	$TT->process($template,$vars,\$out) or die $TT->error;
 
 	return $out;
+}
+
+
+# Wraps all CodeRef vars to cleanly catch exceptions that may be
+# thrown by them. TT isn't able to handle them properly...
+sub get_wrapped_tt_vars {
+  my ($self,$template) = @_;
+  my $vars = $self->Access->get_template_vars($template);
+  
+  die "Access class method 'get_template_vars()' didn't return a HashRef!"
+    unless (ref($vars) eq 'HASH');
+  
+  for my $var (keys %$vars) {
+    next unless (ref($vars->{$var}) eq 'CODE');
+    my $coderef = delete $vars->{$var};
+    $vars->{$var} = sub {
+      my @args = @_;
+      my $ret;
+      try {
+        $ret = $coderef->(@args);
+      }
+      catch {
+        my $err_msg = "!! EXCEPTION IN CODEREF TEMPLATE VARIABLE '$var': $_";
+        
+        # TODO/FIXME:
+        # We set the return value with the exception as a string (i.e. as content) 
+        # instead of re-throwing because TT will display a useless and confusing 
+        # error message, something like: "...Useless bare catch()..."
+        $ret = $err_msg;
+        
+        # We may not actually be able to see the error in the template rendering
+        # but at least it will be printed on the console (an exception here isn't
+        # actually a *Template* error, per-se ... its an error in the perl code 
+        # that is called by this CodeRef)
+        warn RED.BOLD . $err_msg . CLEAR;
+      };
+      return $ret;
+    };
+  }
+  
+  return $vars;
 }
 
 1;
