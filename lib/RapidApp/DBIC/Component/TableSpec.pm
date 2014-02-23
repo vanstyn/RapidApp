@@ -225,7 +225,23 @@ sub apply_TableSpec {
 	my ($pri) = ($self->primary_columns,$self->columns); #<-- first primary col, or first col
 	$self->TableSpec_set_conf(
 		display_column => $pri,
-		title => $table
+		title => $table,
+    
+    # --
+    # New: initialize the columns cnf key early. It doesn't even need all
+    # the columns (just at least one -- we're just doing the base columns
+    # and not bothering with relationships + virtual columns). This is
+    # just about getting the Hash defined so that later calls will update
+    # this hash rather than create a new one, which can get lost in certain
+    # situations (such as a Result Class that loads the TableSpec component
+    # in-line but does not apply any column configs). 
+    # This was needed added after the recent prelim TableSpec_cnf refactor (in v0.99030)
+    # which is a temp/in-between change that consolidates storage of column
+    # configs internally while still preserving the original API for now. 
+    # Yes, this is ugly/hackish but will go away as soon as the full-blown, 
+    # long-planned TableSpec refactor is undertaken...
+    columns => { map { $_ => {} } $self->columns }
+    # --
 	);
 	# ---
 	
