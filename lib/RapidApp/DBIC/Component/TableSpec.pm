@@ -322,16 +322,19 @@ sub default_TableSpec_cnf  {
 	my $rel_trans = {};
 	
 	$defaults{related_column_property_transforms} = $rel_trans;
-	
+  
+  
+  #my $defs = \%defaults;
+  #my $col_cnf = $self->default_TableSpec_cnf_columns($set);
+  #$defs = merge($defs,$col_cnf);
+  #return merge($defs, $set);  
+
+  %defaults = ( %defaults, %$set );
   my $defs = \%defaults;
-	
-	my $col_cnf = $self->default_TableSpec_cnf_columns($set);
+  my $col_cnf = $self->default_TableSpec_cnf_columns($defs);
+  $defs->{columns} = $col_cnf->{columns};
   
-  return { %$defs, %$col_cnf, %$set };
-  
-	#$defs = merge($defs,$col_cnf);
-  #
-	#return merge($defs, $set);
+  return $defs;
 }
 
 sub default_TableSpec_cnf_columns {
