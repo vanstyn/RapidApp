@@ -1,0 +1,93 @@
+
+/* 
+  These are the bare/min styles needed to *undo* the global changes made
+  in ext-all.css (as of ExtJS 3.4.0) and set them back to FF defaults.
+*/
+
+/* Skip the 'body' tag:
+body { margin: 8px; }
+*/
+
+p, dl, ul, ol, pre {
+  margin: 1em 0;
+}
+
+h1 {
+  font-size: 2em;
+  margin: .67em 0;
+}
+
+h2 {
+  margin: .83em 0;
+  font-size: 1.5em;
+}
+
+h3 {
+  font-size: 1.17em;
+  margin: 1em 0;
+}
+
+h4 {
+  font-size: 1.00em;
+  margin: 1.33em 0;
+}
+
+h5 {
+  font-size: 0.83em;
+  margin: 1.67em 0;
+}
+
+h6 {
+  font-size: 0.67em;
+  margin: 2.33em 0;
+}
+
+fieldset {
+  margin-left: 2px;
+  margin-right: 2px;
+  padding: 0.35em 0.625em 0.75em;
+}
+
+input {
+  padding: 1px 0 1px 0;
+}
+
+blockquote {
+  margin: 1em 40px;
+}
+
+th {
+  font-weight: bold;
+  padding: 1px;
+}
+
+address, cite, em, var, dfn {
+  font-style: italic;
+}
+
+caption {
+  text-align: center;
+}
+
+strong {
+  font-weight: bolder;
+}
+
+ul {
+  list-style: disc outside none;
+  padding-left: 40px;
+}
+
+ol {
+  list-style: decimal outside none;
+  padding-left: 40px;
+}
+
+q:before {
+  content: open-quote;
+}
+
+q:after {
+  content: close-quote;
+}
+

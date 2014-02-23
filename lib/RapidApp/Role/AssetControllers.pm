@@ -57,8 +57,14 @@ before 'inject_asset_controllers' => sub {
     {
       controller => 'Assets::RapidApp::CSS::ScopedReset',
       type => 'CSS',
-      include => $share_dir . '/assets/ra-scoped-reset.css',
+      include => $share_dir . '/assets/css-scoped/ra-scoped-reset.css',
       scopify => ['.ra-scoped-reset', merge => ['html','body']]
+    },
+    {
+      controller => 'Assets::RapidApp::CSS::ScopedDoc',
+      type => 'CSS',
+      include => $share_dir . '/assets/css-scoped/ra-doc.css',
+      scopify => ['.ra-doc', merge => ['html','body']]
     },
     {
       controller => 'Assets::RapidApp::JS',

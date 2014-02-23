@@ -135,8 +135,12 @@ sub _div_wrap_content {
     deletable => $exists ? $self->Access->template_deletable($template) : 0
   };
   
+  my @cls = ('ra-template');
+  my $tpl_cls = $self->Access->template_css_class($template);
+  push @cls, $tpl_cls if ($tpl_cls);
+  
   join("\n",
-    '<div class="ra-template">',
+    '<div class="' . join(' ', @cls) . '">',
       
       '<div class="meta" style="display:none;">',
         #'<div class="template-name">' . $template . '</div>',

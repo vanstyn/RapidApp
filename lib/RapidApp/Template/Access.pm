@@ -130,6 +130,15 @@ has 'external_tpl', is => 'ro', lazy => 1, default => sub {
   ) ? 1 : 0;
 }, isa => Bool;
 
+# New: default CSS class name to return for every template (called from template_css_class())
+# unless this is set to 'undef', this class name will be added to the div wrapper when
+# rendering the template (along with 'ra-template'). This attr will have no effect if
+# the 'template_css_class' method is overridden.
+# For backward compatability, this is currently set to 'ra-doc' for out-of-the-box nice styles
+# without needing to set a config, however, a default of undef might make more sense.
+# currently, apps will need to manually set this to undef to avoid the default styles, which
+# is needed when there are better/custom styles.
+has 'default_template_css_class', is => 'ro', isa => Maybe[Str], default => sub { 'ra-doc' };
 
 # Optional CodeRef interfaces:
 has 'get_template_vars_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
@@ -389,6 +398,13 @@ sub get_template_format {
   return 'html';
 }
 
+# Returns an optional css class name associated with a given template
+# that should be added to teh div wrapper when rendering the template
+sub template_css_class {
+  my ($self,@args) = @_;
+  my $template = join('/',@args);
+  return $self->default_template_css_class;
+}
 
 
 1;
