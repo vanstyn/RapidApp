@@ -1819,10 +1819,13 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
       // Listen for clicks on custom 'ra-autopanel-reloader' elements
       // to fire reload of the panel. This provides inline access to
       // this function within the html/content of the panel. 
-      // (Added for Gitbut Issue #24)
+      // (Added for Github Issue #24)
       thisEl.on('click',function(e,t,o) {
         var target = e.getTarget(null,null,true);
         if(target && target.hasClass('ra-autopanel-reloader')) {
+        // in the case of nested AutoPanels, don't allow this event to
+        // bubble up higher:
+        e.stopEvent(); 
         this.reload();
         }
       }, this);
