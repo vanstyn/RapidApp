@@ -240,14 +240,30 @@ sub view :Local {
     or die "Permission denied - template '$template'";
 
   my $ra_req = $c->req->header('X-RapidApp-RequestContentType');
-
+  my $ra_client = ($ra_req && $ra_req eq 'JSON');
   my $external = $self->is_external_template($c,$template);
-  my $iframe = $external || $self->is_iframe_request($c); # <-- external must use iframe
   my $editable = $self->is_editable_request($c);
   
+  # ---
+  # New: for non-external templates which are being accessed externally, 
+  # (i.e. directly from browser) redirect to internal hashnav path:
+  unless ($external || $ra_client) {
+    my $pre = $editable ? 'tple' : 'tpl';
+    my $url = join('/','/#!',$pre,@args);
+    my %params = %{$c->req->params};
+    if(keys %params > 0) {
+      my $qs = join('&',map { $_ . '=' . uri_escape($params{$_}) } keys %params);
+      $url .= '?' . $qs;
+    }
+    $c->response->redirect($url);
+    return $c->detach;
+  }
+  #---
+  
+  my $iframe = $external || $self->is_iframe_request($c); # <-- external must use iframe
   my ($output,$content_type);
   
-  if($ra_req && $ra_req eq 'JSON') {
+  if($ra_client) {
     # This is a call from within ExtJS, wrap divs to id the templates from javascript
     
     my $cnf = {};
