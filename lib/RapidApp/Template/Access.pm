@@ -289,6 +289,14 @@ sub _get_admin_template_vars {
 }
 
 
+# Returns a hashref of optional overrides for the Ext panel config
+# returned when rendering the template via AutoPanel (i.e. tab). This
+# is useful for places where you need to set template-specific options,
+# such as setting 'autopanel_refresh_interval' if you want one
+# specific template to auto refresh. This has no effect when rendered
+# any place other than within AutoPanels in the JS client via the
+# Template::Controller.
+sub template_autopanel_cnf { {} }
 
 
 # Simple bool permission methods:

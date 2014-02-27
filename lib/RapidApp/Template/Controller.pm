@@ -312,7 +312,10 @@ sub view :Local {
         tabTitle => join('/',@args), #<-- not using $template to preserve the orig req name
         tabIconCls => 'ra-icon-page-white-world',
         
-        html => $html
+        html => $html,
+        
+        # Load any extra, template-specific configs from the Access class:
+        %{ $self->Access->template_autopanel_cnf($template) || {} }
       };
     }
     
