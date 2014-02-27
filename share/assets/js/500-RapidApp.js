@@ -1838,12 +1838,12 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 		},this);
 		// --
 
-		var container = this;
-		this.renderer = {
-			disableCaching: true,
-			render: function(el, response, updater, callback) {
-				if (!updater.isUpdating() && el.dom) {
-					
+    var container = this;
+    this.renderer = {
+      disableCaching: true,
+      render: function(el, response, updater, callback) {
+        if (!updater.isUpdating() && el.dom) {
+          
           var conf, content_type = response.getResponseHeader('Content-Type');
           var cont_parts = content_type.split(';');
           
@@ -1959,13 +1959,29 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
             conf.bodyCssClass = 'ra-scoped-reset';
           }
           
-					container.setBodyConf.call(container,conf,el);
-					
-					// This is legacy and should probably be removed:
-					if (conf.rendered_eval) { eval(conf.rendered_eval); }
-				}
-			}
-		};
+          // just for good measure, stop any existing auto refresh:
+          updater.stopAutoRefresh();
+          
+          container.setBodyConf.call(container,conf,el);
+          
+          // autopanel_refresh_interval can be set from either the inner
+          // dynamic panel, or hard-coded on the autopanel container itself:
+          var refresh_interval = 
+            container.autopanel_refresh_interval ||
+            conf.autopanel_refresh_interval;
+          
+          if(refresh_interval) {
+            updater.startAutoRefresh(
+              refresh_interval,
+              container.autoLoad
+            );
+          }
+          
+          // This is legacy and should probably be removed:
+          if (conf.rendered_eval) { eval(conf.rendered_eval); }
+        }
+      }
+    };
 
 		Ext.ux.AutoPanel.superclass.initComponent.call(this);
 	},
