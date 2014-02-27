@@ -1756,10 +1756,6 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 			
       var retry_text = [
        'Please try again later.&nbsp;&nbsp;',
-       '<span',
-          'class="with-icon ra-icon-refresh ra-autopanel-reloader"',
-          'style="display:inline;vertical-align:baseline;padding-left:20px;"',
-       '>Click to Retry...</span>',
        '<div style=height:20px;"></div>',
        '<span style="font-size:.7em;">',
        '<i>If you continue to receive this message, please contact your ',
@@ -2000,7 +1996,16 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
       tabIconCls: 'ra-icon-cancel',
       html: [
         '<div class="ra-autopanel-error">',
-          '<div class="ra-exception-heading">',title,'</div>',
+          '<div class="ra-exception-heading">',
+            title,
+            '<span style="padding-left:20px;">',
+              '<a class="with-icon ra-icon-refresh ra-autopanel-reloader">',
+                '<span class="ra-autopanel-reloader">',
+                  'Reload',
+                '</span>',
+              '</a>',
+            '</span>',
+          '</div>',
           '<div class="msg">',msg,'</div>',
         '</div>'
       ].join('')

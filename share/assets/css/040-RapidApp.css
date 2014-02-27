@@ -1414,6 +1414,12 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
   padding-bottom:15px;
 }
 
+.ra-exception-heading .ra-icon-refresh {
+  font-weight:normal;
+  vertical-align:baseline;
+  font-family: Consolas,Menlo,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New,monospace,serif;
+}
+
 .ra-exception-body * {
   word-wrap: break-word;
 }
@@ -1427,7 +1433,6 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 }
 
 .ra-autopanel-error {
-  padding: 10px;
   font-size: 1.2em;
   position:absolute;
   top: 0px;
@@ -1442,7 +1447,7 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
   font-family: Consolas,Menlo,Monaco,Lucida Console,Liberation Mono,DejaVu Sans Mono,Bitstream Vera Sans Mono,Courier New,monospace,serif;
   color: gray;
   position:absolute;
-  top: 55px;
+  top: 45px;
   right: 0px;
   bottom: 0px;
   left:0px;
