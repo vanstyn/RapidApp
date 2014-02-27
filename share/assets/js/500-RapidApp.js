@@ -1983,39 +1983,41 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
       }
     };
 
-		Ext.ux.AutoPanel.superclass.initComponent.call(this);
-	},
-	
-	setBodyConf: function(conf,thisEl) {
-		thisEl = thisEl || this.getEl();
-		if(this.items.getCount() > 0) { this.removeAll(true); }
-		this.insert(0,conf);
-		this.doLayout();
-	},
-	
-	setErrorBody: function(title,msg,opt) {
-		opt = opt || {};
-		opt = Ext.apply({
-			tabTitle: 'Load Failed',
-			tabIconCls: 'ra-icon-cancel',
-			html: '<div class="ra-autopanel-error" >' +
-				'<div class="ra-exception-heading">' + title + '</div>' +
-				'<div class="msg">' + msg + '</div>' +
-			'</div>'
-		},opt);
-		
-		opt.bodyConf = opt.bodyConf || {
-			layout: 'fit',
-			autoScroll: true,
-			frame: true,
-			xtype: 'panel',
-			html: opt.html
-		};
-		
-		this.setTitle(opt.tabTitle);
-		this.setIconClass(opt.tabIconCls);
-		this.setBodyConf(opt.bodyConf,this.getEl());
-	},
+    Ext.ux.AutoPanel.superclass.initComponent.call(this);
+  },
+
+  setBodyConf: function(conf,thisEl) {
+    thisEl = thisEl || this.getEl();
+    if(this.items.getCount() > 0) { this.removeAll(true); }
+    this.insert(0,conf);
+    this.doLayout();
+  },
+
+  setErrorBody: function(title,msg,opt) {
+    opt = opt || {};
+    opt = Ext.apply({
+      tabTitle: 'Load Failed',
+      tabIconCls: 'ra-icon-cancel',
+      html: [
+        '<div class="ra-autopanel-error">',
+          '<div class="ra-exception-heading">',title,'</div>',
+          '<div class="msg">',msg,'</div>',
+        '</div>'
+      ].join('')
+    },opt);
+    
+    opt.bodyConf = opt.bodyConf || {
+      layout: 'fit',
+      autoScroll: true,
+      frame: true,
+      xtype: 'panel',
+      html: opt.html
+    };
+    
+    this.setTitle(opt.tabTitle);
+    this.setIconClass(opt.tabIconCls);
+    this.setBodyConf(opt.bodyConf,this.getEl());
+  },
   
   reload: function() {
     this.load(this.autoLoad);
