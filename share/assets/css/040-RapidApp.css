@@ -1330,6 +1330,12 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
   display: block;
   width:99px;
   height:14px;
+  float:left;
+}
+
+.ra-footer td a.ra-autopanel-reloader {
+  margin-left:7px;
+  margin-bottom: 5px;
 }
 
 .ra-footer td.center {
@@ -1339,6 +1345,7 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 .ra-footer td.right {
   text-align:right;
 }
+
 
 
 .ra-datastore-app-field {

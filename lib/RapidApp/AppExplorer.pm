@@ -109,6 +109,9 @@ around 'content' => sub {
 	<table width="100%"><tr>
 		<td width="25%">
       <a class="left" target="_blank" href="http://www.rapidapp.info"></a>
+      <a class="ra-icon-refresh-tiny ra-autopanel-reloader" title="Reload Interface">
+        <span class="ra-autopanel-reloader">Reload Interface</span>
+      </a>
 		</td>
 		<td width="50%" class="center">
 			<div id="infostatus"></div>
