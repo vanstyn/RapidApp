@@ -2019,8 +2019,10 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
       html: opt.html
     };
     
-    this.setTitle(opt.tabTitle);
-    this.setIconClass(opt.tabIconCls);
+    if(!this.autopanel_ignore_tabtitle) {
+      this.setTitle(opt.tabTitle);
+      this.setIconClass(opt.tabIconCls);
+    }
     this.setBodyConf(opt.bodyConf,this.getEl());
   },
   
