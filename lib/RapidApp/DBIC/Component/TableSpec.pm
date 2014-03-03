@@ -768,6 +768,32 @@ sub _TableSpec_set_column_properties {
 }
 
 
+# New function for updating/merging in column configs. This allows
+# setting certain column configs without overwriting existing config 
+# keys that are not being specified:
+sub TableSpec_merge_columns_conf {
+  my $self = shift;
+  my $conf = shift;
+  
+  die "TableSpec_merge_columns_conf( \%columns ): bad args"
+    unless (ref($conf) eq 'HASH');
+  
+  my $existing = $self->TableSpec_get_conf('columns') || {};
+  
+  my @cols = uniq( keys %$conf, keys %$existing );
+  
+  my %new = ( map {
+    $_ => {
+      %{ $existing->{$_} || {} },
+      %{ $conf->{$_} || {} },
+    }
+  } @cols );
+  
+  return $self->TableSpec_set_conf( columns => \%new );
+}
+
+
+
 sub TableSpec_get_conf {
   my $self = shift;
   my $param = shift || return undef;

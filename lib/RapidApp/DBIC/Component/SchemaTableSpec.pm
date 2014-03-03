@@ -69,17 +69,13 @@ sub apply_TableSpecs {
 			%{ $class->TableSpec_cnf } # <-- (optional) static conf defined in the Result class (highest priority)
 		);
     
-    my %col_props = (
-      %{ $opt{TableSpec_column_properties}->{$source} || {} },
-      %{ $class->TableSpec_get_conf('column_properties') || {} }
-    );
+    my $col_props = $opt{TableSpec_column_properties}{$source} || {};
     
     if($opt{auto_headers}) {
-      $col_props{$_}{header} ||= $_ for ($class->TableSpec_valid_db_columns);
+      $col_props->{$_}{header} ||= $_ for ($class->TableSpec_valid_db_columns);
     }
     
-    $class->TableSpec_set_conf('column_properties', \%col_props);
-    
+    $class->TableSpec_merge_columns_conf($col_props);
   }
 }
 
