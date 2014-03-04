@@ -125,7 +125,6 @@ my %keyAliases = (
 	title => 'userMessageTitle',
 );
 sub usererr {
-	my $log= RapidApp::ScopedGlobals->get('log');
 	my %args= ();
 	
 	# First arg is always the message.  We stringify it, so it doesn't matter if it was an object.
@@ -142,7 +141,7 @@ sub usererr {
 		my ($key, $val)= (shift, shift);
 		$key = $keyAliases{$key} || $key;
 		RapidApp::Responder::UserError->can($key)
-			or $log && $log->error("Invalid attribute for UserError: $key");
+			or warn "Invalid attribute for UserError: $key";
 		$args{$key}= $val;
 	}
 	
@@ -150,7 +149,7 @@ sub usererr {
 	#  since usererr is not saved.
 	if (scalar(@_)) {
 		my ($pkg, $file, $line)= caller;
-		$log && $log->error("Odd number of arguments to usererr at $file:$line");
+		warn "Odd number of arguments to usererr at $file:$line";
 	}
 	
 	return RapidApp::Responder::UserError->new(\%args);
@@ -173,7 +172,6 @@ Examples:
 =cut
 
 sub userexception {
-	my $log= RapidApp::ScopedGlobals->get('log');
 	my %args= ();
 	
 	# First arg is always the message.  We stringify it, so it doesn't matter if it was an object.
@@ -187,7 +185,7 @@ sub userexception {
 		my ($key, $val)= (shift, shift);
 		$key = $keyAliases{$key} || $key;
 		RapidApp::Error->can($key)
-			or $log && $log->error("Invalid attribute for RapidApp::Error: $key");
+			or warn "Invalid attribute for RapidApp::Error: $key";
 		$args{$key}= $val;
 	}
 	
@@ -201,8 +199,7 @@ sub userexception {
 
 # debug stuff to the log
 sub DEBUG {
-	unshift @_, 'RapidApp::Debug';
-	goto &RapidApp::Debug::global_write; # we don't want to mess up 'caller'
+  warn join(' ',@_);
 }
 
 # Suger function sets up a Native Trait ArrayRef attribute with useful

@@ -2043,7 +2043,7 @@ sub get_or_create_rapidapp_module {
 	my $name = shift or die "get_or_create_rapidapp_module(): Missing module name";
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 
-	my $rootModule = RapidApp::ScopedGlobals->get("rootModule") or die "Failed to find RapidApp Root Module!!";
+	my $rootModule = RapidApp->_rootModule or die "Failed to find RapidApp Root Module!!";
 	
 	$rootModule->apply_init_modules( tablespec => 'RapidApp::AppBase' ) 
 		unless ( $rootModule->has_module('tablespec') );

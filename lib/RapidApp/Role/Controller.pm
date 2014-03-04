@@ -22,14 +22,6 @@ use Term::ANSIColor qw(:constants);
 # RapidApp::Include, like most places.
 #use RapidApp::Include qw(sugar perlutil);
 
-use RapidApp::Error;
-use Exception::Class (
-	'RapidApp::Role::Controller::UnknownAction' => {
-		isa => 'RapidApp::Error',
-		fields => [ 'unknown_arg' ]
-	}
-);
-
 our $VERSION = '0.1';
 
 
@@ -67,20 +59,11 @@ has 'actions' => (
 );
 
 # In catalyst terminology, "c" is the catalyst instance, embodying a request.
-sub c {
-	return RapidApp::ScopedGlobals->get('catalystInstance');
-}
-
-# In catalyst terminology, "app" is the package name of the class that extends catalyst
-# Many catalyst methods can be called from the package level
-sub app {
-	return RapidApp::ScopedGlobals->catalystClass;
-}
+sub c { RapidApp->active_request_context }
 
 # The current logger object, probably the same as ->c->log, but maybe not.
-sub log {
-	return RapidApp::ScopedGlobals->log;
-}
+sub log { (shift)->app->log }
+
 
 has 'no_persist' => ( is => 'rw', lazy => 1, default => sub {
 	my $self = shift;
@@ -124,13 +107,15 @@ sub JSON_encode {
 	return $self->json->encode(shift);
 }
 
+
+## TODO: REMOVE 'simulateRequest' ---
 # This method attempts to set up a catalyst request instance such that a new request can be executed
 #   to a different module and with different parameters and HTTP headers than were used for the main
 #  request.
 sub simulateRequest {
 	my ($self, $req)= @_;
 	
-	my $c= RapidApp::ScopedGlobals->catalystInstance;
+	my $c = RapidApp->active_request_context;
 	
 	my $tempResp= Catalyst::Response->new();
 	
@@ -475,7 +460,6 @@ sub render_data {
 }
 
 requires 'content';
-requires 'web1_content';
 
 sub set_response_warning {
 	my $self = shift;

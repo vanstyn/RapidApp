@@ -404,11 +404,13 @@ sub update_column_permissions_roles_code {
 	});
 }
 
+
+# This code not in use - 
 sub apply_permission_roles_to_datastore_columns {
 	my $self = shift;
 	my $columns = shift;
 	
-	my $c = RapidApp::ScopedGlobals->get('catalystInstance');
+	my $c = RapidApp->active_request_context;
 	#delete $columns->{creator}->{editor} unless ($c->check_user_roles('admin'));
 	
 	my $map = $self->roles_permissions_columns_map;

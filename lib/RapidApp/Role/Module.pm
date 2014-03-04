@@ -15,6 +15,9 @@ use Scalar::Util 'weaken';
 
 our $VERSION = '0.1';
 
+# In catalyst terminology, "app" is the package name of the class that extends catalyst
+# Many catalyst methods can be called from the package level
+has 'app', is => 'ro', required => 1;
 
 has 'module_name'						=> ( is => 'ro',	isa => 'Str', required => 1 );
 has 'module_path'						=> ( is => 'ro',	isa => 'Str', required => 1 );
@@ -47,23 +50,9 @@ has 'modules' => (
 has 'per_request_attr_build_defaults' => ( is => 'ro', default => sub {{}}, isa => 'HashRef' );
 has 'per_request_attr_build_not_set' => ( is => 'ro', default => sub {{}}, isa => 'HashRef' );
 
-sub timed_new {
-	my ($class, @args)= @_;
-	my ($sec0, $msec0)= gettimeofday;
-	
-	my $result= $class->new(@args);
-	
-	my ($sec1, $msec1)= gettimeofday;
-	my $elapsed= ($sec1-$sec0)+($msec1-$msec0)*.000001;
-	if (RapidApp::ScopedGlobals->varExists("RapidAppModuleLoadTimeTracker")) {
-		RapidApp::ScopedGlobals->RapidAppModuleLoadTimeTracker->{$result->base_url}= { module => ref $result, loadTime => $elapsed };
-	}
-	elsif (RapidApp::ScopedGlobals->varExists("log")) {
-		RapidApp::ScopedGlobals->catalystClass->debug
-			and RapidApp::ScopedGlobals->log->debug(sprintf("Loaded RapidApp module ".(ref $result)." at ".$result->base_url.": %0.3f s", $elapsed));
-	}
-	return $result;
-};
+# TODO: add back in functionality to record the time to load the module. 
+# removed during the unfactor work in Github Issue #41
+sub timed_new { (shift)->new(@_) }
 
 sub BUILD {}
 before 'BUILD' => sub {
@@ -322,6 +311,7 @@ sub create_module {
 		}
 	}
 	
+  $params->{app} = $self->app;
 	$params->{module_name} = $name;
 	$params->{module_path} = $self->module_path;
 	$params->{module_path} .= '/' unless substr($params->{module_path}, -1) eq '/';
@@ -336,9 +326,7 @@ sub create_module {
 		CYAN . "Load: " . BOLD . $params->{module_path} . CLEAR . 
 		CYAN . " [$class_name]" . CLEAR . "\n";
 	
-	my $app= RapidApp::ScopedGlobals->catalystClass;
-	my $ctor= ($app->debug && $class_name->can('timed_new')) || $class_name->can('new');
-	my $Object = $class_name->$ctor($params) or die "Failed to create module instance ($class_name)";
+	my $Object = $class_name->new($params) or die "Failed to create module instance ($class_name)";
 	die "$class_name is not a valid RapidApp Module" unless ($Object->does('RapidApp::Role::Module'));
 	
 	return $Object;

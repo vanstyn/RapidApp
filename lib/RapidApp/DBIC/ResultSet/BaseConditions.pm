@@ -30,7 +30,7 @@ around 'BUILDARGS' => sub {
 	$class->$orig(@args);
 };
 
-sub c { RapidApp::ScopedGlobals->get('catalystInstance'); }
+sub c { RapidApp->active_request_context }
 
 has 'base_search_conditions' => ( is => 'ro', default => undef );
 

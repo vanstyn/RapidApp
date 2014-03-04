@@ -9,6 +9,9 @@ package RapidApp::DbicExtQuery;
 #	Initial development
 
 
+### DEPRECATED - WILL BE REMOVED ###
+
+
 use strict;
 use Moose;
 
@@ -77,7 +80,7 @@ has 'base_search_set'         => ( is => 'ro',	default => undef );
 
 ###########################################################################################
 
-sub c { return RapidApp::ScopedGlobals->get("catalystInstance"); }
+sub c { RapidApp->active_request_context }
 
 sub BUILD {
 	my $self = shift;

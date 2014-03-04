@@ -5,7 +5,6 @@ use namespace::autoclean;
 BEGIN { extends 'Catalyst::View'; }
 
 use RapidApp::Include 'perlutil', 'sugar';
-use RapidApp::ErrorReport;
 
 =head1 NAME
 

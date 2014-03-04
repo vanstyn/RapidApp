@@ -66,20 +66,15 @@ sub perlutil {
 }
 
 sub rapidapp_base {
-	calleruse 'RapidApp::Error';
-	calleruse 'RapidApp::Error::UserError';
-	calleruse 'RapidApp::Error::CustomPrompt';
 	calleruse 'RapidApp::Responder::UserError';
 	calleruse 'RapidApp::Responder::CustomPrompt';
 	calleruse 'RapidApp::Responder::InfoStatus';
-	calleruse 'RapidApp::ScopedGlobals';
 	calleruse 'RapidApp::JSONFunc';
 	calleruse 'RapidApp::JSON::MixedEncoder';
 	calleruse 'RapidApp::JSON::RawJavascript';
 	calleruse 'RapidApp::JSON::ScriptWithData';
-	calleruse 'RapidApp::Web1RenderContext';
+  calleruse 'RapidApp::Web1RenderContext';
 	calleruse 'RapidApp::DbicExtQuery';
-	calleruse 'RapidApp::Web1RenderContext';
 	calleruse 'RapidApp::Functions';
 }
 

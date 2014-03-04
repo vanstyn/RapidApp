@@ -4,14 +4,15 @@ use Moose;
 use namespace::autoclean;
 extends 'Catalyst::Model';
 
+# This makes $c->_app available, just like in Controllers:
+with 'Catalyst::Component::ApplicationAttribute';
+
 use RapidApp::Include 'perlutil', 'sugar';
-use RapidApp::ScopedGlobals 'sEnv';
 use Time::HiRes qw(gettimeofday);
-use RapidApp::Role::ErrorReportStore;
-use RapidApp::FileErrorStore;
 
 # the package name of the catalyst application, i.e. "GreenSheet" or "HOPS"
-has 'catalystAppClass' => ( is => 'rw', isa => 'Str', required => 1, default => sub { sEnv->catalystClass } );
+has 'catalystAppClass', is => 'ro', isa => 'Str', lazy => 1,
+  default => sub { (shift)->_app };
 
 # the class name of the root module
 has 'rootModuleClass' => ( is => 'rw', isa => 'Str', lazy_build => 1 );
@@ -33,18 +34,6 @@ has 'preloadModules'    => ( is => 'rw', isa => 'Bool', default => 1 );
 # the root model instance
 has 'rootModule'        => ( is => 'rw', lazy_build => 1 );
 
-#has 'enableTraceCapture'=> ( is => 'rw', isa => 'Bool', default => 0 );
-
-has 'enableDirectLink'  => ( is => 'rw', isa => 'Bool', default => 0 );
-
-# Whether to save errors to whichever ExceptionStore is available via whatever configuration
-# If this is true and no ExceptionStore is configured, we die
-has 'saveErrorReports'  => ( is => 'rw', isa => 'Bool', default => 0 );
-
-# either an exceptionStore instance, or the name of a catalyst Model implementing one
-has 'errorReportStore'  => ( is => 'rw', isa => 'Maybe[RapidApp::Role::ErrorReportStore|Str]',
-	lazy => 1, default => sub { RapidApp::FileErrorStore->new } );
-
 has 'postprocessing_tasks' => ( is => 'rw', isa => 'ArrayRef', default => sub {[]} );
 
 sub add_postprocessing_task {
@@ -52,22 +41,11 @@ sub add_postprocessing_task {
 	push @{$self->postprocessing_tasks}, @_;
 }
 
-sub resolveErrorReportStore {
-	my $self= shift;
-	my $store= $self->errorReportStore;
-	ref $store or $store= $self->catalystAppClass->model($store);
-	return $store;
-}
-
-# Each of the following is the path to a module implementing some useful feature.
-# The module can be specified in the config, or it will be automatically set by the first
-#    module of that type which gets loaded.
-has 'errorViewPath' => ( is => 'rw', isa => 'Str' ); # ErrorView
-has 'errorAddCommentPath' => ( is => 'rw', isa => 'Str' ); # ErrorCommentHandler
 has 'appAuthPath'   => ( is => 'rw', isa => 'Str' ); # AppAuth
 
 sub BUILD {
-	my $self= shift;
+	my $self = shift;
+  $RapidApp::CATALYST_CLASS = $self->_app;
 }
 
 sub _setup_finalize {
@@ -78,8 +56,10 @@ sub _setup_finalize {
 sub _build_rootModule {
 	my $self= shift;
 	
+  return;
+  
 	# if we're doing this at runtime, just load the module.
-	if (sEnv->varExists('catalystInstance')) {
+	if (RapidApp->active_request_context) {
 		return $self->_load_root_module;
 	}
 	# else, we're preloading, and we want diagnostics
@@ -92,20 +72,21 @@ sub _build_rootModule {
 sub _load_root_module {
 	my $self= shift;
 	
-	my $log= sEnv->log;
-	sEnv->catalystClass->debug
-		and $log->debug("Running require on root module ".$self->rootModuleClass);
-	$log->_flush if $log->can('_flush');
+	#my $log= sEnv->log;
+	#sEnv->catalystClass->debug
+	#	and $log->debug("Running require on root module ".$self->rootModuleClass);
+	#$log->_flush if $log->can('_flush');
 	Catalyst::Utils::ensure_class_loaded($self->rootModuleClass);
 	
 	my $mParams= $self->rootModuleConfig || {};
+  $mParams->{app} = $self->_app;
 	$mParams->{module_name}= '';
 	$mParams->{module_path}= '/';
 	$mParams->{parent_module_ref}= undef;
 	
 	# This localized global gets set in RapidApp::RootModule so its available to
 	# submodules during their load:
-	local $RapidApp::ScopedGlobals::_vals->{'rootModule'} = undef;
+	#local $RapidApp::ScopedGlobals::_vals->{'rootModule'} = undef;
 	
 	return $self->rootModule($self->rootModuleClass->timed_new($mParams));
 }
@@ -116,44 +97,44 @@ sub performModulePreload {
 	
 	# Access the root module, causing it to get built
 	# We set RapidAppModuleLoadTimeTracker to instruct the modules to record their load times.
-	if ($self->catalystAppClass->debug) {
-		my $loadTimes= {};
-		sEnv->applyForSub(
-			{ RapidAppModuleLoadTimeTracker => $loadTimes },
-			sub { $self->rootModule($self->_load_root_module) }
-		);
-		scalar(keys %$loadTimes)
-			and $self->displayLoadTimes($loadTimes);
-	}
-	else {
+	#if ($self->catalystAppClass->debug) {
+	#	my $loadTimes= {};
+	#	sEnv->applyForSub(
+	#		{ RapidAppModuleLoadTimeTracker => $loadTimes },
+	#		sub { $self->rootModule($self->_load_root_module) }
+	#	);
+	#	scalar(keys %$loadTimes)
+	#		and $self->displayLoadTimes($loadTimes);
+	#}
+	#else {
 		$self->rootModule($self->_load_root_module);
-	}
+	#}
 }
 
-sub displayLoadTimes {
-	my ($self, $loadTimes)= @_;
-	
-	my $bar= '--------------------------------------------------------------------------------------';
-	my $summary= "Loaded RapidApp Modules:\n";
-	my @colWid= ( 25, 50, 7 );
-	$summary.= sprintf(".%.*s+%.*s+%.*s.\n",     $colWid[0],      $bar,  $colWid[1],    $bar,  $colWid[2],   $bar);
-	$summary.= sprintf("|%*s|%*s|%*s|\n",       -$colWid[0], ' Module', -$colWid[1], ' Path', -$colWid[2], ' Time');
-	$summary.= sprintf("+%.*s+%.*s+%.*s+\n",     $colWid[0],      $bar,  $colWid[1],    $bar,  $colWid[2],   $bar);
-	my @prevPath= ();
-	for my $key (sort keys %$loadTimes) {
-		my ($path, $module, $time)= ($key, $loadTimes->{$key}->{module}, $loadTimes->{$key}->{loadTime});
-		$path=~ s|[^/]*?/| /|g;
-		$path=~ s|^ /|/|;
-		$module =~ s/^(.*::)//; # trim the leading portion of the package name
-		$module = substr($module, -$colWid[0]);  # cut of the front of the string if necesary
-		$path= substr($path, -$colWid[1]);
-		$summary.= sprintf("| %*s| %*s| %*.3f |\n", -($colWid[0]-1), $module, -($colWid[1]-1), $path, $colWid[2]-2, $time);
-	}
-	$summary.= sprintf("'%.*s+%.*s+%.*s'\n",     $colWid[0],      $bar,  $colWid[1],    $bar,  $colWid[2],   $bar);
-	$summary.= "\n";
-	
-	sEnv->log->debug($summary);
-}
+#sub displayLoadTimes {
+#	my ($self, $loadTimes)= @_;
+#	
+#	my $bar= '--------------------------------------------------------------------------------------';
+#	my $summary= "Loaded RapidApp Modules:\n";
+#	my @colWid= ( 25, 50, 7 );
+#	$summary.= sprintf(".%.*s+%.*s+%.*s.\n",     $colWid[0],      $bar,  $colWid[1],    $bar,  $colWid[2],   $bar);
+#	$summary.= sprintf("|%*s|%*s|%*s|\n",       -$colWid[0], ' Module', -$colWid[1], ' Path', -$colWid[2], ' Time');
+#	$summary.= sprintf("+%.*s+%.*s+%.*s+\n",     $colWid[0],      $bar,  $colWid[1],    $bar,  $colWid[2],   $bar);
+#	my @prevPath= ();
+#	for my $key (sort keys %$loadTimes) {
+#		my ($path, $module, $time)= ($key, $loadTimes->{$key}->{module}, $loadTimes->{$key}->{loadTime});
+#		$path=~ s|[^/]*?/| /|g;
+#		$path=~ s|^ /|/|;
+#		$module =~ s/^(.*::)//; # trim the leading portion of the package name
+#		$module = substr($module, -$colWid[0]);  # cut of the front of the string if necesary
+#		$path= substr($path, -$colWid[1]);
+#		$summary.= sprintf("| %*s| %*s| %*.3f |\n", -($colWid[0]-1), $module, -($colWid[1]-1), $path, $colWid[2]-2, $time);
+#	}
+#	$summary.= sprintf("'%.*s+%.*s+%.*s'\n",     $colWid[0],      $bar,  $colWid[1],    $bar,  $colWid[2],   $bar);
+#	$summary.= "\n";
+#	
+#	sEnv->log->debug($summary);
+#}
 
 sub largestCommonPrefix {
 	my ($a, $b)= @_;
@@ -205,10 +186,11 @@ sub cleanupAfterRequest {
 		my $i= 1;
 		while (my $sub= shift @{$self->postprocessing_tasks}) {
 			local $c->{request_id}= $reqid.'.'.$i++;
-			RapidApp::ScopedGlobals->applyForSub(
-				{ catalystInstance => $c },
-				sub { $sub->($c); }
-			);
+			#RapidApp::ScopedGlobals->applyForSub(
+			#	{ catalystInstance => $c },
+			#	sub { $sub->($c); }
+			#);
+      $sub->($c);
 			$self->cleanDirtyModules($c);
 		}
 		

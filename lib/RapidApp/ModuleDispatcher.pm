@@ -3,7 +3,6 @@ package RapidApp::ModuleDispatcher;
 use Moose;
 use RapidApp::Include 'perlutil';
 
-use RapidApp::TraceCapture;
 use Scalar::Util 'blessed';
 
 # Which RapidApp module to dispatch to.  By default, we dispatch to the root.

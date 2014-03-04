@@ -42,12 +42,11 @@ around 'BUILDARGS' => sub {
 
 sub BUILD {
 	my $self= shift;
-	
-	# Make the root module instance available as a ScopedGlobal
-	# see _load_root_module
-	$RapidApp::ScopedGlobals::_vals->{'rootModule'} = $self
-		# this line is just for safety:
-		if (exists $RapidApp::ScopedGlobals::_vals->{'rootModule'});
+  
+  # Make the root module instance available via global. We have to do it
+  # here so it is available to submodules that are still loading.
+  # This is a hack and needs to be fixed...
+  $RapidApp::ROOT_MODULE_INSTANCE = $self;
 	
 	# Execute arbitrary code setup earlier in the init process that needs
 	# to be called after the RapidApp Module tree has been loaded
