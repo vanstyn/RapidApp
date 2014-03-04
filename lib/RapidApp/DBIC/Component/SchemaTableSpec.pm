@@ -66,7 +66,6 @@ sub apply_TableSpecs {
 		$class->TableSpec_set_conf(
 			$opt{set_conf_code}->($Source), # <-- conf returned by the dynamic 'set_conf_code' coderef
 			%{ $opt{TableSpec_confs}->{$source} || {} }, # <-- (optional) static conf defined in the Schema class
-			%{ $class->TableSpec_cnf } # <-- (optional) static conf defined in the Result class (highest priority)
 		);
     
     my $col_props = $opt{TableSpec_column_properties}{$source} || {};
