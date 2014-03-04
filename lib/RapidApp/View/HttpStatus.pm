@@ -7,6 +7,11 @@ use RapidApp::Include 'sugar', 'perlutil';
 
 use base 'Catalyst::View::TT';
 
+1;
+
+__END__
+
+
 =head1 NAME
 
 RapidApp::View::HttpStatus
