@@ -97,15 +97,26 @@ sub _rapidapp_top_level_dispatch {
 	
 	$c->stash->{onrequest_time_elapsed}= 0;
   
-  $orig->($c, @args);
-  
-  for my $err (@{ $c->error }) {
-    if (blessed($err) && $err->isa('RapidApp::Responder')) {
-      $c->clear_errors;
-      $c->forward($err->action);
-      last;
+  try {
+    $orig->($c, @args);
+    for my $err (@{ $c->error }) {
+      if (blessed($err) && $err->isa('RapidApp::Responder')) {
+        $c->clear_errors;
+        $c->forward($err->action);
+        last;
+      }
     }
   }
+  catch {
+    # Fallback to handle uncaught exceptions during dispatch. This is
+    # known to happen when the client sends a garbled request, such as
+    # overly long Ajax requests that were truncated
+    my $err = shift;
+    warn $err;
+    $c->response->content_type('text/plain');
+    $c->response->body(" *** Uncaught Exception in Catalyst Engine ***\n\n\n$err");
+    $c->response->status(500);
+  };
 	
 	if (!defined $c->response->content_type) {
 		$c->log->error("Body was set, but content-type was not!  This can lead to encoding errors!");
