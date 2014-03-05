@@ -95,13 +95,17 @@ sub _rapidapp_top_level_dispatch {
 		|| $c->req->param('RequestContentType')
 		|| '';
 	
-	# special die handler to capture stack traces for all errors
-	#local $SIG{__DIE__}= \&RapidApp::TraceCapture::captureTrace
-	#	if $c->rapidApp->enableTraceCapture;
-	
 	$c->stash->{onrequest_time_elapsed}= 0;
   
   $orig->($c, @args);
+  
+  for my $err (@{ $c->error }) {
+    if (blessed($err) && $err->isa('RapidApp::Responder')) {
+      $c->clear_errors;
+      $c->forward($err->action);
+      last;
+    }
+  }
 	
 	if (!defined $c->response->content_type) {
 		$c->log->error("Body was set, but content-type was not!  This can lead to encoding errors!");
