@@ -267,23 +267,45 @@ Ext.ux.RapidApp.ajaxRequestContentType = function(conn,options) {
 
 
 Ext.ux.RapidApp.ajaxException = function(conn,response,options) {
-  if (!response || !response.getResponseHeader) { return; }
-  
-  if(response.getResponseHeader('X-RapidApp-Exception')) {
-    // If this is an exception with the X-RapidApp-Exception header,
-    // pass it off to the normal check exception logic
-    return Ext.ux.RapidApp.ajaxCheckException.apply(this,arguments);
+  if (response && response.getResponseHeader) {
+    if(response.getResponseHeader('X-RapidApp-Exception')) {
+      // If this is an exception with the X-RapidApp-Exception header,
+      // pass it off to the normal check exception logic
+      return Ext.ux.RapidApp.ajaxCheckException.apply(this,arguments);
+    }
+    else {
+      // If we're here, it means a raw exception was encountered (5xx) 
+      // with an X-RapidApp-Exception header, so just throw the raw
+      // response body as text. This should not happen - it probably means 
+      // the server-side failed to catch the exception. The message will
+      // probably be ugly, but it is the best/safest thing we can do at 
+      // this point:
+      return Ext.ux.RapidApp.showAjaxError(
+        'Ajax Exception - ' + response.statusText + ' (' + response.status + ')',
+        '<pre>' + Ext.util.Format.htmlEncode(response.responseText) + '</pre>'
+      );
+    }
   }
   else {
-    // If we're here, it means a raw exception was encountered (5xx) 
-    // with an X-RapidApp-Exception header, so just throw the raw
-    // response body as text. This should not happen - it probably means 
-    // the server-side failed to catch the exception. The message will
-    // probably be ugly, but it is the best/safest thing we can do at 
-    // this point:
+    // If we're here it means the request failed altogether, and didn't even
+    // send back a response with headers (server is down, network down, etc).
+    
+    // If this is an AutoPanel load request, take no action, since AutoPanel
+    // handles its own errors by showing them as its content: 
+    // (TODO - consolidate this handling)
+    if(options && options.scope && options.scope.AutoPanelId) {
+      return;
+    }
+    
+    // For all other types of Ajax requests (such as CRUD actions), display
+    // the error to the user in a standard window:
+    var msg = (response && response.statusText) ? 
+      response.statusText : 'unknown error';
     return Ext.ux.RapidApp.showAjaxError(
-      'Ajax Exception - ' + response.statusText + ' (' + response.status + ')',
-      '<pre>' + Ext.util.Format.htmlEncode(response.responseText) + '</pre>'
+      'Ajax Request Failed',
+      '<div style="padding:10px;font-size:1.5em;color:navy;">&nbsp;&nbsp;' +
+        '<b>' + msg + '</b>' +
+      '&nbsp;</div>'
     );
   }
 }
