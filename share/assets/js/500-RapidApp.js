@@ -206,49 +206,57 @@ Ext.ux.RapidApp.errMsgHandler = function(title,msg,as_text) {
 }
 
 
+Ext.ux.RapidApp.showAjaxError = function(title,msg,options,data) {
+  data = data || {};
+
+  // -----------------------------------------------------------------------------
+  // Check to see if this exception is associated with an AutoPanel load, and
+  // if it is, display the exception message in the AutoPanel body instead of in
+  // a new window
+  if(options && options.scope && options.scope.AutoPanelId) {
+    var AutoPanel = Ext.getCmp(options.scope.AutoPanelId);
+    if(AutoPanel) {
+      return AutoPanel.setErrorBody.call(AutoPanel,title,msg);
+    }
+  }
+  // -----------------------------------------------------------------------------
+  else {
+    if (data.winform) {
+      return Ext.ux.RapidApp.WinFormPost(data.winform);
+    }
+    else {
+      return Ext.ux.RapidApp.errMsgHandler(title,msg,data.as_text);
+    }
+  
+  }
+
+}
 
 Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
-	if (!response || !response.getResponseHeader) return;
-	try {
-		var exception = response.getResponseHeader('X-RapidApp-Exception');
-		if (exception) {
-			
-			var data = response.result || Ext.decode(response.responseText, true) || {};
-			var title = data.title || 'Error';
-			var msg = data.msg || 'unknown error - Ext.ux.RapidApp.ajaxCheckException';
-			
-			// -----------------------------------------------------------------------------
-			// Check to see if this exception is associated with an AutoPanel load, and
-			// if it is, display the exception message in the AutoPanel body instead of in
-			// a new window
-			if(options.scope && options.scope.AutoPanelId) {
-				var AutoPanel = Ext.getCmp(options.scope.AutoPanelId);
-				if(AutoPanel) {
-					return AutoPanel.setErrorBody.call(AutoPanel,title,msg);
-				}
-			}
-			// -----------------------------------------------------------------------------
-			
-			if (data.winform) {
-				Ext.ux.RapidApp.WinFormPost(data.winform);
-			}
-			else {
-				Ext.ux.RapidApp.errMsgHandler(title,msg,data.as_text);
-			}
-		}
-		
-		var warning = response.getResponseHeader('X-RapidApp-Warning');
-		if (warning) {
-			var data = Ext.decode(warning);
-			var title = data.title || 'Warning';
-			var msg = data.msg || 'Unknown (X-RapidApp-Warning)';
-			Ext.ux.RapidApp.errMsgHandler(title,msg,data.as_text);
-		}
-		
-		var eval_code = response.getResponseHeader('X-RapidApp-EVAL');
-		if (eval) { eval(eval_code); }
-	}
-	catch(err) {}
+  if (!response || !response.getResponseHeader) return;
+
+  try {
+    var exception = response.getResponseHeader('X-RapidApp-Exception');
+    if (exception) {
+      var data = response.result || Ext.decode(response.responseText, true) || {};
+      var title = data.title || 'Error';
+      var msg = data.msg || 'unknown error - Ext.ux.RapidApp.ajaxCheckException';
+      
+      Ext.ux.RapidApp.showAjaxError(title,msg,options,data);
+    }
+    
+    var warning = response.getResponseHeader('X-RapidApp-Warning');
+    if (warning) {
+      var data = Ext.decode(warning);
+      var title = data.title || 'Warning';
+      var msg = data.msg || 'Unknown (X-RapidApp-Warning)';
+      Ext.ux.RapidApp.errMsgHandler(title,msg,data.as_text);
+    }
+    
+    var eval_code = response.getResponseHeader('X-RapidApp-EVAL');
+    if (eval) { eval(eval_code); }
+  }
+  catch(err) {}
 }
 
 Ext.ux.RapidApp.ajaxRequestContentType = function(conn,options) {
@@ -257,9 +265,33 @@ Ext.ux.RapidApp.ajaxRequestContentType = function(conn,options) {
   options.headers['X-RapidApp-VERSION'] = Ext.ux.RapidApp.VERSION;
 };
 
+
+Ext.ux.RapidApp.ajaxException = function(conn,response,options) {
+  if (!response || !response.getResponseHeader) { return; }
+  
+  if(response.getResponseHeader('X-RapidApp-Exception')) {
+    // If this is an exception with the X-RapidApp-Exception header,
+    // pass it off to the normal check exception logic
+    return Ext.ux.RapidApp.ajaxCheckException.apply(this,arguments);
+  }
+  else {
+    // If we're here, it means a raw exception was encountered (5xx) 
+    // with an X-RapidApp-Exception header, so just throw the raw
+    // response body as text. This should not happen - it probably means 
+    // the server-side failed to catch the exception. The message will
+    // probably be ugly, but it is the best/safest thing we can do at 
+    // this point:
+    return Ext.ux.RapidApp.showAjaxError(
+      'Ajax Exception - ' + response.statusText + ' (' + response.status + ')',
+      '<pre>' + Ext.util.Format.htmlEncode(response.responseText) + '</pre>'
+    );
+  }
+}
+
+Ext.Ajax.on('requestexception',Ext.ux.RapidApp.ajaxException);
 Ext.Ajax.on('requestcomplete',Ext.ux.RapidApp.ajaxCheckException);
-Ext.Ajax.on('requestexception',Ext.ux.RapidApp.ajaxCheckException);
 Ext.Ajax.on('beforerequest',Ext.ux.RapidApp.ajaxRequestContentType);
+
 
 
 
