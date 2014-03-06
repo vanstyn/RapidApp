@@ -21,6 +21,12 @@ has 'request_id' => ( is => 'ro', default => sub { (shift)->rapidApp->requestCou
 
 around 'setup_components' => sub {
 	my ($orig, $app, @args)= @_;
+  
+  # Force this standard setting. When it is off, in certain cases, it
+  # can lead to bizzare regex exceptions. This setting is already automatically
+  # set for all new apps created by recent versions of catalyst.pl
+  $app->config( disable_component_resolution_regex_fallback => 1 );
+  
   $app->$orig(@args);  # standard catalyst setup_components
   $app->setupRapidApp; # our additional components needed for RapidApp
 };
