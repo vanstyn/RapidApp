@@ -7,7 +7,7 @@ use Data::Dumper;
 use RapidApp::JSON::MixedEncoder;
 use RapidApp::JSON::RawJavascript;
 use RapidApp::HTML::RawHtml;
-use RapidApp::Error::UserError;
+use RapidApp::Responder::UserError;
 use RapidApp::Handler;
 use RapidApp::DefaultOverride qw(override_defaults merge_defaults);
 use RapidApp::Debug;
