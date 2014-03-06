@@ -150,7 +150,7 @@ sub setJsonBody {
 	
 	my $encoding= $c->stash->{encoding} || $self->encoding;
 	my $rct= $c->stash->{requestContentType};
-	DEBUG('controller', 'rendering json for request content type ', $rct, json => $json);
+	#DEBUG('controller', 'rendering json for request content type ', $rct, json => $json);
 	
 	(!ref $json) or $json= $self->encoder->encode($json);
 	
