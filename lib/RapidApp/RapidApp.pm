@@ -162,6 +162,9 @@ sub markDirtyModule {
 	$self->dirtyModules->{$module}= $module;
 }
 
+
+# The need for this cleanup process is a design flaw in the internals of
+# RapidApp 'Modules' that will be factored away soon...
 sub cleanupAfterRequest {
 	my ($self, $c)= @_;
 	return unless scalar(keys %{$self->dirtyModules} );
@@ -186,10 +189,6 @@ sub cleanupAfterRequest {
 		my $i= 1;
 		while (my $sub= shift @{$self->postprocessing_tasks}) {
 			local $c->{request_id}= $reqid.'.'.$i++;
-			#RapidApp::ScopedGlobals->applyForSub(
-			#	{ catalystInstance => $c },
-			#	sub { $sub->($c); }
-			#);
       $sub->($c);
 			$self->cleanDirtyModules($c);
 		}
@@ -207,7 +206,7 @@ sub cleanDirtyModules {
 	my ($self, $c)= @_;
 	my @modules= values %{$self->dirtyModules};
 	for my $module (@modules) {
-		DEBUG('controller', ' >> CLEARING', $module->module_path);
+		#DEBUG('controller', ' >> CLEARING', $module->module_path);
 		$module->reset_per_req_attrs;
 	}
 	%{$self->dirtyModules}= ();
