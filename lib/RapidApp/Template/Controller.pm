@@ -88,16 +88,19 @@ sub _new_Template {
   my ($self,$opt) = @_;
   Module::Runtime::require_module($self->context_class);
   Module::Runtime::require_module($self->provider_class);
-  return Template->new({ 
+  return Template->new({
+    ENCODING => 'utf8',
     CONTEXT => $self->context_class->new({
       Controller => $self,
       Access => $self->Access,
       # TODO: turn STRICT back on once I figure out how to make the errors useful:
       #STRICT => 1,
+      ENCODING => 'utf8',
       LOAD_TEMPLATES => [
         $self->provider_class->new({
           Controller => $self,
           Access => $self->Access,
+          ENCODING => 'utf8',
           #INCLUDE_PATH => $self->_app->default_tt_include_path,
           INCLUDE_PATH => [
             dir($self->_app->config->{home},'root/templates')->stringify,
