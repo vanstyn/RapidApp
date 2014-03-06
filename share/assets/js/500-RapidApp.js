@@ -1854,14 +1854,15 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 		Ext.ux.AutoPanel.superclass.doAutoLoad.call(this);
 	},
 	
-	initComponent: function() {
-		
-		// -- Make sure no highlighting can happen during load (this prevents highlight
-		//    bugs that can happen if we double-clicked something to spawn this panel)
-		var thisEl;
-		this.on('render',function(){
-			thisEl = this.getEl();
-			thisEl.addClass('no-text-select');
+  initComponent: function() {
+    
+    // -- Make sure no highlighting can happen during load (this prevents highlight
+    //    bugs that can happen if we double-clicked something to spawn this panel)
+    var thisEl;
+    this.on('render',function(){
+      thisEl = this.getEl();
+      thisEl.addClass('ra-ap-body');
+      thisEl.addClass('no-text-select');
       
       this.on('resize',this.setSafesizeClasses,this);
       this.setSafesizeClasses();

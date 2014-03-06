@@ -247,7 +247,7 @@ a.ra-icon-refresh-tiny:hover {
   opacity:1.0;
   filter:alpha(opacity=100); /* For IE8 and earlier */
 }
-a.ra-icon-refresh-tiny span {
+.ra-ap-body a.ra-icon-refresh-tiny span, a.ra-icon-refresh-tiny span {
   visibility: hidden;
 }
 a.ra-icon-refresh-tiny:hover span {
@@ -1641,6 +1641,11 @@ a:hover, a:hover * { cursor: pointer; }
   word-wrap: break-word;
   text-align: center;
 }
+
+
+/* Hide autopanel reloaders unless they are within an AutoPanel*/
+.ra-autopanel-reloader             { visibility: hidden; }
+.ra-ap-body .ra-autopanel-reloader  { visibility: visible; }
 
 
 .ra-autopanel-reloader {
