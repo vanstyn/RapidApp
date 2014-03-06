@@ -50,6 +50,8 @@ sub setupRapidApp {
 		$log->info("RapidApp: No Controller extending ModuleDispatcher found, using default");
 		$app->injectUnlessExist( 'RapidApp::Controller::DefaultRoot', 'Controller::RapidApp::Root' );
 	}
+  
+  $app->injectUnlessExist( 'RapidApp::CatalystX::SimpleCAS::TextTranscode', 'Controller::SimpleCas::TextTranscode' );
 	
 	# for each view, inject it if it doens't exist
 	$app->injectUnlessExist( 'Catalyst::View::TT', 'View::RapidApp::TT' );
