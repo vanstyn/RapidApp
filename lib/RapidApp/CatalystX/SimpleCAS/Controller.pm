@@ -11,9 +11,11 @@ use RapidApp::CatalystX::SimpleCAS::Content;
 use RapidApp::CatalystX::SimpleCAS::Store::File;
 use RapidApp::JSON::MixedEncoder;
 use MIME::Base64;
-use Image::Resize;
 use String::Random;
 use Switch qw(switch);
+
+use Module::Runtime;
+#use Image::Resize;
 
 has 'store_class', is => 'ro', default => 'RapidApp::CatalystX::SimpleCAS::Store::File';
 has 'store_path', is => 'ro', lazy => 1, default => sub {
@@ -117,10 +119,25 @@ sub upload_image: Local  {
 	my $upload = $c->req->upload('Filedata') or die "no upload object";
 	
 	my ($type,$subtype) = split(/\//,$upload->type);
+  
+  my $resized = \0;
+  my $shrunk = \0;
+  
+  my ($checksum,$width,$height,$orig_width,$orig_height);
 	
-	my ($checksum,$width,$height,$resized,$orig_width,$orig_height) 
-		= $self->add_resize_image($upload->tempname,$type,$subtype,$maxwidth,$maxheight);
-	
+  try {
+    # Will die unless Image::Resize is available, which is now optional (Github Issue #42)
+    ($checksum,$width,$height,$resized,$orig_width,$orig_height) 
+      = $self->add_resize_image($upload->tempname,$type,$subtype,$maxwidth,$maxheight);
+  }
+  catch {
+    # Fall-back calculates new image size without actually resizing it. The img
+    # tag will still be smaller, but the image file will be original dimensions
+    ($checksum,$width,$height,$shrunk,$orig_width,$orig_height) 
+      = $self->add_size_info_image($upload->tempname,$type,$subtype,$maxwidth,$maxheight);
+  };
+  
+  
 	unlink $upload->tempname;
 	
 	#my $tag = '<img src="/simplecas/fetch_content/' . $checksum . '"';
@@ -135,6 +152,7 @@ sub upload_image: Local  {
 		height => $height,
 		width => $width,
 		resized => $resized,
+    shrunk => $shrunk,
 		orig_width => $orig_width,
 		orig_height => $orig_height,
 		filename => $self->safe_filename($upload->filename),
@@ -147,6 +165,8 @@ sub upload_image: Local  {
 
 sub add_resize_image :Private {
 	my ($self,$file,$type,$subtype,$maxwidth,$maxheight) = @_;
+  
+  Module::Runtime::require_module('Image::Resize');
 
 	my $checksum = $self->Store->add_content_file($file) or die "Failed to add content";
 	
@@ -193,6 +213,44 @@ sub add_resize_image :Private {
 	return ($checksum,$width,$height,$resized,$orig_width,$orig_height);
 }
 
+
+# New method, uses the same API as 'add_resize_image' above, but doesn't
+# do any actual resizing (just calculates smaller height/width for better
+# display). This method is used when Image::Resize is not available.
+# Added for Github Issue #42
+sub add_size_info_image :Private {
+  my ($self,$file,$type,$subtype,$maxwidth,$maxheight) = @_;
+
+  my $checksum = $self->Store->add_content_file($file) or die "Failed to add content";
+
+  my $shrunk = \0;
+
+  my ($width,$height) = $self->Store->image_size($checksum);
+  my ($orig_width,$orig_height) = ($width,$height);
+  if (defined $maxwidth) {
+    
+    my ($newwidth,$newheight) = ($width,$height);
+    
+    if($width > $maxwidth) {
+      my $ratio = $maxwidth/$width;
+      $newheight = int($ratio * $height);
+      $newwidth = $maxwidth;
+    }
+    
+    if(defined $maxheight and $newheight > $maxheight) {
+      my $ratio = $maxheight/$newheight;
+      $newwidth = int($ratio * $newwidth);
+      $newheight = $maxheight;
+    }
+    
+    unless ($newwidth == $width && $newheight == $height) {
+      ($width,$height) = ($newwidth,$newheight);
+      $shrunk = \1;
+    }
+  }
+
+  return ($checksum,$width,$height,$shrunk,$orig_width,$orig_height);
+}
 
 
 sub upload_file : Local {

@@ -89,6 +89,19 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.SimpleCAS_Image = Ext.extend(Ext.ux.form.HtmlE
 					icon: Ext.MessageBox.INFO
 				});
 			}
+			else if (this.resizeWarn && img.shrunk) {
+				Ext.Msg.show({
+					title:'Notice: Oversized Image Shrunk',
+					msg: 
+						'The image is oversized and has been pre-shrunk for display <br>' +
+						'purposes (however, you can click/drag it larger).<br><br>' +
+						'Actual Size: <b>' + img.orig_width + 'x' + img.orig_height + '</b><br><br>' +
+						'Displayed Size: <b>' + img.width + 'x' + img.height + '</b>'
+					,
+					buttons: Ext.Msg.OK,
+					icon: Ext.MessageBox.INFO
+				});
+			}
 			
 			img.link_url = '/simplecas/fetch_content/' + img.checksum + '/' + img.filename;
 			this.insertImage(img);
