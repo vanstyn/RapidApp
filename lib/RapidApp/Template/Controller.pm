@@ -266,6 +266,10 @@ sub view :Local {
   my $iframe = $external || $self->is_iframe_request($c); # <-- external must use iframe
   my ($output,$content_type);
   
+  my @cls = ('ra-scoped-reset');
+  my $tpl_cls = $self->Access->template_css_class($template);
+  push @cls, $tpl_cls if ($tpl_cls);
+  
   if($ra_client) {
     # This is a call from within ExtJS, wrap divs to id the templates from javascript
     
@@ -306,7 +310,7 @@ sub view :Local {
       $cnf = {
         xtype => 'panel',
         autoScroll => \1,
-        bodyCssClass => 'ra-scoped-reset',
+        bodyCssClass => join(' ',@cls),
         
         # try to set the title/icon by finding/parsing <title> in the 'html'
         autopanel_parse_title => \1,
@@ -376,7 +380,7 @@ sub view :Local {
     # this is *not* an external template:
     $output = $external ? join("\n",@head,$html) : join("\n",
       '<head>', @head, '</head>',
-      '<div class="ra-scoped-reset">', $html, '</div>'
+      '<div class="' . join(' ',@cls) . '">', $html, '</div>'
     );
     
     $content_type = 'text/html; charset=utf-8';

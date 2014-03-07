@@ -11,7 +11,7 @@
    'ra-doc' (default). Set the padding *only* on the topmost
    template. This needs to be set here instead of in ra-doc.css
    because we don't want it applied to nested templates */
-.x-panel-body>.ra-template>.ra-doc {
+.ra-scoped-reset.ra-doc {
   padding: 2px 5px;
 }
 

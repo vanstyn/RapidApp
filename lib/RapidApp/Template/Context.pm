@@ -135,10 +135,6 @@ sub _div_wrap_content {
     deletable => $exists ? $self->Access->template_deletable($template) : 0
   };
   
-  my @cls = ('content');
-  my $tpl_cls = $self->Access->template_css_class($template);
-  push @cls, $tpl_cls if ($tpl_cls);
-  
   join("\n",
     '<div class="ra-template">',
       
@@ -154,7 +150,7 @@ sub _div_wrap_content {
         ''
       ),
       
-      '<div class="' . join(' ', @cls) . '">', $content, '</div>',
+      '<div class="content">', $content, '</div>',
       
     '</div>'
   );
