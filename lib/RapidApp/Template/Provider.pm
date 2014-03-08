@@ -141,6 +141,18 @@ sub _not_exist_content {
   );
 }
 
+# ---
+# Override to decode everything as UTF-8. If there are templates in some
+# other encoding, it is probably a mistake, and even if its not, the rest of
+# the system won't be able to deal with it properly anyway. UTF-8 is 
+# currently is assumed across-the-board in RapidApp. 
+sub _decode_unicode {
+  my ($self, $string) = @_;
+  return undef unless (defined $string);
+  utf8::decode($string);
+  return $string;
+}
+# ---
 
 ###
 ### Over and above the methods in the Template::Provider API:
@@ -159,7 +171,7 @@ sub update_template {
   
   die "Bad template path '$File'" unless (-f $File);
   
-  return $File->spew($content);
+  return $File->spew(iomode => '>:raw', $content);
 }
 
 sub template_exists {
@@ -218,7 +230,7 @@ sub create_template {
   # TODO: formalize a way to dynamically set/specify the new/init content
   $content = "New Template '$template'" unless (defined $content);
 
-  $File->spew($content);
+  $File->spew(iomode => '>:raw', $content);
   
   return -f $File ? 1 : 0;
 }
