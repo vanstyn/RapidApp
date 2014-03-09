@@ -1,0 +1,7 @@
+This branch (ScopedGlobals) is the last version of RapidApp
+before RapidApp::ScopedGlobals was factored out, along with
+a ton of other code dealing with dispatch, exceptions, unicode,
+and other misc items (see Github Issue #41). This branch is
+just for historical/reference purposes.
+
+2014-03-09 by HV
