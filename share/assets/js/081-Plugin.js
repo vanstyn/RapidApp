@@ -4178,7 +4178,7 @@ Ext.ux.RapidApp.Plugin.LinkClickCatcher = Ext.extend(Ext.util.Observable,{
     
     // URL is local (does not start with http://, https://, etc)
     // and does not start with '#' (such as the ext tabs with href='#')
-    if(href.search('#') !== 0 && ! this.externalUrlRe.test(href)) {
+    if(href.search('#') !== 0 && href.search('/#') !== 0 && ! this.externalUrlRe.test(href)) {
       // Stop the link click event and convert to hashpath:
       event.stopEvent();
       var hashpath = Ext.ux.RapidApp.HashNav.urlToHashPath(href);
