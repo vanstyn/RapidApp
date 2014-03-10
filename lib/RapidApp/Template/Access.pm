@@ -33,6 +33,12 @@ has 'Controller', is => 'ro', required => 1, isa => InstanceOf['RapidApp::Templa
 # in this (or derived) class:
 sub catalyst_context { (shift)->Controller->{_current_context} }
 
+# This will be the top-level template name that is being viewed from
+# the controller, in case different Access rules need to be applied
+# for templates that are being INCLUDED within another template vs
+# being viewed/accessed directly.
+sub currently_viewing_template { (shift)->Controller->{_viewing_template} }
+
 # -----
 # Optional *global* settings to toggle access across the board
 

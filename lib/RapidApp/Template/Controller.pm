@@ -236,6 +236,11 @@ sub view :Local {
     
   local $self->{_current_context} = $c;
   
+  # Track the top-level template that is being viewed, in case the Access class
+  # wants to treat top-level templates differently from nested templates
+  #   -- see currently_viewing_template() in RapidApp::Template::Access
+  local $self->{_viewing_template} = $template;
+  
   $self->Access->template_viewable($template)
     or die "Permission denied - template '$template'";
 
