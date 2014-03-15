@@ -388,6 +388,9 @@ sub view :Local {
     $content_type = 'text/html; charset=utf-8';
   }
   
+  # Decode as UTF-8 for user consumption:
+  utf8::decode($output);
+
   return $self->_detach_response($c,200,$output,$content_type);
 }
 
