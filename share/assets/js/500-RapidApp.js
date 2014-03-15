@@ -2040,6 +2040,14 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
   setBodyConf: function(conf,thisEl) {
     thisEl = thisEl || this.getEl();
     if(this.items.getCount() > 0) { this.removeAll(true); }
+    
+    // Clear the existing innerHTML (deletes the loading-indicator)
+    // Previously, the loading-indicator was just hidden off the bottom
+    // of the panel, but certain situations could make it show back up,
+    // such as when the browser tries to scroll a label into view (as
+    // described in Github Issue #46 which this change was added for).
+    thisEl.dom.innerHTML = '';
+    
     this.insert(0,conf);
     this.doLayout();
   },
