@@ -2,7 +2,7 @@ package RapidApp;
 use strict;
 use warnings;
 
-our $VERSION = '0.99100';
+our $VERSION = '0.99101';
 
 use Carp::Clan;
 
