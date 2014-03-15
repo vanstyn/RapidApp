@@ -5,7 +5,6 @@ use autodie;
 
 use RapidApp::Include qw(sugar perlutil);
 use Text::Markdown 1.000031 'markdown';
-use Switch qw(switch);
 use Try::Tiny;
 
 use Moo;
@@ -113,11 +112,11 @@ sub post_process_output {
     or die "Access object didn't return a format string";
   
   # TODO: defer to actual format class/object, TBD
-  switch ($format) {
-    case 'markdown' {
-      $$output_ref = markdown($$output_ref);
-    }
+  if($format eq 'markdown') {
+    $$output_ref = markdown($$output_ref);
   }
+  # TODO: handle additional format types...
+  
   
   return $self->div_wrap($template)
     ? $self->_div_wrap_content($template,$format,$$output_ref)

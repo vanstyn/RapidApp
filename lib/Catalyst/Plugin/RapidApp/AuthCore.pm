@@ -8,7 +8,6 @@ use RapidApp::Include qw(sugar perlutil);
 require Catalyst::Utils;
 use CatalystX::InjectComponent;
 
-use Switch qw(switch);
 use Module::Runtime;
 use RapidApp::CoreSchema;
 

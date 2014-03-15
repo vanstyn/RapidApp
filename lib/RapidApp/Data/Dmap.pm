@@ -7,7 +7,6 @@ use warnings;
 use strict;
 #require v5.10;
 #use feature 'switch';
-use Switch;
 use Exporter 'import';
 our @EXPORT = qw{ dmap };
 our @EXPORT_OK = qw{ cut };
@@ -220,48 +219,47 @@ sub _dmap {
                 };
                 if($recurse) {
                     foreach my $val (@mapped) {
-                        switch(reftype $val) {
-                            case 'HASH' {
-                                for(keys %$val) {
-                                    my @res = _dmap($cache, $callback, $val->{$_});
-                                    croak 'Multi value return in hash value assignment'
+                        my $reftype = reftype $val;
+                        if($reftype eq 'HASH') {
+                            for(keys %$val) {
+                                my @res = _dmap($cache, $callback, $val->{$_});
+                                croak 'Multi value return in hash value assignment'
+                                    if @res > 1;
+                                if(@res) {
+                                    $val->{$_} = $res[0];
+                                } else {
+                                    delete $val->{$_};
+                                }
+                            }
+                            push @result, $val;
+                        }
+                        elsif($reftype eq 'ARRAY') {
+                            my $i = 0;
+                            while($i <= $#$val) {
+                                if(exists $val->[$i]) {
+                                    # TODO Use splice to allow multi-value returns
+                                    my @res = _dmap($cache, $callback, $val->[$i]);
+                                    croak 'Multi value return in array single value assignment'
                                         if @res > 1;
                                     if(@res) {
-                                        $val->{$_} = $res[0];
+                                        $val->[$i] = $res[0];
                                     } else {
-                                        delete $val->{$_};
+                                        splice @$val, $i, 1;
                                     }
                                 }
-                                push @result, $val;
+                                $i++;
                             }
-                            case 'ARRAY' {
-                                my $i = 0;
-                                while($i <= $#$val) {
-                                    if(exists $val->[$i]) {
-                                        # TODO Use splice to allow multi-value returns
-                                        my @res = _dmap($cache, $callback, $val->[$i]);
-                                        croak 'Multi value return in array single value assignment'
-                                            if @res > 1;
-                                        if(@res) {
-                                            $val->[$i] = $res[0];
-                                        } else {
-                                            splice @$val, $i, 1;
-                                        }
-                                    }
-                                    $i++;
-                                }
-                                push @result, $val;
-                            }
-                            case 'SCALAR' {
-                                my @res = _dmap($cache, $callback, $$val);
-                                croak 'Multi value return in single value assignment'
-                                    if @res > 1;
-                                $$val = $res[0] if @res and $$val ne $res[0];
-                                push @result, $val;
-                            }
-                            else {
-                                push @result, $val;
-                            }
+                            push @result, $val;
+                        }
+                        elsif($reftype eq 'SCALAR') {
+                            my @res = _dmap($cache, $callback, $$val);
+                            croak 'Multi value return in single value assignment'
+                                if @res > 1;
+                            $$val = $res[0] if @res and $$val ne $res[0];
+                            push @result, $val;
+                        }
+                        else {
+                            push @result, $val;
                         }
                     }
                 }

@@ -9,7 +9,6 @@ use Text::Glob qw( match_glob );
 use Hash::Diff qw( diff );
 use Text::TabularDisplay;
 use Time::HiRes qw(gettimeofday tv_interval);
-use Switch qw( switch );
 use RapidApp::Data::Dmap qw(dmap);
 use URI::Escape;
 
@@ -1055,27 +1054,25 @@ sub chain_Rs_req_quicksearch {
 	my $mode = $params->{quicksearch_mode} || $self->quicksearch_mode;
 	$mode = $self->quicksearch_mode unless ($self->allow_set_quicksearch_mode);
 	
-	my @search = ();
-	foreach my $f (@$fields) {
-		my $dbicname = $self->resolve_dbic_colname($f,$attr->{join});
-		switch($mode) {
-			case 'like' {
-				# Default:
-				push @search, { $dbicname => { like => '%' . $query . '%' } };
-			}
-			case 'exact' {
-				#push @search, { $dbicname => { '=' => $query } }; 	#<-- for some reason this causes all records to be 
-																	# shown if none match. No idea why.
-				
-				push @search, { $dbicname => { like => $query } };
-			}
-			else {
-				confess "Invalid quicksearch_mode '$mode'";
-			}
-		}
-	}
-	
-	return $Rs->search_rs({ '-or' => \@search },$attr);
+  my @search = ();
+  foreach my $f (@$fields) {
+    my $dbicname = $self->resolve_dbic_colname($f,$attr->{join});
+    if($mode eq 'like') {
+      # Default:
+      push @search, { $dbicname => { like => '%' . $query . '%' } };
+    }
+    elsif($mode eq 'exact') {
+      #push @search, { $dbicname => { '=' => $query } }; 	#<-- for some reason this causes all records to be 
+                                # shown if none match. No idea why.
+      
+      push @search, { $dbicname => { like => $query } };
+    }
+    else {
+      confess "Invalid quicksearch_mode '$mode'";
+    }
+  }
+
+  return $Rs->search_rs({ '-or' => \@search },$attr);
 }
 
 
@@ -1281,24 +1278,22 @@ has 'multifilter_keymap', is => 'ro', default => sub {{
 	'is empty'				=> sub { ('=','') },
 	'null_empty'			=> 'null/empty status',
 	'null/empty status' => sub {
-		switch($_->{v}) {
-			case 'is null' 				{ return ('=',undef)				}
-			case 'is empty' 			{ return ('=','') 					}
-			case 'is not null' 			{ return ('!=',undef)				}
-			case 'is not empty' 		{ return ('!=','') 					}
-			
-			# new, simple way to handle these without needing to inline dbfName
-			case 'is null or empty'		{ return [{'='=>undef},{'='=>''}]	} #<-- arrays automatically OR
-			case 'is not null or empty'	{ return {'!='=>undef,'!='=>''}		} #<-- hashes automatically AND
-			
-			## This complexity isn't needed, and, doesn't work properly when dbfName is a ref/virtual
-			## column. Replaced with a much more simple form above.
-			#case 'is null or empty' { return { '-or',[{ $_->{dbfName} => undef },{ $_->{dbfName} => '' }] } }
-			#case 'is not null or empty'     { return { '-and',[{ $_->{dbfName} => { '!=' => undef } },{ $_->{dbfName} => { '!=' =>  '' } }] } }
+    if   ($_->{v} eq 'is null')       { return ('=',undef)   }
+    elsif($_->{v} eq 'is empty')      { return ('=','')      }
+    elsif($_->{v} eq 'is not null')   { return ('!=',undef)   }
+    elsif($_->{v} eq 'is not empty')  { return ('!=','')     }
+    
+    # new, simple way to handle these without needing to inline dbfName
+    elsif($_->{v} eq 'is null or empty') { return [{'='=>undef},{'='=>''}]	} #<-- arrays automatically OR
+    elsif($_->{v} eq 'is not null or empty') { return {'!='=>undef,'!='=>''} } #<-- hashes automatically AND
+    
+    ## This complexity isn't needed, and, doesn't work properly when dbfName is a ref/virtual
+    ## column. Replaced with a much more simple form above.
+    #elsif($_->{v} eq is null or empty') { return { '-or',[{ $_->{dbfName} => undef },{ $_->{dbfName} => '' }] } }
+    #elsif($_->{v} eq 'is not null or empty')     { return { '-and',[{ $_->{dbfName} => { '!=' => undef } },{ $_->{dbfName} => { '!=' =>  '' } }] } }
 
-			die "Invalid null/empty condition supplied:\n" . Dumper($_);
-		}
-	},
+    die "Invalid null/empty condition supplied:\n" . Dumper($_);
+  },
 	
 }};
 
@@ -1366,124 +1361,122 @@ sub multifilter_translate_cond {
 
 
 sub multifilter_date_getKeywordDt {
-	my $self = shift;
-	my $keyword = shift;
-	
-	$keyword =~ s/\s*//g; #<-- stip whitespace from the keyword
-	$keyword = lc($keyword); #<-- lowercase it
-	
-	my $dt = DateTime->now( time_zone => 'local' );
-	
-	switch($keyword) {
-		
-		case 'now' { return $dt }
-		
-		case 'thisminute' { return DateTime->new(
-			year	=> $dt->year,
-			month	=> $dt->month,
-			day		=> $dt->day,
-			hour	=> $dt->hour,
-			minute	=> $dt->minute,
-			second	=> 0,
-			time_zone => 'local'
-		)}
-		
-		case 'thishour' { return DateTime->new(
-			year	=> $dt->year,
-			month	=> $dt->month,
-			day		=> $dt->day,
-			hour	=> $dt->hour,
-			minute	=> 0,
-			second	=> 0,
-			time_zone => 'local'
-		)}
-		
-		case 'thisday' { return DateTime->new(
-			year	=> $dt->year,
-			month	=> $dt->month,
-			day		=> $dt->day,
-			hour	=> 0,
-			minute	=> 0,
-			second	=> 0,
-			time_zone => 'local'
-		)}
-		
-		# same as thisday:
-		case 'today' { return DateTime->new(
-			year	=> $dt->year,
-			month	=> $dt->month,
-			day		=> $dt->day,
-			hour	=> 0,
-			minute	=> 0,
-			second	=> 0,
-			time_zone => 'local'
-		)}
-		
-		case 'thisweek' { 
-			my $day = $dt->day_of_week;
-			#$day++; $day = 1 if ($day > 7); #<-- shift day 1 from Monday to Sunday
-			$dt = $dt->subtract( days => ($day - 1) );
-			return DateTime->new(
-				year	=> $dt->year,
-				month	=> $dt->month,
-				day		=> $dt->day,
-				hour	=> 0,
-				minute	=> 0,
-				second	=> 0,
-				time_zone => 'local'
-			);
-		}
-		
-		case 'thismonth' { return DateTime->new(
-			year	=> $dt->year,
-			month	=> $dt->month,
-			day		=> 1,
-			hour	=> 0,
-			minute	=> 0,
-			second	=> 0,
-			time_zone => 'local'
-		)}
-		
-		case 'thisquarter' {
-			my $month = $dt->month;
-			my $subtract = 0;
-			if($month > 0 && $month <= 3) {
-				$subtract = $month - 1;
-			}
-			elsif($month > 3 && $month <= 6) {
-				$subtract = $month - 4;
-			}
-			elsif($month > 6 && $month <= 9) {
-				$subtract = $month - 7;
-			}
-			else {
-				$subtract = $month - 10;
-			}
-			
-			$dt = $dt->subtract( months => $subtract );
-			return DateTime->new(
-				year	=> $dt->year,
-				month	=> $dt->month,
-				day		=> 1,
-				hour	=> 0,
-				minute	=> 0,
-				second	=> 0,
-				time_zone => 'local'
-			);
-		}
-		
-		case 'thisyear' { return DateTime->new(
-			year	=> $dt->year,
-			month	=> 1,
-			day		=> 1,
-			hour	=> 0,
-			minute	=> 0,
-			second	=> 0,
-			time_zone => 'local'
-		)}
-		
-		return undef;
-	}
+  my $self = shift;
+  my $keyword = shift;
+
+  $keyword =~ s/\s*//g; #<-- stip whitespace from the keyword
+  $keyword = lc($keyword); #<-- lowercase it
+
+  my $dt = DateTime->now( time_zone => 'local' );
+
+  my $kw = $keyword;
+  if($kw eq 'now') { return $dt }
+  
+  elsif($kw eq 'thisminute') { return DateTime->new(
+    year	=> $dt->year,
+    month	=> $dt->month,
+    day		=> $dt->day,
+    hour	=> $dt->hour,
+    minute	=> $dt->minute,
+    second	=> 0,
+    time_zone => 'local'
+  )}
+  
+  elsif($kw eq 'thishour') { return DateTime->new(
+    year	=> $dt->year,
+    month	=> $dt->month,
+    day		=> $dt->day,
+    hour	=> $dt->hour,
+    minute	=> 0,
+    second	=> 0,
+    time_zone => 'local'
+  )}
+  
+  elsif($kw eq 'thisday') { return DateTime->new(
+    year	=> $dt->year,
+    month	=> $dt->month,
+    day		=> $dt->day,
+    hour	=> 0,
+    minute	=> 0,
+    second	=> 0,
+    time_zone => 'local'
+  )}
+  
+  # same as thisday:
+  elsif($kw eq 'today') { return DateTime->new(
+    year	=> $dt->year,
+    month	=> $dt->month,
+    day		=> $dt->day,
+    hour	=> 0,
+    minute	=> 0,
+    second	=> 0,
+    time_zone => 'local'
+  )}
+  
+  elsif($kw eq 'thisweek') { 
+    my $day = $dt->day_of_week;
+    #$day++; $day = 1 if ($day > 7); #<-- shift day 1 from Monday to Sunday
+    $dt = $dt->subtract( days => ($day - 1) );
+    return DateTime->new(
+      year	=> $dt->year,
+      month	=> $dt->month,
+      day		=> $dt->day,
+      hour	=> 0,
+      minute	=> 0,
+      second	=> 0,
+      time_zone => 'local'
+    );
+  }
+  
+  elsif($kw eq 'thismonth') { return DateTime->new(
+    year	=> $dt->year,
+    month	=> $dt->month,
+    day		=> 1,
+    hour	=> 0,
+    minute	=> 0,
+    second	=> 0,
+    time_zone => 'local'
+  )}
+  
+  elsif($kw eq 'thisquarter') {
+    my $month = $dt->month;
+    my $subtract = 0;
+    if($month > 0 && $month <= 3) {
+      $subtract = $month - 1;
+    }
+    elsif($month > 3 && $month <= 6) {
+      $subtract = $month - 4;
+    }
+    elsif($month > 6 && $month <= 9) {
+      $subtract = $month - 7;
+    }
+    else {
+      $subtract = $month - 10;
+    }
+    
+    $dt = $dt->subtract( months => $subtract );
+    return DateTime->new(
+      year	=> $dt->year,
+      month	=> $dt->month,
+      day		=> 1,
+      hour	=> 0,
+      minute	=> 0,
+      second	=> 0,
+      time_zone => 'local'
+    );
+  }
+  
+  elsif($kw eq 'thisyear') { return DateTime->new(
+    year	=> $dt->year,
+    month	=> 1,
+    day		=> 1,
+    hour	=> 0,
+    minute	=> 0,
+    second	=> 0,
+    time_zone => 'local'
+  )}
+  
+  return undef;
 }
 
 # This is a clone of the JavaScript logic in the function parseRelativeDate() in the plugin

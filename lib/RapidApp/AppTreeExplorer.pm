@@ -18,7 +18,6 @@ with 'RapidApp::Role::Controller';
 
 
 use Clone;
-use Switch;
 
 our $VERSION = '0.1';
 

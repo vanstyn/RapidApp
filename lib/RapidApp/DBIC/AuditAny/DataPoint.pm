@@ -3,8 +3,6 @@ use Moose;
 
 use RapidApp::Include qw(sugar perlutil);
 
-use Switch qw(switch);
-
 has 'AuditObj', is => 'ro', isa => 'RapidApp::DBIC::AuditAny', required => 1;
 has 'name', is => 'ro', isa => 'Str', required => 1;
 has 'context', is => 'ro', isa => 'Str', required => 1;

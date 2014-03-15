@@ -12,7 +12,6 @@ use RapidApp::CatalystX::SimpleCAS::Store::File;
 use RapidApp::JSON::MixedEncoder;
 use MIME::Base64;
 use String::Random;
-use Switch qw(switch);
 
 use Module::Runtime;
 #use Image::Resize;
@@ -84,18 +83,19 @@ sub fetch_content: Local {
 	}
 	
 	my $type = $self->Store->content_mimetype($checksum) or die "Error reading mime type";
-	
-	# type overrides for places where File::MimeInfo::Magic is known to guess wrong
-	if($type eq 'application/vnd.ms-powerpoint' || $type eq 'application/zip') {
-		my $Content = $self->Content($checksum,$filename);
-		switch($Content->file_ext){
-			case 'doc' { $type = 'application/msword' }
-			case 'xls' { $type = 'application/vnd.ms-excel' }
-			case 'docx' { $type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
-			case 'xlsx' { $type = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
-			case 'pptx' { $type = 'application/vnd.openxmlformats-officedocument.presentationml.presentation' }
-		}
-	}
+  
+  # type overrides for places where File::MimeInfo::Magic is known to guess wrong
+  if($type eq 'application/vnd.ms-powerpoint' || $type eq 'application/zip') {
+    my $Content = $self->Content($checksum,$filename);
+    my $ext = lc($Content->file_ext);
+    $type = 
+      $ext eq 'doc'  ? 'application/msword' :
+      $ext eq 'xls'  ? 'application/vnd.ms-excel' :
+      $ext eq 'docx' ? 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' :
+      $ext eq 'xlsx' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' :
+      $ext eq 'pptx' ? 'application/vnd.openxmlformats-officedocument.presentationml.presentation' :
+    $type;
+  }
 	
 	$c->response->header('Content-Type' => $type);
 	$c->response->header('Content-Disposition' => $disposition);

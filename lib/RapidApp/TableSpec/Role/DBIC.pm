@@ -14,8 +14,6 @@ use Text::Glob qw( match_glob );
 use Text::WagnerFischer qw(distance);
 use Clone qw( clone );
 
-use Switch qw(switch);
-
 # ---
 # Attributes 'ResultSource', 'ResultClass' and 'schema' are interdependent. If ResultSource
 # is not supplied to the constructor, both ResultClass and schema must be.
@@ -1668,138 +1666,137 @@ sub get_relationship_column_cnf {
 	}
 	
 	
-	############# ---
-	switch ($conf->{auto_editor_type}) {
-	
-		$conf->{editor} = $conf->{editor} || {};
-		$conf->{auto_editor_params} = $conf->{auto_editor_params} || {};
-		
-		# ----
-		#  Set allowBlank according to the db schema of the key column. This is handled
-		#  automatically in normal columns in the profile stuff, but has to be done special
-		#  for relationship columns:
-		my $cinfo = exists $conf->{keyField} ? $self->ResultSource->column_info($conf->{keyField}) : undef;
-		if($cinfo and defined $cinfo->{is_nullable} and ! exists $conf->{editor}->{allowBlank}) {
-			# This logic is specific instead of being a blanket boolean choice. If there is some other,
-			# different, unexpected value for 'is_nullable', don't set allowBlank one way or the other
-			$conf->{editor}->{allowBlank} = \0 if($cinfo->{is_nullable} == 0);
-			if($cinfo->{is_nullable} == 1) {
-				$conf->{editor}->{allowBlank} = \1;
-				# This setting will only have an effect if the editor is AppCombo2 based:
-				$conf->{editor}->{allowSelectNone} = \1;
-			}
-		}
-		#  same for 'default_value', if defined (again, this logic already happens for normal columns):
-		$conf->{editor}->{value} = $cinfo->{default_value} if ($cinfo && exists $cinfo->{default_value});
-		#  TODO: refactor so the 'normal' column logic from 'profiles' etc gets applied here so this
-		#  duplicate logic isn't needed
-		# ----
-	
-		$conf->{auto_editor_params} = $conf->{auto_editor_params} || {};
-	
-		case 'combo' {
-		
-			my $table = $self->ResultClass->table;
-			$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
-			my $module_name = 'combo_' . $table . '_' . $colname;
-			my $Module = $self->get_or_create_rapidapp_module( $module_name,
-				class	=> 'RapidApp::DbicAppCombo2',
-				params	=> {
-					valueField		=> $conf->{valueField},
-					displayField	=> $conf->{displayField},
-					name				=> $colname,
-					ResultSet		=> $Source->resultset,
-					record_pk		=> $conf->{valueField},
-					# Optional custom ResultSet params applied to the dropdown query
-					RS_condition	=> $conf->{RS_condition} ? $conf->{RS_condition} : {},
-					RS_attr			=> $conf->{RS_attr} ? $conf->{RS_attr} : {},
-					%{ $conf->{auto_editor_params} },
-				}
-			);
-			
-			if($conf->{editor}) {
-				if($conf->{editor}->{listeners}) {
-					my $listeners = delete $conf->{editor}->{listeners};
-					$Module->add_listener( $_ => $listeners->{$_} ) for (keys %$listeners);
-				}
-				$Module->apply_extconfig(%{$conf->{editor}}) if (keys %{$conf->{editor}} > 0);
-			}
-			
-			$conf->{editor} =  $Module->content;
-		}
-		
-		case 'grid' {
-			
-			die "display_columns is required with 'grid' auto_editor_type" 
-				unless (defined $conf->{display_columns});
-			
-			my $custOnBUILD = $conf->{auto_editor_params}->{onBUILD} || sub{};
-			my $onBUILD = sub {
-				my $self = shift;		
-				$self->apply_to_all_columns( hidden => \1 );
-				$self->apply_columns_list($conf->{display_columns},{ hidden => \0 });
-				return $custOnBUILD->($self);
-			};
-			$conf->{auto_editor_params}->{onBUILD} = $onBUILD;
-			
-			my $table = $self->ResultClass->table;
-			$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
-			my $grid_module_name = 'grid_' . $table . '_' . $colname;
-			my $GridModule = $self->get_or_create_rapidapp_module( $grid_module_name,
-				class	=> 'RapidApp::DbicAppGrid3',
-				params	=> {
-					ResultSource => $Source,
-					include_colspec => [ '*', '{?:single}*.*' ],
-					#include_colspec => [ ($conf->{valueField},$conf->{displayField},@{$conf->{display_columns}}) ],
-					title => '',
-					%{ $conf->{auto_editor_params} }
-				}
-			);
-			
-			my $title = $conf->{header} ? 'Select ' . $conf->{header} : 'Select Record';
-			$conf->{editor} = { 
+  ############# ---
+  $conf->{editor} = $conf->{editor} || {};
+  $conf->{auto_editor_params} = $conf->{auto_editor_params} || {};
+  
+  # ----
+  #  Set allowBlank according to the db schema of the key column. This is handled
+  #  automatically in normal columns in the profile stuff, but has to be done special
+  #  for relationship columns:
+  my $cinfo = exists $conf->{keyField} ? $self->ResultSource->column_info($conf->{keyField}) : undef;
+  if($cinfo and defined $cinfo->{is_nullable} and ! exists $conf->{editor}->{allowBlank}) {
+    # This logic is specific instead of being a blanket boolean choice. If there is some other,
+    # different, unexpected value for 'is_nullable', don't set allowBlank one way or the other
+    $conf->{editor}->{allowBlank} = \0 if($cinfo->{is_nullable} == 0);
+    if($cinfo->{is_nullable} == 1) {
+      $conf->{editor}->{allowBlank} = \1;
+      # This setting will only have an effect if the editor is AppCombo2 based:
+      $conf->{editor}->{allowSelectNone} = \1;
+    }
+  }
+  #  same for 'default_value', if defined (again, this logic already happens for normal columns):
+  $conf->{editor}->{value} = $cinfo->{default_value} if ($cinfo && exists $cinfo->{default_value});
+  #  TODO: refactor so the 'normal' column logic from 'profiles' etc gets applied here so this
+  #  duplicate logic isn't needed
+  # ----
 
-				# These can be overridden
-				header			=> $conf->{header},
-				win_title		=> $title,
-				win_height		=> 450,
-				win_width		=> 650,
-				
-				%{$conf->{editor}},
-				
-				# These can't be overridden
-				name		=> $colname,
-				xtype => 'datastore-app-field',
-				valueField		=> $conf->{valueField},
-				displayField	=> $conf->{displayField},
-				load_url	=> $GridModule->base_url,
-				
-			};
-		}
-		
-		case 'custom' {
-			
-			# Use whatever is already in 'editor' plus some sane defaults
-			my $title = $conf->{header} ? 'Select ' . $conf->{header} : 'Select Record';
-			$conf->{editor} = { 
+  $conf->{auto_editor_params} = $conf->{auto_editor_params} || {};
 
-				# These can be overridden
-				header			=> $conf->{header},
-				win_title		=> $title,
-				win_height		=> 450,
-				win_width		=> 650,
-				valueField		=> $conf->{valueField},
-				displayField	=> $conf->{displayField},
-				name			=> $colname,
-				
-				%{$conf->{auto_editor_params}},
-				%{$conf->{editor}},
-			};
-		}
-	}
-	############# ---
-	
-	return (name => $colname, %$conf);
+
+  my $aet = $conf->{auto_editor_type};
+  if($aet eq 'combo') {
+  
+    my $table = $self->ResultClass->table;
+    $table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
+    my $module_name = 'combo_' . $table . '_' . $colname;
+    my $Module = $self->get_or_create_rapidapp_module( $module_name,
+      class	=> 'RapidApp::DbicAppCombo2',
+      params	=> {
+        valueField		=> $conf->{valueField},
+        displayField	=> $conf->{displayField},
+        name				=> $colname,
+        ResultSet		=> $Source->resultset,
+        record_pk		=> $conf->{valueField},
+        # Optional custom ResultSet params applied to the dropdown query
+        RS_condition	=> $conf->{RS_condition} ? $conf->{RS_condition} : {},
+        RS_attr			=> $conf->{RS_attr} ? $conf->{RS_attr} : {},
+        %{ $conf->{auto_editor_params} },
+      }
+    );
+    
+    if($conf->{editor}) {
+      if($conf->{editor}->{listeners}) {
+        my $listeners = delete $conf->{editor}->{listeners};
+        $Module->add_listener( $_ => $listeners->{$_} ) for (keys %$listeners);
+      }
+      $Module->apply_extconfig(%{$conf->{editor}}) if (keys %{$conf->{editor}} > 0);
+    }
+    
+    $conf->{editor} =  $Module->content;
+  }
+  
+  elsif($aet eq 'grid') {
+    
+    die "display_columns is required with 'grid' auto_editor_type" 
+      unless (defined $conf->{display_columns});
+    
+    my $custOnBUILD = $conf->{auto_editor_params}->{onBUILD} || sub{};
+    my $onBUILD = sub {
+      my $self = shift;		
+      $self->apply_to_all_columns( hidden => \1 );
+      $self->apply_columns_list($conf->{display_columns},{ hidden => \0 });
+      return $custOnBUILD->($self);
+    };
+    $conf->{auto_editor_params}->{onBUILD} = $onBUILD;
+    
+    my $table = $self->ResultClass->table;
+    $table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
+    my $grid_module_name = 'grid_' . $table . '_' . $colname;
+    my $GridModule = $self->get_or_create_rapidapp_module( $grid_module_name,
+      class	=> 'RapidApp::DbicAppGrid3',
+      params	=> {
+        ResultSource => $Source,
+        include_colspec => [ '*', '{?:single}*.*' ],
+        #include_colspec => [ ($conf->{valueField},$conf->{displayField},@{$conf->{display_columns}}) ],
+        title => '',
+        %{ $conf->{auto_editor_params} }
+      }
+    );
+    
+    my $title = $conf->{header} ? 'Select ' . $conf->{header} : 'Select Record';
+    $conf->{editor} = { 
+
+      # These can be overridden
+      header			=> $conf->{header},
+      win_title		=> $title,
+      win_height		=> 450,
+      win_width		=> 650,
+      
+      %{$conf->{editor}},
+      
+      # These can't be overridden
+      name		=> $colname,
+      xtype => 'datastore-app-field',
+      valueField		=> $conf->{valueField},
+      displayField	=> $conf->{displayField},
+      load_url	=> $GridModule->base_url,
+      
+    };
+  }
+  
+  elsif($aet eq 'custom') {
+    
+    # Use whatever is already in 'editor' plus some sane defaults
+    my $title = $conf->{header} ? 'Select ' . $conf->{header} : 'Select Record';
+    $conf->{editor} = { 
+
+      # These can be overridden
+      header			=> $conf->{header},
+      win_title		=> $title,
+      win_height		=> 450,
+      win_width		=> 650,
+      valueField		=> $conf->{valueField},
+      displayField	=> $conf->{displayField},
+      name			=> $colname,
+      
+      %{$conf->{auto_editor_params}},
+      %{$conf->{editor}},
+    };
+  }
+  ############# ---
+
+  return (name => $colname, %$conf);
 }
 
 

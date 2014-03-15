@@ -15,7 +15,6 @@ with
 #use RapidApp::DbicAppPropertyPage;
 
 use RapidApp::Include qw(sugar perlutil);
-use Switch 'switch';
 
 has 'page_class', is => 'ro', isa => 'Str', default => 'RapidApp::DbicAppPropertyPage';
 has 'page_params', is => 'ro', isa => 'HashRef', default => sub {{}};

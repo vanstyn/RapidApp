@@ -6,13 +6,18 @@ extends 'RapidApp::AppHtml';
 use RapidApp::Include qw(sugar perlutil);
 
 # Module allows viewing pages in a tab by file name
+#
+# NOTE: This module has been mostly replaced by the Template::Controller
+# system, but it still handles cases, like *.pl and *.pm, that haven't
+# been handled yet in the TC, so it is sticking around for now for
+# reference (DO NOT USE)
+#
 
 use HTML::TokeParser::Simple;
 use Text::Markdown 'markdown';
 use PPI;
 use PPI::HTML;
 use Path::Class qw(file);
-use Switch qw(switch);
 
 has 'content_dir', is => 'ro', isa => 'Str', required => 1;
 has 'parse_title', is => 'ro', isa => 'Bool', default => 1;
@@ -65,39 +70,38 @@ sub html {
   my ($path, $file, $ext) = $self->_requested_file(@args);
   
   my $content;
+  my $lcext = lc($ext);
   
-  switch(lc($ext)) {
-    case('tt') {
-      my $vars = { c => $self->c };
-      
-      # Closure to support nested/recursive calls from templates to be able to
-      # inline the content of other files within the same content_dir scope:
-      $vars->{inline_file} = sub { 
-        die "('$file')->inline_file(): missing arguments" unless (scalar @_ > 0);
-        local $INLINE_FILE_DEPTH;
-        die "('$file')->inline_file(): too many recursive calls"
-          if (++$INLINE_FILE_DEPTH > 5);
-        return $self->html(@_);
-      } if ($self->allow_inline_files);
-      
-      $content = $self->c->template_render($path,$vars);
-    }
-    case('pl') {
-      return $self->_get_syntax_highlighted_perl($path);
-    }
-    case('pm') {
-      return $self->_get_syntax_highlighted_perl($path);
-    }
-    case('md') {
-      return $self->_render_markdown($path);
-    }
-    ##
-    ## TODO: may support non-templates in the future
+  if($lcext eq 'tt') {
+    my $vars = { c => $self->c };
     
-    else {
-      die usererr "Cannot display $file - unknown file extention type '$ext'", 
-        title => "Unknown file type"
-    }
+    # Closure to support nested/recursive calls from templates to be able to
+    # inline the content of other files within the same content_dir scope:
+    $vars->{inline_file} = sub { 
+      die "('$file')->inline_file(): missing arguments" unless (scalar @_ > 0);
+      local $INLINE_FILE_DEPTH;
+      die "('$file')->inline_file(): too many recursive calls"
+        if (++$INLINE_FILE_DEPTH > 5);
+      return $self->html(@_);
+    } if ($self->allow_inline_files);
+    
+    $content = $self->c->template_render($path,$vars);
+  }
+  elsif($lcext eq 'pl') {
+    return $self->_get_syntax_highlighted_perl($path);
+  }
+  elsif($lcext eq 'pm') {
+    return $self->_get_syntax_highlighted_perl($path);
+  }
+  elsif($lcext eq 'md') {
+    return $self->_render_markdown($path);
+  }
+  ##
+  ## TODO: may support non-templates in the future
+  
+  else {
+    die usererr "Cannot display $file - unknown file extention type '$ext'", 
+      title => "Unknown file type"
   }
   
   # Only set the tab title if this is not a nested call (i.e. inline_file from a template)
