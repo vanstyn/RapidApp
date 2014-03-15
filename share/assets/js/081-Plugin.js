@@ -4158,6 +4158,9 @@ Ext.ux.RapidApp.Plugin.LinkClickCatcher = Ext.extend(Ext.util.Observable,{
     node = node.is('a') ? node : node.parent('a');
     if(! node) { return; }
     
+    // Exclude special "filelinks" created by HtmlEditor:
+    if(node.hasClass('filelink')) { return; }
+    
     var targetAttr = node.getAttribute('target');
     if(targetAttr) {
       // If we're in an iFrame, ignore links with a target defined *IF* they
