@@ -1,5 +1,29 @@
 Revision history for RapidApp
 
+0.99102 2014-03-15
+    - Removed all perl switch/case blocks (Github Issue #45)
+    - Removed a bunch more deprecated classes
+
+0.99101 2014-03-10
+    - Removed rouge/leftover classes referencing previously removed classes
+    - Fixed minor issue with LinkClickCatcher
+
+0.99100 2014-03-10
+    - Requires Catalyst::Runtime 5.90061 with bugfix
+    - Expanded Template Access class API (template_css_class + 
+      currently_viewing_template)
+    - Fixed bug in relative links within tabs (Github Issue #43)
+    - Major refactoring of dispatch and exception internals (Github Issue #41)
+    - Improvements and fixes to Unicode handling
+    - Removed GD as a dependency (Image::Resize) and refactored to use only if
+      already available at runtime (Github Issue #42)
+    - AutoPanel now supports auto refresh (autopanel_refresh_interval)
+    - Template::Controller dispatch/redirect fixes
+    - More fixes to TableSpec_cnf internals
+    - Refactored 'ra-scoped-reset' CSS behavior
+    - Misc other bugfixes
+    - Removed lots of old deprecated classes
+
 0.99031 2014-02-16
     - Added JS render func Ext.ux.RapidApp.withFilenameIcon
     - Misc fixes/improvements to RapidApp::AppExplorer
