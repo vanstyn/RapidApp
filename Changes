@@ -1,5 +1,10 @@
 Revision history for RapidApp
 
+0.99103 2014-04-15
+    - Fixed scrolling issue with hash label links in tabs (GitHub Issue #46)
+    - Fixed bug clicking <a> links with no href at all
+    - Fixed utf8 bug when viewing templates (Template::Controller)
+
 0.99102 2014-03-15
     - Removed all perl switch/case blocks (Github Issue #45)
     - Removed a bunch more deprecated classes
