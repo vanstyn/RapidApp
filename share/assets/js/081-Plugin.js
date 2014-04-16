@@ -4179,6 +4179,14 @@ Ext.ux.RapidApp.Plugin.LinkClickCatcher = Ext.extend(Ext.util.Observable,{
     
     var href = node.getAttribute('href');
     
+    // New: Also skip if there is no href, and if the href is exactly
+    // '#', stop the event so it doesn't mess with the browser histroy,
+    // since href="#" is a standard convention for "no action"
+    if(!href || href == '#') { 
+      event.stopEvent();
+      return; 
+    }
+    
     // URL is local (does not start with http://, https://, etc)
     // and does not start with '#' (such as the ext tabs with href='#')
     if(href.search('#') !== 0 && href.search('/#') !== 0 && ! this.externalUrlRe.test(href)) {
