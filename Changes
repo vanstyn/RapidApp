@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+0.99104 2014-04-15
+    - Enabled 'strict' in TableSpec class
+
 0.99103 2014-04-15
     - Fixed scrolling issue with hash label links in tabs (GitHub Issue #46)
     - Fixed bug clicking <a> links with no href at all
