@@ -3,6 +3,9 @@ package RapidApp::DBIC::Component::TableSpec;
 # this is for Attribute::Handlers:
 require base; base->import('DBIx::Class');
 
+use strict;
+use warnings;
+
 use Sub::Name qw/subname/;
 
 # DBIx::Class Component: ties a RapidApp::TableSpec object to
@@ -542,7 +545,6 @@ sub default_TableSpec_cnf_columns {
 				else {
 					$editor->{allowDecimals} = \0;
 				}
-				$edit
 			}
 			$editor->{maxLength} = $size;
 		}
@@ -984,7 +986,7 @@ sub proxy_method_get_changed {
 	
 	# This logic is duplicated in DbicLink2. Not sure how to avoid it, though,
 	# and keep a clean API
-	@changed = ();
+	my @changed = ();
 	foreach my $col (uniq(keys %new,keys %old)) {
 		next if (! defined $new{$col} and ! defined $old{$col});
 		next if ($new{$col} eq $old{$col});
@@ -1107,7 +1109,8 @@ sub apply_row_methods {
 	
 	# --- Actualize/load methods into the Row object namespace:
 	foreach my $meth (keys %RowMethods) {
-		my $meth_name = join '::', $class, $meth;
+		no strict 'refs';
+    my $meth_name = join '::', $class, $meth;
 		*$meth_name = subname $meth_name => $RowMethods{$meth};
 	}
 	# ---
