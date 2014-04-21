@@ -4519,7 +4519,18 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 			
 		},this);
 		
-		this.bindStore = this.store;
+    // This is a workaround for a spurious race-condition bug that is not fully
+    // understood... The root of the issue is that we are tying into the store 
+    // earlier than normal, and it appears that very sporadically the 'store' 
+    // property is undefined at this point. That is why we fall back to other
+    // locations where the 'store' can be found. This is probably a bug someplace
+    // else, like in AutoPanel or DataStore, but this seems to be the only place 
+    // where we have the problem (again, because no other places do we try to hook 
+    // into the store within 'initComponent' but this should work). TODO/FIXME
+    this.bindStore = this.store || this.initialConfig.store;
+    if(!this.bindStore && this.ownerCt) {
+      this.bindStore = this.ownerCt.store || this.ownerCt.initialConfig.store;
+    }
 		delete this.store;
 		
 		if(this.storeReloadButton) {
