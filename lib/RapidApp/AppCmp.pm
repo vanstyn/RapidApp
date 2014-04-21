@@ -46,7 +46,7 @@ has 'require_role', is => 'ro', isa => 'Maybe[Str]', default => sub{undef};
 # just the standard 'check_any_user_role' function
 has 'role_checker', is => 'ro', isa => 'Maybe[CodeRef]', default => sub {
   my $self = shift;
-  my $code = $self->app->config->{'Model::RapidApp'}{role_checker} || sub {
+  my $code = try{$self->app->config->{'Model::RapidApp'}{role_checker}} || sub {
     my $c = shift; #<-- expects CONTEXT object
     # This default checker function always returns true if the catalyst
     # context object lacks the check_any_user_role method (which happens
