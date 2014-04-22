@@ -1,6 +1,6 @@
 use utf8;
 package # hide from PAUSE
-     TestTestRA::ChinookDemo::DB::Result::Employee;
+     TestRA::ChinookDemo::DB::Result::Employee;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
@@ -49,19 +49,19 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("employeeid");
 __PACKAGE__->has_many(
   "customers",
-  "TestTestRA::ChinookDemo::DB::Result::Customer",
+  "TestRA::ChinookDemo::DB::Result::Customer",
   { "foreign.supportrepid" => "self.employeeid" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 __PACKAGE__->has_many(
   "employees",
-  "TestTestRA::ChinookDemo::DB::Result::Employee",
+  "TestRA::ChinookDemo::DB::Result::Employee",
   { "foreign.reportsto" => "self.employeeid" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 __PACKAGE__->belongs_to(
   "reportsto",
-  "TestTestRA::ChinookDemo::DB::Result::Employee",
+  "TestRA::ChinookDemo::DB::Result::Employee",
   { employeeid => "reportsto" },
   {
     is_deferrable => 0,

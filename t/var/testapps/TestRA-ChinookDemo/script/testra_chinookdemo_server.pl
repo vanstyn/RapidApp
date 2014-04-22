@@ -11,11 +11,11 @@ Catalyst::ScriptRunner->run('TestRA::ChinookDemo', 'Server');
 
 =head1 NAME
 
-ra_chinookdemo_server.pl - Catalyst Test Server
+testra_chinookdemo_server.pl - Catalyst Test Server
 
 =head1 SYNOPSIS
 
-ra_chinookdemo_server.pl [options]
+testra_chinookdemo_server.pl [options]
 
    -d --debug           force debug mode
    -f --fork            handle each request in a new process

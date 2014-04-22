@@ -1,15 +1,15 @@
 package # hide from PAUSE
-     TestTestRA::ChinookDemo::Model::DB;
+     TestRA::ChinookDemo::Model::DB;
 use Moose;
 extends 'Catalyst::Model::DBIC::Schema';
 
 use Path::Class qw(file);
 use Catalyst::Utils;
 
-my $db = file(Catalyst::Utils::home('TestTestRA::ChinookDemo'),'chinook.db');
+my $db = file(Catalyst::Utils::home('TestRA::ChinookDemo'),'chinook.db');
 
 __PACKAGE__->config(
-    schema_class => 'TestTestRA::ChinookDemo::DB',
+    schema_class => 'TestRA::ChinookDemo::DB',
     
     connect_info => {
         dsn => 'dbi:SQLite:dbname=' . $db,

@@ -10,11 +10,11 @@ Catalyst::ScriptRunner->run('TestRA::ChinookDemo', 'Create');
 
 =head1 NAME
 
-ra_chinookdemo_create.pl - Create a new Catalyst Component
+testra_chinookdemo_create.pl - Create a new Catalyst Component
 
 =head1 SYNOPSIS
 
-ra_chinookdemo_create.pl [options] model|view|controller name [helper] [options]
+testra_chinookdemo_create.pl [options] model|view|controller name [helper] [options]
 
  Options:
    --force        don't create a .new file where a file to be created exists
@@ -22,14 +22,14 @@ ra_chinookdemo_create.pl [options] model|view|controller name [helper] [options]
    --help         display this help and exits
 
  Examples:
-   ra_chinookdemo_create.pl controller My::Controller
-   ra_chinookdemo_create.pl --mechanize controller My::Controller
-   ra_chinookdemo_create.pl view My::View
-   ra_chinookdemo_create.pl view HTML TT
-   ra_chinookdemo_create.pl model My::Model
-   ra_chinookdemo_create.pl model SomeDB DBIC::Schema MyApp::Schema create=dynamic\
+   testra_chinookdemo_create.pl controller My::Controller
+   testra_chinookdemo_create.pl --mechanize controller My::Controller
+   testra_chinookdemo_create.pl view My::View
+   testra_chinookdemo_create.pl view HTML TT
+   testra_chinookdemo_create.pl model My::Model
+   testra_chinookdemo_create.pl model SomeDB DBIC::Schema MyApp::Schema create=dynamic\
    dbi:SQLite:/tmp/my.db
-   ra_chinookdemo_create.pl model AnotherDB DBIC::Schema MyApp::Schema create=static\
+   testra_chinookdemo_create.pl model AnotherDB DBIC::Schema MyApp::Schema create=static\
    [Loader opts like db_schema, naming] dbi:Pg:dbname=foo root 4321
    [connect_info opts like quote_char, name_sep]
 

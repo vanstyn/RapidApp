@@ -1,6 +1,6 @@
 use utf8;
 package # hide from PAUSE
-     TestTestRA::ChinookDemo::DB::Result::MediaType;
+     TestRA::ChinookDemo::DB::Result::MediaType;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
@@ -23,7 +23,7 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("mediatypeid");
 __PACKAGE__->has_many(
   "tracks",
-  "TestTestRA::ChinookDemo::DB::Result::Track",
+  "TestRA::ChinookDemo::DB::Result::Track",
   { "foreign.mediatypeid" => "self.mediatypeid" },
   { cascade_copy => 0, cascade_delete => 0 },
 );

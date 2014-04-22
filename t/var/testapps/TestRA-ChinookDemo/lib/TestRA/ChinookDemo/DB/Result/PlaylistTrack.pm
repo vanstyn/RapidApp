@@ -1,6 +1,6 @@
 use utf8;
 package # hide from PAUSE
-     TestTestRA::ChinookDemo::DB::Result::PlaylistTrack;
+     TestRA::ChinookDemo::DB::Result::PlaylistTrack;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
@@ -23,13 +23,13 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("playlistid", "trackid");
 __PACKAGE__->belongs_to(
   "playlistid",
-  "TestTestRA::ChinookDemo::DB::Result::Playlist",
+  "TestRA::ChinookDemo::DB::Result::Playlist",
   { playlistid => "playlistid" },
   { is_deferrable => 0, on_delete => "NO ACTION", on_update => "NO ACTION" },
 );
 __PACKAGE__->belongs_to(
   "trackid",
-  "TestTestRA::ChinookDemo::DB::Result::Track",
+  "TestRA::ChinookDemo::DB::Result::Track",
   { trackid => "trackid" },
   { is_deferrable => 0, on_delete => "NO ACTION", on_update => "NO ACTION" },
 );

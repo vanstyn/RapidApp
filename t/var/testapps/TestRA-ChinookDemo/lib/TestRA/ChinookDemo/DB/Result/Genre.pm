@@ -1,6 +1,6 @@
 use utf8;
 package # hide from PAUSE
-     TestTestRA::ChinookDemo::DB::Result::Genre;
+     TestRA::ChinookDemo::DB::Result::Genre;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
@@ -23,7 +23,7 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("genreid");
 __PACKAGE__->has_many(
   "tracks",
-  "TestTestRA::ChinookDemo::DB::Result::Track",
+  "TestRA::ChinookDemo::DB::Result::Track",
   { "foreign.genreid" => "self.genreid" },
   { cascade_copy => 0, cascade_delete => 0 },
 );

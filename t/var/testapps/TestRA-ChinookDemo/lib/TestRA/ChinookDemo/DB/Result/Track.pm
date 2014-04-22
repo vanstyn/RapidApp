@@ -1,6 +1,6 @@
 use utf8;
 package # hide from PAUSE
-     TestTestRA::ChinookDemo::DB::Result::Track;
+     TestRA::ChinookDemo::DB::Result::Track;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
@@ -37,7 +37,7 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("trackid");
 __PACKAGE__->belongs_to(
   "albumid",
-  "TestTestRA::ChinookDemo::DB::Result::Album",
+  "TestRA::ChinookDemo::DB::Result::Album",
   { albumid => "albumid" },
   {
     is_deferrable => 0,
@@ -48,7 +48,7 @@ __PACKAGE__->belongs_to(
 );
 __PACKAGE__->belongs_to(
   "genreid",
-  "TestTestRA::ChinookDemo::DB::Result::Genre",
+  "TestRA::ChinookDemo::DB::Result::Genre",
   { genreid => "genreid" },
   {
     is_deferrable => 0,
@@ -59,19 +59,19 @@ __PACKAGE__->belongs_to(
 );
 __PACKAGE__->has_many(
   "invoice_lines",
-  "TestTestRA::ChinookDemo::DB::Result::InvoiceLine",
+  "TestRA::ChinookDemo::DB::Result::InvoiceLine",
   { "foreign.trackid" => "self.trackid" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 __PACKAGE__->belongs_to(
   "mediatypeid",
-  "TestTestRA::ChinookDemo::DB::Result::MediaType",
+  "TestRA::ChinookDemo::DB::Result::MediaType",
   { mediatypeid => "mediatypeid" },
   { is_deferrable => 0, on_delete => "NO ACTION", on_update => "NO ACTION" },
 );
 __PACKAGE__->has_many(
   "playlist_tracks",
-  "TestTestRA::ChinookDemo::DB::Result::PlaylistTrack",
+  "TestRA::ChinookDemo::DB::Result::PlaylistTrack",
   { "foreign.trackid" => "self.trackid" },
   { cascade_copy => 0, cascade_delete => 0 },
 );

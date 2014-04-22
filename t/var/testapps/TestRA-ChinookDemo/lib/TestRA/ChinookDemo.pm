@@ -1,5 +1,5 @@
 package # hide from PAUSE
-     TestTestRA::ChinookDemo;
+     TestRA::ChinookDemo;
 use Moose;
 use namespace::autoclean;
 

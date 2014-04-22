@@ -1,6 +1,6 @@
 use utf8;
 package # hide from PAUSE
-     TestTestRA::ChinookDemo::DB::Result::Playlist;
+     TestRA::ChinookDemo::DB::Result::Playlist;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
@@ -23,7 +23,7 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("playlistid");
 __PACKAGE__->has_many(
   "playlist_tracks",
-  "TestTestRA::ChinookDemo::DB::Result::PlaylistTrack",
+  "TestRA::ChinookDemo::DB::Result::PlaylistTrack",
   { "foreign.playlistid" => "self.playlistid" },
   { cascade_copy => 0, cascade_delete => 0 },
 );

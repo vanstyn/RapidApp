@@ -1,6 +1,6 @@
 use utf8;
 package # hide from PAUSE
-     TestTestRA::ChinookDemo::DB::Result::Customer;
+     TestRA::ChinookDemo::DB::Result::Customer;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
@@ -45,13 +45,13 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("customerid");
 __PACKAGE__->has_many(
   "invoices",
-  "TestTestRA::ChinookDemo::DB::Result::Invoice",
+  "TestRA::ChinookDemo::DB::Result::Invoice",
   { "foreign.customerid" => "self.customerid" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 __PACKAGE__->belongs_to(
   "supportrepid",
-  "TestTestRA::ChinookDemo::DB::Result::Employee",
+  "TestRA::ChinookDemo::DB::Result::Employee",
   { employeeid => "supportrepid" },
   {
     is_deferrable => 0,
