@@ -18,6 +18,8 @@ use Digest::MD5 qw(md5_hex);
 use Try::Tiny;
 use Path::Class qw(file dir);
 use FindBin;
+use DBIx::Class::Schema::Loader;
+use DBIx::Class::Schema::Diff;
 
 has schema_class => (
     is => 'ro',
@@ -51,6 +53,14 @@ has 'dsn', is => 'ro', isa => 'Str', lazy => 1, default => sub {
   # Convert relative to absolute path:
   # TODO: get the actual $c->config->{home}
   $db_file = file(dir("$FindBin::Bin/../")->resolve,$db_file) if ($db_file->is_relative);
+  return 'dbi:SQLite:dbname=' . $db_file;
+};
+
+# dsn for the "reference" coreschema database/file. This is used only for the
+# purposes of schema comparison
+has 'ref_dsn', is => 'ro', isa => 'Str', lazy => 1, default => sub { 
+  my $self = shift;
+  my $db_file = file(RapidApp->share_dir,'coreschema/ref_sqlite.db')->resolve;
   return 'dbi:SQLite:dbname=' . $db_file;
 };
 
@@ -107,21 +117,85 @@ sub _auto_deploy_schema {
 	 "in CoreSchema database '$dsn', but it appears to be corrupt (no md5 checksum).";
 	 
 	return 1 if ($md5 eq $exist_md5);
-	
-	die "\n\n" . join("\n",
+  
+  # If we're here, it means the md5 of the existing coreschema didn't match, but 
+  # that doesn't mean that the differences make it unsafe to use. Any change in
+  # the generated deploy statements, even trivial things like quotes/whitespace,
+  # will come out as a different checksum. So, we'll perform an actual diff to
+  # compare to see what the actual, effective differences are, using the reference
+  # sqlite database file. We're doing this instead of using the actual CoreSchema
+  # classes we already have because we're not interested in differences that can
+  # be caused by specific loaded components, and other code-level changes that
+  # might show up. (See also GitHub Issue #47)
+  
+  my $Differ = DBIx::Class::Schema::Diff->new(
+    old_schema => $self->_load_connect_schema_ref,
+    new_schema => $self->_load_connect_schema
+  );
+  
+  unless( $Differ->diff ) {
+    # If there are no changes at all, then we're already done...
+    
+    # Future:
+    #
+    # It is fully expected that in later versions of RapidApp there will be
+    # changes to the CoreSchema. Once that happens, these will be handled
+    # either dynamically or via Migrations/DeploymentHandler to alter the 
+    # schema from known older versions to the latest. This code isn't present
+    # because it hasn't happened yet -- we're still on Version 1 of the
+    # schema...
+    # 
+    # But, the larger plan is to *dynamically* handle schema changes, including
+    # support for merging of user defined schemas with the CoreSchema as well
+    # as user-supplied databases to be used as the CoreSchema. Obviously, 
+    # neither checksum or version checks are useful for these dynamic scenarios,
+    # which is why the plan is to define a set of specific rules and tests
+    # that will be required for a schema to be determined as suitable as the
+    # CoreSchema. It is expected that DBIx::Class::Schema::Diff will do the 
+    # heavy lifting for this.
+    #
+    # None of this is happening yet, as this is a big subproject on its own,
+    # but the code has been structured with this in mind. For now, the only
+    # check we're doing with Schema::Diff is "all or nothing", but it supports
+    # fine-grained filtering (and, in fact, this planned RapidApp feature is
+    # the entire reason I wrote DBIx::Class::Schema::Diff in the first place,
+    # so in that sense a lot of the work for this has already been done, just
+    # not yet within the RapidApp code base itself).
+    
+    
+    # TODO: for faster startup next time, add/save the new md5 so we can skip
+    # all this diff work...
+  
+  
+    return 1;
+  }
+  
+  
+	die join("\n",'','',
 	 "  The selected CoreSchema database '$dsn' ",
 	 "  already has a deployed schema but it does not match ",
-   "  the current schema.\n",
+   "  the current schema.",'',
    "    deployed checksum  : $exist_md5",
-   "    expected checksum  : $md5\n"
-	) . "\n\n";
+   "    expected checksum  : $md5",'','',
+   "  Differences from the reference schema (detected by DBIx::Class::Schema::Diff):",
+   '','',
+   Dumper( $Differ->diff ),'','',''
+  );
 }
 
+
 # Need to strip out comments and blank lines to make sure the md5s will be consistent
+sub clean_deploy_statements {
+  my ($self, $deploy_statements) = @_;
+  return join("\n", grep { 
+    ! /^\-\-/ && 
+    ! /^\s*$/ 
+  } split(/\r?\n/,$deploy_statements) );
+}
+
 sub get_clean_md5 {
-	my $self = shift;
-	my $deploy_statements = shift;
-	my $clean = join("\n", grep { ! /^\-\-/ && ! /^\s*$/ } split(/\r?\n/,$deploy_statements) );
+  my ($self, $deploy_statements) = @_;
+	my $clean = $self->clean_deploy_statements($deploy_statements); 
 	return md5_hex($clean);
 }
 
@@ -151,6 +225,26 @@ sub _insert_default_rows {
     role => 'administrator',
   });
 
+}
+
+
+# TODO: clean up these package namespaces after we're done with them...
+sub _load_connect_schema {
+  my $self = shift;
+  my $class = shift || 'RapidApp::CoreSchemaLoad';
+  my $dsn = shift || $self->dsn;
+  return DBIx::Class::Schema::Loader::make_schema_at(
+    $class => {
+      naming => { ALL => 'v7'},
+      use_namespaces => 1,
+      use_moose => 1,
+      debug => 0,
+    },[ $dsn ]
+  );
+}
+sub _load_connect_schema_ref {
+  my $self = shift;
+  $self->_load_connect_schema('RapidApp::CoreSchemaLoadRef',$self->ref_dsn);
 }
 
 
