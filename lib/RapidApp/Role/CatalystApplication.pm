@@ -9,6 +9,8 @@ use RapidApp::CatalystX::SimpleCAS::TextTranscode;
 use Hash::Merge;
 use RapidApp::Debug 'DEBUG';
 use Text::SimpleTable::AutoWidth;
+use Catalyst::Utils;
+use Path::Class qw(file dir);
 
 use RapidApp;
 use Template;
@@ -238,15 +240,30 @@ before 'setup_plugins' => sub {
 # is being made into a core function of rapidapp:
 sub template_controller { (shift)->controller('RapidApp::Template') }
 
-my $share_dir = RapidApp->share_dir;
+my $share_dir = dir( RapidApp->share_dir );
 sub default_tt_include_path {
   my $c = shift;
-  return join(':',
-    $c->config->{home} . '/root/templates',
-    $c->config->{home} . '/root',
-    $share_dir . '/templates',
-    $share_dir
-  );
+  
+  my @paths = ();
+  my $home = dir( Catalyst::Utils::home($c) );
+    
+  if($home && -d $home) {
+    my $root = $home->subdir('root');
+    if($root && -d $root) {
+      my $tpl = $root->subdir('templates');
+      push @paths, "$tpl" if ($tpl && -d $tpl);
+      push @paths, "$root";
+    }
+  }
+  
+  # This should be redundant if share_dir is setup properly
+  if($share_dir && -d $share_dir) {
+    my $tpl = $share_dir->subdir('templates');
+    push @paths, "$tpl" if ($tpl && -d $tpl);
+    push @paths, "$share_dir";
+  }
+  
+  return join(':',@paths);
 }
 
 # convenience util function
