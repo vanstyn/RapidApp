@@ -1,5 +1,17 @@
 Revision history for RapidApp
 
+0.99200 2014-04-23
+    - Added preliminary working 'testapp' unit tests under t/
+    - Turned off last remaining non-debug mode console messages
+    - Now requires Catalyst::Controller::AutoAssets v 0.25
+    - Fixed/cleaned up misc asset controller code
+    - Fixed bug that prevented apps with no Catalyst home dir from starting
+    - Stopped using smartmatch (~~) operators in various places
+    - Refactored CoreSchema model class internals (fixing several bugs)
+    - Fixed misc JS race-condition bugs in AppPropertyGrid
+    - Now uses DBIx::Class::Schema::Diff to check for changes in the
+      coreschema (fixes Github Issue #47)
+
 0.99104 2014-04-15
     - Enabled 'strict' in TableSpec class
 
