@@ -9,7 +9,11 @@ use RapidApp::Test::EnvUtil;
 BEGIN { $ENV{TMPDIR} or RapidApp::Test::EnvUtil::set_tmpdir_env() }
 
 use Test::More;
-use Catalyst::Test 'TestRA::ChinookDemo';
+
+ok(
+  use_ok('Catalyst::Test', 'TestRA::ChinookDemo'),
+  "  * Loaded testapp 'TestRA::ChinookDemo' (via Catalyst::Test)"
+);
 
 action_ok(
   '/assets/rapidapp/misc/static/images/rapidapp_powered_logo_tiny.png',
@@ -18,7 +22,7 @@ action_ok(
 
 action_notfound(
   '/assets/rapidapp/misc/static/some/bad/file.txt',
-  "Bad asset path not found"
+  "Invalid asset path not found as expected"
 );
 
 done_testing;
