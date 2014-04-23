@@ -47,7 +47,6 @@ use Catalyst::Runtime 5.80;
 use RapidApp;
 
 use Catalyst qw/
-    -Debug
     RapidApp::RapidDbic
 /;
 
