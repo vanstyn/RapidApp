@@ -324,7 +324,8 @@ sub create_module {
 	print STDERR
 		' >> ' .
 		CYAN . "Load: " . BOLD . $params->{module_path} . CLEAR . 
-		CYAN . " [$class_name]" . CLEAR . "\n";
+		CYAN . " [$class_name]" . CLEAR . "\n"
+	if ($self->app->debug);
 	
 	my $Object = $class_name->new($params) or die "Failed to create module instance ($class_name)";
 	die "$class_name is not a valid RapidApp Module" unless ($Object->does('RapidApp::Role::Module'));
