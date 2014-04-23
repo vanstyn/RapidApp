@@ -1,4 +1,3 @@
 RapidApp-*
 .build/
 t/var/tmp
-t/var/testapps/TestRA-ChinookDemo/chinook.db
