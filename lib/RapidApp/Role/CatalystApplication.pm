@@ -47,12 +47,13 @@ sub setupRapidApp {
 	my $haveRoot= 0;
 	foreach my $ctlr (@controllers) {
 		if ($ctlr->isa('RapidApp::ModuleDispatcher')) {
-			$log->info("RapidApp: Found $ctlr which implements ModuleDispatcher.");
+			$log->debug("RapidApp: Found $ctlr which implements ModuleDispatcher.");
 			$haveRoot= 1;
 		}
 	}
 	if (!$haveRoot) {
-		$log->info("RapidApp: No Controller extending ModuleDispatcher found, using default");
+		$log->debug("RapidApp: No Controller extending ModuleDispatcher found, using default")
+      if($app->debug);
 		$app->injectUnlessExist( 'RapidApp::Controller::DefaultRoot', 'Controller::RapidApp::Root' );
 	}
   
