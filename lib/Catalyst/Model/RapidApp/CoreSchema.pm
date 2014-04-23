@@ -1,76 +1,93 @@
 package Catalyst::Model::RapidApp::CoreSchema;
 use Moose;
+extends 'Catalyst::Model::DBIC::Schema';
 
 use strict;
 use warnings;
 
 use RapidApp::Include qw(sugar perlutil);
 
-extends 'Catalyst::Model::DBIC::Schema';
-
-use Catalyst::Model::DBIC::Schema::Types
-    qw/ConnectInfo LoadedClass SchemaClass Schema/;
- 
 use MooseX::Types::Moose qw/ArrayRef Str ClassName Undef/;
-
+use Catalyst::Utils;
 use Module::Runtime;
 use Digest::MD5 qw(md5_hex);
 use Try::Tiny;
 use Path::Class qw(file dir);
-use FindBin;
+
 use DBIx::Class::Schema::Loader;
 use DBIx::Class::Schema::Diff;
 
-has schema_class => (
-    is => 'ro',
-    isa => SchemaClass,
-    coerce => 1,
-    default => 'RapidApp::CoreSchema'
-);
+# --------------------
+# User can set their own sqlite file/path by doing this in main app class:
+#
+#  __PACKAGE__->config(
+#   'Model::RapidApp::CoreSchema' => {
+#     sqlite_file => '/path/to/coreschema.db'
+#   }
+# );
+#
+# OR, relative path is local to the app home dir:
+#  __PACKAGE__->config(
+#   'Model::RapidApp::CoreSchema' => {
+#     sqlite_file => 'my_coreschema.db'
+#   }
+# );
+#
+# They can also set/override 'schema_class' and 'connect_info'
+# in the same place
+#
+# --------------------
 
-has connect_info => (
-  is => 'rw', 
-  isa => ConnectInfo, 
-  coerce => 1,
-  lazy => 1,
-  default => sub {
-    my $self = shift;
-    $self->_prepare_db_file;
-    return {
-      dsn => $self->dsn,
-      quote_names => 1,
-      on_connect_call => 'use_foreign_keys'
-    };
-  }
-);
+# New: this needs to be outside like this to avoid running afoul of
+# nasty/complex load order problems with Model::DBIC
+before 'COMPONENT' => sub {
+  my $class = shift;
+  my $app_class = ref $_[0] || $_[0];
+  
+  my $home = Catalyst::Utils::home($app_class);
+  my $cust_cnf = try{$app_class->config->{'Model::RapidApp::CoreSchema'}} || {};
+  
+  $cust_cnf->{sqlite_file} ||= 'rapidapp_coreschema.db';
+  my $db_file = file($cust_cnf->{sqlite_file});
+  $db_file = file(dir($home),$db_file) if ($db_file->is_relative);
+  
+  $class->config(
+    schema_class => 'RapidApp::CoreSchema',
+    
+    connect_info => {
+        dsn => join('','dbi:SQLite:dbname=',$db_file),
+        sqlite_unicode => q{1},
+        on_connect_call => q{use_foreign_keys},
+        quote_names => q{1},
+    },
+    
+    # Allow user-defined config overrides:
+    %$cust_cnf
+  );
+};
+
+sub BUILD {
+  my $self = shift;
+  $self->_auto_deploy_schema( $self->schema );
+}
 
 has 'init_admin_password', is => 'ro', isa => Str, default => 'pass';
 
-has 'db_file', is => 'ro', isa => 'Str', default => 'rapidapp_coreschema.db';
-has 'dsn', is => 'ro', isa => 'Str', lazy => 1, default => sub { 
+sub dsn {
   my $self = shift;
-  my $db_file = file($self->db_file);
-  # Convert relative to absolute path:
-  # TODO: get the actual $c->config->{home}
-  $db_file = file(dir("$FindBin::Bin/../")->resolve,$db_file) if ($db_file->is_relative);
-  return 'dbi:SQLite:dbname=' . $db_file;
-};
+  return $self->config->{connect_info}{dsn};
+}
 
 # dsn for the "reference" coreschema database/file. This is used only for the
 # purposes of schema comparison
 has 'ref_dsn', is => 'ro', isa => 'Str', lazy => 1, default => sub { 
   my $self = shift;
-  my $db_file = file(RapidApp->share_dir,'coreschema/ref_sqlite.db')->resolve;
-  return 'dbi:SQLite:dbname=' . $db_file;
+  my $path = file(
+    dir(RapidApp->share_dir)->subdir('coreschema'),
+    'ref_sqlite.db'
+  )->resolve;
+  return join('','dbi:SQLite:dbname=',$path);
 };
-
-sub _prepare_db_file {
-  my $self = shift;
-  my $class = $self->schema_class;
-  Module::Runtime::require_module($class);
-  my $schema = $class->connect($self->dsn);
-  $self->_auto_deploy_schema($schema);
-}
 
 sub _auto_deploy_schema {
 	my $self = shift;
