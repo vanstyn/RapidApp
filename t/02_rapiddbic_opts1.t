@@ -34,6 +34,10 @@ BEGIN {
   __PACKAGE__->config(
     name => 'TestApp1',
 
+    # ------
+    # This RapidDbic config was been copied verbatim from RA::ChinookDemo (02_rapiddbic_basics)
+    # https://github.com/IntelliTree/RA-ChinookDemo/blob/02_rapiddbic_basics/lib/RA/ChinookDemo.pm
+    # ------
     'Plugin::RapidApp::RapidDbic' => {
       # Only required option:
       dbic_models => ['DB'],
@@ -179,6 +183,19 @@ BEGIN {
   $INC{'TestApp1.pm'} = __FILE__;
   1;
 }
+
+# ----------------
+# This is a development option to be able to run this test app
+# interactively (i.e. just like the test server script) instead
+# of actually running the tests
+if($ENV{RA_INTERACTIVE}) {
+  use Catalyst::ScriptRunner;
+  Catalyst::ScriptRunner->run('TestApp1', 'Server');
+  # the above line never returns...
+  exit;
+}
+# ----------------
+
 
 use Test::More;
 use Catalyst::Test 'TestApp1';
