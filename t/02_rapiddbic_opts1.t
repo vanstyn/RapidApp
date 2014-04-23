@@ -3,14 +3,12 @@
 use strict;
 use warnings;
 use FindBin '$Bin';
+
 use lib "$Bin/var/testapps/TestRA-ChinookDemo/lib";
 use Path::Class qw(file dir);
 
-BEGIN { 
-  my $tmpdir = dir($Bin)->subdir('var')->subdir('tmp')->resolve->absolute;
-  $tmpdir->mkpath unless (-d $tmpdir);
-  $ENV{TMPDIR} = $tmpdir->stringify;
-}
+use RapidApp::Test::EnvUtil;
+BEGIN { $ENV{TMPDIR} or RapidApp::Test::EnvUtil::set_tmpdir_env() }
 
 {
   package TestApp1::Model::DB;

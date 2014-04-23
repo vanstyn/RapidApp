@@ -5,6 +5,9 @@ use warnings;
 use FindBin '$Bin';
 use lib "$Bin/var/testapps/TestRA-ChinookDemo/lib";
 
+use RapidApp::Test::EnvUtil;
+BEGIN { $ENV{TMPDIR} or RapidApp::Test::EnvUtil::set_tmpdir_env() }
+
 use Test::More;
 use Catalyst::Test 'TestRA::ChinookDemo';
 
