@@ -1872,7 +1872,8 @@ sub prepare_record_updates {
 		# TODO: support any depth via an alternate 'update_create_relspec' attr and
 		# create with supplied column values instead of blank (1 step instead of 2)
 		#
-		if($rel && !$UpdRow && $rel ~~ @{$self->update_create_rels} && $_{depth} == 1){
+		my %ucrls = map {$_=>1} @{$self->update_create_rels};
+		if($rel && !$UpdRow && $ucrls{$rel} && $_{depth} == 1){
 			$UpdRow = $Row->create_related($rel,{})->get_from_storage;
 			my $msg = 'Auto CREATED RELATED -> ' . $self->get_Row_Rs_label($UpdRow) . "\n";
 			scream_color(WHITE.ON_GREEN.BOLD,$msg) if($self->c->debug);

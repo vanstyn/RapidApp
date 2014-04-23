@@ -311,13 +311,15 @@ has 'autofield' => (
 			# editable
 			
 			my @bigfield_types = qw(textarea htmleditor ra-htmleditor);
+			my %bf_types = map {$_=>1} @bigfield_types;
 			return $self->div_bigfield($Column->name,$display) if (
-				$config->{xtype} ~~ @bigfield_types
+				$bf_types{$config->{xtype}}
 			);
 			
 			my @no_icons_types = qw(cycle-field menu-field cas-upload-field cas-image-field);
+			my %ni_types = map {$_=>1} @no_icons_types;
 			return $self->div_edit_field_no_icons($Column->name,$display) if (
-				$config->{xtype} ~~ @no_icons_types
+				$ni_types{$config->{xtype}}
 			);
 			
 			return $self->div_edit_field($Column->name,$display);

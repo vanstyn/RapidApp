@@ -256,9 +256,10 @@ sub TableSpec_property_grids {
 		# gets created, it will never be available!!
 		my $relRow = $Row->$rel;# or next;
 		# New: consider 'update_create_rels' (note that update_create_rels API is subject to change)
+		my %ucrls = map {$_=>1} @{$self->update_create_rels};
 		my $setup_grid = (
 			($relRow && $relRow->isa('DBIx::Class::Row')) or
-			($property_grid_nest_level == 1 && $rel ~~ @{$self->update_create_rels})
+			($property_grid_nest_level == 1 && $ucrls{$rel})
 		) ? 1 : 0;
 		if($setup_grid) {
 			push @items, $self->TableSpec_property_grids(
