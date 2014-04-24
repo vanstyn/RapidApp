@@ -196,15 +196,10 @@ if($ENV{RA_INTERACTIVE}) {
 
 
 use Test::More;
-
-ok(
-  use_ok('Catalyst::Test', 'TestApp1'),
-  "  * Loaded testapp 'TestApp1' (via Catalyst::Test)"
-);
+use RapidApp::Test 'TestApp1';
   
-action_ok(
-  '/assets/rapidapp/misc/static/images/rapidapp_powered_logo_tiny.png',
-  "Fetched RapidApp logo from the Misc asset controller"
-);
+run_common_tests();
+
+
 
 done_testing;
