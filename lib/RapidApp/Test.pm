@@ -17,14 +17,12 @@ sub import {
   my ($self, $class, @args) = @_;
   
   # Since apps might take a while to start-up:
-  ok($class,"[RapidApp::Test]: loading testapp '$class'...");
+  pass("[RapidApp::Test]: loading testapp '$class'...");
   
   my $start = [gettimeofday];
-
-  ok(
-    Catalyst::Test->import::into($target,$class,@args),
-    sprintf("$class loaded/started (%0.4f seconds)",tv_interval($start))
-  );
+  
+  require_ok($class);
+  Catalyst::Test->import::into($target,$class,@args);
   
   my @funcs = grep { 
     $_ ne 'import' && $_ ne 'AUTOLOAD'
@@ -35,6 +33,11 @@ sub import {
     no strict 'refs';
     *{ join('::',$target,$_) } = \*{ $_ } for (@funcs);
   }
+  
+  ok(
+    $class->setup_finished || $class->setup,
+    sprintf("$class loaded/started (%0.4f seconds)",tv_interval($start))
+  );
   
   $app_class = $class;
 };

@@ -10,7 +10,7 @@ use Path::Class qw(file dir);
 use RapidApp::Test::EnvUtil;
 BEGIN { $ENV{TMPDIR} or RapidApp::Test::EnvUtil::set_tmpdir_env() }
 
-{
+BEGIN {
   package TestApp1::Model::DB;
   use Moose;
   extends 'TestRA::ChinookDemo::Model::DB';
@@ -18,9 +18,11 @@ BEGIN { $ENV{TMPDIR} or RapidApp::Test::EnvUtil::set_tmpdir_env() }
   1;
 }
 
-{
+BEGIN {
   package TestApp1;
   use Moose;
+  
+  use Catalyst::Runtime 5.80;
 
   use RapidApp;
   use Catalyst qw/RapidApp::RapidDbic/;
@@ -177,10 +179,13 @@ BEGIN { $ENV{TMPDIR} or RapidApp::Test::EnvUtil::set_tmpdir_env() }
     }, # ('Plugin::RapidApp::RapidDbic')
   );
 
-  __PACKAGE__->setup();
+  # Let RapidApp::Test call setup() for us so we can get accurate load time:
+  #__PACKAGE__->setup();
+  
   $INC{'TestApp1.pm'} = __FILE__;
   1;
 }
+
 
 # ----------------
 # This is a development option to be able to run this test app
@@ -194,6 +199,7 @@ if($ENV{RA_INTERACTIVE}) {
 }
 # ----------------
 
+#use TestApp1;
 
 use Test::More;
 use RapidApp::Test 'TestApp1';
