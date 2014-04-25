@@ -88,7 +88,7 @@ sub do_login {
   
 	if($c->authenticate({ username => $user, password => $pass })) {
     $c->session->{RapidApp_username} = $user;
-    $c->log->info("Successfully authenticated user '$user'");
+    $c->log->info("Successfully authenticated user '$user'") if ($c->debug);
     $c->user->update({ 
       last_login_ts => DateTime->now( time_zone => 'local' ) 
     });
@@ -99,7 +99,7 @@ sub do_login {
     return 1;
   }
   else {
-    $c->log->info("Authentication failed for user '$user'");
+    $c->log->info("Authentication failed for user '$user'") if ($c->debug);
     return 0;
   }
 }

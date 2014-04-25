@@ -58,13 +58,38 @@ if($ENV{RA_INTERACTIVE}) {
 }
 # ----------------
 
-#use TestApp1;
-
 use Test::More;
+use Test::HTML::Content;
+use HTTP::Headers::Util qw(split_header_words);
+
 use RapidApp::Test 'TestApp2';
   
 run_common_tests();
 
+ok(
+  my $root_cnt = get('/'),
+  'Fetch (GET) root document URL "/"'
+);
+
+title_ok (
+  $root_cnt => "TestApp2 v$TestApp2::VERSION - Login", 
+  "root document has expected HTML <title> (login page)"
+);
+
+ok(
+  my $login_res = post_request('/auth/login',{
+    username => 'admin', password => 'pass'
+  }),
+  "POST login request with default username/pass"
+);
+
+my @cook_vals = split_header_words( $login_res->header('Set-Cookie') );
+my ($ses_key,$session) = @{ $cook_vals[0] || [] };
+
+is(
+  $ses_key, "testapp2_session",
+  "Login succeeded with new session cookie ($session)"
+);
 
 
 done_testing;
