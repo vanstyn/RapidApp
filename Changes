@@ -1,5 +1,9 @@
 Revision history for RapidApp
 
+0.99201 2014-04-25
+    - Fixed build/install error from bad dependency (TestRA:: namespace)
+    - Expanded unit tests
+
 0.99200 2014-04-23
     - Added preliminary working 'testapp' unit tests under t/
     - Turned off last remaining non-debug mode console messages
