@@ -5,6 +5,7 @@ use strict;
 use warnings;
 use Import::Into;
 
+use Time::HiRes qw(gettimeofday tv_interval);
 use HTTP::Request::Common;
 use JSON qw(decode_json);
 
@@ -18,9 +19,11 @@ sub import {
   # Since apps might take a while to start-up:
   ok($class,"[RapidApp::Test]: loading testapp '$class'...");
   
+  my $start = [gettimeofday];
+
   ok(
     Catalyst::Test->import::into($target,$class,@args),
-    "$class loaded/started"
+    sprintf("$class loaded/started (%0.4f seconds)",tv_interval($start))
   );
   
   my @funcs = grep { 
