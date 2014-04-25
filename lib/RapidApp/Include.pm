@@ -1,4 +1,7 @@
 package RapidApp::Include;
+use strict;
+use warnings;
+
 
 =head1 NAME
 
@@ -39,6 +42,7 @@ our $CALLER;
 our $USEARGS;
 
 sub import {
+  no strict 'refs';
 	my $class= shift;
 	local $CALLER = caller;
 	&$_ foreach (@_);

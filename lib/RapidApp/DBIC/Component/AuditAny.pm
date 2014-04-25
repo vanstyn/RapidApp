@@ -3,6 +3,9 @@ package RapidApp::DBIC::Component::AuditAny;
 # this is for Attribute::Handlers:
 require base; base->import('DBIx::Class::Schema');
 
+use strict;
+use warnings;
+
 
 ### WARNING: THIS IS DEPRECATED, DO NOT USE
 ### See DBIx::Class::AuditAny  instead

@@ -1,6 +1,9 @@
 package RapidApp::DBIC::Component::InputDateTime;
 use base 'DBIx::Class';
 
+use strict;
+use warnings;
+
 # DBIx::Class Component: overrides insert/update to convert 
 # datetime columns into DateTime objects before they are
 # sent to the database

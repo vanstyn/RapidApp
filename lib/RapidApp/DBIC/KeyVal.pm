@@ -1,5 +1,8 @@
 package RapidApp::DBIC::KeyVal;
 
+use strict;
+use warnings;
+
 use Params::Validate ':all';
 use overload '""' => \&stringify; # to-string operator overload
 

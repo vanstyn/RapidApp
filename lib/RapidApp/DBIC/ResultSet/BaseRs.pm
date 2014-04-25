@@ -1,6 +1,9 @@
 package RapidApp::DBIC::ResultSet::BaseRs;
 require base; base->import( 'DBIx::Class::ResultSet');
 
+use strict;
+use warnings;
+
 use RapidApp::Include qw(sugar perlutil);
 use Clone qw(clone);
 

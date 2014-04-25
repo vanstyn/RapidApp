@@ -1,5 +1,8 @@
 package RapidApp::DBIC::Key;
 
+use strict;
+use warnings;
+
 use Params::Validate ':all';
 use overload '""' => \&stringify, 'cmp' => \&compare; # to-string, eq operator overload
 

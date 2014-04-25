@@ -1,5 +1,8 @@
 package RapidApp::Spreadsheet::ParseExcelExt;
 
+use strict;
+use warnings;
+
 1;
 
 package # Hide from PAUSE

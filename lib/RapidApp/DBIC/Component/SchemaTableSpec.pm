@@ -3,6 +3,9 @@ package RapidApp::DBIC::Component::SchemaTableSpec;
 # this is for Attribute::Handlers:
 require base; base->import('DBIx::Class::Schema');
 
+use strict;
+use warnings;
+
 
 # DBIx::Class Component: Applies TableSpec configs to the Result classes within a
 # Schema -- DEPRECATED - do not use

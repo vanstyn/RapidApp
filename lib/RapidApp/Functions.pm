@@ -1,6 +1,8 @@
 package RapidApp::Functions;
-#use strict;
-#use warnings;
+
+use strict;
+use warnings;
+
 require Exporter;
 use Class::MOP::Class;
 
@@ -428,7 +430,7 @@ sub func_debug_around {
 		if($opt{track_stats}) {
 			my $k = $class . '->' . $name;
 			$debug_around_stats->{$k} = $debug_around_stats->{$k} || {};
-			$stats = $debug_around_stats->{$k};
+			my $stats = $debug_around_stats->{$k};
 			%$stats = (
 				class => $class,
 				sub => $name,
@@ -493,7 +495,7 @@ sub debug_sub($&) {
 }
 
 sub debug_around_all {
-	$pkg = shift || caller;
+	my $pkg = shift || caller;
 	my $meta = Class::MOP::Class->initialize($pkg);
 	debug_around($_, pkg => $pkg) for ($meta->get_method_list);
 }

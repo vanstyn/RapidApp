@@ -1,6 +1,9 @@
 package RapidApp::AttributeHandlers;
 use RapidApp::Include qw(sugar perlutil);
 
+use strict;
+use warnings;
+
 unshift @UNIVERSAL::ISA, __PACKAGE__;
 
 use Attribute::Handlers;

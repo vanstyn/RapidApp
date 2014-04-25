@@ -1,5 +1,8 @@
 package RapidApp::DefaultOverride;
 
+use strict;
+use warnings;
+
 use Exporter 'import';
 use Hash::Merge 'merge';
 our $merger= Hash::Merge->new('LEFT_PRECEDENT');
