@@ -44,7 +44,7 @@ before 'COMPONENT' => sub {
   my $class = shift;
   my $app_class = ref $_[0] || $_[0];
   
-  my $home = Catalyst::Utils::home($app_class);
+  my $home = Catalyst::Utils::home($app_class) || Catalyst::Utils::class2tempdir($app_class);
   my $cust_cnf = try{$app_class->config->{'Model::RapidApp::CoreSchema'}} || {};
   
   $cust_cnf->{sqlite_file} ||= 'rapidapp_coreschema.db';
