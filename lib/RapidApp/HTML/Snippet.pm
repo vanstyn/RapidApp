@@ -349,10 +349,11 @@ sub fetch_uri_content {
 	# TODO: LWP fetch:
 }
 
+1;
+
+__END__
 
 
-
-=pod
 # Not currently used:
 sub get_inner_advance {
 	my $self = shift;
@@ -378,9 +379,6 @@ sub get_inner_advance {
 	}
 	die "Error: premature end of document";
 }
-=cut
-
-
 
 
 1;

@@ -41,23 +41,6 @@ has 'schema', is => 'ro', lazy => 1, default => sub { (shift)->ResultSource->sch
 # ---
 
 
-=pod
-has 'data_type_profiles' => ( is => 'ro', isa => 'HashRef', default => sub {{
-	text 			=> [ 'bigtext' ],
-	blob 			=> [ 'bigtext' ],
-	varchar 		=> [ 'text' ],
-	char 			=> [ 'text' ],
-	float			=> [ 'number' ],
-	integer		=> [ 'number', 'int' ],
-	tinyint		=> [ 'number', 'int' ],
-	mediumint	=> [ 'number', 'int' ],
-	bigint		=> [ 'number', 'int' ],
-	datetime		=> [ 'datetime' ],
-	timestamp	=> [ 'datetime' ],
-	date			=> [ 'date' ]
-}});
-=cut
-
 subtype 'ColSpec', as 'Object';
 coerce 'ColSpec', from 'ArrayRef[Str]', 
 	via { RapidApp::TableSpec::ColSpec->new(colspecs => $_) };
@@ -326,60 +309,6 @@ has 'added_relationship_column_relspecs' => (
 	#trigger => sub { my ($self,$val) = @_; uniq($val) }
 );
 
-=pod
-sub expand_relspec_relationship_columns {
-	my $self = shift;
-	my $colspecs = shift;
-	my $update = shift || 0;
-	
-	my $rel_configs = $self->relationship_column_configs;
-	return @$colspecs unless (keys %$rel_configs > 0);
-	
-	my $match_data = {};
-	my @rel_cols = $self->colspec_select_columns({
-		colspecs => $colspecs,
-		columns => [ keys %$rel_configs ],
-		best_match_look_ahead => 1,
-		match_data => $match_data
-	});
-	
-	scream_color(RED.ON_BLUE,\@rel_cols);
-	
-	my %exist = map{$_=>1} @$colspecs;
-	my $added = [];
-	
-	my @new_colspecs = @$colspecs;
-	my $adj = 0;
-	foreach my $rel (@rel_cols) {
-		my @insert = ();
-		push @insert, $rel . '.' . $rel_configs->{$rel}->{displayField} unless ($update);
-		push @insert, $rel . '.' . $rel_configs->{$rel}->{valueField} unless ($update);
-		push @insert, $rel_configs->{$rel}->{keyField};
-		
-		# Remove any expanded colspecs that were already defined (important to honor the user supplied column order)
-		@insert = grep { !$exist{$_} } @insert;
-		
-		push @$added,@insert;
-		unshift @insert, $rel unless ($exist{$rel});
-		
-		my $offset = $adj + $match_data->{$rel}->{index} + 1;
-		
-		splice(@new_colspecs,$offset,0,@insert);
-		
-		%exist = map{$_=>1} @new_colspecs;
-		$adj += scalar @insert;
-	}
-	
-	my @new_adds = grep { ! $self->colspecs_to_colspec_test($colspecs,$_) } @$added;
-	
-	@{$self->added_relationship_column_relspecs} = uniq(
-		@{$self->added_relationship_column_relspecs},
-		@new_adds
-	);
-	
-	return @new_colspecs;
-}
-=cut
 
 sub expand_relspec_wildcards {
 	my $self = shift;
@@ -796,61 +725,6 @@ sub new_TableSpec {
 }
 
 
-=pod
-sub related_TableSpec {
-	my $self = shift;
-	my $rel = shift;
-	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-	
-	my $info = $self->ResultClass->relationship_info($rel) or die "Relationship '$rel' not found.";
-	my $class = $info->{class};
-	
-	# Manually load and initialize the TableSpec component if it's missing from the
-	# related result class:
-	#unless($class->can('TableSpec')) {
-	#	$class->load_components('+RapidApp::DBIC::Component::TableSpec');
-	#	$class->apply_TableSpec(%opt);
-	#}
-	
-	my $relspec_prefix = $self->relspec_prefix;
-	$relspec_prefix .= '.' if ($relspec_prefix and $relspec_prefix ne '');
-	$relspec_prefix .= $rel;
-	
-	my $TableSpec = $self->new_TableSpec(
-		name => $class->table,
-		ResultClass => $class,
-		relation_sep => $self->relation_sep,
-		relspec_prefix => $relspec_prefix,
-		%opt
-	);
-	
-	return $TableSpec;
-}
-=cut
-
-=pod
-# Recursively flattens/merges in columns from related TableSpecs (matching include_colspec)
-# into a new TableSpec object and returns it:
-sub flattened_TableSpec {
-	my $self = shift;
-	
-	#return $self;
-	
-	my $Flattened = $self->new_TableSpec(
-		name => $self->name,
-		ResultClass => $self->ResultClass,
-		relation_sep => $self->relation_sep,
-		include_colspec => $self->include_colspec->colspecs,
-		relspec_prefix => $self->relspec_prefix
-	);
-	
-	$Flattened->add_all_related_TableSpecs_recursive;
-	
-	#scream_color(CYAN,$Flattened->column_name_relationship_map);
-	
-	return $Flattened;
-}
-=cut
 
 # Returns the TableSpec associated with the supplied column name
 sub column_TableSpec {
@@ -935,31 +809,6 @@ sub walk_columns_deep {
 		push @{$map{$rel}}, $col;
 	}
 	
-=pod
-	local $_{depth} = $_{depth}; $_{depth}++;
-	local $_{return};
-	my $tree = $self->columns_to_reltree(@columns);
-	foreach my $rel (grep { /^\@/ } keys %$tree) {
-		my @cols = keys %{$tree->{$rel}};
-		$rel =~ s/^\@//;
-		
-		my $TableSpec = $self->related_TableSpec->{$rel} or die "Failed to find related TableSpec $rel";
-		local $_{rel} = $rel;
-		$_{return} = $TableSpec->walk_columns_deep($code,@cols)
-	}
-	
-	my @local_cols = grep { !/^\@/ } keys %$tree;
-	
-	my $pre = $self->column_prefix;
-	my %name_map = map { my $name = $_; $name =~ s/^${pre}//; $name => $_ } @local_cols;
-	local $_{name_map} = \%name_map;
-	
-	return $code->($self,@local_cols);
-=cut
-	
-	
-	
-	
 	
 	my @local_cols = @{delete $map{''}};
 	
@@ -974,38 +823,7 @@ sub walk_columns_deep {
 		local $_{rel} = $rel;
 		$TableSpec->walk_columns_deep($code,@{$map{$rel}});
 	}
-	
-	
-	
-
-	
-	
-=pod
-	my @local_cols = @{delete $map{''}};
-	
-	local $_{depth} = $_{depth}; $_{depth}++;
-	local $_{return};
-	foreach my $rel (keys %map) {
-		my $TableSpec = $self->related_TableSpec->{$rel} or die "Failed to find related TableSpec $rel";
-		local $_{rel} = $rel;
-		$_{return} = $TableSpec->walk_columns_deep($code,@{$map{$rel}});
-	}
-	
-	my $pre = $self->column_prefix;
-	my %name_map = map { my $name = $_; $name =~ s/^${pre}//; $name => $_ } @local_cols;
-	local $_{name_map} = \%name_map;
-	
-	return $code->($self,@local_cols);
-=cut
-	
 }
-
-
-
-
-
-
-
 
 
 
@@ -1030,31 +848,6 @@ sub related_Row_from_relspec {
 	return $self->related_Row_from_relspec($Related,join('.',@parts));
 }
 
-=pod
-sub add_all_related_TableSpecs_recursive {
-	my $self = shift;
-	
-	foreach my $rel (@{$self->relation_order}) {
-		next if ($rel eq '');
-		my $TableSpec = $self->addIf_related_TableSpec($rel);
-		#my $TableSpec = $self->add_related_TableSpec( $rel, {
-			#include_colspec => $self->relation_colspecs->{$rel}
-		#});
-		
-		$TableSpec->add_all_related_TableSpecs_recursive;
-	}
-	
-	foreach my $rel (@{$self->related_TableSpec_order}) {
-		my $TableSpec = $self->related_TableSpec->{$rel};
-		for my $name ($TableSpec->column_names_ordered) {
-			#die "Column name conflict: $name is already defined (rel: $rel)" if ($self->has_column($name));
-			$self->column_name_relationship_map->{$name} = $rel;
-		}
-	}
-	
-	return $self;
-}
-=cut
 
 # Is this func still used??
 # Like column_order but only considers columns in the local TableSpec object

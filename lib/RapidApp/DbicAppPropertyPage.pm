@@ -110,19 +110,6 @@ sub init_multi_rel_modules {
 		
 		my $colname = $TableSpec->column_prefix . $rel;
 		
-		
-		
-=pod		
-		# If this rel/colname is updatable in the top TableSpec, then that translates
-		# into these multi rel rows being addable/deletable
-		if ($self->TableSpec->colspec_matches_columns($self->TableSpec->updatable_colspec->colspecs,$colname)){
-			$mod_params->{creatable_colspec} = $RelTS->creatable_colspec->init_colspecs;
-			$mod_params->{destroyable_relspec} = ['*'];
-		}
-=cut		
-		
-		
-
 
 		# If this rel/colname is updatable in the top TableSpec, then that translates
 		# into these multi rel rows being addable/deletable
@@ -221,16 +208,16 @@ sub TableSpec_property_grids {
 	my @colnames = $TableSpec->local_column_names;
 	push @$real_columns, @colnames;
 
-=pod
-	# -- Filter out non-existant relationship columns:
-	@colnames = grep {
-		exists $TableSpec->related_TableSpec->{$_} ?
-			$Row->can($_) ? $Row->$_ ? 1 : 0 
-				: 0
-					: 1;
-	} @colnames;
-	# --
-=cut
+
+	## -- Filter out non-existant relationship columns:
+	#@colnames = grep {
+	#	exists $TableSpec->related_TableSpec->{$_} ?
+	#		$Row->can($_) ? $Row->$_ ? 1 : 0 
+	#			: 0
+	#				: 1;
+	#} @colnames;
+	## --
+
 	
 	
 	my @columns = map { $cols{$_} } @colnames;

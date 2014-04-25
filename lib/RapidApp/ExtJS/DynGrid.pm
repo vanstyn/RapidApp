@@ -113,23 +113,6 @@ sub grid_rows {
 	return $self->{grid_rows};
 }
 
-=pod
-sub store_model {
-	my $self = shift;
-	
-	my $a = [];
-	
-	foreach my $field ($self->field_list) {
-		my $h = {};
-		
-		$h->{name} 		= $field->{name};
-		
-		push @{$a}, $h;
-	}
-
-	return $a;
-}
-=cut
 
 
 sub store_fields {

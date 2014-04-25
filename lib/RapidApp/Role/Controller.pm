@@ -487,18 +487,24 @@ has 'response_callback_scoped' => (
 	default => 0
 );
 
-=item
-set_response_callback examples
+=head2 set_response_callback
 
-$self->set_response_callback( 'Ext.ux.MyFunc' );
+examples
 
-$self->set_response_callback( alert => 'foo!' );
-
-$self->set_response_callback( 'Ext.Msg.alert' => ( 'A message!!', 'this is awesome!!' ) );
-
-my $func = RapidApp::JSONFunc->new( raw => 1, func => 'function(){ console.log("anon!!"); console.dir(this.response); }');	
-$self->response_callback_scoped(1);
-$self->set_response_callback( $func => ( "arg1",{ key_in_arg2 => 'blah!!!' },'arg3',\1  ) );
+  $self->set_response_callback( 'Ext.ux.MyFunc' );
+  
+  $self->set_response_callback( alert => 'foo!' );
+  
+  $self->set_response_callback( 'Ext.Msg.alert' => ( 'A message!!', 'this is awesome!!' ) );
+  
+  my $func = RapidApp::JSONFunc->new( 
+    raw => 1, 
+    func => 'function(){ console.log("anon!!"); console.dir(this.response); }'
+  );
+  $self->response_callback_scoped(1);
+  $self->set_response_callback( 
+    $func => ( "arg1",{ key_in_arg2 => 'blah!!!' },'arg3',\1  ) 
+  );
 
 =cut
 

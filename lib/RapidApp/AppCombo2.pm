@@ -86,23 +86,23 @@ In the meantime, you can override this method to do custom rendering in your mod
 =cut
 sub web1_render_list_items {
 	my ($self, $renderCxt, $rows, $template)= @_;
-=pod
-	my $text= $template;
-	$template =~ s|</?tpl[^>]+>||g;
-	my @parts= split /[{}]/, $template;
-	for (my $i=1; $i <= $#parts; $i+= 2) {
-		if (substr($parts[$i], 0, 1) eq '[') {
-			$self->c->log->warn("You need to write a custom 'web1_render_list_items' for ".(ref $self));
-			$parts[$i]= '[unrenderable content]';
-		}
-		else {
-			$parts[$i]= $renderCxt->escHtml($row->{$parts[$i]});
-		}
-	}
-	my $html= join '', @parts;
-	$self->c->log->debug("Before: $template\nAfter: $html");
-	$renderCxt->write($html);
-=cut
+
+	#my $text= $template;
+	#$template =~ s|</?tpl[^>]+>||g;
+	#my @parts= split /[{}]/, $template;
+	#for (my $i=1; $i <= $#parts; $i+= 2) {
+	#	if (substr($parts[$i], 0, 1) eq '[') {
+	#		$self->c->log->warn("You need to write a custom 'web1_render_list_items' for ".(ref $self));
+	#		$parts[$i]= '[unrenderable content]';
+	#	}
+	#	else {
+	#		$parts[$i]= $renderCxt->escHtml($row->{$parts[$i]});
+	#	}
+	#}
+	#my $html= join '', @parts;
+	#$self->c->log->debug("Before: $template\nAfter: $html");
+	#$renderCxt->write($html);
+
 	if ($self->can('web1_render_getListItemContent')) {
 		if (scalar(@$rows) == 0) {
 			$renderCxt->write('<span class="value-placeholder">(unset)</span>');

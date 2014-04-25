@@ -234,40 +234,37 @@ sub add_loadContentCnf_read_munger {
 }
 
 
-
-=pod
-around 'store_read_raw' => sub {
-	my $orig = shift;
-	my $self = shift;
-	
-	my $result = $self->$orig(@_);
-	
-	# Add a 'loadContentCnf' field to store if open_record_class is defined.
-	# This data is used when a row is double clicked on to open the open_record_class
-	# module in the loadContent handler (JS side object). This is currently AppTab
-	# but could be other JS classes that support the same API
-	if (defined $self->open_record_class) {
-		foreach my $record (@{$result->{rows}}) {
-			my $loadCfg = {};
-			# support merging from existing loadContentCnf already contained in the record data:
-			$loadCfg = $self->json->decode($record->{loadContentCnf}) if (defined $record->{loadContentCnf});
-			
-			%{ $loadCfg } = (
-				%{ $self->get_record_loadContentCnf($record) },
-				%{ $loadCfg }
-			);
-			
-			$loadCfg->{autoLoad} = {} unless (defined $loadCfg->{autoLoad});
-			$loadCfg->{autoLoad}->{url} = $self->Module('item')->base_url unless (defined $loadCfg->{autoLoad}->{url});
-			
-			
-			$record->{loadContentCnf} = $self->json->encode($loadCfg);
-		}
-	}
-
-	return $result;
-};
-=cut
+#around 'store_read_raw' => sub {
+#	my $orig = shift;
+#	my $self = shift;
+#	
+#	my $result = $self->$orig(@_);
+#	
+#	# Add a 'loadContentCnf' field to store if open_record_class is defined.
+#	# This data is used when a row is double clicked on to open the open_record_class
+#	# module in the loadContent handler (JS side object). This is currently AppTab
+#	# but could be other JS classes that support the same API
+#	if (defined $self->open_record_class) {
+#		foreach my $record (@{$result->{rows}}) {
+#			my $loadCfg = {};
+#			# support merging from existing loadContentCnf already contained in the record data:
+#			$loadCfg = $self->json->decode($record->{loadContentCnf}) if (defined $record->{loadContentCnf});
+#			
+#			%{ $loadCfg } = (
+#				%{ $self->get_record_loadContentCnf($record) },
+#				%{ $loadCfg }
+#			);
+#			
+#			$loadCfg->{autoLoad} = {} unless (defined $loadCfg->{autoLoad});
+#			$loadCfg->{autoLoad}->{url} = $self->Module('item')->base_url unless (defined $loadCfg->{autoLoad}->{url});
+#			
+#			
+#			$record->{loadContentCnf} = $self->json->encode($loadCfg);
+#		}
+#	}
+#
+#	return $result;
+#};
 
 sub options_menu_button_Id {
 	my $self = shift;

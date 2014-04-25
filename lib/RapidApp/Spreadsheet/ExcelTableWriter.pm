@@ -325,6 +325,8 @@ sub rowHashToArray {
   ...
   $tableWriter->autosizeColumns
 
+=over
+
 =item Arguments: none
 
 =item Returns: none
@@ -332,6 +334,8 @@ sub rowHashToArray {
 AutosizeColumns should be called after all data has been written.  As each row is written, a 
 max width is updated per column. Calling autosizeColumns sets the excel column width to these
 maximum values.
+
+=back
 
 =cut
 sub autosizeColumns {

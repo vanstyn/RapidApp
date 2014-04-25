@@ -347,17 +347,23 @@ includes hashes and arrays) and eliminate any relation not mentioned in
 are eliminated.
 
 This function converts things like
+
   [ { a => b },
     { a => { b => c } },
     a,
     a => [ d, f ],
   ]
+  
 into
+
   { a => { b => { c => {}, }, d => {}, f => {} } }
+  
 resulting in a minimum of joined tables.
 
 This routine would be a little nicer if the output were
+
   { a => [ { b => c }, d, f ] }
+
 but that would be a lot of work, and nothing to gain.
 
 Note that for DBIC, regardless of nesting, the relations must each have unique
@@ -395,36 +401,6 @@ sub simplify_joins {
 		return $used > 0;
 	}
 }
-
-=pod
-sub addToFlatHashref {
-	my $self = shift;
-	my $hash = shift;
-	my $item = shift;
-	
-	unless (ref($item)) {
-		$hash->{$item} = 1;
-		return $hash;
-	}
-	
-	if (ref($item) eq 'HASH') {
-		foreach my $i (keys %$item, values %$item) {
-			$self->addToFlatHashref($hash,$i);
-		}
-		return $hash;
-	}
-	
-	if (ref($item) eq 'ARRAY') {
-		foreach my $i (@$item) {
-			$self->addToFlatHashref($hash,$i);
-		}
-		return $hash;
-	}
-	
-	return $hash;
-}
-=cut
-
 
 
 sub Search_spec {

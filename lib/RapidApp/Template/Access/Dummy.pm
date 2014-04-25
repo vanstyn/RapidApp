@@ -13,8 +13,6 @@ use MooX::Types::MooseLike::Base 0.23 qw(:all);
 
 Dummy Access class which provides open access
 
-=back
-
 =cut
 
 extends 'RapidApp::Template::Access';
