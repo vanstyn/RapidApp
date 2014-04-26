@@ -8,6 +8,9 @@ use Import::Into;
 use Time::HiRes qw(gettimeofday tv_interval);
 use HTTP::Request::Common;
 use JSON qw(decode_json);
+use Catalyst::Utils;
+use RapidApp::Functions;
+use RapidApp::Test::Client;
 
 my $target;
 my $app_class;
@@ -27,6 +30,8 @@ sub import {
   my @funcs = grep { 
     $_ ne 'import' && $_ ne 'AUTOLOAD'
   } Class::MOP::Class->initialize(__PACKAGE__)->get_method_list;
+  
+  push @funcs, 'scream';
   
   # Manually export our functions:
   {
@@ -48,8 +53,21 @@ sub AUTOLOAD {
   $target->can($method)->(@_);
 }
 
+## Setup the "client" object
+my $Client; sub client { $Client }
+$Client = RapidApp::Test::Client->new({ request_caller => sub { 
+  my $req = shift;
+  ok(
+    my $res = request($req),
+    client->describe_request
+  );
+  return $res;
+}});
+##
+
 sub app_class   { $app_class }
 sub app_version { eval(join('','$',app_class(),'::VERSION')) }
+sub app_prefix  { Catalyst::Utils::appprefix(app_class()) }
 
 # These are tests which should pass for all RapidApp applications:
 sub run_common_tests {
@@ -73,12 +91,18 @@ sub run_common_tests {
 
 # These are the default HTTP headers that are sent by the 
 # RapidApp/ExtJS JavaScript client/browser:
-sub ajax_request_headers {(
+my %AjaxRequestHeaders = (
   'X-RapidApp-RequestContentType' => 'JSON',
   'X-RapidApp-VERSION'            => $RapidApp::VERSION,
   'X-Requested-With'              => 'XMLHttpRequest',
-  'Content-Type'                  => 'application/x-www-form-urlencoded; charset=UTF-8'
-)}
+  'Content-Type'                  => 'application/x-www-form-urlencoded; charset=UTF-8',
+);
+
+# quick/dirty get/set default headers:
+sub ajax_request_headers {
+  %AjaxRequestHeaders = (%AjaxRequestHeaders,@_) if (scalar(@_) > 0);
+  return %AjaxRequestHeaders;
+}
 
 
 sub post_request {

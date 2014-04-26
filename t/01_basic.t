@@ -24,7 +24,7 @@ title_ok   ($root_cnt => 'TestRA::ChinookDemo', "root document has expected HTML
 
 # TODO: do deeper inspection of $root_url_content, follow link tags, etc
 
-my $decoded = (ajax_post_decode(
+my $decoded = (client->ajax_post_decode(
   '/main/db/nodes',
   [ node => 'root' ],
   "Fetch main navtree nodes"
@@ -58,18 +58,15 @@ is_deeply(
 # don't have a decoder for it yet. It is almost JSON, but
 # contains raw function() definitions that JSON::PP can't
 # handle. So, we're just making sure
-my $genre_grid = ajax_get_raw(
-  '/main/db/db_genre',
-  "Fetch genre grid"
-);
+my $genre_grid = client->ajax_get_raw('/main/db/db_genre');
 
 ok(
   $genre_grid =~ qr!/main/db/db_genre/store/read!,
-  "Saw expected string within returned genre grid content"
+  "Saw expected string within returned genre grid content [". client->last_request_elapsed . ']'
 );
 
 # This simulates what a DataStore read currently looks like:
-my $genre_read = ajax_post_decode(
+my $genre_read = client->ajax_post_decode(
   '/main/db/db_genre/store/read', [
              columns => '["genreid","name","tracks"]',
              fields  => '["genreid","name"]',
