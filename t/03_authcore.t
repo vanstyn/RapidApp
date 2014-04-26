@@ -74,8 +74,9 @@ run_common_tests();
 
 sub login {
   my $msg = shift || "Successfully logged in as 'admin'";
+  my $pass = shift || 'pass';
   my $login_res = client->post_request('/auth/login',{
-    username => 'admin', password => 'pass'
+    username => 'admin', password => $pass
   });
   
   is(
@@ -149,6 +150,79 @@ sub users_read_denied {
   );
 }
 
+sub change_password {
+  my $newpass = shift || 'newpass';
+  my $msg = shift || "Set password to '$newpass' via users DataStore update";
+  
+  # This simulates what a DataStore update currently looks like:
+  my $users_update = client->ajax_post_decode(
+    '/main/db/rapidapp_coreschema_user/store/update', [
+       columns => '["id","username","set_pw","roles","saved_states","user_to_roles"]',
+       fields  => '["id","username","full_name","last_login_ts"]',
+       limit   => '25',
+       query   => '',
+  quicksearch_mode => 'like',
+       start   => '0',
+       rows    => '{"set_pw":"' . $newpass . '","___record_pk":"1"}'
+    ]
+  ) || {};
+  
+  is(
+    $users_update->{msg},
+    "Update Succeeded",
+    $msg
+  );
+
+}
+
+sub change_full_name {
+  my $full_name = shift || 'new-full_name';
+  
+  # This simulates what a DataStore update currently looks like:
+  client->ajax_post_decode(
+    '/main/db/rapidapp_coreschema_user/store/update', [
+       columns => '["id","username","full_name","set_pw","roles","saved_states","user_to_roles"]',
+       fields  => '["id","username","full_name","last_login_ts"]',
+       limit   => '25',
+       query   => '',
+  quicksearch_mode => 'like',
+       start   => '0',
+       rows    => '{"full_name":"' . $full_name . '","___record_pk":"1"}'
+    ]
+  ) || {};
+  
+}
+
+sub change_full_name_allowed {
+  my $full_name = shift || 'new-full_name';
+  my $msg = shift || "Set full_name to '$full_name' via users DataStore update";
+
+  my $users_update = change_full_name($full_name);
+  
+  is(
+    $users_update->{msg},
+    "Update Succeeded",
+    $msg
+  );
+}
+
+sub change_full_name_denied {
+  my $full_name = shift || 'new-full_name';
+  my $msg = shift || "DataStore update of user row (full_name) denied as expected";
+  my $users_update = change_full_name($full_name);
+  is_deeply(
+    {
+      rows => $users_update->{rows},
+      msg  => $users_update->{msg}
+    },
+    {
+      rows => [],
+      msg  => "Permission denied"
+    },
+    $msg
+  );
+}
+
 
 my $root_cnt = client->browser_get_raw('/');
 title_ok (
@@ -183,6 +257,20 @@ users_read_allowed("Users grid read allowed again");
 client->cookie( undef );
 users_read_denied("Users grid read denied after clearing session cookie");
 
+login("Logged back in");
+change_password('new-password');
+logout();
+login("Logged back in using new password",'new-password');
+users_read_allowed("Users grid read still allowed");
+change_password('pass');
+users_read_allowed("Access/session still valid after pw change");
+
+logout();
+
+change_full_name_denied('Larry Wall');
+
+login("Logged back in");
+change_full_name_allowed('Ricky Bobby',"Row update succeeded after logging back in");
 
 
 done_testing;
