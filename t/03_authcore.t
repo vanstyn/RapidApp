@@ -6,6 +6,7 @@ use FindBin '$Bin';
 
 use lib "$Bin/var/testapps/TestRA-ChinookDemo/lib";
 use Path::Class qw(file dir);
+use RapidApp::Include qw(sugar perlutil);
 
 use RapidApp::Test::EnvUtil;
 BEGIN { $ENV{TMPDIR} or RapidApp::Test::EnvUtil::set_tmpdir_env() }
@@ -23,7 +24,11 @@ BEGIN {
   use Moose;
 
   use RapidApp;
-  use Catalyst qw/RapidApp::RapidDbic RapidApp::AuthCore/;
+  use Catalyst qw/
+    RapidApp::RapidDbic 
+    RapidApp::AuthCore
+    RapidApp::CoreSchemaAdmin
+  /;
 
   extends 'Catalyst';
 
@@ -67,105 +72,122 @@ use RapidApp::Test 'TestApp2';
 run_common_tests();
 
 
+sub login {
+  my $msg = shift || "Successfully logged in as 'admin'";
+  my $login_res = client->post_request('/auth/login',{
+    username => 'admin', password => 'pass'
+  });
+  
+  is(
+    $login_res->header('X-RapidApp-Authenticated'),
+    'admin',
+    $msg
+  );
+}
+
+sub logout {
+  my $msg = shift || "Logged out (and logout redirects to '/')";
+  my $res = client->get_request('/auth/logout');
+  ok(
+    client->lres->is_redirect && client->lres->header('Location') eq '/',
+    $msg
+  );
+}
+
+sub users_store_read {
+  # This simulates what a DataStore read currently looks like:
+  client->ajax_post_decode(
+    '/main/db/rapidapp_coreschema_user/store/read', [
+       columns => '["id","username","password","set_pw","roles","saved_states","user_to_roles"]',
+       fields  => '["id","username","password","full_name","last_login_ts"]',
+       limit   => '25',
+       query   => '',
+  quicksearch_mode => 'like',
+       start   => '0'
+    ]
+  ) || {};
+}
+
+sub users_read_allowed {
+  my $msg = shift || "DataStore read returned expected users rows";
+  my $users_read = users_store_read();
+
+  # This is the user row setup automatically by AuthCore:
+  my $def_user_rows = {
+    'roles' => 'administrator',
+    '___record_pk' => '1',
+    'set_pw' => undef,
+    'username' => 'admin',
+    'password' => '{CRYPT}$2a$09$0W2Bxv/o3HHEzq.cftHh.O93QLRm41ecLL2QNgzqUY1PIJDc9.E.K',
+    'saved_states' => 0,
+    'user_to_roles' => 1,
+    'id' => 1
+  };
+
+  is_deeply(
+    $users_read->{rows},
+    [ $def_user_rows ],
+    $msg
+  );
+}
+
+sub users_read_denied {
+  my $msg = shift || "DataStore read of users denied as expected";
+  my $users_read = users_store_read();
+  is_deeply(
+    {
+      rows => $users_read->{rows},
+      msg  => $users_read->{msg}
+    },
+    {
+      rows => [],
+      msg  => "Permission denied"
+    },
+    $msg
+  );
+}
+
+
 my $root_cnt = client->browser_get_raw('/');
 title_ok (
   $root_cnt => "TestApp2 v$TestApp2::VERSION - Login", 
   "root document has expected HTML <title> (login page)"
 );
 
-ok(
-  my $login_res = client->post_request('/auth/login',{
-    username => 'admin1', password => 'pass'
-  }),
-  "POST login request with default username/pass "
-);
+users_read_denied("Users grid read denied without logging in");
 
-my @cook_vals = split_header_words( $login_res->header('Set-Cookie') );
-my ($ses_key,$session) = @{ $cook_vals[0] || [] };
-
-is(
-  $ses_key, "testapp2_session",
-  "Login succeeded with new session cookie ($session)"
-);
+login();
 
 ok(
-  $login_res->is_redirect && $login_res->header('Location') eq '/',
+  client->lres->is_redirect && client->lres->header('Location') eq '/',
   "Login redirects to '/'"
 );
 
-
-my $genre_grid = client->ajax_get_raw(
-  '/main/db/db_genre',
-  "Fetch genre grid"
-);
-
+my $users_grid = client->ajax_get_raw('/main/db/rapidapp_coreschema_user');
 ok(
-  $genre_grid =~ qr!/main/db/db_genre/store/read!,
-  "Saw expected string within returned genre grid content"
+  $users_grid =~ qr!/main/db/rapidapp_coreschema_user/store/read!,
+  "Saw expected string within returned users grid content"
 );
 
+users_read_allowed();
 
-# This simulates what a DataStore read currently looks like:
-my $genre_read = client->ajax_post_decode(
-  '/main/db/db_genre/store/read', [
-             columns => '["genreid","name","tracks"]',
-             fields  => '["genreid","name"]',
-             limit   => '25',
-             query   => '',
-    quicksearch_mode => 'like',
-             start   => '0'
-  ]
-);
 
-# We need to clear this because its value can vary:
-$genre_read->{query_time} and $genre_read->{query_time} = undef;
+logout();
+users_read_denied("Users grid read denied after logout");
 
-# Delete for now because of blessed object response:
-$genre_read->{success} and delete $genre_read->{success};
+login("Logged back in");
+users_read_allowed("Users grid read allowed again");
 
-is_deeply(
-  $genre_read,
-  {
-    metaData => {
-      fields => [
-        {
-          name => "genreid"
-        },
-        {
-          name => "name"
-        },
-        {
-          name => "tracks"
-        },
-        {
-          name => "loadContentCnf"
-        },
-        {
-          name => "___record_pk"
-        }
-      ],
-      idProperty => "___record_pk",
-      loaded_columns => [
-        "genreid",
-        "name",
-        "tracks",
-        "loadContentCnf",
-        "___record_pk"
-      ],
-      messageProperty => "msg",
-      root => "rows",
-      successProperty => "success",
-      totalProperty => "results"
-    },
-    query_time => undef,
-    results => 0,
-    rows => [],
-    #success => bless( do{\(my $o = 1)}, 'JSON::XS::Boolean' )
-  },
-  "Read genre_grid store using session cookie"
-);
+client->cookie( undef );
+users_read_denied("Users grid read denied after clearing session cookie");
+
 
 
 done_testing;
+__END__
 
-#scream($genre_grid);
+#For debugging:
+scream_color(GREEN.BOLD,join("\n",
+  "REQUEST:\n\n" .  client->lreq->as_string . "\n", 
+  "RESPONSE:\n\n" . client->lres->as_string . "\n"
+));

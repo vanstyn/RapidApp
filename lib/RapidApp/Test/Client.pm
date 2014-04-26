@@ -15,6 +15,10 @@ use LWP::UserAgent;
 use HTTP::Request::Common;
 use JSON qw(decode_json);
 
+# shorthand aliases:
+sub lreq { (shift)->last_request }
+sub lres { (shift)->last_response }
+
 has 'ajax_request_headers', is => 'ro', default => sub {{
   'X-RapidApp-RequestContentType' => 'JSON',
   'X-RapidApp-VERSION'            => $RapidApp::VERSION,

@@ -198,9 +198,16 @@ sub userexception {
 	return RapidApp::Error->new(\%args);
 }
 
-# debug stuff to the log
+# Emulate legacy calls to 'DEBUG' for now:
 sub DEBUG {
-  warn join(' ',@_);
+  my @args = @_;
+  my $c = RapidApp->active_request_context;
+  if($c) {
+    $c->log->debug(join(' ',@args)) if ($c->debug);
+  }
+  else {
+    warn '[RapidApp::Sugar::DEBUG]: ' . join(' ',@args) . "\n";
+  }
 }
 
 # Suger function sets up a Native Trait ArrayRef attribute with useful

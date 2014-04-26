@@ -88,6 +88,12 @@ sub do_login {
   
 	if($c->authenticate({ username => $user, password => $pass })) {
     $c->session->{RapidApp_username} = $user;
+    
+    # New: set the X-RapidApp-Authenticated header now so the response
+    # itself will reflect the successful login (since in either case, the
+    # immediate response is a simple redirect). This is for client info/debug only
+    $c->res->header('X-RapidApp-Authenticated' => $c->user->username);
+
     $c->log->info("Successfully authenticated user '$user'") if ($c->debug);
     $c->user->update({ 
       last_login_ts => DateTime->now( time_zone => 'local' ) 

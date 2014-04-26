@@ -9,7 +9,6 @@ use Time::HiRes qw(gettimeofday tv_interval);
 use HTTP::Request::Common;
 use JSON qw(decode_json);
 use Catalyst::Utils;
-use RapidApp::Functions;
 use RapidApp::Test::Client;
 
 my $target;
@@ -30,8 +29,6 @@ sub import {
   my @funcs = grep { 
     $_ ne 'import' && $_ ne 'AUTOLOAD'
   } Class::MOP::Class->initialize(__PACKAGE__)->get_method_list;
-  
-  push @funcs, 'scream';
   
   # Manually export our functions:
   {

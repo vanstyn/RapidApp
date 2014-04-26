@@ -94,17 +94,22 @@ sub _appcmp_enforce_build_plugins {
 
 sub test_permission {
   my $self = shift;
+  my $c = RapidApp->active_request_context;
   return (
-    $self->c and
+    $c and
     $self->role_checker and
     $self->require_role and
     # FIXME: only perform the test for valid sessions. This logic already
     # happens (i.e. data is already protected from invalid sessions) and 
     # will need to be updated to consider this new feature
-    $self->c->can('session_is_valid') and $self->c->session_is_valid and
-    ! $self->role_checker->($self->c,$self->require_role)
+    $c->can('session') and $c->session and #<-- had to add this because 'session_is_valid' below
+                                          #    was not returning false (some kind of init issue?)
+                                          #    TODO: investigate further...
+    $c->can('session_is_valid') and $c->session_is_valid and
+    ! $self->role_checker->($c,$self->require_role)
   ) ? 0 : 1;
 }
+
 
 sub allowed_content {
   my $self = shift;

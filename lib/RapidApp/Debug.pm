@@ -14,7 +14,7 @@ sub DEBUG {
   my @args = @_;
   my $c = RapidApp->active_request_context;
   if($c) {
-    $c->log->debug(join(' ',@args));
+    $c->log->debug(join(' ',@args)) if ($c->debug);
   }
   else {
     warn '[RapidApp::Debug]: ' . join(' ',@args) . "\n";
