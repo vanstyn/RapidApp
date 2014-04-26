@@ -25,6 +25,7 @@ has 'ajax_request_headers', is => 'ro', default => sub {{
 has 'request_num',   is => 'rw', default => sub{0}, isa => Int;
 has 'last_request',  is => 'rw', default => sub{undef}, isa => Maybe[InstanceOf['HTTP::Request']];
 has 'last_response', is => 'rw', default => sub{undef}, isa => Maybe[InstanceOf['HTTP::Response']];
+has 'last_request_started',  is => 'rw', default => sub{undef};
 has 'last_request_elapsed',  is => 'rw', default => sub{undef}, isa => Maybe[Str];
 has 'last_url',      is => 'rw', default => sub{undef}, isa => Maybe[Str];
 
@@ -57,16 +58,25 @@ sub make_request {
   $self->last_request_elapsed(undef);
   $self->request_num( $self->request_num + 1 );
   
-  my $start = [gettimeofday];
+  $self->last_request_started([gettimeofday]);
   
-  my $res = $self->last_response(
-    $self->request_caller->(
-      $self->last_request($req)
-    )
+  my $res = $self->request_caller->(
+    $self->last_request($req)
   );
   
-  $self->last_request_elapsed(sprintf("%0.5f sec",tv_interval($start)));
+  # Record the response unless the request_caller already did:
+  $self->record_response( $res ) unless ($self->last_response);
   
+  return $res;
+}
+
+sub record_response {
+  my ($self, $res) = @_;
+  die "last_response already defined" if ($self->last_response);
+  $self->last_response( $res );
+  $self->last_request_elapsed(sprintf("%0.5f sec",tv_interval(
+    $self->last_request_started
+  )));
   return $res;
 }
 

@@ -58,7 +58,7 @@ my $Client; sub client { $Client }
 $Client = RapidApp::Test::Client->new({ request_caller => sub { 
   my $req = shift;
   ok(
-    my $res = request($req),
+    my $res = client->record_response( request($req) ),
     client->describe_request
   );
   return $res;
