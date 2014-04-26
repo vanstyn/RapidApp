@@ -15,19 +15,15 @@ use RapidApp::Test 'TestRA::ChinookDemo';
 
 run_common_tests();
 
-ok(
-  my $root_cnt = get('/'),
-  'Fetch (GET) root document URL "/"'
-);
 
+my $root_cnt = client->browser_get_raw('/');
 title_ok   ($root_cnt => 'TestRA::ChinookDemo', "root document has expected HTML <title>");
 
 # TODO: do deeper inspection of $root_url_content, follow link tags, etc
 
 my $decoded = (client->ajax_post_decode(
   '/main/db/nodes',
-  [ node => 'root' ],
-  "Fetch main navtree nodes"
+  [ node => 'root' ]
 ) || [])->[0] || {};
 
 my $child_nodes = $decoded->{children} || [];
