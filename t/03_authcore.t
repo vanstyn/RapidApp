@@ -98,8 +98,8 @@ sub users_store_read {
   # This simulates what a DataStore read currently looks like:
   client->ajax_post_decode(
     '/main/db/rapidapp_coreschema_user/store/read', [
-       columns => '["id","username","password","set_pw","roles","saved_states","user_to_roles"]',
-       fields  => '["id","username","password","full_name","last_login_ts"]',
+       columns => '["id","username","set_pw","roles","saved_states","user_to_roles"]',
+       fields  => '["id","username","full_name","last_login_ts"]',
        limit   => '25',
        query   => '',
   quicksearch_mode => 'like',
@@ -118,7 +118,9 @@ sub users_read_allowed {
     '___record_pk' => '1',
     'set_pw' => undef,
     'username' => 'admin',
-    'password' => '{CRYPT}$2a$09$0W2Bxv/o3HHEzq.cftHh.O93QLRm41ecLL2QNgzqUY1PIJDc9.E.K',
+    # need to exclude this because it is different each time it
+    # is generated, even though it is the same password (TODO: test it, too!)
+    #'password' => '{CRYPT}$2a$09$0W2Bxv/o3HHEzq.cftHh.O93QLRm41ecLL2QNgzqUY1PIJDc9.E.K',
     'saved_states' => 0,
     'user_to_roles' => 1,
     'id' => 1
