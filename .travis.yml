@@ -9,6 +9,6 @@ perl:
 install:
    - cpanm --quiet --notest --skip-satisfied Dist::Zilla
    - "dzil authordeps | cpanm --quiet --notest --skip-satisfied"
-   - "dzil listdeps   | cpanm --verbose --skip-satisfied"
+   - "dzil listdeps   | cpanm --quiet --skip-satisfied"
 script:
    - dzil smoke --release --author
