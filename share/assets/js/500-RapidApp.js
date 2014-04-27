@@ -5582,3 +5582,18 @@ Ext.ux.RapidApp.withFilenameIcon = function(val) {
     '</span>'
   ].join('');
 }
+
+
+Ext.ux.RapidApp.renderBase64 = function(str) {
+
+  try {
+    return Ext.util.Format.htmlEncode(
+      base64.decode(
+        // strip any newlines:
+        str.replace(/(\r\n|\n|\r)/gm,"")
+      )
+    );
+  } catch(err) { 
+    return str; 
+  }
+}

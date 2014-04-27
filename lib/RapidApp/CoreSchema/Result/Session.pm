@@ -92,18 +92,42 @@ sub decoded_session_data {
 }
 
 __PACKAGE__->load_components('+RapidApp::DBIC::Component::TableSpec');
+__PACKAGE__->add_virtual_columns(
+  expires_in => {
+    data_type => "integer", 
+    is_nullable => 1, 
+    sql => q|SELECT (self.expires - strftime('%s','now'))|
+  },
+);
 __PACKAGE__->apply_TableSpec;
 
 __PACKAGE__->TableSpec_set_conf( 
-	title => 'Session',
-	title_multi => 'Sessions',
-	#iconCls => 'ra-icon-user',
-	#multiIconCls => 'ra-icon-group',
-	display_column => 'id',
+  title => 'Session',
+  title_multi => 'Sessions',
+  display_column => 'id',
   priority_rel_columns => 1,
   columns => {
+    id => { 
+      width => 300,
+      allow_add => \0, allow_edit => \0,
+    },
+    session_data => {
+      hidden => \1,
+      renderer => 'Ext.ux.RapidApp.renderBase64'
+    },
     user_id => { no_column => \1, no_multifilter => \1, no_quick_search => \1 },
-    expires_ts => { allow_add => \0, allow_edit => \0 },
+    expires => {
+      width => 100, hidden => \1,
+      allow_add => \0, allow_edit => \0,
+    },
+    expires_ts => { 
+      allow_add => \0, allow_edit => \0, 
+      width => 130
+    },
+    expires_in => {
+      width => 100,
+      renderer => 'Ext.ux.RapidApp.renderSecondsElapsed'
+    },
     user => { allow_add => \0, allow_edit => \0 },
   }
 );
