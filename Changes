@@ -1,5 +1,12 @@
 Revision history for RapidApp
 
+0.99202 2014-05-02
+    - Added support for Travis CI
+    - Misc bug fixes
+    - Improvements to testing classes + expanded unit tests
+    - Misc kwalitee fixes + kwalitee unit tests
+    - Fixed POD syntax errors
+
 0.99201 2014-04-25
     - Fixed build/install error from bad dependency (TestRA:: namespace)
     - Expanded unit tests
