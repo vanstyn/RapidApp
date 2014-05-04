@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+0.99203 2014-05-04
+    - Added new 'disable_tabgui' config/session option
+
 0.99202 2014-05-02
     - Added support for Travis CI
     - Misc bug fixes
