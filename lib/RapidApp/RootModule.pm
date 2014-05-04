@@ -95,11 +95,16 @@ around 'Controller' => sub {
     my $args = $c->req->arguments;
     my ($opt) = @$args;
     
+    if($c->can('session') && $c->session) {
+      $c->session->{disable_tabgui} = ($config->{disable_tabgui} || 0)
+        unless(exists $c->session->{disable_tabgui});
+    }
+    
     # SPECIAL HANDLING FOR ROOT ('/') REQUEST:
     return $self->content unless ($opt || !$c->can('session') || (
       $c->can('session') && $c->session &&
       $c->session->{RapidApp_username} &&
-      ! $config->{disable_tabgui}
+      ! $c->session->{disable_tabgui}
     ));
     
     return $self->$orig(@a) unless (
