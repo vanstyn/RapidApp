@@ -98,7 +98,8 @@ around 'Controller' => sub {
     # SPECIAL HANDLING FOR ROOT ('/') REQUEST:
     return $self->content unless ($opt || !$c->can('session') || (
       $c->can('session') && $c->session &&
-      $c->session->{RapidApp_username}
+      $c->session->{RapidApp_username} &&
+      ! $config->{disable_tabgui}
     ));
     
     return $self->$orig(@a) unless (
