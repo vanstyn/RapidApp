@@ -9,7 +9,7 @@ use RapidApp::Include qw(sugar perlutil);
 use Module::Runtime;
 
 use Clone qw(clone);
-use Time::HiRes qw(gettimeofday);
+use Time::HiRes qw(gettimeofday tv_interval);
 use Catalyst::Utils;
 use Scalar::Util 'weaken';
 
@@ -325,16 +325,18 @@ sub create_module {
   #	CYAN . "Load: " . BOLD . $params->{module_path} . CLEAR . 
   #	CYAN . " [$class_name]" . CLEAR . "\n"
   #if ($self->app->debug);
-
   
-  my $c = $self->app;
-  $c->log->debug( join('', 
-    " >> Load: ",$params->{module_path}," [$class_name]"
-  )) if ($c->debug);
+  my $start = [gettimeofday];
   
 	my $Object = $class_name->new($params) or die "Failed to create module instance ($class_name)";
 	die "$class_name is not a valid RapidApp Module" unless ($Object->does('RapidApp::Role::Module'));
 	
+  my $c = $self->app;
+  $c->log->debug( join('', 
+    " >> Loaded: ",$params->{module_path}," [$class_name] ",
+    sprintf("(%0.3fs)",tv_interval($start))
+  )) if ($c->debug);
+  
 	return $Object;
 }
 
