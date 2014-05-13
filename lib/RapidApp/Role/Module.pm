@@ -318,15 +318,20 @@ sub create_module {
 	$params->{module_path} .= $name;
 	$params->{parent_module_ref} = $self;
 	
-	
-	
-	# TODO: figure out how to pass this to c->log->info (and have it actually be displayed)
-	print STDERR
-		' >> ' .
-		CYAN . "Load: " . BOLD . $params->{module_path} . CLEAR . 
-		CYAN . " [$class_name]" . CLEAR . "\n"
-	if ($self->app->debug);
-	
+
+  # Colorful console messages, non-standard, replaced with normal logging below:
+  #print STDERR
+  #	' >> ' .
+  #	CYAN . "Load: " . BOLD . $params->{module_path} . CLEAR . 
+  #	CYAN . " [$class_name]" . CLEAR . "\n"
+  #if ($self->app->debug);
+
+  
+  my $c = $self->app;
+  $c->log->debug( join('', 
+    " >> Load: ",$params->{module_path}," [$class_name]"
+  )) if ($c->debug);
+  
 	my $Object = $class_name->new($params) or die "Failed to create module instance ($class_name)";
 	die "$class_name is not a valid RapidApp Module" unless ($Object->does('RapidApp::Role::Module'));
 	
