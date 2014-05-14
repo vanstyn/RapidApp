@@ -11,6 +11,7 @@ use RapidApp::Debug 'DEBUG';
 use Text::SimpleTable::AutoWidth;
 use Catalyst::Utils;
 use Path::Class qw(file dir);
+use Time::HiRes qw(tv_interval);
 
 use RapidApp;
 use Template;
@@ -82,6 +83,10 @@ sub injectUnlessExist {
 after 'setup_finalize' => sub {
   my $app = shift;
   $app->rapidApp->_setup_finalize;
+  $app->log->debug(sprintf(
+    "   ---  RapidApp (v$RapidApp::VERSION) Loaded in %0.3f seconds ---",
+    tv_interval($RapidApp::START)
+  )) if ($app->debug);
 };
 
 # called once per request, in class-context

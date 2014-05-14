@@ -4,11 +4,14 @@ use warnings;
 
 our $VERSION = '0.99203';
 
-use Carp::Clan;
-
 # ABSTRACT: Turnkey ajaxy webapps
 
+use Carp::Clan;
+use Time::HiRes qw(gettimeofday);
 use File::ShareDir qw(dist_dir);
+
+# For statistics:
+our $START = [gettimeofday];
 
 sub share_dir {
   my $class = shift || __PACKAGE__;
