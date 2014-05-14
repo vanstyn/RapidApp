@@ -1,6 +1,5 @@
 package RapidApp::Role::AssetControllers;
 
-our $VERSION = '0.01';
 use Moose::Role;
 use namespace::autoclean;
 
@@ -14,6 +13,7 @@ use Catalyst::Utils;
 use Path::Class qw(dir);
 use RapidApp;
 use JavaScript::ExtJS::V3;
+use Time::HiRes qw(gettimeofday tv_interval);
 
 use Catalyst::Controller::AutoAssets 0.26;
 with 'Catalyst::Plugin::AutoAssets';
@@ -21,8 +21,10 @@ with 'Catalyst::Plugin::AutoAssets';
 sub get_extjs_dir { JavaScript::ExtJS::V3->dir->stringify }
 
 
-before 'inject_asset_controllers' => sub {
-  my $c = shift;
+around 'inject_asset_controllers' => sub {
+  my ($orig,$c,@args) = @_;
+  
+  my $start = [gettimeofday];
   
   my %defaults = (
     sha1_string_length => 15,
@@ -157,16 +159,15 @@ before 'inject_asset_controllers' => sub {
   %$_ = (%defaults,%$_) for (@$assets);
   
   $c->config( 'Plugin::AutoAssets' => { assets => $assets } );
-};
-
-
-after 'setup_components' => sub {
-  my $c = shift;
   
-  # Call to throw any exceptions at start-up:
-  $c->all_html_head_tags;
+  my $ret = $c->$orig(@args);
   
-  1;
+  $c->log->debug(sprintf(
+    "Asset Controllers Setup in %0.3f seconds",
+    tv_interval($start)
+  )) if ($c->debug);
+
+  return $ret;
 };
 
 1;
