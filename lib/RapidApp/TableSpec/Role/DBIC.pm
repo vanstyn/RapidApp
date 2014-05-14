@@ -10,9 +10,18 @@ use RapidApp::Include qw(sugar perlutil);
 
 use RapidApp::DBIC::Component::TableSpec;
 
-use Text::Glob qw( match_glob );
+require Text::Glob;
 use Text::WagnerFischer qw(distance);
 use Clone qw( clone );
+
+# hackish performance tweak:
+my %match_glob_cache = ();
+sub match_glob {
+  my ($l,$r) = @_;
+  $match_glob_cache{$l}{$r} = Text::Glob::match_glob($l,$r)
+    unless (exists $match_glob_cache{$l}{$r});
+  return $match_glob_cache{$l}{$r};
+}
 
 # ---
 # Attributes 'ResultSource', 'ResultClass' and 'schema' are interdependent. If ResultSource
@@ -521,6 +530,15 @@ sub colspecs_to_colspec_test {
 }
 
 
+
+my %dist_cache = ();
+sub get_distance {
+  my ($l,$r) = @_;
+  $dist_cache{$l}{$r} = distance($l,$r) unless (exists $dist_cache{$l}{$r});
+  return $dist_cache{$l}{$r};
+}
+
+
 #around colspec_test => &func_debug_around();
 
 # TODO:
@@ -528,7 +546,7 @@ sub colspecs_to_colspec_test {
 # (merge with Mike's class)
 # Tests whether or not the supplied column name matches the supplied colspec.
 # Returns 1 for positive match, 0 for negative match (! prefix) and undef for no match
-sub colspec_test($$){
+sub _colspec_test($$){
 	my $self = shift;
 	my $full_colspec = shift || die "full_colspec is required";
 	my $col = shift || die "col is required";
@@ -566,7 +584,7 @@ sub colspec_test($$){
 	# match (return 1 or 0):
 	if (match_glob($colspec,$test_col)) {
 		# Calculate WagnerFischer edit distance
-		my $distance = distance($colspec,$test_col);
+		my $distance = get_distance($colspec,$test_col);
 		
 		# multiply my $x to set the sign, then flip so bigger numbers 
 		# mean better match instead of the reverse
@@ -583,6 +601,15 @@ sub colspec_test($$){
 	
 	# no match:
 	return undef;
+}
+
+
+# New: caching wrapper for performance:
+sub colspec_test($$){
+  my ($self,$l,$r) = @_;
+  $self->{_colspec_test_cache}{$l}{$r} = $self->_colspec_test($l,$r)
+    unless (exists $self->{_colspec_test_cache}{$l}{$r});
+  return $self->{_colspec_test_cache}{$l}{$r};
 }
 
 # returns a list of loaded column names that match the supplied colspec set
