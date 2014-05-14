@@ -1602,165 +1602,6 @@ Ext.ux.FetchEval = function(url,params) {
 
 
 
-
-
-
-/* This is crap since 'anchor' exists
-Ext.override(Ext.form.FormPanel, {
-	plugins: [new Ext.ux.form.FieldAutoExpand()]
-});
-*/
-
-/*
-Ext.override(Ext.BoxComponent, {
-	initComponent: function() {
-
-		var thisC = this;
-		if (thisC.autoLoadJsonConf) {
-
-
-			Ext.Ajax.request({
-				disableCaching: true,
-				url: thisC.autoLoadJsonConf['url'],
-				params: thisC.autoLoadJsonConf['params'],
-				success: function(response, opts) {
-
-					alert(response.responseText);
-
-					var imported_data = Ext.util.JSON.decode(response.responseText);
-					//var imported_data = eval('(' + response.responseText + ')');
-					Ext.apply(this, Ext.apply(this.initialConfig, imported_data));
-				},
-				failure: function(response, opts) {
-					alert('AJAX autoLoadJsonConf FAILED!!!!!!');
-				}
-			});
-		}
-		Ext.BoxComponent.superclass.initComponent.apply(this, arguments);
-	}
-});
-
-
-
-Ext.override(Ext.BoxComponent, {
-	initComponent: function() {
-
-		var thisC = this;
-
-		if (Ext.isArray(this.items)) {
-			for (i in this.items) {
-				if(this.items[i]['autoLoadJsonConf']) {
-					var urlspec = this.items[i]['autoLoadJsonConf'];
-
-					Ext.Ajax.request({
-						disableCaching: true,
-						url: urlspec['url'],
-						params: urlspec['params'],
-						success: function(response, opts) {
-
-							alert(response.responseText);
-
-							var imported_data = eval('(' + response.responseText + ')');
-							thisC.insert(i,imported_data);
-							thisC.doLayout();
-
-							Ext.apply(this, Ext.apply(this.initialConfig, imported_data));
-						},
-						failure: function(response, opts) {
-							alert('AJAX autoLoadJsonConf FAILED!!!!!!');
-						}
-					});
-
-					delete this.items[i];
-
-
-				}
-			}
-		}
-
-
-
-
-
-
-
-		var thisC = this;
-		if (thisC.autoLoadJsonConf) {
-
-
-			Ext.Ajax.request({
-				disableCaching: true,
-				url: thisC.autoLoadJsonConf['url'],
-				params: thisC.autoLoadJsonConf['params'],
-				success: function(response, opts) {
-
-					alert(response.responseText);
-
-					var imported_data = Ext.util.JSON.decode(response.responseText);
-					//var imported_data = eval('(' + response.responseText + ')');
-					Ext.apply(this, Ext.apply(this.initialConfig, imported_data));
-				},
-				failure: function(response, opts) {
-					alert('AJAX autoLoadJsonConf FAILED!!!!!!');
-				}
-			});
-		}
-		Ext.BoxComponent.superclass.initComponent.apply(this, arguments);
-	}
-});
-
-*/
-
-
-Ext.ux.DynContainer = Ext.extend(Ext.Container, {
-
-	initComponent: function() {
-
-		var id = this.id;
-		var imported_data;
-		var thisC = this;
-		//if (thisC.itemsurl) {
-		var config = {
-			loadData: function(loadurl,params) {
-
-				//alert('Loading: ' + loadurl);
-
-				Ext.Ajax.request({
-					disableCaching: true,
-					//url: thisC.itemsurl,
-					url: loadurl,
-					params: params,
-					success: function(response, opts) {
-
-						imported_data = eval('(' + response.responseText + ')');
-
-						thisC.removeAll();
-						thisC.add(imported_data);
-						thisC.doLayout();
-
-					},
-					failure: function(response, opts) {
-						alert('AJAX FAILED!!!!!!');
-					}
-				});
-			}
-		};
-		Ext.apply(this, Ext.apply(this.initialConfig, config));
-		Ext.ux.DynContainer.superclass.initComponent.apply(this, arguments);
-		//}
-	},
-	onRender: function() {
-		Ext.ux.DynContainer.superclass.onRender.apply(this, arguments);
-		var params = {};
-		if(this.urlparams) { params = this.urlparams; delete params["url"]; }
-		this.loadData(this.itemsurl,params);
-	}
-});
-Ext.reg('dyncontainer',Ext.ux.DynContainer);
-
-
-
-
 Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 
 	// Set the timeout to match the Ajax default:
@@ -5598,4 +5439,28 @@ Ext.ux.RapidApp.renderBase64 = function(str) {
   } catch(err) { 
     return str; 
   }
+}
+
+// Called from ext_viewport.tt to initialize the main app UI:
+Ext.ux.RapidApp.MainViewportInit = function(opt) {
+  Ext.ux.RapidApp.HistoryInit();
+
+  // This is the default currently, which we're listing here for referece:
+  // opt = opt || { config_url: '/main', config_params: {} };
+  
+  new Ext.Viewport({
+    plugins: ['ra-link-click-catcher'],
+    layout : 'fit',
+    hideBorders : true,
+    items : {
+      xtype: 'autopanel',
+      layout: 'fit',
+      id: 'maincontainer',
+      autoLoad: {
+        url: opt.config_url,
+        params: opt.config_params
+      }
+    }
+  });
+  
 }
