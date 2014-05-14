@@ -76,7 +76,7 @@ before 'setup_components' => sub {
   my $main_module_params = {
     title => $config->{nav_title},
     right_footer => $config->{title},
-    iconCls => 'ra-icon-catalyst-transparent',
+    iconCls => $config->{nav_title_iconcls} || 'ra-icon-catalyst-transparent',
     navtrees => \@navtrees
   };
   
