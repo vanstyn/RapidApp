@@ -28,7 +28,7 @@ has 'request_id' => ( is => 'ro', default => sub { (shift)->rapidApp->requestCou
 # dump is instead of the real config. This is being done because of RapidApp
 # plugins which pollute the config hash with refs to deep structures making
 # it too large to safely dump in the event of an exception (in debug mode).
-before 'setup' => sub {
+before 'setup_finalize' => sub {
   my $c = shift;
   $c->config( initial_config => clone( $c->config ) );
 };
