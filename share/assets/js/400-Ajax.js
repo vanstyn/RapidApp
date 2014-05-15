@@ -668,7 +668,7 @@ Ext.ux.RapidApp.ajaxException = function(conn,response,options) {
     }
     else {
       // If we're here, it means a raw exception was encountered (5xx) 
-      // with an X-RapidApp-Exception header, so just throw the raw
+      // without an X-RapidApp-Exception header, so just throw the raw
       // response body as text. This should not happen - it probably means 
       // the server-side failed to catch the exception. The message will
       // probably be ugly, but it is the best/safest thing we can do at 

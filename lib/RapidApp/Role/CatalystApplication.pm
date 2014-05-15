@@ -13,6 +13,7 @@ use Catalyst::Utils;
 use Path::Class qw(file dir);
 use Time::HiRes qw(tv_interval);
 use Clone qw(clone);
+use Data::Dumper::Concise;
 
 use RapidApp;
 use Template;
@@ -162,6 +163,29 @@ sub _rapidapp_top_level_dispatch {
 	}
 };
 
+
+around 'finalize_error' => sub {
+  my ($orig, $c, @args) = @_;
+  if($c->is_ra_ajax_req) {
+    # If this is an Ajax request, send it back as raw text instead of
+    # the normal Catalyst::Engine's HTML error page
+    $c->res->content_type('text/plain; charset=utf-8');
+    my $error = join("\n", @{ $c->error }) || 'Unknown error';
+    if($c->debug) {
+      $error .= join("\n",
+        "\n\n",
+        "RapidApp v$RapidApp::VERSION\n",
+        map { Dumper($_) } $c->dump_these
+      );
+    };
+    $c->res->body($error);
+    $c->res->status(500);
+  }
+  else {
+    return $c->$orig(@args);
+  }
+};
+
 # called after the response is sent to the client, in object-context
 after 'log_response' => sub {
 	my $c= shift;
@@ -261,6 +285,14 @@ before 'setup_plugins' => sub {
 	
 };
 # --
+
+# Handy method returns true for requests which came from The RapidApp ajax client
+sub is_ra_ajax_req {
+  my $c = shift;
+  return 0 unless ($c->can('request') && $c->request);
+  my $tp = $c->request->header('X-RapidApp-RequestContentType') or return 0;
+  return $tp eq 'JSON' ? 1 : 0;
+}
 
 # New: convenience method to get the main 'Template::Controller' which
 # is being made into a core function of rapidapp:
