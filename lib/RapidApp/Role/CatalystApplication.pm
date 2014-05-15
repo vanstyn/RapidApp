@@ -12,6 +12,7 @@ use Text::SimpleTable::AutoWidth;
 use Catalyst::Utils;
 use Path::Class qw(file dir);
 use Time::HiRes qw(tv_interval);
+use Clone qw(clone);
 
 use RapidApp;
 use Template;
@@ -21,6 +22,25 @@ sub rapidapp_version { $RapidApp::VERSION }
 sub rapidApp { (shift)->model("RapidApp"); }
 
 has 'request_id' => ( is => 'ro', default => sub { (shift)->rapidApp->requestCount; } );
+
+# ---
+# Capture the state of the config at load/setup and override 'dump_these' to
+# dump is instead of the real config. This is being done because of RapidApp
+# plugins which pollute the config hash with refs to deep structures making
+# it too large to safely dump in the event of an exception (in debug mode).
+before 'setup' => sub {
+  my $c = shift;
+  $c->config( initial_config => clone( $c->config ) );
+};
+sub dump_these {
+    my $c = shift;
+    [ Request => $c->req ],
+    [ Response => $c->res ],
+    [ Stash => $c->stash ],
+    [ Config => $c->config->{initial_config} ];
+}
+# ---
+
 
 around 'setup_components' => sub {
 	my ($orig, $app, @args)= @_;
