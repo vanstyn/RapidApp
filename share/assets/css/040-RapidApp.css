@@ -1657,3 +1657,14 @@ a:hover, a:hover * { cursor: pointer; }
 	cursor:pointer;
 	text-decoration:underline;
 }
+
+/* Need this for the nested navtrees to horizontally scroll together 
+ TODO: this is a hack, and the mouse-over/highlight of tree nodes
+ is not currently working properly (chopped off)
+*/
+#main-navtrees-container .x-panel-body, 
+#main-navtrees-container .x-panel-bwrap,
+#main-navtrees-container .x-tree {
+  overflow: visible;
+}
+
