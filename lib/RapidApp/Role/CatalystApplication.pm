@@ -301,10 +301,11 @@ sub template_controller { (shift)->controller('RapidApp::Template') }
 my $share_dir = dir( RapidApp->share_dir );
 sub default_tt_include_path {
   my $c = shift;
+  my $app = ref $c ? ref $c : $c;
   
   my @paths = ();
-  my $home = dir( Catalyst::Utils::home($c) );
-    
+  my $home = dir( Catalyst::Utils::home($app) );
+  
   if($home && -d $home) {
     my $root = $home->subdir('root');
     if($root && -d $root) {
