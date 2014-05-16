@@ -471,7 +471,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		};
     
     store.isEditableColumn = function(name) {
-      return store.editable_columns_map[name] ? true : false;
+      return store.editable_columns_map && store.editable_columns_map[name] ? true : false;
     };
 		
 		// ----
