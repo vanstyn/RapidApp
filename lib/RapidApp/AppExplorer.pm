@@ -17,6 +17,7 @@ require Module::Runtime;
 has 'title', is => 'ro', default => 'AppExplorer';
 has 'right_footer', is => 'ro', lazy => 1, default => sub {(shift)->title};
 has 'iconCls', is => 'ro',	default => 'ra-icon-server-database';
+has 'init_width', is => 'ro',	default => 240;
 
 has 'navtree_class', is => 'ro', isa => 'Maybe[Str]', default => sub{undef};
 has 'navtree_params', is => 'ro', isa => 'HashRef', lazy => 1, default => sub{{}};
@@ -138,7 +139,7 @@ sub navtree_area {
     collapsible => \1,
     split => \1,
     minSize => 150,
-    width	=> 240,
+    width	=> $self->init_width,
     margins => '3 3 3 3',
     layout	=> 'fit',
     tools => [{
