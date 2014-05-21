@@ -1,8 +1,13 @@
 package RapidApp::Controller::DefaultRoot;
 
+use strict;
+use warnings;
+
 use Moose;
 use namespace::autoclean;
 BEGIN { extends 'Catalyst::Controller', 'RapidApp::ModuleDispatcher'; }
+
+use RapidApp::Include qw(sugar perlutil);
 
 =head1 NAME
 
@@ -55,11 +60,17 @@ features could also be easily plugged into a custom top controller.
 
 =cut
 
-__PACKAGE__->config( namespace => '' );
+before 'COMPONENT' => sub {
+  my $class = shift;
+  my $app_class = ref $_[0] || $_[0];
+  
+  my $ns = $app_class->config->{'Model::RapidApp'}{module_root_namespace} || '';
+  $class->config( namespace => $ns );
+};
 
 sub approot :Path {
-	my ($self, $c, @args)= @_;
-	$self->dispatch($c, @args);
+  my ($self, $c, @args)= @_;
+  $self->dispatch($c, @args);
 }
 
 sub end : ActionClass('RenderView') {}
