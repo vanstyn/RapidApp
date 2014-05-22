@@ -55,10 +55,12 @@ sub load :Path :Args(1) {
 	$params->{search_id} = $data->{id};
 	
 	%{$c->req->params} = ( %{$c->req->params}, %$params );
-	$data->{url} =~ s/^\///; #<-- strip leading / (needed for split below)
-	my @arg_path = split(/\//,$data->{url});
-	
-	$c->detach('/approot',\@arg_path);
+  return $c->redispatch_public_path( $data->{url} );
+
+  ## This is how we did it before $c->redispatch_public_path():
+  #$data->{url} =~ s/^\///; #<-- strip leading / (needed for split below)
+  #my @arg_path = split(/\//,$data->{url});
+  #$c->detach('/approot',\@arg_path);
 }
 
 

@@ -165,6 +165,34 @@ sub _rapidapp_top_level_dispatch {
 	}
 };
 
+# This is ugly, but seems to be the best way to re-resolve a *public* URL
+# path and dispatch it. It essentially starts over in handle_request at
+# the 'prepare_action' phase with a different request path set, leaving
+# all other details of the request the same. This is meant to be called
+# during an existing request (dispatch phase). This is used internally in 
+# places like NavCore for saved searches:
+sub redispatch_public_path {
+  my ($c, @args) = @_;
+
+  my $path = join('/',@args);
+  $path =~ s/^\///; #<-- strip leading /
+  $path =~ s/\/$//; #<-- strip trailing leading /
+  $path =~ s/\/+/\//g; #<-- strip any double //
+  $path ||= '';
+
+  $c->log->debug("Redispatching as path: $path") if ($c->debug);
+
+  # Overwrite the 'path' in the request object:
+  $c->request->path($path);
+
+  # Now call prepare_action again, now with the updated path:
+  $c->prepare_action;
+
+  # Now forward to the new action. If there is no action,
+  # call $c->dispatch just for the sake of error handling
+  return $c->action ? $c->forward( $c->action ) : $c->dispatch;
+}
+
 
 around 'finalize_error' => sub {
   my ($orig, $c, @args) = @_;
