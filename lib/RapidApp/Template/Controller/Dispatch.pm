@@ -53,6 +53,7 @@ sub default :Path {
   
   $c->stash->{editable} = 1; # <-- Enable template editing (if has perms)
   my $template = join('/',@args);
+  $template =~ s/\/+/\//g; #<-- strip any double //
   return $c->template_controller->view($c, $template);
 }
 

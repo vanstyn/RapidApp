@@ -233,7 +233,8 @@ sub Controller {
     if($self->has_module($opt)) {
       my $ns = $self->module_root_namespace;
       my $base = $ns ne '' ? join('','/',$ns,'/') : '/';
-      my $url = join('/',$base.'#!',@args);
+      my $url = join('/',$base.'#!',$base,@args);
+      $url =~ s/\/+/\//g; #<-- strip any double //
       my %params = %{$c->req->params};
       if(keys %params > 0) {
         my $qs = join('&',map { $_ . '=' . uri_escape($params{$_}) } keys %params);
