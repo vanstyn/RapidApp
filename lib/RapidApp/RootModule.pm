@@ -112,10 +112,8 @@ around 'Controller' => sub {
       $config->{root_template_prefix}
     );
     
-    $c->stash->{editable} = 1; # <-- Enable template editing (if has perms)
-    my $template = $config->{root_template_prefix} . join('/',@$args);
-    return $c->template_controller->view($c, $template);
-    
+    return $c->template_dispatcher->default($c,@$args);
+
     return $self->$orig(@a);
   },$self,@a);
 };
@@ -134,17 +132,7 @@ sub viewport {
 sub content {
   my $self = shift;
   my $c = $self->c;
-  my $config = $c->config->{'Model::RapidApp'};
-  
-  $c->stash->{editable} = 1; # <-- Enable template editing (if has perms)
-  my $template = $config->{root_template};
-  
-  unless ($template) {
-    $template = 'rapidapp/default_root_template.html';
-    $c->stash->{editable} = 0;
-  }
-
-  return $c->template_controller->view($c, $template);
+  return $c->template_dispatcher->default($c);
 }
 
 

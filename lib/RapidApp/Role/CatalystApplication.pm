@@ -89,8 +89,10 @@ sub setupRapidApp {
 	$app->injectUnlessExist( 'RapidApp::View::HttpStatus', 'View::RapidApp::HttpStatus' );
 	$app->injectUnlessExist( 'RapidApp::View::OnError', 'View::RapidApp::OnError' );
   
-  # New experimental Template controller:
+  # Template Controller:
   $app->injectUnlessExist( 'RapidApp::Template::Controller', 'Controller::RapidApp::Template' );
+  $app->injectUnlessExist( 'RapidApp::Template::Controller::Dispatch', 'Controller::RapidApp::TemplateDispatch' );
+
 };
 
 sub injectUnlessExist {
@@ -297,6 +299,7 @@ sub is_ra_ajax_req {
 # New: convenience method to get the main 'Template::Controller' which
 # is being made into a core function of rapidapp:
 sub template_controller { (shift)->controller('RapidApp::Template') }
+sub template_dispatcher { (shift)->controller('RapidApp::TemplateDispatch') }
 
 my $share_dir = dir( RapidApp->share_dir );
 sub default_tt_include_path {
