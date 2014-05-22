@@ -14,6 +14,7 @@ use Path::Class qw(file dir);
 use Time::HiRes qw(tv_interval);
 use Clone qw(clone);
 use Data::Dumper::Concise;
+use URI::Escape;
 
 use RapidApp;
 use Template;
@@ -191,6 +192,44 @@ sub redispatch_public_path {
   # Now forward to the new action. If there is no action,
   # call $c->dispatch just for the sake of error handling
   return $c->action ? $c->forward( $c->action ) : $c->dispatch;
+}
+
+
+sub auto_hashnav_redirect_current {
+  my ($c, @args) = @_;
+  return $c->hashnav_redirect_current(@args) if (
+    $c->req->method eq 'GET' && ! $c->is_ra_ajax_req
+    && ! $c->req->params->{__no_hashnav_redirect} #<-- new: check for special exclude param
+  );
+}
+
+sub hashnav_redirect_current {
+  my ($c, @args) = @_;
+  # Redirects the current request back to itself as a hashnav:
+  return $c->hashnav_redirect($c->req->path,$c->req->params,@args);
+}
+
+sub hashnav_redirect {
+  my ($c, $path, $params, $base) = @_;
+
+  $path = [$path] unless (ref($path));
+
+  unless(defined $base) {
+    # Use the module_root_namespace as the base, if set:
+    my $ns = $c->config->{'Model::RapidApp'}{module_root_namespace} || '';
+    $base = $ns ne '' ? join('','/',$ns,'/') : '/';
+  }
+
+  my $url = join('/','',$base.'#!',@$path);
+  $url =~ s/\/+/\//g; #<-- strip any double //
+
+  if($params && keys %$params > 0) {
+    my $qs = join('&',map { $_ . '=' . uri_escape($params->{$_}) } keys %$params);
+    $url .= '?' . $qs;
+  }
+
+  $c->response->redirect($url);
+  return $c->detach;
 }
 
 
