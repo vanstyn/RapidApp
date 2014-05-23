@@ -67,16 +67,22 @@ sub auth_verify :Private {
 	my $self = shift;
 	my $c = shift;
   
-  if ($c->session_is_valid and $c->user_exists) {
+  if ($c->session && $c->session_is_valid and $c->user_exists) {
     $c->res->header('X-RapidApp-Authenticated' => $c->user->username);
   }
   else {
     $c->res->header('X-RapidApp-Authenticated' => 0);
-    if ( $c->stash->{requestContentType} eq 'JSON' ) {
+    if ( $c->is_ra_ajax_req ) {
+      # The false X-RapidApp-Authenticated header will automatically trigger
+      # reauth prompt by the JS client, if available
+      $c->res->header( 'Content-Type' => 'text/plain' );
       $c->res->body('not authenticated');
       return $c->detach;
     }
-    $self->render_login_page($c);
+    else {
+      # If this is a normal browser request (not Ajax) return the login page:
+      return $self->render_login_page($c);
+    }
   }
 };
 

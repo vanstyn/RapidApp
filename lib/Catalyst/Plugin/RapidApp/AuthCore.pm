@@ -152,29 +152,24 @@ after 'setup_finalize' => sub {
     my $c = $self->c;
     my $args = $c->req->arguments;
     
-    my $do_auth = 0;
-    my $browser_req = $c->req->header('X-RapidApp-RequestContentType') ? 0 : 1;
+    # Do auth_verify for auth required paths. If it fails it will detach:
+    $c->controller('Auth')->auth_verify($c) if $class->is_auth_required_path($self,@$args);
     
-    if ($c->session_is_valid and $c->user_exists) {
-      $c->delete_expired_sessions;
-      $c->res->header('X-RapidApp-Authenticated' => $c->user->username);
-    }
-    else {
-      $c->res->header('X-RapidApp-Authenticated' => 0);
-      $do_auth = 1 if (
-        # Only do auth for browser requests:
-        $browser_req &&
-        $class->_is_auth_required_path($self,@$args)
-      );
-    }
-    
-    return $do_auth ? $c->controller('Auth')->render_login_page($c) : $self->$orig(@_);
+    return $self->$orig(@_);
   });
 };
 
 
-sub _is_auth_required_path {
+sub is_auth_required_path {
   my ($c, $rootModule, @path) = @_;
+  
+  # TODO: add config opt for 'public_module_paths' and check here
+  #  OR - user can wrap this method to override a given path/request
+  #       to not require auth according to whatever rules they wish
+
+  # All RapidApp Module requests require auth, including the root 
+  # module when not deployed at /
+  return 1 if ($c->module_root_namespace ne '');
   
   # Always require auth on requests to RapidApp Modules:
   return 1 if ($path[0] && $rootModule->has_subarg($path[0]));

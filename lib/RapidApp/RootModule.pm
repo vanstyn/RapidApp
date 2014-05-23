@@ -92,6 +92,13 @@ around 'Controller' => sub {
   # want the '_around_Controller' to take priority over this code, which
   # still takes priority over the original.
   return $self->_around_Controller->(sub {
+
+    # -----------
+    # The special handling below only applies when we're deployed at the root
+    # namespace of the app. If not, skip it and return now with default handling:
+    return $self->$orig(@a) unless ($c->module_root_namespace eq '');
+    # -----------
+
     my $args = $c->req->arguments;
     my ($opt) = @$args;
     

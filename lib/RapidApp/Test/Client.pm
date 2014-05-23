@@ -14,6 +14,7 @@ use Time::HiRes qw(gettimeofday tv_interval);
 use LWP::UserAgent;
 use HTTP::Request::Common;
 use JSON qw(decode_json);
+use Try::Tiny;
 
 # shorthand aliases:
 sub lreq { (shift)->last_request }
@@ -162,8 +163,7 @@ sub describe_request {
 sub ajax_post_decode {
   my ($self, $url, $params) = @_;
   my $res = $self->post_request($url, $params, $self->ajax_request_headers);
-  my $decoded = decode_json($res->decoded_content);
-  return $decoded;
+  return try{decode_json($res->decoded_content)} || $res->decoded_content;
 }
 
 
@@ -177,8 +177,7 @@ sub ajax_get_raw {
 sub ajax_get_decode {
   my ($self, $url) = @_;
   my $content = $self->ajax_get_raw($url);
-  my $decoded = decode_json($content);
-  return $decoded;
+  return try{decode_json($content)} || $content;
 }
 
 sub browser_get_raw {

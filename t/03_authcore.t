@@ -134,6 +134,16 @@ sub users_read_allowed {
   );
 }
 
+sub users_read_path_denied {
+  my $msg = shift || "Path to DataStore read of users denied as expected";
+  my $users_read = users_store_read();
+  is(
+    $users_read,
+    'not authenticated',
+    $msg
+  );
+}
+
 sub users_read_denied {
   my $msg = shift || "DataStore read of users denied as expected";
   my $users_read = users_store_read();
@@ -206,6 +216,17 @@ sub change_full_name_allowed {
   );
 }
 
+sub change_full_name_path_denied {
+  my $full_name = shift || 'new-full_name';
+  my $msg = shift || "Path to DataStore update of user row (full_name) denied as expected";
+  my $users_update = change_full_name($full_name);
+  is(
+    $users_update,
+    'not authenticated',
+    $msg
+  );
+}
+
 sub change_full_name_denied {
   my $full_name = shift || 'new-full_name';
   my $msg = shift || "DataStore update of user row (full_name) denied as expected";
@@ -230,7 +251,7 @@ title_ok (
   "root document has expected HTML <title> (login page)"
 );
 
-users_read_denied("Users grid read denied without logging in");
+users_read_path_denied("Users grid read denied without logging in");
 
 login();
 
@@ -249,13 +270,13 @@ users_read_allowed();
 
 
 logout();
-users_read_denied("Users grid read denied after logout");
+users_read_path_denied("Users grid read denied after logout");
 
 login("Logged back in");
 users_read_allowed("Users grid read allowed again");
 
 client->cookie( undef );
-users_read_denied("Users grid read denied after clearing session cookie");
+users_read_path_denied("Users grid read denied after clearing session cookie");
 
 login("Logged back in");
 change_password('new-password');
@@ -267,10 +288,17 @@ users_read_allowed("Access/session still valid after pw change");
 
 logout();
 
-change_full_name_denied('Larry Wall');
+change_full_name_path_denied('Larry Wall');
 
 login("Logged back in");
 change_full_name_allowed('Ricky Bobby',"Row update succeeded after logging back in");
+
+
+# TODO:
+# remove the administrator role
+# call the users_read_denied() test which is not currently used after changing
+# AuthCore to be more restrictive per default.
+#  Note: users_read_path_denied() tests the non-authenticated case, not the perm denied case...
 
 
 done_testing;
