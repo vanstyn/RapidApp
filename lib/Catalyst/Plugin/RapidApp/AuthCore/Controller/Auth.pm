@@ -27,11 +27,7 @@ sub login :Local :Args(0) {
   
   $self->handle_fresh_login($c) unless ($haveSessionForUser);
   
-  my $hashpath = $c->req->params->{hashpath} || '';
-  
-  $c->response->redirect('/' . $hashpath);
-  $c->response->body(' ');
-  return $c->detach;
+  return $self->do_redirect($c);
 }
 
 sub logout :Local :Args(0) {
@@ -41,10 +37,15 @@ sub logout :Local :Args(0) {
   $c->logout;
   $c->delete_session('logout');
   
-  my $redirect = $c->req->params->{redirect} || '/';
-  $redirect = "/$redirect" unless ($redirect =~ /^\//); #<-- enforce local
-  
-  $c->response->redirect($redirect);
+  return $self->do_redirect($c);
+}
+
+sub do_redirect {
+  my ($self, $c, $href) = @_;
+  $c ||= RapidApp->active_request_context;
+  $href ||= $c->req->params->{redirect} || '/';
+  $href = "/$href" unless ($href =~ /^\//); #<-- enforce local
+  $c->response->redirect($href);
   return $c->detach;
 }
 
@@ -129,10 +130,18 @@ sub handle_fresh_login {
   # Something is broken!
   $c->_save_session_expires;
 	
-	my $hashpath = $c->req->params->{hashpath} || '';
-	$c->response->redirect('/' . $hashpath);
-	$c->response->body(' ');
-	return $c->detach;
+  # Honor/persist the client's redirect if set and not '/'. Otherwise,
+  # redirect them back to the default login page. The theory is that
+  # their redirect target should be the same thing which displayed the
+  # login form to begin with. We want to redirect them so they are still
+  # on the login form to see the login error and be able to try again, but
+  # also maintain their redirect target across multiple failed login attempts.
+  # We don't assume this is the case by default for the root '/', but
+  # we don't need to worry about preserving the client's redirect target
+  # to '/' because it is already the default redirect target after login.
+  my $t = $c->req->params->{redirect};
+  my $redirect = ($t && $t ne '/' && $t ne '') ? $t : '/auth/login';
+  return $self->do_redirect($c,$redirect);
 }
 
 

@@ -15,16 +15,23 @@
 
   <script type="text/javascript">
     Ext.onReady(function(){
-      var hiddenEl = Ext.get('hashpath');
-      // Pass the current value of the hashpath through the login:
-      var persist_hash = function() {
+      var hiddenEl = Ext.get('redirect');
+      // Pass the current window.location.href data through the login in 'target_href'
+      //  this is where the auth controller will redirect to after login:
+      var persist_redirect_target = function() {
         if(hiddenEl) {
-          hiddenEl.dom.setAttribute('value',window.location.hash);
+          // Set the redirect to the current local href *unless* 
+          // we're at the default url path '/auth/login'
+          var l = window.location;
+          hiddenEl.dom.setAttribute('value',
+            (l.pathname == '/auth/login') 
+            ? '/' : [l.pathname,l.search,l.hash].join('') 
+          );
         }
       };
       
-      persist_hash();
-      window.onhashchange = persist_hash;
+      persist_redirect_target();
+      window.onhashchange = persist_redirect_target;
       
       // Focus the username field:
       var el = Ext.get('username');
@@ -34,7 +41,7 @@
 
   <form action="[% form_post_url %]" method="post" class="nice" id="l_form">
 
-    <input type="hidden" id="hashpath" name="hashpath" value="#">
+    <input type="hidden" id="redirect" name="redirect" value="">
 
     <div class="sepH_c">
       <div class="elVal">
