@@ -1008,7 +1008,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 					hidden: this.open_record_column_hidden,
 					header: '<span ' +
 							'style="padding-left:0px;height:12px;color:#666666;" ' +
-							'class="with-icon ra-icon-magnify-tiny"' + 
+							'class="ra-nav-link with-icon ra-icon-magnify-tiny"' + 
 						'>' +
 						// using a bunch of &nbsp; instead of padding-left for IE. Idea is to push the 
 						// header text to the right far enough so it can't be seen in the column header,
@@ -1017,7 +1017,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 						'&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' +
 						'<i>Open Item Column</i></span>',
 					items: [{
-            iconCls: 'ra-icon-magnifier ra-ra-icon-actioncolumn',
+            iconCls: 'ra-nav-link ra-icon-magnifier ra-ra-icon-actioncolumn',
 						tooltip: 'Open Item',
 						handler: this.row_open_handler,
 						scope: this

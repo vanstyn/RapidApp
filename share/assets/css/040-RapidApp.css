@@ -1668,3 +1668,6 @@ a:hover, a:hover * { cursor: pointer; }
   overflow: visible;
 }
 
+/* Hide nav links when there is no nav target*/
+.ra-nav-link                  { visibility: hidden; }
+#main-load-target .ra-nav-link  { visibility: visible; }

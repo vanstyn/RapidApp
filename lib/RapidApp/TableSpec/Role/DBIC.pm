@@ -1752,7 +1752,7 @@ sub get_multi_relationship_column_cnf {
 							
 							'var href = "#loadcfg:" + Ext.urlEncode({data: Ext.encode(loadCfg)});' .
 							'disp += "&nbsp;" + Ext.ux.RapidApp.inlineLink(' .
-								'href,"<span>open</span>","ra-icon-magnify-tiny",null,"Open/view: " + loadCfg.title' .
+								'href,"<span>open</span>","ra-nav-link ra-icon-magnify-tiny",null,"Open/view: " + loadCfg.title' .
 							');' .
 						'}'
 					:
