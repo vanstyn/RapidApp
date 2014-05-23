@@ -185,6 +185,15 @@ sub is_auth_required_path {
   return 0;
 }
 
+# Updated version of original method from Catalyst::Plugin::Session::Store::DBIC -
+#  also deletes sessions with undef expires
+sub delete_expired_sessions {
+  my $c = shift;
+  $c->session_store_model->search([
+    $c->session_store_dbic_expires_field => { '<', time() },
+    $c->session_store_dbic_expires_field => undef,
+  ])->delete;
+}
 
 1;
 

@@ -36,6 +36,7 @@ sub logout :Local :Args(0) {
   
   $c->logout;
   $c->delete_session('logout');
+  $c->delete_expired_sessions;
   
   return $self->do_redirect($c);
 }
@@ -67,6 +68,8 @@ sub auth_verify :Private {
 	my $self = shift;
 	my $c = shift;
   
+  $c->delete_expired_sessions;
+  
   if ($c->session && $c->session_is_valid and $c->user_exists) {
     $c->res->header('X-RapidApp-Authenticated' => $c->user->username);
   }
@@ -92,6 +95,8 @@ sub do_login {
   my $c = shift;
 	my $user = shift;
 	my $pass = shift;
+  
+  $c->delete_expired_sessions;
   
 	if($c->authenticate({ username => $user, password => $pass })) {
     $c->session->{RapidApp_username} = $user;
