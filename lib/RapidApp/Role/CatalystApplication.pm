@@ -168,6 +168,11 @@ sub _rapidapp_top_level_dispatch {
 	}
 };
 
+sub module_root_namespace {
+  my $c = shift;
+  return $c->config->{'Model::RapidApp'}{module_root_namespace} || '';
+}
+
 # This is ugly, but seems to be the best way to re-resolve a *public* URL
 # path and dispatch it. It essentially starts over in handle_request at
 # the 'prepare_action' phase with a different request path set, leaving
@@ -218,7 +223,7 @@ sub hashnav_redirect {
 
   unless(defined $base) {
     # Use the module_root_namespace as the base, if set:
-    my $ns = $c->config->{'Model::RapidApp'}{module_root_namespace} || '';
+    my $ns = $c->module_root_namespace;
     $base = $ns ne '' ? join('','/',$ns,'/') : '/';
   }
 

@@ -23,16 +23,10 @@ use Term::ANSIColor qw(:constants);
 
 our $VERSION = '0.1';
 
-# This is the root path where the root module is actually deployed:
-has 'module_root_namespace', is => 'ro', lazy => 1, default => sub {
-  my $self = shift;
-  return $self->app->config->{'Model::RapidApp'}{module_root_namespace} || '';
-}, isa => 'Str';
-
 has 'base_url' => ( 
 	is => 'rw', lazy => 1, default => sub { 
 		my $self = shift;
-		my $ns = $self->module_root_namespace;
+		my $ns = $self->app->module_root_namespace;
     $ns = $ns eq '' ? $ns : '/' . $ns;
 		my $parentUrl= defined $self->parent_module? $self->parent_module->base_url.'/' : $ns;
 		return $parentUrl . $self->{module_name};

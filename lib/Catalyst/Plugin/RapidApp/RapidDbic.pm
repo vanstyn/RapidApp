@@ -82,6 +82,10 @@ before 'setup_component' => sub {
   my $exclude_sources = try{$config->{configs}{$model_name}{exclude_sources}} || [];
   my %excl_sources = map { $_ => 1 } @$exclude_sources;
   
+  # Base RapidApp module path:
+  my $mod_path = join('/','',$c->module_root_namespace,'main');
+  $mod_path =~ s/\/+/\//g; #<-- strip double //
+  
   for my $class (keys %{$schema_class->class_mappings}) {
     my $source_name = $schema_class->class_mappings->{$class};
     
@@ -103,12 +107,13 @@ before 'setup_component' => sub {
     # the open url configs so that cross table links are able to work. this is 
     # just a stop-gap until this functionality is factored into the RapidApp API 
     # officially, somehow...
+    
     my $module_name = lc($model_name . '_' . $class->table);
-    my $grid_url = '/main/' . $config->{dbic_tree_module_name} . '/' . $module_name;
+    my $grid_url = join('/',$mod_path,$config->{dbic_tree_module_name},$module_name);
     $class->TableSpec_set_conf(
       priority_rel_columns => 1,
       open_url_multi => $grid_url,
-      open_url => $grid_url."/item",
+      open_url => join('/',$grid_url,"item"),
     );
     # ----
     

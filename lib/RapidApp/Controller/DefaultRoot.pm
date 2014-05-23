@@ -64,7 +64,7 @@ before 'COMPONENT' => sub {
   my $class = shift;
   my $app_class = ref $_[0] || $_[0];
   
-  my $ns = $app_class->config->{'Model::RapidApp'}{module_root_namespace} || '';
+  my $ns = $app_class->module_root_namespace;
   $class->config( namespace => $ns );
 };
 

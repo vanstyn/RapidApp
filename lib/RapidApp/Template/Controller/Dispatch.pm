@@ -24,10 +24,8 @@ before 'COMPONENT' => sub {
   
   # Claim the root namespace if the root module controller has 
   # been setup at a different namespace
-  $class->config( namespace => '' ) if (
-    $cnf->{module_root_namespace} &&
-    $cnf->{module_root_namespace} ne ''
-  );
+  my $ns = $app_class->module_root_namespace;
+  $class->config( namespace => '' ) if ($ns && $ns ne '');
 
   $class->config( 
     root_template        => $cnf->{root_template} || 'rapidapp/default_root_template.html',
