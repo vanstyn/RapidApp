@@ -783,3 +783,42 @@ Ext.ux.RapidApp.newConn = function(config) {
 /* -------------------------------------------------------------------------------------
 /* ------------------------------------------------------------------------------------- */
 
+
+/* This is an experimental function to dynamically scan and convert html
+   elements into AutoPanels based on a special css selector class name
+   and attemping to decode the elements innerHTML as a JSON object to
+   use as 'autoLoad' for the AutoPanel. The function is working as designed
+   and expected, however it is not used anyplace yet, and may prove to
+   not be useful and be removed later. The original thought was to use
+   within normal HTML content, however, without the correct CSS, ExtJS
+   panels/grids don't render correctly, so those cases are now being pursued
+   using iFrames. However, I'm not deleting this yet because it may be
+   helpful later on...                                                        */
+Ext.ux.RapidApp.loadAsyncAutoPanels = function(Element) {
+  Element = Element || Ext.getBody();
+  var nodes = Element.query('.ra-async-autopanel');
+  
+  Ext.each(nodes,function(dom,index){
+    var el = new Ext.Element(dom);
+    if(el.hasClass('ra-async-autopanel-loaded')) {
+      return;
+    }
+    try {
+      decoded = Ext.decode(el.dom.innerHTML);
+      if(decoded && decoded.url) {
+        el.dom.innerHTML = '';
+        var Cmp = Ext.create({
+          xtype: 'autopanel',
+          autoLoad: decoded,
+          renderTo: el
+        });
+      }
+    }
+    catch(err) {
+      // If the innerHTML was not valid JSON, we will get here.
+      // do nothing - ignore the element
+    };
+    el.addClass('ra-async-autopanel-loaded');
+  });
+}
+
