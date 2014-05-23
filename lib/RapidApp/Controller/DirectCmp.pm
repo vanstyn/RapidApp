@@ -28,11 +28,24 @@ sub direct :Local {
 }
 
 sub navable :Local {
-  ...
+  my ($self, $c, @args) = @_;
   
-  # TODO: the idea here is that the module will be wrapped in a navable
-  # parent, such as an AppTab which can handle hashnav events
+  # Return a one-off AppTab with a tab pointing to the supplied module 
+  # url/path. This will allow any hashnav links inside the module's
+  # content to function as expected, loading as additional tabs
+  $c->stash->{panel_cfg} = {
+    xtype => 'apptabpanel',
+    id => 'main-load-target',
+    initLoadTabs => [{
+      closable => \0,
+      autoLoad => {
+        url => join('/','',@args),
+        params => $c->req->params
+      }
+    }]
+  };
   
+  return $c->detach( $c->view('RapidApp::Viewport') );
 }
 
 

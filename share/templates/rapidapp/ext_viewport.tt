@@ -9,13 +9,11 @@
 <script type="text/javascript">
 
   Ext.onReady(function(){
-    var config_url = '[% config_url %]';
-    var config_params = [% IF config_params %] [% config_params %] [% ELSE %] {} [% END %] ;
-
-    Ext.ux.RapidApp.MainViewportInit({
-      config_url: config_url,
-      config_params: config_params
-    });
+    var opt = {};
+    opt.config_url = [% IF config_url %] '[% config_url %]' [% ELSE %] '' [% END %] ;
+    opt.config_params = [% IF config_params %] [% config_params %] [% ELSE %] {} [% END %] ;
+    opt.panel_cfg = [% IF panel_cfg %] [% panel_cfg %] [% ELSE %] null [% END %] ;
+    Ext.ux.RapidApp.MainViewportInit(opt);
   });
 
 </script>

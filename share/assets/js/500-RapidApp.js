@@ -4833,26 +4833,21 @@ Ext.ux.RapidApp.renderBase64 = function(str) {
 Ext.ux.RapidApp.MainViewportInit = function(opt) {
   Ext.ux.RapidApp.HistoryInit();
 
-  // This is the default currently, which we're listing here for referece:
-  // opt = opt || { config_url: '/main', config_params: {} };
-  
+  var panel_cfg = opt.panel_cfg || {
+    xtype: 'autopanel',
+    layout: 'fit',
+    autoLoad: {
+      url: opt.config_url,
+      params: opt.config_params
+    }
+  };
+
+  panel_cfg.id = panel_cfg.id || 'maincontainer';
+
   new Ext.Viewport({
     plugins: ['ra-link-click-catcher'],
     layout : 'fit',
     hideBorders : true,
-    items : {
-      xtype: 'autopanel',
-      layout: 'fit',
-      id: 'maincontainer',
-      autoLoad: {
-        url: opt.config_url,
-        params: opt.config_params
-      }
-      //,onAutoLoadFailure: function(el,response) {
-      //  
-      //
-      //}
-    }
+    items : panel_cfg
   });
-  
 }

@@ -70,9 +70,16 @@ sub process {
   $c->stash->{precache_imgs} ||= [];
   @{$c->stash->{precache_imgs}} = uniq(@{$c->stash->{precache_imgs}},@img);
   
+  die "ERROR: stash params 'config_url' and 'panel_cfg' cannot be used together"
+    if($c->stash->{config_url} && $c->stash->{panel_cfg});
+
   # make sure config_params is a string of JSON
   if (ref $c->stash->{config_params}) {
     $c->stash->{config_params}= RapidApp::JSON::MixedEncoder::encode_json($c->stash->{config_params});
+  }
+
+  if (ref $c->stash->{panel_cfg}) {
+    $c->stash->{panel_cfg}= RapidApp::JSON::MixedEncoder::encode_json($c->stash->{panel_cfg});
   }
 
   return $self->next::method($c);
