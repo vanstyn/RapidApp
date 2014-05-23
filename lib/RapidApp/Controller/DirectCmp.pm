@@ -4,10 +4,7 @@ use strict;
 use warnings;
 
 use Moose;
-BEGIN { 
-  extends 'Catalyst::Controller', 'RapidApp::ModuleDispatcher'; 
-  with 'RapidApp::Role::AuthController';
-}
+BEGIN { extends 'Catalyst::Controller'; }
 use namespace::autoclean;
 
 use RapidApp::Include qw(sugar perlutil);

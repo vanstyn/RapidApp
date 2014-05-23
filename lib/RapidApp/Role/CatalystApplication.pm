@@ -95,7 +95,7 @@ sub setupRapidApp {
   $app->injectUnlessExist( 'RapidApp::Template::Controller::Dispatch', 'Controller::RapidApp::TemplateDispatch' );
 
   # New "DirectCmp" controller:
-  $app->injectUnlessExist( 'RapidApp::Controller::DirectCmp', 'Controller::RapidApp::Direct' );
+  $app->injectUnlessExist( 'RapidApp::Controller::DirectCmp', 'Controller::RapidApp::Module' );
 };
 
 sub injectUnlessExist {
