@@ -1,0 +1,56 @@
+package [% name %];
+use Moose;
+use namespace::autoclean;
+
+use RapidApp [% ra_ver %];
+
+use Catalyst qw/[%- FOREACH plugin IN plugins %]
+    [% plugin %]
+[%- END %]
+/;
+
+extends 'Catalyst';
+
+our $VERSION = '0.01';
+
+__PACKAGE__->config(
+    name => '[% name %]',
+
+[% FOREACH cnf_section IN configs %]
+[%- cnf_section %]
+[% END -%]
+);
+
+# Start the application
+__PACKAGE__->setup();
+
+1;
+
+__END__
+
+=head1 NAME
+
+[% name %] - Catalyst/RapidApp based application
+
+=head1 SYNOPSIS
+
+    script/[% appprefix %]_server.pl
+
+=head1 DESCRIPTION
+
+[enter your description here]
+
+=head1 SEE ALSO
+
+L<RapidApp>, L<Catalyst>
+
+=head1 AUTHOR
+
+[% author %]
+
+=head1 LICENSE
+
+This library is free software. You can redistribute it and/or modify
+it under the same terms as Perl itself.
+
+=cut
