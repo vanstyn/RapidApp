@@ -24,6 +24,7 @@ RapidApp::Helper - Bootstrap a RapidApp/Catalyst application
 
 use RapidApp;
 use Path::Class qw/dir file/;
+use List::MoreUtils qw(uniq);
 
 # Override these functions to do nothing, because they create files we don't want:
 sub _mk_images    { 1 }
@@ -88,6 +89,10 @@ sub _mk_dirs {
 ### RapidApp-specific methods follow: ###
 #########################################
 
+# extra_args is received by rapidapp.pl and is meant to be available to
+# helper traits which support additional options
+has 'extra_args', is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]};
+
 # Create extra, RapidApp-specific dirs:
 sub _ra_mk_dirs {
   my $self = shift;
@@ -135,14 +140,14 @@ sub _ra_appclass_tt_vars {
   return {
     %{$self},
     ra_ver  => $RapidApp::VERSION,
-    plugins => $self->_ra_catalyst_plugins,
-    configs => $self->_ra_catalyst_configs
+    plugins => [ uniq($self->_ra_catalyst_plugins) ],
+    configs => [ $self->_ra_catalyst_configs ]
   };
 }
 
 sub _ra_catalyst_plugins {
   my $self = shift;
-  return [qw(-Debug RapidApp)],
+  return qw(-Debug RapidApp);
 }
 
 # Should be an arrayref of strings containing key/vals
@@ -150,7 +155,7 @@ sub _ra_catalyst_plugins {
 # TODO: serialize real hahsrefs/structures...
 sub _ra_catalyst_configs {
   my $self = shift;
-  return [(
+  return (
 <<END,
     'Controller::RapidApp::Template' => {
       default_template_extension => 'html',
@@ -184,7 +189,7 @@ END
       #root_template         => 'site/public/page/home',
     },
 END
-  )];
+  );
 }
 
 

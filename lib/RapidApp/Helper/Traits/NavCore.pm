@@ -11,20 +11,20 @@ requires '_ra_catalyst_configs';
 around _ra_catalyst_plugins => sub {
   my ($orig,$self,@args) = @_;
   
-  my $list = $self->$orig(@args);
+  my @list = $self->$orig(@args);
   
-  return [ grep { 
+  return grep { 
     $_ ne 'RapidApp' #<-- Base plugin redundant
-  } @$list, 'RapidApp::NavCore' ];
+  } @list, 'RapidApp::NavCore';
 };
 
 around _ra_catalyst_configs => sub {
   my ($orig,$self,@args) = @_;
   
-  my $list = $self->$orig(@args);
+  my @list = $self->$orig(@args);
   
   # Make the TabGui config come first:
-  return [( @$list,
+  return ( @list,
 <<END,
     # The NavCore plugin automatically configures saved searches/views for
     # RapidDbic sources. When used with AuthCore, each user has their own saved
@@ -33,7 +33,7 @@ around _ra_catalyst_configs => sub {
       # 
     },
 END
-  )];
+  );
 
 };
 
