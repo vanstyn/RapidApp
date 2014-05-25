@@ -4,8 +4,6 @@ use Moose::Role;
 use strict;
 use warnings;
 
-use RapidApp::Helper::Model::DBIC::Schema;
-
 use Catalyst::ScriptRunner;
 use Path::Class qw/file dir/;
 use FindBin;
