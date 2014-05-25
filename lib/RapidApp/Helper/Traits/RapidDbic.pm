@@ -191,6 +191,7 @@ around _ra_catalyst_configs => sub {
       configs => {
         '$model' => {
           grid_params => {
+            # The special '*defaults' key applies to all sources at once
             '*defaults' => {
               # uncomment these lines to turn on editing in all grids
               #updatable_colspec   => ['*'],
