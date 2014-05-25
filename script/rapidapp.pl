@@ -11,25 +11,41 @@ my $help     = 0;
 my $makefile = 0;
 my $scripts  = 0;
 
+my $helpers;
+
 GetOptions(
     'help|?'      => \$help,
     'force|nonew' => \$force,
     'makefile'    => \$makefile,
     'scripts'     => \$scripts,
+    'helpers=s'   => \$helpers
 );
 
-pod2usage(1) if ( $help || !$ARGV[0] );
+my $name = shift @ARGV;
+my @extra_args = @ARGV;
 
-my $helper = RapidApp::Helper->new(
-    {
-        '.newfiles' => !$force,
-        'makefile'  => $makefile,
-        'scripts'   => $scripts,
-        name => $ARGV[0],
-    }
-);
+pod2usage(1) if ( $help || !$name );
+
+my @default_traits = ('TabGui');
+
+sub _traits_list {
+  # Get the traits as a CSV list:
+  my @list = $helpers ? split(/\,/,$helpers) : @default_traits;
+  return map {
+    $_ =~ s/^\+// ? $_ : "RapidApp::Helper::Traits::$_";
+  } @list;
+}
+
+my $helper = RapidApp::Helper->new_with_traits({
+    '.newfiles' => !$force,
+    'makefile'  => $makefile,
+    'scripts'   => $scripts,
+    'traits'    => [&_traits_list],
+    name        => $name,
+    extra_args  => \@extra_args
+});
 # Pass $ARGV[0] for compatibility with old ::Devel
-pod2usage(1) unless $helper->mk_app( $ARGV[0] );
+pod2usage(1) unless $helper->mk_app( $name );
 
 1;
 
@@ -41,7 +57,7 @@ rapidapp.pl - Bootstrap a RapidApp/Catalyst application
 
 =head1 SYNOPSIS
 
-rapidapp.pl [options] application-name
+rapidapp.pl [options] application-name [--] [extra options]
 
 'rapidapp.pl' creates a skeleton for a new application, and allows you to
 upgrade the skeleton of your old application.
@@ -52,6 +68,13 @@ upgrade the skeleton of your old application.
    -makefile   only update Makefile.PL
    -scripts    only update helper scripts
 
+  --helpers   comma-separated list of helper traits (RapidApp::Helper::Traits::*)
+
+ Extra Options:
+    When supplying --helpers, extra args can be supplied following -- after the
+    application-name. These additional arguments will be processed by helpers
+    which accept options.
+
  application-name must be a valid Perl module name and can include "::", 
  which will be converted to '-' in the project name.
 
@@ -59,6 +82,7 @@ upgrade the skeleton of your old application.
  Examples:
     rapidapp.pl My::App
     rapidapp.pl MyApp
+    rapidapp.pl --helpers TabGui,AuthCore,NavCore MyApp
 
 =head1 DESCRIPTION
 

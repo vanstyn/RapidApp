@@ -3,8 +3,11 @@ package RapidApp::Helper;
 use strict;
 use warnings;
 
+require MooseX::Traits;
+
 use Moose;
 extends 'Catalyst::Helper';
+with 'MooseX::Traits';
 
 # Preliminary helper script for bootstrapping new Catalyst+RapidApp
 # applications... API not yet finalized...
@@ -132,9 +135,14 @@ sub _ra_appclass_tt_vars {
   return {
     %{$self},
     ra_ver  => $RapidApp::VERSION,
-    plugins => [qw(-Debug RapidApp::TabGui)],
+    plugins => $self->_ra_catalyst_plugins,
     configs => $self->_ra_catalyst_configs
   };
+}
+
+sub _ra_catalyst_plugins {
+  my $self = shift;
+  return [qw(-Debug RapidApp)],
 }
 
 # Should be an arrayref of strings containing key/vals
@@ -143,19 +151,6 @@ sub _ra_appclass_tt_vars {
 sub _ra_catalyst_configs {
   my $self = shift;
   return [(
-<<END,
-    # The TabGui plugin mounts the standard ExtJS explorer interface as the 
-    # RapidApp root module (which is at the root '/' of the app by default)
-    'Plugin::RapidApp::TabGui' => {
-      title => "$self->{name} v\$VERSION",
-      nav_title => 'Administration',
-      # Templates with the *.md extension render as simple Markdown:
-      dashboard_url => '/tple/site/dashboard.md',
-      # Make all templates in site/ (root/templates/site/) browsable in nav tree:
-      template_navtree_regex => '^site\/'
-    },
-END
-,
 <<END,
     'Controller::RapidApp::Template' => {
       default_template_extension => 'html',
