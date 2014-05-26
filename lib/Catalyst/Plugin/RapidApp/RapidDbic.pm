@@ -12,11 +12,9 @@ require Catalyst::Utils;
 before 'setup_components' => sub {
   my $c = shift;
   
-  my $config = $c->config->{'Plugin::RapidApp::RapidDbic'} or die
-    "No 'Plugin::RapidApp::RapidDbic' config specified!";
-  
-  die "Plugin::RapidApp::RapidDbic: No dbic_models specified!"
-    unless ($config->{dbic_models});
+  $c->config->{'Plugin::RapidApp::RapidDbic'} ||= {};
+  my $config = $c->config->{'Plugin::RapidApp::RapidDbic'};
+  $config->{dbic_models} ||= [];
   
   $config->{dbic_tree_module_name} = 'db';
   $config->{table_class} ||= 'Catalyst::Plugin::RapidApp::RapidDbic::TableBase';
@@ -42,24 +40,49 @@ before 'setup_components' => sub {
   };
 };
 
+# Validate we got a valid RapidDbic config by the end of setup_components or die:
+after 'setup_components' => sub {
+  my $c = shift;
+  
+  my $cfg = $c->config->{'Plugin::RapidApp::RapidDbic'};
+  die "No 'Plugin::RapidApp::RapidDbic' config specified!" unless (
+    $cfg && ref($cfg) eq 'HASH' && scalar(keys %$cfg) > 0
+  );
+  
+  my $mdls = $cfg->{dbic_models};
+  die "Plugin::RapidApp::RapidDbic: No dbic_models specified!" unless (
+    $mdls && ref($mdls) eq 'ARRAY' && scalar(@$mdls) > 0
+  );
+};
 
 before 'setup_component' => sub {
   my( $c, $component ) = @_;
   
-  my $config = $c->config->{'Plugin::RapidApp::RapidDbic'} or die
-    "No 'Plugin::RapidApp::RapidDbic' config specified!";
-  
-  die "Plugin::RapidApp::RapidDbic: No dbic_models specified!"
-    unless ($config->{dbic_models});
-  
   my $appclass = ref($c) || $c;
+  my $config = $c->config->{'Plugin::RapidApp::RapidDbic'};
+  
+  # -- New: read in optional RapidDbic config from the model itself:
+  my $local_cnf = try{$component->config->{RapidDbic}};
+  if($local_cnf) {
+    my ($junk,$name) = split(join('::',$appclass,'Model',''),$component,2);
+    if($name) {
+      $config->{dbic_models} ||= [];
+      push @{$config->{dbic_models}}, $name unless (
+        List::Util::first {$_ eq $name} @{$config->{dbic_models}}
+      );
+      # a config for this model specified in the main app config still takes priority:
+      $config->{configs}{$name} ||= $local_cnf;
+    }
+  }
+  $local_cnf ||= {};
+  # --
+  
   my %active_models = ();
   foreach my $model (@{$config->{dbic_models}}) {
     my ($schema,$result) = split(/\:\:/,$model,2);
     $active_models{$appclass."::Model::".$schema}++;
   }
   return unless ($active_models{$component});
-  
   
   # this doesn't seem to work, and why is it here?
   #my $suffix = Catalyst::Utils::class2classsuffix( $component );
@@ -137,8 +160,8 @@ before 'setup_component' => sub {
     # For single-relationship columns (belongs_to) we want to hide
     # the underlying fk_column because the relationship column name
     # handles setting it for us. In typical RapidApps this is done manually,
-    # currently...
-    if($config->{hide_fk_columns}) {
+    # currently... Check for the config option globally or individually:
+    if($local_cnf->{hide_fk_columns} || $config->{hide_fk_columns}) {
       for my $rel ( $class->relationships ) {
         my $rel_info = $class->relationship_info($rel);
         next unless ($rel_info->{attrs}->{accessor} eq 'single');
