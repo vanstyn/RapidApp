@@ -7,6 +7,7 @@ with 'Catalyst::Plugin::RapidApp::TabGui';
 use RapidApp::Include qw(sugar perlutil);
 require Module::Runtime;
 require Catalyst::Utils;
+use List::Util;
 
 
 before 'setup_components' => sub {
@@ -52,6 +53,12 @@ after 'setup_components' => sub {
   my $mdls = $cfg->{dbic_models};
   die "Plugin::RapidApp::RapidDbic: No dbic_models specified!" unless (
     $mdls && ref($mdls) eq 'ARRAY' && scalar(@$mdls) > 0
+  );
+
+  # Quick hack: move RapidApp::CoreSchema to the end of the list, if present
+  # (this was needed after adding the local model config feature)
+  @$mdls = ((grep { $_ ne 'RapidApp::CoreSchema' } @$mdls), 'RapidApp::CoreSchema') if (
+    List::Util::first { $_ eq 'RapidApp::CoreSchema' } @$mdls
   );
 };
 
