@@ -4,6 +4,8 @@ use Moose::Role;
 use strict;
 use warnings;
 
+use Catalyst::Helper::Model::DBIC::Schema::ForRapidDbic;
+
 use Catalyst::ScriptRunner;
 use Path::Class qw/file dir/;
 use FindBin;
@@ -102,18 +104,19 @@ sub _ra_rapiddbic_generate_model {
     my $sqlt = file($home,$sqlt_orig->basename);
     
     if (-f $sqlt) {
-      # TODO: support the regenerate/rescan case...
+      # TODO: support the regenerate/rescan and/or -force cases...
       die "RapidDbic: error - will not overwrite existing file '$sqlt'\n" ;
       #print " exists \"$sqlt\"\n";
     }
     else {
       print "Copying \"$sqlt_orig\" to \"$sqlt\"\n";
       $sqlt_orig->copy_to( $sqlt );
+      die "RapidDbic: unexpected error copying '$sqlt_orig' to '$sqlt'" unless (-f $sqlt);
     }
-    
-    die "RapidDbic: unexpected error copying '$sqlt_orig' to '$sqlt'" unless (-f $sqlt);
-      
-    # TODO: add robust support for a relative path (needed for the *generated* connect_info)
+
+    # We are using the current, *absolute* path to the db file here on purpose. This 
+    # will be dynamically converted to be a *runtime* relative path in the actual
+    # model class which is created by our DBIC::Schema::ForRapidDbic model helper:
     @connect_info = ( join(':','dbi','SQLite',$sqlt->absolute->resolve->stringify) );
   }
   
@@ -150,8 +153,8 @@ sub _ra_rapiddbic_generate_model {
   @loader_opts = ('create=static', grep { $_ ne 'create=static' } @loader_opts);
 
   my @args = (
-    model          => $opts->{'model-name'},
-    'DBIC::Schema' => $opts->{'schema-class'},
+    'model'                      => $opts->{'model-name'},
+    'DBIC::Schema::ForRapidDbic' => $opts->{'schema-class'},
     @loader_opts, @connect_info, @connect_opts
   );
   
@@ -161,7 +164,7 @@ sub _ra_rapiddbic_generate_model {
       'Generating DBIC schema/model using create script argument list:',
       "  -------------------------------",
       "  model $opts->{'model-name'}",
-      "  DBIC::Schema $opts->{'schema-class'}",
+      "  DBIC::Schema::ForRapidDbic $opts->{'schema-class'}",
       (map { "     $_" } @loader_opts), 
       "  " . join(' ',@connect_info),
       (map { "     $_" } @connect_opts),

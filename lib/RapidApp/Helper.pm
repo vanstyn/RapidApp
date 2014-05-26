@@ -30,6 +30,7 @@ use List::MoreUtils qw(uniq);
 sub _mk_images    { 1 }
 sub _mk_favicon   { 1 }
 sub _mk_rootclass { 1 }
+sub _mk_config    { 1 } #<-- since we don't setup ConfigLoader
 
 # Replace _mk_appclass to call the RapidApp version which is totally
 # different from the default:
