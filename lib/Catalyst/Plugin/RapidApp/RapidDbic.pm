@@ -57,9 +57,9 @@ after 'setup_components' => sub {
 
   # Quick hack: move RapidApp::CoreSchema to the end of the list, if present
   # (this was needed after adding the local model config feature)
-  @$mdls = ((grep { $_ ne 'RapidApp::CoreSchema' } @$mdls), 'RapidApp::CoreSchema') if (
-    List::Util::first { $_ eq 'RapidApp::CoreSchema' } @$mdls
-  );
+  #@$mdls = ((grep { $_ ne 'RapidApp::CoreSchema' } @$mdls), 'RapidApp::CoreSchema') if (
+  #  List::Util::first { $_ eq 'RapidApp::CoreSchema' } @$mdls
+  #);
 };
 
 before 'setup_component' => sub {
