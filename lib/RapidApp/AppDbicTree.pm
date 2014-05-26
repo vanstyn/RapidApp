@@ -29,11 +29,16 @@ has 'dbic_model_tree', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, defaul
       "for RapidApp to function correctly." unless $Model->connect_info->{quote_names};
   }
   
-  # strip excludes:
+  # strip excludes/limits:
   for my $itm (@$list) {
-    my $exclude_sources = try{$self->configs->{$itm->{model}}{exclude_sources}} || [];
+    my $mdl_cfg = $self->configs->{$itm->{model}} || {};
+    my $exclude_sources = $mdl_cfg->{exclude_sources} || [];
     my %excl_sources = map { $_ => 1 } @$exclude_sources;
     @{$itm->{sources}} = grep { ! $excl_sources{$_} } @{$itm->{sources}};
+    my $lim = $mdl_cfg->{limit_sources} ? {map{$_=>1} @{$mdl_cfg->{limit_sources}}} : undef;
+    if($lim) {
+      @{$itm->{sources}} = grep { $lim->{$_} } @{$itm->{sources}};
+    }
   }
   
   return $list;

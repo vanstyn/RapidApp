@@ -7,7 +7,8 @@ with 'Catalyst::Plugin::RapidApp::CoreSchema';
 use RapidApp::Include qw(sugar perlutil);
 use CatalystX::InjectComponent;
 
-after 'setup_components' => sub {
+after 'setup_components' => sub { (shift)->_navcore_inject_controller(@_) };
+sub _navcore_inject_controller {
   my $c = shift;
   
   CatalystX::InjectComponent->inject(

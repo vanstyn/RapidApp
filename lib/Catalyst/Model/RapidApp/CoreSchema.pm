@@ -64,9 +64,6 @@ before 'COMPONENT' => sub {
     # Allow user-defined config overrides:
     %$cust_cnf
   );
-  
-  scream($class->config);
-  
 };
 
 sub BUILD {

@@ -79,6 +79,7 @@ before 'setup_component' => sub {
       );
       # a config for this model specified in the main app config still takes priority:
       $config->{configs}{$name} ||= $local_cnf;
+      $local_cnf = $config->{configs}{$name};
     }
   }
   $local_cnf ||= {};
@@ -109,7 +110,8 @@ before 'setup_component' => sub {
   my ($model_name) = reverse split(/\:\:/,$component); #<-- educated guess, see temp/hack below
   Module::Runtime::require_module($schema_class);
   
-  my $exclude_sources = try{$config->{configs}{$model_name}{exclude_sources}} || [];
+  my $lim_sources = $local_cnf->{limit_sources} ? {map{$_=>1} @{$local_cnf->{limit_sources}}} : undef;
+  my $exclude_sources = $local_cnf->{exclude_sources} || [];
   my %excl_sources = map { $_ => 1 } @$exclude_sources;
   
   # Base RapidApp module path:
@@ -119,6 +121,7 @@ before 'setup_component' => sub {
   for my $class (keys %{$schema_class->class_mappings}) {
     my $source_name = $schema_class->class_mappings->{$class};
     
+    next if ($lim_sources && ! $lim_sources->{$source_name});
     next if ($excl_sources{$source_name});
     
     my $virtual_columns = try{$config->{configs}{$model_name}{virtual_columns}{$source_name}};
