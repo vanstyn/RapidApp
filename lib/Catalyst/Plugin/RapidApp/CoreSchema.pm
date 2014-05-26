@@ -17,7 +17,8 @@ with 'Catalyst::Plugin::RapidApp';
 use RapidApp::Include qw(sugar perlutil);
 use CatalystX::InjectComponent;
 
-after 'setup_components' => sub {
+# setupRapidApp is the main function which injects components
+after 'setupRapidApp' => sub {
   my $c = shift;
   CatalystX::InjectComponent->inject(
     into => $c,
