@@ -1,5 +1,41 @@
 Revision history for RapidApp
 
+0.99300 2014-05-26
+    - rapidapp.pl script now available using 'RapidApp::Helper' and friends
+    - RapidDbic config can now be read from model config (from config key 
+      'RapidDbic')
+    - Lots of improvements to CoreSchema + plugins
+    - CoreSchemaAdmin plugin now only sets up grids for CoreSchema sources actually 
+      in use (unless new option 'all_sources' is supplied)
+    - Improvements to RapidApp::View - now supports 'panel_cfg' option
+    - Lots of improvements to AuthCore - more restrictive defaults + generalized 
+      redirect logic
+    - Fixed delete_expired_sessions AuthCore bug
+    - Added 'DirectCmp' controller allowing direct module dispatch via special
+      paths '/rapidapp/module/direct/...' and '/rapidapp/module/navable/...'
+      which are useful for loading in iframes
+    - Public core/template dispatch in its own controller
+    - New 'module_root_namespace' option allows mounting the root module in
+      a path other than the main app root /
+    - Fixed issue in tree scrolling in TabGui (although not yet perfect)
+    - Many improvements/customizations to dispatch/exception handling
+    - Improvements to AutoPanel JS - now used for the main/first ajax loading
+    - Added new TabGui cnf options 'nav_title_iconcls' & 'navtree_init_width'
+    - Module loading and app start time now logged/displayed
+    - Misc performance improvements (faster startup)
+    - Removed NYTProf profiling classes from core
+    - Requires new module versions, fixing a number of bugs:
+        Catalyst::Controller::AutoAssets 0.27
+        Catalyst 5.90064
+        DBD::SQLite 1.42
+    - Lots of misc bug fixes
+    - Logging now utilizes/expects the upcoming Catalyst::Log 'autoflush'
+      feature (should be relased in Catalyst 5.90065). Prior to this feature,
+      nothing breaks, but the startup log messages will not display until
+      the startup sequence completes (only applies to dev/debug mode)
+    - Removed the 'disable_tabgui' option added in prev version (supplanted
+      by new 'module_root_namespace' option)
+
 0.99203 2014-05-04
     - Added new 'disable_tabgui' config/session option
 
