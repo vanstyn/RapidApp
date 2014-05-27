@@ -13,7 +13,7 @@ use Catalyst::Utils;
 use Path::Class qw(file dir);
 use Time::HiRes qw(tv_interval);
 use Clone qw(clone);
-use Data::Dumper::Concise;
+require Data::Dumper::Concise;
 use URI::Escape;
 
 use RapidApp;
@@ -251,7 +251,7 @@ around 'finalize_error' => sub {
       $error .= join("\n",
         "\n\n",
         "RapidApp v$RapidApp::VERSION\n",
-        map { Dumper($_) } $c->dump_these
+        map { Data::Dumper::Concise::Dumper($_) } $c->dump_these
       );
     };
     $c->res->body($error);

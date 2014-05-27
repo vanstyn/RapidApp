@@ -20,11 +20,10 @@ use CatalystX::InjectComponent;
 # setupRapidApp is the main function which injects components
 after 'setupRapidApp' => sub {
   my $c = shift;
-  CatalystX::InjectComponent->inject(
-    into => $c,
-    component => 'Catalyst::Model::RapidApp::CoreSchema',
-    as => 'Model::RapidApp::CoreSchema'
-  ) unless ($c->model('RapidApp::CoreSchema'));
+  $c->injectUnlessExist(
+    'Catalyst::Model::RapidApp::CoreSchema',
+    'Model::RapidApp::CoreSchema'
+  );
 };
 
 1;
