@@ -57,10 +57,10 @@ rapidapp.pl - Bootstrap a RapidApp/Catalyst application
 
 =head1 SYNOPSIS
 
-rapidapp.pl [options] application-name [--] [extra options]
+ rapidapp.pl [options] application-name [--] [extra options]
 
-'rapidapp.pl' creates a skeleton for a new application, and allows you to
-upgrade the skeleton of your old application.
+ 'rapidapp.pl' creates a skeleton for a new application, and allows you to
+ upgrade the skeleton of your old application.
 
  Options:
    -force      don't create a .new file where a file to be created exists

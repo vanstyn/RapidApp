@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+0.99302 2014-05-27
+    - Fixed typo in dist.ini preventing proper script install
+
 0.99301 2014-05-26
     - Added back $VERSION accidently removed from 2 classes which prevented proper
       PAUSE/CPAN indexing for v0.99301
