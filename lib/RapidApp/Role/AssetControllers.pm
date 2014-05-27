@@ -1,5 +1,11 @@
 package RapidApp::Role::AssetControllers;
 
+use strict;
+use warnings;
+
+# This class must declare the version because we declared it before (and PAUSE knows)
+our $VERSION = '0.99301';
+
 use Moose::Role;
 use namespace::autoclean;
 

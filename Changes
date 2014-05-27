@@ -1,5 +1,9 @@
 Revision history for RapidApp
 
+0.99301 2014-05-26
+    - Added back $VERSION accidently removed from 2 classes which prevented proper
+      PAUSE/CPAN indexing for v0.99301
+
 0.99300 2014-05-26
     - rapidapp.pl script now available using 'RapidApp::Helper' and friends
     - RapidDbic config can now be read from model config (from config key 

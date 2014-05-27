@@ -1,5 +1,11 @@
 package RapidApp::TableSpec::Column;
+
 use strict;
+use warnings;
+
+# This class must declare the version because we declared it before (and PAUSE knows)
+our $VERSION = '0.99301';
+
 use Moose;
 
 use RapidApp::Include qw(sugar perlutil);
