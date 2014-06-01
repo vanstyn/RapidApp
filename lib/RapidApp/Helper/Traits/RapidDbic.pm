@@ -174,42 +174,46 @@ sub _ra_rapiddbic_generate_model {
   }
 }
 
-around _ra_catalyst_configs => sub {
-  my ($orig,$self,@args) = @_;
-  
-  my $model = $self->_ra_rapiddbic_opts->{'model-name'};
-  
-  my @list = $self->$orig(@args);
-  
-  return ( @list,
-<<END,
-    'Plugin::RapidApp::RapidDbic' => {
-      # This is the only required option:
-      dbic_models => ['$model'],
-      # use only the relationship column of a foreign-key and hide the 
-      # redundant literal column when the names are different:
-      hide_fk_columns => 1,
-      configs => {
-        '$model' => {
-          grid_params => {
-            # The special '*defaults' key applies to all sources at once
-            '*defaults' => {
-              # uncomment these lines to turn on editing in all grids
-              #updatable_colspec   => ['*'],
-              #creatable_colspec   => ['*'],
-              #destroyable_relspec => ['*'],
-            }
-          },
-          TableSpecs => {
-            # Define optional TableSpec configs for each source name here:
-            # ...
-          }
-        },
-      }
-    },
-END
-  );
 
-};
+## No longer using these configs in favor of letting the ForRapidDbic create
+## script create the config within the individual model (new feature)
+#
+#around _ra_catalyst_configs => sub {
+#  my ($orig,$self,@args) = @_;
+#  
+#  my $model = $self->_ra_rapiddbic_opts->{'model-name'};
+#  
+#  my @list = $self->$orig(@args);
+#  
+#  return ( @list,
+#<<END,
+#    'Plugin::RapidApp::RapidDbic' => {
+#      # This is the only required option:
+#      dbic_models => ['$model'],
+#      # use only the relationship column of a foreign-key and hide the 
+#      # redundant literal column when the names are different:
+#      hide_fk_columns => 1,
+#      configs => {
+#        '$model' => {
+#          grid_params => {
+#            # The special '*defaults' key applies to all sources at once
+#            '*defaults' => {
+#              # uncomment these lines to turn on editing in all grids
+#              #updatable_colspec   => ['*'],
+#              #creatable_colspec   => ['*'],
+#              #destroyable_relspec => ['*'],
+#            }
+#          },
+#          TableSpecs => {
+#            # Define optional TableSpec configs for each source name here:
+#            # ...
+#          }
+#        },
+#      }
+#    },
+#END
+#  );
+#
+#};
 
 1;

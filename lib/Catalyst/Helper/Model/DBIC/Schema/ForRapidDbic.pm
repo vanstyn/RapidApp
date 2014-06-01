@@ -39,10 +39,14 @@ the same terms as the Perl 5 programming language system itself.
 
 use Try::Tiny;
 use Path::Class qw/file dir/;
+use Module::Runtime;
 
 sub _gen_model {
     my $self = shift;
     my $helper = $self->helper;
+    
+    my @sources = $self->_get_source_list;
+    $helper->{source_names} = \@sources;
     
     try {
       my $nfo = $self->{connect_info};
@@ -63,6 +67,18 @@ sub _gen_model {
               $helper->{app},q{'),'},$rel->stringify,q{');},
           );
           
+          $helper->{post_config_perl_code} = join("\n",
+            q!## ------!,
+            q!## Uncomment these lines to have the schema auto-deployed during!,
+            q!## application startup when the sqlite db file is missing:!,
+            q!#before 'setup' => sub {!,
+            q!#  my $self = shift;!,
+            q!#  return if (-f $db_path);!,
+            q!#  $self->schema_class->connect($self->connect_info->{dsn})->deploy;!,
+            q!#};!,
+            q!## ------!,''
+          );
+          
           $helper->{connect_info}{dsn} = join('','"',$dbi,':',$drv,':','$db_path','"');
         }
       
@@ -70,6 +86,19 @@ sub _gen_model {
     };
     
     $helper->render_file('compclass', $helper->{file} );
+}
+
+# Must be called *after* _gen_static_schema() is called
+sub _get_source_list {
+  my $self = shift;
+  
+  my $class = $self->{schema_class} or die "No schema class!";
+  Module::Runtime::require_module($class) or die "Error loading schema class!";
+  
+  # Connect to a one-off SQLite memory database just so we can get the sources
+  my $schema = $class->connect('dbi:SQLite::memory:');
+  
+  return sort ($schema->sources);
 }
 
 
@@ -124,9 +153,11 @@ it under the same terms as Perl itself.
 
 __compclass__
 package [% class %];
+use Moo;
+extends 'Catalyst::Model::DBIC::Schema';
 
 use strict;
-use base 'Catalyst::Model::DBIC::Schema';
+use warnings;
 
 [% pre_config_perl_code %]
 
@@ -138,8 +169,41 @@ __PACKAGE__->config(
         [% key %] => [% connect_info.${key} %],
         [%- END -%]
 
-    }[% END %]
+    },[% END %]
+
+    # Configs for the RapidApp::RapidDbic Catalyst Plugin:
+    RapidDbic => {
+
+      # use only the relationship column of a foreign-key and hide the 
+      # redundant literal column when the names are different:
+      hide_fk_columns => 1,
+
+      # grid_params are used to configure the grid module which is 
+      # automatically setup for each source in the navtree
+      grid_params => {
+        # The special '*defaults' key applies to all sources at once
+        '*defaults' => {
+          # uncomment these lines to turn on editing in all grids
+          #updatable_colspec   => ['*'],
+          #creatable_colspec   => ['*'],
+          #destroyable_relspec => ['*'],
+        }
+      },
+      [% IF source_names %]
+      # TableSpecs define extra RapidApp-specific metadata for each source
+      # and is used/available to all modules which interact with them
+      TableSpecs => {
+          [%- FOREACH name IN source_names %]
+          [% name %] => {
+          },
+          [%- END -%]
+
+      },[% END %]
+    }
+
 );
+
+[% post_config_perl_code %]
 
 =head1 NAME
 
