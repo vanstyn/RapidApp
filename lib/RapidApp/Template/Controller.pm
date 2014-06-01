@@ -24,6 +24,72 @@ use RapidApp::Template::Context;
 use RapidApp::Template::Provider;
 use RapidApp::Template::Access;
 
+## -----
+## Setup Top-level alias URL paths:
+has 'read_alias_path', is => 'ro', default => '/tpl';
+has 'edit_alias_path', is => 'ro', default => '/tple';
+
+sub BUILD {
+  my $self = shift;
+  
+  my $c = $self->_app;
+  my $ns = $self->action_namespace($c);
+  
+  if($self->read_alias_path) {
+    my $path = $self->read_alias_path;
+    die "Bad read_alias_path '$path' - must start (but not end) with '/'" unless (
+      $path =~ /^\// && ! ($path =~ /\/$/)
+    );
+    $c->dispatcher->register( $c => Catalyst::Action->new({
+      name      => 'tpl',
+      code      => $self->can('tpl'),
+      class     => $self,
+      namespace => $ns,
+      reverse   => join('/',$ns,'tpl'),
+      attributes => {
+        Path => [ $path ]
+      }
+    }));
+  }
+  
+  if($self->edit_alias_path) {
+    my $path = $self->edit_alias_path;
+    die "Bad edit_alias_path '$path' - must start (but not end) with '/'" unless (
+      $path =~ /^\// && ! ($path =~ /\/$/)
+    );
+    $c->dispatcher->register( $c => Catalyst::Action->new({
+      name      => 'tple',
+      code      => $self->can('tple'),
+      class     => $self,
+      namespace => $ns,
+      reverse   => join('/',$ns,'tple'),
+      attributes => {
+        Path => [ $path ]
+      }
+    }));
+  }
+}
+
+sub tpl { #:Path('/tpl') {
+  my ($self, $c) = @_;
+  $c->forward('view');
+}
+
+# Edit alias
+sub tple { #:Path('/tple') {
+  my ($self, $c) = @_;
+  $c->stash->{editable} = 1;
+  $c->forward('view');
+}
+
+sub tpl_path {
+  my $self = shift;
+  # Return the edit alias patgh first or fall back to the read alias:
+  return $self->edit_alias_path || $self->read_alias_path;
+}
+## -----
+
+
 has 'context_class', is => 'ro', default => 'RapidApp::Template::Context';
 has 'provider_class', is => 'ro', default => 'RapidApp::Template::Provider';
 has 'access_class', is => 'ro', default => 'RapidApp::Template::Access';
@@ -196,23 +262,6 @@ sub is_external_template {
 }
 
 
-## -----
-## Top level alias URL paths 
-#   TODO: add these programatically via config
-#   see register_action_methods()
-sub tpl :Path('/tpl') {
-  my ($self, $c) = @_;
-  $c->forward('view');
-}
-
-# Edit alias
-sub tple :Path('/tple') {
-  my ($self, $c) = @_;
-  $c->stash->{editable} = 1;
-  $c->forward('view');
-}
-## -----
-
 sub _resolve_template_name {
   my ($self, @args) = @_;
   return undef unless (defined $args[0]);
@@ -253,7 +302,7 @@ sub view :Local {
   # New: for non-external templates which are being accessed externally, 
   # (i.e. directly from browser) redirect to internal hashnav path:
   unless ($external || $ra_client) {
-    my $pre = $editable ? 'tple' : 'tpl';
+    my $pre = $editable ? $self->tpl_path : $self->read_alias_path;
     my $url = join('/','/#!',$pre,@args);
     my %params = %{$c->req->params};
     if(keys %params > 0) {

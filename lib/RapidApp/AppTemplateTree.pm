@@ -40,7 +40,7 @@ sub template_tree_items {
       name => $template,
       text => $template,
       iconCls => 'ra-icon-page-white-world',
-      loadContentCnf => { autoLoad => { url => '/tple/' . $template }},
+      loadContentCnf => { autoLoad => { url => join('/',$TC->tpl_path,$template) }},
       loaded => \1
     };
     
