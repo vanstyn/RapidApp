@@ -47,6 +47,8 @@ sub dump_these {
 around 'setup_components' => sub {
 	my ($orig, $app, @args)= @_;
   
+  $app->_normalize_catalyst_config;
+  
   # Set the Encoding to UTF-8 unless one is already set:
   $app->encoding('UTF-8') unless ($app->encoding);
   
@@ -368,6 +370,27 @@ sub is_ra_ajax_req {
   return 0 unless ($c->can('request') && $c->request);
   my $tp = $c->request->header('X-RapidApp-RequestContentType') or return 0;
   return $tp eq 'JSON' ? 1 : 0;
+}
+
+# Some some housework on the config for normalization/consistency:
+sub _normalize_catalyst_config {
+  my $c = shift;
+  
+  my $cnf = $c->config;
+  
+  # ---
+  # We're going to transition away from the 'Model::RapidApp' config
+  # key because it is confusing, and in the future the current "model"
+  # class will probably go away (since it is not really a model).
+  # We're going to start by merging/aliasing the config key so users
+  # can use 'RapidApp' instead of 'Model::RapidApp';
+  $cnf->{'Model::RapidApp'} = Catalyst::Utils::merge_hashes(
+    $cnf->{'Model::RapidApp'} || {},
+    $cnf->{'RapidApp'} || {}
+  );
+  $cnf->{'RapidApp'} = $cnf->{'Model::RapidApp'};
+  # ---
+
 }
 
 # New: convenience method to get the main 'Template::Controller' which
