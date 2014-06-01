@@ -77,15 +77,18 @@ __PACKAGE__->has_many(
 use RapidApp::Include qw(sugar perlutil);
 
 sub update {
-	my $self = shift;
-	
-	# Fail-safe: prevent changes to the 'DUMMY ROOT NODE' (id 0)
-	if ($self->get_column('id') == 0) {
-		warn RED.BOLD "Tried to call update() on the DUMMY ROOT NODE." . CLEAR;
-		return undef;
-	}
-	
-	return $self->next::method(@_);
+  my $self = shift;
+
+  # Fail-safe: prevent changes to the 'DUMMY ROOT NODE' (id 0)
+  if ($self->get_column('id') == 0) {
+    #warn RED.BOLD "Tried to call update() on the DUMMY ROOT NODE." . CLEAR;
+    # Updated: The 'Organize Tree' section is known to try to update the dummy root 
+    # node which is a harmless side-effect which we are just silently ignoring.
+    # TODO: investigate the real reason and fix properly
+    return undef;
+  }
+
+  return $self->next::method(@_);
 }
 
 
