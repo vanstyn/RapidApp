@@ -974,8 +974,8 @@ Ext.ux.Bool2yesno = function(val) {
 
 Ext.ns('Ext.ux.showNull');
 Ext.ux.showNull = function(val) {
-	if (val == null) { return '<span style="color:darkgrey;">(not&nbsp;set)</span>'; }
-	if (val === "") { return '<span style="color:darkgrey;">(empty&nbsp;string)</span>'; }
+	if (val == null) { return '<span class="ra-null-val">(not&nbsp;set)</span>'; }
+	if (val === "") { return '<span class="ra-null-val">(empty&nbsp;string)</span>'; }
 	return val;
 }
 
@@ -4023,13 +4023,20 @@ Ext.ux.RapidApp.boolCheckMark = function(val) {
 }
 
 // Returns a date formatter function based on the supplied format:
-Ext.ux.RapidApp.getDateFormatter = function(format) {
-	if (!format) { format = "Y-m-d H:i:s"; }
-	return function(date) {
-		var dt = Date.parseDate(date,"Y-m-d H:i:s");
-		if (! dt) { return date; }
-		return dt.format(format);
-	}
+Ext.ux.RapidApp.getDateFormatter = function(format,allow_zero) {
+  if (!format) { format = "Y-m-d H:i:s"; }
+  return function(date) {
+    if(!allow_zero && date && Ext.isString(date)) {
+      // New: handle the common case of an empty/zero date
+      //  better than 'Nov 30, 00-1 12:00 AM' which is what the typical format returns
+      if(date == '0000-00-00' || date == '0000-00-00 00:00:00') {
+        return ['<span class="ra-null-val">',date,'</span>'].join('');
+      }
+    }
+    var dt = Date.parseDate(date,"Y-m-d H:i:s");
+    if (! dt) { return date; }
+    return dt.format(format);
+  }
 }
 
 
