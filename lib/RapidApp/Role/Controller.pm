@@ -310,7 +310,7 @@ sub controller_dispatch {
 		if ($ct eq 'text/x-RapidApp-FormSubmitResponse'
 			|| $ct eq 'JSON'
 		) {
-			die RapidApp::Role::Controller::UnknownAction->new(message => "Unknown module or action '$opt'", unknown_arg => $opt);
+			die "Unknown module or action '$opt'";
 		}
 		else {
 			$self->c->stash->{current_view} = 'RapidApp::HttpStatus';
