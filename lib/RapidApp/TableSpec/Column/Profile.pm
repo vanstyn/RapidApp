@@ -129,6 +129,12 @@ sub DEFAULT_PROFILES {{
     editor		=> { xtype => 'textarea', grow => \1 },
     summary_functions => \@text_summary_funcs 
   },
+  blob => {
+    width    => 130,
+    renderer => 'Ext.ux.RapidApp.renderHex',
+    # TODO: get a binary/hex editor:
+    editor   => { xtype => 'textarea', grow => \1 },
+  },
   html => {
     width => 200,
     # We need this renderer in case the 'bigtext' profile above has been applied

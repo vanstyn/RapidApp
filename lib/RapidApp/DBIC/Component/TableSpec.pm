@@ -32,7 +32,6 @@ my $default_data_type_profiles = {
 	text 		=> [ 'bigtext' ],
 	mediumtext	=> [ 'bigtext' ],
 	longtext	=> [ 'bigtext' ],
-	blob 		=> [ 'bigtext' ],
 	tinytext 	=> [ 'text' ],
 	varchar 	=> [ 'text' ],
 	char 		=> [ 'text' ],
@@ -48,6 +47,12 @@ my $default_data_type_profiles = {
 	datetime	=> [ 'datetime' ],
 	timestamp	=> [ 'datetime' ],
 	date		=> [ 'date' ],
+  blob       => [ 'blob' ],
+  longblob   => [ 'blob' ],
+  mediumblob => [ 'blob' ],
+  tinyblob   => [ 'blob' ],
+  binary     => [ 'blob' ],
+  varbinary  => [ 'blob' ],
 };
 __PACKAGE__->mk_classdata( 'TableSpec_data_type_profiles' );
 __PACKAGE__->TableSpec_data_type_profiles({ %$default_data_type_profiles }); 

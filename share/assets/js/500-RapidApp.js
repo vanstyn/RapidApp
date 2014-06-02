@@ -4833,6 +4833,45 @@ Ext.ux.RapidApp.renderBase64 = function(str) {
   }
 }
 
+Ext.ux.RapidApp.renderHex = function(s) {
+  if(s) {
+    var orig_length = s.length;
+    // Adapted from bin2hex() function found here: 
+    // https://github.com/kvz/phpjs/blob/master/functions/strings/bin2hex.js
+    var i, l, o = '', n;
+
+    s += '';
+    for (i = 0, l = s.length; i < l; i++) {
+      n = s.charCodeAt(i).toString(16);
+      o += n.length < 2 ? '0' + n : n;
+    }
+    
+    var hex_string = ['0x',o.toUpperCase()].join('');
+    
+    // http://stackoverflow.com/a/4017825
+    function splitStringAtInterval (string, interval) {
+      var result = [];
+      for (var i=0; i<string.length; i+=interval)
+        result.push(string.substring (i, i+interval));
+      return result;
+    }
+    
+    // Take our hex string and add a space every 4 bytes:
+    var hex = splitStringAtInterval(hex_string,8).join(' ');
+    
+    return [
+      '<code ',
+        'title="binary data (length ',orig_length,')" ',
+        'class="blue-text-code" style="font-size:0.8em;">',
+        hex,
+      '</code>'
+    ].join('');
+  }
+  else {
+    return Ext.ux.showNull(s);
+  }
+}
+
 // Called from ext_viewport.tt to initialize the main app UI:
 Ext.ux.RapidApp.MainViewportInit = function(opt) {
   Ext.ux.RapidApp.HistoryInit();
