@@ -4872,6 +4872,21 @@ Ext.ux.RapidApp.renderHex = function(s) {
   }
 }
 
+// Returns a renderer that will return an img tag with its data
+// embedded as base64. This is useful for blob columns which
+// contain raw/binary image data
+Ext.ux.RapidApp.getEmbeddedImgRenderer = function(mime_type) {
+  mime_type = mime_type || 'application/octet-stream';
+  return function(data) {
+    if(data) {
+      return ['<img src="data:',mime_type,';base64,',base64.encode(data),'">'].join('');
+    }
+    else {
+      return Ext.ux.showNull(data);
+    }
+  }
+}
+
 // Called from ext_viewport.tt to initialize the main app UI:
 Ext.ux.RapidApp.MainViewportInit = function(opt) {
   Ext.ux.RapidApp.HistoryInit();
