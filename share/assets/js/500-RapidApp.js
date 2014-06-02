@@ -4833,37 +4833,47 @@ Ext.ux.RapidApp.renderBase64 = function(str) {
   }
 }
 
+// http://stackoverflow.com/a/15405953
+String.prototype.hex2bin = function () {
+  var i = 0, l = this.length - 1, bytes = [];
+  for (i; i < l; i += 2) {
+    bytes.push(parseInt(this.substr(i, 2), 16));
+  }
+  return String.fromCharCode.apply(String, bytes);
+}
+
+String.prototype.bin2hex = function () {
+  var i = 0, l = this.length, chr, hex = '';
+  for (i; i < l; ++i) {
+    chr = this.charCodeAt(i).toString(16)
+    hex += chr.length < 2 ? '0' + chr : chr;
+  }
+  return hex;
+}
+
+Ext.ux.RapidApp.formatHexStr = function(str) {
+  
+  // http://stackoverflow.com/a/4017825
+  function splitStringAtInterval (string, interval) {
+    var result = [];
+    for (var i=0; i<string.length; i+=interval)
+      result.push(string.substring (i, i+interval));
+    return result;
+  }
+  
+  str = ['0x',str.toUpperCase()].join('');
+  return splitStringAtInterval(str,8).join(' ');
+}
+
 Ext.ux.RapidApp.renderHex = function(s) {
   if(s) {
     var orig_length = s.length;
-    // Adapted from bin2hex() function found here: 
-    // https://github.com/kvz/phpjs/blob/master/functions/strings/bin2hex.js
-    var i, l, o = '', n;
-
-    s += '';
-    for (i = 0, l = s.length; i < l; i++) {
-      n = s.charCodeAt(i).toString(16);
-      o += n.length < 2 ? '0' + n : n;
-    }
-    
-    var hex_string = ['0x',o.toUpperCase()].join('');
-    
-    // http://stackoverflow.com/a/4017825
-    function splitStringAtInterval (string, interval) {
-      var result = [];
-      for (var i=0; i<string.length; i+=interval)
-        result.push(string.substring (i, i+interval));
-      return result;
-    }
-    
-    // Take our hex string and add a space every 4 bytes:
-    var hex = splitStringAtInterval(hex_string,8).join(' ');
-    
+    var hex_str = Ext.ux.RapidApp.formatHexStr(s.bin2hex());
     return [
       '<code ',
         'title="binary data (length ',orig_length,')" ',
-        'class="blue-text-code" style="font-size:0.8em;">',
-        hex,
+        'class="ra-hex-string">',
+        hex_str,
       '</code>'
     ].join('');
   }

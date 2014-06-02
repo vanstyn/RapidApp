@@ -133,7 +133,7 @@ sub DEFAULT_PROFILES {{
     width    => 130,
     renderer => 'Ext.ux.RapidApp.renderHex',
     # TODO: get a binary/hex editor:
-    editor   => { xtype => 'textarea', grow => \1 },
+    editor   => { xtype => 'ra-hexfield', grow => \1 },
   },
   html => {
     width => 200,

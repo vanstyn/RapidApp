@@ -1712,6 +1712,24 @@ Ext.reg('multi-check-combo',Ext.ux.RapidApp.MultiCheckCombo);
 
 
 
+Ext.ux.RapidApp.HexField = Ext.extend(Ext.form.TextArea,{
+  cls: 'ra-hex-string',
+  getValue : function() {
+    var v = Ext.ux.RapidApp.HexField.superclass.getValue.apply(this,arguments);
+    // Strip all whitespace
+    v = v.replace(/\s+/g, '');
+    // Strip 0x prefix
+    v = v.replace(/^0x/i, '');
+    v = v.toLowerCase();
+    return v.hex2bin();
+  },
+
+  setValue : function(v){
+    var val = v ? Ext.ux.RapidApp.formatHexStr(v.bin2hex()) : v;
+    return Ext.ux.RapidApp.HexField.superclass.setValue.apply(this,[val]);
+  }
+});
+Ext.reg('ra-hexfield',Ext.ux.RapidApp.HexField);
 
 
 

@@ -1690,3 +1690,9 @@ a:hover, a:hover * { cursor: pointer; }
 .ra-null-val {
   color:darkgrey;
 }
+
+.ra-hex-string {
+  color: #083772;
+  font-family: "Lucida Console", Monaco, monospace !important;
+  font-size: 0.8em !important;
+}
