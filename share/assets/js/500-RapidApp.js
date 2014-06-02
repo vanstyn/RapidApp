@@ -3867,6 +3867,9 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 					metaData.css += ' x-grid3-dirty-cell';
 				}
 				
+				// Make text of the value column selectable (copy/paste):
+				metaData.css += ' yes-text-select';
+				
 				// Translate the renderer to work like in a normal grid:
 				if(orig_renderer) {
 					if(!bindRec) { 
@@ -3896,12 +3899,6 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		Ext.apply(this.bindStore.baseParams,params);
 		
 		Ext.ux.RapidApp.AppPropertyGrid.superclass.initComponent.call(this);
-		
-		/* -- vv -- Make text of the value column selectable (copy/paste) :*/
-		// TODO: expand/refine this
-		var val_col = this.getColumnModel().getColumnById('value');
-		val_col.css = '-moz-user-select: text;-khtml-user-select: text;';
-		/* -- ^^ -- */
 		
 		this.on('afterrender',this.loadFirstRecord,this);
 		this.bindStore.on('load',this.loadFirstRecord,this);
