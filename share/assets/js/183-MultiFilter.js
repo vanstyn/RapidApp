@@ -282,15 +282,18 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
     // browser size into account
     var winWidth = 750;
     var winHeight = 500;
-    var browserSize = Ext.getBody().getViewSize();
-    if (browserSize.width < winWidth) {
-      winWidth = browserSize.width - 20;
-    }
-    if (browserSize.height < winHeight) {
-      winHeight = browserSize.hight - 20;
-    }
-    if(winWidth < 300) { winWidth = 300 }
-    if(winHeight < 150) { winHeight = 150 }
+    //#This code is a bit funky, so instead we're now simply relying on the just added
+    //#global Ext.Window override which prevents any window from being larger than the 
+    //#available browser area:
+    //var browserSize = Ext.getBody().getViewSize();
+    //if (browserSize.width < winWidth) {
+    //  winWidth = browserSize.width - 20;
+    //}
+    //if (browserSize.height < winHeight) {
+    //  winHeight = browserSize.hight - 20;
+    //}
+    //if(winWidth < 300) { winWidth = 300 }
+    //if(winHeight < 150) { winHeight = 150 }
     // --
     
 		var win = new Ext.Window({
