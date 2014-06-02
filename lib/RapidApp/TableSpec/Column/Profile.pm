@@ -206,6 +206,10 @@ sub DEFAULT_PROFILES {{
     allow_add => \0,
     allow_edit => \0,
     allow_batchedit => \0
+  },
+  img_blob => {
+    width => 120,
+    renderer => "Ext.ux.RapidApp.getEmbeddedImgRenderer()"
   }
 
 }};
