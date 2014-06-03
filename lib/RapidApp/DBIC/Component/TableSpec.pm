@@ -384,6 +384,11 @@ sub default_TableSpec_cnf_columns {
   
 	my $data_types = $self->TableSpec_data_type_profiles;
 	#scream(keys %$cols);
+  
+  my $is_virtual = (
+    $self->result_source_instance->can('is_virtual') &&
+    $self->result_source_instance->is_virtual
+  );
 	
 	foreach my $col (keys %$cols) {
 		
@@ -495,6 +500,7 @@ sub default_TableSpec_cnf_columns {
         # New: add the 'relcol' profile to relationship columns:
         $cols->{$col}->{profiles} ||= [];
         push @{$cols->{$col}->{profiles}}, 'relcol';
+        push @{$cols->{$col}->{profiles}}, 'virtual_source' if ($is_virtual);
 			}
 			next;
 		}
@@ -515,6 +521,8 @@ sub default_TableSpec_cnf_columns {
 			not ref $cols->{$col}->{profiles}
 		);
 		push @profiles, @{$cols->{$col}->{profiles}} if ($cols->{$col}->{profiles});
+    
+    push @profiles, 'virtual_source' if ($is_virtual);
 		
 		$cols->{$col}->{profiles} = \@profiles;
 		

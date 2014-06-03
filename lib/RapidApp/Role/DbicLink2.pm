@@ -1598,6 +1598,13 @@ has 'inflate_multifilter_date_unit_map', is => 'ro', default => sub {{
 	second		=> 'seconds'
 }};
 
+has 'is_virtual_source', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  return  (
+    $self->ResultClass->result_source_instance->can('is_virtual') &&
+    $self->ResultClass->result_source_instance->is_virtual
+  );
+}, isa => 'Bool';
 
 has 'DataStore_build_params' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 before DataStore2_BUILD => sub {
@@ -1630,6 +1637,14 @@ before DataStore2_BUILD => sub {
 		defined $self->destroyable_relspec and 
 		not $self->can('destroy_records')
 	);
+  
+  # New: Override to globally disable create/destroy for virtual sources:
+  if($self->is_virtual_source) {
+    exists $store_params->{create_handler}  && delete $store_params->{create_handler};
+    exists $store_params->{destroy_handler} && delete $store_params->{destroy_handler};
+    $self->apply_flags( can_create  => 0 );
+    $self->apply_flags( can_destroy => 0 );
+  }
 	
 	# merge this way to make sure the opts get set, but yet still allow
 	# the opts to be specifically overridden DataStore_build_params attr
