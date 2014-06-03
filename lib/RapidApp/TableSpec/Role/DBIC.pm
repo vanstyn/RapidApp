@@ -1352,9 +1352,9 @@ sub get_relationship_column_cnf {
 	my $conf = \%opt;
 	my $info = $conf->{relationship_info} or die "relationship_info is required";
 	
-	my $from = $self->ResultSource->from;
-	$from = (split(/\./,$from,2))[1] || $from; #<-- get 'table' for both 'db.table' and 'table' format
-	my $err_info = "rel col: " . $from . ".$rel - " . Dumper($conf);
+  my $table = $self->ResultClass->table;
+	$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
+	my $err_info = "rel col: " . $table . ".$rel - " . Dumper($conf);
 	
 	die "displayField is required ($err_info)" unless (defined $conf->{displayField});
 	die "valueField is required ($err_info)" unless (defined $conf->{valueField});

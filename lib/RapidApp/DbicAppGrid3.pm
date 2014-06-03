@@ -61,9 +61,9 @@ sub apply_default_tabtitle {
 	my $class = $self->ResultClass;
 	
 	my $title = try{$class->TableSpec_get_conf('title_multi')} || try{
-		my $from = $self->ResultSource->from;
-		$from = (split(/\./,$from,2))[1] || $from; #<-- get 'table' for both 'db.table' and 'table' format
-		return $from;
+		my $table = $class->table;
+		$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
+		return $table;
 	};
 	
 	my $iconCls = try{$class->TableSpec_get_conf('multiIconCls')};

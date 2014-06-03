@@ -96,7 +96,9 @@ sub _auto_deploy_schema {
 	my $deploy_statements = $schema->deployment_statements;
 	my $md5 = $self->get_clean_md5($deploy_statements);
 	my $Rs = $schema->resultset('DeployInfo');
-	my $table = $Rs->result_source->from;
+	my $Source = $Rs->result_source;
+	my $table = $schema->class($Source->source_name)->table;
+	$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
 	my $deployRow;
 	
 	try {
