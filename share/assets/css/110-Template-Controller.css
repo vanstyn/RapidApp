@@ -3,7 +3,7 @@
 /* Templates directly within ExtJS Panel Bodys (i.e. Tabs)  
    should fill the full area for max flexibility:    */
 .x-panel-body>.ra-template {
-  height: 100%;
+  height: auto;
   width: 100%;
 }
 
