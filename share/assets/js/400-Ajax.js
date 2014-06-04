@@ -422,7 +422,7 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
           // just for good measure, stop any existing auto refresh:
           updater.stopAutoRefresh();
           
-          container.setBodyConf.call(container,conf,el);
+          container.setBodyConf.call(container,conf,el,true);
           
           // autopanel_refresh_interval can be set from either the inner
           // dynamic panel, or hard-coded on the autopanel container itself:
@@ -446,7 +446,7 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
     Ext.ux.AutoPanel.superclass.initComponent.call(this);
   },
 
-  setBodyConf: function(conf,thisEl) {
+  setBodyConf: function(conf,thisEl,clear) {
     thisEl = thisEl || this.getEl();
     if(this.items.getCount() > 0) { this.removeAll(true); }
     
@@ -455,7 +455,7 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
     // of the panel, but certain situations could make it show back up,
     // such as when the browser tries to scroll a label into view (as
     // described in Github Issue #46 which this change was added for).
-    thisEl.dom.innerHTML = '';
+    if(clear) { thisEl.dom.innerHTML = ''; }
     
     this.insert(0,conf);
     this.doLayout();
