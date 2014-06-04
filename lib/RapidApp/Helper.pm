@@ -164,37 +164,6 @@ sub _ra_catalyst_configs {
       ## To change the root RapidApp module to be mounted someplace other than
       ## at the root (/) of the Catalyst app (default is '' which is the root)
       #module_root_namespace => 'adm',
-
-      ## To directly serve templates from the application root (/) namespace for
-      ## easy, public-facing content (paths relative to 'root/templates'):
-      #root_template_prefix  => 'site/public/page/',
-      #root_template         => 'site/public/page/home',
-    },
-END
-,
-<<END,
-    # Customize additional behaviors of the built-in "Template Controller" which is
-    # used to serve template files application-wide. Locally defined Templates, if
-    # present, are served from 'root/templates' (relative to the app home directory)
-    'Controller::RapidApp::Template' => {
-      default_template_extension => 'html',
-      access_params => {
-        ## To make all template paths under site/ (root/templates/site/) editable:
-        #writable_regex      => '^site\/',
-        #creatable_regex     => '^site\/',
-        #deletable_regex     => '^site\/',
-
-        ## To declare templates under site/public/ (root/templates/site/public/)
-        ## to be 'external' (will render in an iframe in the TabGui):
-        #external_tpl_regex  => '^site\/public\/',
-      },
-
-      # To declare a custom template access class instead of the default (which 
-      # is RapidApp::Template::Access). The Access class is used to determine
-      # exactly what type of access is allowed for each template/user, as well as
-      # which template variables should be available when rendering each template
-      # (Note: the access_params above are supplied to ->new() ):
-      #access_class => '$self->{name}::Template::Access'
     },
 END
 ,

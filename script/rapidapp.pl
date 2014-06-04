@@ -82,7 +82,7 @@ rapidapp.pl - Bootstrap a RapidApp/Catalyst application
  Examples:
    rapidapp.pl My::App
    rapidapp.pl MyApp
-   rapidapp.pl --helpers TabGui,AuthCore,NavCore MyApp
+   rapidapp.pl --helpers Templates,TabGui,AuthCore,NavCore MyApp
    rapidapp.pl --helpers RapidDbic MyApp -- --dsn dbi:mysql:database=somedb,root,''
    rapidapp.pl --helpers RapidDbic MyApp -- --from-sqlite /path/to/existing/sqlt.db
 

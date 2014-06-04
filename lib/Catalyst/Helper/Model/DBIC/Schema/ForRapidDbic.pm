@@ -184,7 +184,7 @@ __PACKAGE__->config(
           # The special '*defaults' key applies to all sources at once
           '*defaults' => {
              include_colspec      => ['*'], #<-- default already ['*']
-             # uncomment these lines to turn on editing in all grids
+             ## uncomment these lines to turn on editing in all grids
              #updatable_colspec   => ['*'],
              #creatable_colspec   => ['*'],
              #destroyable_relspec => ['*'],

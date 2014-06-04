@@ -376,6 +376,16 @@ sub _normalize_catalyst_config {
   my $c = shift;
   
   my $cnf = $c->config;
+  $cnf->{'RapidApp'} ||= {};
+  
+  # New: allow root_template_prefix/root_template to be supplied
+  # in the Template Controller config instead of Model::RapidApp
+  # since it just makes better sense from the user standpoint:
+  my $tc_cfg = $cnf->{'Controller::RapidApp::Template'} || {};
+  $cnf->{'RapidApp'}{root_template_prefix} = $tc_cfg->{root_template_prefix}
+    if(exists $tc_cfg->{root_template_prefix});
+  $cnf->{'RapidApp'}{root_template} = $tc_cfg->{root_template}
+    if(exists $tc_cfg->{root_template});
   
   # ---
   # We're going to transition away from the 'Model::RapidApp' config
