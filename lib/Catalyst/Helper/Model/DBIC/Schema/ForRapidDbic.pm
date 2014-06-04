@@ -165,40 +165,41 @@ __PACKAGE__->config(
     schema_class => '[% schema_class %]',
     [% IF traits %]traits => [% traits %],[% END %]
     [% IF setup_connect_info %]connect_info => {
-        [%- FOREACH key = connect_info.keys %]
-        [% key %] => [% connect_info.${key} %],
-        [%- END -%]
+       [%- FOREACH key = connect_info.keys %]
+       [% key %] => [% connect_info.${key} %],
+       [%- END -%]
 
     },[% END %]
 
     # Configs for the RapidApp::RapidDbic Catalyst Plugin:
     RapidDbic => {
 
-      # use only the relationship column of a foreign-key and hide the 
-      # redundant literal column when the names are different:
-      hide_fk_columns => 1,
+       # use only the relationship column of a foreign-key and hide the 
+       # redundant literal column when the names are different:
+       hide_fk_columns => 1,
 
-      # grid_params are used to configure the grid module which is 
-      # automatically setup for each source in the navtree
-      grid_params => {
-        # The special '*defaults' key applies to all sources at once
-        '*defaults' => {
-          # uncomment these lines to turn on editing in all grids
-          #updatable_colspec   => ['*'],
-          #creatable_colspec   => ['*'],
-          #destroyable_relspec => ['*'],
-        }
-      },
-      [% IF source_names %]
-      # TableSpecs define extra RapidApp-specific metadata for each source
-      # and is used/available to all modules which interact with them
-      TableSpecs => {
+       # grid_params are used to configure the grid module which is 
+       # automatically setup for each source in the navtree
+       grid_params => {
+          # The special '*defaults' key applies to all sources at once
+          '*defaults' => {
+             include_colspec      => ['*'], #<-- default already ['*']
+             # uncomment these lines to turn on editing in all grids
+             #updatable_colspec   => ['*'],
+             #creatable_colspec   => ['*'],
+             #destroyable_relspec => ['*'],
+          }
+       },
+       [% IF source_names %]
+       # TableSpecs define extra RapidApp-specific metadata for each source
+       # and is used/available to all modules which interact with them
+       TableSpecs => {
           [%- FOREACH name IN source_names %]
           [% name %] => {
           },
           [%- END -%]
 
-      },[% END %]
+       },[% END %]
     }
 
 );
