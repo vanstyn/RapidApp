@@ -311,14 +311,18 @@ sub default_TableSpec_cnf  {
 	
 	my $table = $self->table;
 	$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
+  
+  my $is_virtual = $self->_is_virtual_source;
+  my $defs_i = $is_virtual ? 'ra-icon-pg-red' : 'ra-icon-pg';
+  my $defm_i = $is_virtual ? 'ra-icon-pg-multi-red' : 'ra-icon-pg-multi';
 	
 	# FIXME: These defaults cannot be seen via call from related tablespec, because of
 	# a circular logic situation. For base-defaults, see apply_TableSpec above
 	# This is one of the reasons the whole TableSpec design needs to be refactored
 	my %defaults = ();
 	$defaults{iconCls} = $data->{singleIconCls} if ($data->{singleIconCls} and ! $data->{iconCls});
-	$defaults{iconCls} = $defaults{iconCls} || $data->{iconCls} || 'ra-icon-pg';
-	$defaults{multiIconCls} = $data->{multiIconCls} || 'ra-icon-pg-multi';
+	$defaults{iconCls} = $defaults{iconCls} || $data->{iconCls} || $defs_i;
+	$defaults{multiIconCls} = $data->{multiIconCls} || $defm_i;
 	$defaults{singleIconCls} = $data->{singleIconCls} || $defaults{iconCls};
 	$defaults{title} = $data->{title} || $table;
 	$defaults{title_multi} = $data->{title_multi} || $defaults{title};
@@ -361,6 +365,14 @@ sub default_TableSpec_cnf  {
   return $defs;
 }
 
+sub _is_virtual_source {
+  my $self = shift;
+  return (
+    $self->result_source_instance->can('is_virtual') &&
+    $self->result_source_instance->is_virtual
+  );
+}
+
 sub default_TableSpec_cnf_columns {
 	my $self = shift;
 	my $set = shift || {};
@@ -385,10 +397,7 @@ sub default_TableSpec_cnf_columns {
 	my $data_types = $self->TableSpec_data_type_profiles;
 	#scream(keys %$cols);
   
-  my $is_virtual = (
-    $self->result_source_instance->can('is_virtual') &&
-    $self->result_source_instance->is_virtual
-  );
+  my $is_virtual = $self->_is_virtual_source;
 	
 	foreach my $col (keys %$cols) {
 		

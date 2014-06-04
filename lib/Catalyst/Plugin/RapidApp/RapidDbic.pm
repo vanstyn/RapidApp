@@ -150,12 +150,16 @@ before 'setup_component' => sub {
     );
     # ----
     
+    my $is_virtual = $class->_is_virtual_source;
+    my $defs_i = $is_virtual ? 'ra-icon-pg-red' : 'ra-icon-pg';
+    my $defm_i = $is_virtual ? 'ra-icon-pg-multi-red' : 'ra-icon-pg-multi';
+    
     # Nicer defaults:
     $class->TableSpec_set_conf(
     	title => ($class->TableSpec_get_set_conf('title') || $source_name),
       title_multi => ($class->TableSpec_get_set_conf('title_multi') || "$source_name Rows"),
-      iconCls => ($class->TableSpec_get_set_conf('iconCls') || 'ra-icon-pg'),
-      multiIconCls => ($class->TableSpec_get_set_conf('multiIconCls') || 'ra-icon-pg-multi'),
+      iconCls => ($class->TableSpec_get_set_conf('iconCls') || $defs_i),
+      multiIconCls => ($class->TableSpec_get_set_conf('multiIconCls') || $defm_i),
     );
     
     # ----------------
