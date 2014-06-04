@@ -132,8 +132,14 @@ sub DEFAULT_PROFILES {{
   blob => {
     width    => 130,
     renderer => 'Ext.ux.RapidApp.renderHex',
-    # TODO: get a binary/hex editor:
-    editor   => { xtype => 'ra-hexfield', grow => \1 },
+    # Here we have a (simple) hex editor which works, however, we're still disabling 
+    # editing out of the gate as the default because there are so many 
+    # possible scenarios for binary data, and in most cases hex editing isn't
+    # useful. However, we still have this as the editor, so that if the user
+    # *does* want to edit, and manually sets allow_edit to true, the default editor
+    # be a sane choice (hex) which will match the default renderer.
+    editor     => { xtype => 'ra-hexfield', grow => \1 },
+    allow_edit => \0
   },
   html => {
     width => 200,
