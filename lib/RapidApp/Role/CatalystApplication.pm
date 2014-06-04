@@ -26,21 +26,20 @@ sub rapidApp { (shift)->model("RapidApp"); }
 has 'request_id' => ( is => 'ro', default => sub { (shift)->rapidApp->requestCount; } );
 
 # ---
-# Capture the state of the config at load/setup and override 'dump_these' to
-# dump is instead of the real config. This is being done because of RapidApp
-# plugins which pollute the config hash with refs to deep structures making
-# it too large to safely dump in the event of an exception (in debug mode).
-before 'setup_finalize' => sub {
-  my $c = shift;
-  $c->config( initial_config => clone( $c->config ) );
+# Override dump_these to limit the depth of data structures which will get
+# dumped. This is needed because RapidApp has a relatively large footprint
+# and the dump can get excessive. This gets called from finalize_error
+# when in debug mode.
+around 'dump_these' => sub {
+  my ($orig,$c,@args) = @_;
+  
+  my $these = [ $c->$orig(@args) ];
+  require Data::Dumper;
+  local $Data::Dumper::Maxdepth = 4;
+  my $VAR1; eval( Data::Dumper::Dumper($these) );
+  
+  return @$VAR1;
 };
-sub dump_these {
-    my $c = shift;
-    [ Request => $c->req ],
-    [ Response => $c->res ],
-    [ Stash => $c->stash ],
-    [ Config => $c->config->{initial_config} ];
-}
 # ---
 
 
