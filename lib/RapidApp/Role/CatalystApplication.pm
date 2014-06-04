@@ -63,46 +63,52 @@ around 'setup_components' => sub {
 sub setupRapidApp {
 	my $app = shift;
 	my $log = $app->log;
-	
-	$app->injectUnlessExist('RapidApp::RapidApp', 'RapidApp');
-	
-	my @names= keys %{ $app->components };
-	my @controllers= grep /[^:]+::Controller.*/, @names;
-	my $haveRoot= 0;
-	foreach my $ctlr (@controllers) {
-		if ($ctlr->isa('RapidApp::ModuleDispatcher')) {
-			$log->debug("RapidApp: Found $ctlr which implements ModuleDispatcher.");
-			$haveRoot= 1;
-		}
-	}
-	if (!$haveRoot) {
-		$log->debug("RapidApp: No Controller extending ModuleDispatcher found, using default")
-      if($app->debug);
-		$app->injectUnlessExist( 'RapidApp::Controller::DefaultRoot', 'Controller::RapidApp::Root' );
-	}
   
-  $app->injectUnlessExist( 'RapidApp::CatalystX::SimpleCAS::TextTranscode', 'Controller::SimpleCas::TextTranscode' );
-	
-	# for each view, inject it if it doens't exist
-	$app->injectUnlessExist( 'Catalyst::View::TT', 'View::RapidApp::TT' );
-	$app->injectUnlessExist( 'RapidApp::View::Viewport', 'View::RapidApp::Viewport' );
-	$app->injectUnlessExist( 'RapidApp::View::Printview', 'View::RapidApp::Printview' );
-	$app->injectUnlessExist( 'RapidApp::View::JSON', 'View::RapidApp::JSON' );
-	$app->injectUnlessExist( 'RapidApp::View::HttpStatus', 'View::RapidApp::HttpStatus' );
-	$app->injectUnlessExist( 'RapidApp::View::OnError', 'View::RapidApp::OnError' );
+  my @inject = (
+    ['RapidApp::RapidApp' => 'RapidApp']
+  );
   
-  # Template Controller:
-  $app->injectUnlessExist( 'RapidApp::Template::Controller', 'Controller::RapidApp::Template' );
-  $app->injectUnlessExist( 'RapidApp::Template::Controller::Dispatch', 'Controller::RapidApp::TemplateDispatch' );
-
-  # New "DirectCmp" controller:
-  $app->injectUnlessExist( 'RapidApp::Controller::DirectCmp', 'Controller::RapidApp::Module' );
+  # Views:
+  push @inject, (
+    ['Catalyst::View::TT'            => 'View::RapidApp::TT'         ],
+    ['RapidApp::View::Viewport'      => 'View::RapidApp::Viewport'   ],
+    ['RapidApp::View::Printview'     => 'View::RapidApp::Printview'  ],
+    ['RapidApp::View::JSON'          => 'View::RapidApp::JSON'       ],
+    ['RapidApp::View::HttpStatus'    => 'View::RapidApp::HttpStatus' ],
+    ['RapidApp::View::OnError'       => 'View::RapidApp::OnError'    ]
+  );
+  
+  my @names= keys %{ $app->components };
+  my @controllers= grep /[^:]+::Controller.*/, @names;
+  my $haveRoot= 0;
+  foreach my $ctlr (@controllers) {
+    if ($ctlr->isa('RapidApp::ModuleDispatcher')) {
+      $log->debug("RapidApp: Found $ctlr which implements ModuleDispatcher.");
+      $haveRoot= 1;
+    }
+  }
+  if (!$haveRoot) {
+    #$log->debug("RapidApp: No Controller extending ModuleDispatcher found, using default")
+    #  if($app->debug);
+    push @inject,['RapidApp::Controller::DefaultRoot', 'Controller::RapidApp::Root'];
+  }
+  
+  # Controllers:
+  push @inject, (
+    ['RapidApp::Template::Controller'                => 'Controller::RapidApp::Template'         ],
+    ['RapidApp::Template::Controller::Dispatch'      => 'Controller::RapidApp::TemplateDispatch' ],
+    ['RapidApp::Controller::DirectCmp'               => 'Controller::RapidApp::Module'           ],
+    ['RapidApp::CatalystX::SimpleCAS::TextTranscode' => 'Controller::SimpleCas::TextTranscode'   ],
+  );
+  
+  $app->injectUnlessExist( @{$_} ) for (@inject);
+  
 };
 
 sub injectUnlessExist {
   my ($app, $actual, $virtual)= @_;
   if (!$app->components->{$virtual}) {
-    $app->debug && $app->log->debug("RapidApp: Installing virtual $virtual");
+    $app->debug && $app->log->debug("RapidApp - Injecting Catalyst Component: $virtual");
     CatalystX::InjectComponent->inject( into => $app, component => $actual, as => $virtual );
   }
 }

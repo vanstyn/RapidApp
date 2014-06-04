@@ -31,6 +31,7 @@ around 'inject_asset_controllers' => sub {
   my ($orig,$c,@args) = @_;
   
   my $start = [gettimeofday];
+  $c->log->debug("RapidApp - Injecting Asset Controllers...") if ($c->debug);
   
   my %defaults = (
     sha1_string_length => 15,
@@ -169,7 +170,7 @@ around 'inject_asset_controllers' => sub {
   my $ret = $c->$orig(@args);
   
   $c->log->debug(sprintf(
-    "Asset Controllers Setup in %0.3f seconds",
+    "RapidApp - Asset Controllers Setup in %0.3f seconds",
     tv_interval($start)
   )) if ($c->debug);
 
