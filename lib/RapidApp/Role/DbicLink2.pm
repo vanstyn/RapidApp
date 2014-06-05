@@ -250,7 +250,9 @@ sub prepare_rest_request {
 	my $self = shift;
 	return unless ($self->allow_restful_queries);
 	
-	my @args = $self->local_args;
+	# New: allow override pf rest args from stash:
+	my $stash_args = $self->c->stash->{rest_args};
+	my @args = $stash_args ? @$stash_args : $self->local_args;
 	
 	$_ = uri_unescape($_) for (@args);
 	
@@ -266,11 +268,11 @@ sub prepare_rest_request {
     $crudI{$rargs[0]}
   );
 	
-	# -- peel of the rs (resultset) args if present:
-	my $rs;
+	# -- peel off the 'rel' (relationship) args if present:
+	my $rel;
 	if(scalar @args > 2) {
-		if(lc($rargs[1]) eq 'rs') {
-			$rs = pop @args;
+		if(lc($rargs[1]) eq 'rel' || lc($rargs[1]) eq 'rs') {
+			$rel = pop @args;
 			pop @args;
 		}
 	}
@@ -307,7 +309,7 @@ sub prepare_rest_request {
 	die usererr "Too many args in RESTful URL (" . join('/',@args) . ") - should be 2 (i.e. 'id/1234')"
 		if(scalar @args > 2);
 		
-	return $self->redirect_handle_rest_rs_request($key,$val,$rs) if ($rs);
+	return $self->redirect_handle_rest_rel_request($key,$val,$rel) if ($rel);
 	
 	# Apply default tabTitle: (see also 'getTabTitle' in DbicRowPage)
 	$self->apply_extconfig( tabTitle => ($key eq $self->record_pk ? 'Id' : $key ) . '/' . $val );
@@ -356,7 +358,7 @@ sub _resolve_rel_obj_method {
   return $Row->$rel;
 }
 
-sub redirect_handle_rest_rs_request {
+sub redirect_handle_rest_rel_request {
   my ($self,$key,$val,$rel) = @_;
   my $c = $self->c;
   
@@ -365,13 +367,13 @@ sub redirect_handle_rest_rs_request {
   my $Src = $RelObj->result_source;
   my $class = $Src->schema->class($Src->source_name);
   
+  $c->stash->{apply_extconfig} = {
+    tabTitle => "[$key/$val] $rel"
+  };
+  
   if($RelObj->isa('DBIx::Class::ResultSet')) {
     my $url = try{$class->TableSpec_get_conf('open_url_multi')}
       or die usererr "No path (open_url_multi) defined to render Result Class: $class";
-
-    $c->stash->{apply_extconfig} = {
-      tabTitle => "[$key/$val] $rel"
-    };
 
     %{$c->req->params} = (
       base_params => $self->json->encode({ 
@@ -384,14 +386,32 @@ sub redirect_handle_rest_rs_request {
     return $c->detach;
   }
   else {
-    # TODO: maybe do an actual/real redirect to the related row:
-    die usererr rawhtml join('',
-      "Relationship at '$mth_path' is not a ResultSet, it is a Row",
-      try{join(''," (",
-        '<i><b style="color:darkblue;font-size:0.9em;">',
-        $RelObj->displayWithLink,'</b></i>',
-      ')')},
-    ), title => 'Not a multi relationship'; 
+    
+    # New: here we are actually dispatching to the page for the single rel, but still
+    # within the rest URL of the rel path. Ideally, for this case we would *redirect*
+    # to the actual REST URL for thsi object, whatever it may be. In order to do this,
+    # support for redirects needs to be added to the autopanel/hashnav stuff on the
+    # client side. In the meantime, rendering the real/actual row page, albeit at an
+    # alias (but still totally valid) url path is the best choice
+    
+    my $url = try{$RelObj->getRestPath};
+    if($url) {
+      # Simulate the rest_args for proper handling of the remote DbicLink
+      # request to operate under the current, alias URL:
+      $self->c->stash->{rest_args} = [$RelObj->getRestKey,$RelObj->getRestKeyVal];
+      $c->root_module_controller->approot($c,$url);
+      return $c->detach;
+    }
+    else {
+      # This is just a fallback - TODO: use a better error msg...
+      die usererr rawhtml join('',
+        "Relationship at '$mth_path' is not a ResultSet, it is a Row",
+        try{join(''," (",
+          '<i><b style="color:darkblue;font-size:0.9em;">',
+          $RelObj->displayWithLink,'</b></i>',
+        ')')},
+      ), title => 'Not a multi relationship'; 
+    }
   }
 }
 

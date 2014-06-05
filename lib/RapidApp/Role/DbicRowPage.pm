@@ -61,6 +61,12 @@ has 'req_Row', is => 'ro', lazy => 1, traits => [ 'RapidApp::Role::PerRequestBui
 		my $iconCls = $self->getTabIconCls->($self,$Row);
 		$self->apply_extconfig( tabIconCls => $iconCls ) if ($iconCls);
 	}
+  
+  # New: honor/apply again the apply_extconfig (this was added as a quick fix
+  # for the case when we're redispatched from a rel rest path)
+  # TODO/FIXME: do this properly...
+  my $ovr = $self->c->stash->{apply_extconfig};
+  $self->apply_extconfig( %$ovr ) if ($ovr);
 	  
 	return $Row;
 };
