@@ -436,10 +436,8 @@ sub default_TableSpec_cnf_columns {
 				if ($info->{attrs}->{accessor} eq 'single' || $info->{attrs}->{accessor} eq 'filter') {
 					
           # -- NEW: Virtual Single Relationship - will be read-only
-          # with no open link:
           unless($cond_data->{foreign} && $cond_data->{self}) {
             $cols->{$col}{virtualized_single_rel} = 1;
-            delete $cols->{$col}{relationship_info};
             $cols->{$col}{allow_add} = 0;
             $cols->{$col}{allow_edit} = 0;
             next;

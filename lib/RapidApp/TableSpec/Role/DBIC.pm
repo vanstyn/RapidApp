@@ -1339,14 +1339,8 @@ sub get_relationship_column_cnf {
 	my $self = shift;
 	my $rel = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-  
-  # --- NEW
-  return ( 
-    %opt, 
-    name => $self->column_prefix . $rel
-  ) if ($opt{virtualized_single_rel});
-  # ---
-	
+
+  return $self->get_virtual_relationship_column_cnf($rel,\%opt) if ($opt{virtualized_single_rel});
 	return $self->get_multi_relationship_column_cnf($rel,\%opt) if ($self->multi_rel_columns_indx->{$rel});
 	
 	my $conf = \%opt;
@@ -1861,6 +1855,45 @@ sub get_m2m_multi_relationship_column_cnf {
 	
 	return %$conf;
 }
+
+
+# TODO: consolidate/simplify all "virtual" relationship columns here. Multi-relationship
+# columns are themselves a virtual column...
+sub get_virtual_relationship_column_cnf {
+  my $self = shift;
+  my $rel = shift;
+  my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+  
+  my $conf = { 
+    %opt, 
+    name => join('',$self->column_prefix,$rel)
+  };
+  
+  my $cur_renderer = $conf->{renderer};
+  
+  my $rel_rest_key = try{$self->ResultClass->getRestKey};
+  my $orgnCol = $rel_rest_key ? join('',$self->column_prefix,$rel_rest_key) : undef;
+  
+  $conf->{required_fetch_columns} ||= [];
+  push @{$conf->{required_fetch_columns}}, $orgnCol if ($orgnCol);
+
+  my $use_rest = 1;
+  if($use_rest && $orgnCol) {
+    my $open_url = $self->ResultClass->TableSpec_get_conf('open_url');
+    $conf->{renderer} = jsfunc( join('',
+      'function(value, metaData, record) { return Ext.ux.RapidApp.DbicRelRestRender({',
+        'value:value,',
+        'record:record,',
+        'key_col: "',$orgnCol,'",',
+        'open_url: "',$open_url,'",',
+        'rs: "',$rel,'"',
+      '})}'
+    ),$cur_renderer);
+  }
+    
+  return %$conf;
+}
+
 
 sub get_or_create_rapidapp_module {
 	my $self = shift;

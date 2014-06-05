@@ -4474,9 +4474,9 @@ Ext.ux.RapidApp.num2pct = function(num) {
 Ext.ux.RapidApp.NO_DBIC_REL_LINKS = false;
 
 Ext.ux.RapidApp.DbicRelRestRender = function(c) {
-	var disp = c.disp || c.record.data[c.render_col];
+	var disp = c.disp || c.record.data[c.render_col] || c.value;
 	var key_value = c.record.data[c.key_col];
-  
+
   // multi-rel: no link for 0 records:
   if(c.multi_rel && c.value == '0') { return disp; }
 	
