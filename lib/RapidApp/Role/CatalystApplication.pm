@@ -61,8 +61,7 @@ around 'setup_components' => sub {
 };
 
 sub setupRapidApp {
-	my $app = shift;
-	my $log = $app->log;
+  my $app = shift;
   
   my @inject = (
     ['RapidApp::RapidApp' => 'RapidApp']
@@ -78,32 +77,43 @@ sub setupRapidApp {
     ['RapidApp::View::OnError'       => 'View::RapidApp::OnError'    ]
   );
   
-  my @names= keys %{ $app->components };
-  my @controllers= grep /[^:]+::Controller.*/, @names;
-  my $haveRoot= 0;
-  foreach my $ctlr (@controllers) {
-    if ($ctlr->isa('RapidApp::ModuleDispatcher')) {
-      $log->debug("RapidApp: Found $ctlr which implements ModuleDispatcher.");
-      $haveRoot= 1;
-    }
-  }
-  if (!$haveRoot) {
-    #$log->debug("RapidApp: No Controller extending ModuleDispatcher found, using default")
-    #  if($app->debug);
-    push @inject,['RapidApp::Controller::DefaultRoot', 'Controller::RapidApp::Root'];
-  }
+  ## This code allowed for automatic detection of an alternate, locally-defined
+  ## 'ModuleDispatcher' controller to act as the root module controller. This
+  ## functionality is not used anyplace, has never been public, and is not worth
+  ## the maintenance cost
+  #my $log = $app->log;
+  #my @names= keys %{ $app->components };
+  #my @controllers= grep /[^:]+::Controller.*/, @names;
+  #my $haveRoot= 0;
+  #foreach my $ctlr (@controllers) {
+  #  if ($ctlr->isa('RapidApp::ModuleDispatcher')) {
+  #    $log->debug("RapidApp: Found $ctlr which implements ModuleDispatcher.");
+  #    $haveRoot= 1;
+  #  }
+  #}
+  #if (!$haveRoot) {
+  #  #$log->debug("RapidApp: No Controller extending ModuleDispatcher found, using default")
+  #  #  if($app->debug);
+  #  push @inject,['RapidApp::Controller::DefaultRoot', 'Controller::RapidApp::Root'];
+  #}
   
   # Controllers:
   push @inject, (
+    ['RapidApp::Controller::DefaultRoot'             => 'Controller::RapidApp::Root'             ],
+    ['RapidApp::Controller::DirectCmp'               => 'Controller::RapidApp::Module'           ],
     ['RapidApp::Template::Controller'                => 'Controller::RapidApp::Template'         ],
     ['RapidApp::Template::Controller::Dispatch'      => 'Controller::RapidApp::TemplateDispatch' ],
-    ['RapidApp::Controller::DirectCmp'               => 'Controller::RapidApp::Module'           ],
     ['RapidApp::CatalystX::SimpleCAS::TextTranscode' => 'Controller::SimpleCas::TextTranscode'   ],
   );
   
   $app->injectUnlessExist( @{$_} ) for (@inject);
   
 };
+
+sub root_module_controller {
+  my $c = shift;
+  return $c->controller('RapidApp::Root');
+}
 
 sub injectUnlessExist {
   my ($app, $actual, $virtual)= @_;

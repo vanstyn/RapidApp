@@ -88,7 +88,14 @@ sub baseResultSet {
 }
 
 sub _ResultSet {
-	my $self = shift;
+  my $self = shift;
+  
+  my $p = $self->c->req->params;
+  if($p->{rs_path} && $p->{rs_method}) {
+    my $Module = $self->get_Module($p->{rs_path}) or die "Failed to get module at $p->{rs_path}";
+    return $Module->_resolve_rel_obj_method($p->{rs_method});
+  }
+  
 	my $Rs = $self->baseResultSet(@_);
 	
 	# the order of when this is called is vitally important:
@@ -339,33 +346,53 @@ sub restGetRow {
 	return $Rs->first;
 }
 
+# This is designed to be called from *another* module to resolve a ResultSet
+# object via arbitrary 'rs_method' path spec
+sub _resolve_rel_obj_method {
+  my ($self, $rs_method) = @_;
+  my ($key,$val,$rel) = split('/',$rs_method,3);
+  my $Row = $self->restGetRow($key,$val);
+  die usererr "No such relationship $rel at ''$rs_method''" unless ($Row->has_relationship($rel));
+  return $Row->$rel;
+}
+
 sub redirect_handle_rest_rs_request {
-	my ($self,$key,$val,$rel) = @_;
-	
-	my $Row  = $self->restGetRow($key,$val);
-	
-	die usererr "No such relationship $rel" unless ($Row->has_relationship($rel));
-	
-	my $Source = $Row->result_source;
-	my $class = $Source->related_class($rel);
-	
-	my $url = try{$class->TableSpec_get_conf('open_url_multi')}
-		or die usererr "No path (open_url_multi) defined to render Result Class: $class";
-	
-	$self->c->stash->{apply_extconfig} = {
-		tabTitle => "[$key/$val] $rel"
-	};
-	
-	my $cond = $Row->$rel->{attrs}->{where};
-	%{$self->c->req->params} = (
-		base_params => $self->json->encode({ 
-			resultset_condition => $self->json->encode($cond)
-		})
-	);
-	
-	$url =~ s/^\///; #<-- strip leading / (needed for split below)
-	my @arg_path = split(/\//,$url);
-	$self->c->detach('/approot',\@arg_path);
+  my ($self,$key,$val,$rel) = @_;
+  my $c = $self->c;
+  
+  my $mth_path = join('/',$key,$val,$rel);
+  my $RelObj = $self->_resolve_rel_obj_method($mth_path);
+  my $Src = $RelObj->result_source;
+  my $class = $Src->schema->class($Src->source_name);
+  
+  if($RelObj->isa('DBIx::Class::ResultSet')) {
+    my $url = try{$class->TableSpec_get_conf('open_url_multi')}
+      or die usererr "No path (open_url_multi) defined to render Result Class: $class";
+
+    $c->stash->{apply_extconfig} = {
+      tabTitle => "[$key/$val] $rel"
+    };
+
+    %{$c->req->params} = (
+      base_params => $self->json->encode({ 
+        rs_path   => $self->module_path,
+        rs_method => join('/',$key,$val,$rel)
+      })
+    );
+  
+    $c->root_module_controller->approot($c,$url);
+    return $c->detach;
+  }
+  else {
+    # TODO: maybe do an actual/real redirect to the related row:
+    die usererr rawhtml join('',
+      "Relationship at '$mth_path' is not a ResultSet, it is a Row",
+      try{join(''," (",
+        '<i><b style="color:darkblue;font-size:0.9em;">',
+        $RelObj->displayWithLink,'</b></i>',
+      ')')},
+    ), title => 'Not a multi relationship'; 
+  }
 }
 
 

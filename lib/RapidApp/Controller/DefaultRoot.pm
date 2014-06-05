@@ -68,10 +68,27 @@ before 'COMPONENT' => sub {
   $class->config( namespace => $ns );
 };
 
+
+sub process { (shift)->approot(@_) }
+
 sub approot :Path {
-  my ($self, $c, @args)= @_;
+  my ($self, $c, @args) = @_;
+  
+  # Handle url string mode:
+  if(scalar(@args) == 1 && $args[0] =~ /^\//) {
+    my $url = $args[0];
+    $url =~ s/^\///; #<-- strip the leading '/' (needed for split below)
+    
+    # Automatically strip the namespace prefix if present:
+    my $ns = $self->config->{namespace};
+    $url =~ s/^${ns}\/?// if ($ns);
+    
+    @args = split(/\//,$url);
+  }
+  
   $self->dispatch($c, @args);
 }
+
 
 sub end : ActionClass('RenderView') {}
 
