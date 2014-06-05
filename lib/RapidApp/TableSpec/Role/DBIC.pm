@@ -1673,52 +1673,46 @@ sub get_multi_relationship_column_cnf {
 		$title .
 		'&nbsp;<span class="superscript-navy">';
 	
-	#scream($conf->{relationship_cond_data});
-	
-	#my $attrs = {};
-	#$attrs->{join} = $conf->{relationship_cond_data}->{attrs}->{join} if ($conf->{relationship_cond_data}->{attrs}->{join});
-	
 	my $cur_renderer = $conf->{renderer};
   
+  my $open_url = $self->ResultClass->TableSpec_get_conf('open_url');
   my $rel_rest_key = try{$self->ResultClass->getRestKey};
   my $orgnCol = $rel_rest_key ? join('',$self->column_prefix,$rel_rest_key) : undef;
 	
   $conf->{required_fetch_columns} ||= [];
   push @{$conf->{required_fetch_columns}}, $orgnCol if ($orgnCol);
-  #push @{$conf->{required_fetch_columns}}, $self->column_prefix . $rel_data->{self} 
-  #  if ($rel_data->{self});
+  
+  my $rSelfCol = $rel_data->{self} ? join('',$self->column_prefix,$rel_data->{self}) : undef;
+  push @{$conf->{required_fetch_columns}}, $rSelfCol if ($rSelfCol && $rSelfCol ne ($orgnCol || ''));
 
-	my $use_rest = 1;
-	if($use_rest && $orgnCol) {
-		#my $key_col = $rel_data->{foreign};
-		my $key_col = $orgnCol;
-		my $open_url = $self->ResultClass->TableSpec_get_conf('open_url');
-		# Toggle setting the 'key' arg in the link (something/1234/rs/rel vs something/key/1234/rs/rel)
-		#my $rest_key = $rel_rest_key eq $orgnCol ? undef : $orgnCol;
+  # Allow old apps to turn off using this source as a rest origin and force fallback to
+  # the fugly, original loadCnf inlineLink
+	my $use_rest = $self->ResultClass->TableSpec_get_conf('allow_rel_rest_origin');
+  $use_rest = 1 unless (defined $use_rest);
+	if($use_rest && $orgnCol && $open_url) {
 		$conf->{renderer} = jsfunc(
 			'function(value, metaData, record) { return Ext.ux.RapidApp.DbicRelRestRender({' .
 				'value:value,record:record,' .
 				"disp: '" . $div_open . "' + value + '</span>'," .
-				'key_col: "' . $key_col . '",' .
+				'key_col: "' . $orgnCol . '",' .
 				'open_url: "' . $open_url . '",' .
 				'multi_rel: true,' .
 				'rs: "' . $rel . '"' . 
-				#( $rest_key ? ',rest_key:"' . $rest_key . '"' : '') .
 			'})}',$cur_renderer
 		);
 	}
 	else {
-    #
-    # --- This is legacy, unused code -- to be removed/cleaned up ---
-    #
-		# Fall back to the old thick, loadCnf inlineLink
+
+		# Fall back to the old thick, ugly loadCnf inlineLink:
+    #  This code path should never happen with RapidDbic, but will still happen for
+    #  manual setups where there is no 'open_url' or other missing TableSpec data:
 		$conf->{renderer} = $rel_data->{self} ? jsfunc(
 			'function(value, metaData, record, rowIndex, colIndex, store) {' .
 				"var div_open = '$div_open';" .
 				"var disp = div_open + value + '</span>';" .
 				
 				#'var key_key = ' .
-				'var key_val = record.data["' . $self->column_prefix . $rel_data->{self} . '"];' .
+				'var key_val = record.data["' . $rSelfCol . '"];' .
 				
 				'var attr = ' . RapidApp::JSON::MixedEncoder::encode_json($rel_data->{attrs}) . ';' .
 				
@@ -1775,9 +1769,8 @@ sub get_multi_relationship_column_cnf {
    );
 	}
 	
-	
 
-	$conf->{name} = $self->column_prefix . $rel;
+	$conf->{name} = join('',$self->column_prefix,$rel);
 	
 	return %$conf;
 }
