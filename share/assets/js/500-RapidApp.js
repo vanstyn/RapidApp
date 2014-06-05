@@ -4476,6 +4476,9 @@ Ext.ux.RapidApp.NO_DBIC_REL_LINKS = false;
 Ext.ux.RapidApp.DbicRelRestRender = function(c) {
 	var disp = c.disp || c.record.data[c.render_col];
 	var key_value = c.record.data[c.key_col];
+  
+  // multi-rel: no link for 0 records:
+  if(c.multi_rel && c.value == '0') { return disp; }
 	
 	if(!c.value) { 
 		if(!disp && !key_value) {
@@ -4499,11 +4502,10 @@ Ext.ux.RapidApp.DbicRelRestRender = function(c) {
 	
 	
 	if(c.rs) {
-		// multi-rel: no link for 0 records:
-		if(c.value == '0') { return disp; }
+		if(!key_value)     { return disp; }
 		// For multi-rel. value actually only contains the count of related
 		// rows. key_value will contain the id of the row from which the rs originated
-		url += key_value + '/rs/' + c.rs; 
+		url += key_value + '/rel/' + c.rs; 
 	}
 	else {
 		// For single-rel

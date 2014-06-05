@@ -1685,31 +1685,38 @@ sub get_multi_relationship_column_cnf {
 	#$attrs->{join} = $conf->{relationship_cond_data}->{attrs}->{join} if ($conf->{relationship_cond_data}->{attrs}->{join});
 	
 	my $cur_renderer = $conf->{renderer};
+  
+  my $rel_rest_key = try{$self->ResultClass->getRestKey};
+  my $orgnCol = $rel_rest_key ? join('',$self->column_prefix,$rel_rest_key) : undef;
 	
   $conf->{required_fetch_columns} ||= [];
-  push @{$conf->{required_fetch_columns}}, $self->column_prefix . $rel_data->{self} 
-    if ($rel_data->{self});
+  push @{$conf->{required_fetch_columns}}, $orgnCol if ($orgnCol);
+  #push @{$conf->{required_fetch_columns}}, $self->column_prefix . $rel_data->{self} 
+  #  if ($rel_data->{self});
 
-	# not fully working yet, use_rest turned off...
-	my $use_rest = 0;
-	my $rel_rest_key = try{$self->ResultClass->getRestKey};
-	if($use_rest && $rel_rest_key) {
-		my $key_col = $rel_data->{foreign};
+	my $use_rest = 1;
+	if($use_rest && $orgnCol) {
+		#my $key_col = $rel_data->{foreign};
+		my $key_col = $orgnCol;
 		my $open_url = $self->ResultClass->TableSpec_get_conf('open_url');
 		# Toggle setting the 'key' arg in the link (something/1234/rs/rel vs something/key/1234/rs/rel)
-		my $rest_key = $rel_rest_key eq $rel_data->{self} ? undef : $rel_data->{self};
+		#my $rest_key = $rel_rest_key eq $orgnCol ? undef : $orgnCol;
 		$conf->{renderer} = jsfunc(
 			'function(value, metaData, record) { return Ext.ux.RapidApp.DbicRelRestRender({' .
 				'value:value,record:record,' .
 				"disp: '" . $div_open . "' + value + '</span>'," .
 				'key_col: "' . $key_col . '",' .
 				'open_url: "' . $open_url . '",' .
+				'multi_rel: true,' .
 				'rs: "' . $rel . '"' . 
-				( $rest_key ? ',rest_key:"' . $rest_key . '"' : '') .
+				#( $rest_key ? ',rest_key:"' . $rest_key . '"' : '') .
 			'})}',$cur_renderer
 		);
 	}
 	else {
+    #
+    # --- This is legacy, unused code -- to be removed/cleaned up ---
+    #
 		# Fall back to the old thick, loadCnf inlineLink
 		$conf->{renderer} = $rel_data->{self} ? jsfunc(
 			'function(value, metaData, record, rowIndex, colIndex, store) {' .
