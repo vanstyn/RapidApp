@@ -1,0 +1,71 @@
+=head1 NAME
+ 
+RapidApp::Manual::Installation - Installing RapidApp on a new system
+ 
+=head1 Install from CPAN
+ 
+RapidApp is a standard CPAN package and can be installed in the standard manner:
+
+  cpanm RapidApp
+
+RapidApp does have a lot of dependencies so be prepared for this to take a while. 
+
+If you are new to perl and you don't have C<cpanm> (or know what it is) is, or if 
+you would like to play with RapidApp without messing with your main system perl, 
+see the next section for installation with perlbrew.
+
+=head1 Installation via Perlbrew
+
+The following is the typical series of commands to run to install a fresh version
+of perl into your home directory using perlbrew. This isn't specific to RapidApp,
+but perl in general. See L<http://perlbrew.pl> for more info on the perlbrew project.
+
+Run the following commands on any Unix system (including Linux and Mac) to 
+install a fresh perlbrew and RapidApp:
+
+  wget -O - http://install.perlbrew.pl | bash
+
+Assuming the above worked, it should tell you to run this:
+
+  source ~/perl5/perlbrew/etc/bashrc
+
+Now you have the C<perlbrew> command and you can install a version of perl. To see
+the available versions, you can run C<perlbrew available>. Choose one from the list and 
+install it. RapidApp should work with any version, but at the time of this writing,
+perl 5.16.x seems to have the fewest issues.
+
+  perlbrew install perl-5.16.3
+
+The above command may take a while. Once it completes, make it the active C<perl> and 
+install C<cpanm>
+
+  perlbrew switch perl-5.16.3
+  perlbrew install-cpanm
+
+Now both C<perl> and C<cpanm> should point to the new perlbrew version within your 
+shell (as long as you source their bashrc file). To remember this for your account
+for next time, do something like the following:
+
+  echo -e "\nsource ~/perl5/perlbrew/etc/bashrc" >> ~/.bash_profile
+
+Now you can install RapidApp:
+
+  cpanm RapidApp
+
+=head2 Copy-Paste Recap
+
+To recap the series of commands to install perlbrew+RapidApp on most Unix-based systems, 
+if you are feeling brave, you can copy and paste the following into your shell to do it
+all in one swoop:
+
+  wget -O - http://install.perlbrew.pl | bash  && \
+  source ~/perl5/perlbrew/etc/bashrc && \
+  echo -e "\nsource ~/perl5/perlbrew/etc/bashrc" >> ~/.bash_profile && \
+  perlbrew install perl-5.16.3 && \
+  perlbrew switch perl-5.16.3 && \
+  perlbrew install-cpanm && \
+  cpanm RapidApp && \
+  echo "RapidApp installed - run rapidapp.pl to bootstrap a new app"
+  
+
+=cut
