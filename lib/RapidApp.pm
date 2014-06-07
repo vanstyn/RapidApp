@@ -46,13 +46,29 @@ __END__
 
 RapidApp - Turnkey ajaxy webapps
 
+=head1 SYNOPSIS
+
+See L<www.rapidapp.info|http://www.rapidapp.info> and L<RapidApp::Manual> for more information.
+
+  # Create new app named "MyApp" using all the helpers:
+  rapidapp.pl --helpers RapidDbic,Templates,TabGui,AuthCore,NavCore MyApp \
+    -- --dsn dbi:mysql:database=somedb,root,''
+
+  # Start the test server (default login admin/pass):
+  MyApp/script/myapp_server.pl
+
+
+
 =head1 DESCRIPTION
 
-Preliminary release of the RapidApp framework. More documentation TBD.
+This is the main class for the RapidApp web framework. RapidApp is an
+extension to L<Catalyst> which provides an extended development stack as well as access
+to common out-of-the-box application paradigms, such as a powerful CRUD
+front-end for L<DBIx::Class> models.
 
-For more information and example usage, please see the RapidApp 
-homepage: L<http://www.rapidapp.info>.
+More documentation TBD.
 
+See the RapidApp website for more infomation and demos: L<http://www.rapidapp.info>
 
 =head1 AUTHOR
 
