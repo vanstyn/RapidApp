@@ -1,5 +1,26 @@
 Revision history for RapidApp
 
+0.99310 2014-06-06
+    - All relationship columns now link to REST paths
+    - Virtualized and complex relationship columns now render with links
+    - Misc updates to POD and Manual
+    - Fixed default favicon
+    - Date renderers handle 0000-00-00 better
+    - Template controller aliases '/tpl' and '/tple' can be changed
+    - Added support for rendering columns containing binary image data
+    - Binary and blob columns now render in hex by default
+    - Added very simple hex editor for binary/blob columns (must be enabled)
+    - DBIC virtual sources (DBIx::Class::ResultSource::View) fully supported
+    - Default icons for virtual sources have different color
+    - Browser text select/highlight allowed in row page/property grid (copy/paste)
+    - RapidDbic helper now creates configs in the model instead of plugin config
+    - Misc other improvements to helper scripts
+    - Misc other bugfixes and improvements
+    - Removed dependency to CSS::Inliner
+    - Requires JavaScript::ExtJS::V3 3.4.11 (minor warning fix)
+    - Requires Catalyst::Controller::AutoAssets 0.28 
+      (SHOULD RESTORE WINDOWS SUPPORT!)
+
 0.99302 2014-05-27
     - Fixed typo in dist.ini preventing proper script install
 
