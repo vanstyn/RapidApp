@@ -1,0 +1,3 @@
+This branch contains the last commit before removing RapidApp::HTML::Snippet.
+This module was just an idea and was never finish/used. It is being removed
+to get rid of the CSS::Inliner dependency
