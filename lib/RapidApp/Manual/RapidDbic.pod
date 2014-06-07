@@ -1,0 +1,10 @@
+=head1 NAME
+ 
+RapidApp::Manual::RapidDbic - Using the RapidDbic plugin
+ 
+=head1 DESCRIPTION
+ 
+TBD - See L<RapidApp::Manual::Bootstrap> for examples setting up an app using
+RapidDbic
+ 
+=cut

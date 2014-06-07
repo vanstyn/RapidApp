@@ -62,10 +62,19 @@ all in one swoop:
   source ~/perl5/perlbrew/etc/bashrc && \
   echo -e "\nsource ~/perl5/perlbrew/etc/bashrc" >> ~/.bash_profile && \
   perlbrew install perl-5.16.3 && \
-  perlbrew switch perl-5.16.3 && \
+  perlbrew switch  perl-5.16.3 && \
   perlbrew install-cpanm && \
   cpanm RapidApp && \
   echo "RapidApp installed - run rapidapp.pl to bootstrap a new app"
   
+
+This can take in the neighborhood of an hour, depending on the speed of your system.
+Assuming everything worked, you should see this as the last line of the output:
+
+  RapidApp installed - run rapidapp.pl to bootstrap a new app
+
+=head1 SEE ALSO
+
+L<RapidApp>, L<RapidApp::Manual::Bootstrap>
 
 =cut
