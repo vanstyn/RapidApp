@@ -17,7 +17,7 @@ For more information see the RapidApp home page at L<http://www.rapidapp.info>.
  
 How to install RapidApp, including a walkthrough of installing using perlbrew.
  
- =head2 L<RapidApp::Manual::Bootstrap>
+=head2 L<RapidApp::Manual::Bootstrap>
  
 Creating a new application with the L<rapidapp.pl> script
  
