@@ -239,4 +239,240 @@ after 'setup_finalize' => sub {
 
 1;
 
+__END__
+
+=head1 NAME
+
+Catalyst::Plugin::RapidApp::RapidDbic - Instant web front-ends for DBIx::Class
+
+=head1 QUICK START
+
+To get started very quickly with a new app, see the RapidDbic helper for bootstrapping a new app
+in the manual:
+
+=over
+
+=item *
+
+L<RapidApp::Manual::Bootstrap>
+
+=back
+
+=head1 SYNOPSIS
+
+ package MyApp;
+ 
+ use Catalyst   qw/ RapidApp::RapidDbic /;
+
+Then, also in the main Catalyst app class:
+
+ __PACKAGE__->config(
+ 
+    'Plugin::RapidApp::RapidDbic' => {
+      dbic_models => ['DB','OtherModel'],
+      
+      # All custom configs optional...
+      configs => {
+        DB => {
+          grid_params => {
+            # ...
+          },
+          TableSpecs => {
+            # ...
+          }
+        },
+        OtherModel => {
+          # ...
+        }
+      }
+    }
+ );
+
+Or, within individual DBIC::Schema model class(es):
+
+ package MyApp::Model::DB;
+ use Moo;
+ extends 'Catalyst::Model::DBIC::Schema';
+
+ __PACKAGE__->config(
+    schema_class => 'MyApp::DB',
+ 
+    connect_info => {
+       # ...
+    },
+ 
+    RapidDbic => {
+ 
+      # All custom configs optional...
+      grid_params => {
+        # to make all grids editable:
+        '*defaults' => {
+          updatable_colspec   => ['*'],
+          creatable_colspec   => ['*'],
+          destroyable_relspec => ['*'],
+          # ...
+        },
+        MySourceA => {
+          persist_immediately => {
+             # Save only when clicking "Save" button...
+             create  => 0, update  => 0, destroy => 0
+          },
+          # ...
+        }
+      },
+      TableSpecs => {
+        MySourceA => {
+          title          => 'My Source Abba!',
+          title_multi    => 'Abbas',
+          iconCls        => 'icon-apple',
+          multiIconCls   => 'icon-apples',
+          # ...
+        },
+        SourceB => {
+          display_column => 'foo',
+          columns => {
+            foo => { 
+              title => 'Foo',
+              # ...
+            }
+          }
+        }
+      },
+      table_class => 'MyApp::Module::CustGridModule',
+      virtual_columns => {
+        # ...
+      }
+    }
+
+=head1 DESCRIPTION
+
+The RapidDbic plugin provides a very high-level, abstract configuration layer for initializing 
+a structure of interfaces for accessing L<DBIC::Schema|Catalyst::Model::DBIC::Schema> models 
+for Catalyst/RapidApp. These interfaces are fully functional out-of-the-box, but also provide
+a robust base which can be configured and extended into various forms of custom applications.
+
+RapidDbic itself simply assembles and configures other RapidApp plugins and modules into a useful,
+working combination without any fuss, while also providing configuration hooks into those sub-modules
+across different layers. This includes the L<TabGui|Catalyst::Plugin::RapidApp::TabGui> plugin for
+the main interface and navigation structure, and sets of DBIC-aware modules such as grids, forms and
+trees.
+
+This hooks into a very broad ecosystem of highly customizable and extendable modules which are 
+still in the process of being fully documented... The unconfigured, default state resembles a 
+database admin utility, with powerful CRUD features, query builder, batch modify forms, and so on.
+
+RapidDbic is also designed to work with other, high-level plugins to access additional turn-key
+application-wide functionality, such as access and authorization with the 
+L<AuthCore|Catalyst::Plugin::RapidApp::AuthCore> plugin and saved user-views with the
+L<NavCore|Catalyst::Plugin::RapidApp::NavCore> plugin.
+
+=head1 CONFIG
+
+The only required config option is specifying at least one L<DBIC::Schema|Catalyst::Model::DBIC::Schema> 
+model to enable. This can be achieved either with the C<dbic_models> option in the plugin config key
+C<'Plugin::RapidApp::RapidDbic'> within the main Catalyst app class/config, or by specifying a C<'RapidDbic'>
+config key in the model class(es) itself (see SYNOPSIS).
+
+The optional additional config options for each model are then divided into two main sections, 
+C<grid_params> and C<TableSpecs>, which are each further divided into each source name in the
+DBIC schema.
+
+=head2 grid_params
+
+The grid_params section allows overriding the parameters to be supplied to the RapidApp module 
+which is automatically built for each source (with a menu point for each in the navtree). By default,
+this is the grid-based module L<Catalyst::Plugin::RapidApp::RapidDbic::TableBase>, but can be changed
+(with the C<table_class> config option) to any module extending a DBIC-aware RapidApp module (which
+are any of the modules based on the "DbicLink" ecosystem) which doesn't even necesarily need to 
+be derived from a grid module at all...
+
+For convenience, the special source name C<'*defaults'> can be used to set params for all sources
+at once.
+
+The DbicLink modules configuration documentation is still in-progress. 
+
+=head2 TableSpecs
+
+TableSpecs are extra schema metadata which can optionally be associated with each source/columns.
+These provide extra "hints" for how to represent the schema entities in different application
+interface contexts. TableSpec data is passive and is consumed by all DBIC-aware RapidApp Modules
+for building their default configuration(s).
+
+For a listing of the different TableSpec data-points which are available, see the TableSpec 
+documentation in the manual:
+
+=over
+
+=item *
+
+L<RapidApp::Manual::TableSpec>
+
+=back
+
+=head2 table_class
+
+Specify a different RapidApp module class name to use for the source. The default is 
+C<Catalyst::Plugin::RapidApp::RapidDbic::TableBase>. The C<grid_params> for each source
+are supplied to the constructor of this class to create the module instances (for each source).
+
+=head2 virtual_columns
+
+Automatically inject virtual columns via config into the sources... More documentation TDB. 
+
+In the meantime, see the virtual_column example in the Chinook Demo:
+
+=over
+
+=item *
+
+L<Chinook Demo - 2.5 - Virtual Columns|http://www.rapidapp.info/demos/chinook/2_5>
+
+=back
+
+
+=head1 SEE ALSO
+
+=over
+
+=item *
+
+L<Chinook Demo (www.rapidapp.info)|http://www.rapidapp.info/demos/chinook>
+
+=item *
+
+L<RapidApp>
+
+=item *
+
+L<Catalyst::Plugin::RapidApp>
+
+=item *
+
+L<Catalyst::Plugin::RapidApp::TabGui>
+
+=item *
+
+L<Catalyst::Plugin::RapidApp::NavCore>
+
+=item * 
+
+L<Catalyst>
+
+=back
+
+=head1 AUTHOR
+
+Henry Van Styn <vanstyn@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2013 by IntelliTree Solutions llc.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
+
+
+1;
 

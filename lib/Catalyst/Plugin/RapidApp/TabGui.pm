@@ -129,3 +129,112 @@ before 'setup_components' => sub {
 1;
 
 
+__END__
+
+=head1 NAME
+
+Catalyst::Plugin::RapidApp::TabGui - Instant tabbed Ajax admin navigation interface
+
+=head1 SYNOPSIS
+
+ package MyApp;
+ 
+ use Catalyst   qw/ RapidApp::TabGui /;
+
+=head1 DESCRIPTION
+
+The TabGui plugin is the primary high-level turn-key interface paradigm provided by the
+RapidApp distribution for top-most level GUIs (i.e. to be loaded in a full-browser, not within
+another interface). It provides a standard admin-style interface, based on ExtJS, with an (optional)
+navigation tree on the left-hand side and a tabbed content panel on the right, with an optional
+banner section at the top.
+
+The content area hooks into a RESTful URL navigation scheme to load various kinds of content
+at public paths in the application, including both RapidApp-specific Module views as well as
+ordinary HTML content returned by ordinary controllers.
+
+The interface is pure Ajax with no browser page loads whatsoever, with simulated client-side
+URLs triggered via the I<hash> section/mechanism of the URL. These are fully-valid, RESTful
+URLs are called "hashnav paths" which start with C<#!/> such as:
+
+ /#!/some/url/path
+
+The above URL loads the content of C</some/url/path> with a new tab (or existing tab if already 
+open) and works just as well if the TabGui is already loaded as accessing the url from a 
+fresh browser window.
+
+The TabGui is loaded at the root module, which defaults to root of the Catalyst app C</> for
+a dedicated application, but can also be changed to provide an admin section for an existing 
+app by setting the config:
+
+ $c->config->{RapidApp}{module_root_path} = 'adm';
+
+In this case, the interface would be accessible via C</adm>, and in turn, the previous hashnav 
+URL example would be:
+
+ /adm/#!/some/url/path
+
+The TabGui is automatically loaded and configured by other high-level plugins, most notably,
+L<RapidDbic|Catalyst::Plugin::RapidApp::RapidDbic>.
+
+Thus, the following are exactly equivalent:
+
+ use Catalyst qw/
+   RapidApp::TabGui
+   RapidApp::RapidDbic
+ /
+
+ use Catalyst qw/
+   RapidApp::RapidDbic
+ /
+
+Additionally, there are multiple extra plugins with provide high-level functionality which 
+assume, build upon and/or otherwise interact with the TabGui as the primary navigation interface, 
+such as L<NavCore|Catalyst::Plugin::RapidApp::NavCore> and 
+L<CoreSchemaAdmin|Catalyst::Plugin::RapidApp::CoreSchemaAdmin>.
+
+The TabGui plugin itself is just a configuration layer. Internally, it assembles and automatically 
+configures a number of RapidApp modules which provide the actual functionality, including 
+L<RapidApp::AppExplorer>, L<RapidApp::AppTree> and others.
+
+=head1 SEE ALSO
+
+=over
+
+=item *
+
+L<RapidApp>
+
+=item *
+
+L<Catalyst::Plugin::RapidApp>
+
+=item *
+
+L<Catalyst::Plugin::RapidApp::RapidDbic>
+
+=item *
+
+L<Catalyst::Plugin::RapidApp::NavCore>
+
+=item * 
+
+L<Catalyst>
+
+=back
+
+=head1 AUTHOR
+
+Henry Van Styn <vanstyn@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2013 by IntelliTree Solutions llc.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
+
+
+1;

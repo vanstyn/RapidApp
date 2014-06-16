@@ -268,3 +268,63 @@ sub _load_connect_schema_ref {
 
 
 1;
+
+__END__
+
+=head1 NAME
+
+Catalyst::Model::RapidApp::CoreSchema - DBIC model for the CoreSchema database
+
+=head1 SYNOPSIS
+
+ package MyApp;
+ 
+ use Catalyst   qw/ RapidApp::CoreSchema /;
+
+=head1 DESCRIPTION
+
+This is the Catalyst model which is automatcally injected by the 
+L<RapidApp::CoreSchema|Catalyst::Plugin::RapidApp::CoreSchema> plugin and is not
+intended to be loaded directly.
+
+With the default configuration, this model automatically initializes and deploys itself
+to an SQLite database file in the root of the application named C<rapidapp_coreschema.db>.
+
+The CoreSchema database is a common location used for persistence by multiple optional
+"Core" plugins, such as L<AuthCore|Catalyst::Plugin::RapidApp::AuthCore> and 
+L<NavCore|Catalyst::Plugin::RapidApp::NavCore>
+
+=head1 SEE ALSO
+
+=over
+
+=item *
+
+L<RapidApp>
+
+=item *
+
+L<Catalyst::Plugin::RapidApp::CoreSchema>
+
+=item *
+
+L<Catalyst::Plugin::RapidApp::CoreSchemaAdmin>
+
+=item * 
+
+L<Catalyst>
+
+=back
+
+=head1 AUTHOR
+
+Henry Van Styn <vanstyn@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2013 by IntelliTree Solutions llc.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut

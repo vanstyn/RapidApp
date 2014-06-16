@@ -7,15 +7,6 @@ with 'Catalyst::Plugin::RapidApp::RapidDbic';
 use RapidApp::Include qw(sugar perlutil);
 use Module::Runtime;
 
-=pod
-
-=head1 DESCRIPTION
-
-Convenience plugin automatically sets up access to RapidApp::CoreSchema
-via the RapidDbic plugin
-
-=cut
-
 before 'setup_components' => sub {
   my $c = shift;
   my $config = $c->config->{'Plugin::RapidApp::CoreSchemaAdmin'} || {};
@@ -67,3 +58,76 @@ before 'setup_components' => sub {
 };
 
 1;
+
+
+__END__
+
+=head1 NAME
+
+Catalyst::Plugin::RapidApp::CoreSchemaAdmin - CRUD access to the CoreSchema via RapidDbic
+
+=head1 SYNOPSIS
+
+ package MyApp;
+ 
+ use Catalyst   qw/ 
+   RapidApp::RapidDbic
+   RapidApp::AuthCore
+   RapidApp::CoreSchemaAdmin
+ /;
+
+=head1 DESCRIPTION
+
+This convenience plugin automatically sets up access to 
+L<Model::RapidApp::CoreSchema|Catalyst::Model::RapidApp::CoreSchema> 
+via the RapidDbic plugin. This is basically just an automatic RapidDbic config.
+
+When used with L<AuthCore|Catalyst::Plugin::RapidApp::AuthCore> (which is 
+typically the whole reason you would want this plugin in the first place), the RapidApp
+Module config option C<require_role> is set by default to C<'administrator'> on the 
+automatically configured tree/grids, since the CoreSchema usually contains the 
+privileged user database for the app (although, not necessarily).
+
+Also, by default, only CoreSchema sources which are actually in use by a given
+Core plugin are configured for access (in the navtree/grids). For instance, the 
+"Sessions" grid is only setup when AuthCore is loaded, "Source Default Views" 
+is only setup with NavCore, and so on.
+
+=head1 SEE ALSO
+
+=over
+
+=item *
+
+L<RapidApp>
+
+=item *
+
+L<Catalyst::Plugin::RapidApp::RapidDbic>
+
+=item *
+
+L<Catalyst::Plugin::RapidApp::AuthCore>
+
+=item *
+
+L<Catalyst::Plugin::RapidApp::CoreSchema>
+
+=item *
+
+L<Catalyst>
+
+=back
+
+=head1 AUTHOR
+
+Henry Van Styn <vanstyn@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2013 by IntelliTree Solutions llc.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
