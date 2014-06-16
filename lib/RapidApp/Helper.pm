@@ -164,6 +164,9 @@ sub _ra_catalyst_configs {
       ## To change the root RapidApp module to be mounted someplace other than
       ## at the root (/) of the Catalyst app (default is '' which is the root)
       #module_root_namespace => 'adm',
+
+      ## To load additional, custom RapidApp modules (under the root module):
+      #load_modules => { somemodule => 'Some::RapidApp::Module::Class' }
     },
 END
 ,

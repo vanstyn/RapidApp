@@ -88,7 +88,19 @@ sub _load_root_module {
 	# submodules during their load:
 	#local $RapidApp::ScopedGlobals::_vals->{'rootModule'} = undef;
 	
-	return $self->rootModule($self->rootModuleClass->timed_new($mParams));
+  $self->rootModule($self->rootModuleClass->timed_new($mParams));
+  
+  # New: load additional custom modules via app config:
+  my $rM = $self->rootModule;
+  my $cfg = $self->_app->config->{'RapidApp'} || {};
+  if($cfg->{load_modules}) {
+    for my $name (keys %{$cfg->{load_modules}}) {
+      die "Module '$name' already loaded" if ($rM->has_module($name));
+      $rM->apply_init_modules( $name => $cfg->{load_modules}{$name} );
+    }
+  }
+  
+  return $rM;
 }
 
 
