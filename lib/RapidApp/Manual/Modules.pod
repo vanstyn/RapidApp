@@ -1,0 +1,68 @@
+=head1 NAME
+ 
+RapidApp::Manual::Modules - RapidApp Modules
+ 
+=head1 DESCRIPTION
+
+RapidApp "Modules" are special object classes, specific to RapidApp, that encapsulate a fully 
+working interface, usually with an embedded ExtJS panel/component front-side view, which is 
+designed to render via Ajax within other rendered Modules (such as within a Viewport, Tab panel, 
+window, etc).
+
+Modules are a special kind of "thick controller" which include controller actions to handle
+any Ajax callbacks which the given interface view may depend on, such CRUD calls associated
+with a DataStore, which are tied to DBIC models, models for tree drag/drop persistence, and so on.
+
+Modules live in a hierarchy starting with the "Root Module" which is mounted as a normal
+Catalyst controller within the application. There is always one - and only one - Root Module which
+is mounted at the root namespace for the application ('/') by default, but can be changed via
+app config option to any location. For instance, to have the module hierarchy start at C</adm>:
+
+  # in the main catalyst app class...
+  
+ __PACKAGE__->config(
+  # ...
+  'RapidApp' => {
+    module_root_namespace => 'adm',
+    
+    # ...
+  }
+  
+ );
+
+=head1 AVAILABLE MODULES
+
+There are a very large number of built-in modules included in the RapidApp distribution to
+achieve all sorts of turn-key interfaces. The bulk of them focus on grids and trees, including
+a number of composable roles which accomplish broad functions like attaching CRUD DataStores
+to DBIC models (internally these are the "DbicLink" interfaces).
+
+Modules have their own DSL which is quite powerful. A Module is defined as any class which consumes the 
+L<RapidApp::Role::Module> role (and usually the L<RapidApp::Role::Controller> role as well for
+all Modules which implement a controller dispatch interface, which nearly all do).
+
+Many of the built-in Modules include C<'*App*'> in the name, such as C<RapidApp::AppTree> and
+C<RapidApp::DbicAppGrid3>. Documentation for these modules in still in-progress and the namespace
+needs to be cleaned up in general...
+
+Note that it is B<NOT REQUIRED> to know the Module DSL, or even interact directly with Modules
+at all in order to develop using RapidApp. This is because of the declarative configuration
+layers which are provided by the L<Plugins|RapidApp::Manual::Plugins>. The APIs of the plugins 
+layers will be maintained for backward compatibility from version to version, while the Module
+API may still change somewhat as cleanup work progresses...
+
+=head1 SEE ALSO
+
+=over
+
+=item *
+
+L<RapidApp::Manual>
+
+=item *
+
+L<RapidApp::Manual::Plugins>
+
+=back
+ 
+=cut

@@ -21,6 +21,10 @@ How to install RapidApp, including a walkthrough of installing using perlbrew.
  
 Creating a new application with the L<rapidapp.pl> script.
  
+=head2 L<RapidApp::Manual::Modules>
+ 
+RapidApp Modules.
+
 =head2 L<RapidApp::Manual::Plugins>
  
 Suite of plugins available in RapidApp.
