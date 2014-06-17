@@ -3,8 +3,57 @@
 RapidApp::Manual::RapidDbic - Using the RapidDbic plugin
  
 =head1 DESCRIPTION
- 
-TBD - See L<RapidApp::Manual::Bootstrap> for examples setting up an app using
-RapidDbic
+
+"RapidDbic" is the main RapidApp plugin which provides an abstract configuration layer for a common, 
+simplified declarative API for accessing many of the DBIC-enabled modules and features available
+in the RapidApp distribution quickly and easily. This is provided in the form of a fully-working, 
+self-assembled CRUD-style admin application.
+
+RapidDbic also provides a common app structure which acts like a hub through which other high-level 
+plugins can attach to activate other instant features, like users and permissions. 
+
+RapidDbic can also be used to attach admin sections to existing Catalyst applications with relative
+ease.
+
+To learn more, see the L<Catalyst::Plugin::RapidApp::RapidDbic> documentation itself. Also, the 
+exmaples in L<RapidApp::Manual::Bootstrap> mainly cover RapidDbic, which show how to create a new app
+from scratch with a single command...
+
+Additionally the Chinook Demo video series on the RapidApp website covers building an app using 
+RapidDbic extensively:
+
+=over
+
+=item *
+
+L<Chinook Demo (www.rapidapp.info/demos/chinook)|http://www.rapidapp.info/demos/chinook>
+
+=back
+
+=head1 SEE ALSO
+
+=over
+
+=item *
+
+L<Catalyst::Plugin::RapidApp::RapidDbic>
+
+=item *
+
+L<RapidApp::Manual>
+
+=item *
+
+L<RapidApp::Manual::TableSpec>
+
+=item *
+
+L<RapidApp::Manual::Bootstrap>
+
+=item * 
+
+L<Catalyst>
+
+=back
  
 =cut
