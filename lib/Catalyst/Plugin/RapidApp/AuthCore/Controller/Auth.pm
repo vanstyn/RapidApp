@@ -45,6 +45,17 @@ sub do_redirect {
   my ($self, $c, $href) = @_;
   $c ||= RapidApp->active_request_context;
   $href ||= $c->req->params->{redirect} || '/';
+
+  # If the client is still trying to redirect to '/auth/login' after login,
+  # it probably means they haven't configured any custom login redirect rules,
+  # send them to the best default location, the root module:
+  if($href =~ /^\/auth\/login\// && $c->session->{RapidApp_username}) {
+    my $new = join('/','',$c->module_root_namespace,'');
+    $new =~ s/\/+/\//g; #<-- strip double //
+    # Automatically swap '/auth/login/' for '/' (or where the root module is)
+    $href =~ s/^\/auth\/login\//${new}/;
+  }
+
   $href = "/$href" unless ($href =~ /^\//); #<-- enforce local
   $c->response->redirect($href);
   return $c->detach;
