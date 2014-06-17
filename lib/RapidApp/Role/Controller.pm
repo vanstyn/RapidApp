@@ -522,9 +522,44 @@ after 'add_response_server_events' => sub {
 	);
 };
 
-
-
-
-
-
 1;
+
+__END__
+
+=head1 NAME
+
+RapidApp::Role::Controller - Role for RapidApp Controller Modules
+
+=head1 SYNOPSIS
+
+ package MyApp::Module::MyModule;
+ use Moose;
+ with 'RapidApp::Role::Controller';
+
+=head1 DESCRIPTION
+
+This is the main role for RapidApp Modules which implement a Controller interface. 
+Documentation still TDB...
+
+=head1 SEE ALSO
+
+=over
+
+=item *
+
+L<RapidApp::Manual::Modules>
+
+=back
+
+=head1 AUTHOR
+
+Henry Van Styn <vanstyn@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2013 by IntelliTree Solutions llc.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
