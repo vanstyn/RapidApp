@@ -1,13 +1,13 @@
 =head1 NAME
  
-RapidApp::Manual - Index of the Manual
+RapidApp::Manual - RapidApp user and developer manual
  
 =head1 DESCRIPTION
  
-This is the L<RapidApp> users manual, which is still in progress. RapidApp is 
-a new open-source web application framework based on L<Catalyst>, ExtJS, 
-L<Template::Toolkit> and L<DBIx::Class> for quickly creating interactive, 
-data-rich webapps.
+This is the L<RapidApp> users manual, which is still a work in progress...
+
+RapidApp is a recently open-sourced web application framework based on L<Catalyst>, ExtJS, 
+L<Template::Toolkit> and L<DBIx::Class> for quickly creating interactive, data-rich webapps.
 
 For more information see the RapidApp home page at L<http://www.rapidapp.info>.
  
