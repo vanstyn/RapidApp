@@ -1,0 +1,55 @@
+=head1 NAME
+ 
+RapidApp::Manual::Plugins - Suite of plugins available in RapidApp
+ 
+=head1 DESCRIPTION
+
+RapidApp provides a number of plugins which provide high-level, declarative configuration
+layers to automatically setup common application scenarios with minimal effort required.
+
+These plugins all tie into the standard Catalyst plugin API, and are designed to be used
+together and in different combinations to access various additive sets of functionality. 
+
+The currently available plugins are listed below.
+
+=head1 AVAILABLE PLUGINS
+
+=over
+
+=item *
+
+L<RapidDbic|Catalyst::Plugin::RapidApp::RapidDbic>
+
+=item *
+
+L<AuthCore|Catalyst::Plugin::RapidApp::AuthCore>
+
+=item *
+
+L<NavCore|Catalyst::Plugin::RapidApp::NavCore>
+
+=item *
+
+L<TabGui|Catalyst::Plugin::RapidApp::TabGui>
+
+=item *
+
+L<CoreSchema|Catalyst::Plugin::RapidApp::CoreSchema>
+
+=item *
+
+L<CoreSchemaAdmin|Catalyst::Plugin::RapidApp::CoreSchemaAdmin>
+
+=back
+
+=head1 SEE ALSO
+
+=over
+
+=item *
+
+L<RapidApp::Manual>
+
+=back
+ 
+=cut
