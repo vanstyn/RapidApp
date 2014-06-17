@@ -1,5 +1,9 @@
 Revision history for RapidApp
 
+0.99311 2014-06-16
+    - Updated documentation
+    - Added 'load_modules' cfg option
+
 0.99310 2014-06-06
     - All relationship columns now link to REST paths
     - Virtualized and complex relationship columns now render with links

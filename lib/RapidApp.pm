@@ -2,7 +2,7 @@ package RapidApp;
 use strict;
 use warnings;
 
-our $VERSION = '0.99310';
+our $VERSION = '0.99311';
 
 # ABSTRACT: Turnkey ajaxy webapps
 
