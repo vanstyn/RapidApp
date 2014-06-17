@@ -141,7 +141,7 @@ JavaScript function name used to validate a value (form/input) for the column. S
 
 ArrayRef list of column profile names. Column profiles are macros/sets of column configs to apply multiple options at once. Many of these are automatically set according to the column type.
 
-Column profiles are defined in L<RapidApp::TableSpec::Column>.
+Column profiles are defined in L<RapidApp::TableSpec::Column::Profile>.
 
 Currently available column profiles:
 
@@ -162,6 +162,10 @@ Currently available column profiles:
 =item * text
 
 =item * bigtext
+
+=item * monotext
+
+=item * blob
 
 =item * html
 
@@ -184,6 +188,22 @@ Currently available column profiles:
 =item * filesize
 
 =item * autoinc
+
+=item * img_blob
+
+=back
+
+=head1 SEE ALSO
+
+=over
+
+=item *
+
+L<RapidApp::Manual>
+
+=item *
+
+L<RapidApp::Manual::RapidDbic>
 
 =back
 

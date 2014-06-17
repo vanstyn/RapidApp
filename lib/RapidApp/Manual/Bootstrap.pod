@@ -55,6 +55,16 @@ thorough is a good place to start.
 
 =head1 SEE ALSO
 
-L<rapidapp.pl>, L<catalyst.pl|catalyst>, L<RapidApp::Helper>, L<Catalyst::Helper>
+=over
+
+=item *
+
+L<RapidApp::Manual>
+
+=item *
+
+L<RapidApp::Manual::Installation>
+
+=back
 
 =cut

@@ -59,7 +59,7 @@ See L<www.rapidapp.info|http://www.rapidapp.info> and L<RapidApp::Manual> for mo
 
 =head1 DESCRIPTION
 
-RapidApp is an extension to L<Catalyst> - the Perl-based MVC framework. It provides a feature-rich
+RapidApp is an extension to L<Catalyst> - the Perl MVC framework. It provides a feature-rich
 extended development stack, as well as easy access to common out-of-the-box application paradigms, 
 such as powerful CRUD-based front-ends for L<DBIx::Class> models, user access and authorization, 
 RESTful URL navigation schemes, pure Ajax interfaces with no browser page loads, templating engine 
@@ -114,6 +114,12 @@ comprehensive video demos and tutorials:
 L<www.rapidapp.info|http://www.rapidapp.info>
 
 =back
+
+=head1 SUPPORT
+ 
+IRC:
+ 
+    Join #rapidapp on irc.perl.org.
 
 =head1 AUTHOR
 

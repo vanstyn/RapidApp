@@ -75,6 +75,16 @@ Assuming everything worked, you should see this as the last line of the output:
 
 =head1 SEE ALSO
 
-L<RapidApp>, L<RapidApp::Manual::Bootstrap>
+=over
+
+=item *
+
+L<RapidApp::Manual>
+
+=item *
+
+L<RapidApp::Manual::Bootstrap>
+
+=back
 
 =cut

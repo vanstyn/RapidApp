@@ -110,9 +110,14 @@ See L<Catalyst::Plugin::AutoAssets> for details.
 Also note that custom application controllers can also always be setup as
 normal Catalyst controllers. The above config options are just convenience mechanisms
 that cover 99% of cases.
+=head1 SEE ALSO
 
-=head2
+=over
 
-App-specific meta data associated with DBIx::Class result classes.
+=item *
+
+L<RapidApp::Manual>
+
+=back
  
 =cut
