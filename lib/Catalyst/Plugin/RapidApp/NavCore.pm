@@ -19,7 +19,10 @@ sub _navcore_inject_controller {
 };
 
 
+1;
+
 __END__
+
 
 =head1 NAME
 
@@ -111,6 +114,4 @@ the same terms as the Perl 5 programming language system itself.
 
 =cut
 
-
-1;
 
