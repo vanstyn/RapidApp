@@ -165,9 +165,16 @@ fresh browser window.
 
 The TabGui is loaded at the root module, which defaults to root of the Catalyst app C</> for
 a dedicated application, but can also be changed to provide an admin section for an existing 
-app by setting the config:
+app by setting the C<module_root_namespace> RapidApp config:
 
- $c->config->{RapidApp}{module_root_path} = 'adm';
+ # in the main catalyst app class:
+ __PACKAGE__->config(
+  # ...
+  'RapidApp' => {
+    module_root_namespace => 'adm',
+    # ...
+  }
+ );
 
 In this case, the interface would be accessible via C</adm>, and in turn, the previous hashnav 
 URL example would be:

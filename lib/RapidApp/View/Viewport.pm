@@ -94,3 +94,43 @@ sub _get_asset_controller_urls {
 
 
 1;
+
+
+__END__
+
+=head1 NAME
+
+RapidApp::View::Viewport - Render a Module within an ExtJS Viewport
+
+=head1 DESCRIPTION
+
+This is the main View for rendering a top-level RapidApp Module within the browser. This
+component class is used internally by plugins like L<TabGui|Catalyst::Plugin::RapidApp::TabGui>.
+
+The JavaScript function C<Ext.ux.RapidApp.AutoPanel> is used to fetch and decode the 
+configured Module URL via Ajax.
+
+More documentation TDB...
+
+=head1 SEE ALSO
+
+=over
+
+=item *
+
+L<RapidApp::Manual::Modules>
+
+=back
+
+=head1 AUTHOR
+
+Henry Van Styn <vanstyn@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2013 by IntelliTree Solutions llc.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut

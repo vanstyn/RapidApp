@@ -51,6 +51,70 @@ layers which are provided by the L<Plugins|RapidApp::Manual::Plugins>. The APIs 
 layers will be maintained for backward compatibility from version to version, while the Module
 API may still change somewhat as cleanup work progresses...
 
+
+=head1 MODULE RENDERING
+
+By default, Modules expect to be rendered within an ExtJS container structure via Ajax by the
+special, RapidApp-specific JavaScript function C<Ext.ux.RapidApp.AutoPanel>. Top-level views
+to prepare the HTML markup to accomplish this automatically are provided, such as 
+L<RapidApp::View::Viewport>, which is what is used by plugins like
+L<TabGui|Catalyst::Plugin::RapidApp::TabGui> to render the RESTful navigation interface.
+
+Modules return a HashRef sctructure when their URL controller path is accessed from the
+JavaScript client by the C<AutoPanel> function, which should represent a valid ExtJS xtype
+panel/component config. This is returned by the C<content()> method of the Module class,
+and is automatically serialized as JSON and returned to the client by the Module dispatch
+system. Thus, it is possible to easily override the returned config in any Module class
+with a simple method modifier:
+
+ around content => sub {
+  my ($orig, $self, @args) = @_;
+  
+  return {
+    %{ $self->$orig(@args) },
+    title => 'Custom title',
+    xtype => 'panel',
+    width => 420,
+    # ...
+  
+  }
+ };
+
+The hashnav URL navigation system provided by plugins like L<TabGui|Catalyst::Plugin::RapidApp::TabGui>
+automatically load the target URL in a tab, which will deserialize and render Modules automatically
+via C<AutoPanel> in the same manner as views like L<RapidApp::View::Viewport> do.
+
+Modules also automatically detect if they are being accessed via Ajax or direct browser call. When
+accessed directly, they attempt to redirect to the hashnav path to render in a tab automatically,
+assuming a hashnav URL navigation scheme is active (and, other custom behaviors for direct browser
+calls can be implemented as well).
+
+There are also special controller dispatch paths provided to directly render any module on-the-fly via
+L<RapidApp::View::Viewport> by prefixing the module path with C</rapidapp/module/direct/[path]>
+or C</rapidapp/module/navable/[path]>. The C<navable> path will wrap the rendered module within a 
+"navable" TabPanel container, which will allow hashnav URL links to work. Otherwise, when rendered
+via C<direct>, any hashnav links will be stripped (unless of course the target module is already
+a navable component).
+
+The direct module dispatch URLs are useful to render a specific module outside the context of
+RapidApp-provided interfaces, such as directly within HTML of public/custom content, via C<iframe>:
+
+ <iframe 
+    class="ux-mif" 
+    frameborder="0" 
+    style="overflow: auto; width: 100%; height: 450px;" 
+    src="/rapidapp/module/navable/some/module/path"
+  ></iframe>
+
+To summarize, all the following URLs can be used to access the same module (assuming the 
+C<module_root_namespace> is set to 'adm', and the L<TabGui|Catalyst::Plugin::RapidApp::TabGui>
+plugin is active):
+
+ /adm/#!/adm/some/mod/path                     # Renders normally in a TabGui tab via Ajax
+ /adm/some/mod/path                            # Redirects to /adm/#!/adm/some/mod/path (like above)
+ /rapidapp/module/direct/adm/some/mod/path     # full-screen in dedicated Viewport
+ /rapidapp/module/navable/adm/some/mod/path    # full-screen in dedicated TabGui-like interface
+
 =head1 SEE ALSO
 
 =over
