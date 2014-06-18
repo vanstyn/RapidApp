@@ -1149,67 +1149,104 @@ Ext.ns('Ext.ux.RapidApp.AppTab.AppGrid2');
 Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu = Ext.extend(Ext.menu.Menu,{
 
 	url: null,
-
+	
 	initComponent: function() {
-
+		var menu= this;
 		this.items = [
 			{
-				//text: 'This Page, Active Columns',
-				text: 'Current Page',
-				iconCls: 'ra-icon-table-selection-row',
-				handler: function(item) {
-					var cmp = item.ownerCt;
-					Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler.call(this,cmp,cmp.url,false,false);
-				},
-				scope: this
+				text: 'Excel',
+				iconCls: 'ra-icon-page-excel',
+				menu: {
+					items: [
+						{
+							//text: 'This Page, Active Columns',
+							text: 'Current Page',
+							iconCls: 'ra-icon-table-selection-row',
+							handler: function(item) { menu.doExport(false,false,'Excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); }
+						},
+						{
+							//text: 'All Pages, Active Columns',
+							text: 'All Pages',
+							iconCls: 'ra-icon-table-selection-all',
+							handler: function(item) { menu.doExport(true,false,'Excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'); }
+						}
+					]
+				}
 			},
-			
-			/*
 			{
-				text: 'This Page, All Columns',
-				handler: function(item) {
-					var cmp = item.ownerCt;
-					Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler(cmp,cmp.url,false,true);
+				text: 'CSV',
+				iconCls: 'ra-icon-table',
+				menu: {
+					items: [
+						{
+							text: 'Current Page',
+							iconCls: 'ra-icon-table-selection-row',
+							handler: function(item) { menu.doExport(false,false,'CSV','text/csv'); }
+						},
+						{
+							text: 'All Pages',
+							iconCls: 'ra-icon-table-selection-all',
+							handler: function(item) { menu.doExport(true,false,'CSV','text/csv'); }
+						}
+					]
 				}
-			}*/
-			
+			},
 			{
-				//text: 'All Pages, Active Columns',
-				text: 'All Pages',
-				iconCls: 'ra-icon-table-selection-all',
-				handler: function(item) {
-					var cmp = item.ownerCt;
-					Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler(cmp,cmp.url,true,false);
+				text: 'TSV',
+				iconCls: 'ra-icon-table',
+				menu: {
+					items: [
+						{
+							text: 'Current Page',
+							iconCls: 'ra-icon-table-selection-row',
+							handler: function(item) { menu.doExport(false,false,'TSV','text/tab-separated-values'); }
+						},
+						{
+							text: 'All Pages',
+							iconCls: 'ra-icon-table-selection-all',
+							handler: function(item) { menu.doExport(true,false,'TSV','text/tab-separated-values'); }
+						}
+					]
+				}
+			},
+			{
+				text: 'JSON',
+				iconCls: 'ra-icon-tree-expand',
+				menu: {
+					items: [
+						{
+							text: 'Current Page',
+							iconCls: 'ra-icon-table-selection-row',
+							handler: function(item) { menu.doExport(false,false,'JSON','application/json'); }
+						},
+						{
+							text: 'All Pages',
+							iconCls: 'ra-icon-table-selection-all',
+							handler: function(item) { menu.doExport(true,false,'JSON','application/json'); }
+						}
+					]
 				}
 			}
-			
-			/*,
-			{
-				text: 'All Pages, All Columns',
-				handler: function(item) {
-					var cmp = item.ownerCt;
-					Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler(cmp,cmp.url,true,true);
-				}
-			}
-			*/
 		];
 		
 		Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu.superclass.initComponent.call(this);
+	},
+	
+	doExport: function(all_pages, all_columns, display_name, content_type) {
+		var btn = Ext.getCmp(this.buttonId);
+		var grid = btn.findParentByType("appgrid2") || btn.findParentByType("appgrid2ed");
+		Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler.call(this, grid, this.url, all_pages, all_columns, display_name, content_type);
 	}
 });
 
 
 
-Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler = function(cmp,url,all_pages,all_columns) {
-	
-	var btn = Ext.getCmp(cmp.buttonId);
-	var grid = btn.findParentByType("appgrid2") || btn.findParentByType("appgrid2ed");
-	
+Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler = function(grid,url,all_pages,all_columns,display_name,content_type) {
 	var export_filename = grid.title || grid.ownerCt.title || 'export';
 	
 	Ext.Msg.show({
-		title: "Excel Export",
-		msg: "Export current view to Excel File? <br><br>(This might take up to a few minutes depending on the number of rows)",
+		title: display_name + " Export",
+		msg: "Export current view to " + display_name +" File? <br><br>(This might take up to a few minutes depending on the number of rows)",
 		buttons: Ext.Msg.YESNO, fn: function(sel){
 			if(sel != "yes") return; 
 			
@@ -1247,6 +1284,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler = function(cmp,url,all_pages,
 			
 			//return Ext.ux.postwith(url,options.params);
 			
+			options.params.export_format = content_type;
 			options.params.export_filename = export_filename;
 			
 			var timeout = 900000; // 15-minutes
@@ -1261,7 +1299,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler = function(cmp,url,all_pages,
 			if(false && Ext.isGecko) { // FireFox (<-- now always false)
 				// Interactive window download:
 				return Ext.ux.RapidApp.winDownload(
-					url,options.params,"Exporting data to Excel...",timeout
+					url,options.params,"Exporting data to "+display_name+"...",timeout
 				);
 			}
       // ---------------
@@ -1279,7 +1317,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler = function(cmp,url,all_pages,
 			}
 			
 		},
-		scope: cmp
+		scope: grid
 	});
 }
 
