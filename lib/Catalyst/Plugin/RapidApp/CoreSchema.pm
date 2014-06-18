@@ -60,7 +60,7 @@ the application named C<rapidapp_coreschema.db>.
 
 =item *
 
-L<RapidApp>
+L<RapidApp::Manual::Plugins>
 
 =item *
 

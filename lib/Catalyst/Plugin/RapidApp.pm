@@ -40,11 +40,7 @@ loaded directly.
 
 =item *
 
-L<RapidApp>
-
-=item * 
-
-L<Catalyst>
+L<RapidApp::Manual::Plugins>
 
 =back
 

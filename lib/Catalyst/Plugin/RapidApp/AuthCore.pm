@@ -63,10 +63,6 @@ before 'setup_dispatcher' => sub {
     $cs_cnf->{init_admin_password} = $config->{init_admin_password};
   }
   
-  die "AuthCore: don't use 'pw_type' with 'credential' config opts" if (
-    exists $config->{pw_type} && exists $config->{credential}
-  );
-  
   # Default session expire 1 hour
   $config->{expires} ||= 60*60;
   
@@ -95,9 +91,9 @@ before 'setup_dispatcher' => sub {
     }
   }
   
-  # Admin/backdoor option. This is useful if the pw_type is changed
+  # Admin/backdoor option. This is useful if the passphrase config is changed
   # after the user database is already setup to be able to login and
-  # set the password to be hashed by the new function.
+  # set the password to be hashed by the new function (or if you forget the pw).
   if($config->{no_validate_passwords} && !$c->config->{'Plugin::Authentication'}) {
     $c->log->warn(join("\n",'',
       ' AuthCore: WARNING: "no_validate_passwords" enabled. Any password',
@@ -234,11 +230,128 @@ New databases are automatically setup with one user:
  username: admin
  password: pass
 
-An C<administrators> role is also automatically setup, which the admin user belongs to.
+An C<administrator> role is also automatically setup, which the admin user belongs to.
 
 For managing users and roles, seeing active sessions, etc, see the 
 L<CoreSchemaAdmin|Catalyst::Plugin::RapidApp::CoreSchemaAdmin> plugin.
 
+=head1 AUTH CONTROLLER
+
+The AuthCore plugin automatically injects an L<Auth|Catalyst::Plugin::RapidApp::AuthCore::Controller::Auth>
+controller at C</auth> in the Catalyst application. This controller implements a login (C</auth/login>)
+and logout (C</auth/logout>) action.
+
+The C</auth/login> action path handles both the rendering a login form (when accessed via GET) and
+the actual login/authentication (when accessed via POST). The login POST should send these params:
+
+=over
+
+=item * 
+
+username
+
+=item * 
+
+password
+
+=item * 
+
+redirect (optional)
+
+=back
+
+A C<redirect> URL can be supplied for the client to redirect to after successful login. The C<redirect>
+param can also be supplied to a GET/POST to C</auth/logout> to redirect after logout.
+
+The login form is also internally rendered from other URL paths which are password-protected (which
+by default is all Module paths when AuthCore is loaded). The built-in login form template automatically
+detects this case and sends the path in C<redirect> with the login POST. This allows RESTful paths
+to be accessed and automatically authenticate, if needed, and then continue on to the desired location
+thereafter.
+
+=head1 CONFIG
+
+Custom options can be set within the C<'Plugin::RapidApp::AuthCore'> config key in the main
+Catalyst application config. All configuration params are optional.
+
+=head2 init_admin_password
+
+Default password to assign to the C<admin> user when initializing a fresh 
+L<CoreSchema|Catalyst::Model::RapidApp::CoreSchema> database for the first time. Defaults to
+
+  pass
+
+=head2 passphrase_class
+
+L<Authen::Passphrase> class to use for password hashing. Defaults to C<'BlowfishCrypt'>.
+The Authen::Passphrase interface is implemented using the L<DBIx::Class::PassphraseColumn>
+component class in the L<CoreSchema|Catalyst::Model::RapidApp::CoreSchema> database.
+
+=head2 passphrase_params
+
+Params supplied to the C<passphrase_class> above. Defaults to:
+
+  {
+    cost        => 9,
+    salt_random => 1,
+  }
+
+=head2 expires
+
+Set the timeout for Session expiration. Defaults to C<3600> (1 hour)
+
+=head2 role_checker
+
+Optional CodeRef used to check user roles. By default, this is just a pass-through to the standard
+C<check_user_roles()> function. When AuthCore is active, Modules which are configured with the
+C<require_role> param will call the role_checker to verify the current user is allowed before rendering. 
+This provides a very simple API for permissions and authorization. More complex authorization rules
+simply need to be implemented in code.
+
+The C<require_role> API is utilized by the 
+L<CoreSchemaAdmin|Catalyst::Plugin::RapidApp::CoreSchemaAdmin> plugin to restrict access to the 
+L<CoreSchema|Catalyst::Model::RapidApp::CoreSchema> database to users with the C<administrator>
+role (which will both hide the menu point and block module paths to non-administrator users).
+
+Note that the C<role_checker> is only called by AuthCore-aware code (Modules or custom user-code), 
+and doesn't modify the behavior of the standard role methods setup by 
+L<Catalyst::Plugin::Authorization::Roles> which is automatically loaded by AuthCore. You can
+still call C<check_user_roles()> in your custom controller code which will function in the
+normal manner (which performs lookups against the Role tables in the CoreSchema)
+regardless of the custom role_checker.
+
+
+=head1 OVERRIDE CONFIGS
+
+If any of the following configs are supplied, they will completely bypass and override the config
+settings above.
+
+=head2 no_validate_passwords
+
+Special temp/admin bool option which when set to a true value will make any supplied password
+successfully authenticate for any user. This is useful if you forget the admin password, so
+you don't have to either manually edit the C<rapidapp_coreschema.db> database, or delete it
+to have it recreated. The setting can also be used if the passphrase settings are changed
+(which will break all pre-existing passwords already in the database) to be able to get back
+into the app, if needed.
+
+Obviously, this setting would never be used in production.
+
+=head2 credential
+
+To override the C<credential> param supplied to C<Plugin::Authentication>
+
+=head2 store
+
+To override the C<store> param supplied to C<Plugin::Authentication>
+
+=head2 Plugin::Authentication
+
+To completely override the C<Plugin::Authentication> config.
+
+=head2 Plugin::Session
+
+To completely override the C<Plugin::Session> config.
 
 =head1 SEE ALSO
 
@@ -246,7 +359,7 @@ L<CoreSchemaAdmin|Catalyst::Plugin::RapidApp::CoreSchemaAdmin> plugin.
 
 =item *
 
-L<RapidApp>
+L<RapidApp::Manual::Plugins>
 
 =item *
 

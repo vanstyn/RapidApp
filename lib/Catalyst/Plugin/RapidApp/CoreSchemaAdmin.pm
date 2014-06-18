@@ -99,7 +99,7 @@ is only setup with NavCore, and so on.
 
 =item *
 
-L<RapidApp>
+L<RapidApp::Manual::Plugins>
 
 =item *
 

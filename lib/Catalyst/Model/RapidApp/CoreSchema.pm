@@ -304,6 +304,10 @@ L<RapidApp>
 
 =item *
 
+L<RapidApp::Manual::Plugins>
+
+=item *
+
 L<Catalyst::Plugin::RapidApp::CoreSchema>
 
 =item *

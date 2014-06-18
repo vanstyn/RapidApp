@@ -62,7 +62,7 @@ This plugin is just experimental and not well supported - do not use in producti
 
 =item *
 
-L<RapidApp>
+L<RapidApp::Manual::Plugins>
 
 =item *
 

@@ -210,7 +210,7 @@ L<RapidApp::AppExplorer>, L<RapidApp::AppTree> and others.
 
 =item *
 
-L<RapidApp>
+L<RapidApp::Manual::Plugins>
 
 =item *
 

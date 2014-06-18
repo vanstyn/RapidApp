@@ -1,5 +1,11 @@
 Revision history for RapidApp
 
+0.99312 2014-06-17
+    - Updated documentation
+    - Improvements to default login redirect handling in AuthCore
+    - Requires Catalyst::Controller::AutoAssets 0.29 
+      (SHOULD *REALLY* RESTORE WINDOWS SUPPORT...)
+
 0.99311 2014-06-16
     - Updated documentation
     - Added 'load_modules' cfg option

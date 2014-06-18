@@ -440,7 +440,11 @@ L<Chinook Demo (www.rapidapp.info)|http://www.rapidapp.info/demos/chinook>
 
 =item *
 
-L<RapidApp>
+L<RapidApp::Manual::RapidDbic>
+
+=item *
+
+L<RapidApp::Manual::Plugins>
 
 =item *
 

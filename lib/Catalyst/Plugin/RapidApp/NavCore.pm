@@ -81,7 +81,7 @@ point under the RapidApp::CoreSchema section in the navtree.
 
 =item *
 
-L<RapidApp>
+L<RapidApp::Manual::Plugins>
 
 =item *
 
