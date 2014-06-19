@@ -232,11 +232,32 @@ sub export_render_tsv {
 sub export_render_json {
 	my ($self, $params, $data, $fd)= @_;
 	
-	my $export_data= { rows => $data->{rows} };
-	$export_data->{column_summaries}= $data->{column_summaries}
-		if exists $data->{column_summaries};
+	my $json= JSON->new->ascii(1);
+	my @cols= map { $_->{name} } @{ $params->{col_defs} };
 	
-	print $fd JSON->new->ascii(1)->encode($export_data);
+	# Export row-by-row for two reasons:
+	#   First, it prevents us from making 3 full copies of the whole
+	#   dataset in memory (could run the server out of ram)
+	#   and Second, if we insert a newline after each row then it won't
+	#   break text viewers (like less) as badly as if they try to view
+	#   several MB of data on a single line.
+	$fd->print("{\"columns\":" . $json->encode($params->{col_defs}) . ",\r\n"
+		." \"rows\":[");
+	for (my $i= 0; $i < @{ $data->{rows} }; $i++) {
+		my %row;
+		# Unfortunately the data might contain extra columns like the primary keys,
+		# and we might not want to show these to users.  (Think SSNs)
+		# So we have to perform a translation on each row to extract only the columns we should export.
+		@row{@cols}= @{$data->{rows}[$i]}{@cols};
+		$fd->print($i? ",\r\n  " : "\r\n  ");
+		$fd->print($json->encode(\%row));
+	}
+	$fd->print("\r\n ]");
+	if (exists $data->{column_summaries}) {
+		$fd->print(",\r\n \"column_summaries\":");
+		$fd->print($json->encode($data->{column_summaries}));
+	}
+	$fd->print("\r\n}");
 }
 
 sub convert_render_cols_hash {
