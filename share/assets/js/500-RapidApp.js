@@ -1021,7 +1021,7 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
     submitBtnText: 'Save',
     cancelHandler: Ext.emptyFn,
     closable: true,
-    disableBtnText: 'Wait...',
+    disableBtnText: 'Wait...'
   });
   
 	var cancel_fn = function(){ Ext.getCmp(winId).close(); cfg.cancelHandler(); }
