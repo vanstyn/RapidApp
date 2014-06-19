@@ -4,7 +4,7 @@ RapidApp::Manual::Bootstrap - Bootstrapping a new app with rapidapp.pl
  
 =head1 DESCRIPTION
  
-RapidApp ships with the script L<rapidapp.pl> which you can used to create a new
+RapidApp ships with the script L<rapidapp.pl> which you can use to create a new
 application from scratch with a skeleton of base files and directories. It extends
 the existing L<catalyst.pl|catalyst> script and "helper" ecosystem, but with some 
 RapidApp-specific customizations, including support for different helper "traits" 
@@ -22,7 +22,7 @@ traits which are essentially different modes of operation.
 
 For example, the L<RapidDbic|RapidApp::Helper::Traits::RapidDbic> helper trait will 
 automatically configure the new application to use the RapidDbic plugin, as well as 
-create a DBIC model and schema for existing database:
+create a DBIC model and schema for an existing database:
 
   rapidapp.pl --helpers RapidDbic MyApp -- --dsn dbi:mysql:database=somedb,root,''
 
