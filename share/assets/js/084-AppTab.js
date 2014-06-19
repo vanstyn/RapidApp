@@ -1156,6 +1156,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu = Ext.extend(Ext.menu.Menu,{
 			{
 				text: 'Excel',
 				iconCls: 'ra-icon-page-excel',
+				hideOnClick: false,
 				menu: {
 					items: [
 						{
@@ -1176,6 +1177,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu = Ext.extend(Ext.menu.Menu,{
 			{
 				text: 'CSV',
 				iconCls: 'ra-icon-table',
+				hideOnClick: false,
 				menu: {
 					items: [
 						{
@@ -1194,6 +1196,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu = Ext.extend(Ext.menu.Menu,{
 			{
 				text: 'TSV',
 				iconCls: 'ra-icon-table',
+				hideOnClick: false,
 				menu: {
 					items: [
 						{
@@ -1212,6 +1215,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu = Ext.extend(Ext.menu.Menu,{
 			{
 				text: 'JSON',
 				iconCls: 'ra-icon-tree-expand',
+				hideOnClick: false,
 				menu: {
 					items: [
 						{
