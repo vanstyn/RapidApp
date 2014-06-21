@@ -1,5 +1,9 @@
 Revision history for RapidApp
 
+0.99320 2014-06-21
+    - Grid export supports CSV, TSV and JSON as well as Excel
+    - POD tweaks
+
 0.99312 2014-06-17
     - Updated documentation
     - Improvements to default login redirect handling in AuthCore
