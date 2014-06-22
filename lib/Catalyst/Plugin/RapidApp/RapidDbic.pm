@@ -166,7 +166,7 @@ before 'setup_component' => sub {
     # Apply some column-specific defaults:
 
     # Set actual column headers (this is not required but real headers are displayed nicer):
-    my %col_props = %{ $class->TableSpec_get_conf('column_properties') || {} };
+    my %col_props = %{ $class->TableSpec_get_set_conf('column_properties') || {} };
     for my $col ($class->columns,$class->relationships) {
       $col_props{$col}{header} ||= $col;
     }
@@ -198,15 +198,21 @@ before 'setup_component' => sub {
     $class->TableSpec_set_conf( $_ => $TSconfig->{$_} ) for (keys %$TSconfig);
     # ---
     
-    # Set the editor to use the grid unless auto_editor_type is already defined
-    unless($class->TableSpec_get_conf('auto_editor_type')) {
+    # Set the editor to use the existing grid unless auto_editor_type is already defined 
+    # *in the RapidDbic plugin config itself*. This is needed to fix a load-order problem
+    # in which the TableSpec auto_editor_type could have been already set automatically to
+    # 'combo' (this is why we're not checking the actual TableSpec config itself). For the
+    # purposes of RapidDbic, we are taking over and superseding that layer of auto-generated 
+    # configs already in action for TableSpecs. Also, if the auto_editor_type is set to
+    # 'grid', replace it with the custom existing grid, too:  
+    if(!$TSconfig->{auto_editor_type} || $TSconfig->{auto_editor_type} eq 'grid') {
       $class->TableSpec_set_conf(
         auto_editor_type => 'custom',
         auto_editor_params => {
           xtype => 'datastore-app-field',
-          displayField => $class->TableSpec_get_conf('display_column'),
+          displayField => $class->TableSpec_get_set_conf('display_column'),
           autoLoad => {
-            url => $class->TableSpec_get_conf('open_url_multi'),
+            url => $class->TableSpec_get_set_conf('open_url_multi'),
             params => {}
           }
         }
