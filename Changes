@@ -1,5 +1,9 @@
 Revision history for RapidApp
 
+0.99321 2014-06-22
+    - Bugfix for edge-case/random scenario in RapidDbic generation of 'auto_editor_type'
+      TableSpec config 
+
 0.99320 2014-06-21
     - Grid export supports CSV, TSV and JSON as well as Excel
     - POD tweaks
