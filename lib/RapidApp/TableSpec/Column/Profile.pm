@@ -47,6 +47,7 @@ push @number_summary_funcs, (
 sub DEFAULT_PROFILES {{
   
   BASE => {
+    broad_data_type => 'text',
     is_nullable => 1, #<-- initial/default
     renderer => ['Ext.ux.showNull'] ,
     editor => { xtype => 'textfield', minWidth => 80, minHeight => 22 },
@@ -68,11 +69,13 @@ sub DEFAULT_PROFILES {{
   },
   
   number => {
+    broad_data_type => 'number',
     editor => { xtype => 'numberfield', style => 'text-align:left;' },
     multifilter_type => 'number',
     summary_functions => \@number_summary_funcs
   },
   int => {
+    broad_data_type => 'integer',
     editor => { xtype => 'numberfield', style => 'text-align:left;', allowDecimals => \0 },
   },
   
@@ -161,6 +164,7 @@ sub DEFAULT_PROFILES {{
     summary_functions => \@text_summary_funcs,
   },
   datetime => {
+    broad_data_type => 'datetime',
     editor => { 
       xtype => 'xdatetime2', 
       plugins => ['form-relative-datetime'], 
@@ -173,6 +177,7 @@ sub DEFAULT_PROFILES {{
     summary_functions => \@date_summary_funcs
   },
   date => {
+    broad_data_type => 'date',
     editor => { 
       xtype => 'datefield', 
       plugins => ['form-relative-datetime'], 

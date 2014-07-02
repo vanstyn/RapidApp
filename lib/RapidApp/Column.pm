@@ -13,7 +13,7 @@ our @gridColParams= qw(
 );
 our @attrs= ( @gridColParams, qw(
 	data_type required_fetch_columns read_raw_munger update_munger 
-	field_readonly field_readonly_config field_config no_fetch 
+	field_readonly field_readonly_config field_config no_fetch broad_data_type
 ) );
 our %triggers= (
 	render_fn				=> '_set_render_fn',
