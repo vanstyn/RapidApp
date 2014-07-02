@@ -29,30 +29,35 @@ __PACKAGE__->mk_classdata( 'TableSpec_built_cnf' );
 
 # See default profile definitions in RapidApp::TableSpec::Column
 my $default_data_type_profiles = {
-	text 		=> [ 'bigtext' ],
-	mediumtext	=> [ 'bigtext' ],
-	longtext	=> [ 'bigtext' ],
-	tinytext 	=> [ 'text' ],
-	varchar 	=> [ 'text' ],
-	char 		=> [ 'text' ],
-	nvarchar 	=> [ 'text' ],
-	nchar 		=> [ 'text' ],
-	float		=> [ 'number' ],
-	integer		=> [ 'number', 'int' ],
-	tinyint		=> [ 'number', 'int' ],
-	mediumint	=> [ 'number', 'int' ],
-	bigint		=> [ 'number', 'int' ],
-	decimal		=> [ 'number' ],
-	numeric		=> [ 'number' ],
-	datetime	=> [ 'datetime' ],
-	timestamp	=> [ 'datetime' ],
-	date		=> [ 'date' ],
-  blob       => [ 'blob' ],
-  longblob   => [ 'blob' ],
-  mediumblob => [ 'blob' ],
-  tinyblob   => [ 'blob' ],
-  binary     => [ 'blob' ],
-  varbinary  => [ 'blob' ],
+  text        => [ 'bigtext' ],
+  mediumtext  => [ 'bigtext' ],
+  longtext    => [ 'bigtext' ],
+  tinytext    => [ 'text' ],
+  smalltext   => [ 'text' ],
+  varchar     => [ 'text' ],
+  char        => [ 'text' ],
+  nvarchar    => [ 'text' ],
+  nchar       => [ 'text' ],
+  float       => [ 'number' ],
+  integer     => [ 'number', 'int' ],
+  tinyint     => [ 'number', 'int' ],
+  smallint    => [ 'number', 'int' ],
+  mediumint   => [ 'number', 'int' ],
+  bigint      => [ 'number', 'int' ],
+  decimal     => [ 'number' ],
+  numeric     => [ 'number' ],
+  datetime    => [ 'datetime' ],
+  timestamp   => [ 'datetime' ],
+  date        => [ 'date' ],
+  blob        => [ 'blob' ],
+  longblob    => [ 'blob' ],
+  mediumblob  => [ 'blob' ],
+  tinyblob    => [ 'blob' ],
+  smallblob   => [ 'blob' ],
+  binary      => [ 'blob' ],
+  varbinary   => [ 'blob' ],
+  year        => [ 'otherdate' ],
+  tsvector    => [ 'bigtext','unsearchable','virtual_source' ], #<-- postgres-specific
 };
 __PACKAGE__->mk_classdata( 'TableSpec_data_type_profiles' );
 __PACKAGE__->TableSpec_data_type_profiles({ %$default_data_type_profiles }); 
@@ -279,6 +284,13 @@ sub create_result_TableSpec {
     push @profiles, 'autoinc' if ($info->{is_auto_increment});
 		
 		my $type_profile = $data_types->{$info->{data_type}} || ['text'];
+    
+    # -- PostgreSQL override until array columns are supported (Github Issue #55):
+    $type_profile = ['unsearchable','virtual_source'] if (
+      $info->{data_type} =~ /\[/ #<-- if the data_type contains a square backect, i.e. 'text[]'
+    );
+    # --
+    
 		$type_profile = [ $type_profile ] unless (ref $type_profile);
 		push @profiles, @$type_profile;
 		
@@ -512,7 +524,7 @@ sub default_TableSpec_cnf_columns {
 			next;
 		}
 		
-		## WARNING! This logic overlaps with logic further up (in create_result_TableSpec)
+		## WARNING! This logic overlaps with logic further up (in create_result_TableSpec) FIXME!
 		my $info = $self->column_info($col);
 		my @profiles = ();
 			
@@ -520,6 +532,13 @@ sub default_TableSpec_cnf_columns {
     push @profiles, 'autoinc' if ($info->{is_auto_increment});
 		
 		my $type_profile = $data_types->{$info->{data_type}} || ['text'];
+    
+    # -- PostgreSQL override until array columns are supported (Github Issue #55):
+    $type_profile = ['unsearchable','virtual_source'] if (
+      $info->{data_type} =~ /\[/ #<-- if the data_type contains a square backect, i.e. 'text[]'
+    );
+    # --
+    
 		$type_profile = [ $type_profile ] unless (ref $type_profile);
 		push @profiles, @$type_profile;
 		

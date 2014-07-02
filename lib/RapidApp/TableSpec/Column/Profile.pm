@@ -200,6 +200,11 @@ sub DEFAULT_PROFILES {{
     multifilter_type => 'date',
     summary_functions => \@date_summary_funcs
   },
+  otherdate => { 
+    # for other general 'date' columns that we have no special handling for yet,
+    # like 'year' in postgres
+    no_quick_search => \1,
+  },
   money => {
     editor => { xtype => 'numberfield', style => 'text-align:left;', decimalPrecision => 2 },
     renderer => 'Ext.ux.showNullusMoney',
@@ -237,6 +242,12 @@ sub DEFAULT_PROFILES {{
     allow_add => \0,
     allow_edit => \0,
     allow_batchedit => \0
+  },
+  unsearchable => {
+    # This profile is for data types for which we do not yet properly support searching on,
+    # like PostgreSQL 'tsvector' and array columns...
+    no_quick_search => \1,
+    no_multifilter => \1
   }
 
 }};
