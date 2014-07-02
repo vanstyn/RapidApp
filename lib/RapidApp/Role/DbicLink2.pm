@@ -11,6 +11,7 @@ use Text::TabularDisplay;
 use Time::HiRes qw(gettimeofday tv_interval);
 use RapidApp::Data::Dmap qw(dmap);
 use URI::Escape;
+use Scalar::Util qw(looks_like_number);
 
 if($ENV{DBIC_TRACE}) {
 	debug_around 'DBIx::Class::Storage::DBI::_execute', newline => 1, stack=>20;
@@ -1086,41 +1087,73 @@ sub chain_Rs_req_explicit_resultset {
 
 # Applies Quick Search to ResultSet:
 sub chain_Rs_req_quicksearch {
-	my $self = shift;
-	my $Rs = shift || $self->_ResultSet;
-	my $params = shift || $self->c->req->params;
-	
-	delete $params->{query} if (defined $params->{query} and $params->{query} eq '');
-	my $query = $params->{query} or return $Rs;
-	
-	my $fields = $self->param_decodeIf($params->{fields},[]);
-	return $Rs unless (@$fields > 0);
-	
-	my $attr = { join => {} };
-	
-	my $mode = $params->{quicksearch_mode} || $self->quicksearch_mode;
-	$mode = $self->quicksearch_mode unless ($self->allow_set_quicksearch_mode);
-	
+  my $self = shift;
+  my $Rs = shift || $self->_ResultSet;
+  my $params = shift || $self->c->req->params;
+
+  delete $params->{query} if (defined $params->{query} and $params->{query} eq '');
+  my $query = $params->{query} or return $Rs;
+
+  my $fields = $self->param_decodeIf($params->{fields},[]);
+  return $Rs unless (@$fields > 0);
+
+  my $attr = { join => {} };
+
+  my $mode = $params->{quicksearch_mode} || $self->quicksearch_mode;
+  $mode = $self->quicksearch_mode unless ($self->allow_set_quicksearch_mode);
+
   my @search = ();
-  foreach my $f (@$fields) {
-    my $dbicname = $self->resolve_dbic_colname($f,$attr->{join});
-    if($mode eq 'like') {
-      # Default:
-      push @search, { $dbicname => { like => '%' . $query . '%' } };
-    }
-    elsif($mode eq 'exact') {
-      #push @search, { $dbicname => { '=' => $query } }; 	#<-- for some reason this causes all records to be 
-                                # shown if none match. No idea why.
-      
-      push @search, { $dbicname => { like => $query } };
-    }
-    else {
-      confess "Invalid quicksearch_mode '$mode'";
-    }
+  foreach my $field (@$fields) {
+    my $cond = $self->_resolve_quicksearch_condition(
+      $field, $query, { mode => $mode, joinref => $attr->{join} }
+    ) or next; #<-- skip for undef (see below)
+    push @search, $cond;
   }
 
   return $Rs->search_rs({ '-or' => \@search },$attr);
 }
+
+
+sub _resolve_quicksearch_condition {
+  my ($self, $field, $query, $opt) = @_;
+
+  my $cnf  = $self->get_column($field) or die "field/column '$field' not found!";
+  my $join = $opt->{joinref} or die "missing opt/ref 'joinref'";
+  my $mode = $opt->{mode} or die "missing opt 'mode'";
+
+  # Force to exact mode via optional TableSpec column cnf override:
+  $mode = 'exact' if (
+    exists $cnf->{quick_search_exact_only}
+    && jstrue($cnf->{quick_search_exact_only})
+  );
+
+  my $dtype    = $cnf->{broad_data_type} || 'text';
+  my $dbicname = $self->resolve_dbic_colname($field,$join);
+
+  # For numbers, force to 'exact' mode and discard (return undef) for queries
+  # which are not numbers (since we already know they will not match anything). 
+  # This is also now safe for PostgreSQL which complains when you try to search
+  # on a numeric column with a non-numeric value:
+  if ($dtype eq 'integer') {
+    return undef unless (
+      looks_like_number( $query )
+      && $query =~ /\A\d+\z/aa
+    );
+    $mode = 'exact';
+  }
+  elsif ($dtype eq 'number') {
+    return undef unless (
+      looks_like_number( $query )
+    );
+    $mode = 'exact';
+  }
+
+  # 'text' is the only type which can do a LIKE (i.e. sub-string)
+  return $mode eq 'like' 
+    ? { $dbicname => { like => join('%','',$query,'') } }
+    : { $dbicname => { '='  => $query } };
+}
+
 
 
 our ($needs_having,$dbf_active_conditions);

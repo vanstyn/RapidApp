@@ -4,16 +4,17 @@ use warnings;
 use RapidApp::Include qw(sugar perlutil);
 
 our @gridColParams= qw(
-	name sortable hidden header dataIndex width editor menuDisabled tpl xtype
-	id no_column no_multifilter no_quick_search extra_meta_data css listeners
-	filter field_cnf rel_combo_field_cnf field_cmp_config render_fn renderer
-	allow_add allow_edit allow_view query_id_use_column query_search_use_column
-	trueText falseText menu_select_editor render_column multifilter_type summary_functions
-	no_summary allow_batchedit format align is_nullable
+  name sortable hidden header dataIndex width editor menuDisabled tpl xtype
+  id no_column no_multifilter no_quick_search extra_meta_data css listeners
+  filter field_cnf rel_combo_field_cnf field_cmp_config render_fn renderer
+  allow_add allow_edit allow_view query_id_use_column query_search_use_column
+  trueText falseText menu_select_editor render_column multifilter_type summary_functions
+  no_summary allow_batchedit format align is_nullable
 );
 our @attrs= ( @gridColParams, qw(
-	data_type required_fetch_columns read_raw_munger update_munger 
-	field_readonly field_readonly_config field_config no_fetch broad_data_type
+  data_type required_fetch_columns read_raw_munger update_munger 
+  field_readonly field_readonly_config field_config no_fetch broad_data_type
+  quick_search_exact_only
 ) );
 our %triggers= (
 	render_fn				=> '_set_render_fn',

@@ -101,6 +101,13 @@ Boolean. Excludes the column from the MultiFilter Search in grids (Filter button
 
 Boolean. Excludes the column from column summaries in grids. Defaults to false.
 
+=head2 quick_search_exact_only
+
+Boolean. Forces queries from the Quick Search to only use exact mode (C<'='> instead of C<LIKE %string%>
+sub-string match) for the given column, regardless of the client-side Quick Search mode. This is 
+already implied for numeric columns since it would never make sense to attempt to match them against
+a sub-string.
+
 =head2 allow_add
 
 Boolean. Determines if an individual column is allowed to be used when adding new rows. This setting
