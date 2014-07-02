@@ -164,7 +164,17 @@ sub DEFAULT_PROFILES {{
     summary_functions => \@text_summary_funcs,
   },
   datetime => {
-    broad_data_type => 'datetime',
+    # We now disable quick search by default for datetime/date columns because
+    # it is more trouble than it is worth. Very rarely would it actually be useful,
+    # since the user can still use MultiFilter where they can do things like
+    # a relative search. Also, certain databases (PostgreSQL) throw exceptions
+    # when querying a datetime column with an invalid datetime string, so, properly
+    # supporting this will require server-side validation, which mary vary from
+    # backend to backend, etc. TODO: we may look at adding this support in the
+    # future using DBIx::Introspector.
+    # Note: the user is still free to manually change 'no_quick_search' if they
+    # really want it - this is just the default...
+    no_quick_search => \1,
     editor => { 
       xtype => 'xdatetime2', 
       plugins => ['form-relative-datetime'], 
@@ -177,7 +187,8 @@ sub DEFAULT_PROFILES {{
     summary_functions => \@date_summary_funcs
   },
   date => {
-    broad_data_type => 'date',
+    # See comment above in the datetime section...
+    no_quick_search => \1,
     editor => { 
       xtype => 'datefield', 
       plugins => ['form-relative-datetime'], 
