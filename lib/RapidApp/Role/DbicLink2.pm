@@ -1148,6 +1148,13 @@ sub _resolve_quicksearch_condition {
     $mode = 'exact';
   }
 
+  # Special-case: pre-validate enums (Github Issue #56)
+  my $enumVh = $cnf->{enum_value_hash};
+  if ($enumVh) {
+    return undef unless ($enumVh->{$query});
+    $mode = 'exact';
+  }
+
   # 'text' is the only type which can do a LIKE (i.e. sub-string)
   return $mode eq 'like' 
     ? { $dbicname => { like => join('%','',$query,'') } }

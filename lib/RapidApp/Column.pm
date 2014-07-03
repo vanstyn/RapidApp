@@ -14,7 +14,7 @@ our @gridColParams= qw(
 our @attrs= ( @gridColParams, qw(
   data_type required_fetch_columns read_raw_munger update_munger 
   field_readonly field_readonly_config field_config no_fetch broad_data_type
-  quick_search_exact_only
+  quick_search_exact_only enum_value_hash
 ) );
 our %triggers= (
 	render_fn				=> '_set_render_fn',

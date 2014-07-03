@@ -615,13 +615,19 @@ sub default_TableSpec_cnf_columns {
         #mode: 'combo', 'menu' or 'cycle':
         mode        => 'menu',
         selections  => $selections
-			};
+      };
+
+      # New: also save the list of possible values in a hashref...
+      #      This is being done so that they can be pre-validated in
+      #      quick search, needed for Postfix (Github Issue #56)
+      #      TODO: not happy about having to do this - revisit later
+      $cols->{$col}{enum_value_hash} = { map {$_=>1} @$list }
     }
     # --^^--
     
-	}
-	
-	return { columns => $cols };
+  }
+
+  return { columns => $cols };
 }
 
 sub TableSpec_valid_db_columns {
