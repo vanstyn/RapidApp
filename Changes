@@ -1,5 +1,14 @@
 Revision history for RapidApp
 
+0.99330 2014-07-04
+    - Misc PostgreSQL-specific fixes and improvements:
+       * Additional TableSpec column profiles and known column data types
+       * Attempts to detect and safely handle special column types like array cols
+         and tsvector (currently just disables the unsupported features)
+       * Disabled quick searching date columns
+       * Pre-validation for numeric cols in quick search (Github Issue #52)
+       * Pre-validation for enum cols in quick search (Github Issue #56)
+
 0.99321 2014-06-22
     - Bugfix for edge-case/random scenario in RapidDbic generation of 'auto_editor_type'
       TableSpec config 
