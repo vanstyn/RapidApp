@@ -1137,7 +1137,7 @@ sub _resolve_quicksearch_condition {
   if ($dtype eq 'integer') {
     return undef unless (
       looks_like_number( $query )
-      && $query =~ /\A\d+\z/aa
+      && $query =~ /^[0-9]+$/
     );
     $mode = 'exact';
   }
