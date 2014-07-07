@@ -1,4 +1,4 @@
-﻿[% WRAPPER templates/rapidapp/ext_page.tt %]
+[% WRAPPER templates/rapidapp/ext_page.tt %]
 
 <!-- Fields required for history management -->
 <form id="history-form" class="x-hidden">
