@@ -1135,10 +1135,7 @@ sub _resolve_quicksearch_condition {
   # This is also now safe for PostgreSQL which complains when you try to search
   # on a numeric column with a non-numeric value:
   if ($dtype eq 'integer') {
-    return undef unless (
-      looks_like_number( $query )
-      && $query =~ /^[0-9]+$/
-    );
+    return undef unless $query =~ /^[+-][0-9]+$/;
     $mode = 'exact';
   }
   elsif ($dtype eq 'number') {
