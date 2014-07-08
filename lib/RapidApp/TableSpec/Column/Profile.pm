@@ -102,6 +102,11 @@ sub DEFAULT_PROFILES {{
         }
       ]
     },
+    
+    # piggy-back on the existing quick-search pre-validation for
+    # enum columns -- Github issue #60
+    enum_value_hash => { '0'=>1,'1'=>1 },
+    
     multifilter_type => 'bool'
   },
   
