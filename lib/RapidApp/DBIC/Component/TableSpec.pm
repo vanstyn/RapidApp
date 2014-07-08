@@ -46,6 +46,8 @@ my $default_data_type_profiles = {
   bigint      => [ 'number', 'int' ],
   decimal     => [ 'number' ],
   numeric     => [ 'number' ],
+  double      => [ 'number' ],
+  'double precision' => [ 'number' ],
   datetime    => [ 'datetime' ],
   timestamp   => [ 'datetime' ],
   date        => [ 'date' ],
@@ -58,6 +60,7 @@ my $default_data_type_profiles = {
   varbinary   => [ 'blob' ],
   year        => [ 'otherdate' ],
   tsvector    => [ 'bigtext','unsearchable','virtual_source' ], #<-- postgres-specific
+  boolean     => ['bool']
 };
 __PACKAGE__->mk_classdata( 'TableSpec_data_type_profiles' );
 __PACKAGE__->TableSpec_data_type_profiles({ %$default_data_type_profiles }); 
