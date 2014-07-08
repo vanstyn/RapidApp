@@ -2,6 +2,7 @@ package RapidApp::TableSpec::Column;
 
 use strict;
 use warnings;
+use Try::Tiny;
 
 # This class must declare the version because we declared it before (and PAUSE knows)
 our $VERSION = '0.99301';
@@ -47,26 +48,39 @@ around BUILDARGS => sub {
 
 
 sub collapse_apply_profiles {
-	my $self = shift;
-	my $target = shift or die "collapse_apply_profiles(): missing arguments";
-	my @base_profiles = @_;
-	
-	my $profiles = [];
-	$profiles = delete $target->{profiles} if($target->{profiles});
-	$profiles = [ $profiles ] unless (ref $profiles);
-	@$profiles = (@base_profiles,@$profiles);
-	
-	return unless (scalar @$profiles > 0);
-  
-  my $collapsed = get_set(@$profiles);
-	
-	#my $collapsed = {};
-	#foreach my $profile (@$profiles) {
-	#	my $opt = $profile_defs->{$profile} or next;
-	#	$collapsed = merge($collapsed,$opt);
-	#}
+  my $self = shift;
+  my $target = shift or die "collapse_apply_profiles(): missing arguments";
+  my @base_profiles = @_;
 
-	%$target = %{ merge($target,$collapsed) };
+  my $profiles = [];
+  $profiles = delete $target->{profiles} if($target->{profiles});
+  $profiles = [ $profiles ] unless (ref $profiles);
+  @$profiles = (@base_profiles,@$profiles);
+
+  return unless (scalar @$profiles > 0);
+
+  my %prof = ();
+  @$profiles = grep { ! $prof{$_}++ } @$profiles;
+
+  my $collapsed = get_set(@$profiles);
+
+  # -- Github issue #61
+  # This is special handling for 'bool' - we need to add the 3rd, '(not set)' option
+  # if it is nullable. We have to do this here because the profile definitions are
+  # currently passive and cannot natively change themselves based on the existence
+  # of other profiles. This is something we want to generalize in the future, when
+  # we will probably turn profiles into real class objects
+  if($prof{bool} && $prof{nullable} && ! $prof{notnull}) {
+    my $selections = try{$collapsed->{menu_select_editor}{selections}};
+    unshift @$selections, {
+      #iconCls => "ra-icon-cross-light-12x12",
+      text	=> '(not set)',
+      value	=> undef
+    } if ($selections && ref($selections) eq 'ARRAY' && scalar(@$selections) == 2);
+  }
+  # --
+
+  %$target = %{ merge($target,$collapsed) };
 }
 
 
