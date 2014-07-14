@@ -1213,6 +1213,7 @@ sub chain_Rs_req_multifilter {
 	# sort virtual selects to the end for priority in name collisions 
 	# (can happen with multi-rels with the same name as a column):
 	@$dbf_active_conditions = sort { !(ref $b->{select}) cmp (ref $a->{select}) } @$dbf_active_conditions;
+  
 
 	# Collapse uniq needed col/cond names into a Hash:
 	my %needed_selects = map { $_->{name} => $_ } @$dbf_active_conditions;
@@ -1245,7 +1246,8 @@ sub chain_Rs_req_multifilter {
 	#
 	# Step 2/3 - transform selects:
 	#
-	
+  
+	my %virtuals = (); #<-- new for Github Issue #51
 	my %map = ();
 	my ($select,$as) = ([],[]);
 	for my $i (0..$#$cur_select) {
@@ -1254,6 +1256,8 @@ sub chain_Rs_req_multifilter {
 		if (ref $cur_select->[$i]) {
 			# Already a virtual column, no changes:
 			push @$select, $cur_select->[$i];
+			# new for Github Issue #51:
+			$virtuals{$cur_as->[$i]} = $self->_extract_virtual_subselect_ref($cur_select->[$i]);
 			next;
 		}
 		
@@ -1274,14 +1278,110 @@ sub chain_Rs_req_multifilter {
 		{ map { defined $_ && exists $map{$_} ? $map{$_} : $_ } %$_ } :
 			$_
 	} $cond;
-	
-	return $Rs->search_rs({},{ %$attr,
-		group_by => [ map { 'me.' . $_ } @{$self->primary_columns} ], #<-- safe group_by
-		having => $having,
-		select => $select,
-		as => $as
-	});
+  
+  # ---
+  # Temporary implementation for Github Issue #51
+  # Here we are doing yet another transformation step, which is to duplicate the full sub-select
+  # for our virtual columns within the condition. This was needed for PostgreSQL support which
+  # was discussed at length within the comments of Github Issue #51. Since we're doing it this 
+  # way now, we can use a normal WHERE clause instead of a HAVING clause. I'm still not certain
+  # this represents the final implementation, and there are lots of entanglements and potential
+  # points-of-failure (which are not yet under test coverage) so for now this is being done using
+  # the least code changes possible. If this is finalized, a refactor pass will remove a *lot* of
+  # code and machinery that serves no purpose if we are not transforming into a HAVING at all...
+  #
+  my $virtual_where = 1; #<-- set to 0 to revert to HAVING codepath
+  if ($virtual_where) {
+    $cond = $self->_recurse_transform_condition(clone($cond),\%virtuals);
+    return $Rs->search_rs({},{ %$attr,
+      where => $cond,
+      select => $select,
+      as => $as
+    });
+  }
+  else {
+    # This is the old code which uses HAVING via alias identifiers. This is being left in for 
+    # now as an active code block (rather than removed/commented out) to make it easier to 
+    # come back to later. We may want to still do this for RDBMS'es which support this (at 
+    # least MySQL and SQLite do, and at least PostgreSQL does not). But, the question will be
+    # to ask if there is even a performance advantage of doing this, and if so, when, how, etc
+    return $Rs->search_rs({},{ %$attr,
+      group_by => [ map { 'me.' . $_ } @{$self->primary_columns} ], #<-- safe group_by
+      having => $having,
+      select => $select,
+      as => $as
+    });
+  }
+  # ---
 }
+
+
+# This machinery was added for Github Issue #51 (see earlier comments)
+sub _extract_virtual_subselect_ref {
+  my ($self, $el) = @_;
+  my $val = $el->{''} or die "Expected empty-string hashkey";
+  # We're handling just 2 cases which know about in advance, virtual columns
+  # and multi-relationship columns:
+  $val = ref($val) eq 'ARRAY' ? $val->[0] : $val;
+  return ref $val ? $val : \$val;
+}
+
+sub _recurse_transform_condition {
+  my ($self, $val, $remap) = @_;
+
+  return $val unless ($val && ref $val);
+
+  if(ref($val) eq 'ARRAY') {
+    @$val = map {
+      $self->_recurse_transform_condition($_,$remap)
+    } @$val;
+  }
+  elsif(ref($val) eq 'HASH') {
+    if(scalar(keys %$val) == 1) {
+      my ($k,$v) = (%$val);
+      # This is the location where we are actually 
+      # changing something in the structure:
+      return &_binary_op_fuser(
+        $self->ResultSource->schema->storage->sql_maker,
+        $remap->{$k},
+        $self->_recurse_transform_condition($v,$remap)
+      ) if($remap->{$k});
+    }
+
+    %$val = map {
+      $_ => $self->_recurse_transform_condition($val->{$_},$remap)
+    } (keys %$val);
+  }
+
+  return $val;
+}
+
+# -- Function (and disclaimer) provided by ribasushi for Github Issue #51 --
+###############################################################
+#        DO NOT COPY THIS UNDER ANY CIRCUMSTANCES
+#  THIS IS A TEMPORARY HACK AND WILL BE BROKEN BY THE MAINTAINERS
+#          POSSIBLY BEFORE THE END OF THIS YEAR
+###############################################################
+sub _binary_op_fuser {
+  my ($sm, $l, $r) = @_;
+
+  my ($lsql, @lbind) = $sm->_recurse_where($l);
+  local $sm->{_nested_func_lhs} = {};
+  my ($rsql, @rbind) = $sm->_recurse_where({ '' => $r });
+  $rsql =~ s/ \A \s* \( (.+?) \) \s* \z /$1/sx;
+  return \[
+    "$lsql $rsql",
+    @lbind,
+    @rbind
+  ];
+}
+###############################################################
+#        DO NOT COPY THIS UNDER ANY CIRCUMSTANCES
+#  THIS IS A TEMPORARY HACK AND WILL BE BROKEN BY THE MAINTAINERS
+#          POSSIBLY BEFORE THE END OF THIS YEAR
+###############################################################
+# --
+
 
 sub multifilter_to_dbf {
 	my $self = shift;
