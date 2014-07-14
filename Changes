@@ -1,5 +1,11 @@
 Revision history for RapidApp
 
+0.99331 2014-07-08
+    - Editor for bool columns now correctly handles nullability (Github Issue #61)
+    - Proper support for PostgeSQL 'boolean' and 'double float' column types,
+      including Quick Search pre-validation (Github Issue #60)
+    - Tweak regex for numeric Quick Search pre-validation (Github PR #58)
+
 0.99330 2014-07-04
     - Misc PostgreSQL-specific fixes and improvements:
        * Additional TableSpec column profiles and known column data types
