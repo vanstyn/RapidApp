@@ -1,5 +1,9 @@
 Revision history for RapidApp
 
+0.99332 2014-07-16
+    - Properly support virtual column conditions (i.e. MultiFilters) under
+      PostgreSQL (Github Issue #51)
+
 0.99331 2014-07-08
     - Editor for bool columns now correctly handles nullability (Github Issue #61)
     - Proper support for PostgeSQL 'boolean' and 'double float' column types,
