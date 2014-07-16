@@ -32,13 +32,34 @@ has 'request_id' => ( is => 'ro', default => sub { (shift)->rapidApp->requestCou
 # when in debug mode.
 around 'dump_these' => sub {
   my ($orig,$c,@args) = @_;
-  
-  my $these = [ $c->$orig(@args) ];
-  require Data::Dumper;
-  local $Data::Dumper::Maxdepth = 4;
-  my $VAR1; eval( Data::Dumper::Dumper($these) );
-  
-  return @$VAR1;
+
+  # strip and capture original 'Request' and 'Response'
+  my ($req_arr,$res_arr);
+  my $these = [ grep {
+    ! ($_->[0] eq 'Request'  and $req_arr = $_) &&
+    ! ($_->[0] eq 'Response' and $res_arr = $_)
+  } $c->$orig(@args) ];
+
+  my @new_these = ();
+  {
+    require Data::Dumper;
+    local $Data::Dumper::Maxdepth = 4;
+    my $VAR1; eval( Data::Dumper::Dumper($these) );
+    @new_these = (
+      # Put the original, non-depth-limited Request and Reponse data back in.
+      # We need to do this because there are other places in native Catalyst
+      # code (e.g. log_request_uploads) which rely on getting the the unaltered 
+      # request/response objects out of 'dump_these'. Also, these objects aren't
+      # the ones which need to be limited anyway, so we preserve them as-is.
+      # Added for Github Issue #54, and to preserve the API as of Catalyst 5.90065.
+      # Note: the functioning of this stuff in Catalyst is legacy and may be 
+      # refactored in a later version of Catalyst...
+      $req_arr,$res_arr,
+      @$VAR1
+    );
+  }
+
+  return @new_these;
 };
 # ---
 
