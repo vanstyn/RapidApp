@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+0.99333 2014-07-17
+    - Fixed insert image (broken in v0.99310) - Github Issue #54
+
 0.99332 2014-07-16
     - Properly support virtual column conditions (i.e. MultiFilters) under
       PostgreSQL (Github Issue #51)
