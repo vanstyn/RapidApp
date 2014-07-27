@@ -7,8 +7,10 @@ perl:
 #   - 5.12
 #   - 5.10
 install:
-   - cpanm --quiet --notest --skip-satisfied Dist::Zilla
+   - cpanm --quiet --notest --skip-satisfied Dist::Zilla Devel::Cover::Report::Coveralls
    - "dzil authordeps | cpanm --quiet --notest --skip-satisfied"
    - "dzil listdeps   | cpanm --quiet --notest --skip-satisfied"
 script:
-   - dzil smoke --release --author
+   - HARNESS_PERL_SWITCHES=-MDevel::Cover=-coverage,statement,branch,condition,path,subroutine dzil test --author --release --keep
+after_success:
+  - cd .build/latest && cover && cover -report coveralls
