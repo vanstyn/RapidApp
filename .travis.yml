@@ -1,11 +1,11 @@
 language: perl
 perl:
-   - 5.19
-   - 5.18
-   - 5.16
-   - 5.14
-#   - 5.12
-#   - 5.10
+   - "5.20"
+   - "5.18"
+   - "5.16"
+   - "5.14"
+#   - "5.12"
+#   - "5.10"
 install:
    - cpanm --quiet --notest --skip-satisfied Dist::Zilla Devel::Cover::Report::Coveralls
    - "dzil authordeps | cpanm --quiet --notest --skip-satisfied"
