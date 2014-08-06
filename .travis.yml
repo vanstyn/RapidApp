@@ -9,7 +9,10 @@ perl:
 install:
    - cpanm --quiet --notest --skip-satisfied Dist::Zilla Devel::Cover::Report::Coveralls
    - "dzil authordeps | cpanm --quiet --notest --skip-satisfied"
-   - "dzil listdeps   | cpanm --quiet --notest --skip-satisfied"
+   # TODO: remove special --notest install of Catalyst::Controller::SimpleCAS
+   #  as soon as its dep, Email::MIME::CreateHTML, is fixed for perl 5.18
+   - cpanm --quiet --notest --skip-satisfied Catalyst::Controller::SimpleCAS
+   - "dzil listdeps   | cpanm --quiet --skip-satisfied"
 script:
    - HARNESS_PERL_SWITCHES=-MDevel::Cover=-coverage,statement,branch,condition,path,subroutine dzil test --author --release --keep
 after_success:
