@@ -13,8 +13,9 @@ install:
    #  as soon as its dep, Email::MIME::CreateHTML, is fixed for perl 5.18
    - cpanm --quiet --notest --skip-satisfied Catalyst::Controller::SimpleCAS
    - "dzil listdeps   | cpanm --quiet --skip-satisfied"
+
 script:
-  # TODO: add back  --author --release switches (to dzil test) once RELEASE_TESTING works...
-   - HARNESS_PERL_SWITCHES=-MDevel::Cover=-coverage,statement,branch,condition,path,subroutine dzil test --keep
+   - HARNESS_PERL_SWITCHES=-MDevel::Cover=-coverage,statement,branch,condition,path,subroutine dzil test --author --release --keep
+
 after_success:
   - cd .build/latest && cover && cover -report coveralls
