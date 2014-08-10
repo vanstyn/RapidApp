@@ -78,7 +78,6 @@ sub rapidapp_base {
 	calleruse 'RapidApp::JSON::RawJavascript';
 	calleruse 'RapidApp::JSON::ScriptWithData';
   calleruse 'RapidApp::Web1RenderContext';
-	calleruse 'RapidApp::DbicExtQuery';
 	calleruse 'RapidApp::Functions';
 }
 
