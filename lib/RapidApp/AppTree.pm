@@ -248,8 +248,9 @@ sub call_fetch_nodes {
 	my $self = shift;
 	my $node = shift || $self->c->req->params->{node};
 	
+	my @node_pth = split(/\//,$node);
 	die usererr "max_node_path_depth (" . $self->max_node_path_depth . ") exceeded ($node)" 
-		if (scalar split(/\//,$node) > $self->max_node_path_depth);
+		if (scalar(@node_pth)  > $self->max_node_path_depth);
 	
 	#Track recursive depth:
 	local $DEEP_FETCH_DEPTH = $DEEP_FETCH_DEPTH + 1;
