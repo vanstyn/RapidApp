@@ -8,15 +8,15 @@ perl:
 #   - "5.10"
 
 install:
+   - cpanm --quiet --notest --skip-satisfied Dist::Zilla
+   - cpanm --quiet --notest --skip-satisfied Devel::Cover::Report::Coveralls
    # We're also installing Catalyst w/o tests to keep travis build time down:
-   - cpanm --quiet --notest --skip-satisfied \
-      Dist::Zilla \
-      Devel::Cover::Report::Coveralls \
-      Catalyst
+   - cpanm --quiet --notest --skip-satisfied Catalyst
+   - "dzil authordeps | cpanm --quiet --notest --skip-satisfied"
+   - "dzil listdeps   | cpanm --quiet --skip-satisfied"
 
 script:
-   - HARNESS_PERL_SWITCHES=-MDevel::Cover=-coverage,statement,branch,condition,path,subroutine \
-      dzil test --author --release --keep
+   - HARNESS_PERL_SWITCHES=-MDevel::Cover=-coverage,statement,branch,condition,path,subroutine dzil test --author --release --keep
 
 after_success:
   - cd .build/latest && cover && cover -report coveralls
