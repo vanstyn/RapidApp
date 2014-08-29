@@ -198,6 +198,12 @@ Currently available column profiles:
 
 =item * img_blob
 
+=item * virtual_source
+
+=item * unsearchable
+
+=item * cas_link
+
 =back
 
 =head1 SEE ALSO

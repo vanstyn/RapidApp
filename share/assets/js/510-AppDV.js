@@ -497,11 +497,18 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	click_controller: function(dv, index, domNode, event) {
 		var target = event.getTarget(null,null,true);
 		
-		// --- Override for HashNav links (a tags with href starting with '#!/'):
+		// --- Override nav links
 		var href = target.getAttribute('href');
-		if(href && target.is('a') && href.search('#!/') === 0) {
-			window.location.hash = href;
-			return;
+		if(href && target.is('a')) {
+			// New: ignore links with target attribute (i.e. target="_self", etc)
+			if(target.getAttribute('target')) {
+				return;
+			}
+			// HashNav links (a tags with href starting with '#!/'):
+			else if(href.search('#!/') === 0) {
+				window.location.hash = href;
+				return;
+			}
 		}
 		// ---
 			

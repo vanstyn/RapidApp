@@ -441,8 +441,9 @@ Ext.ux.RapidApp.ClickActionField = Ext.extend(Ext.ux.RapidApp.UtilField,{
 			this.callActionFn.defer(10,this);
 		}
 	},
-	
+
 	isInForm: function() {
+
 		if(this.ownerCt) {
 			
 			// Special, if in MultiFilter (TODO: clean this up and find a more generaalized
@@ -728,15 +729,65 @@ Ext.reg('menu-field',Ext.ux.RapidApp.ClickMenuField);
 
 
 Ext.ux.RapidApp.CasUploadField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
-	
-	// TODO
-	
-	
-	initComponent: function() {
-		Ext.ux.RapidApp.CasUploadField.superclass.initComponent.call(this);
-		
-	}
-	
+
+  // init/default value:
+  value: '<div style="color:darkgray;">(select file)</div>',
+
+  uploadUrl: '/simplecas/upload_file',
+  uploadHeading: 'Upload File',
+  selectHeading: 'Select File',
+
+  actionOnShow: true,
+
+  getUploadUrl: function() {
+    return this.uploadUrl;
+  },
+
+  formUploadCallback: function(form,res) {
+    var nfo = Ext.decode(res.response.responseText);
+
+    this.setValue([nfo.checksum,nfo.filename].join('/'));
+    this.onActionComplete();
+
+  },
+
+  onActionComplete: function() {
+    this.fireEvent.defer(50,this,['select']);
+  },
+
+  actionFn: function(){
+    
+    var upload_field = {
+      xtype: 'fileuploadfield',
+      emptyText: this.selectHeading,
+      fieldLabel: this.selectHeading,
+      name: 'Filedata',
+      buttonText: 'Browse',
+      width: 300
+    };
+    
+    var fieldset = {
+      style: 'border: none',
+      hideBorders: true,
+      xtype: 'fieldset',
+      labelWidth: 80,
+      border: false,
+      items:[ upload_field ]
+    };
+    
+    Ext.ux.RapidApp.WinFormPost.call(this,{
+      title: this.uploadHeading,
+      width: 440,
+      height:140,
+      url: this.getUploadUrl(),
+      useSubmit: true,
+      fileUpload: true,
+      fieldset: fieldset,
+      success: this.formUploadCallback,
+      cancelHandler: this.onActionComplete.createDelegate(this)
+    });
+  }
+
 });
 Ext.reg('cas-upload-field',Ext.ux.RapidApp.CasUploadField);
 
@@ -747,6 +798,8 @@ Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
 	value: '<div style="color:darkgray;">(select image)</div>',
 	
 	uploadUrl: '/simplecas/upload_image',
+  uploadHeading: 'Insert Image',
+  selectHeading: 'Select Image',
 	
 	maxImageWidth: null,
 	maxImageHeight: null,
@@ -810,42 +863,7 @@ Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
 		this.onActionComplete();
 	},
 	
-	onActionComplete: function() {
-		this.fireEvent.defer(50,this,['select']);
-	},
-	
-	actionFn: function(){
-		
-		var upload_field = {
-			xtype: 'fileuploadfield',
-			emptyText: 'Select image',
-			fieldLabel:'Select Image',
-			name: 'Filedata',
-			buttonText: 'Browse',
-			width: 300
-		};
-		
-		var fieldset = {
-			style: 'border: none',
-			hideBorders: true,
-			xtype: 'fieldset',
-			labelWidth: 80,
-			border: false,
-			items:[ upload_field ]
-		};
-		
-		Ext.ux.RapidApp.WinFormPost.call(this,{
-			title: 'Insert Image',
-			width: 440,
-			height:140,
-			url: this.getUploadUrl(),
-			useSubmit: true,
-			fileUpload: true,
-			fieldset: fieldset,
-			success: this.formUploadCallback,
-			cancelHandler: this.onActionComplete.createDelegate(this)
-		});
-	}
+
 	
 });
 Ext.reg('cas-image-field',Ext.ux.RapidApp.CasImageField);

@@ -253,6 +253,10 @@ sub DEFAULT_PROFILES {{
     # like PostgreSQL 'tsvector' and array columns...
     no_quick_search => \1,
     no_multifilter => \1
+  },
+  cas_link => {
+    editor   => { xtype => 'cas-upload-field' },
+    renderer => 'Ext.ux.RapidApp.renderCasLink'
   }
 
 }};

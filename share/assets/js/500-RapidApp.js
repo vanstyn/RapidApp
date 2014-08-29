@@ -4899,6 +4899,33 @@ Ext.ux.RapidApp.getEmbeddedImgRenderer = function(mime_type) {
   }
 }
 
+
+Ext.ux.RapidApp.renderCasLink = function(v){
+  if(typeof v != 'undefined' && v != null) {
+    var parts = v.split('/');
+
+    if(parts.length <= 2) {
+      var sha1 = parts[0], filename = parts[1] || parts[0];
+      return [
+        '<b class="ra-hex-string">',filename,'</b>',
+        '<a ',
+          'href="/simplecas/fetch_content/',sha1,'/',filename,'" ',
+          'target="_self" ',
+          'class="ra-icon-paperclip-tiny"',
+        '>save</a>'
+      ].join('');
+    }
+    else {
+      // unexpected currently...
+      return v;
+    }
+  }
+  else {
+    return Ext.ux.showNull(v);
+  }
+}
+
+
 // Called from ext_viewport.tt to initialize the main app UI:
 Ext.ux.RapidApp.MainViewportInit = function(opt) {
   Ext.ux.RapidApp.HistoryInit();
