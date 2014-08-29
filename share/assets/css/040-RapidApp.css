@@ -812,11 +812,11 @@ html, body { height:100%; }
 	width: 12px;
 	float:left;
 	cursor:	pointer;
-	display:none;
+	visibility: hidden;
 }
 
 .editing-record .appdv-edit-field td.icons div, .record-update .appdv-edit-field td.icons div {
-	display:none !important;
+	visibility: hidden;
 }
 
 
@@ -827,15 +827,18 @@ html, body { height:100%; }
 
 .appdv-edit-field td.icons .save {
 	background:url(/assets/rapidapp/misc/static/images/bullet_disk.png) center center no-repeat;
+	display:none;
 }
 
 .appdv-edit-field td.icons .cancel {
 	background:url(/assets/rapidapp/misc/static/images/cross_tiny.png) center center no-repeat;
+	display:none;
 }
 
 .appdv-edit-field:hover td.icons .edit {
-	display:block;
+	visibility: visible;
 }
+
 
 .appdv-edit-field .data-holder, .onepx-transparent-border-bottom {
 	border-bottom-style: dotted;
@@ -853,11 +856,14 @@ html, body { height:100%; }
 	cursor:	pointer;
 }
 
-.editing .appdv-edit-field td.icons .save, .editing .appdv-edit-field td.icons .cancel {
+.editing .appdv-edit-field td.icons .save, 
+.editing .appdv-edit-field td.icons .cancel {
 	display:block;
+	visibility: visible;
 }
 
-.editing:hover .appdv-edit-field td.icons .edit {
+.editing .appdv-edit-field td.icons .edit {
+	visibility: hidden;
 	display:none;
 }
 
