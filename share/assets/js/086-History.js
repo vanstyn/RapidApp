@@ -199,11 +199,17 @@ Ext.ux.RapidApp.HashNav = {
 		for (var i = 0; i < this.elements.length; i++) {
 			var name = this.elements[i].name, value = this.elements[i].value;
 			if(name && value) {
-				if(params[name]) {
-					alert("duplicate param name '" + name + "' in HashNav form/url - not supported");
-					return false;
-				}
-				params[name] = value;
+        // Special element name triggers appending URL:
+        if(name == '_append_action_url') {
+          url = [url,value].join('/');
+        }
+        else {
+          if(params[name]) {
+            alert("duplicate param name '" + name + "' in HashNav form/url - not supported");
+            return false;
+          }
+          params[name] = value;
+        }
 			}
 		}
 		
