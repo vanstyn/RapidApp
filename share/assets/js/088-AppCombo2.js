@@ -768,27 +768,27 @@ Ext.ux.RapidApp.CasUploadField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
     this.fireEvent.defer(50,this,['select']);
   },
 
-  actionFn: function(){
-    
-    var upload_field = {
+  getWinFormCfg: function() {
+
+    var fields = [{
       xtype: 'fileuploadfield',
       emptyText: this.selectHeading,
       fieldLabel: this.selectHeading,
       name: 'Filedata',
       buttonText: 'Browse',
       width: 300
-    };
-    
+    }];
+
     var fieldset = {
       style: 'border: none',
       hideBorders: true,
       xtype: 'fieldset',
       labelWidth: 80,
       border: false,
-      items:[ upload_field ]
+      items:fields
     };
-    
-    Ext.ux.RapidApp.WinFormPost.call(this,{
+
+    var cfg = {
       title: this.uploadHeading,
       width: 440,
       height:140,
@@ -798,7 +798,28 @@ Ext.ux.RapidApp.CasUploadField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
       fieldset: fieldset,
       success: this.formUploadCallback,
       cancelHandler: this.onActionComplete.createDelegate(this)
-    });
+    }
+
+    if(this.allowBlank) {
+      var thisF = this;
+      cfg.extra_buttons = [{
+        text: '(None)',
+        handler: function(btn) {
+          // Set the field to null:
+          thisF.setValue.call(thisF,null);
+
+          // Find and call the cancel button which is adjacent to us:
+          var cancelBtn = btn.ownerCt.getComponent('cancel');
+          cancelBtn.handler.call(cancelBtn,cancelBtn);
+        }
+      }]
+    }
+
+    return cfg;
+  },
+
+  actionFn: function() {
+    Ext.ux.RapidApp.WinFormPost.call( this, this.getWinFormCfg() );
   },
 
   setRawValue: function(v){

@@ -1004,6 +1004,7 @@ Ext.ux.RapidApp.WinFormPost
                              uncaught exceptions from the server will
                              cause the button to never be re-enabled
  * @cfg {String} disableBtnText Text to set in the 'Save' button when disabled
+ * @cfg {Array} extra_buttons List of any additional buttons
 */
 Ext.ns('Ext.ux.RapidApp.WinFormPost');
 Ext.ux.RapidApp.WinFormPost = function(cfg) {
@@ -1023,6 +1024,8 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
     closable: true,
     disableBtnText: 'Wait...'
   });
+
+  cfg.extra_buttons = cfg.extra_buttons || [];
   
 	var cancel_fn = function(){ Ext.getCmp(winId).close(); cfg.cancelHandler(); }
 	
@@ -1113,6 +1116,16 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
     if (cfg.failure) { cfg.failure.apply(scope,arguments); }
   };
 
+
+  var win_buttons = cfg.extra_buttons.concat([
+    Btn,
+    {
+      text    : 'Cancel',
+      handler  : cancel_fn,
+      itemId : 'cancel'
+    }
+  ]);
+
 	var win = new Ext.Window({
 		manager: cfg.manager,
     title: cfg.title,
@@ -1130,13 +1143,7 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 			items: cfg.fieldset,
 			fileUpload: cfg.fileUpload,
 			baseParams: cfg.baseParams,
-			buttons: [
-				Btn,
-				{
-					text		: 'Cancel',
-					handler	: cancel_fn
-				}
-			],
+			buttons: win_buttons,
 			listeners: {
 				afterrender: function(fp) {
 					new Ext.KeyMap(fp.el, {
