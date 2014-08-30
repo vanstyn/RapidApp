@@ -482,7 +482,10 @@ Ext.ux.RapidApp.ClickActionField = Ext.extend(Ext.ux.RapidApp.UtilField,{
 	},
 	
 	onClickMe: function(e) {
-		this.callActionFn.defer(10,this,arguments);
+    var target = e.getTarget(null,null,true);
+    if(!target.is('a')) {
+      this.callActionFn.defer(10,this,arguments);
+    }
 	},
 	
 	// Make us look like a combo with an 'expand' function:
