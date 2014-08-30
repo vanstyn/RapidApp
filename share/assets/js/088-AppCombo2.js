@@ -803,10 +803,11 @@ Ext.ux.RapidApp.CasUploadField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
     if(this.allowBlank) {
       var thisF = this;
       cfg.extra_buttons = [{
-        text: '(None)',
+        text: 'Set None (empty)',
+        iconCls: 'ra-icon-selection',
         handler: function(btn) {
           // Set the field to null:
-          thisF.setValue.call(thisF,null);
+          thisF.setRawValue.call(thisF,null);
 
           // Find and call the cancel button which is adjacent to us:
           var cancelBtn = btn.ownerCt.getComponent('cancel');
@@ -831,6 +832,12 @@ Ext.ux.RapidApp.CasUploadField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
       Ext.ux.RapidApp.ClickMenuField.superclass.setRawValue.call(this,v);
     }
     return this;
+  },
+
+  getValue: function() {
+    return this.dataValue 
+      ? this.dataValue 
+      : Ext.ux.RapidApp.ClickMenuField.superclass.getValue.call(this);
   },
 
   getRawValue: function() {
