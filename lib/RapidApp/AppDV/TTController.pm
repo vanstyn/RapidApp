@@ -316,7 +316,7 @@ has 'autofield' => (
 				$bf_types{$config->{xtype}}
 			);
 			
-			my @no_icons_types = qw(cycle-field menu-field cas-image-field);
+			my @no_icons_types = qw(cycle-field menu-field);
 			my %ni_types = map {$_=>1} @no_icons_types;
 			return $self->div_edit_field_no_icons($Column->name,$display) if (
 				$ni_types{$config->{xtype}}

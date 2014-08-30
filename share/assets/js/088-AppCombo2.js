@@ -852,9 +852,6 @@ Ext.reg('cas-upload-field',Ext.ux.RapidApp.CasUploadField);
 
 Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
 	
-	// init/default value:
-	value: '<div style="color:darkgray;">(select image)</div>',
-	
 	uploadUrl: '/simplecas/upload_image',
   uploadHeading: 'Insert Image',
   selectHeading: 'Select Image',
@@ -866,7 +863,7 @@ Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
 	
 	minHeight: 2,
 	minWidth: 2,
-  renderValFn: null,
+  renderValFn: 'Ext.ux.showNull',
 	
 	getUploadUrl: function() {
 		url = this.uploadUrl;
