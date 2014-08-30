@@ -4913,13 +4913,20 @@ Ext.ux.RapidApp.renderCasLink = function(v){
 
     if(parts.length <= 2) {
       var sha1 = parts[0], filename = parts[1] || parts[0];
+      var cls = ['filelink'];
+      var fnparts = filename.split('.');
+      if (fnparts.length > 1) {
+        cls.push(fnparts.pop().toLowerCase());
+      }
       return [
-        '<b class="ra-hex-string">',filename,'</b>',
-        '<a ',
-          'href="/simplecas/fetch_content/',sha1,'/',filename,'" ',
-          'target="_self" ',
-          'class="ra-icon-paperclip-tiny"',
-        '>save</a>'
+        '<div class="',cls.join(' '),'">',
+          '<span>',filename,'</span>',
+          '<a ',
+            'href="/simplecas/fetch_content/',sha1,'/',filename,'" ',
+            'target="_self" ',
+            'class="ra-icon-paperclip-tiny"',
+          '>save</a>',
+        '</div>'
       ].join('');
     }
     else {
