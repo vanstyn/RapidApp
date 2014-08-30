@@ -731,7 +731,8 @@ Ext.reg('menu-field',Ext.ux.RapidApp.ClickMenuField);
 Ext.ux.RapidApp.CasUploadField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 
   // init/default value:
-  value: '<div style="color:darkgray;">(select file)</div>',
+  //value: '<div style="color:darkgray;">(select file)</div>',
+  value: null,
 
   uploadUrl: '/simplecas/upload_file',
   uploadHeading: 'Upload File',
@@ -739,16 +740,25 @@ Ext.ux.RapidApp.CasUploadField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 
   actionOnShow: true,
 
+  renderValFn: 'Ext.ux.RapidApp.renderCasLink',
+
+  initComponent: function() {
+    // Allow renderValFn to be specified as a string or real func:
+    if(typeof this.renderValFn == 'string') {
+      this.renderValFn = eval(this.renderValFn);
+    }
+
+    Ext.ux.RapidApp.CasUploadField.superclass.initComponent.call(this);
+  },
+
   getUploadUrl: function() {
     return this.uploadUrl;
   },
 
   formUploadCallback: function(form,res) {
     var nfo = Ext.decode(res.response.responseText);
-
     this.setValue([nfo.checksum,nfo.filename].join('/'));
     this.onActionComplete();
-
   },
 
   onActionComplete: function() {
@@ -786,6 +796,23 @@ Ext.ux.RapidApp.CasUploadField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
       success: this.formUploadCallback,
       cancelHandler: this.onActionComplete.createDelegate(this)
     });
+  },
+
+  setRawValue: function(v){
+    if(this.renderValFn){
+      this.dataValue = v;
+      Ext.ux.RapidApp.ClickMenuField.superclass.setRawValue.call(this,this.renderValFn(v));
+    }
+    else {
+      Ext.ux.RapidApp.ClickMenuField.superclass.setRawValue.call(this,v);
+    }
+    return this;
+  },
+
+  getRawValue: function() {
+    return this.dataValue 
+      ? this.dataValue 
+      : Ext.ux.RapidApp.ClickMenuField.superclass.getRawValue.call(this);
   }
 
 });
@@ -808,6 +835,7 @@ Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
 	
 	minHeight: 2,
 	minWidth: 2,
+  renderValFn: null,
 	
 	getUploadUrl: function() {
 		url = this.uploadUrl;
