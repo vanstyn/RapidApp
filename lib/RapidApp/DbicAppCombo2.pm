@@ -63,6 +63,9 @@ sub read_records {
   }
   # --
   
+  # New: fail-safe max-rows:
+  $Rs = $Rs->search_rs(undef,{ rows => 500 }) unless (exists $Rs->{attrs}{rows});
+
 	my @rows = ();
 	foreach my $row ($Rs->all) {
 		my $data = { $row->get_columns };
