@@ -56,7 +56,7 @@ around 'dump_these' => sub {
       # Note: the functioning of this stuff in Catalyst is legacy and may be 
       # refactored in a later version of Catalyst...
       $req_arr,$res_arr,
-      @$VAR1
+      @{$VAR1 || []}
     );
   }
 
