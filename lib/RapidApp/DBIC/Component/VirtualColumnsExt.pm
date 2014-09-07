@@ -79,6 +79,12 @@ sub get_column {
 	return $self->next::method($column);
 }
 
+# TODO/FIXME: 
+#  here we are loading/appending all defined virtual columns during the call
+#  to get_columns(), which is slow/expensive. What we should be doing is 
+#  hooking into 'inflate_result' to *preload* the values into the row object 
+#  ('_column_data' attr) in the same location as ordinary columns which should
+#  then allow the native get_columns() to work as-is...
 sub get_columns {
     my $self = shift;
     
