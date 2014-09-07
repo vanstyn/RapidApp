@@ -22,6 +22,7 @@ sub scream {
 
 sub scream_color {
 	my $color = shift;
+  no warnings 'uninitialized';
 	local $_ = caller_data(3) unless (
 		$_ eq 'no_caller_data' or (
 			ref($_) eq 'ARRAY' and
@@ -428,6 +429,7 @@ sub func_debug_around {
 		
 		# -- Track stats in global %$RapidApp::Functions::debug_around_stats:
 		if($opt{track_stats}) {
+			no warnings 'uninitialized';
 			my $k = $class . '->' . $name;
 			$debug_around_stats->{$k} = $debug_around_stats->{$k} || {};
 			my $stats = $debug_around_stats->{$k};
