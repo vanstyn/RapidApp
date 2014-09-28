@@ -1,5 +1,24 @@
 Revision history for RapidApp
 
+0.99400 2014-09-28
+    - DbicAppCombo2: Added fail-safe max rows (temp)
+    - Fix undef exception in 'duimp_these' (debug mode)
+    - formSubmitHandler: special handling for '_append_action_url'
+    - ClickActionField and cas-upload-field improvements
+    - TableSpec column profile 'cas_link' _ releated new editors/renderers
+    - AppDV css improvements for edit icons
+    - Officially require at least perl 5.10
+    - Require new Email::MIME::CreateHTML 1.040 - install on 5.18 works
+    - Started 'Rapi' namespace (future)
+    - Remove misc deprecated packages
+    - Require Catalyst 5.90071
+    - pod coverage/spelling/kwalitee tests
+    - Bumped dep ver for SQLT to 0.11018
+    - Unfactored SimpleCAS into external cpan pkg (#62)
+       prelim release: Catalyst::Controller::SimpleCAS 0.991
+    - Travis cfg improvements, Coveralls, 5.20 job
+    - Lots of misc/minor bug fixes
+
 0.99333 2014-07-17
     - Fixed insert image (broken in v0.99310) - Github Issue #54
 
