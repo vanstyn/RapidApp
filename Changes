@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+0.99401 2014-09-29
+    - Fixed bug in DbicAppCombo2 (#66)
+
 0.99400 2014-09-28
     - DbicAppCombo2: Added fail-safe max rows (temp)
     - Fix undef exception in 'duimp_these' (debug mode)
