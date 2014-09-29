@@ -34,7 +34,11 @@ sub read_records {
 	my $self = shift;
 	
 	my $Rs = $self->get_ResultSet;
-	
+  
+  my $Source = $Rs->result_source;
+  my $source_name = $Rs->result_source->source_name;
+  my $class = $Source->schema->class($source_name);
+    
 	# TODO: Get this duplicate crap out of here and make this work natively with
 	# DbicLink2 methods
 	$Rs = $self->RapidApp::Role::DbicLink2::chain_Rs_req_explicit_resultset($Rs);
@@ -51,9 +55,6 @@ sub read_records {
   #   a useful REMINDER that this still needs to be addressed)
   unless (exists $Rs->{attrs}{order_by}) {
     my $col_select = $self->displayField;
-    my $Source = $Rs->result_source;
-    my $source_name = $Rs->result_source->source_name;
-    my $class = $Source->schema->class($source_name);
     if($class->can('_virtual_column_select')) {
       $col_select = $class->_virtual_column_select($col_select);
     }
@@ -66,8 +67,19 @@ sub read_records {
   # New: fail-safe max-rows:
   $Rs = $Rs->search_rs(undef,{ rows => 500 }) unless (exists $Rs->{attrs}{rows});
 
-  $Rs = $Rs->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
-  my $rows = [ $Rs->all ];
+  my $rows = [];
+  # We still have to do it the slow way for virtual display columns (#66):
+  if($class->can('has_virtual_column') && $class->has_virtual_column($self->displayField)) {
+    foreach my $row ($Rs->all) {
+      my $data = { $row->get_columns };
+      push @$rows, $data;
+    }
+  }
+  else {
+    # Much faster but doesn't work for virtual columns:
+    $Rs = $Rs->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
+    $rows = [ $Rs->all ];
+  }
 
   return {
     rows    => $rows,
