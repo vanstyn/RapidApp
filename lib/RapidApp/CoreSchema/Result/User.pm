@@ -160,12 +160,20 @@ __PACKAGE__->TableSpec_set_conf(
       no_column => \1, no_quick_search => \1, no_multifilter => \1
     },
     
-    set_pw        => { header => 'Set New Password*', width => 130,    },
+    
     
     roles         => { width => 220,  header => 'Roles'  },
     sessions      => { width => 120,  header => 'Sessions'  },
     saved_states  => { width => 130,  header => 'Saved Views' },
     user_to_roles => { width => 130, header => 'User to Roles', hidden => \1   },
+    
+    set_pw => { 
+      header => 'Set Password*', 
+      width => 130,    
+      editor => { xtype => 'ra-change-password-field' },
+      renderer => 'Ext.ux.RapidApp.renderSetPwValue'
+    },
+    
   }
 );
 

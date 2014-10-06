@@ -1807,3 +1807,180 @@ Ext.reg('ra-hexfield',Ext.ux.RapidApp.HexField);
 
 
 
+
+Ext.ux.RapidApp.renderSetPwValue = function(v) {
+
+  var inner = v 
+    ? ['<b style="color:#666666;">',Array(v.length+1).join('&bull;'),'</b>'].join('')
+    : ['( ',Array(10).join('&bull;'),' )'].join('');
+
+  return [
+    '<span style="font-size:11px;" class="x-form-item ra-null-val">',
+      '&nbsp;&nbsp;',inner,
+    '</span>'
+  ].join('');
+};
+Ext.ux.RapidApp.ChangePasswordField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
+
+  value: null,
+  actionOnShow: true,
+
+  initComponent: function() {
+
+
+    Ext.ux.RapidApp.ChangePasswordField.superclass.initComponent.call(this);
+  },
+
+  onActionComplete: function() {
+    this.win.close();
+    this.fireEvent.defer(50,this,['select']);
+  },
+
+  actionFn: function() {
+
+    if(this.win) { this.win.close(); }
+
+    var newPwField = new Ext.form.TextField({
+      name: 'new_pw',
+      inputType: 'password',
+      fieldLabel: 'New Password',
+      allowBlank: false
+    });
+
+    var thisF = this;
+    var doChange = function() {
+      //thisF.dataValue = newPwField.getValue();
+      thisF.dataValue = newPwField.getValue();
+      thisF.setValue.call(thisF,thisF.dataValue);
+      thisF.onActionComplete.call(thisF);
+    };
+    
+    
+    var fp = new Ext.form.FormPanel({
+      xtype: 'form',
+      frame: true,
+      labelAlign: 'right',
+      
+      //plugins: ['dynamic-label-width'],
+      labelWidth: 160,
+      labelPad: 15,
+      bodyStyle: 'padding: 10px 30px 5px 10px;',
+      defaults: { anchor: '-0' },
+      autoScroll: true,
+      monitorValid: true,
+      buttonAlign: 'right',
+      minButtonWidth: 100,
+      
+      items: [
+        { html: [
+            '<div class="ra-change-pw-heading">',
+              '<div style="padding-top:20px;">Set&nbsp;Password</div>',
+            '</div>'
+          ].join("\n")
+        },
+        { xtype: 'spacer', height: 5 },
+        
+        //oldPwField,
+        newPwField,
+        {
+          name: 'confirm_pw',
+          xtype: 'textfield',
+          inputType: 'password',
+          fieldLabel: 'Confirm New Password',
+          allowBlank: false,
+          validator: function(v) {
+            if(v != newPwField.getValue()) {
+              return 'Passwords do not match';
+            }
+            return true;
+          }
+        },
+        {xtype: 'spacer', height: 5 }
+      ],
+      
+      buttons: [
+        {
+          name: 'ok',
+          text: 'Ok',
+          iconCls: 'ra-icon-key',
+          formBind: true,
+          handler: doChange,
+          scope: this
+        },
+        {
+          name: 'cancel',
+          text: 'Cancel',
+          handler: function(btn) {
+            thisF.dataValue = null;
+            thisF.onActionComplete.call(thisF);
+          },
+          scope: this
+        }
+      ]
+    });
+    
+    
+
+    this.win = new Ext.Window({
+      title: 'Set Password',
+      layout: 'fit',
+      width: 455,
+      height: 300,
+      minWidth: 455,
+      minHeight: 300,
+      closable: false,
+      modal: true,
+      items: fp,
+      show_mask: function() { thisF.win.myMask.show(); },
+      hide_mask: function() { thisF.win.myMask.hide(); },
+      listeners: {
+        afterrender: function() {
+          var El = thisF.win.getEl();
+          // Create the actual mask object tied to the window
+          thisF.win.myMask = new Ext.LoadMask(El, {msg:"Please wait..."});
+          
+          new Ext.KeyMap(El, {
+            key: Ext.EventObject.ENTER,
+            shift: false,
+            alt: false,
+            fn: function(keyCode, e){
+              fp.el.select('button').item(0).dom.click();
+            }
+          });
+        },
+        show: function(){
+          newPwField.focus('',10); 
+          newPwField.focus('',100); 
+          newPwField.focus('',300);
+        }
+      }
+    });
+    
+    this.win.show();
+  },
+
+  getErrors: function(){ return []; },
+
+  setRawValue: function(v){
+    this.dataValue = v;
+    Ext.ux.RapidApp.ClickMenuField.superclass.setRawValue.call(this,
+      Ext.ux.RapidApp.renderSetPwValue(v)
+    );
+    return this;
+  },
+
+  getValue: function() {
+    return this.dataValue 
+      ? this.dataValue 
+      : Ext.ux.RapidApp.ClickMenuField.superclass.getValue.call(this);
+  },
+
+  getRawValue: function() {
+    return this.dataValue 
+      ? this.dataValue 
+      : Ext.ux.RapidApp.ClickMenuField.superclass.getRawValue.call(this);
+  }
+
+
+});
+Ext.reg('ra-change-password-field',Ext.ux.RapidApp.ChangePasswordField);
