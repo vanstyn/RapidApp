@@ -4509,7 +4509,7 @@ Ext.ux.RapidApp.DbicRelRestRender = function(c) {
 	
 	
 	if(c.rs) {
-		if(!key_value)     { return disp; }
+		if(!key_value && key_value != '0')     { return disp; }
 		// For multi-rel. value actually only contains the count of related
 		// rows. key_value will contain the id of the row from which the rs originated
 		url += key_value + '/rel/' + c.rs; 
