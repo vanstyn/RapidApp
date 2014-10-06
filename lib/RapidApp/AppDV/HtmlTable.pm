@@ -188,17 +188,14 @@ sub is_valid_colname {
 	my $col = shift;
 	
 	return 0 unless ($self->has_column($col));
-	
-	return 1 unless (
-		not defined $self->columns->{$col} or
-		jstrue($self->columns->{$col}->{no_column}) or
-		(
-			defined $self->columns->{$col}->{allow_view} and 
-			not jstrue($self->columns->{$col}->{allow_view})
-		)
-	);
-	
-	return 0;
+  
+  # allow_view/allow_edit overrides no_column
+  return 1 if (
+    jstrue($self->columns->{$col}{allow_view}) or
+    jstrue($self->columns->{$col}{allow_edit})
+  );
+  
+  return jstrue($self->columns->{$col}{no_column}) ? 0 : 1;
 }
 
 sub BUILD {
