@@ -1,5 +1,10 @@
 Revision history for RapidApp
 
+0.99402 2014-10-06
+    - Added a real "set password" dialog for setting user passwords in CoreSchema
+    - Improvements to CoreSchema interfaces (icons, headers, etc)
+    - Fixed bug in REST/nav logic with '0' value keys (#67)
+
 0.99401 2014-09-29
     - Fixed bug in DbicAppCombo2 (#66)
 
