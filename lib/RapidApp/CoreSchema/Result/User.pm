@@ -132,8 +132,8 @@ __PACKAGE__->apply_TableSpec;
 __PACKAGE__->TableSpec_set_conf( 
 	title => 'User',
 	title_multi => 'Users',
-	#iconCls => 'ra-icon-user',
-	#multiIconCls => 'ra-icon-group',
+	iconCls => 'ra-icon-businessman',
+	multiIconCls => 'ra-icon-businessmen',
 	display_column => 'username',
   priority_rel_columns => 1,
   columns => {

@@ -104,6 +104,8 @@ __PACKAGE__->apply_TableSpec;
 __PACKAGE__->TableSpec_set_conf( 
   title => 'Session',
   title_multi => 'Sessions',
+  iconCls => 'ra-icon-environment-network',
+  multiIconCls => 'ra-icon-environment-network',
   display_column => 'id',
   priority_rel_columns => 1,
   columns => {

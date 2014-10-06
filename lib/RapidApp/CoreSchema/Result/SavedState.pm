@@ -100,8 +100,8 @@ __PACKAGE__->apply_TableSpec;
 __PACKAGE__->TableSpec_set_conf( 
 	title => 'Saved View',
 	title_multi => 'Saved Views',
-	#iconCls => 'ra-icon-data-view',
-	#multiIconCls => 'ra-icon-data-views',
+	iconCls => 'ra-icon-data-view',
+	multiIconCls => 'ra-icon-data-views',
 	display_column => 'title'
 );
 

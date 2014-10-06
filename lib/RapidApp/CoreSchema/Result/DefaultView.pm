@@ -44,8 +44,8 @@ __PACKAGE__->apply_TableSpec;
 __PACKAGE__->TableSpec_set_conf( 
 	title => 'Source Default View',
 	title_multi => 'Source Default Views',
-	#iconCls => 'ra-icon-data-view',
-	#multiIconCls => 'ra-icon-data-views',
+	iconCls => 'ra-icon-data-preferences',
+	multiIconCls => 'ra-icon-data-preferences',
 	display_column => 'source_model'
 );
 
