@@ -267,7 +267,7 @@ sub local_args {
 	my $path = '/' . $self->c->req->path;
 	my $base = quotemeta($self->base_url . '/');
 	$path =~ /^${base}(.+$)/;
-	my $argpath = $1 || '';
+	my $argpath = defined $1 ? $1 : '';
 	return split('/',$argpath);
 }
 

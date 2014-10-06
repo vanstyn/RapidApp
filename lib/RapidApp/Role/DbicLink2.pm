@@ -292,15 +292,15 @@ sub prepare_rest_request {
 	}
 	# ---
 	
-  return unless ($args[0]);
-	my $key = lc($args[0]) or return;
+  return unless defined $args[0];
+	my $key = lc("$args[0]");
 	my $val = $args[1];
 	
 	# Ignore paths that are submodules or actions:
 	return if (exists $self->modules_obj->{$key} || $self->has_action($key));
 	
 	# if there was only 1 argument, treat it as the value and set the default key/pk:
-	unless ($val) {
+	unless (defined $val) {
 		$val = $args[0];
 		my $rest_key_column = try{$self->ResultClass->getRestKey};
 		$key = $rest_key_column || $self->record_pk;
