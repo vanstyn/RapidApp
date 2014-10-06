@@ -102,17 +102,19 @@ __PACKAGE__->TableSpec_set_conf(
 	title_multi => 'Saved Views',
 	iconCls => 'ra-icon-data-view',
 	multiIconCls => 'ra-icon-data-views',
-	display_column => 'title'
+	display_column => 'title',
+  auto_editor_type => 'grid'
 );
 
 __PACKAGE__->TableSpec_set_conf('column_properties_ordered', 
 
 	id => { no_column => \1, no_multifilter => \1, no_quick_search => \1 },
 	node_id => { no_column => \1, no_multifilter => \1, no_quick_search => \1 },
+  user_id => { no_column => \1, no_multifilter => \1, no_quick_search => \1 },
 	
 	title => {
-		header => 'Title',
-		width	=> 120,
+		header => 'View Name/Title',
+		width	=> 170,
 	},
 	
 	subtitle => {
@@ -120,6 +122,11 @@ __PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 		width	=> 225,
 		hidden => \1
 	},
+  
+  ordering => {
+    header => 'Order Num',
+    hidden => 1
+  },
 	
 	iconcls => {
 		width	=> 110,
@@ -136,6 +143,7 @@ __PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 		width	=> 250,
 		header => 'Params',
 		renderer => 'Ext.ux.RapidApp.renderJSONjsDump',
+    hidden => \1,
 		allow_edit => \0,
 		allow_view => \1
 	},
@@ -151,6 +159,11 @@ __PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 	node => {
 		width	=> 175,
 		header => 'Navtree Parent Node',
+	},
+  
+  user => {
+		width	=> 130,
+		header => 'User',
 	},
 	
 );

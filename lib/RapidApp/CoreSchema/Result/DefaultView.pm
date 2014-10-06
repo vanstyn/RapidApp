@@ -55,7 +55,7 @@ __PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 
 	source_model => {
 		header => 'Source/Model',
-		width	=> 120,
+		width	=> 250,
     allow_add => \0,
     allow_edit => \0
 	},
