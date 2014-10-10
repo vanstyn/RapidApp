@@ -7,7 +7,7 @@ require Exporter;
 use Class::MOP::Class;
 
 use Term::ANSIColor qw(:constants);
-use Data::Dumper;
+use Data::Dumper::Concise 'Dumper';
 use RapidApp::RootModule;
 use Clone qw(clone);
 use RapidApp::JSON::MixedEncoder qw(encode_json);
@@ -23,6 +23,10 @@ sub scream {
 sub scream_color {
 	my $color = shift;
   no warnings 'uninitialized';
+  
+  my $maxdepth = $Data::Dumper::Maxdepth || 4;
+  local $Data::Dumper::Maxdepth = $maxdepth;
+  
 	local $_ = caller_data(3) unless (
 		$_ eq 'no_caller_data' or (
 			ref($_) eq 'ARRAY' and
