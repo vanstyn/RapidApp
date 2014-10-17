@@ -517,7 +517,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			var records = [];
 			store.each(function(Record){
 				if(Record.phantom) { records.push(Record); } 
-			});
+			},store);
 			return records;
 		};
 		
@@ -555,8 +555,12 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		};
 		
 		store.eachTiedChild = function(fn) {
-			Ext.iterate(store.tiedChildStores,function(id,str) {
-				fn(str);
+			Ext.iterate(store.tiedChildStores,function(id,stor) {
+				// Call the function on the child store as long as its data object still
+        // exists. If it doesn't, this indicates the child store has already been
+        // destroyed or is otherwise no longer valid -- delete it from the index
+        // and move on: 
+        stor.data ? fn.call(stor,stor) : delete store.tiedChildStores[id];
 			});
 		};
 		
@@ -1442,7 +1446,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		component.confirmRemoveInProg = true;
 		
 		var store = this.cmp.store;
-		if(!store || !store.hasAnyPendingChanges()) { 
+		if(!store || !store.data || !store.hasAnyPendingChanges()) { 
 			c.un('beforeremove',this.beforeRemoveConfirm,this);
 			return true; 
 		}
