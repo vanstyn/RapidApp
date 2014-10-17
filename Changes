@@ -1,5 +1,9 @@
 Revision history for RapidApp
 
+next-ver 2014-10-??
+    - Now requires Catalyst 5.90075
+    - Now requires DBIx::Class 0.082801
+
 0.99402 2014-10-06
     - Added a real "set password" dialog for setting user passwords in CoreSchema
     - Improvements to CoreSchema interfaces (icons, headers, etc)
