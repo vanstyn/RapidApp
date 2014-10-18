@@ -454,6 +454,12 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		
 		store.addEvents('beforeremove');
 		store.removeOrig = store.remove;
+    // This is a bastardized thing - remove() is documented as only to be called when removing
+    // a record from the store, but somehow it is also being called from the container removal
+    // machinery - this is either an ExtJS "bug" or a bug in ourselves someplace... In any case,
+    // when the latter happens 'record' below is actually the component being removed, and we
+    // hook into this and fire the beforeremove event which we are listening to for unsaved
+    // change detection (see our beforeRemoveConfirm() function further down)
 		store.remove = function(record) {
 			if(store.fireEvent('beforeremove',store,record) !== false) {
 				return store.removeOrig.apply(store,arguments);
@@ -1444,7 +1450,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		}
 		
 		component.confirmRemoveInProg = true;
-		
+
 		var store = this.cmp.store;
 		if(!store || !store.data || !store.hasAnyPendingChanges()) { 
 			c.un('beforeremove',this.beforeRemoveConfirm,this);

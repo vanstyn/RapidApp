@@ -499,6 +499,27 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
   },
   
   reload: function() {
+    // Call removeAll now so that any listeners associated with remove/destroy can
+    // be called early (removeAll also gets called during the load process later).
+    // This is being done mainly to accomidate unsaved change detection in 
+    // DataStorePlus-driven components, but is the right/clean thing to do 
+    // regardless. Note that this is still not totally ideal, because it is already
+    // too late for the user to stop the reload (as with a simple close) but at
+    // least they have one last chance to save the outstanding changes which is
+    // better than nothing. 
+    // UPDATE -- don't do this after all because it can lead to a deadlock situation
+    //           just purge the listeners b/c it is too late for the user to save 
+    //           their changes if they clicked reload on the tab. Just like there
+    //           is nothing we can do if they refreshed the browser.
+    //this.removeAll();
+    // TODO: hook into the guts of this process to support
+    // actually cancelling the reload. This would need to be done by calling and
+    // testing the result of 'beforeremove'
+
+    // And then purge any listeners for a clean, fresh start. 
+    this.purgeListeners();
+
+    // Now call load using the same/original autoLoad config:
     this.load(this.autoLoad);
   },
   
