@@ -196,15 +196,10 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 						field.cycleOnShow = false;
 						field.manuOnShow = false;
 						
-						//Call 'expand' for combos and other fields with an expand method (cycle-field)
-						if(Ext.isFunction(field.expand)) {
+						//Call 'onTriggerClick' for combos and other fields with an onTriggerClick method (cycle-field)
+						if(Ext.isFunction(field.onTriggerClick)) {
 							ed.on('startedit',function(){
-								this.expand();
-								// If it is specifically a combo, call expand again to make sure
-								// it really expands
-								if(Ext.isFunction(this.doQuery)) {
-									this.expand.defer(50,this);
-								}
+								this.onTriggerClick();
 							},field);
 						}
 						

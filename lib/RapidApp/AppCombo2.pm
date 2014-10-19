@@ -27,7 +27,7 @@ sub BUILD {
 		triggerAction	=> 'all',
 		selectOnFocus	=> \1,
 		editable			=> \0,
-		allowBlank 		=> \0,
+		#allowBlank 		=> \0,
 		width 			=> 337,
 		name 				=> $self->name,
 		fieldLabel 		=> $self->fieldLabel,

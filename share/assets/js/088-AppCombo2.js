@@ -10,19 +10,53 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
 	selectNoneLabel: '(None)',
 	selectNoneCls: 'ra-combo-select-none',
 	selectNoneValue: null,
+  //value: null,
+  lastValueClass: '',
 	
 	initComponent: function() {
 		Ext.ux.RapidApp.AppCombo2.ComboBox.superclass.initComponent.call(this);
-		
+
+    // Reload every time, as per the Ext docs:
+    this.on('beforequery',function(qe){
+      delete qe.combo.lastQuery;
+    },this);
+
+    this.store.on('beforeload',function(ds){
+      var v = this.getValue();
+      if(v && v != '') {
+        ds.baseParams['valueqry'] = v;
+      }
+    },this);
+
+    this.store.on('load',function(ds){
+      if(ds.baseParams['valueqry']) {
+        delete ds.baseParams['valueqry']
+      }
+      this.autoInsertNoneRecord();
+      // Call setValue again so the displayValue is displayed if it wasn't
+      // available until the load that just completed
+      this.setValue(this.value);
+    },this);
+
 		if (this.baseParams) {
 			Ext.apply(this.getStore().baseParams,this.baseParams);
 		}
 	},
 	
-	lastValueClass: '',
+  setNoneDomValue: function(){
+    this.el.dom.value = this.selectNoneValue;
+  },
+
+  getValue: function(){
+    var v = Ext.ux.RapidApp.AppCombo2.ComboBox.superclass.getValue.call(this);
+    // Return empty string as the "none" value
+    return v == '' ? this.selectNoneValue : v;
+  },
 	
-	nativeSetValue: function(v) {
-		if (this.valueCssField) {
+	setValue: function(v) {
+		v = v == '' ? this.selectNoneValue : v;
+    this.apply_field_css();
+    if (this.valueCssField) {
 			var record = this.findRecord(this.valueField, v);
 			if (record) {
 				var addclass = record.data[this.valueCssField];
@@ -32,36 +66,14 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
 				}
 			}
 		}
-		return Ext.form.ComboBox.prototype.setValue.apply(this,arguments);
+		var ret = Ext.form.ComboBox.prototype.setValue.apply(this,arguments);
+    if (!v || v == '') {
+      // This is just to prevent the (None) markup from showing in the field:
+      this.setNoneDomValue.defer(10,this); 
+    }
+    return ret;
 	},
-	
-	setValue: function(v){
-	
-    this.apply_field_css();
-	
-    if (!v || v == '') { return this.nativeSetValue(v); }
-		
-		this.getStore().baseParams['valueqry'] = v;
-		var combo = this;
-		if(this.valueField){
-			var r = this.findRecord(this.valueField, v);
-			if (!r) {
-				var data = {}
-				data[this.valueField] = v
-				this.store.load({
-					params:data,
-					callback:function(){
-						var Store = combo.getStore();
-						if(Store){
-							delete Store.baseParams['valueqry'];
-						}
-						combo.nativeSetValue(v);
-					}
-				})   
-			} else return combo.nativeSetValue(v);
-		} else combo.nativeSetValue(v);
-	},
-	
+
 	apply_field_css: function() {
 		if (this.focusClass) {
 			this.el.addClass(this.focusClass);
@@ -70,13 +82,12 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
 			this.el.addClass(this.value_addClass);
 		}
 	},
-	
-	onLoad: function() {
-		if(this.allowSelectNone && !this.hasNoneRecord()) {
-			this.insertNoneRecord();
-		}
-		return Ext.ux.RapidApp.AppCombo2.ComboBox.superclass.onLoad.apply(this,arguments);
-	},
+
+  autoInsertNoneRecord: function() {
+    if(this.allowSelectNone && !this.hasNoneRecord()) {
+      this.insertNoneRecord();
+    }
+  },
 	
 	hasNoneRecord: function() {
 		var store = this.getStore();
@@ -488,8 +499,8 @@ Ext.ux.RapidApp.ClickActionField = Ext.extend(Ext.ux.RapidApp.UtilField,{
     }
 	},
 	
-	// Make us look like a combo with an 'expand' function:
-	expand: function(){
+	// Make us look like a combo with an 'onTriggerClick' function:
+	onTriggerClick: function(){
 		this.callActionFn.defer(10,this);
 	}
 });
