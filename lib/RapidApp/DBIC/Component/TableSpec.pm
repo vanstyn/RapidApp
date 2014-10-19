@@ -459,6 +459,12 @@ sub default_TableSpec_cnf_columns {
           }
           # --
           
+          # New: pass the is_nullable flag in from the local FK column:
+          if($self->has_column($cond_data->{self})) {
+            $cols->{$col}{is_nullable} = $self->column_info($cond_data->{self})
+              ->{is_nullable} ? 1 : 0;
+          }
+          
 					# Use TableSpec_related_get_set_conf instead of TableSpec_related_get_conf
 					# to prevent possible deep recursion:
 					
