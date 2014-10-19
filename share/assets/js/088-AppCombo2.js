@@ -10,7 +10,6 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
 	selectNoneLabel: '(None)',
 	selectNoneCls: 'ra-combo-select-none',
 	selectNoneValue: null,
-  //value: null,
   lastValueClass: '',
 	
 	initComponent: function() {
@@ -35,7 +34,9 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
       this.autoInsertNoneRecord();
       // Call setValue again so the displayValue is displayed if it wasn't
       // available until the load that just completed
-      this.setValue(this.value);
+      if(this.rendered && this.el && this.el.dom) {
+        this.setValue(this.value);
+      }
     },this);
 
 		if (this.baseParams) {

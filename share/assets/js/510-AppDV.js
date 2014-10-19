@@ -441,6 +441,13 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 				},this);
 			}
 			
+      // Fire the trigger if present (i.e. expand dropdown)
+      if(Ext.isFunction(Field.onTriggerClick)) {
+        Field.on('show',function(field){
+          field.onTriggerClick();
+        },this);
+      }
+
 		}
 		/*****************************************************/
 		
