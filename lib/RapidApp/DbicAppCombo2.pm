@@ -7,8 +7,6 @@ extends 'RapidApp::AppCombo2';
 use RapidApp::Include qw(sugar perlutil);
 use List::Util;
 
-### TODO: Bring this into the fold with DbicLink. For now, it is simple enough this isn't really needed
-
 has 'ResultSet' => ( is => 'rw', isa => 'Object', required => 1 );
 has 'RS_condition' => ( is => 'ro', isa => 'Ref', default => sub {{}} );
 has 'RS_attr' => ( is => 'ro', isa => 'Ref', default => sub {{}} );
@@ -25,12 +23,36 @@ addition to selecting an existing item from the list. Defaults to false.
 =cut
 has 'user_editable', is => 'ro', isa => 'Bool', default => sub{0};
 
-=head2 type_ahead
+=head2 type_filter
 
 Boolean. If true, the combo field will allow the user to type in arbitrary text to filter the list
 of results. Defaults to false unless user_editable is true.
 =cut
-has 'type_ahead', is => 'ro', isa => 'Bool', lazy => 1, default => sub{ (shift)->user_editable };
+has 'type_filter', is => 'ro', isa => 'Bool', lazy => 1, default => sub{ 1 };#(shift)->user_editable };
+
+=head2 min_type_filter_chars
+
+Setting passed to the 'minChars' ExtJS combo config. Defaults to '0' which causes filter/query
+to fire with every user ketstroke. For large tables where matching on as little as a single character 
+will be too slow, or to reduce the number/rate of queries fired, set this to a higher value.
+=cut
+has 'min_type_filter_chars', is => 'ro', isa => 'Int', default => 0;
+
+=head2 auto_complete
+
+Boolean. True to enable 'typeAhead' in the ExtJS combo, meaning that text from the filtered results
+will be auto-completed in the box. This only makes sense when type_filter is on and will auto enable 
+filter_match_start. This is an "unfeature" (very annoying) if used inappropriately. Defaults to false.
+=cut
+has 'auto_complete', is => 'ro', isa => 'Bool', default => sub{0};
+
+
+=head2 filter_match_start
+
+Boolean. True for the LIKE query generated for the type_filter to match only the start of the display
+column. This defaults to true if auto_complete is enabled because it wouldn't make sense otherwise.
+=cut
+has 'filter_match_start', is => 'ro', isa => 'Bool', lazy => 1, default => sub{ (shift)->auto_complete };
 
 
 has 'result_class', is => 'ro', lazy => 1, default => sub {
@@ -40,7 +62,7 @@ has 'result_class', is => 'ro', lazy => 1, default => sub {
 }, isa => 'Str', init_arg => undef;
 
 sub BUILD {
-	my $self = shift;
+  my $self = shift;
   
  # record_pk and valueField are almost always the the same
   my @cols = uniq(
@@ -56,24 +78,25 @@ sub BUILD {
       as     => \@cols
     })
   );
-	
-	# Remove the width hard coded in AppCombo2 (still being left in AppCombo2 for legacy
-	# but will be removed in the future)
-	$self->delete_extconfig_param('width');
-	
-	$self->apply_extconfig(
-		itemId	=> $self->name . '_combo',
-		forceSelection => \1,
-		editable => \0,
-	);
   
-  # type_ahead overrides:
+  # Remove the width hard coded in AppCombo2 (still being left in AppCombo2 for legacy
+  # but will be removed in the future)
+  $self->delete_extconfig_param('width');
+  
+  # base config:
+  $self->apply_extconfig(
+    itemId         => $self->name . '_combo',
+    forceSelection => \1,
+    editable       => \0,
+    typeAhead      => \0,
+    selectOnFocus  => \0,
+  );
+  
+  # type_filter overrides:
   $self->apply_extconfig(
     editable      => \1,
-    typeAhead     => \1,
-    minChars      => 0,
-    queryParam    => 'type_ahead_query',
-    selectOnFocus => \0,
+    queryParam    => 'type_filter_query',
+    minChars      => $self->min_type_filter_chars,
     emptyText     => 'Type to Find',
     emptyClass    => 'field-empty-text',
     listEmptyText => join("\n",
@@ -81,15 +104,18 @@ sub BUILD {
                             '(No matches found)',
                           '</div>'
                      ),
-  ) if ($self->type_ahead);
+  ) if ($self->type_filter);
+  
+  # auto_complete overrides:
+  $self->apply_extconfig(
+    typeAhead     => \1 
+  ) if ($self->auto_complete);
   
   # user_editable overrides:
   $self->apply_extconfig(
     editable       => \1,
     forceSelection => \0,
-    typeAhead      => \0, #<-- do not auto-complete
-  ) if ($self->user_editable);
-  
+  ) if ($self->user_editable); 
 }
 
 
@@ -97,8 +123,12 @@ sub read_records {
   my $self = shift;
   my $p = $self->c->req->params;
   
-  # Discard type_ahead queries if type_ahead is not enabled:
-  delete $p->{type_ahead_query} if ($p->{type_ahead_query} && ! $self->type_ahead);
+  delete $p->{type_filter_query} if ( $p->{type_filter_query} && (
+    # Discard type_filter queries if type_filter is not enabled:
+    ! $self->type_filter ||
+    # As well as empty/only whitespace
+    $p->{type_filter_query} =~ /^\s*$/
+  ));
 
   # Start by applying the optional RS_condition/RS_attr
   my $Rs = $self->ResultSet->search_rs(
@@ -116,11 +146,10 @@ sub read_records {
   # And set a fail-safe max number of rows:
   $Rs = $Rs->search_rs(undef,{ rows => 500 }) unless (exists $Rs->{attrs}{rows});
   
-  # Filter for type_ahead
-  $Rs = $Rs->search_rs({
-    $self->_resolve_select($self->displayField)
-      => { 'like' => $p->{type_ahead_query} . '%' }
-  }) if ($p->{type_ahead_query});
+  # Filter for type_filter
+  $Rs = $Rs->search_rs(
+    $self->_like_type_filter_for($p->{type_filter_query})
+  ) if ($p->{type_filter_query});
   
   # Finally, chain through the custom 'AppComboRs' ResultSet method if defined:
   $Rs = $Rs->AppComboRs if ($Rs->can('AppComboRs'));
@@ -132,13 +161,13 @@ sub read_records {
 
   # Handle the 'valueqry' separately because it supercedes the rest of the
   # query, and applies to only 1 row. However, we don't expect both a valueqry
-  # and a type_ahead_query together. The valueqry is sent to obtain the display
+  # and a type_filter_query together. The valueqry is sent to obtain the display
   # value for an existing value in the combo, and we support the case of
   # properly displaying an existing value even if it does not show up (i.e. 
   # cannot be selected) in the dropdown list.
   $self->_apply_valueqry($rows,$p->{valueqry}) if (
     $p->{valueqry} &&
-    ! $p->{type_ahead_query}
+    ! $p->{type_filter_query}
   );
 
   return {
@@ -174,6 +203,20 @@ sub _resolve_select {
       ? $class->_virtual_column_select($col)
       : join('.','me',$col)
   };
+}
+
+
+sub _like_type_filter_for {
+  my ($self,$str) = @_;
+  
+  my $like_arg = $self->filter_match_start 
+    ? join('',    $str,'%') # <-- start of the column
+    : join('','%',$str,'%'); # <-- anywhere in the column
+  
+  my $sel = $self->_resolve_select($self->displayField);
+  $sel = $$sel if (ref $sel);
+  
+  return \[join(' ',$sel,'LIKE ?'),$like_arg];
 }
 
 
