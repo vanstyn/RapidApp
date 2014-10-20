@@ -1367,7 +1367,7 @@ sub _binary_op_fuser {
 
   my ($lsql, @lbind) = $sm->_recurse_where($l);
   local $sm->{_nested_func_lhs} = {};
-  my ($rsql, @rbind) = $sm->_recurse_where({ '' => $r });
+  my ($rsql, @rbind) = $sm->_recurse_where({ ' ' => $r });
   $rsql =~ s/ \A \s* \( (.+?) \) \s* \z /$1/sx;
   return \[
     "$lsql $rsql",
