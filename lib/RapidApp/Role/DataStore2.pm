@@ -7,6 +7,8 @@ use Clone qw(clone);
 
 use RapidApp::DataStore2;
 
+has 'no_datastore_plus_plugin', is => 'ro', isa => 'Bool', lazy => 1, default => 0;
+
 subtype 'TableSpec', as 'Object', where { $_->isa('RapidApp::TableSpec') };
 
 has 'TableSpec' => ( is => 'ro', isa => 'Maybe[TableSpec]', lazy_build => 1 );
@@ -191,7 +193,7 @@ after 'BUILD' => sub {
 		$self->apply_extconfig( batch_update_url => $self->suburl('batch_update') );
 	}
 	
-	$self->add_plugin( 'datastore-plus' );
+	$self->add_plugin( 'datastore-plus' ) unless ($self->no_datastore_plus_plugin);
 };
 
 

@@ -448,7 +448,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		});
 		
 		store.addEvents('beforeremove');
-		store.removeOrig = store.remove;
+		store.removeOrig = store.remove || Ext.emptyFn;
     // This is a bastardized thing - remove() is documented as only to be called when removing
     // a record from the store, but somehow it is also being called from the container removal
     // machinery - this is either an ExtJS "bug" or a bug in ourselves someplace... In any case,

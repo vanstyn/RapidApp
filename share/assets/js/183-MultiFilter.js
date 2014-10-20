@@ -841,6 +841,9 @@ Ext.ux.MultiFilter.Criteria = Ext.extend(Ext.Container,{
 				this.cond_combo_cnf.value = cond;
 				this.datafield_cnf.value = v2;
 
+        // Workaround for new AppCombo design:
+        this.datafield_cnf.storeLoaded = true;
+
 				this.last_cond_value = cond;
 			},this);
 		},this);

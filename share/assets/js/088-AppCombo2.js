@@ -28,14 +28,19 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
     },this);
 
     this.store.on('load',function(ds){
+      this.storeLoaded = true;
+      this.store = ds;
       if(ds.baseParams['valueqry']) {
         delete ds.baseParams['valueqry']
       }
-      this.autoInsertNoneRecord();
-      // Call setValue again so the displayValue is displayed if it wasn't
-      // available until the load that just completed
-      if(this.rendered && this.el && this.el.dom) {
-        this.setValue(this.value);
+      // presence of lastQuery indicates a type-ahead in prog, don't clobber it
+      if(!this.lastQuery || this.lastQuery == '') {
+        this.autoInsertNoneRecord();
+        // Call setValue again so the displayValue is displayed if it wasn't
+        // available until the load that just completed
+        if(this.rendered && this.el && this.el.dom) {
+          this.setValue(this.value);
+        }
       }
     },this);
 
@@ -58,7 +63,7 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
 		v = v == '' ? this.selectNoneValue : v;
     this.apply_field_css();
     if (this.valueCssField) {
-			var record = this.findRecord(this.valueField, v);
+			var record = this.store.findRecord(this.valueField, v);
 			if (record) {
 				var addclass = record.data[this.valueCssField];
 				if (addclass) { 
@@ -72,8 +77,18 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
       // This is just to prevent the (None) markup from showing in the field:
       this.setNoneDomValue.defer(10,this); 
     }
+    else {
+      this.ensureStoreLoaded.defer(10,this);
+    }
     return ret;
 	},
+
+  ensureStoreLoaded: function(){
+    if(this.storeLoaded || this.store.proxy.getConnection().isLoading()){
+      return;
+    }
+    this.store.load();
+  },
 
 	apply_field_css: function() {
 		if (this.focusClass) {
