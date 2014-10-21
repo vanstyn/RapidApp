@@ -1509,24 +1509,27 @@ sub get_relationship_column_cnf {
 
 
   my $aet = $conf->{auto_editor_type};
-  if($aet eq 'combo') {
+  if($aet eq 'combo' || $aet eq 'dropdown') {
+  
+    my $params = {
+      valueField		=> $conf->{valueField},
+      displayField	=> $conf->{displayField},
+      name				=> $colname,
+      ResultSet		=> $Source->resultset,
+      record_pk		=> $conf->{valueField},
+      # Optional custom ResultSet params applied to the dropdown query
+      RS_condition	=> $conf->{RS_condition} ? $conf->{RS_condition} : {},
+      RS_attr			=> $conf->{RS_attr} ? $conf->{RS_attr} : {},
+    };
+    
+    $params->{type_filter} = 1 if ($aet eq 'combo');
   
     my $table = $self->ResultClass->table;
     $table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
     my $module_name = 'combo_' . $table . '_' . $colname;
     my $Module = $self->get_or_create_rapidapp_module( $module_name,
-      class	=> 'RapidApp::DbicAppCombo2',
-      params	=> {
-        valueField		=> $conf->{valueField},
-        displayField	=> $conf->{displayField},
-        name				=> $colname,
-        ResultSet		=> $Source->resultset,
-        record_pk		=> $conf->{valueField},
-        # Optional custom ResultSet params applied to the dropdown query
-        RS_condition	=> $conf->{RS_condition} ? $conf->{RS_condition} : {},
-        RS_attr			=> $conf->{RS_attr} ? $conf->{RS_attr} : {},
-        %{ $conf->{auto_editor_params} },
-      }
+      class	  => 'RapidApp::DbicAppCombo2',
+      params  => { %$params, %{ $conf->{auto_editor_params} } }
     );
     
     if($conf->{editor}) {

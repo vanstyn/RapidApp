@@ -68,15 +68,32 @@ Defaults to the first primary key column, or the first column if there are no pr
 =head2 auto_editor_type
 
 Default editor interface to use when selecting a row from this source (i.e. setting/changing a
-single relationship, or belongs_to). Current supported values are C<grid>, C<combo> and C<custom>.
+single relationship, or belongs_to). Current supported values are C<grid>, C<combo>, C<dropdown>
+ and C<custom>.
 
 In RapidDbic this is set to C<custom> with an automatic config that attaches to the default grid for
 the source. This is effectively the same as C<grid> but without configuring a separate RapidApp
 module.
 
-C<combo> sets up a simple dropdown box, with the items listed showing the value of the 
-C<display_column> for each row. C<combo> is a nice alternative to C<grid> when there is a limited 
-number of rows to select from.
+C<combo> and C<dropdown> set up a dropdown box with the items listed showing the value of the 
+C<display_column> for each row. C<combo> also enables type-in search/filtering of the list (which
+triggers a LIKE query on the display_column) while C<dropdown> does not. C<combo> is a nice 
+alternative to C<grid> when there is a limited number of rows to select from and/or if text
+searching on the display_column alone is sufficient to distinguish them between them. C<dropdown> 
+is only suitable when both are the case, but is more than sufficient and optimal when it is (i.e.
+for things like a 'status' table with just a handful of static rows).
+
+C<grid> is by far the most powerful choice, but the tradeoff is that is much slower to interact
+with since it loads an entire grid interface in a pop-up window, instead of quick little inline
+combo/dropdown box. But, this mode has all the same capabilities as any other grid, including not 
+only the query tools like quick search and filters, but also the ability to select a row that 
+doesn't already exist by adding it on-the-spot, which is not available in the other types.
+
+Since the system doesn't have a reliable way of determining that C<combo>/C<dropdown> would be 
+sufficient for a given source, the default is C<grid> which is the safest choice to ensure all 
+needed options are available -- it is better to have them and not need them than need them
+and not have them.
+
 
 =head2 columns
 
@@ -238,6 +255,8 @@ Currently available column profiles:
 =item * unsearchable
 
 =item * cas_link
+
+=item * soft_rel
 
 =back
 

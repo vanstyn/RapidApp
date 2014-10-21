@@ -28,7 +28,7 @@ has 'user_editable', is => 'ro', isa => 'Bool', default => sub{0};
 Boolean. If true, the combo field will allow the user to type in arbitrary text to filter the list
 of results. Defaults to false unless user_editable is true.
 =cut
-has 'type_filter', is => 'ro', isa => 'Bool', lazy => 1, default => sub{ 1 };#(shift)->user_editable };
+has 'type_filter', is => 'ro', isa => 'Bool', lazy => 1, default => sub{ (shift)->user_editable };
 
 =head2 min_type_filter_chars
 
