@@ -1366,9 +1366,15 @@ sub _binary_op_fuser {
   my ($sm, $l, $r) = @_;
 
   my ($lsql, @lbind) = $sm->_recurse_where($l);
+
   local $sm->{_nested_func_lhs} = {};
-  my ($rsql, @rbind) = $sm->_recurse_where({ ' ' => $r });
+  my ($rsql, @rbind) = $sm->_recurse_where({ "\0" => $r });
+
+  my ($ql, $qr) = $sm->_quote_chars;
+  $rsql =~ s/ (\Q$ql\E)? \0 (\Q$qr\E)? //gx;
+
   $rsql =~ s/ \A \s* \( (.+?) \) \s* \z /$1/sx;
+
   return \[
     "$lsql $rsql",
     @lbind,
