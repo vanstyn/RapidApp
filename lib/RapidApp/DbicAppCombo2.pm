@@ -205,19 +205,26 @@ sub _resolve_select {
   };
 }
 
+require RapidApp::Role::DbicLink2;
+sub _binary_op_fuser { RapidApp::Role::DbicLink2::_binary_op_fuser(@_) }
 
 sub _like_type_filter_for {
   my ($self,$str) = @_;
   
   my $like_arg = $self->filter_match_start 
-    ? join('',    $str,'%') # <-- start of the column
+    ? join('',    $str,'%')  # <-- start of the column
     : join('','%',$str,'%'); # <-- anywhere in the column
   
   my $sel = $self->_resolve_select($self->displayField);
-  $sel = $$sel if (ref $sel);
   
-  return \[join(' ',$sel,'LIKE ?'),$like_arg];
+  my $sm = $self->ResultSet->result_source->schema->storage->sql_maker;
+  return &_binary_op_fuser($sm,$sel => { like => $like_arg });
+
+  # Manual alternative to _binary_op_fuser above:
+  #$sel = $$sel if (ref $sel);
+  #return \[join(' ',$sel,'LIKE ?'),$like_arg];
 }
+
 
 
 1;
