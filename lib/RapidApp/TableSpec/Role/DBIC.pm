@@ -1044,30 +1044,64 @@ hashash 'multi_rel_columns_indx', lazy => 1, default => sub {
 };
 
 
-=head2 $tableSpec->resolve_dbic_colname( $fieldName, \%merge_join, $get_render_col )
+=head2 resolve_dbic_colname
+
+=over 4
+
+=item Arguments: $fieldName, \%merge_join, $get_render_col (bool)
+
+=item Return Value: Valid DBIC 'select'
+
+=back
 
 Returns a value which can be added to DBIC's ->{attr}{select} in order to select the column.
 
-$fieldName is the ExtJS column name to resolve.
-%merge_join is a in/out parameter which collects the total required joins
-	for this query.
-$get_render_col is a boolean of whether this function should instead return
-	the DBIC name of the render column.
+$fieldName is the ExtJS column name to resolve. This contains the full path to the column which
+may span multiple joins, for example:
+
+  rel1__rel2__foo
+
+In this case, 'rel1' is a relationship of the local (top-level) source, and rel2 is a relationship
+of the 'rel1' source. The \%merge_join argument is passed by reference and modified to contain the 
+join needed for the select. In the case, assuming 'foo' is an ordinary column of the 'rel2' source, 
+the select/as/join might be the following:
+
+  select  : 'rel2.foo'
+  as      : 'rel1__rel2__foo'   # already implied by the $fieldName
+  join    : { rel1 => 'rel2' }  # merged into %merge_join
+
+However, 'foo' might not be a column in the relationship of the 'rel2' source - it might be a 
+relationship or a virtual column. In these cases, a sub-select/query is generated for the select,
+which is dependent on what foo actually is. For multi-rels it is a count of the related rows while
+for single rels it is a select of the remote display_column. For virtual columns, it is a 
+sub-select of whatever the 'sql' attr is set to for the given virtual_column config.
 
 =cut
 sub resolve_dbic_colname {
-  my ($self, $name, $merge_join, $get_render_col)= @_;
+  my ($self, $fieldName, $merge_join, $get_render_col)= @_;
   $get_render_col ||= 0;
 
-  my ($rel,$col,$join,$cond_data) = $self->resolve_dbic_rel_alias_by_column_name($name,$get_render_col);
+  # $rel is the alias of the last relationship name in the chain --
+  #  if $fieldName is 'rel1__rel2__rel3__blah', $rel is 'rel3'
+  #
+  # $col is the column name in the remote source --
+  #  if $fieldName is 'rel1__rel2__rel3__blah', $col is 'blah'
+  #
+  # $join is the join attr needed to get to $rel/$col
+  #  if $fieldName is 'rel1__rel2__rel3__blah', $join is { rel1 => { rel2 => 'rel3' } }
+  #  the join needs to be merged into the common %merge_join hash
+  #
+  # $cond_data contains details about $col when $col is a relationship (otherwise it is undef)
+  #  if $fieldName is 'rel1__rel2__rel3__blah', $cond_data contains info about 
+  #  the relationship 'blah', which is a relationship of the rel3 source
+  my ($rel,$col,$join,$cond_data) = $self->resolve_dbic_rel_alias_by_column_name($fieldName,$get_render_col);
 
   %$merge_join = %{ merge($merge_join,$join) }
     if ($merge_join and $join);
-    
-    
+
 
   if (!defined $cond_data) {
-    # it is a simple column
+    # $col is a simple column, not a relationship, we're done:
     return "$rel.$col";
   } else {
 
@@ -1076,12 +1110,12 @@ sub resolve_dbic_colname {
     #  breaks COUNT() (because the number of joined rows gets multiplied) so by default
     #  we only use sub-queries.  In fact, join and group-by has a lot of problems on
     #  MySQL and we should probably never use it.
-    $cond_data->{function} = $cond_data->{function} || $self->multi_rel_columns_indx->{$name};
+    $cond_data->{function} = $cond_data->{function} || $self->multi_rel_columns_indx->{$fieldName};
     
     # Support for a custom aggregate function
     if (ref($cond_data->{function}) eq 'CODE') {
       # TODO: we should use hash-style parameters
-      return $cond_data->{function}->($self,$rel,$col,$join,$cond_data,$name);
+      return $cond_data->{function}->($self,$rel,$col,$join,$cond_data,$fieldName);
     }
     else {
       my $m2m_attrs = $cond_data->{info}->{attrs}->{m2m_attrs};
@@ -1147,44 +1181,60 @@ sub resolve_dbic_colname {
           " WHERE `$rinfo->{cond_info}->{foreign}` = `$rel`.`$cond_data->{self}`",
         ')');
         
-        return { '' => \$sql, -as => $name };		
+        return { '' => \$sql, -as => $fieldName };		
       }
       else {
        
         my $source = $self->schema->source($cond_data->{info}{source});
         
+        # $rel_rs is a resultset object for $col when $col is the name of a relationship (which
+        # it is because we're here). We are using $rel_rs to create a sub-query for a count. 
+        # We are suppling a custom alias that is not likely to conflict with the rest of the
+        # query.
+        my $rel_rs = $source->resultset_class
+          ->new($source, { alias => "${col}_alias" })
+          ->search_rs(undef,{ 
+            %{$source->resultset_attributes || {}}, 
+            %{$cond_data->{info}{attrs} || {}} 
+          });
+        
         # --- Github Issue #40 ---
         # This was the original, manual condition generation which only supported 
         # single-key relationship conditions (and not multi-key or CodeRef):
         #my $cond = { "${rel}_alias.$cond_data->{foreign}" => \[" = $rel.$cond_data->{self}"] };
-        
+
         # This is the new way which uses DBIC's internal machinery in the proper way
         # and works for any multi-rel cond type, including CodeRef:
+        # UPDATE (#68): Starting in DBIC 0.08280 this invocation is producing a 
+        #               warning because it doesn't know what "${col}_alias" is 
+        #               (we're declaring it as the alias in $rel_rs above). It thinks 
+        #               it should be a relationship, but it is just the local ('me') 
+        #               alias (from the perspective of $rel_rs)
         my $cond = $source->_resolve_condition(
           $cond_data->{info}{cond},
-          "${rel}_alias",
-          $rel,
+          "${col}_alias", #<-- the self alias
+          $rel,           #<-- the foreign alias
         );
         # ---
         
-        my $rel_rs = $source->resultset_class->new($source, { alias => "${rel}_alias" })->search_rs(
-          $cond,
-          { %{$source->resultset_attributes || {}}, %{$cond_data->{info}{attrs} || {}} }
-        );
+        $rel_rs = $rel_rs->search_rs($cond);
         
         if($cond_data->{info}{attrs}{accessor} eq 'multi') {
           # -- standard multi relationship column --
           # This is where the count sub-query is generated that provides
           # the numeric count of related items for display in multi rel columns.
-          return { '' => $rel_rs->count_rs->as_query, -as => $name };
+          return { '' => $rel_rs->count_rs->as_query, -as => $fieldName };
         }
         else {
+          # *** NOTE: this code-path never happens currently! (99.9% sure)
+          #     BUT: this is how the case would be handled (single rel) -- leaving in for now
+          #          for reference purposes...
           # -- NEW: virtualized single relationship column --
           # Returns the related display_column value as a subquery using the same
           # technique as the count for multi-relationship columns
           my $display_column = $source->result_class->TableSpec_get_conf('display_column')
             or die "Failed to get display_column";
-          return { '' => $rel_rs->get_column($display_column)->as_query, -as => $name };
+          return { '' => $rel_rs->get_column($display_column)->as_query, -as => $fieldName };
         }
       }
     }
@@ -1193,26 +1243,26 @@ sub resolve_dbic_colname {
 
 sub resolve_dbic_rel_alias_by_column_name  {
 	my $self = shift;
-	my $name = shift;
+	my $fieldName = shift;
 	my $get_render_col = shift || 0; 
 	
 	# -- applies only to relationship columns and currently only used for sort:
 	#  UPDATE: now also used for column_summaries
 	if($get_render_col) {
-		my $render_col = $self->relationship_column_render_column_map->{$name};
-		$name = $render_col if ($render_col);
+		my $render_col = $self->relationship_column_render_column_map->{$fieldName};
+		$fieldName = $render_col if ($render_col);
 	}
 	# --
 	
-	my $rel = $self->column_name_relationship_map->{$name};
+	my $rel = $self->column_name_relationship_map->{$fieldName};
 	unless ($rel) {
 		
 		my $join = $self->needed_join;
 		my $pre = $self->column_prefix;
-		$name =~ s/^${pre}//;
+		$fieldName =~ s/^${pre}//;
 		
 		# Special case for "multi" relationships... they return the related row count
-		my $cond_data = $self->multi_rel_columns_indx->{$name};
+		my $cond_data = $self->multi_rel_columns_indx->{$fieldName};
 		if ($cond_data) {
 			# Need to manually build the join to include the rel column:
 			# Update: we no longer add this to the join, because we use a sub-select
@@ -1231,7 +1281,7 @@ sub resolve_dbic_rel_alias_by_column_name  {
 			#	if length $self->relspec_prefix;
 			# ---
 			
-			return ('me',$name,$join,$cond_data);
+			return ('me',$fieldName,$join,$cond_data);
 		}
 		
 		
@@ -1243,8 +1293,8 @@ sub resolve_dbic_rel_alias_by_column_name  {
 		## query. This is similar to a multi rel column, but is still a column
 		## and not a relationship (TODO: combine this logic with the older multi
 		## rel column logic)
-		if ($self->ResultClass->has_virtual_column($name)) {
-			my $info = $self->ResultClass->column_info($name) || {};
+		if ($self->ResultClass->has_virtual_column($fieldName)) {
+			my $info = $self->ResultClass->column_info($fieldName) || {};
 			my $function = $info->{function} || sub {
 				my ($self,$rel,$col,$join,$cond_data2,$name2) = @_;
 				my $sql = $info->{sql} || 'SELECT(NULL)';
@@ -1267,30 +1317,30 @@ sub resolve_dbic_rel_alias_by_column_name  {
 				$join = $self->chain_to_hash(@prefix);
 			}
 			
-			return ('me',$name,$join,$cond_data);
+			return ('me',$fieldName,$join,$cond_data);
 		}
 		## ----
     ## --- NEW: Virtual Single Relationship Column (Github Issue #40)
-    elsif($self->ResultClass->has_relationship($name)){
-      my $cnf = $self->Cnf_columns->{$name};
+    elsif($self->ResultClass->has_relationship($fieldName)){
+      my $cnf = $self->Cnf_columns->{$fieldName};
       if ($cnf && $cnf->{virtualized_single_rel}) {
         # This is emulating the existing format being passed around and
         # used for relationship columns (see multi_rel_columns_indx). This
         # is going to be totally refactored and simplified later (also,
         # note that 'me' has no actual meaning and is a throwback)
-        return ('me',$name,$join,{ 
-          relname => $name,
-          info => $self->ResultClass->relationship_info($name)
+        return ('me',$fieldName,$join,{ 
+          relname => $fieldName,
+          info => $self->ResultClass->relationship_info($fieldName)
         });
       }
     }
     # ---
 		
-		return ('me',$name,$join);
+		return ('me',$fieldName,$join);
 	}
 	
 	my $TableSpec = $self->related_TableSpec->{$rel};
-	my ($alias,$dbname,$join,$cond_data) = $TableSpec->resolve_dbic_rel_alias_by_column_name($name,$get_render_col);
+	my ($alias,$dbname,$join,$cond_data) = $TableSpec->resolve_dbic_rel_alias_by_column_name($fieldName,$get_render_col);
 	$alias = $rel if ($alias eq 'me');
 	return ($alias,$dbname,$join,$cond_data);
 }
