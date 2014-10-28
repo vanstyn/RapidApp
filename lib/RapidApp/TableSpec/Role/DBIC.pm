@@ -9,7 +9,6 @@ use RapidApp::TableSpec::ColSpec;
 use RapidApp::Include qw(sugar perlutil);
 
 use RapidApp::DBIC::Component::TableSpec;
-require DBIx::Class::Helper::ResultSet::CorrelateRelationship;
 
 require Text::Glob;
 use Text::WagnerFischer qw(distance);
@@ -1192,9 +1191,7 @@ sub resolve_dbic_colname {
         my $p_source = $self->schema->source($cond_data->{parent_source})
           or die "Failed to resolve parent_source '$cond_data->{parent_source}'";
         
-        my $rel_rs = DBIx::Class::Helper::ResultSet::CorrelateRelationship::correlate(
-          $p_source->resultset, $col
-        );
+        my $rel_rs = $self->_correlate_rs_rel($p_source->resultset, $col);
         
         if($cond_data->{info}{attrs}{accessor} eq 'multi') {
           # -- standard multi relationship column --
@@ -1216,6 +1213,24 @@ sub resolve_dbic_colname {
       }
     }
   }
+}
+
+# Copied directly from DBIx::Class::Helper::ResultSet::CorrelateRelationship::correlate
+sub _correlate_rs_rel {
+   my ($self, $Rs, $rel) = @_;
+ 
+   my $source = $Rs->result_source;
+   my $rel_info = $source->relationship_info($rel);
+ 
+   return $source->related_source($rel)->resultset
+      ->search(scalar $source->_resolve_condition(
+         $rel_info->{cond},
+         "${rel}_alias",
+         $Rs->current_source_alias,
+         $rel
+      ), {
+         alias => "${rel}_alias",
+      })
 }
 
 sub resolve_dbic_rel_alias_by_column_name  {
