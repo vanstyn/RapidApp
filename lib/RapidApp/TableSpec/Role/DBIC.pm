@@ -1185,14 +1185,13 @@ sub resolve_dbic_colname {
         return { '' => \$sql, -as => $fieldName };		
       }
       else {
-       
-        my $source = $self->schema->source($cond_data->{info}{source});
 
-        my $p_source = $self->schema->source($cond_data->{parent_source})
-          or die "Failed to resolve parent_source '$cond_data->{parent_source}'";
-        
+        die '"parent_source" missing from $cond_data -- cannot correlate sub-select for "$col"'
+          unless ($cond_data->{parent_source});
+ 
+        my $p_source = $self->schema->source($cond_data->{parent_source});
         my $rel_rs = $self->_correlate_rs_rel($p_source->resultset, $col);
-        
+
         if($cond_data->{info}{attrs}{accessor} eq 'multi') {
           # -- standard multi relationship column --
           # This is where the count sub-query is generated that provides
@@ -1200,12 +1199,10 @@ sub resolve_dbic_colname {
           return { '' => $rel_rs->count_rs->as_query, -as => $fieldName };
         }
         else {
-          # *** NOTE: this code-path never happens currently! (99.9% sure)
-          #     BUT: this is how the case would be handled (single rel) -- leaving in for now
-          #          for reference purposes...
           # -- NEW: virtualized single relationship column --
           # Returns the related display_column value as a subquery using the same
           # technique as the count for multi-relationship columns
+          my $source = $self->schema->source($cond_data->{info}{source});
           my $display_column = $source->result_class->TableSpec_get_conf('display_column')
             or die "Failed to get display_column";
           return { '' => $rel_rs->get_column($display_column)->as_query, -as => $fieldName };
@@ -1322,7 +1319,8 @@ sub resolve_dbic_rel_alias_by_column_name  {
         # note that 'me' has no actual meaning and is a throwback)
         return ('me',$fieldName,$join,{ 
           relname => $fieldName,
-          info => $self->ResultClass->relationship_info($fieldName)
+          info => $self->ResultClass->relationship_info($fieldName),
+          parent_source => $self->ResultSource->source_name
         });
       }
     }
