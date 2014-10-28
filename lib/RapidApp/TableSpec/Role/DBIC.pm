@@ -9,6 +9,7 @@ use RapidApp::TableSpec::ColSpec;
 use RapidApp::Include qw(sugar perlutil);
 
 use RapidApp::DBIC::Component::TableSpec;
+require DBIx::Class::Helper::ResultSet::CorrelateRelationship;
 
 require Text::Glob;
 use Text::WagnerFischer qw(distance);
@@ -1014,7 +1015,8 @@ hashash 'multi_rel_columns_indx', lazy => 1, default => sub {
     $indx{$rel} = { %$h, 
 			info => $info,
 			rev_relname => $rev_relname,
-			relname => $rel
+			relname => $rel,
+			parent_source => $self->ResultSource->source_name
 		};
 	}
 	
@@ -1186,47 +1188,13 @@ sub resolve_dbic_colname {
       else {
        
         my $source = $self->schema->source($cond_data->{info}{source});
-        
-        # $rel_rs is a resultset object for $col when $col is the name of a relationship (which
-        # it is because we're here). We are using $rel_rs to create a sub-query for a count. 
-        # We are suppling a custom alias that is not likely to conflict with the rest of the
-        # query.
-        my $rel_rs = $source->resultset_class
-          ->new($source, { alias => "${col}_alias" })
-          ->search_rs(undef,{ 
-            %{$source->resultset_attributes || {}}, 
-            %{$cond_data->{info}{attrs} || {}} 
-          });
-        
-        # --- Github Issue #40 ---
-        # This was the original, manual condition generation which only supported 
-        # single-key relationship conditions (and not multi-key or CodeRef):
-        #my $cond = { "${rel}_alias.$cond_data->{foreign}" => \[" = $rel.$cond_data->{self}"] };
 
-        # This is the new way which uses DBIC's internal machinery in the proper way
-        # and works for any multi-rel cond type, including CodeRef:
-        # UPDATE (#68): Starting in DBIC 0.08280 this invocation is producing a 
-        #               warning because it doesn't know what "${col}_alias" is 
-        #               (we're declaring it as the alias in $rel_rs above). It thinks 
-        #               it should be a relationship, but it is just the local ('me') 
-        #               alias (from the perspective of $rel_rs)
-        my $cond = do {
-          # TEMP/FIXME - This is not the way _resolve_condition is supposed to be called
-          # and this will stop working in the next major DBIC release. _resolve_condition
-          # needs to be called with a valid relname which we do not have in this case. In
-          # order to fix this, we need to call _resolve_condition from one rel higher so
-          # we can pass $col as the rel. For now we are just ignoring the warning which
-          # we know is being produced. See Github Issue #68
-          local $SIG{__WARN__} = sub {};
-          $source->_resolve_condition(
-            $cond_data->{info}{cond},
-            $rel_rs->current_source_alias, #<-- the self alias ("${col}_alias" as set above)
-            $rel,                          #<-- the foreign alias
-          )
-        };
-        # ---
+        my $p_source = $self->schema->source($cond_data->{parent_source})
+          or die "Failed to resolve parent_source '$cond_data->{parent_source}'";
         
-        $rel_rs = $rel_rs->search_rs($cond);
+        my $rel_rs = DBIx::Class::Helper::ResultSet::CorrelateRelationship::correlate(
+          $p_source->resultset, $col
+        );
         
         if($cond_data->{info}{attrs}{accessor} eq 'multi') {
           # -- standard multi relationship column --
