@@ -117,13 +117,13 @@ sub chain_Rs_REST {
 		# if there is a '.' in the key name, assume it means 'rel.col', and
 		# try to add the join for 'rel':
 		my ($rel) = split(/\./,$key,2);
-		$Rs = $Rs->search_rs(undef,{ join => $rel }) 
+		$Rs = $self->_chain_search_rs($Rs,undef,{ join => $rel }) 
 			if ($self->ResultSource->has_relationship($rel));
 	}
 	else {
 		$key = 'me.' . $key;
 	}
-	return $Rs->search_rs({ $key => $val });
+	return $self->_chain_search_rs($Rs,{ $key => $val });
 }
 
 has 'get_CreateData' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default => sub {
@@ -566,10 +566,10 @@ sub read_records {
     ->{sqlite_see_if_its_a_number} = 1;
   # --
 	
-	$Rs = $Rs->search_rs({},{rows => 1}) if ($self->single_record_fetch);
+	$Rs = $self->_chain_search_rs($Rs,{},{rows => 1}) if ($self->single_record_fetch);
 	
 	# don't use Row objects
-	my $Rs2 = $Rs->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
+	my $Rs2 = $self->_chain_search_rs($Rs,undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
 		
 	my $rows;
 	try {
@@ -622,7 +622,7 @@ sub apply_first_records {
 	my $cond = $self->param_decodeIf($params->{first_records_cond},{});
 	return undef unless (keys %$cond > 0);
 	
-	my $first_rows = [ $Rs->search_rs($cond)->all ];
+	my $first_rows = [ $self->_chain_search_rs($Rs,$cond)->all ];
 	
 	#Hard coded munger for record_pk:
 	foreach my $row (@$first_rows) {
@@ -710,7 +710,7 @@ sub rs_count_manual {
 		};
 	}
 	
-	$Rs2 = $Rs2->search_rs({},$attr);
+	$Rs2 = $self->_chain_search_rs($Rs2,{},$attr);
 	$Rs2 = $Rs2->as_subselect_rs unless ($opts{no_subselect});
 	
 	return $Rs2->count_literal if ($opts{count_literal});
@@ -829,7 +829,7 @@ sub calculate_column_summaries {
       #  within the select, which is replaced for the summary query.
       #  This special handling finally fixes Summary Functions when
       #  there is a virtual column setup in MultiFilters
-      $agg_row = $Rs->search_rs(undef,{
+      $agg_row = $self->_chain_search_rs($Rs,undef,{
         page => undef,
         rows => undef,
         order_by => undef,
@@ -840,7 +840,7 @@ sub calculate_column_summaries {
       # ---
     }
     else {
-      $agg_row = $Rs->search_rs(undef,{
+      $agg_row = $self->_chain_search_rs($Rs,undef,{
         page => undef,
         rows => undef,
         order_by => undef,
@@ -936,7 +936,7 @@ sub chain_Rs_req_base_Attr {
 		$attr->{order_by} = { '-' . $params->{dir} => $sort_name } ;
 	}
 
-	return $Rs->search_rs({},$attr);
+	return $self->_chain_search_rs($Rs,{},$attr);
 }
 
 sub resolve_dbic_colname {
@@ -1039,16 +1039,16 @@ sub chain_Rs_req_id_in {
 	$id_in = [ $id_in ] unless (ref $id_in);
 	
 	# TODO: second form below doesn't work, find out why...
-	return $Rs->search_rs({ '-or' => [ map { $self->record_pk_cond($_) } @$id_in ] });
+	return $self->_chain_search_rs($Rs,{ '-or' => [ map { $self->record_pk_cond($_) } @$id_in ] });
 	
 	## If there is more than one primary column, we have to construct the condition completely 
 	## different:
-	#return $Rs->search_rs({ '-or' => [ map { $self->record_pk_cond($_) } @$id_in ] })
+	#return $self->_chain_search_rs($Rs,{ '-or' => [ map { $self->record_pk_cond($_) } @$id_in ] })
 	#	if (@{$self->primary_columns} > 1);
 	#	
 	## If there is really only one primary column we can use '-in' :
 	#my $col = $self->TableSpec->resolve_dbic_colname($self->primary_columns->[0]);
-	#return $Rs->search_rs({ $col => { '-in' => $id_in } });
+	#return $self->_chain_search_rs($Rs,{ $col => { '-in' => $id_in } });
 }
 
 
@@ -1081,7 +1081,7 @@ sub chain_Rs_req_explicit_resultset {
 	##
 	##
 	
-	return $Rs->search_rs($cond,$attr);
+	return $self->_chain_search_rs($Rs,$cond,$attr);
 }
 
 
@@ -1110,7 +1110,7 @@ sub chain_Rs_req_quicksearch {
     push @search, $cond;
   }
 
-  return $Rs->search_rs({ '-or' => \@search },$attr);
+  return $self->_chain_search_rs($Rs,{ '-or' => \@search },$attr);
 }
 
 
@@ -1182,7 +1182,7 @@ sub chain_Rs_req_multifilter {
 	my $attr = { join => {} };
 	my $cond = $self->multifilter_to_dbf($multifilter,$attr->{join}) || {};
 	
-	return $Rs->search_rs($cond,$attr) unless ($needs_having);
+	return $self->_chain_search_rs($Rs,$cond,$attr) unless ($needs_having);
 
 	# If we're here, '$needs_having' was set to true and we need to convert the
 	# *entire* query to use HAVING instead of WHERE to be sure we correctly handle
@@ -1293,7 +1293,7 @@ sub chain_Rs_req_multifilter {
   my $virtual_where = 1; #<-- set to 0 to revert to HAVING codepath
   if ($virtual_where) {
     $cond = $self->_recurse_transform_condition(clone($cond),\%virtuals);
-    return $Rs->search_rs({},{ %$attr,
+    return $self->_chain_search_rs($Rs,{},{ %$attr,
       where => $cond,
       select => $select,
       as => $as
@@ -1305,7 +1305,7 @@ sub chain_Rs_req_multifilter {
     # come back to later. We may want to still do this for RDBMS'es which support this (at 
     # least MySQL and SQLite do, and at least PostgreSQL does not). But, the question will be
     # to ask if there is even a performance advantage of doing this, and if so, when, how, etc
-    return $Rs->search_rs({},{ %$attr,
+    return $self->_chain_search_rs($Rs,{},{ %$attr,
       group_by => [ map { 'me.' . $_ } @{$self->primary_columns} ], #<-- safe group_by
       having => $having,
       select => $select,
@@ -1387,6 +1387,39 @@ sub _binary_op_fuser {
 #          POSSIBLY BEFORE THE END OF THIS YEAR
 ###############################################################
 # --
+
+
+# Common proxy for calls to $Rs->search_rs(...)
+sub _chain_search_rs {
+  my ($self, $Rs, $cond, $attr) = @_;
+
+  # --
+  # Convert {} joins to undef - this prevents ResultSet unititialized warnings when:
+  #  join => { rel1 => { rel2 => {} } }
+  # becomes:
+  #  join => { rel1 => { rel2 => undef } }
+  # (See DBIx::Class::ResultSet::_calculate_score() and related code)
+  $attr = {
+    %$attr,
+    join => $self->_recurse_clean_empty_hashrefs($attr->{join})
+  } if ($attr->{join});
+  # --
+
+  $Rs->search_rs($cond,$attr)
+}
+
+sub _recurse_clean_empty_hashrefs {
+  my ($self, $val) = @_;
+
+  if($val && ref($val) eq 'HASH') {
+    return (scalar keys(%$val) > 0)
+      ? { map { $_ => $self->_recurse_clean_empty_hashrefs($val->{$_}) } keys(%$val) }
+      : undef
+  }
+  else {
+    return $val
+  }
+}
 
 
 sub multifilter_to_dbf {
@@ -2039,7 +2072,7 @@ sub apply_virtual_rel_col_update {
 		my $Rs = $Source->schema->source($m2m_attrs->{rrinfo}->{source})->resultset;
 		my $keycol = $m2m_attrs->{rrinfo}->{cond_info}->{foreign};
 		
-		my @rrows = $Rs->search_rs({ $keycol => { '-in' => \@ids }})->all;
+		my @rrows = $self->_chain_search_rs($Rs,{ $keycol => { '-in' => \@ids }})->all;
 		my $count = scalar @rrows;
 		
 		scream_color(WHITE.ON_BLUE.BOLD,"  --> Setting '$colname' m2m links (count: $count)")
