@@ -1210,11 +1210,20 @@ sub resolve_dbic_colname {
         #               (we're declaring it as the alias in $rel_rs above). It thinks 
         #               it should be a relationship, but it is just the local ('me') 
         #               alias (from the perspective of $rel_rs)
-        my $cond = $source->_resolve_condition(
-          $cond_data->{info}{cond},
-          "${col}_alias", #<-- the self alias
-          $rel,           #<-- the foreign alias
-        );
+        my $cond = do {
+          # TEMP/FIXME - This is not the way _resolve_condition is supposed to be called
+          # and this will stop working in the next major DBIC release. _resolve_condition
+          # needs to be called with a valid relname which we do not have in this case. In
+          # order to fix this, we need to call _resolve_condition from one rel higher so
+          # we can pass $col as the rel. For now we are just ignoring the warning which
+          # we know is being produced. See Github Issue #68
+          local $SIG{__WARN__} = sub {};
+          $source->_resolve_condition(
+            $cond_data->{info}{cond},
+            $rel_rs->current_source_alias, #<-- the self alias ("${col}_alias" as set above)
+            $rel,                          #<-- the foreign alias
+          )
+        };
         # ---
         
         $rel_rs = $rel_rs->search_rs($cond);
