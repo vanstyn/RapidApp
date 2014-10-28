@@ -1517,7 +1517,10 @@ sub multifilter_translate_cond {
 		
 	my ($k,$v) = (%$cond);
 	
-	$v = $self->inflate_multifilter_date($v) if($column->{multifilter_type} =~ /^date/);
+	$v = $self->inflate_multifilter_date($v) if(
+    $column->{multifilter_type} &&
+    $column->{multifilter_type} =~ /^date/
+  );
 	
 	my $map = $self->multifilter_keymap->{$k};
 
