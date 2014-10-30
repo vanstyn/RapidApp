@@ -169,6 +169,11 @@ Ext.ux.RapidApp.errMsgHandler = function(title,msg,as_text) {
   var headCls = ['ra-exception-heading'];
   if(title.search('Database Error ') == 0){
     headCls.push('ra-icon-data-warning-32x32');
+    // While at it, convert the known dash (-) sequence into a pretty <hr>
+    body = body.replace(
+      "----------------",
+      '<hr color="#808080" size="1">'
+    );
   }
 	
 	win = new Ext.Window({
