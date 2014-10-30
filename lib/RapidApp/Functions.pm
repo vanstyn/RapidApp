@@ -46,6 +46,8 @@ sub scream_color {
 		'[line ' . $_->[1]->{line} . ']: ' . CLEAR . "\n" unless ($_ eq 'no_caller_data');
 	
 	print STDERR $pre . $color . $data . CLEAR . "\n";
+  
+  return @_;
 }
 
 
