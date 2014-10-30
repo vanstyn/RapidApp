@@ -1326,6 +1326,8 @@ sub _extract_virtual_subselect_ref {
   return ref $val ? $val : \$val;
 }
 
+sub sql_maker { (shift)->ResultSource->schema->storage->sql_maker }
+
 sub _recurse_transform_condition {
   my ($self, $val, $remap) = @_;
 
@@ -1342,7 +1344,7 @@ sub _recurse_transform_condition {
       # This is the location where we are actually 
       # changing something in the structure:
       return &_binary_op_fuser(
-        $self->ResultSource->schema->storage->sql_maker,
+        $self->sql_maker,
         $remap->{$k},
         $self->_recurse_transform_condition($v,$remap)
       ) if($remap->{$k});
@@ -1520,24 +1522,31 @@ has 'multifilter_keymap', is => 'ro', default => sub {{
 	
 }};
 
+# -- multifilter_translate_cond()
+# This method now uses _binary_op_fuser() internally to generate conditions with
+# virtual/sub-select as lhs, as is the case with virtual columns (fixes #69). 
+# There is a lot of ugly code that was written before this function was available that
+# utilized HAVING that now is not needed and should be cleaned up/unfactored
+# (such as the localized $dbf_active_conditions global crap - TODO/FIXME)
+#  see also #51 for details on the HAVING design change
 sub multifilter_translate_cond {
 	my $self = shift;
 	my $cond = shift;
 	my $dbfName = shift;
 	my $field = shift;
 	my $column = try{$self->get_column($field)} || {};
-	
-	# If we're a virtual column:
-	my $dbfNameStr = try{$dbfName->{-as}} || $dbfName;
-	
+
+  # If we're a virtual column:
+  my ($select,$as) = ((ref $dbfName||'') eq 'HASH' && $dbfName->{-as} && $dbfName->{''})
+    ? ($dbfName->{''} => $dbfName->{-as} )
+    : ($dbfName       => $dbfName        );
+
 	# Track in localized global:
-	push @$dbf_active_conditions, { 
-		name => $dbfNameStr, 
+	push @$dbf_active_conditions, {
+		name => $as,
 		field => $field, 
-		select => clone($dbfName) 
+		select => clone($dbfName)
 	};
-	
-	$dbfName = $dbfNameStr;
 	
 	# After changing the conditions for 'null or empty' to a simpler form, a lot of the
 	# logic in here isn't currently needed. But, leaving it in for now for reference and
@@ -1570,7 +1579,7 @@ sub multifilter_translate_cond {
 		my @new = &$map;
 		($k) = @new;
 		
-		return { $dbfName => $k } if ref($k);
+		return &_binary_op_fuser($self->sql_maker, $select => $k) if ref($k);
 		($k,$v) = @new if (scalar @new > 1); #<-- if 2 args were returned (this approach allows $v of undef)
 	}
 	else {
@@ -1582,8 +1591,9 @@ sub multifilter_translate_cond {
 		return $self->multifilter_translate_cond({ $map => $v },$dbfName,$field) if ($map);
 	}
 	
-	return { $dbfName => { $k => $v } };
+	return &_binary_op_fuser($self->sql_maker, $select => { $k => $v });
 }
+
 
 
 sub multifilter_date_getKeywordDt {
