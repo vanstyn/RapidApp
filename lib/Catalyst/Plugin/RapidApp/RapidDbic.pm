@@ -141,7 +141,7 @@ before 'setup_component' => sub {
     # just a stop-gap until this functionality is factored into the RapidApp API 
     # officially, somehow...
     
-    my $module_name = lc($model_name . '_' . $class->table);
+    my $module_name = lc($model_name . '_' . $source_name);
     my $grid_url = join('/',$mod_path,$config->{dbic_tree_module_name},$module_name);
     $class->TableSpec_set_conf(
       priority_rel_columns => 1,
