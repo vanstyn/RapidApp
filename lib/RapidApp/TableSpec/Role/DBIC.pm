@@ -347,13 +347,13 @@ sub expand_relspec_wildcards {
 	push @parts,$clspec;
 	
 	my $rel = shift @parts;
-	my $pre; { $rel =~ s/^(\!)//; $pre = $1 ? $1 : ''; }
+	my $pre; { my ($match) = ($rel =~ s/^(\!)//); $pre = $match ? $match : ''; }
 	
 	my @rel_list = $Source->relationships;
 	#scream($_) for (map { $Source->relationship_info($_) } @rel_list);
 	
 	my @macro_keywords = @ovr_macro_keywords;
-	my $macro; { $rel =~ s/^\{([\?\:a-zA-Z0-9]+)\}//; $macro = $1; }
+	my $macro; { my ($match) = ($rel =~ s/^\{([\?\:a-zA-Z0-9]+)\}//); $macro = $match; }
 	push @macro_keywords, split(/\:/,$macro) if ($macro);
 	my %macros = map { $_ => 1 } @macro_keywords;
 	
@@ -497,8 +497,8 @@ sub colspec_to_colspec_test {
 	my $colspec = shift;
 	my $test_spec = shift;
 	
-	$colspec =~ s/^(\!)//;
-	my $x = $1 ? -1 : 1;
+	my ($match) = ($colspec =~ s/^(\!)//);
+	my $x = $match ? -1 : 1;
 	
 	my @parts = split(/\./,$colspec);
 	my @test_parts = split(/\./,$test_spec);
@@ -561,9 +561,9 @@ sub _colspec_test($$){
 	# tested with 
 	my @other_colspecs = @_;
 	
+  
   my $full_colspec_orig = $full_colspec;
-  my $neg_flag = ($full_colspec =~ /^\!/);
-  $full_colspec =~ s/^(\!)//;
+  my ($neg_flag) = ($full_colspec =~ s/^(\!)//);
   my $x = $neg_flag ? -1 : 1;
   my $match_return = $neg_flag ? 0 : 1;
 	
@@ -607,10 +607,9 @@ sub _colspec_test($$){
 
 # New: caching wrapper for performance:
 sub colspec_test($$){
-  my ($self,$l,$r) = @_;
-  $self->{_colspec_test_cache}{$l}{$r} = $self->_colspec_test($l,$r)
-    unless (exists $self->{_colspec_test_cache}{$l}{$r});
-  return $self->{_colspec_test_cache}{$l}{$r};
+  my $self = shift;
+  # There may be extra args, we need to include all in the cache hashkey
+  $self->{_colspec_test_cache}{join('|',@_)} //= $self->_colspec_test(@_)
 }
 
 # returns a list of loaded column names that match the supplied colspec set
