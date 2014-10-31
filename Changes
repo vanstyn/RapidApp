@@ -1,8 +1,23 @@
 Revision history for RapidApp
 
-next-ver 2014-10-??
+0.99500 2014-10-31 🎃
+    - Apps now work properly when started via 'plackup' (#70)
+    - Major improvements to default 'combo' (fk/single rel) editors:
+       * Text/type filtering enabled by default
+       * New 'dropdown' auto_editor_type for the old/simple behavior
+    - Added special 'soft_rel' column profile
+    - Lots of fixes/improvements to AppCombo UI controls in general
+    - Fix bug in RapidDbic-generated urls when ->table('db.table') (#71)
+    - Fix bug in text filtering single rels w/ virtual display_column (#69)
+    - Fix deprecated usage of DBIC _resolve_condition method (#68)
+    - Fix _binary_op_fuser func to work with new SQLA 1.80 (thanks ribasushi)
     - Now requires Catalyst 5.90075
-    - Now requires DBIx::Class 0.082801
+    - Now requires DBIx::Class 0.082810
+    - Now requires SQL::Abstract 1.81
+    - Now requires SQL::Translator 0.11020
+    - Now requires Plack 1.0033
+    - Now requires DBIx::Class::Schema::Diff 1.02
+    - Lots of misc/minor bug fixes
 
 0.99402 2014-10-06
     - Added a real "set password" dialog for setting user passwords in CoreSchema
@@ -204,4 +219,4 @@ next-ver 2014-10-??
     - Relationships with complex conditions now supported (Github Issue #40)
     - Refactored internal TableSpec_cnf format somewhat (no API changes)
     - Started Changes file (this file). See commit history for change log prior
-      to this version (https://github.com/vanstyn/RapidApp)
+      to this version (https://github.com/vanstyn/RapidApp)Changes for SQL::Translator
