@@ -1191,7 +1191,10 @@ sub resolve_dbic_colname {
           unless ($cond_data->{parent_source});
  
         my $p_source = $self->schema->source($cond_data->{parent_source});
-        my $rel_rs = $self->_correlate_rs_rel($p_source->resultset, $col);
+        my $rel_rs = $self->_correlate_rs_rel(
+          $p_source->resultset->search_rs(undef,{ alias => $rel }), 
+          $col
+        );
 
         if($cond_data->{info}{attrs}{accessor} eq 'multi') {
           # -- standard multi relationship column --
