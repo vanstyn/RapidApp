@@ -561,10 +561,11 @@ sub _colspec_test($$){
 	# tested with 
 	my @other_colspecs = @_;
 	
-	my $full_colspec_orig = $full_colspec;
-	$full_colspec =~ s/^(\!)//;
-	my $x = $1 ? -1 : 1;
-	my $match_return = $1 ? 0 : 1;
+  my $full_colspec_orig = $full_colspec;
+  my $neg_flag = ($full_colspec =~ /^\!/);
+  $full_colspec =~ s/^(\!)//;
+  my $x = $neg_flag ? -1 : 1;
+  my $match_return = $neg_flag ? 0 : 1;
 	
 	my @parts = split(/\./,$full_colspec); 
 	my $colspec = pop @parts;
