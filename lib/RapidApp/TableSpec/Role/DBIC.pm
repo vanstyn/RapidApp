@@ -347,14 +347,17 @@ sub expand_relspec_wildcards {
 	push @parts,$clspec;
 	
 	my $rel = shift @parts;
-	my $pre= ($rel =~ s/^!//)? '!' : '';
+	my $pre; { my ($match) = ($rel =~ /^(\!)/); $rel =~ s/^(\!)//; $pre = $match ? $match : ''; }
 	
 	my @rel_list = $Source->relationships;
 	#scream($_) for (map { $Source->relationship_info($_) } @rel_list);
 	
 	my @macro_keywords = @ovr_macro_keywords;
-	my ($macro, $remainder)= ($rel =~ /^\{([\?\:a-zA-Z0-9]+)\}(.*)/);
-	$rel= $remainder if defined $macro;
+	my $macro; { 
+    my ($match) = ($rel =~ /^\{([\?\:a-zA-Z0-9]+)\}/);
+    $rel =~ s/^\{([\?\:a-zA-Z0-9]+)\}//;
+    $macro = $match; 
+  }
 	push @macro_keywords, split(/\:/,$macro) if ($macro);
 	my %macros = map { $_ => 1 } @macro_keywords;
 	
@@ -498,7 +501,8 @@ sub colspec_to_colspec_test {
 	my $colspec = shift;
 	my $test_spec = shift;
 	
-	my $x= ($colspec =~ s/^!//)? -1 : 1;
+	my ($match) = ($colspec =~ /^(\!)/); $colspec =~ s/^(\!)//;
+	my $x = $match ? -1 : 1;
 	
 	my @parts = split(/\./,$colspec);
 	my @test_parts = split(/\./,$test_spec);
@@ -563,7 +567,7 @@ sub _colspec_test($$){
 	
   
   my $full_colspec_orig = $full_colspec;
-  my $neg_flag= ($full_colspec =~ s/^!//)? -1 : 1;
+  my ($neg_flag) = ($full_colspec =~ /^(\!)/); $full_colspec =~ s/^(\!)//;
   my $x = $neg_flag ? -1 : 1;
   my $match_return = $neg_flag ? 0 : 1;
 	

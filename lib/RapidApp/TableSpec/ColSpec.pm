@@ -151,7 +151,7 @@ default => sub {
 	
 	my %end_rels = ( '' => 1 );
 	foreach my $spec ($self->all_colspecs) {
-		my $pre= ($spec =~ s/^!//)? '!' : '';
+		my $pre; { my ($match) = ($spec =~ /^(\!)/); $spec =~ s/^(\!)//; $pre = $match ? $match : ''; }
 		
 		my @parts = split(/\./,$spec);
 		my $rel = shift @parts;
