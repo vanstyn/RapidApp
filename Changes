@@ -1,5 +1,10 @@
 Revision history for RapidApp
 
+0.99501 2014-??
+    - Fix regression related to #68 changes for _resolve_condition calls
+    - Purge most code of buggy $1 calls (really fixes #70)
+    - Unit test for _binary_op_fuser() 
+
 0.99500 2014-10-31 🎃
     - Apps now work properly when started via 'plackup' (#70)
     - Major improvements to default 'combo' (fk/single rel) editors:
@@ -11,6 +16,7 @@ Revision history for RapidApp
     - Fix bug in text filtering single rels w/ virtual display_column (#69)
     - Fix deprecated usage of DBIC _resolve_condition method (#68)
     - Fix _binary_op_fuser func to work with new SQLA 1.80 (thanks ribasushi)
+    - Better looking DB error dialogs
     - Now requires Catalyst 5.90075
     - Now requires DBIx::Class 0.082810
     - Now requires SQL::Abstract 1.81
@@ -219,4 +225,4 @@ Revision history for RapidApp
     - Relationships with complex conditions now supported (Github Issue #40)
     - Refactored internal TableSpec_cnf format somewhat (no API changes)
     - Started Changes file (this file). See commit history for change log prior
-      to this version (https://github.com/vanstyn/RapidApp)Changes for SQL::Translator
+      to this version (https://github.com/vanstyn/RapidApp)

@@ -1373,10 +1373,9 @@ sub _binary_op_fuser {
   my ($rsql, @rbind) = $sm->_recurse_where({ "\0" => $r });
 
   my ($ql, $qr) = $sm->_quote_chars;
-  my ($match) = ($rsql =~ / (\Q$ql\E)? \0 (\Q$qr\E)? /gx);
   $rsql =~ s/ (\Q$ql\E)? \0 (\Q$qr\E)? //gx;
 
-  $rsql =~ s/ \A \s* \( (.+?) \) \s* \z /${match}/sx;
+  $rsql =~ s/ \A \s* \( (.+?) \) \s* \z /$1/sx;
 
   return \[
     "$lsql $rsql",
