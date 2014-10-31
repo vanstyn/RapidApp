@@ -1373,9 +1373,10 @@ sub _binary_op_fuser {
   my ($rsql, @rbind) = $sm->_recurse_where({ "\0" => $r });
 
   my ($ql, $qr) = $sm->_quote_chars;
-  my ($match) = ($rsql =~ s/ (\Q$ql\E)? \0 (\Q$qr\E)? //gx);
+  my ($match)= ($rsql =~ / (\Q$ql\E)? \0 (\Q$qr\E)? /);
+  $rsql =~ s/ (\Q$ql\E)? \0 (\Q$qr\E)? //gx;
 
-  $rsql =~ s/ \A \s* \( (.+?) \) \s* \z /${match}/sx;
+  $rsql =~ s/ \A \s* \( (.+?) \) \s* \z /$match/sx;
 
   return \[
     "$lsql $rsql",
@@ -1757,9 +1758,7 @@ sub inflate_multifilter_date {
 	
 	@parts = ();
 	while(length $str) {
-		my ($num,$unit);
-		my ($match) = ($str =~ s/^(\d+)//); $num = $match;
-		($match) = ($str =~ s/^(\D+)//); $unit = $match;
+		my ($num,$unit)= ($str =~ /^(\d*)(\D*)/);
 		
 		#custom support for "weeks":
 		if($unit eq 'w' || $unit eq 'week' || $unit eq 'weeks' || $unit eq 'wk' || $unit eq 'wks') {
