@@ -498,7 +498,7 @@ sub colspec_to_colspec_test {
 	my $colspec = shift;
 	my $test_spec = shift;
 	
-	$x= ($colspec =~ s/^!//)? -1 : 1;
+	my $x= ($colspec =~ s/^!//)? -1 : 1;
 	
 	my @parts = split(/\./,$colspec);
 	my @test_parts = split(/\./,$test_spec);
@@ -564,6 +564,7 @@ sub _colspec_test($$){
   
   my $full_colspec_orig = $full_colspec;
   my $neg_flag= ($full_colspec =~ s/^!//)? -1 : 1;
+  my $x = $neg_flag ? -1 : 1;
   my $match_return = $neg_flag ? 0 : 1;
 	
 	my @parts = split(/\./,$full_colspec); 
