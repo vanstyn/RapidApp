@@ -9,6 +9,70 @@ Ext.ns('Ext.ux.RapidApp.Plugin');
  to any components with stores (note that Ext.data.Store itself
  cannot use plugins because its not a component)
 */
+
+Ext.ux.RapidApp.Plugin.CmpDataStorePlusX = {
+  startEditingWrapper: function(row,col,cmp) {
+    var ed = this.colModel.getCellEditor(col, row);
+    if(ed) {
+      var field = ed.field;
+      if(field && !field.DataStorePlusApplied) {
+        
+        var stopEditFn = cmp.stopEditing.createDelegate(cmp);
+        
+        // --- Handle Ctrl+S/Ctrl+Z ('save'/'undo' keyboard shortcuts) for in-progress edit:
+        field.on('afterrender', function(){
+          if(!field.el) { return; }
+          var savebtn = cmp.loadedStoreButtons ? cmp.loadedStoreButtons.save : null;
+          new Ext.KeyMap(field.el,{
+            ctrl: true,
+            key: 's',
+            fn: function(k,e){
+              e.stopEvent();
+
+              // Complete the edit:
+              stopEditFn();
+
+              // If we have a Store save button, also call its handler:
+              if(savebtn) { return savebtn.handler.call(this,savebtn); }
+            },
+            scope: this
+          });
+          // This is better than the default Ctrl+Z behavior for text fields:
+          var xtype = field.getXType();
+          if(xtype == 'field' || xtype == 'textfield' || xtype == 'numberfield') {
+            new Ext.KeyMap(field.el,{
+              ctrl: true,
+              key: 'z',
+              fn: ed.cancelEdit,
+              scope: ed
+            });
+          }
+        },this);
+        // ---
+
+        // For combos and other fields with a select listener, automatically
+        // finish the edit on select
+        field.on('select',stopEditFn);
+        
+        // For cycle-field/menu-field:
+        field.cycleOnShow = false;
+        field.manuOnShow = false;
+        
+        //Call 'onTriggerClick' for combos and other fields with an onTriggerClick method (cycle-field)
+        if(Ext.isFunction(field.onTriggerClick)) {
+          ed.on('startedit',function(){
+            this.onTriggerClick();
+          },field);
+        }
+        
+        field.DataStorePlusApplied = true;
+      }
+    }
+    return cmp.startEditing_orig.apply(cmp,arguments);
+  }
+
+};
+
 Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	init: function(cmp) {
 		this.cmp = cmp;
@@ -148,66 +212,14 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		if(Ext.isFunction(cmp.startEditing)){
 
 			cmp.startEditing_orig = cmp.startEditing;
-			
-			cmp.startEditing = function(row,col) {
-				var ed = this.colModel.getCellEditor(col, row);
-				if(ed) {
-					var field = ed.field;
-					if(field && !field.DataStorePlusApplied) {
-						
-						var stopEditFn = cmp.stopEditing.createDelegate(cmp);
-						
-						// --- Handle Ctrl+S/Ctrl+Z ('save'/'undo' keyboard shortcuts) for in-progress edit:
-						field.on('afterrender', function(){
-							if(!field.el) { return; }
-							var savebtn = cmp.loadedStoreButtons ? cmp.loadedStoreButtons.save : null;
-							new Ext.KeyMap(field.el,{
-								ctrl: true,
-								key: 's',
-								fn: function(k,e){
-									e.stopEvent();
-
-									// Complete the edit:
-									stopEditFn();
-
-									// If we have a Store save button, also call its handler:
-									if(savebtn) { return savebtn.handler.call(this,savebtn); }
-								},
-								scope: this
-							});
-							// This is better than the default Ctrl+Z behavior for text fields:
-							var xtype = field.getXType();
-							if(xtype == 'field' || xtype == 'textfield' || xtype == 'numberfield') {
-								new Ext.KeyMap(field.el,{
-									ctrl: true,
-									key: 'z',
-									fn: ed.cancelEdit,
-									scope: ed
-								});
-							}
-						},this);
-						// ---
-
-						// For combos and other fields with a select listener, automatically
-						// finish the edit on select
-						field.on('select',stopEditFn);
-						
-						// For cycle-field/menu-field:
-						field.cycleOnShow = false;
-						field.manuOnShow = false;
-						
-						//Call 'onTriggerClick' for combos and other fields with an onTriggerClick method (cycle-field)
-						if(Ext.isFunction(field.onTriggerClick)) {
-							ed.on('startedit',function(){
-								this.onTriggerClick();
-							},field);
-						}
-						
-						field.DataStorePlusApplied = true;
-					}
-				}
-				return cmp.startEditing_orig.apply(cmp,arguments);
-			}
+      
+      cmp.startEditing = function(row,col) {
+        return Ext.ux.RapidApp.Plugin.CmpDataStorePlusX.startEditingWrapper.call(
+          this,
+          row,col,
+          cmp
+        );
+      };
 		}
 		/**********************/
 		/**********************/
@@ -404,6 +416,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		
 	},
 	
+  
 	store_add_initData: {},
 	close_unsaved_confirm: true,
 	show_store_button_text: false,
