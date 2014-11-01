@@ -329,18 +329,13 @@ sub controller_dispatch {
 	# if there were unprocessed arguments which were not an action, and there was no default action, generate a 404
 	# UPDATE: unless new 'accept_subargs' attr is true (see attribute declaration above)
 	if (defined $opt && !$self->accept_subargs) {
-		$self->c->log->debug("--> " . RED . BOLD . "unknown action: $opt" . CLEAR) if($self->c->debug);
-		if ($ct eq 'text/x-RapidApp-FormSubmitResponse'
-			|| $ct eq 'JSON'
-		) {
-			die "Unknown module or action '$opt'";
-		}
-		else {
-			$self->c->stash->{current_view} = 'RapidApp::HttpStatus';
-			$self->c->res->status(404);
-			return 1;
-		}
+    $self->c->log->debug(join('',"--> ",RED,BOLD,"unknown action: $opt",CLEAR)) if ($self->c->debug);
+    $c->stash->{template} = 'rapidapp/http-404.html';
+    $c->stash->{current_view} = 'RapidApp::Template';
+    $c->res->status(404);
+    return $c->detach;
 	}
+  # TODO: this logic is old and may no longer be valid...
 	elsif ($ct ne 'JSON' && $ct ne 'text/x-rapidapp-form-response' && $self->auto_web1) {
 		$self->c->log->debug("--> " . GREEN . BOLD . "[web1_content]" . CLEAR . ". (no action)")
       if($self->c->debug);

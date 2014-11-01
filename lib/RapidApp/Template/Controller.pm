@@ -282,7 +282,11 @@ sub view :Local {
   my ($self, $c, @args) = @_;
   my $template = $self->_resolve_template_name(@args)
     or die "No template specified";
-    
+
+  # Honor the existing status, if set, except for Ajax requests
+  my $status = $c->res->status || 200;
+  $status = 200 if ($c->is_ra_ajax_req);
+
   local $self->{_current_context} = $c;
   
   # Track the top-level template that is being viewed, in case the Access class
@@ -440,7 +444,7 @@ sub view :Local {
   # Decode as UTF-8 for user consumption:
   utf8::decode($output);
 
-  return $self->_detach_response($c,200,$output,$content_type);
+  return $self->_detach_response($c,$status,$output,$content_type);
 }
 
 
