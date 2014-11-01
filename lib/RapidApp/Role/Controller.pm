@@ -329,6 +329,11 @@ sub controller_dispatch {
 	# if there were unprocessed arguments which were not an action, and there was no default action, generate a 404
 	# UPDATE: unless new 'accept_subargs' attr is true (see attribute declaration above)
 	if (defined $opt && !$self->accept_subargs) {
+    # Handle the special case of browser requests for 'favicon.ico' (#57)
+    return $c->redispatch_public_path(
+      '/assets/rapidapp/misc/static/images/rapidapp_icon_small.ico'
+    ) if ($opt eq 'favicon.ico' && !$c->is_ra_ajax_req);
+
     $self->c->log->debug(join('',"--> ",RED,BOLD,"unknown action: $opt",CLEAR)) if ($self->c->debug);
     $c->stash->{template} = 'rapidapp/http-404.html';
     $c->stash->{current_view} = 'RapidApp::Template';
