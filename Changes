@@ -1,6 +1,10 @@
 Revision history for RapidApp
 
-0.99501 2014-??
+0.99501 2014-11-1
+    - Combos behave properly on property grid page
+    - Random 'favicon.ico' requests handled (#57)
+    - Bad module paths now render 404 page instead of exception (#73)
+    - Name mismatch between source/table name working again (#72)
     - Fix regression related to #68 changes for _resolve_condition calls
     - Purge most code of buggy $1 calls (really fixes #70)
     - Unit test for _binary_op_fuser() 
