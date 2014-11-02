@@ -46,7 +46,7 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
 
     // Force the combo to show/hide the list on click just like a normal 
     // dropdown would if not in edit mode
-    if(this.editable) {
+    if(this.editable && ! this.no_click_trigger) {
       this.on('afterrender',function(cmb){
         cmb.getEl().on('click',function(el){
           cmb.isExpanded() ? cmb.collapse() : cmb.onTriggerClick();

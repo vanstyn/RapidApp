@@ -113,8 +113,12 @@ sub BUILD {
   
   # user_editable overrides:
   $self->apply_extconfig(
-    editable       => \1,
-    forceSelection => \0,
+    editable         => \1,
+    forceSelection   => \0,
+    emptyText        => undef,
+    listEmptyText    => '',
+    triggerClass     => 'x-form-search-trigger',
+    no_click_trigger => \1,
   ) if ($self->user_editable); 
 }
 

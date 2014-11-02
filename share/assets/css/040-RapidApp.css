@@ -1739,3 +1739,7 @@ a:hover, a:hover * { cursor: pointer; }
   font-size: 0.8em !important;
 }
 
+/* lighter version of the standard grey combo trigger */
+.ra-x-form-arrow-trigger-light {
+  background-image: url(/assets/rapidapp/misc/static/images/trigger-square-light.gif) !important;
+}
