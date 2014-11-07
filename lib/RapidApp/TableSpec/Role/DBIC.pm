@@ -5,6 +5,7 @@ use Moose::Util::TypeConstraints;
 
 use RapidApp::TableSpec::DbicTableSpec;
 use RapidApp::TableSpec::ColSpec;
+use RapidApp::TableSpec::Column::Profile;
 
 use RapidApp::Include qw(sugar perlutil);
 
@@ -1386,6 +1387,13 @@ sub get_relationship_column_cnf {
 	my $self = shift;
 	my $rel = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+  
+  # New: apply profiles early so any profiles which set rel column options
+  # are available (e.g. 'soft_rel' which sets 'auto_editor_params' -- added for #77)
+  if ($opt{profiles}) {
+    my $o = RapidApp::TableSpec::Column::Profile->_apply_profiles_soft(\%opt);
+    %opt = %$o;
+  }
 
   return $self->get_virtual_relationship_column_cnf($rel,\%opt) if ($opt{virtualized_single_rel});
 	return $self->get_multi_relationship_column_cnf($rel,\%opt) if ($self->multi_rel_columns_indx->{$rel});
