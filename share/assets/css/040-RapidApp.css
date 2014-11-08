@@ -1429,8 +1429,8 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
   overflow:hidden;
 }
 
-.wrap-on {
-  white-space: normal;
+.ra-wrap-on {
+  white-space: normal !important;
 }
 
 .ra-datastore-app-field-invalid {

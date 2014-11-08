@@ -127,7 +127,7 @@ sub DEFAULT_PROFILES {{
   },
   bigtext => {
     width => 150,
-    renderer 	=> ['Ext.util.Format.nl2br'],
+    renderer 	=> ['Ext.ux.RapidApp.nl2brWrap'],
     editor		=> { xtype => 'textarea', grow => \1 },
     summary_functions => \@text_summary_funcs 
   },

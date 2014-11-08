@@ -1582,7 +1582,7 @@ Ext.reg('datastore-app-field',Ext.ux.RapidApp.DataStoreAppField);
 
 Ext.ux.RapidApp.ListEditField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 	
-	fieldClass: 'ra-datastore-app-field wrap-on',
+	fieldClass: 'ra-datastore-app-field ra-wrap-on',
 	invalidClass: 'ra-datastore-app-field-invalid',
 	actionOnShow: true,
 	

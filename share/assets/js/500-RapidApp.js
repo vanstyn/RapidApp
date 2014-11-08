@@ -4924,6 +4924,13 @@ Ext.ux.RapidApp.renderCasLink = function(v){
   }
 }
 
+Ext.ux.RapidApp.nl2brWrap = function(v) {
+  return v && v.length > 1 ? [
+    '<span class="ra-wrap-on">',
+      Ext.util.Format.nl2br(v),
+    '</span>'
+  ].join('') : v;
+}
 
 // Called from ext_viewport.tt to initialize the main app UI:
 Ext.ux.RapidApp.MainViewportInit = function(opt) {
