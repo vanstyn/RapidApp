@@ -1021,6 +1021,8 @@ sub proxy_method_get_changed {
 	my $self = shift;
 	my $method = shift;
 	
+  no warnings 'uninitialized'; # because we might compare undef values
+  
 	my $origRow = $self;
 	my %old = ();
 	if($self->in_storage) {

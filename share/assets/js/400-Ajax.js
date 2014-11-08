@@ -515,9 +515,19 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
     // TODO: hook into the guts of this process to support
     // actually cancelling the reload. This would need to be done by calling and
     // testing the result of 'beforeremove'
-
-    // And then purge any listeners for a clean, fresh start. 
-    this.purgeListeners();
+    
+    // NEW/Updated:
+    // Clear *only* 'beforeremove' events -- we can't call purgeListeners()
+    // because it breaks things like resize events. We only really need to
+    // escape 'beforeremove' because, again, its too late at this point to abort
+    // the remove, which is what beforeremove is for (as discussed above)
+    var befRem = this.events.beforeremove;
+    if(befRem && typeof befRem == 'object') {
+      befRem.clearListeners();
+    }
+    
+    // Purge any child listeners for good measure (probably not needed)
+    this.items.each(function(itm) { itm.purgeListeners(); });
 
     // Now call load using the same/original autoLoad config:
     this.load(this.autoLoad);
