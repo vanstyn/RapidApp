@@ -163,6 +163,11 @@ sub read_records {
     ->all
   ];
 
+  # Sort results into groups according to the kind of match (#83)
+  $rows = $self->_apply_type_filter_row_order(
+    $rows,$p->{type_filter_query}
+  ) if ($p->{type_filter_query});
+
   # Handle the 'valueqry' separately because it supercedes the rest of the
   # query, and applies to only 1 row. However, we don't expect both a valueqry
   # and a type_filter_query together. The valueqry is sent to obtain the display
@@ -229,6 +234,37 @@ sub _like_type_filter_for {
   #return \[join(' ',$sel,'LIKE ?'),$like_arg];
 }
 
+
+# Orders the rows by the kind of match: exact, start, then everything else (#83)
+sub _apply_type_filter_row_order {
+  my ($self, $rows, $str) = @_;
+
+  my @exact = ();
+  my @start = ();
+  my @other = ();
+
+  $str = lc($str); # case-insensitive
+
+  for my $row (@$rows) {
+    exists $row->{$self->displayField} or die "Bad data -- row doesn't contain displayField key";
+
+    my $dval = lc($row->{$self->displayField}); # case-insensitive
+
+    if ($dval eq $str) {
+      push @exact, $row;
+    }
+    elsif ($dval =~ /^$str/) {
+      push @start, $row;
+    }
+    else {
+      push @other, $row;
+    }
+  }
+
+  @$rows = (@exact,@start,@other);
+
+  $rows
+}
 
 
 1;
