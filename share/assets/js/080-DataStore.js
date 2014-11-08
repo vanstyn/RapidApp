@@ -485,6 +485,9 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		};
     
     store.isEditableColumn = function(name) {
+      // If there is no update api, no columns are editable by definition
+      if(!store.api.update) { return false; }
+      
       return store.editable_columns_map && store.editable_columns_map[name] ? true : false;
     };
 		
@@ -1085,6 +1088,12 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		
 		// Adding a new record (phantom):
 		if(e.record.phantom) {
+    // If there is no create api, we can't edit (for create):
+      if(!e.grid.store.api.create) { 
+        e.cancel = true;
+        return false; 
+      }
+
 			// Prevent editing if allow_add is set to false:
 			if(typeof column.allow_add !== "undefined" && !column.allow_add) {
 				e.cancel = true; //<-- redundant with return false but set for good measure
@@ -1093,6 +1102,12 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		}
 		// Editing an existing record:
 		else {
+      // If there is no update api, we can't edit (for update):
+      if(!e.grid.store.api.update) { 
+        e.cancel = true;
+        return false; 
+      }
+
 			// Prevent editing if allow_edit is set to false:
 			if(typeof column.allow_edit !== "undefined" && !column.allow_edit) {
 				e.cancel = true; //<-- redundant with return false but set for good measure
