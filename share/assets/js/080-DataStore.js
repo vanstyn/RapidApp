@@ -1522,7 +1522,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		return false;
 	},
 	
-	getAddFormPanel: function(newRec,close_handler,callback) {
+	getAddFormPanel: function(newRec,close_handler,callback,use_formpanel) {
 		
 		var plugin = this;
 		var store = this.cmp.store;
@@ -1596,24 +1596,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		var show_mask = function() { myMask.show(); }
 		var hide_mask = function() { myMask.hide(); }
 		
-		var params = {};
-		if(store.lastOptions.params) { Ext.apply(params,store.lastOptions.params); }
-		if(store.baseParams) { Ext.apply(params,store.baseParams); }
-		if(plugin.cmp.baseParams) { Ext.apply(params,plugin.cmp.baseParams); }
-		Ext.apply(params,plugin.add_form_url_params);
-		
     var attach_formpanel = function(formpanel) {
-      Ext.each(formpanel.items,function(field) {
-        // Important: autoDestroy must be false on the store or else store-driven
-        // components (i.e. combos) will be broken as soon as the form is closed 
-        // the first time
-        if(field.store) { field.store.autoDestroy = false; }
-        // Make sure that hidden fields that can't be changed don't 
-        // block validation of the form if they are empty and erroneously
-        // set with allowBlank: false (common-sense failsafe):
-        if(field.hidden) { field.allowBlank = true; } 
-      },this);
-      
+
       Ext.each(formpanel.buttons,function(button) {
         if(button.name == 'save') {
           button.handler = save_handler;
@@ -1629,17 +1613,32 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
       callback(formpanel);
     };
     
-    show_mask();
-    Ext.Ajax.request({
-      url: plugin.cmp.add_form_url,
-      params: params,
-      failure: hide_mask,
-      success: function(response,options) {
-        var formpanel = Ext.decode(response.responseText);
-        attach_formpanel.call(this,formpanel);
-      },
-      scope: this
-    });
+    
+    if(use_formpanel) {
+      // Existing formpanel is supplied for the special dedicated add form case
+      attach_formpanel.call(this,use_formpanel);
+    }
+    else {
+      // Fetch the formpanel via Ajax from the server now:
+    
+      var params = {};
+      if(store.lastOptions.params) { Ext.apply(params,store.lastOptions.params); }
+      if(store.baseParams) { Ext.apply(params,store.baseParams); }
+      if(plugin.cmp.baseParams) { Ext.apply(params,plugin.cmp.baseParams); }
+      Ext.apply(params,plugin.add_form_url_params);
+     
+      show_mask();
+      Ext.Ajax.request({
+        url: plugin.cmp.add_form_url,
+        params: params,
+        failure: hide_mask,
+        success: function(response,options) {
+          var formpanel = Ext.decode(response.responseText);
+          attach_formpanel.call(this,formpanel);
+        },
+        scope: this
+      });
+    }
 	},
 	
 	
@@ -1738,14 +1737,6 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				Ext.each(formpanel.items,function(field) {
 					// Don't try to edit fields that aren't loaded, exclude them from the form:
 					if(!store.hasLoadedColumn(field.name)){ return; }
-					// Important: autoDestroy must be false on the store or else store-driven
-					// components (i.e. combos) will be broken as soon as the form is closed 
-					// the first time
-					if(field.store) { field.store.autoDestroy = false; }
-          // Make sure that hidden fields that can't be changed don't 
-          // block validation of the form if they are empty and erroneously
-          // set with allowBlank: false (common-sense failsafe):
-          if(field.hidden) { field.allowBlank = true; } 
 					field.value = Rec.data[field.name];
 					new_items.push(field);
 				},this);
@@ -1778,20 +1769,42 @@ Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.DataStoreDedicatedAddForm = Ext.extend(Ext.Panel, {
 
   initComponent: function() {
-  
-    this.Cmp = Ext.create(this.source_cmp);
-    this.FP  = Ext.create(this.formpanel);
     
+    this.bodyStyle = 'border:none;';
     this.layout = 'fit';
-    this.items = this.FP;
-    
-    this.FP.on('afterrender',function() {
-    
-      // In Progress ...
+    this.on('beforerender',function() {
+  
+      var thisC = this;
       
-    
-    
-    
+      this.source_cmp.hidden = true;
+      this.source_cmp.store_autoLoad = true;
+      
+      // We expect to be within an AutoPanel (i.e. a tab)
+      // -- this is the only supported case currently
+      if(this.ownerCt && this.ownerCt.xtype == 'autopanel') {
+        this.autopanel = this.ownerCt;
+      }
+      
+      var on_load;
+      on_load = function(ds) {
+        var dsPlugin = this.Cmp.datastore_plus_plugin;
+        var newRec        = ds.prepareNewRecord.call(dsPlugin),
+            close_handler = function(){ thisC.autopanel.destroy(); },
+            callback      = Ext.emptyFn,
+            use_formpanel = this.FP;
+        
+        dsPlugin.getAddFormPanel.call(dsPlugin,
+          newRec,close_handler,callback,use_formpanel
+        );
+      
+        ds.un('load',on_load);
+      };
+      
+      this.source_cmp.store.on('load',on_load,this);
+     
+      this.FP  = this.add(this.formpanel);
+      this.Cmp = this.add(this.source_cmp);
+      
     },this);
   
     Ext.ux.RapidApp.DataStoreDedicatedAddForm.superclass.initComponent.call(this);

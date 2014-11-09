@@ -322,6 +322,18 @@ sub get_add_edit_form_items {
 		$field->{header} = $colname unless (defined $field->{header} and $field->{header} ne '');
 		$field->{fieldLabel} = $field->{header};
     $field->{anchor} = '-20';
+    
+    # ---- Moved from DataStorePlus JS (client-side):
+    # Important: autoDestroy must be false on the store or else store-driven
+    # components (i.e. combos) will be broken as soon as the form is closed 
+    # the first time
+    $field->{store}{autoDestroy} = \1 if ($field->{store});
+    
+    # Make sure that hidden fields that can't be changed don't 
+    # block validation of the form if they are empty and erroneously
+    # set with allowBlank: false (common-sense failsafe):
+    $field->{allowBlank} = \1 if (jstrue $field->{hidden});
+    # ----
 		
 		push @items, $field;
 	}
@@ -450,19 +462,26 @@ sub dedicated_add_form {
   my $self = shift;
   die "Not allowed" unless $self->dedicated_add_form_enabled;
   
+  my $c = $self->c;
+  my $content = $self->content;
+  
+  # Just in case custom add_form_url_params are configured, merge them into the current
+  # request params so they are available as they would be if called via Ajax...
+  my $afuParams = $self->get_extconfig_param('add_form_url_params') || {};
+  %{$c->req->params} = ( %{$c->req->params}, %$afuParams );
+  
   my $fp = $self->get_add_form;
   
-  # tmp - strip the cancel button:
-  @{$fp->{buttons}} = grep { $_->{name} ne 'cancel' } @{$fp->{buttons}};
+  my $btnCfg = ($self->get_extconfig_param('store_button_cnf')||{})->{add} || {};
   
   return $self->render_data({
     xtype      => 'datastore-dedicated-add-form',
     
-    source_cmp => $self->content,
+    source_cmp => $content,
     formpanel  => $fp,
     
-    tabTitle   => '(Add ...)',
-    tabIconCls => 'ra-icon-add'
+    tabTitle   => $btnCfg->{text}    || '(Add ...)',
+    tabIconCls => $btnCfg->{iconCls} || 'ra-icon-add'
     
   });
 }
