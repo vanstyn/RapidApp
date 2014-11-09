@@ -28,6 +28,9 @@ has 'persist_immediately' => ( is => 'ro', isa => 'HashRef', default => sub{{
 	destroy	=> \0
 }});
 
+# New option added in GitHub Issue #85
+has 'dedicated_add_form_enabled', is => 'ro', isa => 'Bool', default => 1;
+
 # use_add_form/use_edit_form: 'tab', 'window' or undef
 has 'use_add_form', is => 'ro', isa => 'Maybe[Str]', lazy => 1, default => undef;
 has 'use_edit_form', is => 'ro', isa => 'Maybe[Str]', lazy => 1, default => undef;
@@ -116,6 +119,9 @@ sub BUILD {}
 before 'BUILD' => sub { (shift)->DataStore2_BUILD };
 sub DataStore2_BUILD {
 	my $self = shift;
+  
+  # New for #85:
+  $self->apply_actions( add => 'dedicated_add_form' ) if ($self->dedicated_add_form_enabled);
 	
 	my $store_params = { 
 		record_pk 		=> $self->record_pk,
@@ -437,6 +443,30 @@ sub param_decodeIf {
 	return $param if (ref $param);
 	return $self->json->decode($param);
 }
+
+
+# New for #85:
+sub dedicated_add_form {
+  my $self = shift;
+  die "Not allowed" unless $self->dedicated_add_form_enabled;
+  
+  my $fp = $self->get_add_form;
+  
+  # tmp - strip the cancel button:
+  @{$fp->{buttons}} = grep { $_->{name} ne 'cancel' } @{$fp->{buttons}};
+  
+  return $self->render_data({
+    xtype      => 'datastore-dedicated-add-form',
+    
+    source_cmp => $self->content,
+    formpanel  => $fp,
+    
+    tabTitle   => '(Add ...)',
+    tabIconCls => 'ra-icon-add'
+    
+  });
+}
+  
 
 
 #### --------------------- ####
