@@ -1769,7 +1769,8 @@ Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.DataStoreDedicatedAddForm = Ext.extend(Ext.Panel, {
 
   initComponent: function() {
-    
+  
+    this.init_hash = window.location.hash;
     this.bodyStyle = 'border:none;';
     this.layout = 'fit';
     this.on('beforerender',function() {
@@ -1787,13 +1788,13 @@ Ext.ux.RapidApp.DataStoreDedicatedAddForm = Ext.extend(Ext.Panel, {
       
       var on_load;
       on_load = function(ds) {
-        var dsPlugin = this.Cmp.datastore_plus_plugin;
-        var newRec        = ds.prepareNewRecord.call(dsPlugin),
+        this.dsPlugin = this.Cmp.datastore_plus_plugin;
+        var newRec        = ds.prepareNewRecord.call(this.dsPlugin),
             close_handler = Ext.emptyFn,
             callback      = Ext.emptyFn,
             use_formpanel = this.FP;
         
-        dsPlugin.getAddFormPanel.call(dsPlugin,
+        this.dsPlugin.getAddFormPanel.call(this.dsPlugin,
           newRec,close_handler,callback,use_formpanel
         );
       
@@ -1814,17 +1815,37 @@ Ext.ux.RapidApp.DataStoreDedicatedAddForm = Ext.extend(Ext.Panel, {
         }
       },this);
       
-      // We manually need to close on 'write' because we need to give the component time
+      // We manually need to close on 'save' because we need to give the component time
       // to do any post-write operations (like autoload_added_record) before we destroy
       // it since the original add_form close handling code doesn't destroy the store
-      var on_write;
-      on_write = function(ds,action) {
-        if(action == 'create') {
-          ds.un('write',on_write);
-          close_fn();
+      var on_save;
+      on_save = function(ds) {
+        ds.un('save',on_save);
+        // This is still a race condition, since we don't know how long it might take for
+        // post-save operations to complete. For the special autoload_added_record case
+        // (which is by far the most common) we know that it will navigate to a new URL
+        // once it is done/ready. Check for this in a loop and close as soon as it happens,
+        // which we will wait for up to ~ 5 seconds to happen. 
+        //  TODO: find a way to handle this while avoiding a race condition at all...
+        if(this.dsPlugin.autoload_added_record) {
+          var closeIf, loop_count = 0;
+          closeIf = function() {
+            if(window.location.hash == this.init_hash && loop_count < 100) {
+              loop_count++;
+              closeIf.defer(50);
+            }
+            else {
+              close_fn();
+            }
+          }
+          closeIf();
+        }
+        else {
+          // otherwise close outright, but give it a bit extra time for good measure
+          close_fn.defer(100);
         }
       };
-      this.source_cmp.store.on('write',on_write,this,{ delay: 50 });
+      this.source_cmp.store.on('save',on_save,this,{ delay: 50 });
       
       this.FP  = this.add(this.formpanel);
       this.Cmp = this.add(this.source_cmp);
