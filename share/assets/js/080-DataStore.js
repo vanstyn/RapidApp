@@ -1789,7 +1789,7 @@ Ext.ux.RapidApp.DataStoreDedicatedAddForm = Ext.extend(Ext.Panel, {
       on_load = function(ds) {
         var dsPlugin = this.Cmp.datastore_plus_plugin;
         var newRec        = ds.prepareNewRecord.call(dsPlugin),
-            close_handler = function(){ thisC.autopanel.destroy(); },
+            close_handler = Ext.emptyFn,
             callback      = Ext.emptyFn,
             use_formpanel = this.FP;
         
@@ -1799,9 +1799,33 @@ Ext.ux.RapidApp.DataStoreDedicatedAddForm = Ext.extend(Ext.Panel, {
       
         ds.un('load',on_load);
       };
-      
       this.source_cmp.store.on('load',on_load,this);
-     
+      
+      // We need to do our own close handler manually:
+      var close_fn = function() { 
+        if(thisC && thisC.autopanel) {
+          thisC.autopanel.destroy();
+        }
+      };
+      Ext.each(this.formpanel.buttons,function(btn){
+        if(btn.name == 'cancel') {
+          delete btn.name;
+          btn.handler = close_fn;
+        }
+      },this);
+      
+      // We manually need to close on 'write' because we need to give the component time
+      // to do any post-write operations (like autoload_added_record) before we destroy
+      // it since the original add_form close handling code doesn't destroy the store
+      var on_write;
+      on_write = function(ds,action) {
+        if(action == 'create') {
+          ds.un('write',on_write);
+          close_fn();
+        }
+      };
+      this.source_cmp.store.on('write',on_write,this,{ delay: 50 });
+      
       this.FP  = this.add(this.formpanel);
       this.Cmp = this.add(this.source_cmp);
       
