@@ -1768,11 +1768,52 @@ Ext.preg('datastore-plus',Ext.ux.RapidApp.Plugin.CmpDataStorePlus);
 Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.DataStoreDedicatedAddForm = Ext.extend(Ext.Panel, {
 
+  addIsAllowed: function() {
+    var allowed = (
+         this.source_cmp
+      && this.source_cmp.store
+      && this.source_cmp.store.api.create
+    ) ? true : false;
+
+    // If store_exclude_api is set it hasn't been processed yet:
+    if(allowed && this.source_cmp.store_exclude_api) {
+      Ext.each(this.source_cmp.store_exclude_api,function(name){
+        if(name == 'create') { allowed = false; }
+      },this);
+    }
+
+    // Same with store_exclude_buttons - we're doing this to preserve the contract
+    // of the previous API which held that if the button is excluded, the user would
+    // have had no other way to access the add form. Keep that true:
+    if(allowed && this.source_cmp.store_exclude_buttons) {
+      Ext.each(this.source_cmp.store_exclude_buttons,function(name){
+        if(name == 'add') { allowed = false; }
+      },this);
+    }
+
+    return allowed;
+  },
+
   initComponent: function() {
-  
+
     this.init_hash = window.location.hash;
     this.bodyStyle = 'border:none;';
     this.layout = 'fit';
+
+    if(!this.addIsAllowed()) {
+      var title = this.tabTitle || this.title || 'Add Record';
+      this.items = {
+        html: [
+          '<div class="ra-autopanel-error" style="padding:20px;">',
+            '<div class="ra-exception-heading">',
+              [title,'','&ndash;','','permission','denied'].join('&nbsp;'),
+            '</div>',
+          '</div>'
+        ].join('')
+      };
+      return Ext.ux.RapidApp.DataStoreDedicatedAddForm.superclass.initComponent.call(this);
+    }
+
     this.on('beforerender',function() {
   
       var thisC = this;
