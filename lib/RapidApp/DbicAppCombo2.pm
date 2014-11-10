@@ -7,7 +7,7 @@ extends 'RapidApp::AppCombo2';
 use RapidApp::Include qw(sugar perlutil);
 use List::Util;
 
-has 'ResultSet' => ( is => 'rw', isa => 'Object', required => 1 );
+has 'ResultSet' => ( is => 'ro', isa => 'Object', required => 1 );
 has 'RS_condition' => ( is => 'ro', isa => 'Ref', default => sub {{}} );
 has 'RS_attr' => ( is => 'ro', isa => 'Ref', default => sub {{}} );
 has 'record_pk' => ( is => 'ro', isa => 'Str', required => 1 );
@@ -64,21 +64,6 @@ has 'result_class', is => 'ro', lazy => 1, default => sub {
 sub BUILD {
   my $self = shift;
   
- # record_pk and valueField are almost always the the same
-  my @cols = uniq(
-    $self->record_pk,
-    $self->valueField,
-    $self->displayField
-  );
-  
-  # Update the ResultSet to select only the columns we need:
-  $self->ResultSet( $self->ResultSet
-    ->search_rs(undef,{
-      select => [map {$self->_resolve_select($_)} @cols],
-      as     => \@cols
-    })
-  );
-  
   # Remove the width hard coded in AppCombo2 (still being left in AppCombo2 for legacy
   # but will be removed in the future)
   $self->delete_extconfig_param('width');
@@ -133,9 +118,22 @@ sub read_records {
     # As well as empty/only whitespace
     $p->{type_filter_query} =~ /^\s*$/
   ));
+  
+  # record_pk and valueField are almost always the the same
+  my @cols = uniq(
+    $self->record_pk,
+    $self->valueField,
+    $self->displayField
+  );
+  
+  # Start with a select on only the columns we need:
+  my $Rs = $self->ResultSet->search_rs(undef,{
+    select => [map {$self->_resolve_select($_)} @cols],
+    as     => \@cols
+  });
 
-  # Start by applying the optional RS_condition/RS_attr
-  my $Rs = $self->ResultSet->search_rs(
+  # Then apply the optional RS_condition/RS_attr
+  $Rs = $Rs->search_rs(
     $self->RS_condition,
     $self->RS_attr
   );
@@ -157,7 +155,7 @@ sub read_records {
   
   # Finally, chain through the custom 'AppComboRs' ResultSet method if defined:
   $Rs = $Rs->AppComboRs if ($Rs->can('AppComboRs'));
-
+  
   my $rows = [ $Rs
     ->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' })
     ->all
