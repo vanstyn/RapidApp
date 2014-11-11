@@ -954,9 +954,7 @@ Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
 			'>';
 		this.setValue(img_tag);
 		this.onActionComplete();
-	},
-	
-
+	}
 	
 });
 Ext.reg('cas-image-field',Ext.ux.RapidApp.CasImageField);
