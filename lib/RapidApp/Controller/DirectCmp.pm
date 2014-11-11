@@ -27,6 +27,15 @@ sub direct :Local {
   return $c->redispatch_public_path(@args);
 }
 
+sub printview :Local {
+  my ($self, $c, @args) = @_;
+
+  $c->req->params->{__no_hashnav_redirect} = 1;
+  $c->stash->{render_viewport} = 'printview';
+
+  return $c->redispatch_public_path(@args);
+}
+
 sub navable :Local {
   my ($self, $c, @args) = @_;
   

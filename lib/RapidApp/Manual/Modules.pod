@@ -96,6 +96,13 @@ or C</rapidapp/module/navable/[path]>. The C<navable> path will wrap the rendere
 via C<direct>, any hashnav links will be stripped (unless of course the target module is already
 a navable component).
 
+There is also C</rapidapp/module/printview/[path]> available. This works exactly like C<direct>
+except it renders using L<RapidApp::View::Printview> instead of L<RapidApp::View::Viewport>. This
+view attempts to render modules in a manner which is optimized for printing, which primarily has
+to do with scrolling (i.e. browser scroll to not chop off unscrolled content). This mode only works
+for modules which have been specifically written to support it, such as AppDV. Grids currently do
+not support this mode because their height is always based on a container.
+
 The direct module dispatch URLs are useful to render a specific module outside the context of
 RapidApp-provided interfaces, such as directly within HTML of public/custom content, via C<iframe>:
 
@@ -114,6 +121,7 @@ plugin is active):
  /adm/some/mod/path                            # Redirects to /adm/#!/adm/some/mod/path (like above)
  /rapidapp/module/direct/adm/some/mod/path     # full-screen in dedicated Viewport
  /rapidapp/module/navable/adm/some/mod/path    # full-screen in dedicated TabGui-like interface
+ /rapidapp/module/printview/adm/some/mod/path  # full-screen in a print-optimized Viewport
 
 =head1 SEE ALSO
 

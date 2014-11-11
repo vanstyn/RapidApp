@@ -347,7 +347,11 @@ sub controller_dispatch {
 		return $self->web1_content;
 	}
 	else {
-    if($self->c->stash->{render_viewport} && $self->can('viewport')) {
+    my $rdr_vp = $self->c->stash->{render_viewport};
+    if($rdr_vp && $rdr_vp eq 'printview' && $self->can('printview')) {
+      return $self->printview;
+    }
+    elsif($rdr_vp && $self->can('viewport')) {
       return $self->viewport;
     }
     else {
