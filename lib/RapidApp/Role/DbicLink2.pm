@@ -323,11 +323,18 @@ sub prepare_rest_request {
 	# (see the req_Row and and supplied_id methods in that class) while 'rest_query' is handled by
 	# all modules with the DbicLink2 role. Need to consolidate these in DbicLink2 so this all happens in 
 	# the same place
-	my $params = $key eq $self->record_pk ? { $key => $val } : { rest_query => $key . '/' . $val };
-	%{$self->c->req->params} = ( %{$self->c->req->params}, %$params );
-	my $baseParams = $self->DataStore->get_extconfig_param('baseParams') || {};
-	%$baseParams = ( %$baseParams, %$params );
-	$self->DataStore->apply_extconfig( baseParams => $baseParams );
+  my $params = $key eq $self->record_pk
+    ? { $key => $val }
+    : { rest_query => $key . '/' . $val };
+
+  %{$self->c->req->params} = ( %{$self->c->req->params}, %$params );
+
+  my $existBP = $self->c->req->params->{base_params} 
+    ? try{decode_json_utf8($self->c->req->params->{base_params})}
+    : {};
+
+  %$params = (%$existBP, %$params);
+  $self->c->req->params->{base_params} = encode_json_utf8($params);
 	# ---
 	
 }
