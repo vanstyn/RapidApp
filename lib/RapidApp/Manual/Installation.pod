@@ -33,12 +33,12 @@ Now you have the C<perlbrew> command and you can install a version of perl. To s
 the available versions, you can run C<perlbrew available>. Choose one from the list and 
 install it. For example:
 
-  perlbrew install perl-5.20.0
+  perlbrew install perl-5.20.1
 
 The above command may take a while. Once it completes, make it the active C<perl> and 
 install C<cpanm>
 
-  perlbrew switch perl-5.20.0
+  perlbrew switch perl-5.20.1
   perlbrew install-cpanm
 
 Now both C<perl> and C<cpanm> should point to the new perlbrew version within your 
@@ -59,7 +59,7 @@ perlbrew+RapidApp on most Unix-based systems in one swoop:
 
   time wget -O - \
    https://raw.githubusercontent.com/vanstyn/instant-perlbrew/v1/instant-perlbrew.sh \
-   | bash -s perl-5.20.0 RapidApp
+   | bash -s perl-5.20.1 RapidApp
 
 This can take in the neighborhood of an hour, depending on the speed of your system.
 See L<github.com/vanstyn/instant-perlbrew|https://github.com/vanstyn/instant-perlbrew> for 
