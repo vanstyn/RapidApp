@@ -2031,9 +2031,15 @@ sub _dbiclink_update_records {
 		#die usererr rawhtml $self->make_dbic_exception_friendly($err), title => 'Database Error';
 	};
 	
-	# Perform a fresh lookup of all the records we just updated and send them back to the client:
-	my $newdata = $self->DataStore->read({ columns => [ keys %{ $arr->[0] } ], id_in => \@updated_keyvals });
-	
+  # --
+  # Perform a fresh lookup of all the records we just updated and send them back to the client:
+  %{ $self->c->req->params } = (); #<-- must clear the request params to prevent polluting the read
+  my $newdata = $self->DataStore->read({
+    columns => [ keys %{ $arr->[0] } ], 
+    id_in   => \@updated_keyvals
+  });
+  # --
+  
 	## ----------------
 	# NEW: We need to make sure the order of the returned rows matches the supplied rows;
 	# Ext's data store uses the order rather than the record ids to match. If we don't do
@@ -2362,8 +2368,14 @@ sub _dbiclink_create_records {
 		#die usererr rawhtml $self->make_dbic_exception_friendly($err), title => 'Database Error';
 	};
 	
-	# Perform a fresh lookup of all the records we just updated and send them back to the client:
-	my $newdata = $self->DataStore->read({ columns => \@req_columns, id_in => \@updated_keyvals });
+  # --
+  # Perform a fresh lookup of all the records we just updated and send them back to the client:
+  %{ $self->c->req->params } = (); #<-- must clear the request params to prevent polluting the read
+  my $newdata = $self->DataStore->read({
+    columns => \@req_columns, 
+    id_in   => \@updated_keyvals
+  });
+  # --
 	
 	die usererr rawhtml "Unknown error; no records were created", 
 		title => 'Create Failed' unless ($newdata && $newdata->{results});
