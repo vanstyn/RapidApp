@@ -1475,67 +1475,119 @@ sub multifilter_to_dbf {
 	return $self->multifilter_translate_cond($cond,$dbfName,$f);
 }
 
-# Dynamic map to convert supplied multifilter key names into proper
-# dbic search/key names. Can be simple key/values with values as strings,
-# or CodeRefs which can return either key/value strings, or single HashRefs
-# which will be used as the whole condition, verbatim. See multifilter_translate_cond
-# below for the values supplied to the CddeRef in '$_' (as a HashRef)
-has 'multifilter_keymap', is => 'ro', default => sub {{
-	
-  'is'              => '=',
-  'equal to'        => '=',
-  'is equal to'     => '=',
-  'exactly'         => '=',
-  'before'          => '<',
-  'less than'       => '<',
-  'greater than'    => '>',
-  'after'           => '>',
-  'not equal to'    => '!=',
-  'is not equal to' => '!=',
-	
-	"doesn't contain"     => 'not_contain',
-	'starts with'         => 'starts_with',
-	'ends with'           => 'ends_with',
-	"doesn't start with"  => 'not_starts_with',
-	"doesn't end with"    => 'not_ends_with',
-	'ends with'           => 'ends_with',
-	
-	'contains'				=> sub { ('like','%'.$_->{v}.'%') },
-	'starts_with'			=> sub { ('like',$_->{v}.'%') },
-	'ends_with'				=> sub { ('like','%'.$_->{v}) },
-	'not_contain'			=> sub { ('not like','%'.$_->{v}.'%') },
-	'not_starts_with'		=> sub { ('not like',$_->{v}.'%') },
-	'not_ends_with'			=> sub { ('not like','%'.$_->{v}) },
-	'is null'				=> sub { ('=',undef) },
-	'is empty'				=> sub { ('=','') },
-	'null_empty'			=> 'null/empty status',
-	'null/empty status' => sub {
-    if   ($_->{v} eq 'is null')       { return ('=',undef)   }
-    elsif($_->{v} eq 'is empty')      { return ('=','')      }
-    elsif($_->{v} eq 'is not null')   { return ('!=',undef)   }
-    elsif($_->{v} eq 'is not empty')  { return ('!=','')     }
-    
-    # new, simple way to handle these without needing to inline dbfName
-    elsif($_->{v} eq 'is null or empty') { return [{'='=>undef},{'='=>''}]	} #<-- arrays automatically OR
-    elsif($_->{v} eq 'is not null or empty') { return {'!='=>undef,'!='=>''} } #<-- hashes automatically AND
-    
-    ## This complexity isn't needed, and, doesn't work properly when dbfName is a ref/virtual
-    ## column. Replaced with a much more simple form above.
-    #elsif($_->{v} eq is null or empty') { return { '-or',[{ $_->{dbfName} => undef },{ $_->{dbfName} => '' }] } }
-    #elsif($_->{v} eq 'is not null or empty')     { return { '-and',[{ $_->{dbfName} => { '!=' => undef } },{ $_->{dbfName} => { '!=' =>  '' } }] } }
 
-    die "Invalid null/empty condition supplied:\n" . Dumper($_);
-  },
-	
-}};
+
+my %mf_op_alias = (
+  'is'                    => '=',
+  'equal to'              => '=',
+  'is equal to'           => '=',
+  'exactly'               => '=',
+  'before'                => '<',
+  'less than'             => '<',
+  'greater than'          => '>',
+  'after'                 => '>',
+  'not equal to'          => '!=',
+  'is not equal to'       => '!=',
+  "doesn't contain"       => 'not_contain',
+  'starts with'           => 'starts_with',
+  'ends with'             => 'ends_with',
+  "doesn't start with"    => 'not_starts_with',
+  "doesn't end with"      => 'not_ends_with',
+  'ends with'             => 'ends_with',
+
+  'is null'               => 'is_null',
+  'is empty'              => 'is_empty',
+  'is not null'           => 'not_null',
+  'is not empty'          => 'not_empty',
+  'is null or empty'      => 'null_or_empty',
+  'is not null or empty'  => 'not_null_or_empty',
+
+  'null/empty status'     => 'null_empty_status'
+);
+# This will deep recurse if there there a circular refs in %mf_op_alias above
+sub _mf_resolve_op {
+  my ($self, $op) = @_;
+  $mf_op_alias{$op} ? $self->_mf_resolve_op($mf_op_alias{$op}) : $op;
+}
+
+sub _mf_get_cond {
+  my ($self,$select,$op,$val) = @_;
+
+  $op = $self->_mf_resolve_op($op);
+
+  my $cond;
+
+  if($op eq 'contains') {
+    $cond = $self->_op_fuse($select => { like => join('','%',$val,'%') });
+  }
+  elsif($op eq 'starts_with') {
+    $cond = $self->_op_fuse($select => { like => join('',$val,'%') });
+  }
+  elsif($op eq 'ends_with') {
+    $cond = $self->_op_fuse($select => { like => join('','%',$val) });
+  }
+  elsif($op eq 'not_contain') {
+    $cond = { -or => [ # NOT LIKE -OR- NULL
+      $self->_op_fuse($select => { 'not like' => join('','%',$val,'%') }),
+      $self->_op_fuse($select => { '=' => undef }),
+    ]};
+  }
+  elsif($op eq 'not_starts_with') {
+    $cond = { -or => [ # NOT LIKE -OR- NULL
+      $self->_op_fuse($select => { 'not like' => join('',$val,'%') }),
+      $self->_op_fuse($select => { '=' => undef }),
+    ]};
+  }
+  elsif($op eq 'not_ends_with') {
+    $cond = { -or => [ # NOT LIKE -OR- NULL
+      $self->_op_fuse($select => { 'not like' => join('','%',$val) }),
+      $self->_op_fuse($select => { '=' => undef }),
+    ]};
+  }
+  elsif($op eq 'is_null') {
+    $cond = $self->_op_fuse($select => { '=' => undef });
+  }
+  elsif($op eq 'is_empty') {
+    $cond = $self->_op_fuse($select => { '=' => '' });
+  }
+  elsif($op eq 'not_null') {
+    $cond = $self->_op_fuse($select => { '!=' => undef });
+  }
+  elsif($op eq 'not_empty') {
+    $cond = $self->_op_fuse($select => { '!=' => '' });
+  }
+  elsif($op eq 'null_or_empty') {
+    $cond = { -or => [
+      $self->_op_fuse($select => { '=' => undef }),
+      $self->_op_fuse($select => { '=' => '' })
+    ]};
+  }
+  elsif($op eq 'not_null_or_empty') {
+    $cond = { -and => [
+      $self->_op_fuse($select => { '!=' => undef }),
+      $self->_op_fuse($select => { '!=' => '' })
+    ]};
+  }
+  elsif($op eq 'null_empty_status') {
+    # Re-call with with the val as the op:
+    $cond = $self->_mf_get_cond($select, $val);
+  }
+  else {
+    $cond = $self->_op_fuse($select => { $op => $val });
+  }
+
+  $cond
+}
+
+sub _op_fuse {
+  my $self = shift;
+  &_binary_op_fuser($self->sql_maker, @_)
+}
+
 
 # -- multifilter_translate_cond()
-# This method now uses _binary_op_fuser() internally to generate conditions with
-# virtual/sub-select as lhs, as is the case with virtual columns (fixes #69). 
-# There is a lot of ugly code that was written before this function was available that
-# utilized HAVING that now is not needed and should be cleaned up/unfactored
-# (such as the localized $dbf_active_conditions global crap - TODO/FIXME)
-#  see also #51 for details on the HAVING design change
+#    - refactored for #88 and #89
+#    - previously modified for #69 and #51
 sub multifilter_translate_cond {
 	my $self = shift;
 	my $cond = shift;
@@ -1548,17 +1600,14 @@ sub multifilter_translate_cond {
     ? ($dbfName->{''} => $dbfName->{-as} )
     : ($dbfName       => $dbfName        );
 
+  # -- TODO - this is legacy and needs to be investigated and removed
 	# Track in localized global:
 	push @$dbf_active_conditions, {
 		name => $as,
 		field => $field, 
 		select => clone($dbfName)
 	};
-	
-	# After changing the conditions for 'null or empty' to a simpler form, a lot of the
-	# logic in here isn't currently needed. But, leaving it in for now for reference and
-	# if more complex conditions need to be added later. Not worth the time to refactor
-	# to shrink the API (TODO: revisit this later)
+  # --
 	
 	# There should be exactly 1 key/value:
 	die "invalid multifilter condition: must have exactly 1 key/value pair:\n" . Dumper($cond) 
@@ -1570,35 +1619,8 @@ sub multifilter_translate_cond {
     $column->{multifilter_type} &&
     $column->{multifilter_type} =~ /^date/
   );
-	
-	my $map = $self->multifilter_keymap->{$k};
 
-	if(ref($map) eq 'CODE') {
-		
-		local $_ = { 
-			v 		=> $v, 
-			k 		=> $k, 
-			cond 	=> $cond, 
-			dbfName	=> $dbfName, 
-			field 	=> $field 
-		};
-		
-		my @new = &$map;
-		($k) = @new;
-		
-		return &_binary_op_fuser($self->sql_maker, $select => $k) if ref($k);
-		($k,$v) = @new if (scalar @new > 1); #<-- if 2 args were returned (this approach allows $v of undef)
-	}
-	else {
-		# If we're here, $map should be a scalar/string:
-		die "unexpected data in 'multifilter_keymap'!" if ref($map);
-	
-		# remap/recall recursively to support multi-level keyname map translations:
-		# (i.e. 'equal to' could map to 'is equal to' which could map to '=')
-		return $self->multifilter_translate_cond({ $map => $v },$dbfName,$field) if ($map);
-	}
-	
-	return &_binary_op_fuser($self->sql_maker, $select => { $k => $v });
+  return $self->_mf_get_cond($select, $k, $v);
 }
 
 
