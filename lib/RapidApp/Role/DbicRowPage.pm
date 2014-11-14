@@ -37,12 +37,12 @@ has 'req_Row', is => 'ro', lazy => 1, traits => [ 'RapidApp::Role::PerRequestBui
 	
 	my $supId = $self->supplied_id;
 	die usererr "Record Id not supplied in request", title => 'Id not supplied'
-		unless (defined $supId || defined $self->c->req->params->{rest_query});
+		unless (defined $supId || defined $self->c->req->params->{$self->_rst_qry_param});
 	
 	my $count = $Rs->count;
 	
 	unless ($count == 1) {
-		my $idErr = defined $supId ? "id: '$supId'" : "'" . $self->c->req->params->{rest_query} . "'";
+		my $idErr = defined $supId ? "id: '$supId'" : "'" . $self->c->req->params->{$self->_rst_qry_param} . "'";
 
 		die usererr 'Record not found by ' . $idErr, title => 'Record not found'
 			unless ($count);

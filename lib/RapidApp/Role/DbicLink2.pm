@@ -12,6 +12,7 @@ use Time::HiRes qw(gettimeofday tv_interval);
 use RapidApp::Data::Dmap qw(dmap);
 use URI::Escape;
 use Scalar::Util qw(looks_like_number);
+use Digest::SHA1;
 
 if($ENV{DBIC_TRACE}) {
 	debug_around 'DBIx::Class::Storage::DBI::_execute', newline => 1, stack=>20;
@@ -72,6 +73,45 @@ has 'natural_column_order', is => 'ro', isa => 'Bool', default => 1;
 
 has 'allow_restful_queries', is => 'ro', isa => 'Bool', default => 0;
 
+# Generate a param string unique to this module by URL/path. This only needs to be unique
+# among modules whose ->content may be rendered within the same request, which is only
+# being done for good measure
+has '_rst_qry_param', is => 'ro', isa => 'Str', lazy => 1, default => sub {
+  my $self = shift;
+  join('_',
+    'rst_qry',
+    substr(Digest::SHA1->new->add($self->base_url)->hexdigest, 0, 5)
+  );
+};
+sub _appl_base_params {
+  my ($self, $params) = @_;
+  my $c = $self->c;
+  
+  %{$c->req->params} = ( %{$c->req->params}, %$params );
+  
+  my $baseParams = $self->DataStore->get_extconfig_param('baseParams') || {};
+  %$baseParams = ( %$baseParams, %$params );
+  $self->DataStore->apply_extconfig( baseParams => $baseParams );
+}
+sub _appl_rst_qry {
+  my ($self, $val) = @_;
+  $self->_appl_base_params({ $self->_rst_qry_param => $val });
+}
+sub _retr_rst_qry {
+  my $self = shift;
+  my $c = RapidApp->active_request_context or return undef;
+  my $rst_qry = $c->req->params->{ $self->_rst_qry_param } or return undef;
+  
+  # Re-apply the rst_qry now to make sure there is not a caching issue
+  # in the DataStore baseParams in case the normal rest logic doesn't
+  # do this, which is the case when launched from a foreign component
+  # by setting rest_args in the stash
+  $self->_appl_rst_qry( $rst_qry );
+  
+  $rst_qry
+}
+
+
 has 'ResultSource' => (
 	is => 'ro',
 	isa => 'DBIx::Class::ResultSource',
@@ -102,8 +142,8 @@ sub _ResultSet {
 	# the order of when this is called is vitally important:
 	$self->prepare_rest_request;
 	
-	if($self->c->req->params->{rest_query}) {
-		my ($key,$val) = split(/\//,$self->c->req->params->{rest_query},2);
+	if(my $rst_qry = $self->_retr_rst_qry) {
+		my ($key,$val) = split(/\//,$rst_qry,2);
 		$Rs = $self->chain_Rs_REST($Rs,$key,$val);
 	}
 
@@ -323,21 +363,16 @@ sub prepare_rest_request {
 	# (see the req_Row and and supplied_id methods in that class) while 'rest_query' is handled by
 	# all modules with the DbicLink2 role. Need to consolidate these in DbicLink2 so this all happens in 
 	# the same place
-  my $params = $key eq $self->record_pk
-    ? { $key => $val }
-    : { rest_query => $key . '/' . $val };
-
-  %{$self->c->req->params} = ( %{$self->c->req->params}, %$params );
-
-  my $existBP = $self->c->req->params->{base_params} 
-    ? try{decode_json_utf8($self->c->req->params->{base_params})}
-    : {};
-
-  %$params = (%$existBP, %$params);
-  $self->c->req->params->{base_params} = encode_json_utf8($params);
+  if($key eq $self->record_pk) {
+    $self->_appl_base_params({$key => $val});
+  }
+  else {
+    $self->_appl_rst_qry( join('/',$key,$val) );
+  }
 	# ---
 	
 }
+
 
 sub restGetRow {
 	my ($self,$key,$val) = @_;
