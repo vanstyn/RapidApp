@@ -2068,7 +2068,10 @@ sub _dbiclink_update_records {
 	
   # --
   # Perform a fresh lookup of all the records we just updated and send them back to the client:
-  %{ $self->c->req->params } = (); #<-- must clear the request params to prevent polluting the read
+  delete $self->c->req->params->{ $self->_rst_qry_param } if (
+    # clear any existing rst_qry to prevent polluting the read
+    exists $self->c->req->params->{ $self->_rst_qry_param }
+  );
   my $newdata = $self->DataStore->read({
     columns => [ keys %{ $arr->[0] } ], 
     id_in   => \@updated_keyvals
@@ -2405,7 +2408,10 @@ sub _dbiclink_create_records {
 	
   # --
   # Perform a fresh lookup of all the records we just updated and send them back to the client:
-  %{ $self->c->req->params } = (); #<-- must clear the request params to prevent polluting the read
+  delete $self->c->req->params->{ $self->_rst_qry_param } if (
+    # clear any existing rst_qry to prevent polluting the read
+    exists $self->c->req->params->{ $self->_rst_qry_param }
+  );
   my $newdata = $self->DataStore->read({
     columns => \@req_columns, 
     id_in   => \@updated_keyvals
