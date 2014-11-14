@@ -193,7 +193,7 @@ sub _apply_valueqry {
   } @$rows );
   
   my $Row = $self->ResultSet
-    ->search_rs({ $self->record_pk => { '=' => $valueqry }})
+    ->search_rs({ join('.','me',$self->record_pk) => { '=' => $valueqry }})
     ->first
   or return;
   
