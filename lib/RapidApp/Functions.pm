@@ -166,11 +166,13 @@ sub caller_data_brief {
 	return \@new;
 }
 
+
+# TODO: replace this with uniq from List::Utils
 # Returns a list with duplicates removed. If passed a single arrayref, duplicates are
 # removed from the arrayref in place, and the new list (contents) are returned.
 sub uniq {
 	my %seen = ();
-	return grep { !$seen{$_}++ } @_ unless (@_ == 1 and ref($_[0]) eq 'ARRAY');
+	return grep { !$seen{ defined $_ ? $_ : '___!undef!___'}++ } @_ unless (@_ == 1 and ref($_[0]) eq 'ARRAY');
 	return () unless (@{$_[0]} > 0);
 	# we add the first element to the end of the arg list to prevetn deep recursion in the
 	# case of nested single element arrayrefs
