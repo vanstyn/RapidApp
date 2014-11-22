@@ -110,7 +110,7 @@ sub load_saved_search {
 	my $search_params = try{$self->json->decode($Search->get_column('params'))} || {};
 	
 	# TODO: this is now duplicated in the /view RequestMapper controller....
-	my @not_allowed_params = qw(search_id quick_search quick_search_cols);
+	my @not_allowed_params = qw(search_id quick_search quick_search_cols quick_search_mode);
 	exists $search_params->{$_} and delete $search_params->{$_} for (@not_allowed_params);
 	
 	%{$self->c->req->params} = ( %{$self->c->req->params}, %$search_params );

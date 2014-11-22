@@ -38,7 +38,7 @@ sub load :Path :Args(1) {
 	
 	my $params = decode_json($data->{params});
 	
-	my @not_allowed_params = qw(search_id quick_search quick_search_cols);
+	my @not_allowed_params = qw(search_id quick_search quick_search_cols quick_search_mode);
 	exists $params->{$_} and delete $params->{$_} for (@not_allowed_params);
 	
 	$params->{search_id} = $data->{id};

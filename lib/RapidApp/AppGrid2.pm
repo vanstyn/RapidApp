@@ -182,6 +182,12 @@ sub init_onrequest {
 		my @cols = split(/\s*,\s*/,$quick_search_cols);
 		$self->apply_extconfig( init_quick_search_columns => \@cols );
 	}
+  
+  # Added for #94:
+  if(my $qs_mode = try{$self->c->req->params->{quick_search_mode}}) {
+    $self->apply_extconfig( init_quick_search_mode => $qs_mode );
+  }
+  
 	
 	#$self->apply_config(store => $self->JsonStore);
 	$self->apply_extconfig(tbar => $self->tbar_items) if (defined $self->tbar_items);

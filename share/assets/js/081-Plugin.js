@@ -484,7 +484,9 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		store.quickSearchCheckIndexes = this.grid.init_quick_search_columns || store.quickSearchCheckIndexes;
 		// --
 		
-		store.quicksearch_mode = store.quicksearch_mode || this.grid.quicksearch_mode;
+   store.quicksearch_mode = this.grid.init_quick_search_mode ||
+      store.quicksearch_mode || this.grid.quicksearch_mode;
+      
 		this.grid.quicksearch_mode = store.quicksearch_mode;
 		
 		store.on('beforeload',this.applyStoreParams,this);
