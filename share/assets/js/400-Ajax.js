@@ -447,6 +447,9 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
   },
 
   setBodyConf: function(conf,thisEl,clear) {
+    // Always attempt to find and remove loading-indicator
+    this.purgeLoadingIndicator();
+  
     thisEl = thisEl || this.getEl();
     if(this.items.getCount() > 0) { this.removeAll(true); }
     
@@ -496,6 +499,11 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
       this.setIconClass(opt.tabIconCls);
     }
     this.setBodyConf(opt.bodyConf,this.getEl());
+  },
+  
+  purgeLoadingIndicator: function() {
+    var loadEl = this.getEl().child('div.loading-indicator');
+    if(loadEl) { loadEl.remove(); }
   },
   
   reload: function() {
