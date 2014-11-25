@@ -397,8 +397,8 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 	 * @cfg {Object} paramNames Params name map (defaults to {fields:"fields", query:"query"}
 	 */
 	,paramNames: {
-		fields:'fields',
-		query:'query',
+		qs_fields:'qs_fields',
+		qs_query:'qs_query',
 		quicksearch_mode: 'quicksearch_mode'
 	}
 
@@ -699,7 +699,7 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 	,onTriggerClear:function() {
 		// HV: added the baseParams check below. this fixes a bug, it is probably needed
 		// because of odd things we're doing in AppGrid2/Store
-		if(this.field.getValue() || this.grid.store.lastOptions.params.query || this.grid.store.baseParams.query) {
+		if(this.field.getValue() || this.grid.store.lastOptions.params.qs_query || this.grid.store.baseParams.qs_query) {
 			this.field.setValue('');
 			this.field.focus();
 			this.onTriggerSearch();
@@ -774,19 +774,19 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		},this);
 
 		// add fields and query to baseParams of store
-		delete(store.baseParams[this.paramNames.fields]);
-		delete(store.baseParams[this.paramNames.query]);
+		delete(store.baseParams[this.paramNames.qs_fields]);
+		delete(store.baseParams[this.paramNames.qs_query]);
 		delete(store.baseParams[this.paramNames.quicksearch_mode]);
 		if (store.lastOptions && store.lastOptions.params) {
-			delete(store.lastOptions.params[this.paramNames.fields]);
-			delete(store.lastOptions.params[this.paramNames.query]);
+			delete(store.lastOptions.params[this.paramNames.qs_fields]);
+			delete(store.lastOptions.params[this.paramNames.qs_query]);
 			delete(store.lastOptions.params[this.paramNames.quicksearch_mode]);
 		}
-		//if(fields.length && !this.field.disabled) {
-			store.baseParams[this.paramNames.fields] = Ext.encode(fields);
-			store.baseParams[this.paramNames.query] = val;
+		if(val && val.length) {
+			store.baseParams[this.paramNames.qs_fields] = Ext.encode(fields);
+			store.baseParams[this.paramNames.qs_query] = val;
 			store.baseParams[this.paramNames.quicksearch_mode] = this.grid.quicksearch_mode;
-		//}
+		}
 	}
 
 

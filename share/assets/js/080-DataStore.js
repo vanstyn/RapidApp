@@ -441,11 +441,12 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		});
 		
 		store.on('beforewrite',function(ds,action,records,options,arg) {
-			if(action == 'create'){
-				var colnames = [];
-				store.fields.each(function(field){ colnames.push(field.name); });
-				options.params.create_columns = Ext.encode(colnames);
-			}
+      // Is this needed any more?? Don't think so, removing (2014-11-24 by HV)
+      //if(action == 'create'){
+      //	var colnames = [];
+      //	store.fields.each(function(field){ colnames.push(field.name); });
+      //	options.params.create_columns = Ext.encode(colnames);
+      //}
 			
 			
 			// -- Invalidate the total cache on write operations:

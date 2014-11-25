@@ -1133,10 +1133,10 @@ sub chain_Rs_req_quicksearch {
   my $Rs = shift || $self->_ResultSet;
   my $params = shift || $self->c->req->params;
 
-  delete $params->{query} if (defined $params->{query} and $params->{query} eq '');
-  my $query = $params->{query} or return $Rs;
+  delete $params->{qs_query} if (defined $params->{qs_query} and $params->{qs_query} eq '');
+  my $query = $params->{qs_query} or return $Rs;
 
-  my $fields = $self->param_decodeIf($params->{fields},[]);
+  my $fields = $self->param_decodeIf($params->{qs_fields},[]);
   return $Rs unless (@$fields > 0);
 
   my $attr = { join => {} };
@@ -2343,7 +2343,9 @@ sub _dbiclink_create_records {
 	#my $Rs = $self->ResultSource->resultset;
 	my $Rs = $self->baseResultSet;
 	
-	my @req_columns = $self->get_req_columns(undef,'create_columns');
+  # create_columns turned off in 080-DataStore.js - 2014-11-24 by HV
+	#my @req_columns = $self->get_req_columns(undef,'create_columns');
+  my @req_columns = $self->get_req_columns;
 	
 	# -- current real/valid columns according to DataStore2:
 	my %cols_indx = map {$_=>1} $self->column_name_list;
