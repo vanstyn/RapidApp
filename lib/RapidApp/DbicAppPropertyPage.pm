@@ -206,6 +206,11 @@ sub TableSpec_property_grids {
 	my %cols = map { $_->{name} => $_ } @{ $self->column_list };
 	
 	my @colnames = $TableSpec->local_column_names;
+  
+  # New: attemp to honor the column order
+  my %s = map {$_=>1} @colnames;
+  @colnames = grep { $s{$_} } uniq(@{ $self->column_order }, @colnames);
+  
 	push @$real_columns, @colnames;
 
 
