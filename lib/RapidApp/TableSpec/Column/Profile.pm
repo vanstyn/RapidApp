@@ -165,7 +165,7 @@ sub DEFAULT_PROFILES {{
   },
   email => {
     width => 100,
-    editor => { xtype => 'textfield' },
+    editor => { xtype => 'textfield', vtype => 'email' },
     summary_functions => \@text_summary_funcs,
   },
   datetime => {
