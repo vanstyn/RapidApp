@@ -1,5 +1,23 @@
 Revision history for RapidApp
 
+0.99600 2014-11-26
+    - Column data type 'ipaddr' set to 'unsearchable' (#81)
+    - The 'email' column profile now validates for emails in editor
+    - Cleanup crud POST params - remove 'create_columns' + rename
+      quicksearch params, and only sent when a quicksearch is active
+    - quick_search_mode can now be set via url qry string (#94)
+    - "Doesn't contain" now implies not NULL
+    - Fixed "null or empty" conditions (#89) (#88)
+    - Multiple fixes improvements to DbicLink2 rest_query/base_params, etc
+    - Added /rapidapp/module/printview/[path] (DirectCmp)
+    - Dedicated Add Form (#85)
+    - 'bigtext' column profile wraps long lines by default (incl grid cells)
+    - Fix bug in AutoPanel tab right-click reload
+    - Fixes/improvements to DataStorePlus
+    - Fixes to column profile logic for rel columns (#77)
+    - More improvements and fixes to generated combos (misc + #83)
+    - Lots of misc fixes
+
 0.99501 2014-11-1
     - Combos behave properly on property grid page
     - Random 'favicon.ico' requests handled (#57)

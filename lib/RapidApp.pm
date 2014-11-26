@@ -5,7 +5,7 @@ use warnings;
 # Min supported Perl is currently v5.10
 use 5.010;
 
-our $VERSION = 0.99501_14;
+our $VERSION = '0.99600';
 
 # ABSTRACT: Turnkey ajaxy webapps
 
