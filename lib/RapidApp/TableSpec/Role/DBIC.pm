@@ -1199,6 +1199,18 @@ sub resolve_dbic_colname {
           $p_source->resultset->search_rs(undef,{ alias => $rel }), 
           $col
         );
+        
+        # -- Temp hack/workaround for #95
+        # TODO: this should not be needed in the next version of DBIC
+        if(my $where = $p_source->relationship_info($col)->{attrs}{where}) {
+          warn join("\n",'',
+            '  WARNING: DBIC relationships with \'where\' attrs are poorly supported.',
+            '  Change "'.$p_source->source_name.'/'.$col.'" to use a complex ON clause instead',
+            '  (See https://github.com/vanstyn/RapidApp/issues/95)','',''
+          );
+          $rel_rs = $rel_rs->search_rs($where);
+        }
+        # --
 
         if($cond_data->{info}{attrs}{accessor} eq 'multi') {
           # -- standard multi relationship column --
