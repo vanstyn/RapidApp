@@ -1,5 +1,11 @@
 Revision history for RapidApp
 
+0.99601 2014-12-03
+    - rdbic.pl - new db utility script/server for instant CRUD (#96)
+    - SQLite schemas now show a different top icon in navtree (RapidDbic)
+    - Relationships with 'where' attrs handled again (#95)
+    - Improvements to error messages in rapidapp.pl
+
 0.99600 2014-11-26
     - Column data type 'ipaddr' set to 'unsearchable' (#81)
     - The 'email' column profile now validates for emails in editor
