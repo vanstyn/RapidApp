@@ -206,18 +206,18 @@ rdbic.pl - Instant CRUD webapp for your database using RapidApp/Catalyst/DBIx::C
  rdbic.pl SQLITE_DB [options]
 
  Options:
-   --help        Display this help screen and exit
-   --dsn         Valid DBI dsn connect string (+ ,user,pw) - REQUIRED
-   --port        Local TCP port to use for the test server (defaults to 3500)
-   --tmpdir      To use a different dir than is returned by File::Spec->tmpdir()
-   --no-cleanup  To leave auto-generated files on-disk after exit (in tmpdir)
-   --app-class   Name to use for the generated app (defaults to 'rDbicServer')
+   --help          Display this help screen and exit
+   --dsn           Valid DBI dsn connect string (+ ,user,pw) - REQUIRED
+   --port          Local TCP port to use for the test server (defaults to 3500)
+   --tmpdir        To use a different dir than is returned by File::Spec->tmpdir()
+   --no-cleanup    To leave auto-generated files on-disk after exit (in tmpdir)
+   --app-class     Name to use for the generated app (defaults to 'rDbicServer')
 
    --crud-profile  One of five choices to broadly control CRUD interface behavior (see below)
 
  CRUD Profiles:
-   * editable         Full CRUD is allowed with 'persist_immediately' turned off globally. The 
-                      user has to click "Save" to apply queued-up changes (DEFAULT)
+   * editable         Full CRUD is allowed with 'persist_immediately' turned off globally which 
+                      means the user has to click "Save" to apply queued-up changes (DEFAULT)
 
    * edit-instant     Full CRUD is allowed with 'persist_immediately' turned on. Changes are
                       applied as soon as the cell is blurred after making a change
@@ -251,24 +251,25 @@ needs to be supplied to C<rdbic.pl> is a DSN, although additional options are al
 C<rdbic.pl> can be used to replace tools like Navicat or PhpMyAdmin for a general-purpose database 
 client.
 
-Internally, C<rdbic.pl> simply bootstraps a new application using L<RapidApp::Helper> (just like 
-L<rapidapp.pl>) but into a temporary directory, and immediately launched using the standard
-LCatalyst> test server, all in one swoop.
+Internally, C<rdbic.pl> simply bootstraps a new application using L<RapidApp::Helper> in the same
+manner as L<rapidapp.pl>, but the new app is generated in a temporary directory and immediately 
+launched using the standard L<Catalyst> test server, all in one swoop.
 
-The generated/temporary files are automatically cleaned up on exit, unless the C<--no-cleanup> 
+The generated/temporary files are automatically cleaned up on exit unless the C<--no-cleanup> 
 option is supplied.
 
-You can also override the location used for the temporary directory with the C<--tmpdir> option (
-defaults to C</tmp> or whatever is returned by File::Spec->tmpdir). If you combine with C<--no-cleanup>
-you can easily get the full working Catalyst/RapidApp app which was generated for later use. For 
-instance, these options will create and leave the generated app files within the current directory:
+You can also override the location used for the temporary directory with the C<--tmpdir> option 
+(defaults to C</tmp> or whatever is returned by File::Spec->tmpdir). If you combine with 
+C<--no-cleanup> you can easily get the full working Catalyst/RapidApp app which was generated for 
+later use. For instance, these options will create and leave the generated app files within the 
+current directory:
 
  --tmpdir . --no-cleanup
 
 A shorthand first argument syntax is also supported. If the first argument looks like a dsn (starts
 with 'dbi:') then it will be used as the dsn without having to supply C<--dsn> first. Additionally,
-if the first argument is a path to an existing regular file, it is assumed it is a path to an
-SQLite database file, and the appropriate dsn (i.e. "dbi:SQLite:$ARGV[0]") is used automatically.
+if the first argument is a path to an existing regular file it is assumed to be an SQLite database 
+file, and the appropriate dsn (i.e. "dbi:SQLite:$ARGV[0]") is used automatically.
 
 =head1 SEE ALSO
 

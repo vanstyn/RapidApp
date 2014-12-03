@@ -162,12 +162,20 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
         require_role => $menu_req_role
 			}
 		}
+    
 		
     my $exclude_sources = try{$self->configs->{$model}{exclude_sources}} || [];
 		my $expand = (try{$self->configs->{$model}{expand}}) ? 1 : 0;
-    my $iconcls = (try{$self->configs->{$model}{iconCls}}) || 'ra-icon-server-database';
     my $text = (try{$self->configs->{$model}{text}}) || $model;
     my $template = try{$self->configs->{$model}{template}};
+    
+    
+    my $dbd_driver = $schema->storage->dbh->{Driver}->{Name} || '';
+    my $iconcls = (try{$self->configs->{$model}{iconCls}}) || (
+      $dbd_driver eq 'SQLite' 
+      ? 'ra-icon-page-white-database' 
+      : 'ra-icon-server-database'
+    );
 		
 		my $module_name = lc($model);
     $module_name =~ s/\:\:/_/g;
