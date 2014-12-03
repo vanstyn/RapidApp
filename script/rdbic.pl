@@ -37,10 +37,22 @@ END { &_cleanup_exit };
 $SIG{$_} = \&_cleanup_exit for qw(INT KILL TERM HUP QUIT ABRT);
 ################################################################################
 
-my $tmpdir = dir( File::Spec->tmpdir );
-my $dsn;
-my $port = 3500;
 
+my $dsn;
+
+if($ARGV[0] && ! ($ARGV[0] =~ /^\-/) ) {
+  if($ARGV[0] =~ /^dbi\:/) {
+    # If the first argument is obviously a DBI dsn, use it
+    $dsn = shift @ARGV;
+  }
+  elsif(-f $ARGV[0]) {
+    # If the first argument is a path to a real file, assume it is SQLite
+    $dsn = join(':','dbi','SQLite',shift @ARGV);
+  }
+}
+
+my $tmpdir = dir( File::Spec->tmpdir );
+my $port = 3500;
 
 my $name = 'Rdbic::Explorer';
 
@@ -164,7 +176,7 @@ sub _normalize_dbname {
   }
   
   # strip after . (i.e. Foo.Db becomes Foo)
-  $dbname = (split(/\./,$name))[0] if ($name && $name =~ /\./);
+  $dbname = (split(/\./,$dbname))[0] if ($dbname && $dbname =~ /\./);
   
   $dbname
 }
@@ -177,29 +189,51 @@ __END__
 
 =head1 NAME
 
-rdbic.pl - Instant database CRUD utility using RapidApp/DBIx::Class
+rdbic.pl - Instant database CRUD utility (webapp) using RapidApp/DBIx::Class
 
 =head1 SYNOPSIS
 
- rdbic.pl --dsn DSN [--port PORT]
+ rdbic.pl DSN[,USER,PW] [options]
+
+ rdbic.pl --dsn DSN[,USER,PW] [options]
+ rdbic.pl SQLITE_DB [options]
 
  Options:
-   --dsn          Valid DBI dsn connect string (required)
-   --port         TCP port to use for the test server. Defaults 3500
-   --no-cleanup   To leave auto-generated files on-disk after exit
+   --dsn         Valid DBI dsn connect string (+ ,user,pw) - REQUIRED (or in first arg)
+   --port        Local TCP port to use for the test server (defaults to 3500)
+   --tmpdir      To use a different dir than is returned by File::Spec->tmpdir()
+   --no-cleanup  To leave auto-generated files on-disk after exit (in tmpdir)
 
  Examples:
+   rdbic.pl dbi:mysql:dbname,root,''
+   rdbic.pl to/any/sqlite_db_file
+   rdbic.pl dbi:mysql:somedb,someusr,smepass --port 5005 --tmpdir /foo --no-cleanup
+
    rdbic.pl --dsn dbi:mysql:database=somedb,root,''
-   rdbic.pl --port 4001 --dsn dbi:sqlite:/path/to/sqlt.db
+   rdbic.pl --port 4001 --dsn dbi:SQLite:/path/to/sqlt.db
+   rdbic.pl --dsn dbi:SQLite:/path/to/sqlt.db --tmpdir . --no-cleanup
 
 =head1 DESCRIPTION
 
-rdbic.pl is a handy cmd-line utility to fire up new RapidDbic/RapidApp applications for a
-given database/DSN on-the-fly, without needing to bootstrap a real app with directory structure. 
+C<rdbic.pl> is a handy cmd-line utility to fire up new RapidDbic/RapidApp applications for a
+given database/DSN on-the-fly, without needing to bootstrap a real app with directory structure.
+This can be used to replace tools like PhpMyAdmin for a general-purpose 
 Internaly, rdbic.pl simply bootstraps a new application (like rapidapp.pl) but into a temporary 
 directory and immediately launches the test server, all in one swoop. 
 
-The temporary files are cleaned up on exit, unless the --no-cleanup option was supplied.
+The temporary files are cleaned up on exit, unless the C<--no-cleanup> option was supplied.
+
+You can also override the location used for the temporary directory with the C<--tmpdir> option (
+defaults to /tmp or whatever is returned by File::Spec->tmpdir). If you combine with C<--no-cleanup>
+you can easily get the full working Catalyst/RapidApp app which was generated. For instance,
+these options will create and leave generated files within the current directory:
+
+ --tmpdir . --no-cleanup
+
+A shorthand first argument syntax is also supported. If the first argument looks like a dsn (starts
+with 'dbi:') then it will be used as the dsn without having to supply C<--dsn> first. Additionally,
+if the first argument is a path to an existing regular file, it is assumed it is a path to an
+SQLite database file, and the appropriate dsn (i.e. "dbi:SQLite:$ARGV[0]") is used automatically.
 
 =head1 SEE ALSO
 
