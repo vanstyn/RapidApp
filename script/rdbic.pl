@@ -66,6 +66,9 @@ $tmp = dir( $tmpdir, join('-',
 -d $tmp ? die "tmp dir already exists, aborting" : $tmp->mkpath(1);
 die "Error creating temp dir $tmp" unless (-d $tmp);
 
+my $app_dir = $tmp->subdir('Rdbic-Explorer');
+$app_dir->mkpath(1);
+
 
 my $model_name = &_guess_model_name_from_dsn($dsn);
 
@@ -77,7 +80,7 @@ my $helper = RapidApp::Helper->new_with_traits({
     'traits'    => ['RapidApp::Helper::Traits::RapidDbic'],
     name        => $name,
     #extra_args  => ['--dsn',$dsn],
-    dir         => $tmp,
+    dir         => $app_dir,
     _ra_rapiddbic_opts => {
       dsn            => $dsn,
       'model-name'   => $model_name,
@@ -95,19 +98,26 @@ pod2usage(1) unless $helper->mk_app( $name );
 {
   no warnings 'redefine';
   
-  my $app_tmp = dir( $tmp, 'tmp' );
+  #my $lib_dir = $tmp->subdir('lib');
+  #use lib "$lib_dir";
+  
+  my $app_tmp = $tmp->subdir('tmp');
   $app_tmp->mkpath(1);
 
   # Override function used to determine tempdir:
   local *Catalyst::Utils::class2tempdir  = sub { $app_tmp->stringify };
+  
+  # Disable warnings about GetOpt
+  require Catalyst::Script::Server;
+  local *Catalyst::Script::Server::_getopt_spec_warnings = sub {};
 
-  use lib dir( $tmp, 'lib' )->stringify;
+  
 
   local $ENV{CATALYST_PORT} = $port;
+  local $ENV{CATALYST_SCRIPT_GEN} = 40;
   
-  use Catalyst::ScriptRunner;
+  require Catalyst::ScriptRunner;
   Catalyst::ScriptRunner->run('Rdbic::Explorer', 'Server');
-
 }
 
 
