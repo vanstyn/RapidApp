@@ -98,6 +98,6 @@ This script is simply an extension on top of C<catalyst.pl>. See L<catalyst>.
 
 =head1 SEE ALSO
 
-L<RapidApp>, L<catalyst>, L<Catalyst::Manual>, L<Catalyst::Manual::Intro>
+L<RapidApp>, L<rdbic.pl>, L<catalyst>, L<Catalyst::Manual>, L<Catalyst::Manual::Intro>
 
 =cut

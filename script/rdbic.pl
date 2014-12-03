@@ -216,10 +216,10 @@ rdbic.pl - Instant CRUD webapp for your database using RapidApp/Catalyst/DBIx::C
    --crud-profile  One of five choices to broadly control CRUD interface behavior (see below)
 
  CRUD Profiles:
-   * editable         Full CRUD is allowed with 'persist_immediately' turned off globally which 
+   * editable         Full CRUD is enabled with 'persist_immediately' turned off globally which 
                       means the user has to click "Save" to apply queued-up changes (DEFAULT)
 
-   * edit-instant     Full CRUD is allowed with 'persist_immediately' turned on. Changes are
+   * edit-instant     Full CRUD is enabled with 'persist_immediately' turned on. Changes are
                       applied as soon as the cell is blurred after making a change
 
    * edit-gridadd     Same as 'editable' except new rows are added directly to the grid 
@@ -243,10 +243,10 @@ rdbic.pl - Instant CRUD webapp for your database using RapidApp/Catalyst/DBIx::C
 
 =head1 DESCRIPTION
 
-C<rdbic.pl> is a handy cmd-line utility to fire up a fully-functional RapidDbic/RapidApp application 
+C<rdbic.pl> is a handy utility which fires up a fully-functional RapidDbic/RapidApp application 
 for a given database/DSN on-the-fly with with a single shell command. This avoids having 
-to bootstrap a real application with a name, config, directory etc with C<rapidapp.pl>. All that 
-needs to be supplied to C<rdbic.pl> is a DSN, although additional options are also available.
+to bootstrap a real application with a name, config, directory, etc with L<rapidapp.pl> or L<catalyst>. 
+All that needs to be supplied to C<rdbic.pl> is a DSN, although additional options are also available.
 
 C<rdbic.pl> can be used to replace tools like Navicat or PhpMyAdmin for a general-purpose database 
 client.
@@ -258,9 +258,9 @@ launched using the standard L<Catalyst> test server, all in one swoop.
 The generated/temporary files are automatically cleaned up on exit unless the C<--no-cleanup> 
 option is supplied.
 
-You can also override the location used for the temporary directory with the C<--tmpdir> option 
+You can also specify the location of the temporary directory with the C<--tmpdir> option 
 (defaults to C</tmp> or whatever is returned by File::Spec->tmpdir). If you combine with 
-C<--no-cleanup> you can easily get the full working Catalyst/RapidApp app which was generated for 
+C<--no-cleanup> you can easily get the full working Catalyst/RapidApp app which was generated, for 
 later use. For instance, these options will create and leave the generated app files within the 
 current directory:
 

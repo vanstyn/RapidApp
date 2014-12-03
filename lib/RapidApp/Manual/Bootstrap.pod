@@ -53,6 +53,27 @@ everything is created within the main application class (i.e. MyApp.pm).
 Also, since everything is based on Catalyst, its documentation which is much more 
 thorough is a good place to start.
 
+=head1 rdbic.pl
+
+RapidApp also ships with L<rdbic.pl> which can be used to generate and run a new CRUD
+app on-the-fly. It is essentially a single-use app which is regenerated each time it is
+ran. Files are generated into a temporary directory which is automatically cleaned up 
+on exit.
+
+ # For a proper DSN
+ rdbic.pl dbi:mysql:database=somedb,root,''
+
+ # For an SQLite file
+ rdbic.pl /path/to/existing/sqlt.db
+
+This is the fastest way to start a new app for a database, however, since the config
+is entirely generated, its obviously not as flexible. L<rdbic.pl> is basically a
+general-purpose database admin utility, like PhpMyAdmin, Navicat, etc.
+
+See the L<rdbic.pl> documentation for more details.
+
+acts as a database
+
 =head1 SEE ALSO
 
 =over
