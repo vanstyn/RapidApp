@@ -244,8 +244,8 @@ rdbic.pl - Instant CRUD webapp for your database using RapidApp/Catalyst/DBIx::C
 =head1 DESCRIPTION
 
 C<rdbic.pl> is a handy utility which fires up a fully-functional RapidDbic/RapidApp application 
-for a given database/DSN on-the-fly with with a single shell command. This avoids having 
-to bootstrap a real application with a name, config, directory, etc with L<rapidapp.pl> or L<catalyst>. 
+for a given database/DSN on-the-fly with a single shell command. This avoids having to bootstrap 
+a real application with a name, config, directory, etc with L<rapidapp.pl> or L<catalyst>. 
 All that needs to be supplied to C<rdbic.pl> is a DSN, although additional options are also available.
 
 C<rdbic.pl> can be used to replace tools like Navicat or PhpMyAdmin for a general-purpose database 
