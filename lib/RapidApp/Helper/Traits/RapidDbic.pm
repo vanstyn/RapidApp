@@ -4,6 +4,8 @@ use Moose::Role;
 use strict;
 use warnings;
 
+use RapidApp::Include qw(sugar perlutil);
+
 use Catalyst::Helper::Model::DBIC::Schema::ForRapidDbic;
 
 use Catalyst::ScriptRunner;
@@ -160,6 +162,10 @@ sub _ra_rapiddbic_generate_model {
   
   {
     local @ARGV = @args;
+    
+    # This is ugly but is the cleanest way to pass in extra configs without mucking with
+    # the complex arg call structure of the public/legacy API (of Model::DBIC::Schema)
+    local $RapidApp::Helper::Traits::RapidDbic::_ra_rapiddbic_opts = $opts;
     print join("\n",
       'Generating DBIC schema/model using create script argument list:',
       "  -------------------------------",

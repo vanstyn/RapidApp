@@ -41,10 +41,115 @@ use Try::Tiny;
 use Path::Class qw/file dir/;
 use Module::Runtime;
 
+use RapidApp::Include qw(sugar perlutil);
+
+# This is ugly/temporary -- mechanism to pull in additional configs from the
+# RapidDbic helper trait. Currently this is only exposed in rdbic.pl (--crud-profile)
+sub _ra_rapiddbic_opts {
+  my $self = shift;
+  $self->{_ra_rapiddbic_opts} ||= (
+    $RapidApp::Helper::Traits::RapidDbic::_ra_rapiddbic_opts || {}
+  )
+}
+
+sub crud_profile {
+  my $self = shift;
+  my $prof = ($self->{_crud_profile} ||= (
+    $self->_ra_rapiddbic_opts->{crud_profile} || 'read-only'
+  ));
+  
+  my @valid = qw(read-only editable edit-instant edit-gridadd ed-inst-gridadd);
+  my %valid = map {$_=>1} @valid;
+  
+  die join('',
+    "Unknown crud_profile '$prof' -- must be one of (",
+    join(', ',@valid),")"
+  ) unless ($valid{$prof});
+  
+  $prof
+}
+
+sub _get_grid_params_section {
+    my $self = shift;
+    
+    # Default/original 'read-only'
+    return q~
+       grid_params => {
+          # The special '*defaults' key applies to all sources at once
+          '*defaults' => {
+             include_colspec      => ['*'], #<-- default already ['*']
+             ## uncomment these lines to turn on editing in all grids
+             #updatable_colspec   => ['*'],
+             #creatable_colspec   => ['*'],
+             #destroyable_relspec => ['*'],
+          }
+       },
+    ~ if ($self->crud_profile eq 'read-only');
+    
+    my $inner = '';
+    if ($self->crud_profile eq 'editable') {
+      $inner = q~
+             persist_immediately => {
+               create  => 1,
+               update  => 0,
+               destroy => 0
+             },~;
+    }
+    elsif ($self->crud_profile eq 'edit-gridadd') {
+      $inner = q~
+             persist_immediately => {
+               create  => 0,
+               update  => 0,
+               destroy => 0
+             },~;
+    }
+    elsif ($self->crud_profile eq 'edit-instant') {
+      $inner = q~
+             persist_immediately => {
+               create  => 1,
+               update  => 1,
+               destroy => 1
+             },~;
+    }
+    elsif ($self->crud_profile eq 'ed-inst-gridadd') {
+      $inner = q~
+             persist_immediately => {
+               create  => 0,
+               update  => 1,
+               destroy => 1
+             },~;
+    }
+    else {
+      die "unexpected error";
+    }
+
+    q~
+       grid_params => {
+          # The special '*defaults' key applies to all sources at once
+          '*defaults' => {
+             include_colspec     => ['*'], #<-- default already ['*']
+             updatable_colspec   => ['*'],
+             creatable_colspec   => ['*'],
+             destroyable_relspec => ['*'],~ .
+             $inner . q~
+             extra_extconfig => {
+               store_button_cnf => {
+                 save => { showtext => 1 },
+                 undo => { showtext => 1 }
+               }
+             }
+          }
+       },
+    ~
+}
+
+
 sub _gen_model {
     my $self = shift;
     my $helper = $self->helper;
-    
+
+    $helper->{grid_params_section} = $self->_get_grid_params_section;
+
     my @sources = $self->_get_source_list;
     $helper->{source_names} = \@sources;
     
@@ -180,16 +285,7 @@ __PACKAGE__->config(
 
        # grid_params are used to configure the grid module which is 
        # automatically setup for each source in the navtree
-       grid_params => {
-          # The special '*defaults' key applies to all sources at once
-          '*defaults' => {
-             include_colspec      => ['*'], #<-- default already ['*']
-             ## uncomment these lines to turn on editing in all grids
-             #updatable_colspec   => ['*'],
-             #creatable_colspec   => ['*'],
-             #destroyable_relspec => ['*'],
-          }
-       },
+[% grid_params_section %]
        [% IF source_names %]
        # TableSpecs define extra RapidApp-specific metadata for each source
        # and is used/available to all modules which interact with them
