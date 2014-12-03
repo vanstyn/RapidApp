@@ -26,6 +26,9 @@ my @extra_args = @ARGV;
 
 pod2usage(1) if ( $help || !$name );
 
+# Attempt to catch the common error of forgetting the app name with extra args
+die "rapidapp.pl: Missing application-name!\n" if ($name =~ /^\-\-/);
+
 my @default_traits = ('TabGui');
 
 sub _traits_list {
