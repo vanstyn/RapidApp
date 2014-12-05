@@ -10,6 +10,7 @@ use String::Random;
 use File::Spec;
 use Path::Class qw( file dir );
 use String::CamelCase qw(camelize decamelize wordsplit);
+use Module::Runtime;
 
 use RapidApp::Include qw(sugar perlutil);
 
@@ -56,6 +57,7 @@ my $name         = 'rDbicServer';
 my $crud_profile = 'editable';
 my $tmpdir       = dir( File::Spec->tmpdir );
 my $port         = 3500;
+my $run_webapi   = 0;
 
 
 
@@ -66,7 +68,8 @@ GetOptions(
   'tmpdir=s'        => \$tmpdir,
   'no-cleanup+'     => \$no_cleanup,
   'app-class=s'     => \$name,
-  'crud-profile=s'  => \$crud_profile
+  'crud-profile=s'  => \$crud_profile,
+  'run-webapi+'     => \$run_webapi
 );
 
 pod2usage(1) if ($help || !$dsn);
@@ -88,13 +91,14 @@ my $app_dir = $tmp->subdir($name);
 $app_dir->mkpath(1);
 
 my $model_name = &_guess_model_name_from_dsn($dsn);
+my $schema_class = join('::',$name,$model_name);
 
 my $helper = RapidApp::Helper->new_with_traits({
     '.newfiles' => 1, 'makefile' => 0, 'scripts' => 0,
     _ra_rapiddbic_opts => {
       dsn            => $dsn,
       'model-name'   => $model_name,
-      'schema-class' => join('::',$name,$model_name),
+      'schema-class' => $schema_class,
       crud_profile   => $crud_profile
     },
     traits => ['RapidApp::Helper::Traits::RapidDbic'],
@@ -104,9 +108,15 @@ my $helper = RapidApp::Helper->new_with_traits({
 
 pod2usage(1) unless $helper->mk_app( $name );
 
-{
+if($run_webapi) {
+  print "\n\nRunning WebAPI::DBIC::WebApp/HAL-Browser...\n";
+  &_run_webapi_webapp;
+}
+else {
+  print "\n\nStarting Catalyst test server...\n\n";
+
   no warnings 'redefine';
-  
+
   # Disable warnings about GetOpt
   require Catalyst::Script::Server;
   local *Catalyst::Script::Server::_getopt_spec_warnings = sub {};
@@ -189,6 +199,61 @@ sub _normalize_dbname {
 }
 
 
+sub _run_webapi_webapp {
+
+  use Plack::Builder;
+  use Plack::Runner;
+
+  Module::Runtime::require_module('WebAPI::DBIC::WebApp');
+  Module::Runtime::require_module('Plack::App::File');
+  
+  my $model = join('::',$name,'Model',$model_name);
+  Module::Runtime::require_module($model);
+  
+  my $connect_info = $model->config->{connect_info};
+  
+  my $schema = $schema_class->connect(
+    $connect_info->{dsn},
+    $connect_info->{user},
+    $connect_info->{password}
+  );
+  
+  # -- would rather not have to do this
+  my $hal_dir = $app_dir->subdir('hal-browser');
+  $hal_dir->mkpath;
+  my $cmd = "git clone https://github.com/vanstyn/hal-browser $hal_dir";
+  print "\n$cmd\n";
+  qx|$cmd|;
+  $? ? die "git clone failed.\n\n" : print "\n";
+  # --
+  
+  my $app = WebAPI::DBIC::WebApp->new({
+    schema         => $schema,
+    writable       => $crud_profile eq 'read-only' ? 0 : 1,
+    http_auth_type => 'none'
+  })->to_psgi_app;
+
+  my $app_prefix = "/webapi-dbic";
+  
+  my $plack = builder {
+    enable "SimpleLogger";  # show on STDERR
+
+    mount "$app_prefix/" => builder {
+        mount "/browser" => Plack::App::File->new(root => "$hal_dir")->to_app;
+        mount "/" => $app;
+    };
+
+    # root redirect for discovery - redirect to API
+    mount "/" => sub { [ 302, [ Location => "$app_prefix/" ], [ ] ] };
+  };
+  
+  my $runner = Plack::Runner->new;
+  $runner->parse_options('--port',$port);
+  
+  $runner->run($plack);
+}
+
+
 
 1;
 
@@ -212,6 +277,7 @@ rdbic.pl - Instant CRUD webapp for your database using RapidApp/Catalyst/DBIx::C
    --tmpdir        To use a different dir than is returned by File::Spec->tmpdir()
    --no-cleanup    To leave auto-generated files on-disk after exit (in tmpdir)
    --app-class     Name to use for the generated app (defaults to 'rDbicServer')
+   --run-webapi    EXPERIMENTAL: Run WebAPI::DBIC w/ HAL Browser instead of RapidApp
 
    --crud-profile  One of five choices to broadly control CRUD interface behavior (see below)
 
@@ -240,6 +306,7 @@ rdbic.pl - Instant CRUD webapp for your database using RapidApp/Catalyst/DBIx::C
    rdbic.pl --dsn dbi:SQLite:/path/to/sqlt.db --tmpdir . --no-cleanup
    rdbic.pl my_sqlt.db --crud-profile=edit-gridadd
    rdbic.pl dbi:Pg:dbname=foo,usr,1234 --crud-profile=edit-instant
+   rdbic.pl dbi:mysql:foo,root,'' --run-webapi
 
 =head1 DESCRIPTION
 
