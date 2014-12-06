@@ -195,6 +195,25 @@ in the TableSpec config of the I<remote> source.
 
 Only applies to single relationship columns - for expert/advanced usage only.
 
+=head2 search_operator_strf
+
+Optional sprintf format to apply to the operator used to query the column in quick search and
+MultiFilters. This feature has been added specifically to support Type Casting in PostgreSQL.
+
+For instance, special column types need to be "cast" in order for text/string queries to work:
+
+  search_operator_strf => '::varchar %s'
+
+The above setting will prefix the raw SQL operator used when querying the column with 
+C<::varchar>. For example, this would change a WHEREclause that would normally be generated
+like this:
+
+  WHERE column LIKE 'foo%'
+
+to be generated like this:
+
+  WHERE column ::varchar LIKE 'foo%'
+
 =head2 profiles
 
 ArrayRef list of column profile names. Column profiles are macros/sets of column configs to apply 

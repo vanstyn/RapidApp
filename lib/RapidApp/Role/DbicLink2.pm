@@ -1194,10 +1194,14 @@ sub _resolve_quicksearch_condition {
     $mode = 'exact';
   }
 
+  # New for GitHub Issue #97
+  my $strf = $cnf->{search_operator_strf};
+  my $s = $strf ? sub { sprintf($strf,shift) } : sub { shift };
+
   # 'text' is the only type which can do a LIKE (i.e. sub-string)
   return $mode eq 'like' 
-    ? { $dbicname => { like => join('%','',$query,'') } }
-    : { $dbicname => { '='  => $query } };
+    ? { $dbicname => { $s->('like') => join('%','',$query,'') } }
+    : { $dbicname => { $s->('=')    => $query } };
 }
 
 
@@ -1546,36 +1550,41 @@ sub _mf_resolve_op {
 }
 
 sub _mf_get_cond {
-  my ($self,$select,$op,$val) = @_;
+  my ($self,$select,$op,$val,$strf) = @_;
 
   $op = $self->_mf_resolve_op($op);
+
+  # New for GitHub Issue #97
+  my $s = $strf ? sub { sprintf($strf,shift) } : sub { shift };
 
   my $cond;
 
   if($op eq 'contains') {
-    $cond = $self->_op_fuse($select => { like => join('','%',$val,'%') });
+    $cond = $self->_op_fuse($select => { $s->('like') => join('','%',$val,'%') });
   }
   elsif($op eq 'starts_with') {
-    $cond = $self->_op_fuse($select => { like => join('',$val,'%') });
+    $cond = $self->_op_fuse($select => { $s->('like') => join('',$val,'%') });
   }
   elsif($op eq 'ends_with') {
-    $cond = $self->_op_fuse($select => { like => join('','%',$val) });
+    $cond = $self->_op_fuse($select => { $s->('like') => join('','%',$val) });
   }
   elsif($op eq 'not_contain') {
     $cond = { -or => [ # NOT LIKE -OR- NULL
-      $self->_op_fuse($select => { 'not like' => join('','%',$val,'%') }),
+      $self->_op_fuse($select => { $s->('not like') => join('','%',$val,'%') }),
+      # Note: we do not pass the operator for undef through the strf because it
+      # is treated special by SQLA - becomes "IS NULL" etc... (#97)
       $self->_op_fuse($select => { '=' => undef }),
     ]};
   }
   elsif($op eq 'not_starts_with') {
     $cond = { -or => [ # NOT LIKE -OR- NULL
-      $self->_op_fuse($select => { 'not like' => join('',$val,'%') }),
+      $self->_op_fuse($select => { $s->('not like') => join('',$val,'%') }),
       $self->_op_fuse($select => { '=' => undef }),
     ]};
   }
   elsif($op eq 'not_ends_with') {
     $cond = { -or => [ # NOT LIKE -OR- NULL
-      $self->_op_fuse($select => { 'not like' => join('','%',$val) }),
+      $self->_op_fuse($select => { $s->('not like') => join('','%',$val) }),
       $self->_op_fuse($select => { '=' => undef }),
     ]};
   }
@@ -1583,24 +1592,24 @@ sub _mf_get_cond {
     $cond = $self->_op_fuse($select => { '=' => undef });
   }
   elsif($op eq 'is_empty') {
-    $cond = $self->_op_fuse($select => { '=' => '' });
+    $cond = $self->_op_fuse($select => { $s->('=') => '' });
   }
   elsif($op eq 'not_null') {
     $cond = $self->_op_fuse($select => { '!=' => undef });
   }
   elsif($op eq 'not_empty') {
-    $cond = $self->_op_fuse($select => { '!=' => '' });
+    $cond = $self->_op_fuse($select => { $s->('!=') => '' });
   }
   elsif($op eq 'null_or_empty') {
     $cond = { -or => [
       $self->_op_fuse($select => { '=' => undef }),
-      $self->_op_fuse($select => { '=' => '' })
+      $self->_op_fuse($select => { $s->('=') => '' })
     ]};
   }
   elsif($op eq 'not_null_or_empty') {
     $cond = { -and => [
       $self->_op_fuse($select => { '!=' => undef }),
-      $self->_op_fuse($select => { '!=' => '' })
+      $self->_op_fuse($select => { $s->('!=') => '' })
     ]};
   }
   elsif($op eq 'null_empty_status') {
@@ -1655,7 +1664,8 @@ sub multifilter_translate_cond {
     $column->{multifilter_type} =~ /^date/
   );
 
-  return $self->_mf_get_cond($select, $k, $v);
+  # New for GitHub #97 - pass in optional new search_operator_strf param
+  return $self->_mf_get_cond($select, $k, $v,$column->{search_operator_strf});
 }
 
 
