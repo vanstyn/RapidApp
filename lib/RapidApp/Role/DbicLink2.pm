@@ -1152,6 +1152,14 @@ sub chain_Rs_req_quicksearch {
     push @search, $cond;
   }
 
+  # If no search conditions have been populated at all it means the query
+  # failed pre-validation for all active columns. We need to simulate
+  # a condition which will return no rows
+  unless(scalar(@search) > 0) {
+    # Simple dummy condition that will always be false to force 0 results
+    return $Rs->search_rs(\'1 = 2');
+  }
+
   return $self->_chain_search_rs($Rs,{ '-or' => \@search },$attr);
 }
 
@@ -1177,7 +1185,7 @@ sub _resolve_quicksearch_condition {
   # This is also now safe for PostgreSQL which complains when you try to search
   # on a numeric column with a non-numeric value:
   if ($dtype eq 'integer') {
-    return undef unless $query =~ /^[+-][0-9]+$/;
+    return undef unless $query =~ /^[+-]*[0-9]+$/;
     $mode = 'exact';
   }
   elsif ($dtype eq 'number') {
