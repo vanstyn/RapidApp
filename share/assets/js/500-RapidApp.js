@@ -3799,6 +3799,13 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 						store.editRecordForm();
 					},
 					scope: this
+				},{
+					id: 'save',
+					qtip: 'Save',
+					handler: function() {
+						store.saveAll();
+					},
+					scope: this
 				});
 			}
 		}
