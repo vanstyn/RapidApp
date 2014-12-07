@@ -206,6 +206,9 @@ sub _run_webapi_webapp {
 
   Module::Runtime::require_module('WebAPI::DBIC::WebApp');
   Module::Runtime::require_module('Plack::App::File');
+  Module::Runtime::require_module('Alien::Web::HalBrowser');
+
+  my $hal_dir = Alien::Web::HalBrowser->dir;
   
   my $model = join('::',$name,'Model',$model_name);
   Module::Runtime::require_module($model);
@@ -217,15 +220,6 @@ sub _run_webapi_webapp {
     $connect_info->{user},
     $connect_info->{password}
   );
-  
-  # -- would rather not have to do this
-  my $hal_dir = $app_dir->subdir('hal-browser');
-  $hal_dir->mkpath;
-  my $cmd = "git clone https://github.com/vanstyn/hal-browser $hal_dir";
-  print "\n$cmd\n";
-  qx|$cmd|;
-  $? ? die "git clone failed.\n\n" : print "\n";
-  # --
   
   my $app = WebAPI::DBIC::WebApp->new({
     schema         => $schema,
