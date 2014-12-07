@@ -96,6 +96,7 @@ sub _ra_rapiddbic_generate_model {
   my $opts = $self->_ra_rapiddbic_opts;
   
   my @connect_info = $opts->{dsn} ? split(/\,/,$opts->{dsn},3) : ();
+  push @connect_info, '' while (scalar(@connect_info) < 3);
   
   if($opts->{'from-sqlite'}) {
     
