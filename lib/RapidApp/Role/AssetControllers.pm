@@ -18,13 +18,13 @@ use CatalystX::InjectComponent;
 use Catalyst::Utils;
 use Path::Class qw(dir);
 use RapidApp;
-use JavaScript::ExtJS::V3;
+use Alien::Web::ExtJS::V3;
 use Time::HiRes qw(gettimeofday tv_interval);
 
 use Catalyst::Controller::AutoAssets 0.29;
 with 'Catalyst::Plugin::AutoAssets';
 
-sub get_extjs_dir { JavaScript::ExtJS::V3->dir->stringify }
+sub get_extjs_dir { Alien::Web::ExtJS::V3->dir->stringify }
 
 
 around 'inject_asset_controllers' => sub {
