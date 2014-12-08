@@ -9,6 +9,13 @@ extends 'Plack::Component';
 
 use Types::Standard qw(:all);
 
+use File::Temp;
+#$File::Temp::DEBUG = 1;
+
+# Doing this so our temp dirs still get cleaned up if the user does a Ctrl-C...
+# todo - this might be overstepping, but what else can be done??
+$SIG{INT} ||= sub { exit };
+
 use RapidApp::Helper;
 use String::Random;
 use File::Spec;
@@ -52,13 +59,21 @@ has 'workdir', is => 'ro', lazy => 1, predicate => 1, default => sub {
   
   -d $self->tmpdir or die "tmpdir doesn't exist";
   
-  my $tmp = dir( $self->tmpdir, join('-',
-    'rdbic','tmp',
-    String::Random->new->randregex('[a-z0-9A-Z]{8}')
+  my $tmp = dir( File::Temp::tempdir(
+    'rdbic-tmp-XXXXX',
+    DIR      => $self->tmpdir,
+    CLEANUP  => !$self->no_cleanup,
+    UNLINK   => 1
   ));
-
-  -d $tmp ? die "tmp dir already exists, aborting" : $tmp->mkpath(1);
-  die "Error creating temp dir $tmp" unless (-d $tmp);
+  
+  
+  #my $tmp = dir( $self->tmpdir, join('-',
+  #  'rdbic','tmp',
+  #  String::Random->new->randregex('[a-z0-9A-Z]{8}')
+  #));
+  #
+  #-d $tmp ? die "tmp dir already exists, aborting" : $tmp->mkpath(1);
+  #die "Error creating temp dir $tmp" unless (-d $tmp);
   
   $tmp
   
@@ -187,13 +202,14 @@ sub DEMOLISH {
     if($self->no_cleanup) {
       print STDERR "\nLeaving temporary workdir '$tmp' ('no_cleanup' enabled)\n";
     }
-    else {
-      print STDERR "\nRemoving temporary workdir '$tmp' ... ";
-      $tmp->rmtree;
-      -d $tmp 
-        ? die "Unknown error removing $tmp." 
-        : print STDERR "done.\n"
-    }
+    # This is now done for us by File::Temp
+    #else {
+    #  print STDERR "\nRemoving temporary workdir '$tmp' ... ";
+    #  $tmp->rmtree;
+    #  -d $tmp 
+    #    ? die "Unknown error removing $tmp." 
+    #    : print STDERR "done.\n"
+    #}
   }
 }
 
