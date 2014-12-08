@@ -118,10 +118,15 @@ has 'model_name', is => 'ro', isa => Str, lazy => 1, default => sub {
   &_guess_model_name_from_dsn( $self->dsn )
 }, predicate => 1;
 
-sub model_class {
+has 'model_class', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
-  join('::',$self->app_namespace,'Model',$self->model_name)
-}
+  my $class = join('::',$self->app_namespace,'Model',$self->model_name);
+  Module::Runtime::require_module($class);
+  $class
+}, isa => ClassName, init_arg => undef;
+
+has 'model_config', is => 'ro', isa => Maybe[HashRef], default => sub { undef };
+
 
 sub BUILD {
   my $self = shift;
@@ -142,7 +147,7 @@ has '_catalyst_psgi_app', is => 'ro', lazy => 1, default => sub {
   
   my $name = $self->app_namespace;
   Module::Runtime::require_module($name);
-  
+
   $name->apply_default_middlewares( $name->psgi_app )
   
 }, isa => CodeRef, init_arg => undef;
@@ -189,6 +194,15 @@ sub _bootstrap {
   });
   
   $helper->mk_app( $name ) or die "mk_app failed";
+  
+  if (my $config = $self->model_config) {
+    my $new_cfg = Catalyst::Utils::merge_hashes(
+      $self->model_class->config || {},
+      $config
+    );
+    $self->model_class->config( $new_cfg );
+  }
+  
 }
 
 
