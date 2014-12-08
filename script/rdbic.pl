@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#!/usr/bin/perl
 
 use strict;
 use Getopt::Long;
@@ -31,7 +31,7 @@ sub _cleanup_exit {
 END { &_cleanup_exit };
 $SIG{$_} = \&_cleanup_exit for qw(INT KILL TERM HUP QUIT ABRT);
 
-
+my $schema_class;
 my $no_cleanup   = 0;
 my $help         = 0;
 my $name         = 'rDbicServer';
@@ -39,30 +39,46 @@ my $crud_profile = 'editable';
 my $tmpdir       = dir( File::Spec->tmpdir );
 my $port         = 3500;
 my $run_webapi   = 0;
+my $includes     = [];
+
+# From 'prove': Allow cuddling the paths with -I, -M and -e
+@ARGV = map { /^(-[IMe])(.+)/ ? ($1,$2) : $_ } @ARGV;
 
 GetOptions(
   'help+'           => \$help,
   'dsn=s'           => \$dsn,
+  'schema-class=s'  => \$schema_class,
   'port=i'          => \$port,
   'tmpdir=s'        => \$tmpdir,
   'no-cleanup+'     => \$no_cleanup,
   'app-class=s'     => \$name,
   'crud-profile=s'  => \$crud_profile,
-  'run-webapi+'     => \$run_webapi
+  'run-webapi+'     => \$run_webapi,
+  'I=s@'            => $includes
 );
 
 pod2usage(1) if ($help || !$dsn);
 
+
+if (@$includes) {
+  require lib;
+  lib->import(@$includes);
+}
+
 {
 
-  my $App = Plack::App::RapidApp::rDbic->new({
+  my $cnf = {
     app_namespace    => $name,
     dsn              => $dsn,
     tmpdir           => $tmpdir,
     no_cleanup       => $no_cleanup,
     crud_profile     => $crud_profile,
     isolate_app_tmp  => 1
-  });
+  };
+  
+  $cnf->{schema_class} = $schema_class if ($schema_class);
+
+  my $App = Plack::App::RapidApp::rDbic->new( $cnf );
 
   print "\n\n";
 
@@ -146,6 +162,7 @@ rdbic.pl - Instant CRUD webapp for your database using RapidApp/Catalyst/DBIx::C
  Options:
    --help          Display this help screen and exit
    --dsn           Valid DBI dsn connect string (+ ,user,pw) - REQUIRED
+   --schema-class  DBIC schema class name (blank/non-existant to auto-generate with Schema::Loader)
    --port          Local TCP port to use for the test server (defaults to 3500)
    --tmpdir        To use a different dir than is returned by File::Spec->tmpdir()
    --no-cleanup    To leave auto-generated files on-disk after exit (in tmpdir)
@@ -153,6 +170,9 @@ rdbic.pl - Instant CRUD webapp for your database using RapidApp/Catalyst/DBIx::C
    --run-webapi    EXPERIMENTAL: Run WebAPI::DBIC w/ HAL Browser instead of RapidApp
 
    --crud-profile  One of five choices to broadly control CRUD interface behavior (see below)
+
+    -I  Specifies Perl library include paths, like "perl"'s -I option. You
+        may add multiple paths by using this option multiple times.
 
  CRUD Profiles:
    * editable         Full CRUD is enabled with 'persist_immediately' turned off globally which 
@@ -180,6 +200,8 @@ rdbic.pl - Instant CRUD webapp for your database using RapidApp/Catalyst/DBIx::C
    rdbic.pl my_sqlt.db --crud-profile=edit-gridadd
    rdbic.pl dbi:Pg:dbname=foo,usr,1234 --crud-profile=edit-instant
    rdbic.pl dbi:mysql:foo,root,'' --run-webapi
+
+   rdbic.pl my_sqlt.db -Ilib --schema-class My::Existing::Schema
 
 =head1 DESCRIPTION
 

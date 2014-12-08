@@ -50,14 +50,10 @@ has '_ra_rapiddbic_opts', is => 'ro', isa => 'HashRef', lazy => 1, default => su
     die "RapidDbic: --from-sqlite file '$sqlt_orig' not found\n" unless (-f $sqlt_orig);
   }
   
-  $opts{'model-name'} ||= 'DB';
-  $opts{'schema-class'} ||= $opts{'model-name'};
-  
   my $name = $self->{name};
   
-  # Force prefix the schema class under the app namespace:
-  $opts{'schema-class'} = join('::',$name,$opts{'schema-class'})
-    unless ($opts{'schema-class'} =~ /^${name}\:\:/);
+  $opts{'model-name'}   ||= 'DB';
+  $opts{'schema-class'} ||= join('::',$name,$opts{'model-name'});
   
   return \%opts;
 };
@@ -154,10 +150,18 @@ sub _ra_rapiddbic_generate_model {
   
   # create=static is always required, and must be the first arg:
   @loader_opts = ('create=static', grep { $_ ne 'create=static' } @loader_opts);
+  
+  my $schema_class = $opts->{'schema-class'} or die "missing required opt 'schema-class'";
+  
+  try {
+    # If this succeeds we are dealing with an existing schema - clear loader opts
+    Module::Runtime::require_module($schema_class);
+    @loader_opts = ();
+  };
 
   my @args = (
     'model'                      => $opts->{'model-name'},
-    'DBIC::Schema::ForRapidDbic' => $opts->{'schema-class'},
+    'DBIC::Schema::ForRapidDbic' => $schema_class,
     @loader_opts, @connect_info, @connect_opts
   );
   

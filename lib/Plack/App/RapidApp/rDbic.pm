@@ -34,8 +34,15 @@ has 'app_namespace', is => 'ro', isa => Str,  lazy => 1, default => sub {
   $class
 };
 
+
+has 'schema_class', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  join('::',$self->app_namespace,$self->model_name)
+}, isa => Str, predicate => 1;
+
+
 has 'tmpdir', 
-  is      => 'ro', predicate => 1, lazy => 1,
+  is      => 'ro', predicate => 1, 
   isa     => InstanceOf['Path::Class::Dir'],
   coerce  => sub { dir( $_[0] ) },
   default => sub { File::Spec->tmpdir };
@@ -71,16 +78,22 @@ has 'app_dir', is => 'ro', lazy => 1, default => sub {
 }, isa => InstanceOf['Path::Class::Dir'], coerce => sub {dir($_[0])}, init_arg => undef;
 
 
+has 'local_tmp', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  
+  my $tmp = $self->workdir->subdir( 'tmp' );
+  $tmp->mkpath(1);
+  
+  $tmp
+  
+}, isa => InstanceOf['Path::Class::Dir'], coerce => sub {dir($_[0])};
+
 has 'app_tmp', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   
-  return dir( Catalyst::Utils::class2tempdir( $self->app_namespace ) )
-    unless ($self->isolate_app_tmp);
-  
-  my $app_tmp = $self->workdir->subdir( 'tmp' );
-  $app_tmp->mkpath(1);
-  
-  $app_tmp
+  $self->isolate_app_tmp
+    ? $self->local_tmp
+    : dir( Catalyst::Utils::class2tempdir( $self->app_namespace ) )
   
 }, isa => InstanceOf['Path::Class::Dir'], coerce => sub {dir($_[0])}, init_arg => undef;
 
@@ -88,7 +101,7 @@ has 'app_tmp', is => 'ro', lazy => 1, default => sub {
 has 'model_name', is => 'ro', isa => Str, lazy => 1, default => sub {
   my $self = shift;
   &_guess_model_name_from_dsn( $self->dsn )
-};
+}, predicate => 1;
 
 sub model_class {
   my $self = shift;
@@ -145,17 +158,14 @@ sub _bootstrap {
   
   my $name = $self->app_namespace;
   
-  die "App class name '$name' already loaded!" if (is_class_loaded $name);
-  
-  my $model_name = $self->model_name;
-  my $schema_class = join('::',$name,$model_name);
+  die "App class namespace '$name' already loaded!" if (is_class_loaded $name);
 
   my $helper = RapidApp::Helper->new_with_traits({
       '.newfiles' => 1, 'makefile' => 0, 'scripts' => 0,
       _ra_rapiddbic_opts => {
         dsn            => $self->dsn,
-        'model-name'   => $model_name,
-        'schema-class' => $schema_class,
+        'model-name'   => $self->model_name,
+        'schema-class' => $self->schema_class,
         crud_profile   => $self->crud_profile
       },
       traits => ['RapidApp::Helper::Traits::RapidDbic'],
@@ -180,7 +190,9 @@ sub DEMOLISH {
     else {
       print STDERR "\nRemoving temporary workdir '$tmp' ... ";
       $tmp->rmtree;
-      -d $tmp ? die "Unknown error removing $tmp." : print "done.\n";
+      -d $tmp 
+        ? die "Unknown error removing $tmp." 
+        : print STDERR "done.\n"
     }
   }
 }
@@ -219,6 +231,31 @@ sub _guess_model_name_from_dsn {
   
 }
 
+
+
+sub _normalize_dbname {
+  my $dbname = shift;
+
+  if($dbname =~ /\;/) {
+    my %cfg = map {
+      my ($k,$v) = split(/\=/,$_,2);
+      $k && $v ? ($k => $v) : ()
+    } split(/\;/,$dbname);
+
+    my $name = $cfg{dbname} || $cfg{database};
+
+    return &_normalize_dbname($name) if ($name);
+  }
+  elsif($dbname =~ /\//) {
+    my @parts = split(/\//,$dbname);
+    $dbname = pop @parts;
+  }
+
+  # strip after . (i.e. Foo.Db becomes Foo)
+  $dbname = (split(/\./,$dbname))[0] if ($dbname && $dbname =~ /\./);
+
+  $dbname
+}
 
 
 
