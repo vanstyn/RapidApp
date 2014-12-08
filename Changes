@@ -1,5 +1,14 @@
 Revision history for RapidApp
 
+0.99602 2014-12-07
+    - Fixed bug in app bootstrap with dsns w/o a user/pass
+    - Switched to Alien::Web::ExtJS::V3 for ExtJS sources
+    - AppPropertyGrid now has a 'Save' tool icon/control
+    - Fix bug in quick_search on integer columns
+    - New TableSpec column param 'search_operator_strf' - (#97)
+    - Add experimental --run-webapi option to rdbic.pl
+    - Really handle 'where' attrs - tmp conditional logic fallback (#95)
+
 0.99601 2014-12-03
     - rdbic.pl - new db utility script/server for instant CRUD (#96)
     - SQLite schemas now show a different top icon in navtree (RapidDbic)
