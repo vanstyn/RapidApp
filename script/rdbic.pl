@@ -4,40 +4,13 @@ use strict;
 use Getopt::Long;
 use Pod::Usage;
 
-use RapidApp::Helper;
-
-use String::Random;
 use File::Spec;
 use Path::Class qw( file dir );
-use String::CamelCase qw(camelize decamelize wordsplit);
-use Module::Runtime;
+
+use Plack::Runner;
+use Plack::App::RapidApp::rDbic;
 
 use RapidApp::Include qw(sugar perlutil);
-
-################################################################################
-my $tmp;
-my $no_cleanup = 0;
-my $cleanup_recur = 0;
-
-sub _cleanup_exit {
-  exit if $cleanup_recur++;
-  if($tmp && -d $tmp) {
-    if($no_cleanup) {
-      print "\nLeaving temporary directory '$tmp' ('no-cleanup' enabled)\n";
-    }
-    else {
-      print "\nRemoving temporary directory '$tmp' ... ";
-      $tmp->rmtree;
-      -d $tmp ? die "Unknown error removing $tmp." : print "done.\n";
-    }
-  }
-  exit;
-}
-
-END { &_cleanup_exit };
-$SIG{$_} = \&_cleanup_exit for qw(INT KILL TERM HUP QUIT ABRT);
-################################################################################
-
 
 my $dsn;
 
@@ -52,14 +25,20 @@ if($ARGV[0] && ! ($ARGV[0] =~ /^\-/) ) {
   }
 }
 
+sub _cleanup_exit { 
+  exit 
+}
+END { &_cleanup_exit };
+$SIG{$_} = \&_cleanup_exit for qw(INT KILL TERM HUP QUIT ABRT);
+
+
+my $no_cleanup   = 0;
 my $help         = 0;
 my $name         = 'rDbicServer';
 my $crud_profile = 'editable';
 my $tmpdir       = dir( File::Spec->tmpdir );
 my $port         = 3500;
 my $run_webapi   = 0;
-
-
 
 GetOptions(
   'help+'           => \$help,
@@ -74,135 +53,36 @@ GetOptions(
 
 pod2usage(1) if ($help || !$dsn);
 
-$tmpdir = dir( $tmpdir || File::Spec->tmpdir )->resolve;
-die "Error finding tmpdir ('$tmpdir') -- doesn't exist or not a directory" 
-  unless (-d $tmpdir);
+{
 
-$tmp = dir( $tmpdir, join('-',
-  'rdbic','tmp',
-  String::Random->new->randregex('[a-z0-9A-Z]{8}')
-));
+  my $App = Plack::App::RapidApp::rDbic->new({
+    app_namespace    => $name,
+    dsn              => $dsn,
+    tmpdir           => $tmpdir,
+    no_cleanup       => $no_cleanup,
+    crud_profile     => $crud_profile,
+    isolate_app_tmp  => 1
+  });
 
+  print "\n\n";
 
--d $tmp ? die "tmp dir already exists, aborting" : $tmp->mkpath(1);
-die "Error creating temp dir $tmp" unless (-d $tmp);
+  my $psgi = $run_webapi
+    ? &_webapi_psgi($App)
+    : $App->to_app;
 
-my $app_dir = $tmp->subdir($name);
-$app_dir->mkpath(1);
+  my $runner = Plack::Runner->new;
+  $runner->parse_options('--port',$port);
 
-my $model_name = &_guess_model_name_from_dsn($dsn);
-my $schema_class = join('::',$name,$model_name);
+  $runner->run($psgi);
 
-my $helper = RapidApp::Helper->new_with_traits({
-    '.newfiles' => 1, 'makefile' => 0, 'scripts' => 0,
-    _ra_rapiddbic_opts => {
-      dsn            => $dsn,
-      'model-name'   => $model_name,
-      'schema-class' => $schema_class,
-      crud_profile   => $crud_profile
-    },
-    traits => ['RapidApp::Helper::Traits::RapidDbic'],
-    name   => $name,
-    dir    => $app_dir,
-});
-
-pod2usage(1) unless $helper->mk_app( $name );
-
-if($run_webapi) {
-  print "\n\nRunning WebAPI::DBIC::WebApp/HAL-Browser...\n";
-  &_run_webapi_webapp;
-}
-else {
-  print "\n\nStarting Catalyst test server...\n\n";
-
-  no warnings 'redefine';
-
-  # Disable warnings about GetOpt
-  require Catalyst::Script::Server;
-  local *Catalyst::Script::Server::_getopt_spec_warnings = sub {};
-  
-  my $app_tmp = $tmp->subdir('tmp');
-  $app_tmp->mkpath(1);
-
-  # Override function used to determine tempdir:
-  local *Catalyst::Utils::class2tempdir  = sub { $app_tmp->stringify };
-  
-  local $ENV{CATALYST_PORT} = $port;
-  local $ENV{CATALYST_SCRIPT_GEN} = 40;
-  
-  require Catalyst::ScriptRunner;
-  Catalyst::ScriptRunner->run($name, 'Server');
 }
 
+sub _webapi_psgi {
+  my $App = shift;
 
-# Should never get here:
-
-&_cleanup_exit;
-
-
-####################################################
-
-sub _guess_model_name_from_dsn {
-  my $odsn = shift;
-  
-  # strip username/password if present
-  my $dsn = (split(/,/,$odsn))[0];
-  
-  my $name = 'DB'; #<-- default
-  
-  my ($dbi,$drv,@extra) = split(/\:/,$dsn);
-  
-  die "Invalid dsn string" unless (
-    $dbi && $dbi eq 'dbi'
-    && $drv && scalar(@extra) > 0
-  );
-  
-  $name = camelize($drv); #<-- second default
-  
-  # We don't know how to handle more than 3 colon-separated vals
-  return $name unless (scalar(@extra) == 1);
-  
-  my $parm_info = shift @extra;
-  
-  # 3rd default, is the last part of the dsn is already safe chars:
-  return camelize($parm_info) if ($parm_info =~ /^[0-9a-zA-Z\-\_]+$/);
-  
-  $name = &_normalize_dbname($parm_info) || $drv;
-  
-  # Fall back to the driver name unless $name contains only simple/safe chars
-  camelize( $name =~ /^[0-9a-zA-Z\-\_]+$/ ? $name : $drv )
-  
-}
-
-sub _normalize_dbname {
-  my $dbname = shift;
-  
-  if($dbname =~ /\;/) {
-    my %cfg = map {
-      my ($k,$v) = split(/\=/,$_,2);
-      $k && $v ? ($k => $v) : ()
-    } split(/\;/,$dbname);
-    
-    my $name = $cfg{dbname} || $cfg{database};
-    
-    return &_normalize_dbname($name) if ($name);
-  }
-  elsif($dbname =~ /\//) {
-    my @parts = split(/\//,$dbname);
-    $dbname = pop @parts;
-  }
-  
-  # strip after . (i.e. Foo.Db becomes Foo)
-  $dbname = (split(/\./,$dbname))[0] if ($dbname && $dbname =~ /\./);
-  
-  $dbname
-}
-
-
-sub _run_webapi_webapp {
+  print "Running WebAPI::DBIC::WebApp/HAL-Browser...\n";
 
   use Plack::Builder;
-  use Plack::Runner;
 
   Module::Runtime::require_module('WebAPI::DBIC::WebApp');
   Module::Runtime::require_module('Plack::App::File');
@@ -210,10 +90,13 @@ sub _run_webapi_webapp {
 
   my $hal_dir = Alien::Web::HalBrowser->dir;
   
-  my $model = join('::',$name,'Model',$model_name);
+  my $model = $App->model_class;
   Module::Runtime::require_module($model);
   
   my $connect_info = $model->config->{connect_info};
+  my $schema_class = $model->config->{schema_class};
+  
+  Module::Runtime::require_module($schema_class);
   
   my $schema = $schema_class->connect(
     $connect_info->{dsn},
@@ -241,12 +124,8 @@ sub _run_webapi_webapp {
     mount "/" => sub { [ 302, [ Location => "$app_prefix/" ], [ ] ] };
   };
   
-  my $runner = Plack::Runner->new;
-  $runner->parse_options('--port',$port);
-  
-  $runner->run($plack);
+  return $plack
 }
-
 
 
 1;
