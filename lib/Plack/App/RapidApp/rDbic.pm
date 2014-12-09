@@ -39,7 +39,7 @@ has 'connect_info', is => 'ro', lazy => 1, default => sub {
     user      => $user || '',
     password  => $pass || ''
   }
-}, isa => HashRef, predicate => 1;
+}, isa => HashRef, predicate => 1, coerce => \&_coerce_connect_info;
 
 has 'dsn', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
@@ -60,8 +60,10 @@ has 'dsn', is => 'ro', lazy => 1, default => sub {
   
 }, isa => Str, predicate => 1;
 
+has 'crud_profile',
+  isa => Enum[qw/editable edit-instant edit-gridadd ed-inst-gridadd read-only/],
+  is => 'ro', default => sub { 'editable' };
 
-has 'crud_profile',    is => 'ro', isa => Str, default => sub { 'editable' };
 has 'no_cleanup',      is => 'ro', isa => Bool, default => sub {0};
 has 'isolate_app_tmp', is => 'ro', isa => Bool, default => 0;
 
@@ -106,18 +108,9 @@ has 'workdir', is => 'ro', lazy => 1, predicate => 1, default => sub {
     UNLINK   => 1
   ));
   
-  
-  #my $tmp = dir( $self->tmpdir, join('-',
-  #  'rdbic','tmp',
-  #  String::Random->new->randregex('[a-z0-9A-Z]{8}')
-  #));
-  #
-  #-d $tmp ? die "tmp dir already exists, aborting" : $tmp->mkpath(1);
-  #die "Error creating temp dir $tmp" unless (-d $tmp);
-  
   $tmp
   
-}, isa => InstanceOf['Path::Class::Dir'], coerce => sub {dir($_[0])}, init_arg => undef;
+}, isa => InstanceOf['Path::Class::Dir'], coerce => sub {dir($_[0])};
 
 has 'app_dir', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
@@ -364,6 +357,24 @@ sub _normalize_dbname {
   $dbname
 }
 
+sub _coerce_connect_info {
+  my $arg = $_[0];
+  
+  $arg && ref $arg eq 'ARRAY' ? do {
+    my ($dsn,$user,$pass,$attrs,$extra) = @$arg;
+    $attrs ||= {};
+    $extra ||= {};
+    die "4th connect_info argument, if defined, must be a HashRef" unless (ref $attrs eq 'HASH');
+    die "5th connect_info argument, if defined, must be a HashRef" unless (ref $extra eq 'HASH');
+    {
+      dsn      => $dsn,
+      user     => $user || '',
+      password => $pass || '',
+      %{ $attrs },
+      %{ $extra }
+    }
+  } : $arg
+}
 
 1;
 
@@ -404,17 +415,157 @@ Plack::App::RapidApp::rDbic - Instant database CRUD using RapidApp
 
 =head1 DESCRIPTION
 
-Plack interface to on-the-fly generated RapidApp/RapidDbic application. Used by L<rdbic.pl>.
+Plack interface to on-the-fly generated RapidApp/RapidDbic application. This module bootstraps
+a fully working L<RapidApp> application with a L<RapidDbic|Catalyst::Plugin::RapidApp::RapidDbic>
+configuration for a specified existing database, which can be supplied as an existing 
+L<DBIx::Class::Schema>, or simply a valid DBI datasource name (dsn), in which case the L<DBIx::Class>
+schema is generation automatically, all in one swoop.
+
+This is the module which is used internally by the L<rdbic.pl> script, but can also be used directly 
+as a Plack::App for greater flexibility, including additional configuration options not
+exposed by the cmd-line arguments provided by L<rdbic.pl>.
 
 =head1 CONFIGURATION
 
 =head2 connect_info
 
-Standard connect_info hash
+Your connect_info args normalized to hashref form (with dsn/user/password.) See
+L<DBIx::Class::Storage::DBI/connect_info> for more info on the hashref form of
+L</connect_info>.
+
+=head2 dsn
+
+Alternative way to supply C<connect_info> as a string. Database user and password can be optionally 
+inlined using commas.
+
+For example:
+
+ dsn => 'dbi:mysql:mydb,dbuser,dbpass'
+
+Is equivelent to:
+
+ connect_info => {
+   dsn      => 'dbi:mysql:mydb',
+   user     => 'dbuser',
+   password => 'dbpass'
+ }
+
+=head2 schema_class
+
+Optional existing L<DBIx::Class::Schema> class name. Leave unconfigured to have the schema classes
+generated on-the-fly using L<DBIx::Class::Schema::Loader>.
 
 =head2 schema
 
-Existing schema ...
+Optional alternative existing/connected schema object. This option can be used instead of 
+C<connect_info>/C<schema_class>.
+
+=head2 app_namespace
+
+Name of the generated RapidApp/Catalyst app. Defaults to C<rDbicApp>. When multiple instances are
+loaded, subsequent names are generated as C<rDbicApp1>, C<rDbicApp2> and so on.
+
+
+
+=head2 crud_profile
+
+One of five choices to broadly control CRUD interface behavior:
+
+=over 4
+
+=item editable
+
+b<Default>
+
+Full CRUD is enabled with 'persist_immediately' turned off globally which 
+means the user has to click "Save" to apply queued-up changes
+
+=item edit-instant
+
+Full CRUD is enabled with 'persist_immediately' turned on. Changes are
+applied as soon as the cell is blurred after making a change
+
+=item edit-gridadd
+
+Same as 'editable' except new rows are added directly to the grid 
+instead of displaying an add record form
+
+=item ed-inst-gridadd
+
+Same as 'edit-instant' except new rows are added directly to the grid;
+"Save" must still be clicked before the row is actually inserted
+
+=item read-only
+
+No create/update/delete interfaces at all (L<rapidapp.pl> default)
+
+=back
+
+For more fine-grained control, RapidDbic configs can also be applied in C<model_config>.
+
+=head2 no_cleanup
+
+Set to true to prevent the temp C<workdir> from being cleaned up on exit (ignored when C<workdir> 
+is manually configured). 
+
+Defaults to false.
+
+=head2 tmpdir
+
+Parent temporary directory. Defaults to C<tmpdir> from L<File::Spec> (usually C</tmp/>)
+
+=head2 workdir
+
+Directory in which to generate temporary application files. If left unconfigured, this is an
+automatically generated directory C<'rdbic-tmp-XXXXX'> within C<tmpdir> which is automatically 
+cleaned/removed unless C<no_cleanup> is true.
+
+
+
+=head2 isolate_app_tmp
+
+Set to true to override the location used for Catalyst temporary files to be contained within
+the C<workdir> instead of within the system temp. This is useful to avoid leaving temporary
+files behind, but will slow startup because the asset files will be generated on each load.
+
+Defaults to false, but set to true in the L<rdbic.pl> script.
+
+=head2 local_tmp
+
+Directory to use for C<app_tmp> when C<isolate_app_tmp> is true. Defults to C<tmp/> within the
+C<workdir>
+
+=head2 model_name
+
+Name of the C<Model::DBIC> in the generated app. Defaults to an auto-generated name based on the 
+schema/dsn
+
+=head2 model_config
+
+Optional extra config to apply to the C<Model::DBIC> in the generated app. This is useful to be 
+able to customize RapidDbic configs (See L<Catalyst::Plugin::RapidApp::RapidDbic>)
+
+=head1 METHODS
+
+=head2 to_app
+
+PSGI C<$app> CodeRef. Derives from L<Plack::Component>
+
+=head2 model_class
+
+Full class name of the C<Model::DBIC> in the generated app.
+
+=head2 app_dir
+
+Home directory for the generated RapidApp/Catalyst app. This will be the app name within the 
+C<workdir>
+
+=head2 app_tmp
+
+The temporary directory used by the generated RapidApp/Catalyst app. If C<isolate_app_tmp> is
+true this will be within the C<workdir>, or whatever directory is set in C<local_tmp>. 
+Otherwise it is the standard location returned by C<Catalyst::Utils::class2tempdir> for
+the generated app (which is not cleaned up).
 
 
 =head1 SEE ALSO
