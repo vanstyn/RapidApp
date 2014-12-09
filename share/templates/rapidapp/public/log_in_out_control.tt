@@ -1,12 +1,13 @@
+[% SET mnt_pfx = c.mount_url %]
 [% SET 
   username = c.user.get_from_storage.username 
-  login_url = '/auth/login'
+  login_url = mnt_pfx _ '/auth/login'
 -%]
 [%- 
   SET login_url = "$login_url/#!$local_uri" IF convert_hashpath 
 -%]
 [%- IF username -%]
- [% username %] | <a target="_top" href="/auth/logout">Logout</a>
+ [% username %] | <a target="_top" href="[% mnt_pfx %]/auth/logout">Logout</a>
 [%- ELSE -%]
  (not logged in) | <a target="_top" href="[% login_url %]">Login</a>
 [%- END -%]

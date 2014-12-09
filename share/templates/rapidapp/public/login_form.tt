@@ -1,3 +1,4 @@
+[% SET mnt_pfx = c.mount_url %]
 [% SET username = c.user.get_from_storage.username %]
 [% IF username %]
 
@@ -6,7 +7,7 @@
       <h5>Logged in as: [% username %]</h5>
     </p>
     <p>
-      <h4><a target="_top" href="/auth/logout?redirect=/auth/login">Logout</a></h4>
+      <h4><a target="_top" href="[% mnt_pfx %]/auth/logout?redirect=[% mnt_pfx %]/auth/login">Logout</a></h4>
     </p>
   </center>
   <br>
@@ -24,7 +25,7 @@
           // we're at the default url path '/auth/login'
           var l = window.location;
           hiddenEl.dom.setAttribute('value',
-            (l.pathname == '/auth/login') 
+            (l.pathname == '[% mnt_pfx %]/auth/login') 
             ? '/' : [l.pathname,l.search,l.hash].join('') 
           );
         }
@@ -39,7 +40,7 @@
     });
   </script>
 
-  <form action="[% form_post_url %]" method="post" class="nice" id="l_form">
+  <form action="[% mnt_pfx %][% form_post_url %]" method="post" class="nice" id="l_form">
 
     <input type="hidden" id="redirect" name="redirect" value="">
 

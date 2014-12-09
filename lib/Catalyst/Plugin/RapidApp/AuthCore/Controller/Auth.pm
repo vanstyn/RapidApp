@@ -57,7 +57,8 @@ sub do_redirect {
   }
 
   $href = "/$href" unless ($href =~ /^\//); #<-- enforce local
-  $c->response->redirect($href);
+  my $pfx = $c->mount_url || '';
+  $c->response->redirect("$pfx$href");
   return $c->detach;
 }
 

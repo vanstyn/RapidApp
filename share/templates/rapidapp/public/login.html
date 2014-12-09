@@ -1,5 +1,7 @@
+[% SET mnt_pfx = c.mount_url %]
+
 [% SET
-  foundation_path = '/assets/rapidapp/misc/static/login/foundation/'
+  foundation_path = mnt_pfx _ '/assets/rapidapp/misc/static/login/foundation/'
 %]
 
 <!DOCTYPE html>
@@ -16,7 +18,7 @@
   <!-- Foundation framework -->
   <link rel="stylesheet" href="[% foundation_path %]stylesheets/foundation.css">
   <!--[if lt IE 8]> <link rel="stylesheet" href="[% foundation_path %]stylesheets/ie.css" /> <![endif]-->
-  <link rel="stylesheet" href="/assets/rapidapp/misc/static/login/css/style.css">
+  <link rel="stylesheet" href="[% mnt_pfx %]/assets/rapidapp/misc/static/login/css/style.css">
 </head>
 
 <body class="ptrn_a grdnt_a">
@@ -37,7 +39,7 @@
             <div class="cf" style="height:80px;">
               <h2 class="lb_ribbon lb_blue">
                 <div style="padding-top:3px;">
-                  <img src="/assets/rapidapp/misc/static/images/iconLoggedOut.png" style="vertical-align:middle;padding-bottom:5px;padding-right:9px;">
+                  <img src="[% mnt_pfx %]/assets/rapidapp/misc/static/images/iconLoggedOut.png" style="vertical-align:middle;padding-bottom:5px;padding-right:9px;">
                   <span style="padding-right:11px;font-weight:bold;font-size:1.1em;">Sign in</span>
                 </div>
               </h2>
@@ -97,7 +99,7 @@
             <a target="_blank" href="http://www.rapidapp.info/">
               <img 
                 width="165" height="25" border="0" 
-                src="/assets/rapidapp/misc/static/images/rapidapp_powered_logo_small.png"
+                src="[% mnt_pfx %]/assets/rapidapp/misc/static/images/rapidapp_powered_logo_small.png"
               >
             </a>
           </div> 

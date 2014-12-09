@@ -390,21 +390,20 @@ Plack::App::RapidApp::rDbic - Instant database CRUD using RapidApp
 
  use Plack::App::RapidApp::rDbic;
 
- # Dynamically generated schema:
  $app = Plack::App::RapidApp::rDbic->new({
    connect_info => {
-     dsn => 'dbi:SQLite:my_sqlt.db',
-     user => '',
+     dsn      => 'dbi:SQLite:my_sqlt.db',
+     user     => '',
      password => ''
    }
  })->to_app;
 
- # For an existing schema class:
+ # Or, for an existing schema class:
  $app = Plack::App::RapidApp::rDbic->new({
    schema_class => 'My::Schema',
    connect_info => {
-     dsn => 'dbi:SQLite:my_sqlt.db',
-     user => '',
+     dsn      => 'dbi:SQLite:my_sqlt.db',
+     user     => '',
      password => ''
    }
  })->to_app;
@@ -417,15 +416,14 @@ Plack::App::RapidApp::rDbic - Instant database CRUD using RapidApp
 
 =head1 DESCRIPTION
 
-Plack interface to on-the-fly generated RapidApp/RapidDbic application. This module bootstraps
-a fully working L<RapidApp> application with a L<RapidDbic|Catalyst::Plugin::RapidApp::RapidDbic>
-configuration for a specified existing database into a temporary directly. The database can be 
-supplied as an existing L<DBIx::Class::Schema>, or simply a valid DBI datasource name (dsn) to
-have the L<DBIx::Class> schema classes generated automatically, all in one swoop.
+This module provides a Plack interface to a runtime-generated database CRUD application. 
+It bootstraps and loads a fully working L<RapidApp> application with a 
+L<RapidDbic|Catalyst::Plugin::RapidApp::RapidDbic> configuration for an arbitrary database, which 
+can be supplied as either an existing L<DBIx::Class::Schema> or a simple DBI connect string (dsn) 
+to have L<DBIx::Class> schema classes generated for you.
 
-This is the module which is used internally by the L<rdbic.pl> script, but can also be used directly 
-as a Plack::App for greater flexibility, including additional configuration options not
-exposed by the cmd-line arguments provided by L<rdbic.pl>.
+This module is used internally by L<rdbic.pl> which exposes only a portion of the available options 
+as a command-line script.
 
 =head1 CONFIGURATION
 
@@ -437,7 +435,7 @@ L</connect_info>.
 
 =head2 dsn
 
-Alternative way to supply C<connect_info> in a string form. The database user and password can be 
+Alternative way to supply C<connect_info>, as a string. The database user and password can be 
 optionally inlined using commas.
 
 For example:
@@ -470,8 +468,6 @@ C<connect_info>/C<schema_class>.
 
 Name of the generated RapidApp/Catalyst app. Defaults to C<rDbicApp>. When multiple instances are
 loaded, subsequent names are generated as C<rDbicApp1>, C<rDbicApp2> and so on.
-
-
 
 =head2 crud_profile
 
@@ -538,7 +534,7 @@ Defaults to false, but set to true in the L<rdbic.pl> script.
 
 =head2 local_tmp
 
-Directory to use for C<app_tmp> when C<isolate_app_tmp> is true. Defults to C<tmp/> within the
+Directory to use for C<app_tmp> when C<isolate_app_tmp> is true. Defaults to C<tmp/> within the
 C<workdir>
 
 =head2 model_name
