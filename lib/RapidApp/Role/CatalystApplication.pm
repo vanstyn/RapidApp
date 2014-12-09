@@ -65,6 +65,15 @@ around 'dump_these' => sub {
 # ---
 
 
+before 'setup_middleware' => sub {
+  my $c = shift;
+  
+  unshift @{ $c->config->{'psgi_middleware'} ||= [] },
+    '+RapidApp::Plack::Middleware'
+};
+
+
+
 around 'setup_components' => sub {
 	my ($orig, $app, @args)= @_;
   

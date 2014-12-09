@@ -79,6 +79,7 @@ has 'app_namespace', is => 'ro', isa => Str,  lazy => 1, default => sub {
 
 has 'schema', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
+  $self->prepare_app;
   $self->app_namespace->model($self->model_name)->schema
 }, isa => InstanceOf['DBIx::Class::Schema'], predicate => 1;
 
@@ -225,14 +226,15 @@ sub prepare_app {
  $self->_catalyst_psgi_app 
 }
 
+
 sub call {
-  my $self = shift;
-  
+  my ($self, $env) = @_;
+
   # Override function used to determine tempdir:
   no warnings 'redefine';
   local *Catalyst::Utils::class2tempdir = sub { $self->app_tmp->stringify };
-  
-  $self->_catalyst_psgi_app->(@_);
+
+  $self->_catalyst_psgi_app->($env);
 }
 
 sub _bootstrap {
@@ -417,9 +419,9 @@ Plack::App::RapidApp::rDbic - Instant database CRUD using RapidApp
 
 Plack interface to on-the-fly generated RapidApp/RapidDbic application. This module bootstraps
 a fully working L<RapidApp> application with a L<RapidDbic|Catalyst::Plugin::RapidApp::RapidDbic>
-configuration for a specified existing database, which can be supplied as an existing 
-L<DBIx::Class::Schema>, or simply a valid DBI datasource name (dsn), in which case the L<DBIx::Class>
-schema is generation automatically, all in one swoop.
+configuration for a specified existing database into a temporary directly. The database can be 
+supplied as an existing L<DBIx::Class::Schema>, or simply a valid DBI datasource name (dsn) to
+have the L<DBIx::Class> schema classes generated automatically, all in one swoop.
 
 This is the module which is used internally by the L<rdbic.pl> script, but can also be used directly 
 as a Plack::App for greater flexibility, including additional configuration options not
@@ -435,12 +437,16 @@ L</connect_info>.
 
 =head2 dsn
 
-Alternative way to supply C<connect_info> as a string. Database user and password can be optionally 
-inlined using commas.
+Alternative way to supply C<connect_info> in a string form. The database user and password can be 
+optionally inlined using commas.
 
 For example:
 
  dsn => 'dbi:mysql:mydb,dbuser,dbpass'
+
+Is equivelent to:
+
+ connect_info => ['dbi:mysql:mydb','dbuser','dbpass']
 
 Is equivelent to:
 
