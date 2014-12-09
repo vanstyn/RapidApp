@@ -27,7 +27,40 @@ use Class::Load 'is_class_loaded';
 
 use RapidApp::Include qw(sugar perlutil);
 
-has 'dsn',             is => 'ro', isa => Str, required => 1;
+has 'connect_info', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  
+  my ($dsn,$user,$pass) = $self->has_schema
+    ? ('dbi:SQLite::memory:','','')
+    : split(/\,/,$self->dsn,3);
+    
+  return {
+    dsn       => $dsn,
+    user      => $user || '',
+    password  => $pass || ''
+  }
+}, isa => HashRef, predicate => 1;
+
+has 'dsn', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  
+  ( $self->has_schema ||
+    $self->has_connect_info
+  ) or die "Must supply either dsn or connect_info or schema";
+  
+  my $info = $self->connect_info;
+  
+  my $dsn = $info->{dsn} or die "dsn must be supplied in connect_info";
+  return $dsn unless ($info->{user} || $info->{user} ne '');
+  
+  join(',',$dsn, (
+    grep { $_ && $_ ne '' }
+    $info->{user}, $info->{password}
+  ))
+  
+}, isa => Str, predicate => 1;
+
+
 has 'crud_profile',    is => 'ro', isa => Str, default => sub { 'editable' };
 has 'no_cleanup',      is => 'ro', isa => Bool, default => sub {0};
 has 'isolate_app_tmp', is => 'ro', isa => Bool, default => 0;
@@ -42,9 +75,16 @@ has 'app_namespace', is => 'ro', isa => Str,  lazy => 1, default => sub {
 };
 
 
+has 'schema', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  $self->app_namespace->model($self->model_name)->schema
+}, isa => InstanceOf['DBIx::Class::Schema'], predicate => 1;
+
 has 'schema_class', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
-  join('::',$self->app_namespace,$self->model_name)
+  $self->has_schema 
+    ? blessed $self->schema
+    : join('::',$self->app_namespace,$self->model_name)
 }, isa => Str, predicate => 1;
 
 
@@ -146,10 +186,39 @@ has '_catalyst_psgi_app', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   
   my $name = $self->app_namespace;
-  Module::Runtime::require_module($name);
+  
+  # Handle user-supplied, existing/connected schema object:
+  if($self->has_schema) {
+  
+    # Hackish/abusive, but RapidApp absolutely requires 'quote_names' to be set
+    #  -- if it's not already set this will set it after the fact:
+    unless($self->schema->storage->_sql_maker_opts->{quote_names}) {
+      warn join('',
+        "Warning: Applying 'quote_names' option to storage object on schema ",
+        blessed $self->schema
+      );
+      $self->schema->storage->_sql_maker_opts->{quote_names} = 1;
+      $self->schema->storage->_sql_maker(undef);
+      $self->schema->storage->sql_maker;
+    };
+  
+    # These override hacks are needed to set the existing schema object
+    # and stop Model::DBIC from changing the existing storage/connection.
+    no warnings 'redefine';
+    local *DBIx::Class::Schema::connection = sub { shift };
+    local *Catalyst::Model::DBIC::Schema::setup = sub {
+      my $o = shift;
+      $o->schema( $self->schema );
+    };
+    
+    Module::Runtime::require_module($name);
+  }
+  else {
+    Module::Runtime::require_module($name);
+  }
 
   $name->apply_default_middlewares( $name->psgi_app )
-  
+
 }, isa => CodeRef, init_arg => undef;
 
 # Init:
@@ -201,6 +270,14 @@ sub _bootstrap {
       $config
     );
     $self->model_class->config( $new_cfg );
+  }
+  
+  if($self->has_connect_info) {
+    my $new_info = Catalyst::Utils::merge_hashes(
+      $self->model_class->config->{connect_info} || {},
+      $self->connect_info
+    );
+    $self->model_class->config( connect_info => $new_info );
   }
   
 }
@@ -288,5 +365,88 @@ sub _normalize_dbname {
 }
 
 
-
 1;
+
+__END__
+
+=head1 NAME
+
+Plack::App::RapidApp::rDbic - Instant database CRUD using RapidApp
+
+=head1 SYNOPSIS
+
+ use Plack::App::RapidApp::rDbic;
+
+ # Dynamically generated schema:
+ $app = Plack::App::RapidApp::rDbic->new({
+   connect_info => {
+     dsn => 'dbi:SQLite:my_sqlt.db',
+     user => '',
+     password => ''
+   }
+ })->to_app;
+
+ # For an existing schema class:
+ $app = Plack::App::RapidApp::rDbic->new({
+   schema_class => 'My::Schema',
+   connect_info => {
+     dsn => 'dbi:SQLite:my_sqlt.db',
+     user => '',
+     password => ''
+   }
+ })->to_app;
+
+ # For an existing schema connection:
+ my $schema = My::Schema->connect('dbi:SQLite:my_sqlt.db');
+ $app = Plack::App::RapidApp::rDbic->new({
+   schema => $schema
+ })->to_app;
+
+=head1 DESCRIPTION
+
+Plack interface to on-the-fly generated RapidApp/RapidDbic application. Used by L<rdbic.pl>.
+
+=head1 CONFIGURATION
+
+=head2 connect_info
+
+Standard connect_info hash
+
+=head2 schema
+
+Existing schema ...
+
+
+=head1 SEE ALSO
+
+=over
+
+=item *
+
+L<rdbic.pl>
+
+=item * 
+
+L<RapidApp>
+
+=item * 
+
+L<Plack::Component>
+
+=back
+
+
+=head1 AUTHOR
+
+Henry Van Styn <vanstyn@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2014 by IntelliTree Solutions llc.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
+
+
