@@ -61,7 +61,8 @@ sub process {
   );
   
   # Misc static images:
-  push @{$c->stash->{precache_imgs}}, (qw(
+  my $pfx = $c->mount_url || '';
+  push @{$c->stash->{precache_imgs}}, map { "$pfx$_" } (qw(
     /assets/rapidapp/misc/static/icon-error.gif
     /assets/rapidapp/misc/static/s.gif
   ));

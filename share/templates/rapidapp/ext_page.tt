@@ -10,7 +10,7 @@
 [% c.all_html_head_tags %]
 
 <!-- default favicon -->
-[% SET favicon = '/assets/rapidapp/misc/static/images/rapidapp_icon_small.ico' %]
+[% SET favicon = c.mount_url _ '/assets/rapidapp/misc/static/images/rapidapp_icon_small.ico' %]
 [% TRY %]
   [% PROCESS templates/local_js_css.tt %]
 [% CATCH %]
@@ -21,8 +21,10 @@
 
 <script type="text/javascript">
   Ext.ux.RapidApp.VERSION = [% c.rapidapp_version %];
-  Ext.BLANK_IMAGE_URL = '/assets/rapidapp/misc/static/s.gif';
-  Ext.chart.Chart.CHART_URL = '/assets/rapidapp/misc/static/charts.swf';
+  var pfx = "[% c.mount_url %]";
+  Ext.ux.RapidApp.AJAX_URL_PREFIX = pfx;
+  Ext.BLANK_IMAGE_URL = [pfx,'/assets/rapidapp/misc/static/s.gif'].join('');
+  Ext.chart.Chart.CHART_URL = [pfx,'/assets/rapidapp/misc/static/charts.swf'].join('');
   Ext.QuickTips.init();
 </script>
 

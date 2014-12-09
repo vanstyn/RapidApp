@@ -26,6 +26,11 @@ sub rapidApp { (shift)->model("RapidApp"); }
 
 has 'request_id' => ( is => 'ro', default => sub { (shift)->rapidApp->requestCount; } );
 
+sub mount_url {
+  my $c = shift;
+  try{ $c->req->env->{SCRIPT_NAME} } || ''
+}
+
 # ---
 # Override dump_these to limit the depth of data structures which will get
 # dumped. This is needed because RapidApp has a relatively large footprint

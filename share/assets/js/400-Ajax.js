@@ -693,6 +693,12 @@ Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
 
 Ext.ux.RapidApp.ajaxRequestContentType = function(conn,options) {
   if (!options.headers) { options.headers= {}; }
+  
+  if(options.url) {
+    var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
+    options.url = [pfx,options.url].join('');
+  }
+  
   options.headers['X-RapidApp-RequestContentType']= 'JSON';
   options.headers['X-RapidApp-VERSION'] = Ext.ux.RapidApp.VERSION;
 };

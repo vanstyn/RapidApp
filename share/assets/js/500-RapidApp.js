@@ -7,6 +7,7 @@ Ext.ns('Ext.ux.RapidApp');
 
 // This should be set dynamically by the server:
 Ext.ux.RapidApp.VERSION = Ext.ux.RapidApp.VERSION || 0;
+Ext.ux.RapidApp.AJAX_URL_PREFIX = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
 
 // Window Group for Custom Prompts to make them higher than other windows and load masks
 Ext.ux.RapidApp.CustomPromptWindowGroup = new Ext.WindowGroup();
