@@ -1,5 +1,10 @@
 Revision history for RapidApp
 
+0.99650 2014-12-09
+    - Added Plack::App::RapidApp::rDbic
+    - Misc Plack-specific fixes/improvements
+    - Requires Catalyst::Controller::AutoAssets 0.30
+
 0.99602 2014-12-07
     - Fixed bug in app bootstrap with dsns w/o a user/pass
     - Switched to Alien::Web::ExtJS::V3 for ExtJS sources
