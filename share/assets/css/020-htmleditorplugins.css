@@ -12,21 +12,21 @@
     Some icons have been modified slightly from their source files, in which case the original authors license still applies.
     
 */
-.x-edit-wordpaste {background: url(/assets/rapidapp/misc/static/images/htmleditorplugins/edit-word-text.png) 0 0 no-repeat !important;}
-.x-edit-table {background: url(/assets/rapidapp/misc/static/images/htmleditorplugins/edit-table.png) 0 0 no-repeat !important;}
-.x-edit-hr {background: url(/assets/rapidapp/misc/static/images/htmleditorplugins/edit-rule.png) 0 0 no-repeat !important;}
-.x-edit-indent {background: url(/assets/rapidapp/misc/static/images/htmleditorplugins/edit-indent.png) 0 0 no-repeat !important;}
-.x-edit-char {background: url(/assets/rapidapp/misc/static/images/htmleditorplugins/edit-char.png) 0 0 no-repeat !important;}
-.x-edit-outdent {background: url(/assets/rapidapp/misc/static/images/htmleditorplugins/edit-outdent.png) 0 0 no-repeat !important;}
-.x-edit-subscript {background: url(/assets/rapidapp/misc/static/images/htmleditorplugins/edit-subscript.png) 0 0 no-repeat !important;}
-.x-edit-superscript {background: url(/assets/rapidapp/misc/static/images/htmleditorplugins/edit-superscript.png) 0 0 no-repeat !important;}
-.x-edit-removeFormat {background: url(/assets/rapidapp/misc/static/images/htmleditorplugins/edit-removeFormat.png) 0 0 no-repeat !important;}
-.x-edit-image {background: url(/assets/rapidapp/misc/static/images/htmleditorplugins/edit-image.png) 0 0 no-repeat !important;}
-.x-edit-findandreplace {background: url(/assets/rapidapp/misc/static/images/htmleditorplugins/edit-findandreplace.png) 0 0 no-repeat !important;}
-.x-edit-undo {background: url(/assets/rapidapp/misc/static/images/htmleditorplugins/edit-undo.png) 0 0 no-repeat !important;}
-.x-edit-redo {background: url(/assets/rapidapp/misc/static/images/htmleditorplugins/edit-redo.png) 0 0 no-repeat !important;}
-.x-edit-formatblock-h1 {background: url(/assets/rapidapp/misc/static/images/htmleditorplugins/edit-heading-h1.png) 0 0 no-repeat !important;}
-.x-edit-formatblock-h2 {background: url(/assets/rapidapp/misc/static/images/htmleditorplugins/edit-heading-h2.png) 0 0 no-repeat !important;}
+.x-edit-wordpaste {background: url(../../../assets/rapidapp/misc/static/images/htmleditorplugins/edit-word-text.png) 0 0 no-repeat !important;}
+.x-edit-table {background: url(../../../assets/rapidapp/misc/static/images/htmleditorplugins/edit-table.png) 0 0 no-repeat !important;}
+.x-edit-hr {background: url(../../../assets/rapidapp/misc/static/images/htmleditorplugins/edit-rule.png) 0 0 no-repeat !important;}
+.x-edit-indent {background: url(../../../assets/rapidapp/misc/static/images/htmleditorplugins/edit-indent.png) 0 0 no-repeat !important;}
+.x-edit-char {background: url(../../../assets/rapidapp/misc/static/images/htmleditorplugins/edit-char.png) 0 0 no-repeat !important;}
+.x-edit-outdent {background: url(../../../assets/rapidapp/misc/static/images/htmleditorplugins/edit-outdent.png) 0 0 no-repeat !important;}
+.x-edit-subscript {background: url(../../../assets/rapidapp/misc/static/images/htmleditorplugins/edit-subscript.png) 0 0 no-repeat !important;}
+.x-edit-superscript {background: url(../../../assets/rapidapp/misc/static/images/htmleditorplugins/edit-superscript.png) 0 0 no-repeat !important;}
+.x-edit-removeFormat {background: url(../../../assets/rapidapp/misc/static/images/htmleditorplugins/edit-removeFormat.png) 0 0 no-repeat !important;}
+.x-edit-image {background: url(../../../assets/rapidapp/misc/static/images/htmleditorplugins/edit-image.png) 0 0 no-repeat !important;}
+.x-edit-findandreplace {background: url(../../../assets/rapidapp/misc/static/images/htmleditorplugins/edit-findandreplace.png) 0 0 no-repeat !important;}
+.x-edit-undo {background: url(../../../assets/rapidapp/misc/static/images/htmleditorplugins/edit-undo.png) 0 0 no-repeat !important;}
+.x-edit-redo {background: url(../../../assets/rapidapp/misc/static/images/htmleditorplugins/edit-redo.png) 0 0 no-repeat !important;}
+.x-edit-formatblock-h1 {background: url(../../../assets/rapidapp/misc/static/images/htmleditorplugins/edit-heading-h1.png) 0 0 no-repeat !important;}
+.x-edit-formatblock-h2 {background: url(../../../assets/rapidapp/misc/static/images/htmleditorplugins/edit-heading-h2.png) 0 0 no-repeat !important;}
 
 /*
     When using the famfamfam set of icons, the following styles can be used, assuming the famfamfam 
@@ -41,8 +41,8 @@
 .x-edit-subscript {background: url(icons/text_subscript.png) 0 0 no-repeat !important;}
 .x-edit-superscript {background: url(icons/text_superscript.png) 0 0 no-repeat !important;}
 .x-edit-removeFormat {background: url(icons/exclamation.png) 0 0 no-repeat !important;} 
-.x-edit-undo {background: url(/assets/rapidapp/misc/static/images/htmleditorplugins/arrow_undo.png) 0 0 no-repeat !important;}
-.x-edit-redo {background: url(/assets/rapidapp/misc/static/images/htmleditorplugins/arrow_redo.png) 0 0 no-repeat !important;}
+.x-edit-undo {background: url(../../../assets/rapidapp/misc/static/images/htmleditorplugins/arrow_undo.png) 0 0 no-repeat !important;}
+.x-edit-redo {background: url(../../../assets/rapidapp/misc/static/images/htmleditorplugins/arrow_redo.png) 0 0 no-repeat !important;}
 
 */
 
