@@ -477,7 +477,7 @@ One of five choices to broadly control CRUD interface behavior:
 
 =item editable
 
-b<Default>
+B<Default>
 
 Full CRUD is enabled with 'persist_immediately' turned off globally which 
 means the user has to click "Save" to apply queued-up changes
