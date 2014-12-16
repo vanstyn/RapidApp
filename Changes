@@ -1,5 +1,10 @@
 Revision history for RapidApp
 
+0.99651 2014-12-16
+    - Added more flexible 'grid_class' param (RapidDbic)
+    - Support for reading model config from Model::NAME cnf key (RapidDbic)
+    - Misc POD updates
+
 0.99650 2014-12-09
     - Added Plack::App::RapidApp::rDbic
     - Misc Plack-specific fixes/improvements
