@@ -68,8 +68,16 @@ before 'setup_component' => sub {
   my $appclass = ref($c) || $c;
   my $config = $c->config->{'Plugin::RapidApp::RapidDbic'};
   
-  # -- New: read in optional RapidDbic config from the model itself:
-  my $local_cnf = try{$component->config->{RapidDbic}};
+  my $loc_cmp_name = $component;
+  $loc_cmp_name =~ s/^${appclass}\:\://;
+
+  # -- New: read in optional RapidDbic config from the model itself, or from the main 
+  #    app config under the model's config key (i.e. "Model::DB")
+  my $local_cnf = scalar(
+        try{ $component->config          ->{RapidDbic}  }
+     || try{ $c->config->{$loc_cmp_name} ->{RapidDbic}  }
+  );
+
   if($local_cnf) {
     my ($junk,$name) = split(join('::',$appclass,'Model',''),$component,2);
     if($name) {
