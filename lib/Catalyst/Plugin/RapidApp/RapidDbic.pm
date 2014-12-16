@@ -443,6 +443,31 @@ L<Chinook Demo - 2.5 - Virtual Columns|http://www.rapidapp.info/demos/chinook/2_
 
 =back
 
+=head1 PLACK INTERFACE (QUICK START)
+
+There is also now a L<Plack> interface available which can be used to generate a fully working
+RapidDbic-based app with a working config on-the-fly that can then be mounted like any Plack
+app:
+
+=over
+
+=item *
+
+L<Plack::App::RapidApp::rDbic>
+
+=back
+
+For instant gratification, a script-based wrapper is also available which can fire up an app 
+with a single shell command and dsn argument:
+
+=over
+
+=item *
+
+L<rdbic.pl>
+
+=back
+
 
 =head1 SEE ALSO
 

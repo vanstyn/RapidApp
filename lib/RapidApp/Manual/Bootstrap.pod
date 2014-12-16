@@ -72,7 +72,14 @@ general-purpose database admin utility, like PhpMyAdmin, Navicat, etc.
 
 See the L<rdbic.pl> documentation for more details.
 
-acts as a database
+
+=head1 Plack::App::RapidApp::rDbic
+
+The Plack-based interface L<Plack::App::RapidApp::rDbic> is also available for generating
+a CRUD app on-the-fly which can be further configured and mounted within any L<PSGI>/L<Plack>
+configuration. L<rdbic.pl> is simply a wrapper around L<Plack::App::RapidApp::rDbic> which
+provides many more options and features than L<rdbic.pl> exposes.
+
 
 =head1 SEE ALSO
 

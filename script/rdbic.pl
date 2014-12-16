@@ -233,8 +233,14 @@ with 'dbi:') then it will be used as the dsn without having to supply C<--dsn> f
 if the first argument is a path to an existing regular file it is assumed to be an SQLite database 
 file, and the appropriate dsn (i.e. "dbi:SQLite:$ARGV[0]") is used automatically.
 
+C<rdbic.pl> is a wrapper around L<Plack::App::RapidApp::rDbic> which can be used 
+directly in Plack-based setups and provides additional options and functionality not exposed in 
+this script. 
+
+See L<Plack::App::RapidApp::rDbic> for more information.
+
 =head1 SEE ALSO
 
-L<RapidApp>, L<rapidapp.pl>
+L<RapidApp>, L<rapidapp.pl>, L<Plack::App::RapidApp::rDbic>
 
 =cut

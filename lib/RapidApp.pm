@@ -5,7 +5,7 @@ use warnings;
 # Min supported Perl is currently v5.10
 use 5.010;
 
-our $VERSION = '0.99650';
+our $VERSION = 0.99650_01;
 
 # ABSTRACT: Turnkey ajaxy webapps
 
@@ -73,7 +73,11 @@ RESTful URL navigation schemes, pure Ajax interfaces with no browser page loads,
 with front-side CMS features, declarative configuration layers, and more...
 
 RapidApp is useful not only for new application development, but also for adding admin interfaces to 
-existing Catalyst applications, as well as for rapid prototyping.
+existing applications, as well as for rapid prototyping.
+
+Although RapidApp is based on Catalyst, fully encapsulated L<Plack> interfaces are also 
+provided, such as L<Plack::App::RapidApp::rDbic>, which enables RapidApp to be integrated into
+any application/framework which utilizes PSGI/Plack.
 
 RapidApp started as an internal project in 2009 and has been under continuous development
 ever since. It has been used very successfully for multiple medium to large-scale client 

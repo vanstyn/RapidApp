@@ -15,11 +15,18 @@ plugins can attach to activate other instant features, like users and permission
 RapidDbic can also be used to attach admin sections to existing Catalyst applications with relative
 ease.
 
-To learn more, see the L<Catalyst::Plugin::RapidApp::RapidDbic> documentation itself. Also, the 
-exmaples in L<RapidApp::Manual::Bootstrap> mainly cover RapidDbic, which show how to create a new app
-from scratch with a single command...
+Instantly generated RapidDbic CRUD applications can also be initialized and mounted as a 
+L<Plack>-compatable app with L<Plack::App::RapidApp::rDbic>. There is also the command-line wrapper 
+script L<rdbic.pl> which can be used to launch a working app for any existing database via dsn in 
+a single shell command:
 
-Additionally the Chinook Demo video series on the RapidApp website covers building an app using 
+  rdbic.pl dbi:mysql:mydb
+
+To learn more, see the L<Catalyst::Plugin::RapidApp::RapidDbic> documentation itself. Also, the 
+exmaples in L<RapidApp::Manual::Bootstrap> mainly cover RapidDbic, which show how to bootstrap a new 
+app from scratch, also with a single command, which can then be further customized and developed.
+
+Additionally, the Chinook Demo video series on the RapidApp website covers building an app using 
 RapidDbic extensively:
 
 =over
@@ -37,6 +44,14 @@ L<Chinook Demo (www.rapidapp.info/demos/chinook)|http://www.rapidapp.info/demos/
 =item *
 
 L<Catalyst::Plugin::RapidApp::RapidDbic>
+
+=item *
+
+L<Plack::App::RapidApp::rDbic>
+
+=item *
+
+L<rdbic.pl>
 
 =item *
 
