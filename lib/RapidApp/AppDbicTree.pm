@@ -134,12 +134,15 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
       # place (note this probably needs to be fixed in there for exactly this reason)
       my $cust_merged = clone( Catalyst::Utils::merge_hashes($cust_def_config,$cust_config) );
       
+      my $grid_class = $cust_merged->{grid_class} ? delete $cust_merged->{grid_class} :
+        try{$self->configs->{$model}{grid_class}} || $self->table_class;
+      
       #my $table = $Source->schema->class($Source->source_name)->table;
       #$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
       my $module_name = lc(join('_',$model,$source));
       $module_name =~ s/\:\:/_/g;
       $self->apply_init_modules( $module_name => {
-        class => $self->table_class,
+        class => $grid_class,
         params => { 
           %$cust_merged, 
           ResultSource => $Source, 
