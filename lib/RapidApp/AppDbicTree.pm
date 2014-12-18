@@ -27,8 +27,9 @@ has 'dbic_model_tree', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, defaul
     
     warn join("\n",'',
       "  WARNING: using DBIC model '$itm->{model}' without 'quote_names' enabled.",
-      "  It is strongly reccomended that this setting be enabled...",'',''
-    ) unless $Model->connect_info->{quote_names};
+      "  It is strongly reccomended that this setting be enabled...",
+      "  (Set env var RAPIDAPP_ISSUE99_IGNORE to supress this message)",'',''
+    ) unless ($Model->connect_info->{quote_names} || $ENV{RAPIDAPP_ISSUE99_IGNORE});
   }
   
   # strip excludes/limits:
