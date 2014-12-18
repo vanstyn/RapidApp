@@ -25,8 +25,10 @@ has 'dbic_model_tree', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, defaul
     die "Error: model '$itm->{model}' is not a Catalyst::Model::DBIC::Schema"
       unless ($Model->isa('Catalyst::Model::DBIC::Schema'));
     
-    die "Error: model '$itm->{model}' must be configured with quote_names => 1 in connect_info " .
-      "for RapidApp to function correctly." unless $Model->connect_info->{quote_names};
+    warn join("\n",'',
+      "  WARNING: using DBIC model '$itm->{model}' without 'quote_names' enabled.",
+      "  It is strongly reccomended that this setting be enabled...",'',''
+    ) unless $Model->connect_info->{quote_names};
   }
   
   # strip excludes/limits:

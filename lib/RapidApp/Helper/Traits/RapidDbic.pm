@@ -139,7 +139,7 @@ sub _ra_rapiddbic_generate_model {
     #...
   }
   
-  # quote_names is always required:
+  # quote_names is always required for newly generated schemas:
   push @connect_opts, 'quote_names=1' unless (
     List::Util::first { $_ eq 'quote_names=1' } @connect_opts
   );

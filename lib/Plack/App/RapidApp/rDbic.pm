@@ -184,17 +184,20 @@ has '_catalyst_psgi_app', is => 'ro', lazy => 1, default => sub {
   # Handle user-supplied, existing/connected schema object:
   if($self->has_schema) {
   
-    # Hackish/abusive, but RapidApp absolutely requires 'quote_names' to be set
-    #  -- if it's not already set this will set it after the fact:
-    unless($self->schema->storage->_sql_maker_opts->{quote_names}) {
-      warn join('',
-        "Warning: Applying 'quote_names' option to storage object on schema ",
-        blessed $self->schema
-      );
-      $self->schema->storage->_sql_maker_opts->{quote_names} = 1;
-      $self->schema->storage->_sql_maker(undef);
-      $self->schema->storage->sql_maker;
-    };
+    ##  -----
+    ## Hackish/abusive (but effective) way to set 'quote_names' if not already set, after
+    ## the fact. This code is no longer enabled as of GH Issue #99 where we dropped the
+    ## hard quote_names requirement
+    #unless($self->schema->storage->_sql_maker_opts->{quote_names}) {
+    #  warn join('',
+    #    "Warning: Applying 'quote_names' option to storage object on schema ",
+    #    blessed $self->schema
+    #  );
+    #  $self->schema->storage->_sql_maker_opts->{quote_names} = 1;
+    #  $self->schema->storage->_sql_maker(undef);
+    #  $self->schema->storage->sql_maker;
+    #};
+    ## -----
   
     # These override hacks are needed to set the existing schema object
     # and stop Model::DBIC from changing the existing storage/connection.
