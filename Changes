@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+0.99652 2014-12-18
+    - Removed hard requirement for 'quote_names' to be enabled on DBIC models (#99)
+
 0.99651 2014-12-16
     - Added more flexible 'grid_class' param (RapidDbic)
     - Support for reading model config from Model::NAME cnf key (RapidDbic)
