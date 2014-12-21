@@ -148,7 +148,20 @@ sub store_init_onrequest {
 	## --
 
 	$self->apply_extconfig(
-		storeId 					=> $self->storeId,
+
+    ## ----
+    ## storeId disabled altogether for GitHub Issue #100
+    ##
+    ## storeId was used for optimization to support re-use of stores on the JavaScript
+    ## side via Ext.StoreMgr, but this caused caching problems starting with Perl 5.18.
+    ## Without this setting, every componenent/tab will have its own, independent 
+    ## Ext.data.Store, and these cannot be seen within Ext.StoreMgr. This willl lead to
+    ## a larger memory footprint in the client, but there is no way around it at this
+    ## point.
+    #storeId 					=> $self->storeId,
+    ##
+    ## ----
+
 		api 						=> $self->store_api,
 		#baseParams 				=> $self->base_params,
 		writer					=> $self->store_writer,
