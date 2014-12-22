@@ -118,16 +118,6 @@ sub BUILD {
 	$self->apply_actions( create	=> 'create' ) if (defined $self->create_handler);
 	$self->apply_actions( destroy	=> 'destroy' ) if (defined $self->destroy_handler);
 	
-	$self->add_listener( exception => RapidApp::JSONFunc->new( raw => 1, func => 
-			'function(DataProxy, type, action, options, response, arg) { ' .
-				'if (action == "update" || action == "create") {' .
-					'var store = ' . $self->getStore_code . ';' .
-					'store.rejectChanges();' .
-				'}' .
-			'}' 
-		)
-	);
-	
 	$self->add_listener( write => RapidApp::JSONFunc->new( raw => 1, func => 
 		'function(store, action, result, res, rs) { store.reload(); }' 
 	)) if ($self->reload_on_save);

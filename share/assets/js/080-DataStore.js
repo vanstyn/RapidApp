@@ -502,6 +502,12 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
       
       return store.editable_columns_map && store.editable_columns_map[name] ? true : false;
     };
+    
+    store.on('exception',function(ds){
+      store.rejectChanges();
+    },this);
+    
+    
 		
 		// ----
 		// New: track 'loaded_columns' from the server (see metaData in DataStore2)
