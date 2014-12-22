@@ -77,6 +77,17 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	init: function(cmp) {
 		this.cmp = cmp;
 		cmp.datastore_plus_plugin = this;
+    
+    // ---
+    // Auto-cleanup of entries in Ext.StoreMgr on destroy
+    var storeId = cmp.store ? cmp.store.storeId : null;
+    if(storeId) {
+      cmp.on('destroy',function(){
+        var ds = Ext.StoreMgr.item(storeId);
+        if(ds) { Ext.StoreMgr.remove(ds) }
+      },this);
+    }
+    // ---
 
 		delete cmp.store.tiedChildStores;
 		

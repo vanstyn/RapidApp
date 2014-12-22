@@ -20,7 +20,24 @@ our $BATCH_UPDATE_IN_PROGRESS = 0;
 
 has 'record_pk' 			=> ( is => 'ro', default => undef );
 has 'store_fields' 		=> ( is => 'ro', default => undef );
-has 'storeId' 				=> ( is => 'ro', default => sub { 'datastore-' . String::Random->new->randregex('[a-z0-9A-Z]{5}') } );
+
+# ---
+# Changed for GitHub Issue #100
+#
+# Ensure that the storeId is unique per request, but still able to be used to resolve
+# the store for when 'defer_DataStore' is active
+has 'storeId', is => 'ro', default => sub { 
+  join('-','ds',String::Random->new->randregex('[a-z0-9A-Z]{6}'))
+};
+around storeId => sub {
+  my ($orig,$self,@args) = @_;
+  my $id = $self->$orig(@args);
+  my $c = $self->c;
+  $c ? join('-',$id,$c->request_id) : $id;
+};
+#
+# ---
+
 has 'store_use_xtype'	=> ( is => 'ro', default => 0 );
 has 'store_autoLoad'		=> ( is => 'rw', default => sub {\0} );
 has 'reload_on_save' 	=> ( is => 'ro', default => 1 );
@@ -148,20 +165,7 @@ sub store_init_onrequest {
 	## --
 
 	$self->apply_extconfig(
-
-    ## ----
-    ## storeId disabled altogether for GitHub Issue #100
-    ##
-    ## storeId was used for optimization to support re-use of stores on the JavaScript
-    ## side via Ext.StoreMgr, but this caused caching problems starting with Perl 5.18.
-    ## Without this setting, every componenent/tab will have its own, independent 
-    ## Ext.data.Store, and these cannot be seen within Ext.StoreMgr. This willl lead to
-    ## a larger memory footprint in the client, but there is no way around it at this
-    ## point.
-    #storeId 					=> $self->storeId,
-    ##
-    ## ----
-
+    storeId 					=> $self->storeId,
 		api 						=> $self->store_api,
 		#baseParams 				=> $self->base_params,
 		writer					=> $self->store_writer,
@@ -844,39 +848,45 @@ has 'getStore' => ( is => 'ro', lazy => 1, default => sub {
 	return $self->JsonStore;
 });
 
-has 'getStore_code' => ( is => 'ro', lazy_build => 1 );
-sub _build_getStore_code {
-	my $self = shift;
-	return 'Ext.StoreMgr.lookup("' . $self->storeId . '")';
-}
 
-has 'getStore_func' => ( is => 'ro', lazy_build => 1 );
-sub _build_getStore_func {
-	my $self = shift;
-	return RapidApp::JSONFunc->new( 
-		raw => 1, 
-		func => $self->getStore_code
-	);
-}
+sub getStore_code   { join('','Ext.StoreMgr.lookup("',(shift)->storeId,'")') }
+sub getStore_func   { RapidApp::JSONFunc->new(raw=>1, func=>(shift)->getStore_code) }
+sub store_load_code { join('',(shift)->getStore_code,'.load()') }
 
-has 'store_load_code' => ( is => 'ro', lazy_build => 1 );
-sub _build_store_load_code {
-	my $self = shift;
-	return $self->getStore_code . '.load()';
-}
+#has 'getStore_code' => ( is => 'ro', lazy_build => 1 );
+#sub _build_getStore_code {
+#	my $self = shift;
+#  scream_color(RED,$self->storeId);
+#	return 'Ext.StoreMgr.lookup("' . $self->storeId . '")';
+#}
+#
+#has 'getStore_func' => ( is => 'ro', lazy_build => 1 );
+#sub _build_getStore_func {
+#	my $self = shift;
+#	return RapidApp::JSONFunc->new( 
+#		raw => 1, 
+#		func => $self->getStore_code
+#	);
+#}
+#
+#has 'store_load_code' => ( is => 'ro', lazy_build => 1 );
+#sub _build_store_load_code {
+#	my $self = shift;
+#	return $self->getStore_code . '.load()';
+#}
 
-# TODO: get a more reliable way to access the store - use local references and scope
-# instead of relying on a global ID:
-has 'store_load_fn' => ( is => 'ro', isa => 'RapidApp::JSONFunc', lazy => 1, default => sub {
-	my $self = shift;
-	return RapidApp::JSONFunc->new( raw => 1, func =>
-		'function() {' .
-			'var storeId = "' . $self->storeId . '";' .
-			'var storeByLookup = Ext.StoreMgr.lookup(storeId);' .
-			'if(storeByLookup) { storeByLookup.load(); }' .
-		'}'
-	);
-});
+## TODO: get a more reliable way to access the store - use local references and scope
+## instead of relying on a global ID:
+#has 'store_load_fn' => ( is => 'ro', isa => 'RapidApp::JSONFunc', lazy => 1, default => sub {
+#	my $self = shift;
+#	return RapidApp::JSONFunc->new( raw => 1, func =>
+#		'function() {' .
+#			'var storeId = "' . $self->storeId . '";' .
+#			'var storeByLookup = Ext.StoreMgr.lookup(storeId);' .
+#			'if(storeByLookup) { storeByLookup.load(); }' .
+#		'}'
+#	);
+#});
 
 
 has 'store_api' => ( is => 'ro', lazy => 1, default => sub {
