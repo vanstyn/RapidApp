@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+0.99661 2014-12-22
+    - Fix store exception handler regression from previoud release
+
 0.99660 2014-12-21
     - Fix caching bug in perl 5.18+ (#100)
     - Fixes for NavCore w/o AuthCore use case (in Organize Tree)
