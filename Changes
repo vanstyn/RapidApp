@@ -1,5 +1,9 @@
 Revision history for RapidApp
 
+0.99660 2014-12-21
+    - Fix caching bug in perl 5.18+ (#100)
+    - Fixes for NavCore w/o AuthCore use case (in Organize Tree)
+
 0.99652 2014-12-18
     - Removed hard requirement for 'quote_names' to be enabled on DBIC models (#99)
 
