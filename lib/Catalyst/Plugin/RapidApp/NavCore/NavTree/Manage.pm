@@ -120,6 +120,8 @@ sub fetch_nodes {
 		
 		return $nodes;
 	}
+  
+  return $self->next::method(@_) unless ($self->plugin_config->{user_views});
 	
 	return $self->my_searches_nodes if ($node =~ /my_searches$/);
 	
