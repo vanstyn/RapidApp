@@ -18,7 +18,7 @@ has 'plugin_config', is => 'ro', lazy => 1, default => sub {
   
   # user_views: Whether or not to enable saved views/searches on a per-user basis
   # (also requires Auth to be enabled)
-  $config->{user_views} //= 1;
+  $config->{user_views} //= $c->can('_authcore_load_plugins') ? 1 : 0;
   
   return $config;
 };
