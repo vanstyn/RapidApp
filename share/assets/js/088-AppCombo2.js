@@ -53,7 +53,18 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
         },{ scope: cmb, delay: 50 });
       },this);
     }
-
+    
+    
+    // Handle the case of initialization with an existing 'value' - trigger a load
+    // to resolve the display value. Skip if the display and value fields are the same
+    if(typeof this.value != 'undefined' && this.displayField != this.valueField){
+      this.on('render',function(cmb) {
+        if(!cmb.storeLoaded){
+          cmb.doQuery();
+        }
+      },this);
+    }
+    
 		if (this.baseParams) {
 			Ext.apply(this.getStore().baseParams,this.baseParams);
 		}
