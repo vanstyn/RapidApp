@@ -291,7 +291,7 @@ __PACKAGE__->config(
        # and is used/available to all modules which interact with them
        TableSpecs => {
           [%- FOREACH name IN source_names %]
-          [% name %] => {
+          '[% name %]' => {
           },
           [%- END -%]
 
