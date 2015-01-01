@@ -1801,7 +1801,10 @@ sub get_multi_relationship_column_cnf {
 
   # Allow old apps to turn off using this source as a rest origin and force fallback to
   # the fugly, original loadCnf inlineLink
-	my $use_rest = $self->ResultClass->TableSpec_get_conf('allow_rel_rest_origin');
+	my $use_rest = 
+    $rel_data->{attrs}{allow_rel_rest_origin}
+    // try{$rel_data->{class}->TableSpec_get_conf('allow_rel_rest_origin')};
+    
   $use_rest = 1 unless (defined $use_rest);
 	if($use_rest && $orgnCol && $open_url) {
 		$conf->{renderer} = jsfunc(
