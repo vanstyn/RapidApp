@@ -665,7 +665,11 @@ Ext.ux.RapidApp.showAjaxError = function(title,msg,options,data) {
 }
 
 Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
-  if (!response || !response.getResponseHeader) return;
+  if (!response || !response.getResponseHeader || response.ajaxExceptionChecked){
+    return;
+  }
+  
+  response.ajaxExceptionChecked = true;
 
   try {
     var exception = response.getResponseHeader('X-RapidApp-Exception');
@@ -679,10 +683,18 @@ Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
     
     var warning = response.getResponseHeader('X-RapidApp-Warning');
     if (warning) {
-      var data = Ext.decode(warning);
+      var data;
+        try        { data = Ext.decode(warning); }
+        catch(err) { data = { title: 'Warning', msg: warning }; }
+        
       var title = data.title || 'Warning';
       var msg = data.msg || 'Unknown (X-RapidApp-Warning)';
-      Ext.ux.RapidApp.errMsgHandler(title,msg,data.as_text);
+      Ext.ux.RapidApp.errMsgHandler(title,msg,data.as_text,{
+        win_title: 'Warning',
+        warn_icon: true,
+        win_width: 500,
+        win_height: 300
+      });
     }
     
     var eval_code = response.getResponseHeader('X-RapidApp-EVAL');

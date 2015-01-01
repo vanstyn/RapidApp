@@ -293,6 +293,23 @@ sub hashnav_redirect {
   return $c->detach;
 }
 
+# This is very old, but was originally within the Module Controller role:
+sub set_response_warning {
+  my ($c,$warn) = @_;
+
+  $warn = {
+    title	=> 'Warning',
+    msg	=> $warn
+  } unless (ref $warn);
+
+  die "Invalid argument passed to set_response_warning" unless (
+    ref($warn) eq 'HASH' &&
+    defined $warn->{msg}
+  );
+
+  $c->res->header( 'X-RapidApp-Warning' => encode_json_utf8($warn) );
+}
+
 
 around 'finalize_error' => sub {
   my ($orig, $c, @args) = @_;

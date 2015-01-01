@@ -160,7 +160,8 @@ Ext.ux.RapidApp.errMsgHandler = function(title,msg) {
 */
 
 
-Ext.ux.RapidApp.errMsgHandler = function(title,msg,as_text) {
+Ext.ux.RapidApp.errMsgHandler = function(title,msg,as_text,extra_opts) {
+  extra_opts = extra_opts || {};
 	var win;
 	
 	var body = as_text ? '<pre>' + Ext.util.Format.nl2br(msg) + '</pre>' : msg;
@@ -176,12 +177,15 @@ Ext.ux.RapidApp.errMsgHandler = function(title,msg,as_text) {
       '<hr color="#808080" size="1">'
     );
   }
+  else if(extra_opts.warn_icon) {
+    headCls.push('ra-icon-warning-32x32');
+  }
 	
 	win = new Ext.Window({
 		manager: Ext.ux.RapidApp.CustomPromptWindowGroup,
-    title: 'Exception',
-		width: 600,
-		height: 400,
+    title: extra_opts.win_title || 'Exception',
+		width: extra_opts.win_width || 600,
+		height: extra_opts.win_height || 400,
 		modal: true,
 		closable: true,
 		layout: 'fit',

@@ -463,19 +463,8 @@ sub render_data {
 
 requires 'content';
 
-sub set_response_warning {
-	my $self = shift;
-	my $warn = shift;
-	
-	$warn = {
-		title	=> 'Warning',
-		msg	=> $warn
-	} unless (ref($warn));
-	
-	die "Invalid argument passed to set_response_warning" unless (ref($warn) eq 'HASH' and defined $warn->{msg});
-	
-	return $self->c->response->header('X-RapidApp-Warning' => $self->json->encode($warn));
-}
+sub set_response_warning { (shift)->c->set_response_warning(@_) }
+
 
 # if response_callback_scoped is true when set_response_callback is called, the
 # function will be called with the scope (this reference) of the Ext.data.Connection
