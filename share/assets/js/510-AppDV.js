@@ -417,6 +417,11 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			// Setup keymaps for Enter and Esc:
 			Field.on('specialkey',function(field,e) {
 				if(e.getKey() == e.ENTER) {
+          // triggerBlur is on trigger/combos, and needs to be called to call any needed
+          // logic to apply the raw field value 
+          if(Ext.isFunction(field.triggerBlur)) {
+            field.triggerBlur();
+          }
 					if(! field.isValid()) { return; }
 					saveEndEdit.call(this);
 				}

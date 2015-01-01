@@ -17,10 +17,12 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
 
     // Reload every time, as per the Ext docs:
     this.on('beforequery',function(qe){
+      this.setQueryRunning();
       delete qe.combo.lastQuery;
     },this);
 
     this.store.on('beforeload',function(ds){
+      this.setQueryRunning();
       var v = this.getValue();
       if(v && v != '') {
         ds.baseParams['valueqry'] = v;
@@ -42,7 +44,10 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
           this.setValue(this.value);
         }
       }
+      this.setQueryNotRunning();
     },this);
+    
+    this.store.on('exception',this.setQueryNotRunning,this);
 
     // Force the combo to show/hide the list on click just like a normal 
     // dropdown would if not in edit mode
@@ -69,9 +74,48 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
 			Ext.apply(this.getStore().baseParams,this.baseParams);
 		}
 	},
+  
+  initEvents: function() {
+    Ext.ux.RapidApp.AppCombo2.ComboBox.superclass.initEvents.call(this);
+    this.keyNav.enter = function(e) {
+      if (!this.queryRunning && !this.store.proxy.getConnection().isLoading()) {
+        this.onViewClick();
+      }
+    };
+  },
+  
+  onViewClick: function() {
+    if(this.is_user_editable || this.view.selected.getCount() > 0) {
+      return Ext.ux.RapidApp.AppCombo2.ComboBox.superclass.onViewClick.apply(this,arguments);
+    }
+  },
+  
+  setQueryRunning: function(max) {
+    max = max || 2000;
+    this.queryRunning = true;
+    this.clearRunningTask = this.clearRunningTask || new Ext.util.DelayedTask(function(){
+      this.setQueryNotRunning();
+    },this);
+    this.clearRunningTask.delay(max);
+  },
+  
+  setQueryNotRunning: function() {
+    this.queryRunning = false;
+  },
+  
+  onKeyUp: function(e) {
+    var k = e.getKey();
+    if(this.editable !== false && this.readOnly !== true && (k == e.BACKSPACE || !e.isSpecialKey())){
+      this.view.clearSelections(true);
+      this.setQueryRunning();
+    }
+    return Ext.ux.RapidApp.AppCombo2.ComboBox.superclass.onKeyUp.call(this,e);
+  },
 	
   setNoneDomValue: function(){
-    this.el.dom.value = this.selectNoneValue;
+    if(this.el && this.el.dom) {
+      this.el.dom.value = this.selectNoneValue;
+    }
   },
 
   getValue: function(){
@@ -172,7 +216,6 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
 		}
 		return Ext.ux.RapidApp.AppCombo2.ComboBox.superclass.onSelect.apply(this,arguments);
 	}
-
 });
 Ext.reg('appcombo2', Ext.ux.RapidApp.AppCombo2.ComboBox);
 

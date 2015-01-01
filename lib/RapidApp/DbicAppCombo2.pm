@@ -104,6 +104,8 @@ sub BUILD {
     listEmptyText    => '',
     triggerClass     => 'x-form-search-trigger',
     no_click_trigger => \1,
+    is_user_editable => \1,
+    autoSelect       => \0
   ) if ($self->user_editable); 
 }
 
