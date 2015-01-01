@@ -24,6 +24,9 @@ has 'tt_include_path' => (
 # if true, page will be wrapped into a tab panel with an extra "Data" tab (RapidApp::DbicAppPropertyPage)
 has 'tabify_data', is => 'ro', isa => 'Bool', default => 0;
 
+has 'data_tab_class', is => 'ro', isa => 'Str', default => sub {'RapidApp::DbicAppPropertyPage'};
+has 'data_tab_params', is => 'ro', isa => 'HashRef', default => sub {{}};
+
 has '+allow_restful_queries', default => 1;
 
 sub BUILD {
@@ -38,14 +41,28 @@ sub BUILD {
 	
 	if($self->tabify_data) {
 		$self->apply_init_modules( data_tab => {
-			class => 'RapidApp::DbicAppPropertyPage',
+			class => $self->data_tab_class,
 			params => {
+        defer_to_store_module => $self,
 				ResultSource => $self->ResultSource,
-				get_ResultSet => $self->get_ResultSet, 
+				#get_ResultSet => $self->get_ResultSet, 
 				TableSpec => $self->TableSpec,
 				include_colspec => $self->include_colspec,
+        updatable_colspec => $self->updatable_colspec,
 				allow_restful_queries => $self->allow_restful_queries,
-				get_local_args => sub { $self->local_args }
+				get_local_args => sub { $self->local_args },
+        $self->persist_all_immediately ? (
+          persist_all_immediately => 1 
+         ) : (
+          persist_immediately => $self->persist_immediately 
+        ),
+        %{ $self->data_tab_params },
+        onBUILD => sub {
+          my $o = shift;
+          # Turn off autoScroll because scrolling is handled by the parent
+          $o->apply_extconfig( autoScroll => \0 );
+          $self->data_tab_params->{onBUILD}->($o) if (exists $self->data_tab_params->{onBUILD});
+        }
 			}
 		});
 	}
