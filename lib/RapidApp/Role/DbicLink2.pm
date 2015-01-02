@@ -683,10 +683,34 @@ sub apply_first_records {
 }
 
 sub rs_all { 
-	my $self = shift;
-	my $Rs = shift;
-	#$self->c->stash->{query_start} = [gettimeofday]; 
-	return $Rs->all;
+  my ($self, $Rs) = @_;
+  my $want = wantarray;
+
+  my @ret = ();
+  try {
+    @ret = $want ? $Rs->all : scalar $Rs->all
+  }
+  catch {
+    my $err = shift;
+
+    my $dbh = $Rs->result_source->schema->storage->dbh;
+    my $LRL = $dbh->{LongReadLen} || 80;
+
+    if($LRL == 80 && "$err" =~ /or LongReadLen too small/) {
+      local $dbh->{LongReadLen} = 1024*256;
+      warn join("\n",'','',
+        '  Caught DBI LongTruncOk/LongReadLen exception and LongReadLen not configured --',
+        "  Trying over with really large LongReadLen : $dbh->{LongReadLen}",
+        '  You need to set this to a real/appropriate value for your database','',''
+      );
+      @ret = $want ? $self->rs_all($Rs) : scalar $self->rs_all($Rs)
+    }
+    else {
+      die $err
+    }
+  };
+
+  $want ? @ret : $ret[0]
 }
 
 sub rs_count { 
