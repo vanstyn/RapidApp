@@ -1,5 +1,12 @@
 Revision history for RapidApp
 
+0.99663 2015-01-01
+    - Auto retry on DBI LongReadLen exception (DbicLink)
+    - Improvements to Ajax error/warning dialogs
+    - AppCombo: improvements to "Enter" key event behavior
+    - DbicTemplate: fixes/improvements to 'tabify_data' mode
+    - Misc internal bug fixes
+
 0.99662 2014-12-30
     - Fix possible Bareword exception in app cfgs generated via ForRapidDbic
       bootstrap helper (discussed in PR #102)
