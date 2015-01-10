@@ -28,7 +28,8 @@ has 'request_id' => ( is => 'ro', default => sub { (shift)->rapidApp->requestCou
 
 sub mount_url {
   my $c = shift;
-  try{ $c->req->env->{SCRIPT_NAME} } || ''
+  my $pfx = try{ $c->req->env->{SCRIPT_NAME} } || '';
+  $pfx eq '/' ? '' : $pfx
 }
 
 # ---
