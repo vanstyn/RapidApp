@@ -968,8 +968,7 @@ sub chain_Rs_req_base_Attr {
 	my $columns = $self->get_req_columns;
 	
 	my $used_aliases = {};
-	my $dbic_name_map = {};
-	
+
 	for my $col (@$columns) {
 		my $dbic_name = $self->resolve_dbic_colname($col,$attr->{join});
 		
@@ -985,15 +984,13 @@ sub chain_Rs_req_base_Attr {
 			$dbic_name = $alias . '_' . $count . '.' . $field if($count > 1);
 		}
 		
-		$dbic_name_map->{$col} = $dbic_name;
-		
 		push @{$attr->{'select'}}, $dbic_name;
 		push @{$attr->{'as'}}, $col;
 	}
 	
 	if ($params->{sort} and $params->{dir}) {
 		my $sort = lc($params->{sort});
-		my $sort_name = $dbic_name_map->{$sort} || $self->resolve_dbic_render_colname($sort,$attr->{join});
+		my $sort_name = $self->resolve_dbic_render_colname($sort,$attr->{join});
 		if (ref $sort_name eq 'HASH') {
 			die "Can't sort by column if it doesn't have an SQL alias"
 				unless exists $sort_name->{-as};
