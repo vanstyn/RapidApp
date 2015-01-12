@@ -1,5 +1,12 @@
 Revision history for RapidApp
 
+0.99664 2015-01-12
+    - Fix scrollbar issue in Organize Navtree (#104)
+    - Fix sort issue with single col rels sharing the real column name (#105)
+    - Handle special \'true' and \'false' ScalarRef vals in JSON MixedEncoder
+    - Require Catalyst 5.90080 (dist.ini)
+    - Properly handle the case of the Plack env var SCRIPT_NAME='/' (instead of '')
+
 0.99663 2015-01-01
     - Auto retry on DBI LongReadLen exception (DbicLink)
     - Improvements to Ajax error/warning dialogs
