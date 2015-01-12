@@ -45,7 +45,8 @@ sub BUILD {
 	$self->apply_extconfig(
 		border => \1,
     tabTitle => 'Organize Navtree',
-    tabIconCls => 'ra-icon-tree-edit'
+    tabIconCls => 'ra-icon-tree-edit',
+    autoScroll => \1
 	);
 	
 	# Automatically reload the main nav tree when closed:
@@ -354,6 +355,8 @@ sub copy_node {
 sub enforce_valid_new_search_name {
 	my $self = shift;
 	my $name = shift;
+  
+  return unless ($self->c->can('user'));
 	
 	my $uid = $self->c->user->get_column('id');
 	
