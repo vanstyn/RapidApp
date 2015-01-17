@@ -60,7 +60,6 @@ has 'base_url' => (
 #has 'extra_actions'			=> ( is => 'ro', 	default => sub {{}} );
 has 'default_action'			=> ( is => 'ro',	default => undef );
 has 'render_as_json'			=> ( is => 'rw',	default => 1, traits => [ 'RapidApp::Role::PerRequestVar' ]  );
-has 'auto_web1'				=> ( is => 'rw',	default => 0 );
 
 # NEW: if true, sub-args (of url path) are passed in even if the sub path does
 # not exist as a defined action or sub-module. TODO: refactor and use built-in Catalyst
@@ -340,12 +339,17 @@ sub controller_dispatch {
     $c->res->status(404);
     return $c->detach;
 	}
-  # TODO: this logic is old and may no longer be valid...
-	elsif ($ct ne 'JSON' && $ct ne 'text/x-rapidapp-form-response' && $self->auto_web1) {
-		$self->c->log->debug("--> " . GREEN . BOLD . "[web1_content]" . CLEAR . ". (no action)")
+  # --
+  # TODO: this is the last remaining logic from the old "web1" stuff (see the v0.996xx branch for
+  #       the last state of that code before it was unfactored)
+  #
+  #       this needs to be merged with the next, newer codeblock (render_viewport stuff...)
+	elsif ($self->auto_viewport && !$self->c->is_ra_ajax_req) {
+		$self->c->log->debug("--> " . GREEN . BOLD . "[auto_viewport_content]" . CLEAR . ". (no action)")
       if($self->c->debug);
-		return $self->web1_content;
+		return $self->viewport;
 	}
+  # --
 	else {
     my $rdr_vp = $self->c->stash->{render_viewport};
     if($rdr_vp && $rdr_vp eq 'printview' && $self->can('printview')) {

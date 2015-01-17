@@ -51,31 +51,6 @@ sub init_onrequest {
 	);
 }
 
-sub web1_render_extcfg {
-	my ($self, $renderCxt, $extCfg)= @_;
-	$renderCxt->renderer->isa('RapidApp::Web1RenderContext::ExtCfgToHtml')
-		or die "Renderer for automatic ext->html conversion must be a Web1RenderContext::ExtCfg2ToHtml";
-	
-	# get the cfg if it wasn't gotten already
-	$extCfg ||= $self->get_complete_extconfig;
-	
-	# load the data for the form
-	my $storeFetchParams= $extCfg->{store}{parm}{baseParams};
-	my $data= $self->Module('store')->read_raw($storeFetchParams);
-	
-	# if we got it, fill in the values
-	if (scalar(@{$data->{rows}})) {
-		$self->mergeStoreValues($extCfg->{items}, $data->{rows}->[0]);
-	}
-	
-	# now render using the renderer for xtype "form"
-	my $formRenderer= $renderCxt->renderer->findRendererForXtype('form');
-	$formRenderer->renderAsHtml($renderCxt, $extCfg);
-	
-	# for debugging, show the complete contents of the extCfg hash
-	($ENV{DEBUG_CFG_OBJECTS} || $self->c->req->params->{DEBUG_CFG_OBJECTS})
-		and $renderCxt->data2html($extCfg);
-}
 
 sub mergeStoreValues {
 	my ($self, $items, $row)= @_;

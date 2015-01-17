@@ -55,7 +55,6 @@ has 'instance_id' => (
 sub BUILD {
 	my $self= shift;
 	$self->apply_actions(viewport => 'viewport');
-	$self->apply_actions('web1.0' => 'web1');
 	$self->apply_actions(printview => 'printview');
   
   $self->apply_init_modules(%{$self->auto_init_modules})
@@ -99,21 +98,6 @@ sub content {
 	die "Unimplemented";
 }
 
-sub web1_content {
-	my $self= shift;
-	return $self->auto_viewport? $self->viewport : $self->web1;
-}
-
-sub web1 { # public action
-	my $self= shift;
-	$self->c->view('RapidApp::Web1Render')->render({module => $self});
-	return 1;
-}
-
-sub web1_render {
-	my ($self, $renderCxt)= @_;
-	$self->c->error("No web1_render defined for ".(ref $self));
-}
 
 sub viewport {
 	my $self= shift;

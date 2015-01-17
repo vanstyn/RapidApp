@@ -43,7 +43,6 @@ has 'tt_include_path' => (
 );
 
 has 'tt_file' => ( is => 'ro', isa => 'Str', required => 1 );
-has 'tt_file_web1' => ( is => 'ro', isa => 'Maybe[Str]', default => undef );
 
 
 has 'submodule_config_override' => (
@@ -136,7 +135,6 @@ sub xtemplate_cnf {
 	};
 	
 	my $tt_file = $self->tt_file;
-	$tt_file = $self->tt_file_web1 if ($self->tt_file_web1 and $self->is_web1_request);
 	
 	my $Template = Template->new({ INCLUDE_PATH => $self->tt_include_path });
 	$Template->process($tt_file,$tt_vars,\$html_out)
@@ -211,29 +209,6 @@ sub read_records {
 }
 
 
-sub web1_render {
-	my ($self, $renderCxt)= @_;
-	
-	$self->c->stash->{template} = 'templates/rapidapp/ext_page.tt';
-	
-	my $html_out = $self->web1_string_content;
-	
-	my @classes = ();
-	push @classes, 'no_create';
-	push @classes, 'no_update';
-	push @classes, 'no_destroy';
-
-	$html_out = '<div class="' . join(' ',@classes) . '">' . $html_out . '</div>';
-	
-	$renderCxt->write($html_out);
-}
-
-sub web1_string_content {
-	my $self = shift;
-	my $xtemplate = $self->xtemplate_cnf;
-	return $self->render_xtemplate_with_tt($xtemplate);
-}
-
 # This code is not yet fully working. It attemps to process an Ext.XTemplate with TT
 sub render_xtemplate_with_tt {
 	my $self = shift;
@@ -263,7 +238,6 @@ sub render_xtemplate_with_tt {
 				my ($junk,$submod) = split(/appdv-submodule\s+/,$class);
 				if ($submod) {
 					my $Module = $self->Module($submod);
-					$inner .= $Module->web1_string_content if ($Module and $Module->can('web1_string_content'));
 				}
 				
 			}

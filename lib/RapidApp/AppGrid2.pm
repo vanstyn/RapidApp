@@ -369,67 +369,6 @@ sub set_columns_visible {
 }
 
 
-sub web1_render_extcfg {
-	my ($self, $renderCxt, $extCfg)= @_;
-	
-	# simulate a get request to the grid's store
-	my $storeFetchParams= $extCfg->{store}{parm}{baseParams};
-	my $origParams= $self->c->req->params;
-	my $data;
-	try {
-		$self->c->req->params($storeFetchParams);
-		$data= $self->Module('store')->read();
-		$self->c->req->params($origParams);
-	}
-	catch {
-		$self->c->req->params($origParams);
-		die $_;
-	};
-	
-	my $cols= $extCfg->{columns};
-	defined $cols && ref $cols eq 'ARRAY'
-		or $cols= [];
-	
-	# filter hidden columns
-	$cols= [ grep { !$_->{hidden} || (ref $_->{hidden} && !${$_->{hidden}}) } @$cols ];
-	
-	# now render it using the xtype_panel code
-	$renderCxt->renderer->render_xtype_panel($renderCxt, {
-		%$extCfg,
-		bbar => undef, # skip bottom bar, since web 1.0 doesn't need the buttons
-		bodyContent => sub { $self->web1_render_table($renderCxt, $extCfg, $cols, $data->{rows}) },
-	});
-}
-
-sub web1_render_table {
-	my ($self, $renderCxt, $extCfg, $cols, $rows)= @_;
-	$renderCxt->incCSS('/static/rapidapp/css/web1_ExtJSGrid.css');
-	
-	# write table
-	$renderCxt->write("<div class='x-grid3'><div class='x-grid3-viewport'><table style='width:100%'>\n");
-	
-	# write header cells
-	$renderCxt->write('<tr class="x-grid3-hd-row x-grid3-header">');
-	$renderCxt->write(join('', map { '<th class="x-grid3-hd x-grid3-cell" width="'.$_->{width}.'"><div class="x-grid3-hd-inner">'.$_->{header}.'</div></th>' } @$cols ));
-	$renderCxt->write("</tr>\n");
-	
-	# write data cells
-	if (scalar(@$rows)) {
-		for my $row (@$rows) { $self->web1_render_table_row($renderCxt, $extCfg, $cols, $row); }
-	}
-	else {
-		my $span= scalar(@$cols) > 1? ' colspan="'.scalar(@$cols).'"' : '';
-		my $emptyText= defined $extCfg->{viewConfig} && $extCfg->{viewConfig}{emptyText};
-		$renderCxt->write("<tr><td class='x-grid-empty'$span>".$emptyText."</td></tr>");
-	}
-	
-	$renderCxt->write("</table></div></div>\n");
-}
-
-sub web1_render_table_row {
-	my ($self, $renderCxt, $extCfg, $cols, $row)= @_;
-	$renderCxt->write('<tr>'.join('', map { '<td class="x-grid3-col x-grid3-cell">'.$row->{$_->{dataIndex}}.'</td>' } @$cols )."</tr>\n");
-}
 
 #### --------------------- ####
 

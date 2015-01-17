@@ -55,7 +55,6 @@ sub BUILD {
 		$coderef->($self);
 	}
 	
-	$self->auto_web1(1);
 	$self->auto_viewport(1);
 	
 	## ---
