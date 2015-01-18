@@ -13,7 +13,6 @@ use Clone qw(clone);
 use RapidApp::JSON::MixedEncoder qw(encode_json);
 use Try::Tiny;
 use Time::HiRes qw(gettimeofday tv_interval);
-use Text::SimpleTable;
 
 sub scream {
 	local $_ = caller_data(3);

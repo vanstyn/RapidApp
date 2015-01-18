@@ -2,7 +2,6 @@ package RapidApp::View::HttpStatus;
 
 use strict;
 use warnings;
-use HTTP::Status;
 use RapidApp::Include 'sugar', 'perlutil';
 
 use base 'Catalyst::View::TT';
@@ -59,7 +58,7 @@ sub process {
 	}
 	
 	$c->stash->{statusCode}      ||= $stat;
-	$c->stash->{shortStatusText} ||= HTTP::Status::status_message($stat);
+	$c->stash->{shortStatusText} ||= $c->stash->{statusCode}; #HTTP::Status::status_message($stat);
 	$c->stash->{longStatusText}  ||= $_longMessages{$stat} || "<no details>";
 	$c->stash->{errorViewPath}   ||= $c->rapidApp->errorViewPath;
 	
