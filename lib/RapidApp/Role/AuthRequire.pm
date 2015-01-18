@@ -29,7 +29,7 @@ around 'Controller' => sub {
 		$self->c->res->header('X-RapidApp-Authenticated' => 0);
 		
 		if ($self->auto_prompt && $self->c->stash->{requestContentType} ne 'JSON') {
-			my $authPath= $self->auth_module_path || $c->rapidApp->appAuthPath;
+			my $authPath= $self->auth_module_path;
 			my $authModule;
 			defined $authPath && length($authPath) > 1 && ($authModule= $c->rapidApp->module($authPath))
 				or die "Misconfigured auth_module_path";

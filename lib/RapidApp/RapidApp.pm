@@ -41,8 +41,6 @@ sub add_postprocessing_task {
 	push @{$self->postprocessing_tasks}, @_;
 }
 
-has 'appAuthPath'   => ( is => 'rw', isa => 'Str' ); # AppAuth
-
 sub BUILD {
 	my $self = shift;
   $RapidApp::CATALYST_CLASS = $self->_app;
