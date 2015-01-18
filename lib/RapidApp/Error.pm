@@ -6,7 +6,6 @@ use overload '""' => \&_stringify_object; # to-string operator overload
 use Data::Dumper;
 use DateTime;
 use Devel::StackTrace::WithLexicals;
-use RapidApp::Data::DeepMap;
 use Scalar::Util 'blessed', 'reftype';
 
 =head1 NAME
