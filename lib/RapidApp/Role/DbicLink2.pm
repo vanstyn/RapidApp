@@ -6,7 +6,6 @@ use RapidApp::Include qw(sugar perlutil);
 use RapidApp::TableSpec::DbicTableSpec;
 use Clone qw(clone);
 use Text::Glob qw( match_glob );
-use Hash::Diff qw( diff );
 use Text::TabularDisplay;
 use Time::HiRes qw(gettimeofday tv_interval);
 use RapidApp::Data::Dmap qw(dmap);

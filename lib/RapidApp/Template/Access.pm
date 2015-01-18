@@ -5,7 +5,7 @@ use warnings;
 use RapidApp::Include qw(sugar perlutil);
 
 use Moo;
-use MooX::Types::MooseLike::Base 0.23 qw(:all);
+use Types::Standard qw(:all);
 
 =pod
 

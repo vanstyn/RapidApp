@@ -19,19 +19,13 @@ use Clone qw(clone);
 
 
 our @EXPORT = qw(
-	sessvar perreq asjson rawjs mixedjs ashtml rawhtml usererr userexception override_defaults 
-	merge_defaults DEBUG jsfunc blessed merge hasarray hashash infostatus clone
+  perreq asjson rawjs mixedjs ashtml rawhtml usererr userexception override_defaults 
+  merge_defaults DEBUG jsfunc blessed merge hasarray hashash infostatus clone
 );
 
 # Module shortcuts
 #
 
-# a per-session variable, dynamically loaded form the session object on each request
-sub sessvar {
-	my ($name, %attrs)= @_;
-	push @{$attrs{traits}}, 'RapidApp::Role::SessionVar';
-	return ( $name, %attrs );
-}
 
 # a per-request variable, reset to default or cleared at the end of each request execution
 sub perreq {
