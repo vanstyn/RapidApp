@@ -7,7 +7,8 @@ use warnings;
 
 use RapidApp::Include qw(sugar perlutil);
 
-use MooseX::Types::Moose qw/ArrayRef Str ClassName Undef/;
+use Types::Standard qw(:all);
+
 use Catalyst::Utils;
 use Module::Runtime;
 use Digest::MD5 qw(md5_hex);
