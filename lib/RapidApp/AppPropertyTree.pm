@@ -18,8 +18,6 @@ extends 'RapidApp::AppBase';
 use Try::Tiny;
 use Term::ANSIColor qw(:constants);
 
-use RapidApp::ExtJS;
-
 use RapidApp::Tree;
 
 our $VERSION = '0.1';

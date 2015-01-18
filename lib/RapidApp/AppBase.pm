@@ -17,7 +17,6 @@ use Clone;
 #use JSON;
 
 use Try::Tiny;
-use RapidApp::ExtJS::MsgBox;
 use String::Random;
 
 use Term::ANSIColor qw(:constants);

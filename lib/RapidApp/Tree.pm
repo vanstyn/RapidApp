@@ -12,10 +12,8 @@ package RapidApp::Tree;
 use strict;
 use Moose;
 
-
-use RapidApp::ExtJS;
-use RapidApp::ExtJS::TreeNode;
-use RapidApp::ExtJS::TreePanel;
+use RapidApp::Tree::TreeNode;
+use RapidApp::Tree::TreePanel;
 
 our $VERSION = '0.1';
 
@@ -35,14 +33,14 @@ has 'treewalk_coderef' 				=> ( is => 'ro',	required 	=> 0,				isa => 'CodeRef',
 sub _build_TreePanel {
 	my $self = shift;
 
-	my $RootNode = RapidApp::ExtJS::TreeNode->new({
+	my $RootNode = RapidApp::Tree::TreeNode->new({
 		nodeType		=> 'async',
 		id				=> 'root',
 		#text			=> $self->title,
 		text			=> 'root_node',
 		expandable	=> 1,
 		expanded		=> 1,
-	}) or die 'Failed to create RapidApp::ExtJS::TreeNode object';
+	}) or die 'Failed to create RapidApp::Tree::TreeNode object';
 
 	foreach my $node_cfg (@{$self->TreeConfig}) {
 		$RootNode->children($self->TreeNode_from_cfg($node_cfg)->Params);
@@ -65,7 +63,7 @@ sub _build_TreePanel {
 	
 	$config->{click_handler_func} = $self->click_handler if ($self->has_click_handler);
 
-	return RapidApp::ExtJS::TreePanel->new($config);
+	return RapidApp::Tree::TreePanel->new($config);
 }
 
 
@@ -123,7 +121,7 @@ sub TreeNode_from_cfg {
 	
 	$self->expand_nodes->{$path} = 1 if ($node_cfg->{expand});
 	
-	my $Node = RapidApp::ExtJS::TreeNode->new($cfg) or return undef;
+	my $Node = RapidApp::Tree::TreeNode->new($cfg) or return undef;
 	
 	return $Node unless (defined $node_cfg->{children} and ref($node_cfg->{children}) eq 'ARRAY');
 	

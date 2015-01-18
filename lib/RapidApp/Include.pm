@@ -77,13 +77,7 @@ sub rapidapp_base {
 	calleruse 'RapidApp::JSON::MixedEncoder';
 	calleruse 'RapidApp::JSON::RawJavascript';
 	calleruse 'RapidApp::JSON::ScriptWithData';
-  calleruse 'RapidApp::Web1RenderContext';
 	calleruse 'RapidApp::Functions';
-}
-
-sub extjs {
-	calleruse 'RapidApp::ExtJS::StaticCombo';
-	# we will likely want to add a bunch more here, but I don't know which ones are in common use
 }
 
 sub sugar {

@@ -21,9 +21,6 @@ use Clone;
 
 our $VERSION = '0.1';
 
-use RapidApp::ExtJS;
-use RapidApp::ExtJS::DynGrid;
-
 use RapidApp::JSONFunc;
 
 use RapidApp::Tree;
