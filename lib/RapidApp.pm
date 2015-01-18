@@ -5,11 +5,10 @@ use warnings;
 # Min supported Perl is currently v5.10
 use 5.010;
 
-our $VERSION = 0.99699_05;
+our $VERSION = 0.99699_06;
 
 # ABSTRACT: Turnkey ajaxy webapps
 
-use Carp::Clan;
 use Time::HiRes qw(gettimeofday);
 use File::ShareDir qw(dist_dir);
 
@@ -25,9 +24,6 @@ sub share_dir {
 # simple/global API access within all code dispatched by RapidApp
 # to be able to identify if there is a current request, and if so
 # get the $c object without fuss.
-# Note: this is/was also provided by the 'RapidApp::ScopedGlobals' system
-# but that system is more complex than it needed to be and is planned
-# for deprication/removal in the future.
 our $ACTIVE_REQUEST_CONTEXT = undef;
 
 sub active_request_context { $ACTIVE_REQUEST_CONTEXT }
