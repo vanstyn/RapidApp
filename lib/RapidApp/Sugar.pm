@@ -9,8 +9,6 @@ use RapidApp::JSON::RawJavascript;
 use RapidApp::HTML::RawHtml;
 use RapidApp::Responder::UserError;
 use RapidApp::Handler;
-use RapidApp::DefaultOverride qw(override_defaults merge_defaults);
-use RapidApp::Debug;
 use HTML::Entities;
 use Scalar::Util qw(blessed);
 use Hash::Merge qw( merge );
@@ -19,8 +17,8 @@ use Clone qw(clone);
 
 
 our @EXPORT = qw(
-  perreq asjson rawjs mixedjs ashtml rawhtml usererr userexception override_defaults 
-  merge_defaults jsfunc blessed merge hasarray hashash infostatus clone
+  perreq asjson rawjs mixedjs ashtml rawhtml usererr userexception 
+  jsfunc blessed merge hasarray hashash infostatus clone
 );
 
 # Module shortcuts
