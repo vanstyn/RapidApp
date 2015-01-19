@@ -72,7 +72,7 @@ sub process {
 	
 	if ($c->stash->{exception}) {
 		my $err= $c->stash->{exception};
-		DEBUG('controller', 'JSON->process( exception == '.$err.' )');
+		$c->log->debug('controller: JSON->process( exception == '.$err.' )') if ($c->debug);
 		
 		$c->res->header('X-RapidApp-Exception' => 1);
 		$c->res->status(500);
@@ -150,7 +150,6 @@ sub setJsonBody {
 	
 	my $encoding= $c->stash->{encoding} || $self->encoding;
 	my $rct= $c->stash->{requestContentType};
-	#DEBUG('controller', 'rendering json for request content type ', $rct, json => $json);
 	
 	(!ref $json) or $json= $self->encoder->encode($json);
 	

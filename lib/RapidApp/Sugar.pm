@@ -20,7 +20,7 @@ use Clone qw(clone);
 
 our @EXPORT = qw(
   perreq asjson rawjs mixedjs ashtml rawhtml usererr userexception override_defaults 
-  merge_defaults DEBUG jsfunc blessed merge hasarray hashash infostatus clone
+  merge_defaults jsfunc blessed merge hasarray hashash infostatus clone
 );
 
 # Module shortcuts
@@ -192,17 +192,7 @@ sub userexception {
 	return RapidApp::Error->new(\%args);
 }
 
-# Emulate legacy calls to 'DEBUG' for now:
-sub DEBUG {
-  my @args = @_;
-  my $c = RapidApp->active_request_context;
-  if($c) {
-    $c->log->debug(join(' ',@args)) if ($c->debug);
-  }
-  else {
-    warn '[RapidApp::Sugar::DEBUG]: ' . join(' ',@args) . "\n";
-  }
-}
+
 
 # Suger function sets up a Native Trait ArrayRef attribute with useful
 # default accessor methods

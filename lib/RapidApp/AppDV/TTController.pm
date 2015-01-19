@@ -3,7 +3,7 @@ use Moose;
 
 use RapidApp::Include qw(sugar perlutil);
 
-use RapidApp::RecAutoload;
+use RapidApp::AppDV::RecAutoload;
 
 has 'AppDV' => (
 	is => 'ro',
@@ -150,7 +150,7 @@ has 'field' => (
 	lazy => 1,
 	default => sub {
 		my $self = shift;
-		return RapidApp::RecAutoload->new( process_coderef => sub {
+		return RapidApp::AppDV::RecAutoload->new( process_coderef => sub {
 			my $name = shift;
 			my $Column = $self->AppDV->get_column($name) or return '';
 			$self->FieldCmp->{$Column->name} = $self->AppDV->json->encode($Column->get_field_config);
@@ -166,10 +166,10 @@ has 'field' => (
 has 'edit_field' => (
 	is => 'ro',
 	lazy => 1,
-	isa => 'RapidApp::RecAutoload',
+	isa => 'RapidApp::AppDV::RecAutoload',
 	default => sub {
 		my $self = shift;
-		return RapidApp::RecAutoload->new( process_coderef => sub {
+		return RapidApp::AppDV::RecAutoload->new( process_coderef => sub {
 			my $name = shift;
 			my $display = shift;
 			$display = $name unless ($display);
@@ -186,10 +186,10 @@ has 'edit_field' => (
 has 'edit_bigfield' => (
 	is => 'ro',
 	lazy => 1,
-	isa => 'RapidApp::RecAutoload',
+	isa => 'RapidApp::AppDV::RecAutoload',
 	default => sub {
 		my $self = shift;
-		return RapidApp::RecAutoload->new( process_coderef => sub {
+		return RapidApp::AppDV::RecAutoload->new( process_coderef => sub {
 			my $name = shift;
 			my $display = shift;
 			$display = $name unless ($display);
@@ -220,10 +220,10 @@ has 'edit_bigfield' => (
 has 'edit_click_field' => (
 	is => 'ro',
 	lazy => 1,
-	isa => 'RapidApp::RecAutoload',
+	isa => 'RapidApp::AppDV::RecAutoload',
 	default => sub {
 		my $self = shift;
-		return RapidApp::RecAutoload->new( process_coderef => sub {
+		return RapidApp::AppDV::RecAutoload->new( process_coderef => sub {
 			my $name = shift;
 			my $Column = $self->AppDV->get_column($name) or return '';
 			
@@ -250,10 +250,10 @@ has 'edit_click_field' => (
 has 'autofield' => (
 	is => 'ro',
 	lazy => 1,
-	isa => 'RapidApp::RecAutoload',
+	isa => 'RapidApp::AppDV::RecAutoload',
 	default => sub {
 		my $self = shift;
-		return RapidApp::RecAutoload->new( process_coderef => sub {
+		return RapidApp::AppDV::RecAutoload->new( process_coderef => sub {
 			my $name = shift;
 			my $display = shift;
 			$display = $name unless ($display);
@@ -332,10 +332,10 @@ has 'autofield' => (
 has 'submodule' => (
 	is => 'ro',
 	lazy => 1,
-	isa => 'RapidApp::RecAutoload',
+	isa => 'RapidApp::AppDV::RecAutoload',
 	default => sub {
 		my $self = shift;
-		return RapidApp::RecAutoload->new( process_coderef => sub {
+		return RapidApp::AppDV::RecAutoload->new( process_coderef => sub {
 			my $name = shift;
 			
 			my $Module = $self->AppDV->Module($name) or return '';

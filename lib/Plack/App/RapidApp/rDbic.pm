@@ -10,7 +10,6 @@ extends 'Plack::Component';
 use Types::Standard qw(:all);
 
 use File::Temp;
-#$File::Temp::DEBUG = 1;
 
 # Doing this so our temp dirs still get cleaned up if the user does a Ctrl-C...
 # todo - this might be overstepping, but what else can be done??

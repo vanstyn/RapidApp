@@ -1,4 +1,4 @@
-package RapidApp::RecAutoload;
+package RapidApp::AppDV::RecAutoload;
 use Moose;
 
 # Simple class to provide objects that maintain a list of method names

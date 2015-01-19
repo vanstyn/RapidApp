@@ -49,7 +49,7 @@ sub process {
 	
 	my $err= $errors[0];
 	my $rct= $c->stash->{requestContentType};
-	DEBUG('controller', 'OnError->process( rct == '.$rct.' )');
+	$c->log->debug('controller: OnError->process( rct == '.$rct.' )') if ($c->debug);
 	
 	# on exceptions, we either generate a 500, or a JSON response to the same effect
 	if ($rct eq 'JSON' || $rct eq 'text/x-rapidapp-form-response') {

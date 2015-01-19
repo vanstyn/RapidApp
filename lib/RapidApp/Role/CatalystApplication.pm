@@ -6,7 +6,6 @@ use RapidApp::RapidApp;
 use Scalar::Util 'blessed';
 use CatalystX::InjectComponent;
 use Hash::Merge;
-use RapidApp::Debug 'DEBUG';
 use Text::SimpleTable::AutoWidth;
 use Catalyst::Utils;
 use Path::Class qw(file dir);

@@ -216,7 +216,6 @@ sub cleanDirtyModules {
 	my ($self, $c)= @_;
 	my @modules= values %{$self->dirtyModules};
 	for my $module (@modules) {
-		#DEBUG('controller', ' >> CLEARING', $module->module_path);
 		$module->reset_per_req_attrs;
 	}
 	%{$self->dirtyModules}= ();
