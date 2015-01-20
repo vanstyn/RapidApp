@@ -110,7 +110,6 @@ sub setupRapidApp {
     ['RapidApp::View::Printview'     => 'View::RapidApp::Printview'  ],
     ['RapidApp::View::JSON'          => 'View::RapidApp::JSON'       ],
     ['RapidApp::View::HttpStatus'    => 'View::RapidApp::HttpStatus' ],
-    ['RapidApp::View::OnError'       => 'View::RapidApp::OnError'    ],
     ['RapidApp::View::Template'      => 'View::RapidApp::Template'   ]
   );
   
