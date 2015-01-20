@@ -31,7 +31,7 @@ has 'print_rapidapp_handlers_call_debug' => ( is => 'rw', isa => 'Bool', default
 
 
 # All purpose options:
-has 'module_options' => ( is => 'ro', lazy => 1, default => sub {{}}, traits => [ 'RapidApp::Role::PerRequestVar' ] );
+has 'module_options' => ( is => 'ro', lazy => 1, default => sub {{}}, traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ] );
 
 has 'modules' => (
 	traits	=> ['Hash'],
@@ -87,16 +87,10 @@ sub cached_per_req_attr_list {
 	return $attrs;
 };
 
+
 sub should_clear_per_req {
-	my $self = shift;
-	my $attr = shift;
-	
-	return 1 if (
-		$attr->does('RapidApp::Role::PerRequestBuildDefReset') or 
-		$attr->does('RapidApp::Role::PerRequestVar')
-	);
-	
-	return 0;
+  my ($self, $attr) = @_;
+  $attr->does('RapidApp::Role::PerRequestBuildDefReset')
 }
 
 
@@ -114,7 +108,7 @@ sub apply_init_modules {
 
 # 'ONREQUEST' is called once per web request. Add before modifiers to any classes that
 # need to run code at this time
-#has 'ONREQUEST_called' => ( is => 'rw', lazy => 1, default => 0, traits => [ 'RapidApp::Role::PerRequestVar' ] );
+#has 'ONREQUEST_called' => ( is => 'rw', lazy => 1, default => 0, traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ] );
 
 has 'ONREQUEST_called' => ( is => 'rw', lazy => 1, default => 0 );
 

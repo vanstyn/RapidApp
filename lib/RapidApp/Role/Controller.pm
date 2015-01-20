@@ -54,12 +54,12 @@ has 'base_url' => (
 		my $parentUrl= defined $self->parent_module? $self->parent_module->base_url.'/' : $ns;
 		return $parentUrl . $self->{module_name};
 	},
-	traits => [ 'RapidApp::Role::PerRequestVar' ] 
+	traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ] 
 );
 
 #has 'extra_actions'			=> ( is => 'ro', 	default => sub {{}} );
 has 'default_action'			=> ( is => 'ro',	default => undef );
-has 'render_as_json'			=> ( is => 'rw',	default => 1, traits => [ 'RapidApp::Role::PerRequestVar' ]  );
+has 'render_as_json'			=> ( is => 'rw',	default => 1, traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ]  );
 
 # NEW: if true, sub-args (of url path) are passed in even if the sub path does
 # not exist as a defined action or sub-module. TODO: refactor and use built-in Catalyst

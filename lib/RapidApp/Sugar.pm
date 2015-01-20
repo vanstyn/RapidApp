@@ -17,20 +17,13 @@ use Clone qw(clone);
 
 
 our @EXPORT = qw(
-  perreq asjson rawjs mixedjs ashtml rawhtml usererr userexception 
+  asjson rawjs mixedjs ashtml rawhtml usererr userexception 
   jsfunc blessed merge hasarray hashash infostatus clone
 );
 
 # Module shortcuts
 #
 
-
-# a per-request variable, reset to default or cleared at the end of each request execution
-sub perreq {
-	my ($name, %attrs)= @_;
-	push @{$attrs{traits}}, 'RapidApp::Role::PerRequestVar';
-	return ( $name, %attrs );
-}
 
 # JSON shortcuts
 #
