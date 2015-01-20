@@ -109,7 +109,6 @@ sub setupRapidApp {
     ['RapidApp::View::Viewport'      => 'View::RapidApp::Viewport'   ],
     ['RapidApp::View::Printview'     => 'View::RapidApp::Printview'  ],
     ['RapidApp::View::JSON'          => 'View::RapidApp::JSON'       ],
-    ['RapidApp::View::HttpStatus'    => 'View::RapidApp::HttpStatus' ],
     ['RapidApp::View::Template'      => 'View::RapidApp::Template'   ]
   );
   
@@ -531,7 +530,6 @@ before 'setup_components' => sub {
     View::RapidApp::TT
     View::RapidApp::Viewport
     View::RapidApp::Printview
-    View::RapidApp::HttpStatus
   );
   
   $c->config( $_ => { 

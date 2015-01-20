@@ -30,17 +30,10 @@ sub isHtml { return (ref (shift)->userMessage)->isa('RapidApp::HTML::RawHtml'); 
 has userMessageTitle => ( is => 'rw', isa => 'Str|Object' );
 
 sub writeResponse {
-	my ($self, $c)= @_;
-	
-	my $rct= $c->stash->{requestContentType};
-	$c->stash->{exception}= $self;
-	if ($rct eq 'JSON' || $rct eq 'text/x-rapidapp-form-response') {
-		$c->forward('View::RapidApp::JSON');
-	}
-	else {
-		$c->response->status(200);
-		$c->forward('View::RapidApp::HttpStatus');
-	}
+  my ($self, $c)= @_;
+
+  $c->stash->{exception} = $self;
+  $c->forward('View::RapidApp::JSON');
 }
 
 sub stringify { (shift)->userMessage }
