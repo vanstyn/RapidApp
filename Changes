@@ -1,5 +1,14 @@
 Revision history for RapidApp
 
+0.99700 2015-01-20
+    - Unfactor, consolidate & cleanup lots legacy code (#106)
+      (see commit logs for more details)
+    - Removed lots of CPAN deps
+    - Got all package files properly separated into their own pm files (#110)
+    - All remaining CPAN deps w/ version numbers now listed in dist.ini (#107)
+    - Setup separate Runtime/Test/Develop Prereqs sections (dist.ini)
+    - Require Catalyst::Controller::SimpleCAS 0.992 (fixes broken Insert Image)
+
 0.99664 2015-01-12
     - Fix scrollbar issue in Organize Navtree (#104)
     - Fix sort issue with single col rels sharing the real column name (#105)
