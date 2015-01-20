@@ -43,7 +43,6 @@ use warnings;
 use Moose;
 
 use Spreadsheet::ParseExcel;
-use RapidApp::Spreadsheet::ParseExcelExt;
 use RapidApp::Spreadsheet::ExcelTableWriter::ColDef;
 
 has 'wbook'    => ( is => 'ro', isa => 'Excel::Writer::XLSX::Workbook', required => 1 );
