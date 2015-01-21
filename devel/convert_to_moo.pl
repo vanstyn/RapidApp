@@ -6,6 +6,9 @@
 # Preliminary/experimental script performs in-place conversions
 # on RapidApp *.pm files to convert from current Moose to Moo ...
 #
+#
+#   git checkout lib/* && devel/convert_to_moo.pl lib/
+#
 
 use strict;
 use warnings;
@@ -62,6 +65,12 @@ $start_dir->recurse(
         }
         elsif($line =~ /^use MooseX::Traits\;/) {
           $line = 'use MooX::Traits;';
+        }
+        elsif($line =~ /^require MooseX::Traits\;/) {
+          $line = 'require MooX::Traits;';
+        }
+        elsif($line =~ /^with \'MooseX::Traits\'\;/) {
+          $line = 'with \'MooX::Traits\';';
         }
         
         
