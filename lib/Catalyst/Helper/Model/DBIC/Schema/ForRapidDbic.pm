@@ -206,6 +206,23 @@ sub _get_source_list {
   return sort ($schema->sources);
 }
 
+# This is the cleanest way to munge the arguments passed to make_schema_at (in parent)
+# to inject our custom loader_class option. 
+#  -- See Catalyst::Helper::Model::DBIC::Schema::_gen_static_schema to understand why
+around '_gen_static_schema' => sub {
+  my ($orig,$self,@args) = @_;
+
+  my $connect_info = $self->connect_info;
+
+  no warnings 'redefine';
+  local *connect_info = sub {
+    $connect_info, { loader_class => 'RapidApp::Util::MetaKeys::Loader' }
+  };
+
+  $self->$orig(@args)
+};
+
+
 
 1;
 
