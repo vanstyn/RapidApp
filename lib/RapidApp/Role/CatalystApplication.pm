@@ -17,7 +17,7 @@ use URI::Escape;
 use RapidApp;
 use Template;
 
-use Catalyst::Controller::SimpleCAS 0.992;
+use Catalyst::Controller::SimpleCAS 0.993;
 
 sub rapidapp_version { $RapidApp::VERSION }
 
