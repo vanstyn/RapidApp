@@ -12,6 +12,10 @@ use Plack::App::RapidApp::rDbic;
 
 use RapidApp::Include qw(sugar perlutil);
 
+# Special case - move cuddled '-I' arg from post to last so 
+# that dbi arg logic can still work (as the second arg)
+push @ARGV, (shift @ARGV) if($ARGV[0] && $ARGV[0] =~ /^\-I\S+/);
+
 my $dsn;
 
 if($ARGV[0] && ! ($ARGV[0] =~ /^\-/) ) {
