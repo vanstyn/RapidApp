@@ -23,8 +23,14 @@ sub load {
     $data->isa(__PACKAGE__)
   );
   
+  my $can_be_file = ! (
+    ref($data) ||
+    length($data) > 1024 ||
+    $data =~ /\n/
+  );
+
   unless (ref $data) {
-    $data = length($data) < 1024 && -f file($data)
+    $data = $can_be_file && -f file($data)
       ? $self->data_from_file($data)
       : $self->data_from_string($data)
   }
@@ -68,10 +74,13 @@ sub parse_key_vals {
   
   my @data = ();
   for my $line (split(/\r?\n/,$string)) {
-    # Handle/strip comments:
-    my ($active,$comment) = split(/\s*\#/,$line,2);
-    $line = $active;
   
+    # Handle/strip comments:
+    if($line =~ /\#/) {
+      my ($active,$comment) = split(/\s*\#/,$line,2);
+      $line = $active;
+    }
+
     # strip leading/trailing whitespace
     $line =~ s/^\s+//; $line =~ s/\s+$//;
     
