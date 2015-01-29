@@ -213,10 +213,19 @@ around '_gen_static_schema' => sub {
   my ($orig,$self,@args) = @_;
 
   my $connect_info = $self->connect_info;
+  my $loader_args  = $self->loader_args;
+  my $metakeys = $self->_ra_rapiddbic_opts->{metakeys};
 
   no warnings 'redefine';
+
   local *connect_info = sub {
     $connect_info, { loader_class => 'RapidApp::Util::MetaKeys::Loader' }
+  };
+
+  local *loader_args = sub {
+    $metakeys
+      ? { %$loader_args, metakeys => $metakeys }
+      : $loader_args
   };
 
   $self->$orig(@args)
