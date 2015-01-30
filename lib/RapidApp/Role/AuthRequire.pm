@@ -6,7 +6,6 @@ requires 'c';
 requires 'Controller';
 requires 'render_data';
 requires 'content';
-#with 'RapidApp::Role::Controller';
 
 use Term::ANSIColor qw(:constants);
 

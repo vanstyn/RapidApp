@@ -38,8 +38,7 @@ a number of composable roles which accomplish broad functions like attaching CRU
 to DBIC models (internally these are the "DbicLink" interfaces).
 
 Modules have their own DSL which is quite powerful. A Module is defined as any class which consumes the 
-L<RapidApp::Role::Module> role (and usually the L<RapidApp::Role::Controller> role as well for
-all Modules which implement a controller dispatch interface, which nearly all do).
+L<RapidApp::Role::ModuleController> role.
 
 Many of the built-in Modules include C<'*App*'> in the name, such as C<RapidApp::AppTree> and
 C<RapidApp::DbicAppGrid3>. Documentation for these modules in still in-progress and the namespace

@@ -11,7 +11,7 @@ package RapidApp::AppBase;
 
 use strict;
 use Moose;
-with 'RapidApp::Role::Controller';
+with 'RapidApp::Role::ModuleController';
 
 use Clone;
 #use JSON;
