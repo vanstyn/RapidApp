@@ -24,7 +24,9 @@ has 'module_path'						=> ( is => 'ro',	isa => 'Str', required => 1 );
 has 'parent_module_ref'					=> ( is => 'ro',	isa => 'Maybe[RapidApp::Role::Module]', weak_ref => 1, required => 1);
 has 'modules_obj'						=> ( is => 'ro', 	default => sub {{}} );
 has 'default_module'					=> ( is => 'rw',	default => 'default_module' );
-has 'create_module_params'			=> ( is => 'ro',	default => sub { {} } );
+
+# This is defined in Controller role
+#has 'create_module_params'			=> ( is => 'ro',	default => sub { {} } );
 has 'modules_params'					=> ( is => 'ro',	default => sub { {} } );
 
 has 'print_rapidapp_handlers_call_debug' => ( is => 'rw', isa => 'Bool', default => 0 );

@@ -15,6 +15,7 @@ use Hash::Merge qw( merge );
 Hash::Merge::set_behavior( 'RIGHT_PRECEDENT' );
 use Clone qw(clone);
 
+use Types::Standard qw(:all);
 
 our @EXPORT = qw(
   asjson rawjs mixedjs ashtml rawhtml usererr userexception 
