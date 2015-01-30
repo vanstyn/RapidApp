@@ -73,21 +73,30 @@ are ignored.
 
 =cut
 
-subtype 'ColSpecStr', as 'Str', where {
-	/\s+/ and warn "ColSpec '$_' is invalid because it contains whitespace" and return 0;
-	/[A-Z]+/ and warn "ColSpec '$_' is invalid because it contains upper case characters" and return 0;
-	/([^\#a-z0-9\-\_\.\!\*\?\[\]\{\}\:])/ and warn "ColSpec '$_' contains invalid characters ('$1')." and return 0;
-	/^\./ and warn "ColSpec '$_' is invalid: \".\" cannot be the first character" and return 0;
-	/\.$/ and warn "ColSpec '$_' is invalid: \".\" cannot be the last character (did you mean '$_*' ?)" and return 0;
-	
-	$_ =~ s/^\#//;
-		/\#/ and warn "ColSpec '$_' is invalid: # (comment) character may only be supplied at the begining of the string." and return 0;
-	
-	$_ =~ s/^\!//;
-	/\!/ and warn "ColSpec '$_' is invalid: ! (not) character may only be supplied at the begining of the string." and return 0;
 
-	return 1;
-};
+use Type::Tiny;
+my $TYPE_ColSpecStr = Type::Tiny->new(
+  name       => "ColSpecStr",
+  constraint => sub {
+    /\s+/ and warn "ColSpec '$_' is invalid because it contains whitespace" and return 0;
+    /[A-Z]+/ and warn "ColSpec '$_' is invalid because it contains upper case characters" and return 0;
+    /([^\#a-z0-9\-\_\.\!\*\?\[\]\{\}\:])/ and warn "ColSpec '$_' contains invalid characters ('$1')." and return 0;
+    /^\./ and warn "ColSpec '$_' is invalid: \".\" cannot be the first character" and return 0;
+    /\.$/ and warn "ColSpec '$_' is invalid: \".\" cannot be the last character (did you mean '$_*' ?)" and return 0;
+
+    $_ =~ s/^\#//;
+      /\#/ and warn "ColSpec '$_' is invalid: # (comment) character may only be supplied at the begining of the string." and return 0;
+
+    $_ =~ s/^\!//;
+    /\!/ and warn "ColSpec '$_' is invalid: ! (not) character may only be supplied at the begining of the string." and return 0;
+
+    return 1;
+  },
+  message => sub { "$_ not a ColSpecStr (see previous warnings)" }
+);
+sub ColSpecStr { $TYPE_ColSpecStr }
+
+subtype 'ColSpecStr', as 'Str', where { $TYPE_ColSpecStr->constraint->(@_) };
 
 hasarray 'colspecs', isa => 'ArrayRef[ColSpecStr]', required => 1;
 
