@@ -48,7 +48,8 @@ $start_dir->recurse(
           $line =~ /^use MooseX::MarkAsMethods/ ||
           $line =~ /^use MooseX::NonMoose/ ||
           $line =~ /^no Moose/ ||
-          $line =~ /^__PACKAGE__\-\>meta\-\>make_immutable/
+          $line =~ /^__PACKAGE__\-\>meta\-\>make_immutable/ ||
+          $line =~ /^subtype 'TableSpec'/
         );
         
         if($line =~ /^use Moose\;/) {
@@ -81,11 +82,14 @@ $start_dir->recurse(
           
           $new =~ s/(RapidApp::[\w\:]+)/InstanceOf\[\'$1\'\]/;
           
+          $new = 'Maybe[InstanceOf[\'RapidApp::TableSpec\']]' 
+            if($new eq 'Maybe[TableSpec]');
+          
           try {
             my $Type = eval_type($new,$reg);
             $new = $Type->display_name;
           }
-          catch {
+          catch { 
           
             # TODO ...
           
