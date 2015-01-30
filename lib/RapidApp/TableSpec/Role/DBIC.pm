@@ -50,22 +50,30 @@ default => sub {
 has 'schema', is => 'ro', lazy => 1, default => sub { (shift)->ResultSource->schema; };
 # ---
 
+use List::Util;
+
+sub _coerce_ColSpec {
+  my $v = $_[0];
+  ( # quick/dirty simulate from 'ArrayRef[Str]'
+    ref $v && ref($v) eq 'ARRAY' &&
+    !( List::Util::first { ref($_) || ! defined $_ } @$v )
+  ) ? RapidApp::TableSpec::ColSpec->new(colspecs => $v) : $v
+}
 
 subtype 'ColSpec', as 'Object';
-coerce 'ColSpec', from 'ArrayRef[Str]', 
-	via { RapidApp::TableSpec::ColSpec->new(colspecs => $_) };
+coerce 'ColSpec', from 'ArrayRef[Str]',	via { &_coerce_ColSpec($_) };
 
 has 'include_colspec', is => 'ro', isa => 'ColSpec', 
-	required => 1, coerce => 1, trigger =>  sub { (shift)->_colspec_attr_init_trigger(@_) };
+	required => 1, coerce => \&_coerce_ColSpec, trigger =>  sub { (shift)->_colspec_attr_init_trigger(@_) };
 	
 has 'updatable_colspec', is => 'ro', isa => 'ColSpec', 
-	default => sub {[]}, coerce => 1, trigger =>  sub { (shift)->_colspec_attr_init_trigger(@_) };
+	default => sub {[]}, coerce => \&_coerce_ColSpec, trigger =>  sub { (shift)->_colspec_attr_init_trigger(@_) };
 	
 has 'creatable_colspec', is => 'ro', isa => 'ColSpec', 
-	default => sub {[]}, coerce => 1, trigger => sub { (shift)->_colspec_attr_init_trigger(@_) };
+	default => sub {[]}, coerce => \&_coerce_ColSpec, trigger => sub { (shift)->_colspec_attr_init_trigger(@_) };
 	
 has 'always_fetch_colspec', is => 'ro', isa => 'ColSpec', 
-	default => sub {[]}, coerce => 1, trigger => sub { (shift)->_colspec_attr_init_trigger(@_) };
+	default => sub {[]}, coerce => \&_coerce_ColSpec, trigger => sub { (shift)->_colspec_attr_init_trigger(@_) };
 
 sub _colspec_attr_init_trigger {
 	my ($self,$ColSpec) = @_;
