@@ -49,7 +49,9 @@ $start_dir->recurse(
           $line =~ /^use MooseX::NonMoose/ ||
           $line =~ /^no Moose/ ||
           $line =~ /^__PACKAGE__\-\>meta\-\>make_immutable/ ||
-          $line =~ /^subtype 'TableSpec'/
+          $line =~ /^subtype 'TableSpec'/ ||
+          $line =~ /^subtype 'ColSpec'/ ||
+          $line =~ /^coerce 'ColSpec'/
         );
         
         if($line =~ /^use Moose\;/) {
@@ -82,8 +84,16 @@ $start_dir->recurse(
           
           $new =~ s/(RapidApp::[\w\:]+)/InstanceOf\[\'$1\'\]/;
           
-          $new = 'Maybe[InstanceOf[\'RapidApp::TableSpec\']]' 
-            if($new eq 'Maybe[TableSpec]');
+          
+          if($new eq 'Maybe[TableSpec]') {
+            $new = 'Maybe[InstanceOf[\'RapidApp::TableSpec\']]';
+          }
+          elsif($new eq 'ColSpec') {
+            $new = 'InstanceOf[\'RapidApp::TableSpec::ColSpec\']';
+          }
+          elsif($new eq 'DBIx::Class::ResultSource') {
+            $new = 'InstanceOf[\'DBIx::Class::ResultSource\']';
+          }
           
           try {
             my $Type = eval_type($new,$reg);

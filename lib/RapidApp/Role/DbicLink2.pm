@@ -197,7 +197,7 @@ sub _build_ResultClass {
 }
 
 
-has 'TableSpec' => ( is => 'ro', isa => 'TableSpec', lazy_build => 1 );
+has 'TableSpec' => ( is => 'ro', isa => 'RapidApp::TableSpec', lazy_build => 1 );
 sub _build_TableSpec {
 	my $self = shift;
 	
