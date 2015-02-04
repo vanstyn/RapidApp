@@ -3,9 +3,9 @@ package Catalyst::Plugin::RapidApp::RapidDbic::TableBase;
 use strict;
 use warnings;
 use Moose;
-extends 'RapidApp::DbicAppGrid3';
+extends 'RapidApp::Module::DbicGrid';
 with 
-  'RapidApp::AppGrid2::Role::ExcelExport',
+  'RapidApp::Module::Grid::Role::ExcelExport',
   # This is a bit of overlap/entaglement needed for 'NavCore' to be able to
   # work. However, NavCore is not always enabled, and this role only
   # enables itself if it is (i.e. Plugin::NavCore is present)
