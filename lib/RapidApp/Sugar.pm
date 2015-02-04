@@ -19,7 +19,7 @@ use Types::Standard qw(:all);
 
 our @EXPORT = qw(
   asjson rawjs mixedjs ashtml rawhtml usererr userexception 
-  jsfunc blessed merge hasarray hashash infostatus clone
+  jsfunc blessed merge hashash infostatus clone
 );
 
 # Module shortcuts
@@ -188,27 +188,27 @@ sub userexception {
 
 # Suger function sets up a Native Trait ArrayRef attribute with useful
 # default accessor methods
-sub hasarray {
-	my $name = shift;
-	my %opt = @_;
-	
-	my %defaults = (
-		is => 'ro',
-		isa => 'ArrayRef',
-		traits => [ 'Array' ],
-		default => sub {[]},
-		handles => {
-			'all_' . $name => 'uniq',
-			'add_' . $name => 'push',
-			'insert_' . $name => 'unshift',
-			'has_no_' . $name => 'is_empty',
-			'count_' . $name		=> 'count'
-		}
-	);
-	
-	my $conf = merge(\%defaults,\%opt);
-	return caller->can('has')->($name,%$conf);
-}
+#sub hasarray {
+#	my $name = shift;
+#	my %opt = @_;
+#	
+#	my %defaults = (
+#		is => 'ro',
+#		isa => 'ArrayRef',
+#		traits => [ 'Array' ],
+#		default => sub {[]},
+#		handles => {
+#			'all_' . $name => 'uniq',
+#			'add_' . $name => 'push',
+#			'insert_' . $name => 'unshift',
+#			'has_no_' . $name => 'is_empty',
+#			'count_' . $name		=> 'count'
+#		}
+#	);
+#	
+#	my $conf = merge(\%defaults,\%opt);
+#	return caller->can('has')->($name,%$conf);
+#}
 
 # Suger function sets up a Native Trait HashRef attribute with useful
 # default accessor methods

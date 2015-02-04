@@ -1021,13 +1021,14 @@ sub resolve_dbic_render_colname {
 	return $h->{$name};
 }
 
-hasarray 'always_fetch_columns', is => 'ro', lazy => 1, default => sub {
+has 'always_fetch_columns', is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	return [] unless ($self->always_fetch_colspec);
 	return [ $self->TableSpec->get_colspec_column_names(
 		$self->TableSpec->always_fetch_colspec->colspecs
 	)];
-};
+}, isa => 'ArrayRef';
+sub all_always_fetch_columns { uniq( @{(shift)->always_fetch_columns} ) }
 
 sub get_req_columns {
 	my $self = shift;

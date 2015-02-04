@@ -98,7 +98,10 @@ sub ColSpecStr { $TYPE_ColSpecStr }
 
 subtype 'ColSpecStr', as 'Str', where { $TYPE_ColSpecStr->constraint->(@_) };
 
-hasarray 'colspecs', isa => 'ArrayRef[ColSpecStr]', required => 1;
+has 'colspecs', is => 'ro', isa => 'ArrayRef[ColSpecStr]', required => 1;
+sub all_colspecs { uniq( @{(shift)->colspecs} ) }  
+sub add_colspecs { push @{(shift)->colspecs}, @_ }
+
 
 # Store the orig/init colspec data in 'init_colspecs'
 has 'init_colspecs', is => 'ro', required => 1;
@@ -137,10 +140,12 @@ sub regen_subspec {
 }
 
 
-hasarray 'rel_order', lazy => 1, clearer => '_clear_rel_order', default => sub {
+has 'rel_order', is => 'ro', lazy => 1, clearer => '_clear_rel_order', default => sub {
 	my $self = shift;
 	return $self->_subspec_data->{order};
-};
+}, isa => 'ArrayRef';
+sub all_rel_order   { uniq( @{(shift)->rel_order} ) }  
+sub count_rel_order { scalar( (shift)->all_rel_order ) }
 
 hashash 'subspec', lazy => 1, clearer => '_clear_subspec', default => sub {
 	my $self = shift;
