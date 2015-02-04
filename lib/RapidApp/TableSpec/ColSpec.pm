@@ -147,12 +147,13 @@ has 'rel_order', is => 'ro', lazy => 1, clearer => '_clear_rel_order', default =
 sub all_rel_order   { uniq( @{(shift)->rel_order} ) }  
 sub count_rel_order { scalar( (shift)->all_rel_order ) }
 
-hashash 'subspec', lazy => 1, clearer => '_clear_subspec', default => sub {
+has 'subspec', is => 'ro', lazy => 1, clearer => '_clear_subspec', default => sub {
 	my $self = shift;
 	my $data = $self->_subspec_data->{data};
 	return { '' => $self } unless ($self->count_rel_order > 1);
 	return { map { $_ => __PACKAGE__->new(colspecs => $data->{$_}) } keys %$data };
-};
+}, isa => 'HashRef';
+sub get_subspec { (shift)->subspec->{$_[0]} }
 
 
 

@@ -138,7 +138,9 @@ sub init_relspecs {
 }
 
 
-hashash 'column_data_alias';
+has 'column_data_alias', is => 'ro', isa => 'HashRef', default => sub {{}};
+sub apply_column_data_alias { my $h = (shift)->column_data_alias; %$h = ( %$h, @_ ) }
+
 has 'no_column_colspec', is => 'ro', isa => 'ColSpec', coerce => 1, default => sub {[]};
 sub expand_relationship_columns {
 	my $self = shift;
@@ -281,8 +283,11 @@ sub add_db_column($@) {
 
 # Load and process config params from TableSpec_cnf in the ResultClass plus
 # additional defaults:
-hashash 'Cnf_order';
-hashash 'Cnf', lazy => 1, default => sub {
+has 'Cnf_order', is => 'ro', isa => 'HashRef', default => sub {{}};
+sub get_Cnf_order { (shift)->Cnf_order->{$_[0]} }
+
+
+has 'Cnf', is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	my $class = $self->ResultClass;
 	
@@ -303,7 +308,8 @@ hashash 'Cnf', lazy => 1, default => sub {
   
   %{$self->Cnf_order} = %{ $sim_order || {} };
   return $cf || {};
-};
+}, isa => 'HashRef';
+sub get_Cnf { (shift)->Cnf->{$_[0]} }
 
 has 'relationship_column_configs', is => 'ro', isa => 'HashRef', lazy_build => 1; 
 sub _build_relationship_column_configs {
@@ -1008,7 +1014,7 @@ around 'updated_column_order' => sub {
 
 
 
-hashash 'multi_rel_columns_indx', lazy => 1, default => sub {
+has 'multi_rel_columns_indx', is => 'ro', lazy => 1, default => sub {
 	my $self = shift;
 	my $list = $self->get_Cnf('multi_relationship_column_names') || [];
 	
@@ -1055,7 +1061,8 @@ hashash 'multi_rel_columns_indx', lazy => 1, default => sub {
 	#scream(\%indx);
 
 	return \%indx;
-};
+}, isa => 'HashRef';
+
 
 
 =head2 resolve_dbic_colname
@@ -1446,7 +1453,7 @@ sub chain_to_hash {
 }
 
 
-hashash 'relationship_column_render_column_map';
+has 'relationship_column_render_column_map', is => 'ro', isa => 'HashRef', default => sub {{}};
 sub get_relationship_column_cnf {
 	my $self = shift;
 	my $rel = shift;
@@ -1900,7 +1907,7 @@ sub get_multi_relationship_column_cnf {
 	return %$conf;
 }
 
-hashash 'm2m_rel_columns_indx';
+has 'm2m_rel_columns_indx', is => 'ro', isa => 'HashRef', default => sub {{}};
 
 sub get_m2m_multi_relationship_column_cnf {
 	my $self = shift;

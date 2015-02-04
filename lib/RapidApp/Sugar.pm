@@ -19,7 +19,7 @@ use Types::Standard qw(:all);
 
 our @EXPORT = qw(
   asjson rawjs mixedjs ashtml rawhtml usererr userexception 
-  jsfunc blessed merge hashash infostatus clone
+  jsfunc blessed merge infostatus clone
 );
 
 # Module shortcuts
@@ -212,27 +212,27 @@ sub userexception {
 
 # Suger function sets up a Native Trait HashRef attribute with useful
 # default accessor methods
-sub hashash {
-	my $name = shift;
-	my %opt = @_;
-	
-	my %defaults = (
-		is => 'ro',
-		isa => 'HashRef',
-		traits => [ 'Hash' ],
-		default => sub {{}},
-		handles => {
-			'apply_' . $name		=> 'set',
-			'get_' . $name			=> 'get',
-			'has_' . $name			=> 'exists',
-			'all_' . $name			=> 'values',
-			$name . '_names'		=> 'keys',
-		}
-	);
-	
-	my $conf = merge(\%defaults,\%opt);
-	return caller->can('has')->($name,%$conf);
-}
+#sub hashash {
+#	my $name = shift;
+#	my %opt = @_;
+#	
+#	my %defaults = (
+#		is => 'ro',
+#		isa => 'HashRef',
+#		traits => [ 'Hash' ],
+#		default => sub {{}},
+#		handles => {
+#			'apply_' . $name		=> 'set',
+#			'get_' . $name			=> 'get',
+#			'has_' . $name			=> 'exists',
+#			'all_' . $name			=> 'values',
+#			$name . '_names'		=> 'keys',
+#		}
+#	);
+#	
+#	my $conf = merge(\%defaults,\%opt);
+#	return caller->can('has')->($name,%$conf);
+#}
 
 
 sub infostatus {
