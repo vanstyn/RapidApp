@@ -30,11 +30,14 @@ my %class_map = (
   'RapidApp::AppDV::HtmlTable'        => 'RapidApp::Module::AppDV::HtmlTable',
   'RapidApp::AppDV::RecAutoload'      => 'RapidApp::Module::AppDV::RecAutoload',
   'RapidApp::AppDV::TTController'     => 'RapidApp::Module::AppDV::TTController',
+  'RapidApp::AppMimeIframe'           => 'RapidApp::Module::MimeIframe',
+  'RapidApp::DbicAppPropertyPage'     => 'RapidApp::Module::DbicPropPage',
 
   # Roles:
   'RapidApp::Role::DbicLink2'               => 'RapidApp::Module::StorCmp::Role::DbicLnk',
   'RapidApp::AppGrid2::Role::ExcelExport'   => 'RapidApp::Module::Grid::Role::ExcelExport',
   'RapidApp::Role::DataStore2::SavedSearch' => 'RapidApp::Module::StorCmp::Role::SavedSearch',
+  'RapidApp::Role::DbicRowPage'             => 'RapidApp::Module::StorCmp::Role::DbicLnk::RowPg',
 
 );
 
@@ -43,6 +46,7 @@ my @convs = sort { length($b) <=> length($a) } keys %class_map;
 
 my @pkg_skips = (@convs, qw(
   RapidApp::Role::DataStore2
+  RapidApp::AppDataStore2
 ));
 
 
@@ -52,6 +56,8 @@ use Path::Class qw( file dir );
 use Try::Tiny;
 use Term::ANSIColor qw(:constants);
 use List::Util;
+
+my @skipped_pkg_files = ();
 
 print "Working on $start_dir/...\n";
 
@@ -68,7 +74,10 @@ $start_dir->recurse(
       # Ignore if we're dealing with one of the old packages itself
       my $is_pkg = List::Util::first { $lines[0] =~ /^package $_/ } @pkg_skips;
       
-      unless($is_pkg) {
+      if($is_pkg) {
+        push @skipped_pkg_files, "$File";
+      }
+      else {
         for my $line (@lines) {
         
           $line =~ /(\r?\n)$/;
@@ -103,4 +112,17 @@ $start_dir->recurse(
     }
   }
 );
+
+print "\n";
+
+if(scalar(@skipped_pkg_files) > 0) {
+  print join("\n",'',
+    "Skipped Package Files (old/original classes):",
+    '',
+    @skipped_pkg_files,
+    '',''
+  );
+}
+
+
 
