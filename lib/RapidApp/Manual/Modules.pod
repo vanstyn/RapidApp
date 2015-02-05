@@ -35,14 +35,11 @@ app config option to any location. For instance, to have the module hierarchy st
 There are a very large number of built-in modules included in the RapidApp distribution to
 achieve all sorts of turn-key interfaces. The bulk of them focus on grids and trees, including
 a number of composable roles which accomplish broad functions like attaching CRUD DataStores
-to DBIC models (internally these are the "DbicLink" interfaces).
+to DBIC models (internally these are the "DbicLnk" interfaces).
 
-Modules have their own DSL which is quite powerful. A Module is defined as any class which consumes the 
-L<RapidApp::Role::ModuleController> role.
-
-Many of the built-in Modules include C<'*App*'> in the name, such as C<RapidApp::AppTree> and
-C<RapidApp::DbicAppGrid3>. Documentation for these modules in still in-progress and the namespace
-needs to be cleaned up in general...
+Modules have their own DSL which is quite powerful. A Module is defined as any class which extends 
+L<RapidApp::Module>. Built-in modules live within the C<RapidApp::Module::> namespace, such as
+L<RapidApp::Module::Tree> and L<RapidApp::Module::DbicGrid>.
 
 Note that it is B<NOT REQUIRED> to know the Module DSL, or even interact directly with Modules
 at all in order to develop using RapidApp. This is because of the declarative configuration
@@ -129,6 +126,10 @@ plugin is active):
 =item *
 
 L<RapidApp::Manual>
+
+=item *
+
+L<RapidApp::Module>
 
 =item *
 
