@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use Moose;
-extends 'RapidApp::Module::NavTree';
+extends 'RapidApp::Module::Tree';
 
 use RapidApp::Include qw(sugar perlutil);
 

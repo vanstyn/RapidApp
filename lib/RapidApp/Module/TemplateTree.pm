@@ -1,6 +1,8 @@
 package RapidApp::Module::TemplateTree;
+
 use strict;
 use warnings;
+
 use Moose;
 extends 'RapidApp::Module::NavTree';
 
@@ -27,7 +29,7 @@ sub folder_template_tree_items {
 }
 
 sub template_tree_items {
-	my $self = shift;
+  my $self = shift;
   
   my $TC = $self->TC;
   my $templates = $TC->get_Provider->list_templates($self->template_regex);
@@ -68,8 +70,8 @@ sub apply_tpl_node {
 
 
 sub fetch_nodes {
-	my $self = shift;
-	my ($node) = @_;
+  my $self = shift;
+  my ($node) = @_;
   
   my $items;
   
@@ -77,9 +79,9 @@ sub fetch_nodes {
   # template query until it is actually expanded (unless default_expanded is set):
   if ($node eq 'root') {
     $items = [{
-      id			=> 'tpl-list',
-      text		=> 'Templates',
-      expanded	=> $self->default_expanded ? \1 : \0,
+      id      => 'tpl-list',
+      text    => 'Templates',
+      expanded  => $self->default_expanded ? \1 : \0,
     }];
     $items->[0]->{children} = $self->folder_template_tree_items
       if ($self->default_expanded);
@@ -115,7 +117,7 @@ sub folder_convert {
           id => 'tpl-' . $folder . '/',
           name => $folder . '/',
           text => $part,
-          expanded	=> $self->default_expanded ? \1 : \0,
+          expanded  => $self->default_expanded ? \1 : \0,
           children => []
         };
         $self->apply_tpl_node($cnf);
