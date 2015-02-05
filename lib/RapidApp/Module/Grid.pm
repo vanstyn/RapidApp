@@ -12,7 +12,7 @@ use Try::Tiny;
 use RapidApp::Column;
 
 #has 'record_pk'      => ( is => 'ro', default => 'id' );
-#has 'DataStore_class'  => ( is => 'ro', default => 'RapidApp::DataStore2', isa => 'ClassName' );
+#has 'DataStore_class'  => ( is => 'ro', default => 'RapidApp::Module::DatStor', isa => 'ClassName' );
 
 
 has 'title' => ( is => 'ro', default => undef );

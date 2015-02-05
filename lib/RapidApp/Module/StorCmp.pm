@@ -13,7 +13,7 @@ extends 'RapidApp::Module::ExtComponent';
 use RapidApp::Include qw(sugar perlutil);
 use Clone qw(clone);
 
-use RapidApp::DataStore2;
+use RapidApp::Module::DatStor;
 
 has 'no_datastore_plus_plugin', is => 'ro', isa => 'Bool', lazy => 1, default => 0;
 
@@ -25,7 +25,7 @@ sub _build_TableSpec { undef; }
 has 'TableSpec_applied' => ( is => 'rw', isa => 'Bool', default => 0 );
 
 has 'record_pk'			=> ( is => 'ro', default => 'id' );
-has 'DataStore_class'	=> ( is => 'ro', default => 'RapidApp::DataStore2' );
+has 'DataStore_class'	=> ( is => 'ro', default => 'RapidApp::Module::DatStor' );
 
 has 'max_pagesize'		=> ( is => 'ro', isa => 'Maybe[Int]', default => undef );
 
@@ -63,7 +63,7 @@ has 'cache_total_count', is => 'ro', isa => 'Bool', default => 1;
 
 has 'DataStore' => (
 	is			=> 'rw',
-	isa		=> 'RapidApp::DataStore2',
+	isa		=> 'RapidApp::Module::DatStor',
 	handles => {
 		JsonStore					=> 'JsonStore',
 #		store_read					=> 'store_read',
@@ -433,7 +433,7 @@ sub batch_update {
 	
 	my $result;
 	{
-		local $RapidApp::DataStore2::BATCH_UPDATE_IN_PROGRESS = 1;
+		local $RapidApp::Module::DatStor::BATCH_UPDATE_IN_PROGRESS = 1;
 		$result = $self->DataStore->update_handler->call($rows,$read_params);
 	}
 	
