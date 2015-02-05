@@ -15,7 +15,7 @@ use Sub::Name qw/subname/;
 use RapidApp::Include qw(sugar perlutil);
 
 use RapidApp::TableSpec;
-use RapidApp::DbicAppCombo2;
+use RapidApp::Module::DbicCombo;
 
 #__PACKAGE__->load_components(qw/IntrospectableM2M/);
 

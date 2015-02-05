@@ -45,7 +45,7 @@ before 'setup_components' => sub {
   if($config->{template_navtree_regex}) {
    push @navtrees, ({
       module => 'tpl_navtree',
-      class => 'RapidApp::AppTemplateTree',
+      class => 'RapidApp::Module::TemplateTree',
       params => {
         template_regex => $config->{template_navtree_regex},
         default_expanded => $config->{template_navtree_expanded} || 0
@@ -82,7 +82,7 @@ before 'setup_components' => sub {
   };
   
   if($config->{dashboard_template}) {
-    $main_module_params->{dashboard_class} = 'RapidApp::AppHtml';
+    $main_module_params->{dashboard_class} = 'RapidApp::Module::HtmlContent';
     $main_module_params->{dashboard_params} = {
       get_html => sub {
         my $self = shift;
@@ -105,7 +105,7 @@ before 'setup_components' => sub {
   $config->{$_} and $main_module_params->{$_} = $config->{$_} for (@copy_params);
   
   # -- New: enable passthrough to exclude navtrees that define 
-  # a 'require_role' property (See new API in RapidApp::AppExplorer)
+  # a 'require_role' property (See new API in RapidApp::Module::Explorer)
   $main_module_params->{role_checker} = 
     $c->config->{'Plugin::RapidApp::AuthCore'}{role_checker}
     if ($c->_authcore_enabled);
@@ -115,7 +115,7 @@ before 'setup_components' => sub {
     rootModuleClass => 'RapidApp::RootModule',
     rootModuleConfig => {
       app_title => $config->{title},
-      main_module_class => 'RapidApp::AppExplorer',
+      main_module_class => 'RapidApp::Module::Explorer',
       main_module_params => $main_module_params
     }
   };
@@ -202,7 +202,7 @@ L<CoreSchemaAdmin|Catalyst::Plugin::RapidApp::CoreSchemaAdmin>.
 
 The TabGui plugin itself is just a configuration layer. Internally, it assembles and automatically 
 configures a number of RapidApp modules which provide the actual functionality, including 
-L<RapidApp::AppExplorer>, L<RapidApp::AppTree> and others.
+L<RapidApp::Module::Explorer>, L<RapidApp::Module::Tree> and others.
 
 =head1 SEE ALSO
 

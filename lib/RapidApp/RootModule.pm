@@ -2,7 +2,7 @@ package RapidApp::RootModule;
 
 use Moose;
 use RapidApp::Include 'perlutil';
-extends 'RapidApp::AppBase';
+extends 'RapidApp::Module';
 
 require Module::Runtime;
 

@@ -1654,7 +1654,7 @@ sub get_relationship_column_cnf {
     $table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
     my $module_name = 'combo_' . $table . '_' . $colname;
     my $Module = $self->get_or_create_rapidapp_module( $module_name,
-      class	  => 'RapidApp::DbicAppCombo2',
+      class	  => 'RapidApp::Module::DbicCombo',
       params  => { %$params, %{ $conf->{auto_editor_params} } }
     );
     
@@ -1687,7 +1687,7 @@ sub get_relationship_column_cnf {
     $table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
     my $grid_module_name = 'grid_' . $table . '_' . $colname;
     my $GridModule = $self->get_or_create_rapidapp_module( $grid_module_name,
-      class	=> 'RapidApp::DbicAppGrid3',
+      class	=> 'RapidApp::Module::DbicGrid',
       params	=> {
         ResultSource => $Source,
         include_colspec => [ '*', '{?:single}*.*' ],
@@ -1949,7 +1949,7 @@ sub get_m2m_multi_relationship_column_cnf {
 	$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
 	my $module_name = 'm2mcombo_' . $table . '_' . $colname;
 	my $Module = $self->get_or_create_rapidapp_module( $module_name,
-		class	=> 'RapidApp::DbicAppCombo2',
+		class	=> 'RapidApp::Module::DbicCombo',
 		params	=> {
 			valueField		=> $rrinfo->{cond_info}->{foreign},
 			displayField	=> $rrinfo->{cond_info}->{foreign},
@@ -2027,7 +2027,7 @@ sub get_or_create_rapidapp_module {
 
 	my $rootModule = RapidApp->_rootModule or die "Failed to find RapidApp Root Module!!";
 	
-	$rootModule->apply_init_modules( tablespec => 'RapidApp::AppBase' ) 
+	$rootModule->apply_init_modules( tablespec => 'RapidApp::Module' ) 
 		unless ( $rootModule->has_module('tablespec') );
 	
 	my $TMod = $rootModule->Module('tablespec');

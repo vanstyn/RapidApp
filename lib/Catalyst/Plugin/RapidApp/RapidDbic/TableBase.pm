@@ -12,16 +12,16 @@ with
   'Catalyst::Plugin::RapidApp::NavCore::GridRole'
 ;
 
-#use RapidApp::DbicAppPropertyPage;
+#use RapidApp::Module::DbicPropPage;
 
 use RapidApp::Include qw(sugar perlutil);
 
-has 'page_class', is => 'ro', isa => 'Str', default => 'RapidApp::DbicAppPropertyPage';
+has 'page_class', is => 'ro', isa => 'Str', default => 'RapidApp::Module::DbicPropPage';
 has 'page_params', is => 'ro', isa => 'HashRef', default => sub {{}};
 has 'no_page', is => 'ro', isa => 'Bool', default => 0;
 has 'source_model', is => 'ro', isa => 'Maybe[Str]', default => undef;
 
-# This is an option of RapidApp::AppGrid2 that will allow double-click to open Rows:
+# This is an option of RapidApp::Module::Grid that will allow double-click to open Rows:
 has '+open_record_class', lazy => 1, default => sub {
 	my $self = shift;
 	return undef if ($self->no_page);

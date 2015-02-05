@@ -29,7 +29,7 @@ before 'setup_components' => sub {
   
   push @{$tgui_cnf->{navtrees}}, {
     module => $config->{dbic_tree_module_name},
-    class => 'RapidApp::AppDbicTree',
+    class => 'RapidApp::Module::DbicNavTree',
     params => {
       dbic_models => $config->{dbic_models},
       table_class	=> $config->{table_class},

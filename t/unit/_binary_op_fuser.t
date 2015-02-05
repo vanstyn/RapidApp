@@ -9,7 +9,7 @@ use Test::More;
 
 use DBIx::Class::Schema;
 
-require_ok('RapidApp::Role::DbicLink2');
+require_ok('RapidApp::Module::StorCmp::Role::DbicLnk');
 
 my @tests = (
   [ 'foo', { -in => [4,5,6] } ],
@@ -42,7 +42,7 @@ for my $q (0,1) {
   )->storage->sql_maker;
 
   is_deeply(
-    [ map { RapidApp::Role::DbicLink2::_binary_op_fuser($sm, @$_) } @tests ],
+    [ map { RapidApp::Module::StorCmp::Role::DbicLnk::_binary_op_fuser($sm, @$_) } @tests ],
     \@expected, 
     "_binary_op_fuser returns expected results (quote_names => $q)"
   );

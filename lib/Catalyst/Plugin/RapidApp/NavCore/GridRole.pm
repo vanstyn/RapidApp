@@ -2,7 +2,7 @@ package Catalyst::Plugin::RapidApp::NavCore::GridRole;
 use strict;
 use warnings;
 use Moose::Role;
-with 'RapidApp::Role::DataStore2::SavedSearch';
+with 'RapidApp::Module::StorCmp::Role::SavedSearch';
 
 use RapidApp::Include qw(sugar perlutil);
 

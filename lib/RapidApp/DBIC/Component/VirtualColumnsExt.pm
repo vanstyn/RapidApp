@@ -111,7 +111,7 @@ sub get_columns {
 # code for now... Need to actually learn the right DBIC way to do
 # this. This is a BUG. This code has been added for 2 reasons:
 #   1. As a reminder to fix this
-#   2. As a stop-gap for RapidApp::DbicAppCombo2 (sort), which is also
+#   2. As a stop-gap for RapidApp::Module::DbicCombo (sort), which is also
 #      in a tmp/in-flux state. Otherwise, this code would just be
 #      there, but it is here as a reminder. No other code should be
 #      calling this **private** method which WILL change when this

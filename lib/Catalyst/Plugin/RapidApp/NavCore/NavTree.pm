@@ -2,7 +2,7 @@ package Catalyst::Plugin::RapidApp::NavCore::NavTree;
 use strict;
 use warnings;
 use Moose;
-extends 'RapidApp::AppNavTree';
+extends 'RapidApp::Module::NavTree';
 
 use RapidApp::Include qw(sugar perlutil);
 
