@@ -8,8 +8,6 @@ use warnings;
 use Moose;
 extends 'RapidApp::Module::ExtComponent';
 
-#use Moose::Util::TypeConstraints;
-
 use RapidApp::Include qw(sugar perlutil);
 use Clone qw(clone);
 
@@ -17,9 +15,7 @@ use RapidApp::Module::DatStor;
 
 has 'no_datastore_plus_plugin', is => 'ro', isa => 'Bool', lazy => 1, default => 0;
 
-#subtype 'TableSpec', as 'Object', where { $_->isa('RapidApp::TableSpec') };
-
-has 'TableSpec' => ( is => 'ro', isa => 'Maybe[TableSpec]', lazy_build => 1 );
+has 'TableSpec' => ( is => 'ro', isa => 'Maybe[RapidApp::TableSpec]', lazy_build => 1 );
 sub _build_TableSpec { undef; }
 
 has 'TableSpec_applied' => ( is => 'rw', isa => 'Bool', default => 0 );
