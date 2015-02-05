@@ -66,7 +66,7 @@ $start_dir->recurse(
   preorder => 1,
   callback => sub {
     my $File = shift;
-    if (-f $File && $File =~ /.pm$/) {
+    if (-f $File && (($File =~ /\.pm$/) || ($File =~ /\.t$/) || ($File =~ /\.pl$/))) {
       my @lines = $File->slurp(iomode => '<:encoding(UTF-8)');
       my @nlines = ();
       my $ch = 0;
