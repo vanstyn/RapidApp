@@ -32,6 +32,7 @@ my %class_map = (
   'RapidApp::AppDV::TTController'     => 'RapidApp::Module::AppDV::TTController',
   'RapidApp::AppMimeIframe'           => 'RapidApp::Module::MimeIframe',
   'RapidApp::DbicAppPropertyPage'     => 'RapidApp::Module::DbicPropPage',
+  'RapidApp::DbicTemplate'            => 'RapidApp::Module::DbicTmplPage',
 
   # Roles:
   'RapidApp::Role::DbicLink2'               => 'RapidApp::Module::StorCmp::Role::DbicLnk',
