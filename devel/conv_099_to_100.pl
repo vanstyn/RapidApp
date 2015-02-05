@@ -35,12 +35,17 @@ my %class_map = (
 # longest first
 my @convs = sort { length($b) <=> length($a) } keys %class_map;
 
+my @pkg_skips = (@convs, qw(
+  RapidApp::Role::DataStore2
+));
+
 
 my $start_dir = dir( $ARGV[0] )->resolve;
 
 use Path::Class qw( file dir );
 use Try::Tiny;
 use Term::ANSIColor qw(:constants);
+use List::Util;
 
 print "Working on $start_dir/...\n";
 
@@ -52,23 +57,30 @@ $start_dir->recurse(
       my @lines = $File->slurp(iomode => '<:encoding(UTF-8)');
       my @nlines = ();
       my $ch = 0;
-      for my $line (@lines) {
+      my $is_pkg;
       
-        $line =~ /(\r?\n)$/;
-        my $nl = $1;
-        $line =~ s/\r?\n$//;
-        my $orig = $line;
+      # Ignore if we're dealing with one of the old packages itself
+      my $is_pkg = List::Util::first { $lines[0] =~ /^package $_/ } @pkg_skips;
+      
+      unless($is_pkg) {
+        for my $line (@lines) {
         
-        for my $old (@convs) {
-          my $new = $class_map{$old};
-          $line =~ s/\Q${old}\E/${new}/g;
+          $line =~ /(\r?\n)$/;
+          my $nl = $1;
+          $line =~ s/\r?\n$//;
+          my $orig = $line;
+          
+          for my $old (@convs) {
+            my $new = $class_map{$old};
+            $line =~ s/\Q${old}\E/${new}/g;
+          }
+          
+          unless ($line eq $orig) {
+            $ch++;
+            $nl = "\n";
+          }
+          push @nlines, $line, $nl;
         }
-        
-        unless ($line eq $orig) {
-          $ch++;
-          $nl = "\n";
-        }
-        push @nlines, $line, $nl;
       }
         
       print join('','  ',$File->relative($start_dir)->stringify);
