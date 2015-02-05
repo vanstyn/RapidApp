@@ -118,8 +118,7 @@ sub enforce_permission {
 
 sub content {
   my $self = shift;
-  #return bless { %{$self->get_complete_extconfig} }, 'RapidApp::AppCmp::SelfConfigRender';
-  
+
   $self->enforce_permission;
   
   # ---
