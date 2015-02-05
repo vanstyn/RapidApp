@@ -15,8 +15,8 @@ has 'read_handler'    => ( is => 'ro', default => undef,  isa => 'Maybe[RapidApp
 has 'update_handler'    => ( is => 'ro', default => undef,  isa => 'Maybe[RapidApp::Handler]' );
 has 'destroy_handler'  => ( is => 'ro', default => undef,  isa => 'Maybe[RapidApp::Handler]' );
 
-# global variable/flag (set/localized in RapidApp::Role::DataStore2)
-our $BATCH_UPDATE_IN_PROGRESS = 0;
+# global variable/flag (set/localized in RapidApp::Module::StorCmp) 
+our $BATCH_UPDATE_IN_PROGRESS = 0; #<-- should use obj hash key instead of pkg
 
 has 'record_pk'       => ( is => 'ro', default => undef );
 has 'store_fields'     => ( is => 'ro', default => undef );
