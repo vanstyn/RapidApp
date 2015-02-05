@@ -1,8 +1,11 @@
 package RapidApp::Module::DbicGrid;
+
 use strict;
+use warnings;
+
 use Moose;
 extends 'RapidApp::Module::Grid';
-with 'RapidApp::Role::DbicLink2';
+with 'RapidApp::Module::StorCmp::Role::DbicLnk';
 
 use RapidApp::Include qw(sugar perlutil);
 
