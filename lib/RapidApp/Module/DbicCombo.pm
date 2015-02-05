@@ -216,8 +216,8 @@ sub _resolve_select {
   };
 }
 
-require RapidApp::Role::DbicLink2;
-sub _binary_op_fuser { RapidApp::Role::DbicLink2::_binary_op_fuser(@_) }
+require RapidApp::Module::StorCmp::Role::DbicLnk;
+sub _binary_op_fuser { RapidApp::Module::StorCmp::Role::DbicLnk::_binary_op_fuser(@_) }
 
 sub _like_type_filter_for {
   my ($self,$str) = @_;

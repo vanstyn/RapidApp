@@ -7,7 +7,7 @@ use Moose::Role;
 requires 'record_pk';
 
 
-# Copied from RapidApp::Role::DbicLink2
+# Copied from (RapidApp::)Role::DbicLink2
 
 
 use RapidApp::Include qw(sugar perlutil);

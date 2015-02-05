@@ -189,7 +189,7 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
     my $module_name = lc($model);
     $module_name =~ s/\:\:/_/g;
     $self->apply_init_modules( $module_name => {
-      class => 'RapidApp::DbicSchemaGrid',
+      class => 'RapidApp::Module::DbicSchemaGrid',
       params => { 
         Schema => $self->app->model($model)->schema,
         tabTitle => $text,
