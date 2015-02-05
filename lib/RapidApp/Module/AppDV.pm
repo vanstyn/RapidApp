@@ -6,7 +6,7 @@ use warnings;
 # ABSTRACT: Editable DataView class
 
 use Moose;
-extends 'RapidApp::Module::StoreCmp';
+extends 'RapidApp::Module::StorCmp';
 
 use RapidApp::Include qw(sugar perlutil);
 

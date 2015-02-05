@@ -711,7 +711,7 @@ sub update {
   
   # -- Set the $BATCH_UPDATE_IN_PROGRESS flag if the client says this is a
   # batch update. This codepath is followed for "local" batch updates. See
-  # also the 'batch_update' method/action in RapidApp::Module::StoreCmp
+  # also the 'batch_update' method/action in RapidApp::Module::StorCmp
   local $BATCH_UPDATE_IN_PROGRESS = $BATCH_UPDATE_IN_PROGRESS;
   $BATCH_UPDATE_IN_PROGRESS = 1 if ($params->{batch_update});
   # --

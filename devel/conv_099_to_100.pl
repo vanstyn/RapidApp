@@ -33,6 +33,7 @@ my %class_map = (
   'RapidApp::AppMimeIframe'           => 'RapidApp::Module::MimeIframe',
   'RapidApp::DbicAppPropertyPage'     => 'RapidApp::Module::DbicPropPage',
   'RapidApp::DbicTemplate'            => 'RapidApp::Module::DbicTmplPage',
+  'RapidApp::AppDataStore2'           => 'RapidApp::Module::StorCmp',
 
   # Roles:
   'RapidApp::Role::DbicLink2'               => 'RapidApp::Module::StorCmp::Role::DbicLnk',
@@ -47,7 +48,7 @@ my @convs = sort { length($b) <=> length($a) } keys %class_map;
 
 my @pkg_skips = (@convs, qw(
   RapidApp::Role::DataStore2
-  RapidApp::AppDataStore2
+  
 ));
 
 
@@ -66,7 +67,7 @@ $start_dir->recurse(
   preorder => 1,
   callback => sub {
     my $File = shift;
-    if (-f $File && (($File =~ /\.pm$/) || ($File =~ /\.t$/) || ($File =~ /\.pl$/))) {
+    if (-f $File && $File =~ /\.(pm|pl|t|pod)$/) {
       my @lines = $File->slurp(iomode => '<:encoding(UTF-8)');
       my @nlines = ();
       my $ch = 0;

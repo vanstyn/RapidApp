@@ -100,7 +100,7 @@ sub BUILD {
     # make it call our store.load() whenever it changes:
     ### Temp disabled because this can cause a big load/hit ##
     #$self->Module('item',1)->DataStore->add_listener( write => $self->DataStore->store_load_fn ) if (
-    #  $self->Module('item',1)->isa('RapidApp::Module::StoreCmp')
+    #  $self->Module('item',1)->isa('RapidApp::Module::StorCmp')
     #);
   }
   
@@ -112,7 +112,7 @@ sub BUILD {
     
     ### Temp disabled because this can cause a big load/hit ##
     #$self->Module('add',1)->DataStore->add_listener( write => $self->DataStore->store_load_fn ) if (
-    #  $self->Module('add',1)->isa('RapidApp::Module::StoreCmp')
+    #  $self->Module('add',1)->isa('RapidApp::Module::StorCmp')
     #);
   }
   
