@@ -12,6 +12,7 @@ use strict;
 use warnings;
 
 my %class_map = (
+  'RapidApp::DataStore2'      => 'RapidApp::Module::DatStor',
   'RapidApp::AppBase'         => 'RapidApp::Module',
   'RapidApp::AppCmp'          => 'RapidApp::Module::ExtComponent',
   'RapidApp::AppGrid2'        => 'RapidApp::Module::Grid',
@@ -19,9 +20,20 @@ my %class_map = (
   'RapidApp::AppTree'         => 'RapidApp::Module::Tree',
   'RapidApp::AppNavTree'      => 'RapidApp::Module::NavTree',
   'RapidApp::AppTemplateTree' => 'RapidApp::Module::TemplateTree',
+  'RapidApp::AppExplorer'     => 'RapidApp::Module::Explorer',
+  'RapidApp::AppHtml'         => 'RapidApp::Module::HtmlContent',
+  'RapidApp::AppDbicTree'     => 'RapidApp::Module::DbicNavTree',
+  'RapidApp::DbicSchemaGrid'  => 'RapidApp::Module::DbicSchemaGrid',
 
+  # Roles:
+  'RapidApp::Role::DbicLink2'               => 'RapidApp::Module::StorCmp::Role::DbicLnk',
+  'RapidApp::AppGrid2::Role::ExcelExport'   => 'RapidApp::Module::Grid::Role::ExcelExport',
+  'RapidApp::Role::DataStore2::SavedSearch' => 'RapidApp::Module::StorCmp::Role::SavedSearch',
 
 );
+
+# longest first
+my @convs = sort { length($b) <=> length($a) } keys %class_map;
 
 
 my $start_dir = dir( $ARGV[0] )->resolve;
@@ -47,7 +59,7 @@ $start_dir->recurse(
         $line =~ s/\r?\n$//;
         my $orig = $line;
         
-        for my $old (keys %class_map) {
+        for my $old (@convs) {
           my $new = $class_map{$old};
           $line =~ s/\Q${old}\E/${new}/g;
         }
