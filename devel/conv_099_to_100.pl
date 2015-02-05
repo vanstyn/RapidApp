@@ -24,6 +24,8 @@ my %class_map = (
   'RapidApp::AppHtml'         => 'RapidApp::Module::HtmlContent',
   'RapidApp::AppDbicTree'     => 'RapidApp::Module::DbicNavTree',
   'RapidApp::DbicSchemaGrid'  => 'RapidApp::Module::DbicSchemaGrid',
+  'RapidApp::AppCombo2'       => 'RapidApp::Module::Combo',
+  'RapidApp::DbicAppCombo2'   => 'RapidApp::Module::DbicCombo',
 
   # Roles:
   'RapidApp::Role::DbicLink2'               => 'RapidApp::Module::StorCmp::Role::DbicLnk',
