@@ -247,6 +247,21 @@ this script.
 
 See L<Plack::App::RapidApp::rDbic> for more information.
 
+The C<rdbic.pl> script and L<rDbic|Plack::App::RapidApp::rDbic> Plack App were also featured in the 
+2014 Catalyst Advent Calendar:
+
+=over
+
+=item * 
+
+L<Day 16 - "Instant database admin tool with RapidApp and rdbic.pl"|http://www.catalystframework.org/calendar/2014/16>
+
+=item * 
+
+L<Day 17 - "The Plack::App::RapidApp::rDbic interface to RapidApp"|http://www.catalystframework.org/calendar/2014/17>
+
+=back
+
 =head1 SEE ALSO
 
 L<RapidApp>, L<rapidapp.pl>, L<Plack::App::RapidApp::rDbic>

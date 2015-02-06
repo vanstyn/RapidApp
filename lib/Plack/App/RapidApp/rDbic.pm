@@ -591,6 +591,14 @@ L<RapidApp>
 
 L<Plack::Component>
 
+=item * 
+
+L<Catalyst Advent 2014 - Day 16|http://www.catalystframework.org/calendar/2014/16>
+
+=item * 
+
+L<Catalyst Advent 2014 - Day 17|http://www.catalystframework.org/calendar/2014/17>
+
 =back
 
 
