@@ -44,6 +44,7 @@ my $tmpdir       = dir( File::Spec->tmpdir );
 my $port         = 3500;
 my $run_webapi   = 0;
 my $includes     = [];
+my $metakeys;
 
 # From 'prove': Allow cuddling the paths with -I, -M and -e
 @ARGV = map { /^(-[IMe])(.+)/ ? ($1,$2) : $_ } @ARGV;
@@ -58,7 +59,8 @@ GetOptions(
   'app-class=s'     => \$name,
   'crud-profile=s'  => \$crud_profile,
   'run-webapi+'     => \$run_webapi,
-  'I=s@'            => $includes
+  'I=s@'            => $includes,
+  'metakeys=s'      => \$metakeys
 );
 
 pod2usage(1) if ($help || !$dsn);
@@ -77,7 +79,8 @@ if (@$includes) {
     tmpdir           => $tmpdir,
     no_cleanup       => $no_cleanup,
     crud_profile     => $crud_profile,
-    isolate_app_tmp  => 1
+    isolate_app_tmp  => 1,
+    metakeys         => $metakeys
   };
   
   $cnf->{schema_class} = $schema_class if ($schema_class);
@@ -172,6 +175,7 @@ rdbic.pl - Instant CRUD webapp for your database using RapidApp/Catalyst/DBIx::C
    --no-cleanup    To leave auto-generated files on-disk after exit (in tmpdir)
    --app-class     Name to use for the generated app (defaults to 'rDbicServer')
    --run-webapi    EXPERIMENTAL: Run WebAPI::DBIC w/ HAL Browser instead of RapidApp
+   --metakeys      EXPERIMENTAL: Path to a RapidApp::Util::MetaKeys data file
 
    --crud-profile  One of five choices to broadly control CRUD interface behavior (see below)
 

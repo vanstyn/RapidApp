@@ -66,6 +66,8 @@ has 'crud_profile',
 has 'no_cleanup',      is => 'ro', isa => Bool, default => sub {0};
 has 'isolate_app_tmp', is => 'ro', isa => Bool, default => 0;
 
+has 'metakeys', is => 'ro', isa => Maybe[Any], default => sub { undef };
+
 has '_def_ns_pfx', is => 'ro', isa => Str, default => sub { 'rDbicApp' };
 
 has 'app_namespace', is => 'ro', isa => Str,  lazy => 1, default => sub { 
@@ -252,7 +254,8 @@ sub _bootstrap {
         dsn            => $self->dsn,
         'model-name'   => $self->model_name,
         'schema-class' => $self->schema_class,
-        crud_profile   => $self->crud_profile
+        crud_profile   => $self->crud_profile,
+        metakeys       => $self->metakeys
       },
       traits => ['RapidApp::Helper::Traits::RapidDbic'],
       name   => $name,
