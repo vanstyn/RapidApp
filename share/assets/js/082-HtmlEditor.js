@@ -56,6 +56,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.SimpleCAS_Image = Ext.extend(Ext.ux.form.HtmlE
 	
 	selectImage: function() {
 		
+    var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
 		
 		var upload_field = {
 			xtype: 'fileuploadfield',
@@ -103,11 +104,12 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.SimpleCAS_Image = Ext.extend(Ext.ux.form.HtmlE
 				});
 			}
 			
-			img.link_url = '/simplecas/fetch_content/' + img.checksum + '/' + img.filename;
+			img.link_url = [pfx,'/simplecas/fetch_content/',img.checksum,'/',img.filename].join('');
 			this.insertImage(img);
 		};
 		
-		var url = '/simplecas/upload_image';
+		// Note: the pfx will be applied within Ajax code 
+    var url = '/simplecas/upload_image';
 		if(this.maxImageWidth) { url += '/' + this.maxImageWidth; }
 		
 		Ext.ux.RapidApp.WinFormPost.call(this,{
@@ -361,11 +363,13 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHtmlFile = Ext.extend(Ext.util.Observable,
 			this.replaceContent(packet.content);
 		};
 		
+    var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
+    
 		Ext.ux.RapidApp.WinFormPost.call(this,{
 			title: 'Load from File (replace existing content)',
 			width: 430,
 			height:140,
-			url:'/simplecas/texttranscode/transcode_html',
+			url:[pfx,'/simplecas/texttranscode/transcode_html'].join(''),
 			useSubmit: true,
 			fileUpload: true,
 			fieldset: fieldset,
@@ -408,10 +412,13 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.SaveMhtml = Ext.extend(Ext.util.Observable, {
 	
 	downloadFile: function() {
 		var html = this.cmp.getRawValue();
+    
+    var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
+    var url = [pfx,'/simplecas/texttranscode/generate_mhtml_download'].join('');
 
 		//Ext.ux.iframeBgDownload(
-		//Ext.ux.postwith('/simplecas/texttranscode/generate_mhtml_download',{
-		Ext.ux.iFramePostwith('/simplecas/texttranscode/generate_mhtml_download',{
+		//Ext.ux.postwith(url,{
+		Ext.ux.iFramePostwith(url,{
 			html_enc: Ext.encode({ data: html })
 		});
 	}
@@ -523,9 +530,11 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile = Ext.extend(Ext.util.Observable, {
 			items:[ upload_field ]
 		};
 		
+    var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
+    
 		var callback = function(form,res) {
 			var packet = Ext.decode(res.response.responseText);
-			var url = '/simplecas/fetch_content/' + packet.checksum + '/' + packet.filename;
+			var url = [pfx,'/simplecas/fetch_content/',packet.checksum,'/',packet.filename].join('');
 			var link = '<a class="' + packet.css_class + '" href="' + url + '">' + packet.filename + '</a>';
 			this.insertContent(link);
 		};
@@ -534,7 +543,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile = Ext.extend(Ext.util.Observable, {
 			title: 'Insert file',
 			width: 430,
 			height:140,
-			url:'/simplecas/upload_file',
+      url: '/simplecas/upload_file', // <-- Note: the pfx will be applied within Ajax code 
 			useSubmit: true,
 			fileUpload: true,
 			fieldset: fieldset,

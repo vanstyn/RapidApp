@@ -4915,11 +4915,13 @@ Ext.ux.RapidApp.renderCasLink = function(v){
       if (fnparts.length > 1) {
         cls.push(fnparts.pop().toLowerCase());
       }
+      var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
+      var url = [pfx,'/simplecas/fetch_content/',sha1,'/',filename].join('');
       return [
         '<div class="',cls.join(' '),'">',
           '<span>',filename,'</span>',
           '<a ',
-            'href="/simplecas/fetch_content/',sha1,'/',filename,'" ',
+            'href="',url,'" ',
             'target="_self" ',
             'class="ra-icon-paperclip-tiny"',
           '>save</a>',

@@ -828,7 +828,7 @@ Ext.ux.RapidApp.CasUploadField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
   //value: '<div style="color:darkgray;">(select file)</div>',
   value: null,
 
-  uploadUrl: '/simplecas/upload_file',
+  uploadUrl: '/simplecas/upload_file', // <-- Note: the pfx will be applied within Ajax code 
   uploadHeading: 'Upload File',
   selectHeading: 'Select File',
 
@@ -943,7 +943,7 @@ Ext.reg('cas-upload-field',Ext.ux.RapidApp.CasUploadField);
 
 Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
 	
-	uploadUrl: '/simplecas/upload_image',
+  uploadUrl: '/simplecas/upload_image', // <-- Note: the pfx will be applied within Ajax code 
   uploadHeading: 'Insert Image',
   selectHeading: 'Select Image',
 	
@@ -997,7 +997,8 @@ Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
       });
     }
 		
-		img.link_url = '/simplecas/fetch_content/' + img.checksum + '/' + img.filename;
+    var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
+    img.link_url = [pfx,'/simplecas/fetch_content/',img.checksum,'/',img.filename].join('');
 		
 		if(!img.width || img.width < this.minWidth) { img.width = this.minWidth; }
 		if(!img.height || img.height < this.minHeight) { img.height = this.minHeight; }
