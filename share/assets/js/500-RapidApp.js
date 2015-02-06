@@ -4017,10 +4017,16 @@ Ext.ux.RapidApp.renderRed = function(val) {
 }
 
 Ext.ux.RapidApp.boolCheckMark = function(val) {
-	if (val == null || val === "" || val <= 0) { 
-		return '<img src="/assets/rapidapp/misc/static/s.gif" class="ra-icon-12x12 ra-icon-cross-light-12x12">';
-	}
-	return '<img src="/assets/rapidapp/misc/static/s.gif" class="ra-icon-12x12 ra-icon-checkmark-12x12">';
+  if (val == null || val === "" || val <= 0) { 
+    return [
+      '<img src="',Ext.BLANK_IMAGE_URL,
+      '" class="ra-icon-12x12 ra-icon-cross-light-12x12">'
+    ].join('');
+  }
+  return [
+    '<img src="',Ext.BLANK_IMAGE_URL,
+    '" class="ra-icon-12x12 ra-icon-checkmark-12x12">'
+  ].join('');
 }
 
 // Returns a date formatter function based on the supplied format:
@@ -4042,8 +4048,10 @@ Ext.ux.RapidApp.getDateFormatter = function(format,allow_zero) {
 
 
 Ext.ux.RapidApp.renderPencil = function(val) {
-	return '<span>' + val + '</span>' + 
-		'<img src="/assets/rapidapp/misc/static/s.gif" class="ra-icon-14x14 ra-icon-gray-pencil">';
+  return [
+    '<span>',val,'</span>',
+    '<img src="',Ext.BLANK_IMAGE_URL,'" class="ra-icon-14x14 ra-icon-gray-pencil">'
+  ].join('');
 }
 
 

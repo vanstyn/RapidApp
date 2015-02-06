@@ -1081,11 +1081,11 @@ table.GSprop tbody.GSprop, table.GSprop thead.GSprop {border-left: 1px solid #EA
 table.GSprop tbody.GSprop {border-bottom: 1px solid #EAECEE!important;}
 
 table.GSprop tbody.GSprop td.GSprop, table.GSprop tbody.GSprop {
-padding: 5px!important; background: url("/assets/rapidapp/misc/static/images/td_back.gif") repeat-x!important; text-align: left!important;
+padding: 5px!important; background: url("../../../assets/rapidapp/misc/static/images/td_back.gif") repeat-x!important; text-align: left!important;
 }
 
 th.GSprop, table.GSprop tbody.GSprop {
-padding: 5px!important; background: url("/assets/rapidapp/misc/static/images/td_back.gif") repeat-x!important;
+padding: 5px!important; background: url("../../../assets/rapidapp/misc/static/images/td_back.gif") repeat-x!important;
 }
 
 th.GSprop { font-weight: bolder!important; margin: 5px !important; white-space:nowrap !important; padding: 2px!important;}
@@ -1227,9 +1227,9 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 /* alternative to x-grid3-dirty-cell, not currently in use */
 .border-dirty {
   border-width:5px 0px 0px 5px;
-  -moz-border-image:url("/assets/rapidapp/misc/static/images/dirty.gif") 50% 50% 50% 50% stretch;
-  -webkit-border-image:url("/assets/rapidapp/misc/static/images/dirty.gif") 50% 50% 50% 50% stretch;
-  border-image: url("/assets/rapidapp/misc/static/images/dirty.gif") 50% 50% 50% 50% stretch;
+  -moz-border-image:url("../../../assets/rapidapp/misc/static/images/dirty.gif") 50% 50% 50% 50% stretch;
+  -webkit-border-image:url("../../../assets/rapidapp/misc/static/images/dirty.gif") 50% 50% 50% 50% stretch;
+  border-image: url("../../../assets/rapidapp/misc/static/images/dirty.gif") 50% 50% 50% 50% stretch;
 }
 
 

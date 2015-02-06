@@ -172,11 +172,16 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			
 			if(freeze_btn) { freeze_btn.setDisabled(!count); }
 		};
+    
+    var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
+    var url = [pfx,'/assets/rapidapp/misc/static/images/simple_new.png'].join('');
 
-		var get_header_html = function(size){
-			return '<img src="/assets/rapidapp/misc/static/images/simple_new.png" style="padding-bottom:3px;">&nbsp;&nbsp;' +
-				size + '&nbsp; Frozen (hidden) Filter Conditions Applied';
-		};
+    var get_header_html = function(size){
+      return [
+        '<img src="',url,'" style="padding-bottom:3px;">&nbsp;&nbsp;',
+        size,'&nbsp; Frozen (hidden) Filter Conditions Applied'
+      ].join('');
+    };
 		
 		var hbuttons = [
 			hlabel = new Ext.form.Label({

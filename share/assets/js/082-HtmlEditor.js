@@ -454,11 +454,13 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHelp = Ext.extend(Ext.util.Observable, {
 	},
 	
 	showWindow: function(){
+    var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
+    var url = [pfx,'/assets/rapidapp/misc/static/html/htmleditor_load_download_help.html'].join('');
 		Ext.ux.RapidApp.showIframeWindow({
 			title: this.title,
 			height: this.height,
 			width: this.width,
-			src: '/assets/rapidapp/misc/static/html/htmleditor_load_download_help.html'
+			src: url
 		});
 	}
 	
@@ -482,13 +484,18 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile = Ext.extend(Ext.util.Observable, {
 	init: function(cmp){
 		this.cmp = cmp;
 		this.cmp.on('render', this.onRender, this);
-		
-		var getDocMarkup_orig = this.cmp.getDocMarkup;
-		this.cmp.getDocMarkup = function() {
-			return '<link rel="stylesheet" type="text/css" href="/assets/rapidapp/filelink/current/filelink.css" />' +
-				getDocMarkup_orig.apply(this,arguments);
-		}
-	},
+    
+    var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
+    var url = [pfx,'/assets/rapidapp/filelink/current/filelink.css'].join('');
+    
+    var getDocMarkup_orig = this.cmp.getDocMarkup;
+    this.cmp.getDocMarkup = function() {
+      return [
+        '<link rel="stylesheet" type="text/css" href="',url,'" />',
+        getDocMarkup_orig.apply(this,arguments)
+      ].join('');
+    }
+  },
 	
 	onRender: function() {
 		this.btn = this.cmp.getToolbar().addButton({
