@@ -9,7 +9,7 @@ with 'RapidApp::Module::StorCmp::Role::DbicLnk::RowPg';
 
 use RapidApp::DBIC::Component::TableSpec;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 has 'ResultSource' => ( is => 'ro', required => 1 );
 

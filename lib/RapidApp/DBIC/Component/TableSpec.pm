@@ -12,7 +12,7 @@ use Sub::Name qw/subname/;
 # a Result class for use in configuring various modules that
 # consume/use a DBIC Source
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 use RapidApp::TableSpec;
 use RapidApp::Module::DbicCombo;

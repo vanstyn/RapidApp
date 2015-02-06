@@ -12,7 +12,7 @@ use namespace::autoclean;
 # This Role handles setting up AutoAssets controllers needed for the proper functioning
 # of the RapidApp system
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 use CatalystX::InjectComponent;
 use Catalyst::Utils;

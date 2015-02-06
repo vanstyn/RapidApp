@@ -14,7 +14,7 @@ with
 
 #use RapidApp::Module::DbicPropPage;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 has 'page_class', is => 'ro', isa => 'Str', default => 'RapidApp::Module::DbicPropPage';
 has 'page_params', is => 'ro', isa => 'HashRef', default => sub {{}};

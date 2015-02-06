@@ -4,7 +4,7 @@ use warnings;
 use Moose::Role;
 with 'RapidApp::Module::StorCmp::Role::SavedSearch';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 # This Role must be loaded in Grids for "Save Search" to be available in the
 # options menu. Even if loaded, this Role will not enable itself unless the

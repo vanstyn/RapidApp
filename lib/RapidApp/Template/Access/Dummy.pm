@@ -2,7 +2,7 @@ package RapidApp::Template::Access::Dummy;
 use strict;
 use warnings;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 use Moo;
 use Types::Standard qw(:all);

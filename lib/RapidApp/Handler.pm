@@ -1,7 +1,7 @@
 package RapidApp::Handler;
 use Moose;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 has 'scope'		=> ( is => 'rw', default => undef, isa => 'Maybe[Object]' );
 has 'method'	=> ( is => 'rw', default => undef, isa => 'Maybe[Str]' );

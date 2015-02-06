@@ -6,7 +6,7 @@ use warnings;
 
 # ABSTRACT: Default Middleware for RapidApp
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 sub call {
   my ($self, $env) = @_;

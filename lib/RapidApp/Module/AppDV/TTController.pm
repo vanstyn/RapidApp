@@ -5,7 +5,7 @@ use warnings;
 
 use Moose;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 use RapidApp::Module::AppDV::RecAutoload;
 

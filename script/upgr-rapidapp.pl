@@ -1,17 +1,23 @@
 #!/usr/bin/perl
-
+#
+#  upgr-rapidapp.pl [DIR]
+#
 # -- GitHub Issue #74 "Consolidate and move Module classes to RapidApp::Module::"
 #    https://github.com/vanstyn/RapidApp/issues/74
 #
-# Preliminary/experimental script does find and replace to remap module class 
-# names from v0.99* to their new names under RapidApp::Module::* for v1.0
+# Script will perform a recursive find/replace on a directory to make
+# changes from older/known configurations to newer conventions expected
+# by the current version of RapidApp
 #
-
 
 use strict;
 use warnings;
 
+use RapidApp::Util qw(:all);
+
+
 my %class_map = (
+  # Module classes:
   'RapidApp::DataStore2'              => 'RapidApp::Module::DatStor',
   'RapidApp::AppBase'                 => 'RapidApp::Module',
   'RapidApp::AppCmp'                  => 'RapidApp::Module::ExtComponent',
@@ -40,6 +46,9 @@ my %class_map = (
   'RapidApp::AppGrid2::Role::ExcelExport'   => 'RapidApp::Module::Grid::Role::ExcelExport',
   'RapidApp::Role::DataStore2::SavedSearch' => 'RapidApp::Module::StorCmp::Role::SavedSearch',
   'RapidApp::Role::DbicRowPage'             => 'RapidApp::Module::StorCmp::Role::DbicLnk::RowPg',
+  
+  # Other pkg/classes:
+  'RapidApp::Functions'   => 'RapidApp::Util',
 
 );
 
@@ -48,15 +57,17 @@ my @convs = sort { length($b) <=> length($a) } keys %class_map;
 
 my @pkg_skips = (@convs, qw(
   RapidApp::Role::DataStore2
-  
+  RapidApp::Include
+  RapidApp::Sugar
 ));
 
 
+die "Must supply a start dir as argument!\n" unless ($ARGV[0]);
 my $start_dir = dir( $ARGV[0] )->resolve;
 
+
 use Path::Class qw( file dir );
-use Try::Tiny;
-use Term::ANSIColor qw(:constants);
+
 use List::Util;
 
 my @skipped_pkg_files = ();
@@ -67,12 +78,11 @@ $start_dir->recurse(
   preorder => 1,
   callback => sub {
     my $File = shift;
-    if (-f $File && $File =~ /\.(pm|pl|t|pod)$/) {
+    if (-f $File && $File =~ /\.(pm|t|pod)$/) {
       my @lines = $File->slurp(iomode => '<:encoding(UTF-8)');
       my @nlines = ();
       my $ch = 0;
-      my $is_pkg;
-      
+
       # Ignore if we're dealing with one of the old packages itself
       my $is_pkg = List::Util::first { $lines[0] =~ /^package $_/ } @pkg_skips;
       
@@ -90,6 +100,11 @@ $start_dir->recurse(
           for my $old (@convs) {
             my $new = $class_map{$old};
             $line =~ s/\Q${old}\E/${new}/g;
+          }
+          
+          # Convert to RapidApp::Util:
+          if ($line =~ /^use RapidApp\:\:(Include|Sugar)/) {
+            $line = 'use RapidApp::Util qw(:all);';
           }
           
           unless ($line eq $orig) {

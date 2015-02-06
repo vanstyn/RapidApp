@@ -5,7 +5,7 @@ use warnings;
 use Moose;
 extends 'Catalyst::Plugin::RapidApp::NavCore::NavTree';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 #has '+root_node_text' => ( default => 'Navtree' );
 #has '+show_root_node' => ( default => 1 );

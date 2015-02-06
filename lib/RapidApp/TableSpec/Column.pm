@@ -9,7 +9,7 @@ our $VERSION = '0.99301';
 
 use Moose;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 use RapidApp::TableSpec::Column::Profile qw( get_set );
 

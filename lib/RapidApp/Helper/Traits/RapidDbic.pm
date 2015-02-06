@@ -4,7 +4,7 @@ use Moose::Role;
 use strict;
 use warnings;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 use Catalyst::Helper::Model::DBIC::Schema::ForRapidDbic;
 

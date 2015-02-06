@@ -2,7 +2,7 @@ package RapidApp::Template::Controller;
 use strict;
 use warnings;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 use Try::Tiny;
 use Template;
 use Module::Runtime;

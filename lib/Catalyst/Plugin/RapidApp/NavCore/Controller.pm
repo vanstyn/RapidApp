@@ -4,7 +4,7 @@ use namespace::autoclean;
 
 BEGIN { extends 'Catalyst::Controller' };
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 require Module::Runtime;
 require Catalyst::Utils;
 

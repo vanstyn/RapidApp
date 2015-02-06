@@ -7,7 +7,7 @@ use warnings;
 
 with 'Catalyst::Plugin::RapidApp';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 use CatalystX::InjectComponent;
 
 # setupRapidApp is the main function which injects components

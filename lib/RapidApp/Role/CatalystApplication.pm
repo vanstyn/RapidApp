@@ -1,7 +1,7 @@
 package RapidApp::Role::CatalystApplication;
 
 use Moose::Role;
-use RapidApp::Include 'perlutil';
+use RapidApp::Util qw(:all);
 use RapidApp::RapidApp;
 use Scalar::Util 'blessed';
 use CatalystX::InjectComponent;
@@ -339,12 +339,12 @@ after 'log_response' => sub {
 
 
 # reset stats for each request:
-before 'dispatch' => sub { %$RapidApp::Functions::debug_around_stats = (); };
+before 'dispatch' => sub { %$RapidApp::Util::debug_around_stats = (); };
 after 'dispatch' => \&_report_debug_around_stats;
 
 sub _report_debug_around_stats {
 	my $c = shift;
-	my $stats = $RapidApp::Functions::debug_around_stats || return;
+	my $stats = $RapidApp::Util::debug_around_stats || return;
 	return unless (ref($stats) && keys %$stats > 0);
 	
 	my $total = $c->stats->elapsed;
@@ -360,7 +360,7 @@ sub _get_debug_around_stats_ascii {
 	my $total = shift or die "missing total arg";
 	my $total_heading = shift || 'Total Elapsed';
 	
-	my $stats = $RapidApp::Functions::debug_around_stats || return;
+	my $stats = $RapidApp::Util::debug_around_stats || return;
 	return unless (ref($stats) && keys %$stats > 0);
 	
 	my $auto_width = 'calls';

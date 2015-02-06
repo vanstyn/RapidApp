@@ -3,7 +3,7 @@ use Moose;
 extends 'RapidApp::Module::ExtComponent';
 
 use strict;
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 use String::Random;
 use RapidApp::Column;
 use MIME::Base64;

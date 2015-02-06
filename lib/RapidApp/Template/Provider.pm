@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use autodie;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 use Path::Class qw(file dir);
 use RapidApp::Template::Access::Dummy;
 

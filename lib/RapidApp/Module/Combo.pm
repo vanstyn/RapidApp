@@ -6,7 +6,7 @@ use warnings;
 use Moose;
 extends 'RapidApp::Module::StorCmp';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 has 'name'           => ( is => 'ro', required => 1, isa => 'Str' );
 has 'displayField'   => ( is => 'ro', required => 1, isa => 'Str' );

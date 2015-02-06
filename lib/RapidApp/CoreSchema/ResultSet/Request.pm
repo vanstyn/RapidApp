@@ -4,7 +4,7 @@ use base 'DBIx::Class::ResultSet';
 use strict;
 use warnings;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 # Flexible handling (copied from My Clippard)
 sub record_Request {

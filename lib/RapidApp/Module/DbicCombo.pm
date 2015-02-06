@@ -6,7 +6,7 @@ use warnings;
 use Moose;
 extends 'RapidApp::Module::Combo';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 use List::Util;
 
 has 'ResultSet' => ( is => 'ro', isa => 'Object', required => 1 );

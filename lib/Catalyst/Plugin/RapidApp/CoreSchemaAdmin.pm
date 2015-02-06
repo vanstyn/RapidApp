@@ -4,7 +4,7 @@ use namespace::autoclean;
 
 with 'Catalyst::Plugin::RapidApp::RapidDbic';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 use Module::Runtime;
 
 before 'setup_components' => sub {

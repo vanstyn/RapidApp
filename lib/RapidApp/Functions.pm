@@ -3,6 +3,18 @@ package RapidApp::Functions;
 use strict;
 use warnings;
 
+die join("\n",
+  '','',
+  '  ***  WARNING  ***',
+  "  " . __PACKAGE__ . " is DEPRECATED. It has been replaced by consolidated 'RapidApp::Util' package",
+  "   [tip]: run `upgr-rapidapp.pl path/to/lib/` to upgrade your code automatically...",
+  '',''
+);
+
+1;
+__END__
+
+
 require Exporter;
 use Class::MOP::Class;
 

@@ -6,7 +6,7 @@ use Moose::Role;
 
 use Excel::Writer::XLSX;
 use RapidApp::Spreadsheet::ExcelTableWriter;
-use RapidApp::Include qw(perlutil sugar);
+use RapidApp::Util qw(:all);
 require JSON;
 require Text::CSV;
 

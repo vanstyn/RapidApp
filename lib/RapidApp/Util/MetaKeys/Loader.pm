@@ -9,7 +9,7 @@ require Module::Runtime;
 require DBIx::Class::Schema::Loader::Table;
 require RapidApp::Util::MetaKeys;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 use Data::Printer;
 
 sub new {

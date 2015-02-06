@@ -6,7 +6,7 @@ with 'MooseX::Traits';
 # This configuration class defines behaviors of tables and
 # columns in a general way that can be used in different places
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 use RapidApp::TableSpec::Column;
 
 our $VERSION = '0.1';

@@ -1,7 +1,7 @@
 package RapidApp::RootModule;
 
 use Moose;
-use RapidApp::Include 'perlutil';
+use RapidApp::Util qw(:all);
 extends 'RapidApp::Module';
 
 require Module::Runtime;
@@ -50,7 +50,7 @@ sub BUILD {
 	
 	# Execute arbitrary code setup earlier in the init process that needs
 	# to be called after the RapidApp Module tree has been loaded
-	# See RapidApp::Functions::rapidapp_add_global_init_coderef() for more info
+	# See RapidApp::Util::rapidapp_add_global_init_coderef() for more info
 	foreach my $coderef (@RapidApp::RootModule::GLOBAL_INIT_CODEREFS) {
 		$coderef->($self);
 	}

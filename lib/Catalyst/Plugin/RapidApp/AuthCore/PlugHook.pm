@@ -2,7 +2,7 @@ package Catalyst::Plugin::RapidApp::AuthCore::PlugHook;
 use Moose::Role;
 use namespace::autoclean;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 =pod
 

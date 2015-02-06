@@ -10,7 +10,7 @@ requires 'record_pk';
 # Copied from (RapidApp::)Role::DbicLink2
 
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 use RapidApp::TableSpec::DbicTableSpec;
 use Clone qw(clone);
 use Text::Glob qw( match_glob );

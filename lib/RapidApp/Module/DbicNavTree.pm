@@ -9,7 +9,7 @@ use Moose;
 extends 'RapidApp::Module::NavTree';
 
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 require Module::Runtime;
 
 has 'dbic_models', is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default => undef;

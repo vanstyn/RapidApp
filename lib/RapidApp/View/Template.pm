@@ -5,7 +5,7 @@ use warnings;
 
 use base 'Catalyst::View';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 
 sub process {

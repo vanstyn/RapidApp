@@ -7,7 +7,7 @@ use RapidApp::TableSpec::DbicTableSpec;
 use RapidApp::TableSpec::ColSpec;
 use RapidApp::TableSpec::Column::Profile;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 use RapidApp::DBIC::Component::TableSpec;
 

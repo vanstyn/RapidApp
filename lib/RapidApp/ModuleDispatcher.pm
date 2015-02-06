@@ -1,7 +1,7 @@
 package RapidApp::ModuleDispatcher;
 
 use Moose;
-use RapidApp::Include 'perlutil';
+use RapidApp::Util qw(:all);
 
 use Scalar::Util 'blessed';
 

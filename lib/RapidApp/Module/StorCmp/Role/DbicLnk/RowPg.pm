@@ -8,7 +8,7 @@ use warnings;
 use Moose::Role;
 with 'RapidApp::Module::StorCmp::Role::DbicLnk';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 has 'getTabTitle', is => 'ro', isa => 'Maybe[CodeRef]', default => undef;
 has 'getTabIconCls', is => 'ro', isa => 'Maybe[CodeRef]', default => undef;

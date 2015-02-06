@@ -7,7 +7,7 @@ extends 'Catalyst::Model';
 # This makes $c->_app available, just like in Controllers:
 with 'Catalyst::Component::ApplicationAttribute';
 
-use RapidApp::Include 'perlutil', 'sugar';
+use RapidApp::Util qw(:all);
 use Time::HiRes qw(gettimeofday);
 
 # the package name of the catalyst application, i.e. "GreenSheet" or "HOPS"

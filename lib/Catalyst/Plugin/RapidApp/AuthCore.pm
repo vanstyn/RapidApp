@@ -4,7 +4,7 @@ use namespace::autoclean;
 
 with 'Catalyst::Plugin::RapidApp::CoreSchema';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 require Catalyst::Utils;
 use CatalystX::InjectComponent;
 

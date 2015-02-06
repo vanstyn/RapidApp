@@ -10,7 +10,7 @@ use warnings;
 # DBIx::Class Component: Applies TableSpec configs to the Result classes within a
 # Schema -- DEPRECATED - do not use
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 sub apply_TableSpecs {
 	my $self = shift;

@@ -41,7 +41,7 @@ use Try::Tiny;
 use Path::Class qw/file dir/;
 use Module::Runtime;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 # This is ugly/temporary -- mechanism to pull in additional configs from the
 # RapidDbic helper trait. Currently this is only exposed in rdbic.pl (--crud-profile)

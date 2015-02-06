@@ -6,7 +6,7 @@ use warnings;
 use Moose;
 extends 'RapidApp::Module::ExtComponent';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 # This class exists just to properly setup a container with correct scrollbars, 
 # in all browsers (including IE), to contain simple HTML. Derived class should

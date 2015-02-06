@@ -5,7 +5,7 @@ extends 'Catalyst::Model::DBIC::Schema';
 use strict;
 use warnings;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 use Types::Standard qw(:all);
 

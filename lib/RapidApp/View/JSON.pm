@@ -8,8 +8,7 @@ use RapidApp::JSON::MixedEncoder;
 use Data::Dumper;
 use Scalar::Util 'blessed', 'reftype';
 use HTML::Entities;
-use RapidApp::Sugar;
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 =head1 NAME
 

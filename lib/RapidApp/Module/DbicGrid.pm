@@ -7,7 +7,7 @@ use Moose;
 extends 'RapidApp::Module::Grid';
 with 'RapidApp::Module::StorCmp::Role::DbicLnk';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 has 'show_base_conditions_in_header', is => 'ro', isa => 'Bool', default => 1;
 

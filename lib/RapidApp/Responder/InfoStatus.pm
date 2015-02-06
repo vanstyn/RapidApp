@@ -3,7 +3,7 @@ package RapidApp::Responder::InfoStatus;
 use Moose;
 extends 'RapidApp::Responder';
 
-use RapidApp::Include;
+use RapidApp::Util qw(:all);
 use HTML::Entities;
 
 

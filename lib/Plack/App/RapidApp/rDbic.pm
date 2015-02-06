@@ -24,7 +24,7 @@ use Module::Runtime;
 use Catalyst::Utils;
 use Class::Load 'is_class_loaded';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 has 'connect_info', is => 'ro', lazy => 1, default => sub {
   my $self = shift;

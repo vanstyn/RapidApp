@@ -7,7 +7,7 @@ use Moose;
 use namespace::autoclean;
 BEGIN { extends 'Catalyst::Controller', 'RapidApp::ModuleDispatcher'; }
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 =head1 NAME
 

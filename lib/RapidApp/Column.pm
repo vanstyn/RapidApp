@@ -1,7 +1,7 @@
 package RapidApp::Column;
 use strict;
 use warnings;
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 our @gridColParams= qw(
   name sortable hidden header dataIndex width editor menuDisabled tpl xtype

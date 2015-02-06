@@ -5,7 +5,7 @@ use Moose;
 
 extends 'RapidApp::Module';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 # New: ability to programatically set the Ext panel header/footer
 has 'header_template', is => 'ro', isa => 'Maybe[Str]', default => sub{undef};

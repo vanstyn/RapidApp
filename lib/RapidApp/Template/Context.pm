@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use autodie;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 use Text::Markdown 1.000031 'markdown';
 use Try::Tiny;
 

@@ -6,7 +6,7 @@ use warnings;
 use Moose;
 extends 'RapidApp::Module::Grid';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 has '+auto_autosize_columns', default => 1; #<-- not working
 

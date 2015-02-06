@@ -5,7 +5,7 @@ use warnings;
 
 use base 'Catalyst::View::TT';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 __PACKAGE__->config(TEMPLATE_EXTENSION => '.tt');
 

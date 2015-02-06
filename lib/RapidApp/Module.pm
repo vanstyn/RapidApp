@@ -19,7 +19,7 @@ use Data::Dumper;
 use RapidApp::JSONFunc;
 use RapidApp::JSON::MixedEncoder;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 has 'base_params'         => ( is => 'ro',  lazy => 1, default => sub {{}}  );
 has 'params'             => ( is => 'ro',  required   => 0,    isa => 'ArrayRef'  );

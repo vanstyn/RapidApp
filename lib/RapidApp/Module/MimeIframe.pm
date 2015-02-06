@@ -6,7 +6,7 @@ use warnings;
 use Moose;
 extends 'RapidApp::Module::ExtComponent';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 has 'get_id_code', is => 'ro', lazy => 1, isa => 'CodeRef', default => sub { die "Virtual Method!" };
 has 'get_content_code', is => 'ro', lazy => 1, isa => 'CodeRef', default => sub { die "Virtual Method!" };

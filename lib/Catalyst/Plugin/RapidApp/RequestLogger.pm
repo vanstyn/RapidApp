@@ -6,7 +6,7 @@ with 'Catalyst::Plugin::RapidApp';
 
 # Plugin logs all requests to CoreSchema
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 require Module::Runtime;
 require Catalyst::Utils;
 use CatalystX::InjectComponent;

@@ -7,7 +7,7 @@ use Moose;
 BEGIN { extends 'Catalyst::Controller'; }
 use namespace::autoclean;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 # This is a special controller designed to render a single RapidApp 
 # Module in its own Viewport (i.e. in an iFrame)

@@ -3,7 +3,7 @@ use strict;
 use Moose;
 use Moose::Util::TypeConstraints;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 =head1 ColSpec format 'include_colspec'
 

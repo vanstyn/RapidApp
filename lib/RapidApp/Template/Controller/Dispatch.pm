@@ -2,7 +2,7 @@ package RapidApp::Template::Controller::Dispatch;
 use strict;
 use warnings;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 use Moose;
 use namespace::autoclean;

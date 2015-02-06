@@ -6,7 +6,7 @@ use warnings;
 use Moose;
 extends 'RapidApp::Module::Tree';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 has 'module_scope', is => 'ro', lazy => 1, default => sub { return shift };
 

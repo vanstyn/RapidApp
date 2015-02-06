@@ -4,7 +4,7 @@ require base; base->import( 'DBIx::Class::ResultSet');
 use strict;
 use warnings;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 use Clone qw(clone);
 
 # This ResultSet class is simple and elegant. It extends the standard

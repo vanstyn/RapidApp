@@ -8,7 +8,7 @@ use warnings;
 use Moose;
 extends 'RapidApp::Module::StorCmp';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 use Template;
 use RapidApp::Module::AppDV::TTController;

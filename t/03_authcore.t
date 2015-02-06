@@ -6,7 +6,7 @@ use FindBin '$Bin';
 
 use lib "$Bin/var/testapps/TestRA-ChinookDemo/lib";
 use Path::Class qw(file dir);
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 use RapidApp::Test::EnvUtil;
 BEGIN { $ENV{TMPDIR} or RapidApp::Test::EnvUtil::set_tmpdir_env() }

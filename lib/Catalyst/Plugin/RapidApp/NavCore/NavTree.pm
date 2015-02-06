@@ -4,7 +4,7 @@ use warnings;
 use Moose;
 extends 'RapidApp::Module::NavTree';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 has 'plugin_config', is => 'ro', lazy => 1, default => sub {
   my $self = shift;

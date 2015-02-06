@@ -4,7 +4,7 @@ use namespace::autoclean;
 
 with 'Catalyst::Plugin::RapidApp::CoreSchema';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 use CatalystX::InjectComponent;
 
 after 'setup_components' => sub { (shift)->_navcore_inject_controller(@_) };

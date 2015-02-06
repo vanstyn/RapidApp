@@ -4,7 +4,7 @@ use namespace::autoclean;
 
 with 'Catalyst::Plugin::RapidApp::TabGui';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 require Module::Runtime;
 require Catalyst::Utils;
 use List::Util;

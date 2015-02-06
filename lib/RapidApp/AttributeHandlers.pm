@@ -1,5 +1,5 @@
 package RapidApp::AttributeHandlers;
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 use strict;
 use warnings;

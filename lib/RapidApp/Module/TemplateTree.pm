@@ -15,7 +15,7 @@ system (RapidApp::Template::*)
 
 =cut
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 has '+fetch_nodes_deep', default => 0;
 has 'template_regex', is => 'ro', isa => 'Maybe[Str]', default => sub {undef};

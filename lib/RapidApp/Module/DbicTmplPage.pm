@@ -7,7 +7,7 @@ use Moose;
 extends 'RapidApp::Module::StorCmp';
 with 'RapidApp::Module::StorCmp::Role::DbicLnk::RowPg';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 use RapidApp::Module::DbicPropPage;
 

@@ -7,7 +7,7 @@ use Moose;
 # quoted (i.e. turned into a string), this object must be encoded with RapidApp::JSON::MixedEncoder
 # which extends JSON::PP and modifies the behavior to return TO_JSON_RAW as-is
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 use RapidApp::JSON::MixedEncoder;
 
 has 'func'		=> ( is => 'ro', required => 1, isa => 'Str' );

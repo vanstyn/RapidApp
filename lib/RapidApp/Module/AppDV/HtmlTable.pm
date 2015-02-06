@@ -6,7 +6,7 @@ use warnings;
 use Moose;
 extends 'RapidApp::Module::AppDV';
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 =head1 NAME
 
