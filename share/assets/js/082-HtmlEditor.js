@@ -453,6 +453,8 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHelp = Ext.extend(Ext.util.Observable, {
 		}
 	},
 	
+  // TODO: This is old, not used anyplace else, and needs brought into the fold with
+  // the newer stuff like Template::Controller, etc (GitHub Issue #116)
 	showWindow: function(){
     var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
     var url = [pfx,'/assets/rapidapp/misc/static/html/htmleditor_load_download_help.html'].join('');
