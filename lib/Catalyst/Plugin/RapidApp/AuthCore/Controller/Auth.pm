@@ -45,6 +45,9 @@ sub do_redirect {
   my ($self, $c, $href) = @_;
   $c ||= RapidApp->active_request_context;
   $href ||= $c->req->params->{redirect} || '/';
+  
+  my $pfx = $c->mount_url || '';
+  $href =~ s/^${pfx}//;
 
   # If the client is still trying to redirect to '/auth/login' after login,
   # it probably means they haven't configured any custom login redirect rules,
@@ -57,7 +60,6 @@ sub do_redirect {
   }
 
   $href = "/$href" unless ($href =~ /^\//); #<-- enforce local
-  my $pfx = $c->mount_url || '';
   $c->response->redirect("$pfx$href");
   return $c->detach;
 }
