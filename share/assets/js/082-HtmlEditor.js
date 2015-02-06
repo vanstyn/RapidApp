@@ -363,13 +363,11 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.LoadHtmlFile = Ext.extend(Ext.util.Observable,
 			this.replaceContent(packet.content);
 		};
 		
-    var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
-    
 		Ext.ux.RapidApp.WinFormPost.call(this,{
 			title: 'Load from File (replace existing content)',
 			width: 430,
 			height:140,
-			url:[pfx,'/simplecas/texttranscode/transcode_html'].join(''),
+			url:'/simplecas/texttranscode/transcode_html', // <-- Note: the pfx will be applied within Ajax code 
 			useSubmit: true,
 			fileUpload: true,
 			fieldset: fieldset,
