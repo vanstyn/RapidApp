@@ -45,10 +45,15 @@ BEGIN {
   );
 }
 
-
-use RapidApp::JSON::RawJavascript;
-use RapidApp::HTML::RawHtml;
 use RapidApp::Responder::UserError;
+use RapidApp::Responder::CustomPrompt;
+use RapidApp::Responder::InfoStatus;
+use RapidApp::JSONFunc;
+use RapidApp::JSON::MixedEncoder;
+use RapidApp::JSON::RawJavascript;
+use RapidApp::JSON::ScriptWithData;
+
+use RapidApp::HTML::RawHtml;
 use RapidApp::Handler;
 use HTML::Entities;
 use RapidApp::RootModule;
