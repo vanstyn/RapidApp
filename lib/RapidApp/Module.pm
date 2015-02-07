@@ -658,13 +658,6 @@ has 'customprompt_data' => (
 ##################################
 
 
-use Term::ANSIColor qw(:constants);
-# TODO/FIXME: for some reason that I haven't taken the time to
-# figure out, the 'scream' util function can't be called within
-# the request logic. That's why this module isn't loading the
-# RapidApp::Include, like most places.
-#use RapidApp::Include qw(sugar perlutil);
-
 has 'base_url' => ( 
   is => 'rw', lazy => 1, default => sub { 
     my $self = shift;

@@ -142,4 +142,48 @@ if(scalar(@skipped_pkg_files) > 0) {
 }
 
 
+__END__
+
+=head1 NAME
+
+upgr-rapidapp.pl - Update codebases for latest version of RapidApp
+
+=head1 SYNOPSIS
+
+ upgr-rapidapp.pl /path/to/app/lib
+
+=head1 DESCRIPTION
+
+This script performs updates on existing code to reflect changes in the L<RapidApp> API. This can
+be used to bring code written for an older version of RapidApp up to date. This primarily consists
+of simple re-mapping of class names from v0.99x to their new v1.00x names, but in the future if
+larger API changes are made that can be safely converted via an automated script, this is where
+they will go.
+
+Use this script at your own risk, and make sure to backup your code first!
+
+
+=head1 SEE ALSO
+
+L<RapidApp>
+
+=head1 SUPPORT
+ 
+IRC:
+ 
+    Join #rapidapp on irc.perl.org.
+
+=head1 AUTHOR
+
+Henry Van Styn <vanstyn@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2015 by IntelliTree Solutions llc.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
+
 

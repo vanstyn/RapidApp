@@ -10,7 +10,7 @@ use Path::Class qw( file dir );
 use Plack::Runner;
 use Plack::App::RapidApp::rDbic;
 
-use RapidApp::Include qw(sugar perlutil);
+use RapidApp::Util qw(:all);
 
 # Special case - move cuddled '-I' arg from post to last so 
 # that dbi arg logic can still work (as the second arg)
@@ -265,5 +265,23 @@ L<Day 17 - "The Plack::App::RapidApp::rDbic interface to RapidApp"|http://www.ca
 =head1 SEE ALSO
 
 L<RapidApp>, L<rapidapp.pl>, L<Plack::App::RapidApp::rDbic>
+
+=head1 SUPPORT
+ 
+IRC:
+ 
+    Join #rapidapp on irc.perl.org.
+
+=head1 AUTHOR
+
+Henry Van Styn <vanstyn@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2014 by IntelliTree Solutions llc.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
 
 =cut
