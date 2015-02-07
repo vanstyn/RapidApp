@@ -1,5 +1,22 @@
 Revision history for RapidApp
 
+1.0000 2015-02-07 
+    - First official "1.0" release  ** API CHANGES **
+    - New internal class structure for Modules with significant cleanup (#74)
+    - Replaced RapidApp::Include with simple RapidApp::Util exporter (#115)
+    - upgr-rapidapp.pl script converts existing code bases (although these 
+      changes are not likely to impact most apps, as most of the changes are
+      internal -- the existing public config/plugin APIs remain the same)
+    - Lots of fixes and improvements related to apps mounted at sub-urls (#114)
+    - Added experimental "metakeys" feature (rdbic.pl)
+    - Fixed broken Load MHTML feature (HtmlEditor)
+       * Now works even with Word 2010 generated files and crazy unicode
+       * Fixes made within Catalyst::Controller::SimpleCAS 0.994
+    - Require Moo 1.007000 (although classes remain mostly Moose, but this
+      is planned to be changed in the near future)
+    - Misc forward-compat changes for a future conversion to Moo (see #75)
+    - Lots of misc bug fixes
+
 0.99700 2015-01-20
     - Unfactor, consolidate & cleanup lots legacy code (#106)
       (see commit logs for more details)
