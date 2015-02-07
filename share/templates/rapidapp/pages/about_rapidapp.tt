@@ -2,15 +2,15 @@
 
 <title class="ra-icon-information" style="color:darkgreen;">About RapidApp</title>
 
-
+[% SET mnt_pfx = c.mount_url %]
 
 <div id="ext-gen809" class="ra-doc">
 
 <div style="float:right;padding-top:5px;padding-right:20px;">
-<img src="/assets/rapidapp/misc/static/images/btn_120x50_powered.png">
+<img src="[% mnt_pfx %]/assets/rapidapp/misc/static/images/btn_120x50_powered.png">
 </div>
 
-<img src="/assets/rapidapp/misc/static/images/rapidapp_catalyst_logo.png" width="225">
+<img src="[% mnt_pfx %]/assets/rapidapp/misc/static/images/rapidapp_catalyst_logo.png" width="225">
 <span style="color:#666666;font-size:.8em;padding-left:20px;">
 [% rapidapp_version %]
 </span>
