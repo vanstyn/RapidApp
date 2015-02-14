@@ -4511,10 +4511,13 @@ Ext.ux.RapidApp.DbicRelRestRender = function(c) {
 	
 	var url = '#!' + c.open_url + '/';
 	if(c.rest_key) { url += c.rest_key + '/'; }
-	
-	
+
+  // Added for GitHub #119 -- don't show links for bad rels
+  if(!key_value && key_value != '0' && key_value != '') { 
+    return disp; 
+  }
+
 	if(c.rs) {
-		if(!key_value && key_value != '0')     { return disp; }
 		// For multi-rel. value actually only contains the count of related
 		// rows. key_value will contain the id of the row from which the rs originated
 		url += key_value + '/rel/' + c.rs; 
