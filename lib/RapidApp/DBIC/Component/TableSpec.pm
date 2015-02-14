@@ -417,7 +417,10 @@ sub default_TableSpec_cnf_columns {
 	
 	foreach my $col (keys %$cols) {
 		
-		my $is_local = $self->has_column($col) ? 1 : 0;
+		my $is_phy = $self->has_column($col) ? 1 : 0;
+    $cols->{$col}{is_phy_colname} = $is_phy; #<-- track if this is also a physical column name
+
+    my $is_local = $is_phy;
 		
 		# If this is both a local column and a relationship, allow the rel to take over
 		# if 'priority_rel_columns' is true:
@@ -432,7 +435,7 @@ sub default_TableSpec_cnf_columns {
 			! $is_local and
 			$set->{no_priority_rel_column} and
 			$set->{no_priority_rel_column}->{$col} and
-			$self->has_column($col)
+			$is_phy
 		);
 		# --
 		

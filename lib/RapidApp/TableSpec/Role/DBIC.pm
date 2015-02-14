@@ -1571,6 +1571,8 @@ sub get_relationship_column_cnf {
 	};
 	
 	my $cur_renderer = $conf->{renderer};
+  
+  my $is_phy = $conf->{is_phy_colname};
 	
 	# NEW: use simpler DbicRelRestRender to generate a REST link. Check to make sure
 	# the relationship references the *single* primary column of the related row
@@ -1587,6 +1589,7 @@ sub get_relationship_column_cnf {
 				'render_col: "' . $render_col . '",' .
 				'open_url: "' . $conf->{open_url} . '"' .
 				( $rest_key ? ',rest_key:"' . $rest_key . '"' : '') .
+        ( $is_phy ? ',is_phy_colname: true' : '') .
 			'})}',$cur_renderer
 		);
 	}

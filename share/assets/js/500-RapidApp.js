@@ -4514,7 +4514,7 @@ Ext.ux.RapidApp.DbicRelRestRender = function(c) {
 
   // Added for GitHub #119 -- don't show links for bad rels
   if(!key_value && key_value != '0' && key_value != '') { 
-    return disp; 
+    return c.is_phy_colname ? disp : Ext.ux.showNull(key_value); 
   }
 
 	if(c.rs) {
