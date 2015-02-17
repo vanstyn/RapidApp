@@ -284,7 +284,7 @@ Catalyst::Model::RapidApp::CoreSchema - DBIC model for the CoreSchema database
 
 =head1 DESCRIPTION
 
-This is the Catalyst model which is automatcally injected by the 
+This is the Catalyst model which is automatically injected by the 
 L<RapidApp::CoreSchema|Catalyst::Plugin::RapidApp::CoreSchema> plugin and is not
 intended to be loaded directly.
 
