@@ -35,11 +35,10 @@ $start_dir->recurse(
     if (-f $File && $File =~ /.pm$/) {
       my @lines = $File->slurp(iomode => '<:encoding(UTF-8)');
       my @nlines = ();
+      my $nl = "\n";
       my $ch = 0;
       for my $line (@lines) {
       
-        $line =~ /(\r?\n)$/;
-        my $nl = $1;
         $line =~ s/\r?\n$//;
         my $orig = $line;
      
@@ -131,7 +130,6 @@ $start_dir->recurse(
         
         unless ($line eq $orig) {
           $ch++;
-          $nl = "\n";
         }
         push @nlines, $line, $nl;
       }
