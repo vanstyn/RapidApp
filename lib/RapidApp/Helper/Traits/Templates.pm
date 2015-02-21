@@ -19,10 +19,10 @@ around _ra_catalyst_configs => sub {
 
       # Params to be supplied to the Template Access class:
       access_params => {
-        ## To make all template paths under site/ (root/templates/site/) editable:
-        #writable_regex      => '^site\/',
-        #creatable_regex     => '^site\/',
-        #deletable_regex     => '^site\/',
+        # Make all template paths under site/ (root/templates/site/) editable:
+        writable_regex      => '^site\/',
+        creatable_regex     => '^site\/',
+        deletable_regex     => '^site\/',
 
         ## To declare templates under site/public/ (root/templates/site/public/)
         ## to be 'external' (will render in an iframe in the TabGui):
