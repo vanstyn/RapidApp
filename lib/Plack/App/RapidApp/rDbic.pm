@@ -312,6 +312,9 @@ sub _guess_model_name_from_dsn {
   # strip username/password if present
   my $dsn = (split(/,/,$odsn))[0];
   
+  # camelize doesn't handle '-' for us but its a bad class name! (GitHub Issue #124)
+  $dsn =~ s/\-/_/g; 
+  
   my $name = 'DB'; #<-- default
   
   my ($dbi,$drv,@extra) = split(/\:/,$dsn);
