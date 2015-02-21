@@ -15,7 +15,6 @@ use Clone qw(clone);
 use Time::HiRes qw(gettimeofday tv_interval);
 use Catalyst::Utils;
 use Scalar::Util qw(blessed weaken);
-use Data::Dumper;
 use RapidApp::JSONFunc;
 use RapidApp::JSON::MixedEncoder;
 
