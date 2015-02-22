@@ -1,5 +1,15 @@
 Revision history for RapidApp
 
+1.0010 2015-02-21
+    - rapidapp.pl now bootstraps 'Templates' to be editable by default (#125)
+    - Fix bug in rDbic with Sqlt files contraining dash '-' (#124)
+    - Fix Dumper sub redefine warning in Module class
+    - Minor doc tweaks (PR #122)
+    - Improvements to relationship column rendering for bad FKs:
+        - ommits "open" (tiny mag glass) links
+        - renders raw value only for physical columns, undef otherwise
+    - Now requires Catalyst::Controller::AutoAssets 0.31
+
 1.0000 2015-02-07 
     - First official "1.0" release  ** API CHANGES **
     - New internal class structure for Modules with significant cleanup (#74)
