@@ -10,6 +10,13 @@
 	font-size: 12px;
 }
 
+/* if being used as the iconCls in a tab, set the position 'left center'
+   which is slightly lower than the ExtJs default '0 3' which is optimized
+   for 16x16 icons (filelink icons are 14x14)                                */
+.x-tab-strip-inner .filelink {
+  background-position: left center !important;
+}
+
 a.filelink {
 	text-decoration: none !important;
 	cursor: pointer !important;
@@ -27,7 +34,7 @@ div.filelink {
 }
 
 
-.filelink.txt, .filelink.css, .filelink.text {
+.filelink.txt, .filelink.css, .filelink.text, .filelink.sql {
 	background-image: url(page_white_text_14x14.png) !important;
 }
 
@@ -109,4 +116,8 @@ div.filelink {
 
 .filelink.bz2, .filelink.tgz, .filelink.gz, .filelink.pkg  {
 	background-image: url(page_white_zip_14x14.png) !important;
+}
+
+.filelink.db {
+	background-image: url(page_white_database_14x14.png) !important;
 }
