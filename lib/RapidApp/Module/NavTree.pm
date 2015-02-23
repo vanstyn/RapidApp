@@ -33,6 +33,11 @@ sub apply_node_navopts_recursive {
   my $self = shift;
   my $nodes = shift;
   
+  if(ref($nodes) eq 'HASH') {
+    $self->apply_node_navopts_recursive($nodes->{children}) if ($nodes->{children});
+    return $self->apply_node_navopts($nodes);
+  }
+  
   return undef unless (ref($nodes) eq 'ARRAY');
   
   foreach my $item (@$nodes) {
@@ -40,12 +45,12 @@ sub apply_node_navopts_recursive {
     if (ref($item->{children}) eq 'ARRAY' and scalar $item->{children} > 0) {
       $self->apply_node_navopts_recursive($item->{children}) if ($item->{children});
     }
-    else {
-      #$item->{leaf} = \1;
-      $item->{loaded} = \1;
-      delete $item->{children} if ($item->{children});
-    }
-    
+    #else {
+    #  #$item->{leaf} = \1;
+    #  $item->{loaded} = \1;
+    #  delete $item->{children} if ($item->{children});
+    #}
+
     $item->{expanded} = \1 if ($item->{expand});
     
     $self->apply_node_navopts($item);
@@ -60,7 +65,7 @@ sub apply_node_navopts {
   
   my $autoLoad = {};
   $autoLoad->{params} = $item->{params} if ($item->{params});
-  $autoLoad->{url} = $item->{url} if ($item->{params});
+  $autoLoad->{url}    = $item->{url}    if ($item->{url});
   
   my $module = $item->{module}; 
   if ($module) {
@@ -86,9 +91,20 @@ sub apply_node_navopts {
 # Default fetch_nodes uses an array of nodes returned from 'TreeConfig'
 sub fetch_nodes {
   my $self = shift;
-  return $self->apply_node_navopts_recursive($self->TreeConfig) || [];
+  return $self->TreeConfig || [];
 }
 
+
+# New: automatically apply navopts logic to all nodes, including for subclasses
+# which define their own own fetch_nodes method
+around 'prepare_node' => sub {
+  my ($orig, $self, @args) = @_;
+  my $nodes = $self->$orig(@args);
+  
+  $self->apply_node_navopts_recursive($nodes);
+  
+  $nodes
+};
 
 
 

@@ -244,7 +244,7 @@ has 'max_node_path_depth', is => 'ro', isa => 'Int', default => 100;
 
 # Max nested/recursive *single request* fetch depth that will be allowed. The tree can possibly
 # be deeper than this value, but it wouldn't be fetch-able in a single request
-has 'max_recursive_fetch_depth', is => 'ro', isa => 'Int', default => 10;
+has 'max_recursive_fetch_depth', is => 'ro', isa => 'Int', default => 3;
 
 our $DEEP_FETCH_DEPTH = 0;
 
@@ -283,49 +283,62 @@ sub call_fetch_nodes {
   my %seen_id = ();
   
   foreach my $n (@$nodes) {
-    if (jstrue($n->{leaf}) or (exists $n->{allowChildren} and ! jstrue($n->{allowChildren}))) {
-      $n->{loaded} = \1 unless (exists $n->{loaded});
-      next;
-    }
-    
-    $self->apply_path_specific_node_opts($node,$n) or next;
-    
-    ## If we've gotten this far, it means the current node can contain child nodes
-    
     die "Invalid node definition: duplicate id ($n->{id}): " . Dumper($n)
       if($seen_id{$n->{id}}++);
     
-    my $recurse = 0;
-    $recurse = 1 if (
-      ( $self->fetch_nodes_deep or jstrue($n->{expanded}) )
-      and ! exists $n->{children}
-      and ! jstrue($n->{loaded})
-      and $DEEP_FETCH_DEPTH < $self->max_recursive_fetch_depth
-    );
-    
-    if($recurse) { # Pre-fetch child nodes automatically:
-      my $children = $self->call_fetch_nodes($n->{id});
-      if(@$children > 0) {
-        $n->{children} = $children;
-        $n->{expanded} = \1 if ($self->default_expanded and ! exists $n->{expanded});
-      }
-      else {
-        # Set loaded to true if this node is empty (prevents being initialized with a +/- toggle):
-        $n->{loaded} = \1 unless (exists $n->{loaded});
-      }
-    }
-    
-    # WARNING: note that setting 'children' of a node to an empty array will prevent subsequent
-    # ajax loading of the node's children (should any exist later)
+    $self->prepare_node($n,$node);
   }
   
   return $nodes;
 }
 
+sub prepare_node {
+  my ($self, $n, $parent) = @_;
+  
+  if (jstrue($n->{leaf}) or (exists $n->{allowChildren} and ! jstrue($n->{allowChildren}))) {
+    $n->{loaded} = \1 unless (exists $n->{loaded});
+    return $n;
+  }
+  
+  if($parent) {
+    $self->apply_path_specific_node_opts($parent,$n) or return $n;
+  }
+  
+  ## If we've gotten this far, it means the current node can contain child nodes
+  
+  my $recurse = 0;
+  $recurse = 1 if (
+    ( $self->fetch_nodes_deep or jstrue($n->{expanded}) )
+    and ! exists $n->{children}
+    and ! jstrue($n->{loaded})
+    and $DEEP_FETCH_DEPTH < $self->max_recursive_fetch_depth
+  );
+  
+  if($recurse) { # Pre-fetch child nodes automatically:
+    my $children = $self->call_fetch_nodes($n->{id});
+    if(@$children > 0) {
+      $n->{children} = $children;
+      $n->{expanded} = \1 if ($self->default_expanded and ! exists $n->{expanded});
+    }
+    else {
+      # Set loaded to true if this node is empty (prevents being initialized with a +/- toggle):
+      $n->{loaded} = \1 unless (exists $n->{loaded});
+    }
+  }
+  
+  # WARNING: note that setting 'children' of a node to an empty array will prevent subsequent
+  # ajax loading of the node's children (should any exist later)
+  
+  $n
+}
+
+
 sub call_fetch_node {
   my $self = shift;
   my $node = $self->c->req->params->{node};
-  return $self->fetch_node($node);
+  my $n = $self->fetch_node($node);
+  $self->prepare_node($n);
+  $n
 }
 
 sub call_add_node {
