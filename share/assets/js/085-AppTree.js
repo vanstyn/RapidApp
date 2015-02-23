@@ -191,6 +191,25 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		},this);
 		
 		
+    // -----
+    // Show a load mask for the loading of the root node - GitHub #126
+    this.on('beforeload',function(node) {
+      if(node == this.root) {
+        if(!this.rootLoadMask) {
+          // For good measure, try set the mask on the parent container. This is useful
+          // because the height of TreePanel might be 0px before the root node is loaded
+          var targetCmp = this.ownerCt ? this.ownerCt : this;
+          this.rootLoadMask = new Ext.LoadMask(targetCmp.getEl(), {msg:"Loading Tree Data..."});
+        }
+        this.rootLoadMask.show(); 
+      }
+    },this);
+    
+    this.on('load',function(node) {
+      this.rootLoadMask && this.rootLoadMask.hide();
+    },this);
+    // -----
+    
 		
 		Ext.ux.RapidApp.AppTree.superclass.initComponent.call(this);
 	},
