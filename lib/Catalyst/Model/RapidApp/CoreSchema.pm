@@ -20,8 +20,11 @@ use DBIx::Class::Schema::Diff;
 
 BEGIN {
   require DBIx::Class::Optional::Dependencies;
-  if ( my $m = DBIx::Class::Optional::Dependencies->req_missing_for('deploy') ) {
-    die "Required DBIx::Class 'deploy' dependencies missing: $m";
+  unless ( DBIx::Class::Optional::Dependencies->req_ok_for('deploy') ) {
+    die(
+      "Required DBIx::Class 'deploy' dependencies missing: "
+     . ( values %{ DBIx::Class::Optional::Dependencies->req_errorlist_for('deploy') } )[0] 
+    );
   }
 }
 
