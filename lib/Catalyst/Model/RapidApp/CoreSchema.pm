@@ -18,6 +18,13 @@ use Path::Class qw(file dir);
 use DBIx::Class::Schema::Loader;
 use DBIx::Class::Schema::Diff;
 
+BEGIN {
+  require DBIx::Class::Optional::Dependencies;
+  if ( my $m = DBIx::Class::Optional::Dependencies->req_missing_for('deploy') ) {
+    die "Required DBIx::Class 'deploy' dependencies missing: $m";
+  }
+}
+
 # --------------------
 # User can set their own sqlite file/path by doing this in main app class:
 #
