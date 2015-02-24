@@ -1157,30 +1157,34 @@ text-align: left!important; font: 120%  "Lucida Grande", "Lucida Sans Unicode", 
 }
 
 
-
-.r-simple-table table  {
+table.r-simple-table,
+.r-simple-table table {
 	border: 1px solid #DDDDDD;
 }
 
-.r-simple-table th, .r-simple-table td {
-	padding: 3px 8px 3px 3px;
+table.r-simple-table  td,
+.r-simple-table table td {
+	padding: 2px 8px 2px 3px;
 }
 
-.r-simple-table th {
-	padding-bottom: 2px;
+table.r-simple-table  th,
+.r-simple-table table th {
+  padding: 2px 15px 2px 5px;
 	font-weight: bold;
-	text-decoration: underline;
 }
 
-.r-simple-table tr {
+table.r-simple-table  tr,
+.r-simple-table table tr  {
 	background: white;
 }
 
-.r-simple-table tr:nth-child(2n+1) {
+table.r-simple-table  tr:nth-child(2n+1),
+.r-simple-table table tr:nth-child(2n+1) {
 	background: #F8F8F8;
 }
 
-.r-simple-table tr > td:first-child {
+table.r-simple-table  tr > td:first-child,
+.r-simple-table table tr > td:first-child {
 	font-weight: bold;
 }
 
