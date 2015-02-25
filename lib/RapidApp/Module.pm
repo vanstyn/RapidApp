@@ -973,7 +973,7 @@ sub controller_dispatch {
       ## ---
       ## detect direct browser GET requests (i.e. not from the ExtJS client)
       ## and redirect them back to the #! hashnav path
-      $c->auto_hashnav_redirect_current;
+      $self->auto_hashnav_redirect_current;
       # ---
       $self->c->log->debug("--> " . GREEN . BOLD . "[content]" . CLEAR . ". (no action)")
         if($self->c->debug);
@@ -982,6 +982,14 @@ sub controller_dispatch {
   }
   
 }
+
+# This call happens via local method so subclasses are able to override
+sub auto_hashnav_redirect_current {
+  my $self = shift;
+  $self->c->auto_hashnav_redirect_current
+}
+
+
 
 =head2 process_action( $actionName, [optional @args] )
 
