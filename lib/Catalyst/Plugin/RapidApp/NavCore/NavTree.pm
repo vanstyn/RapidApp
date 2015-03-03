@@ -105,6 +105,8 @@ sub get_node_Row {
 	my $self = shift;
 	my $node = shift;
 	my $NavtreeNode_only = shift;
+
+  return undef unless (defined $node);
 	
 	# Return the supplied node object if it is already a Row:
 	return $node if (ref($node));
