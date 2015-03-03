@@ -59,38 +59,45 @@ sub BUILD {
   $self->apply_actions( nodes   => 'call_fetch_nodes' );
   $self->apply_actions( node   => 'call_fetch_node' ) if ($self->can('fetch_node'));
   
-  if($self->can('add_node')) {
+  if($self->op_available('add_node')) {
     $self->apply_actions( add   => 'call_add_node' );
     $self->apply_extconfig( add_node_url => $self->suburl('add') );
   }
   
-  if($self->can('delete_node')) {
+  if($self->op_available('delete_node')) {
     $self->apply_actions( delete   => 'call_delete_node' ); 
     $self->apply_extconfig( delete_node_url => $self->suburl('delete') );
   }
   
-  if($self->can('rename_node')) {
+  if($self->op_available('rename_node')) {
     $self->apply_actions( rename   => 'call_rename_node' );
     $self->apply_extconfig( rename_node_url => $self->suburl('rename') );
   }
   
-  if($self->can('copy_node')) {
+  if($self->op_available('copy_node')) {
     $self->apply_actions( copy => 'call_copy_node' );
     $self->apply_extconfig( copy_node_url => $self->suburl('copy') );
   }
   
-  if($self->can('move_node')) {
+  if($self->op_available('move_node')) {
     $self->apply_actions( move => 'call_move_node' );
     $self->apply_extconfig( move_node_url => $self->suburl('move') );
   }
   
-  if($self->can('expand_node')) {
+  if($self->op_available('expand_node')) {
     $self->apply_actions( expand   => 'call_expand_node' );
     $self->apply_extconfig( expand_node_url => $self->suburl('expand') );
   }
   
   $self->add_ONREQUEST_calls('init_onreq');
 }
+
+# New: this method is provided so subclass can hook/override
+sub op_available {
+  my ($self, $op_name) = @_;
+  $self->can($op_name)
+}
+
 
 around 'content' => sub {
   my $orig = shift;
