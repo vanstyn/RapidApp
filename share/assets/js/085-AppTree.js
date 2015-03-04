@@ -236,6 +236,13 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
     },this);
     // -----
     
+    // -- Reset node expand state on exception - GitHub Issue #127
+    this.loader.on('loadexception',function(loader,node,response){
+      if(node.expanded) { node.collapse(true); }
+      node.loaded = false;
+      node.childrenRendered = false;
+      node.ui.updateExpandIcon();
+    },this,{ delay: 50 });
 		
 		Ext.ux.RapidApp.AppTree.superclass.initComponent.call(this);
 	},
@@ -1237,6 +1244,11 @@ Ext.ux.RapidApp.AppTree.ServerFilterPlugin = Ext.extend(Ext.util.Observable,{
 	
 	init: function(tree) {
 		this.tree = tree;
+    
+    var Tbar = tree.getTopToolbar();
+    // New: do not load the plugin if there is no toolbar or
+    // a 'searchField' property already exists in the treepanel
+    if(!Tbar || tree.searchField) { return; }
 		
 		tree.onReload = function() {
 			delete tree.next_load_params;
@@ -1296,7 +1308,6 @@ Ext.ux.RapidApp.AppTree.ServerFilterPlugin = Ext.extend(Ext.util.Observable,{
 		}
 		
 		tree.searchField = new Ext.form.TwinTriggerField(fieldConfig);
-		var Tbar = tree.getTopToolbar();
 		Tbar.insert(this.fieldIndex,tree.searchField);
 	}
 });
