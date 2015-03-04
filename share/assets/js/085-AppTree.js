@@ -1,5 +1,16 @@
 Ext.ns('Ext.ux.RapidApp');
 
+Ext.ux.RapidApp.AppTreeLoader = Ext.extend(Ext.tree.TreeLoader,{
+  getParams: function(node) {
+    var params = Ext.ux.RapidApp.AppTreeLoader.superclass.getParams.apply(this,arguments);
+    var tp = node.getOwnerTree();
+    if(tp.root == node) {
+      params.root_node = true;
+    }
+    return params;
+  }
+});
+
 Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	
 	add_node_text: 'Add',
@@ -39,6 +50,21 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	debug_menu_options: false,
 	
 	initComponent: function() {
+  
+  // --------
+  // initialize the loader 
+  //   use our customized Ext.ux.RapidApp.AppTreeLoader
+  var l = this.loader;
+  if(!l){
+      l = new Ext.ux.RapidApp.AppTreeLoader({
+          dataUrl: this.dataUrl,
+          requestMethod: this.requestMethod
+      });
+  }else if(Ext.isObject(l) && !l.load){
+      l = new Ext.ux.RapidApp.AppTreeLoader(l);
+  }
+  this.loader = l;
+  // --------
 		
 		this.initDragAndDrop();
 		
