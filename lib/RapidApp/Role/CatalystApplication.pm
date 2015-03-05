@@ -71,16 +71,7 @@ around 'dump_these' => sub {
 
 
 before 'setup_middleware' => sub {
-  my $c = shift;
-  
-  unshift @{ $c->config->{'psgi_middleware'} ||= [] },
-    '+RapidApp::Plack::Middleware'
-};
-
-
-
-around 'setup_components' => sub {
-	my ($orig, $app, @args)= @_;
+  my $app = shift;
   
   $app->_normalize_catalyst_config;
   
@@ -92,6 +83,15 @@ around 'setup_components' => sub {
   # set for all new apps created by recent versions of catalyst.pl
   $app->config( disable_component_resolution_regex_fallback => 1 );
   
+  unshift @{ $app->config->{'psgi_middleware'} ||= [] },
+    '+RapidApp::Plack::Middleware'
+};
+
+
+
+around 'setup_components' => sub {
+	my ($orig, $app, @args)= @_;
+
   $app->$orig(@args);  # standard catalyst setup_components
   $app->setupRapidApp; # our additional components needed for RapidApp
 };
@@ -444,6 +444,7 @@ sub _normalize_catalyst_config {
   my $c = shift;
   
   my $cnf = $c->config;
+  $cnf->{name} ||= ref $c ? ref $c : $c;
   $cnf->{'RapidApp'} ||= {};
   
   # New: allow root_template_prefix/root_template to be supplied
