@@ -55,6 +55,7 @@ sub BUILD {
   my %seen = ();
   for my $cnf (@{$self->navtrees}) {
     my $name = $cnf->{module} or next;
+    next if try{ $self->get_Module($name) };
     my $class = $cnf->{class} or die "Missing class name";
     my $params = $cnf->{params} || {};
     die "Duplicate module '$name'" if ($seen{$name}++);
@@ -194,7 +195,7 @@ sub west_area_items {
   # Dynamic "typing" (of sorts). Allow raw ExtJS configs to
   # be interspersed among module cnfs 
   my @items = map {
-    $_->{module} ? $self->Module($_->{module})->allowed_content : $_
+    $_->{module} ? $self->get_Module($_->{module})->allowed_content : $_
   } grep {
     # New: exclude items where 'menu_require_role' is set but the 
     # current user does not have the role

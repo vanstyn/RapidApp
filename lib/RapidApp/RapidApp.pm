@@ -81,24 +81,12 @@ sub _load_root_module {
 	$mParams->{module_name}= '';
 	$mParams->{module_path}= '/';
 	$mParams->{parent_module_ref}= undef;
-	
-	# This localized global gets set in RapidApp::RootModule so its available to
-	# submodules during their load:
-	#local $RapidApp::ScopedGlobals::_vals->{'rootModule'} = undef;
-	
+  
+  my $cfg = $self->_app->config->{'RapidApp'} || {};
+  $mParams->{auto_init_modules} = $cfg->{load_modules} if ($cfg->{load_modules});
+
   $self->rootModule($self->rootModuleClass->timed_new($mParams));
   
-  # New: load additional custom modules via app config:
-  my $rM = $self->rootModule;
-  my $cfg = $self->_app->config->{'RapidApp'} || {};
-  if($cfg->{load_modules}) {
-    for my $name (keys %{$cfg->{load_modules}}) {
-      die "Module '$name' already loaded" if ($rM->has_module($name));
-      $rM->apply_init_modules( $name => $cfg->{load_modules}{$name} );
-    }
-  }
-  
-  return $rM;
 }
 
 
