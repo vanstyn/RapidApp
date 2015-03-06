@@ -5,8 +5,8 @@ use warnings;
 
 # ABSTRACT: Programmatic RapidApp instance builder
 
-use Moose;
-extends 'CatalystX::AppBuilder';
+use Moo;
+extends qw/ Plack::Component CatalystX::AppBuilder /;
 
 use Types::Standard qw(:all);
 use Class::Load 'is_class_loaded';
@@ -54,7 +54,7 @@ sub ensure_bootstrapped {
   $self->_bootstrap_called ? 1 : $self->bootstrap(@_)
 }
 
-has 'psgi_app', is => 'ro', lazy => 1, default => sub {
+has '_psgi_app', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   $self->ensure_bootstrapped(1);
   
@@ -63,7 +63,17 @@ has 'psgi_app', is => 'ro', lazy => 1, default => sub {
   
 }, init_arg => undef;
 
-sub to_app { (shift)->psgi_app }
+sub psgi_app { (shift)->to_app(@_) }
+
+# Plack::Component methods:
+
+sub prepare_app { (shift)->ensure_bootstrapped }
+
+sub call {
+  my ($self, $env) = @_;
+  $self->_psgi_app->($env)
+}
+
 
 1;
 
@@ -89,6 +99,11 @@ RapidApp::Builder - Programmatic RapidApp instance builder
 
 
 =head1 DESCRIPTION
+
+This module is an extension to both L<Plack::Component> and L<CatalystX::AppBuilder> and 
+facilitates programatically creating/instantiating a RapidApp application without having to 
+setup/bootstrap files on disk. As a L<Plack::Component>, it can also be used anywhere Plack
+is supported, and subclassed in the same manner as L<Plack::Component>.
 
 ...
 
