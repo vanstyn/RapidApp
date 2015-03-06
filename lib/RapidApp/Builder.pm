@@ -9,9 +9,30 @@ use Moose;
 extends 'CatalystX::AppBuilder';
 
 use Types::Standard qw(:all);
+use Class::Load 'is_class_loaded';
+require Module::Locate; 
+
 use RapidApp::Util ':all';
 
-# Don't use any of the defaults from superclass:
+has 'base_appname', is => 'ro', isa => Maybe[Str], default => sub { undef };
+
+has 'appname', is => 'ro', isa => Str, lazy => 1, default => sub {
+  my $self = shift;
+  my $base = $self->base_appname or die "Must supply either 'appname' or 'base_appname'";
+
+  my ($class, $i) = ($base,0);
+  
+  # Aggressively ensure the class name is not already used
+  $class = join('',$base,++$i) while ( 
+       is_class_loaded($class)
+    || Module::Locate::locate($class)
+  );
+  
+  $class
+};
+
+
+# Don't use any of the defaults from the superclass:
 sub _build_plugins {[]}
 
 around 'plugins' => sub {
@@ -73,17 +94,36 @@ RapidApp::Builder - Programmatic RapidApp instance builder
 
 =head1 CONFIGURATION
 
+=head2 appname
+
+Class name of the RapidApp/Catalyst app to be built.
+
+=head2 base_appname
+
+Alternative to C<appname>, but will append a number if the specified class already exists (loaded
+or unloaded, but found in @INC). For example, if set to C<MyApp>, if MyApp already exists, the appname 
+is set to <MyApp1>, if that exists it is set to C<MyApp2> and so on.
+
 =head2 plugins
 
-...
+List of Catalyst plugins to load. The plugin 'RapidApp' is always loaded, and '-Debug' is loaded
+when C<debug> is set.
 
+=head2 debug
+
+Boolean flag to enable debug output in the application. When set, adds C<-Debug> to the plugins 
+list.
+
+=head2 version
+
+The C<$VERSION> string to use
 
 
 =head1 METHODS
 
 =head2 psgi_app
 
-...
+Same as C<to_app>
 
 =head2 to_app
 
