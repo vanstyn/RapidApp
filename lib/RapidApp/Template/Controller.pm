@@ -94,6 +94,8 @@ has 'context_class', is => 'ro', default => 'RapidApp::Template::Context';
 has 'provider_class', is => 'ro', default => 'RapidApp::Template::Provider';
 has 'access_class', is => 'ro', default => 'RapidApp::Template::Access';
 has 'access_params', is => 'ro', isa => 'HashRef', default => sub {{}};
+has 'include_paths', is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]};
+
 
 # -- 
 # Only these TT plugins and filters will be allowed in Templates
@@ -166,6 +168,7 @@ sub _new_Template {
           Access => $self->Access,
           #INCLUDE_PATH => $self->_app->default_tt_include_path,
           INCLUDE_PATH => [
+            map { dir($_)->stringify } @{ $self->include_paths },
             dir($self->_app->config->{home},'root/templates')->stringify,
             dir(RapidApp->share_dir,'templates')->stringify
           ],
