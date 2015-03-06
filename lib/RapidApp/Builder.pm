@@ -3,10 +3,14 @@ package RapidApp::Builder;
 use strict;
 use warnings;
 
-# ABSTRACT: Programmatic RapidApp instance builder
+# ABSTRACT: Plack-compatable, runtime-generated RapidApp loader
 
-use Moo;
-extends qw/ Plack::Component CatalystX::AppBuilder /;
+use Moose;
+use MooseX::NonMoose;
+extends qw/ 
+ Plack::Component
+ CatalystX::AppBuilder
+/;
 
 use Types::Standard qw(:all);
 use Class::Load 'is_class_loaded';
@@ -81,7 +85,7 @@ __END__
 
 =head1 NAME
 
-RapidApp::Builder - Programmatic RapidApp instance builder
+RapidApp::Builder - Plack-compatable, runtime-generated RapidApp loader
 
 =head1 SYNOPSIS
 
@@ -103,7 +107,7 @@ RapidApp::Builder - Programmatic RapidApp instance builder
 This module is an extension to both L<Plack::Component> and L<CatalystX::AppBuilder> and 
 facilitates programatically creating/instantiating a RapidApp application without having to 
 setup/bootstrap files on disk. As a L<Plack::Component>, it can also be used anywhere Plack
-is supported, and subclassed in the same manner as L<Plack::Component>.
+is supported, and can subclassed in the same manner as any L<Plack::Component> class.
 
 ...
 
