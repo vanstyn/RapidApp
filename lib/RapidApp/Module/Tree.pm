@@ -229,7 +229,7 @@ sub apply_path_specific_node_opts {
   # The id should be a fully qualified '/' delim path prefixed with the (parent) node 
   # path ($node supplied to this function). If it is not, assume it is a relative path 
   # and prefix it automatically:
-  $n->{id} = $node . '/' . $n->{id} unless ($n->{id} =~ /^${node}/);
+  $n->{id} = $node . '/' . $n->{id} unless ($n->{id} =~ /^\Q${node}\E/);
   
   # This is (imo) an ExtJS bug. It fixes the problem where empty nodes are automatically
   # made "leaf" nodes and get a stupid, non-folder default icon
