@@ -115,19 +115,20 @@ around 'inject_asset_controllers' => sub {
   ) ? 1 : 0;
   
   my $home = dir( Catalyst::Utils::home($c) );
+  my $cfged_dir = $c->config->{'Model::RapidApp'}->{local_assets_dir};
   
-  # We can't setup auto local assets if we have no home dir:
-  $auto_setup = 0 unless ($home && -d $home);
+  # We can't setup auto local assets if we have no home dir and not manually cfged:
+  $auto_setup = 0 unless ($cfged_dir || ($home && -d $home));
   
   if($auto_setup) {
   
     # New, automatic 'local_asset_dir' can now be specified via config:
-    my $dir = dir(
-      $c->config->{'Model::RapidApp'}->{local_assets_dir} || 'root/assets'
-    );
+    my $dir = dir( $cfged_dir || 'root/assets' );
     
-    # If relative, make relative to app home:
-    $dir = $home->subdir($dir) if ($dir->is_relative);
+    # If relative, make relative to app home (unless manually cfged and already exists as-is):
+    unless($cfged_dir && -d $dir) {
+      $dir = $home->subdir($dir) if ($home && $dir->is_relative);
+    }
     
     # Add local assets if asset include dirs exist in the App directory
     push @$assets, {
