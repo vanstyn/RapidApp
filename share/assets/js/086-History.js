@@ -226,15 +226,26 @@ Ext.ux.RapidApp.HashNav = {
 		// e.preventDefault() first, so this isn't also needed)
 		return false;
 	},
-	
-	updateTitle: function(title) {
-		if(!title || !Ext.isString(title) || title.search(/[\w\s\-]+$/) == -1) {
-			document.title = Ext.ux.RapidApp.HashNav.INIT_TITLE;
-		}
-		else {
-			document.title = title + ' - ' + Ext.ux.RapidApp.HashNav.INIT_TITLE;
-		}
-	},
+
+  updateTitle: function(title) {
+    if(title && Ext.isString(title)) {
+      // New: if ita tag, attempt to parse it and use its innerHTML (GitHub Issue #117)
+      if(title.search('<') == 0){
+        var el = document.createElement( 'div' );
+        el.innerHTML = title;
+        if(el && el.children.length > 0) {
+          return Ext.ux.RapidApp.HashNav.updateTitle(el.children[0].innerHTML);
+        }
+        else {
+          document.title = Ext.ux.RapidApp.HashNav.INIT_TITLE;
+        }
+      }
+      document.title = title + ' - ' + Ext.ux.RapidApp.HashNav.INIT_TITLE;
+    }
+    else {
+      document.title = Ext.ux.RapidApp.HashNav.INIT_TITLE;
+    }
+  },
   
   // New: util function - converts a normal URL into a hashpath
   urlToHashPath: function(url) {
