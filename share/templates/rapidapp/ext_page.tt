@@ -10,7 +10,7 @@
 [% c.all_html_head_tags %]
 
 <!-- default favicon -->
-[% SET favicon = c.mount_url _ '/assets/rapidapp/misc/static/images/rapidapp_icon_small.ico' %]
+[% SET favicon = c.default_favicon_url %]
 [% TRY %]
   [% PROCESS templates/local_js_css.tt %]
 [% CATCH %]

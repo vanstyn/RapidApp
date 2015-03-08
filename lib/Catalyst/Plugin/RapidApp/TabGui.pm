@@ -75,7 +75,7 @@ before 'setup_components' => sub {
   
   my $main_module_params = {
     title => $config->{nav_title},
-    right_footer => $config->{title},
+    right_footer => $config->{right_footer} || $config->{title},
     iconCls => $config->{nav_title_iconcls} || 'ra-icon-catalyst-transparent',
     init_width => $config->{navtree_init_width} || 230,
     navtrees => \@navtrees

@@ -941,7 +941,7 @@ sub controller_dispatch {
   if (defined $opt && !$self->accept_subargs) {
     # Handle the special case of browser requests for 'favicon.ico' (#57)
     return $c->redispatch_public_path(
-      '/assets/rapidapp/misc/static/images/rapidapp_icon_small.ico'
+      $c->default_favicon_url
     ) if ($opt eq 'favicon.ico' && !$c->is_ra_ajax_req);
 
     $self->c->log->debug(join('',"--> ",RED,BOLD,"unknown action: $opt",CLEAR)) if ($self->c->debug);

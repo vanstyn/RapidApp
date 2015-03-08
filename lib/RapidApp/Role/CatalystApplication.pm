@@ -31,6 +31,14 @@ sub mount_url {
   $pfx eq '/' ? '' : $pfx
 }
 
+sub default_favicon_url {
+  my $c = shift;
+  my $path = $c->config->{'RapidApp'}{default_favicon_url}
+    || '/assets/rapidapp/misc/static/images/rapidapp_icon_small.ico';
+  join('',$c->mount_url,$path)
+}
+
+
 # ---
 # Override dump_these to limit the depth of data structures which will get
 # dumped. This is needed because RapidApp has a relatively large footprint
