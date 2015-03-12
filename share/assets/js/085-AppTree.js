@@ -246,6 +246,11 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		
 		Ext.ux.RapidApp.AppTree.superclass.initComponent.call(this);
 	},
+  
+  expandChildNodes: function() {
+    if(!this.childNodes) { return; }
+    return Ext.ux.RapidApp.AppTree.superclass.expandChildNodes.apply(this,arguments);
+  },
 	
 	persistNodeExpandState: function(node,state) {
 		if(node == this.root) { return false; } // <-- ignore the root node
@@ -1454,4 +1459,38 @@ Ext.ux.tree.TreeFilterX = Ext.extend(Ext.tree.TreeFilter, {
 	// }}}
 
 }); // eo extend
+
+
+// ----- 
+// Overrides to prevent exceptions when panel is closed while an Ajax load is in-progress
+Ext.override(Ext.tree.TreeNode,{
+    _orig: {
+      expand: Ext.tree.TreeNode.prototype.expand,
+      expandChildNodes: Ext.tree.TreeNode.prototype.expandChildNodes,
+      renderChildren: Ext.tree.TreeNode.prototype.renderChildren,
+    },
+    expand : function(){
+      if(!this.getOwnerTree()) { return; }
+      return this._orig.expand.apply(this,arguments);
+    },
+    expandChildNodes: function() {
+      if(!this.childNodes) { return; }
+      return this._orig.expandChildNodes.apply(this,arguments);
+    },
+    renderChildren: function() {
+      if(!this.childNodes) { return; }
+      return this._orig.renderChildren.apply(this,arguments);
+    }
+});
+
+Ext.override(Ext.tree.AsyncTreeNode,{
+    loadComplete : function(deep, anim, callback, scope){
+        this.loading = false;
+        this.loaded = true;
+        if(this.ui) { this.ui.afterLoad(this); }
+        this.fireEvent("load", this);
+        this.expand(deep, anim, callback, scope);
+    }
+});
+// ----- 
 
