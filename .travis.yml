@@ -10,7 +10,8 @@ perl:
 install:
    - cpanm --quiet --notest --skip-satisfied Dist::Zilla
    - cpanm --quiet --notest --skip-satisfied Devel::Cover::Report::Coveralls
-   # We're also installing Catalyst w/o tests to keep travis build time down:
+   # We're also installing Catalyst and DBIC w/o tests to keep travis build time down:
+   - cpanm --quiet --notest --skip-satisfied DBIx::Class
    - cpanm --quiet --notest --skip-satisfied Catalyst
    - "dzil authordeps | cpanm --quiet --notest --skip-satisfied"
    - "dzil listdeps   | cpanm --quiet --skip-satisfied"
