@@ -1,5 +1,22 @@
 Revision history for RapidApp
 
+1.0200 2015-03-13
+    - NEW FEATURE/CLASS: RapidApp::Builder
+    - Simplified and more flexible cfg for favicon - 'default_favicon_url'
+    - Internal Ajax JS now queues and limits to 2 simultaneous requests
+    - Browser title update now works for all (TabGui) tabs (#117)
+    - Template::Controller cfg now supports 'include_paths' option
+    - local_assets_dir cfg no longer has to be relative to app home (which may not exist)
+    - Catalyst 'name' config now auto-applied if not already configured
+    - TabGui 'navtrees' cfg can now reference existing modules by path string
+    - auto_hashnav_redirect_current() can now override via Module
+    - Tree node expand state resets on load exception (#127)
+    - Loading mask shown for initial tree load (#126)
+    - Lots of fixes and improvements to Tree module internals
+    - CoreSchema model now properly enforces DBIC 'deploy' deps
+    - Misc CSS and icon asset additions + removal of unused CSS
+    - Misc bugfixes and improvements
+
 1.0010 2015-02-21
     - rapidapp.pl now bootstraps 'Templates' to be editable by default (#125)
     - Fix bug in rDbic with Sqlt files contraining dash '-' (#124)
