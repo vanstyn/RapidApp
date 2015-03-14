@@ -1,5 +1,9 @@
 Revision history for RapidApp
 
+1.0201 2015-03-14
+    - Add back dummy vers of previously deleted share dir files to ensure clean on 
+      systems out in the wild
+
 1.0200 2015-03-13
     - NEW FEATURE/CLASS: RapidApp::Builder
     - Simplified and more flexible cfg for favicon - 'default_favicon_url'
