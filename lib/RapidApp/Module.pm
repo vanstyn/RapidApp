@@ -81,6 +81,13 @@ sub suburl {
   return $new_url;
 }
 
+# like suburl, but also prefixes mount_url
+sub local_url {
+  my ($self,$url) = @_;
+  $url = $url ? $self->suburl($url) : $self->base_url;
+  join('',$self->c->mount_url,$url)
+}
+
 
 sub urlparams {
   my $self = shift;
