@@ -390,6 +390,8 @@ Ext.reg('apptabpanel', Ext.ux.RapidApp.AppTab.TabPanel);
 Ext.ux.RapidApp.AppTab.treenav_click = function(node,event) {
 	var tree = node.getOwnerTree();
 	var loadTarget = tree.loadTargetObj;
+  
+  if(!loadTarget) { return; }
 	
 	// Update the loadTarget with a refernece back to us. This is needed in case
 	// an app needs to tell us to reload (such as in the case of saving AppGrid2 searches
