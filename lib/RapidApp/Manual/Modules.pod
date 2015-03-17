@@ -85,6 +85,8 @@ accessed directly, they attempt to redirect to the hashnav path to render in a t
 assuming a hashnav URL navigation scheme is active (and, other custom behaviors for direct browser
 calls can be implemented as well).
 
+=head2 Direct Rendering URLs
+
 There are also special controller dispatch paths provided to directly render any module on-the-fly via
 L<RapidApp::View::Viewport> by prefixing the module path with C</rapidapp/module/direct/[path]>
 or C</rapidapp/module/navable/[path]>. The C<navable> path will wrap the rendered module within a 
