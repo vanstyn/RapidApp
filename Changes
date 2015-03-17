@@ -1,5 +1,11 @@
 Revision history for RapidApp
 
+1.0202 2015-03-17
+    - POD tweak
+    - Fix js undef err outside of nav context (tree click)
+    - Add Module util method local_url()
+    - Require Catalyst 5.90084 + Plack 1.0034
+
 1.0201 2015-03-14
     - Add back dummy vers of previously deleted share dir files to ensure clean on 
       systems out in the wild
