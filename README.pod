@@ -27,12 +27,12 @@ such as powerful CRUD-based front-ends for L<DBIx::Class> models, user access an
 RESTful URL navigation schemes, pure Ajax interfaces with no browser page loads, templating engine 
 with front-side CMS features, declarative configuration layers, and more...
 
-RapidApp is useful not only for new application development, but also for adding admin interfaces to 
-existing applications, as well as for rapid prototyping.
+RapidApp is useful not only for new application development, but also for adding admin interfaces 
+and snap-in components to existing applications, as well as for rapid prototyping.
 
-Although RapidApp is based on Catalyst, fully encapsulated L<Plack> interfaces are also 
-provided, such as L<Plack::App::RapidApp::rDbic>, which enables RapidApp to be integrated into
-any application/framework which utilizes PSGI/Plack.
+Although RapidApp is based on Catalyst, fully encapsulated L<Plack> interfaces are also provided, 
+such as L<Plack::App::RapidApp::rDbic> and L<Rapi::Fs>, which enables RapidApp to be integrated into 
+any application/framework which utilizes PSGI/Plack. 
 
 RapidApp started as an internal project in 2009 and has been under continuous development
 ever since. It has been used very successfully for multiple medium to large-scale client 
