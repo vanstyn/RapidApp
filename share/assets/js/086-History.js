@@ -240,7 +240,18 @@ Ext.ux.RapidApp.HashNav = {
           document.title = Ext.ux.RapidApp.HashNav.INIT_TITLE;
         }
       }
-      document.title = title + ' - ' + Ext.ux.RapidApp.HashNav.INIT_TITLE;
+      
+      // This will have any html entities decoded, and stripped of leading/trailing whitespace:
+      var txtarea = document.createElement( 'textarea' );
+      txtarea.innerHTML = title;
+      title = txtarea.value.replace(/^\s+|\s+$/g,'');
+      
+      if(title.length > 0) {
+        document.title = title + ' - ' + Ext.ux.RapidApp.HashNav.INIT_TITLE;
+      }
+      else {
+        document.title = Ext.ux.RapidApp.HashNav.INIT_TITLE;
+      }
     }
     else {
       document.title = Ext.ux.RapidApp.HashNav.INIT_TITLE;
