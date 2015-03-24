@@ -41,18 +41,17 @@ Ext.lib.Ajax = function() {
         break;
     }
 
-    var activeX = [
-        'MSXML2.XMLHTTP.3.0',
-        'MSXML2.XMLHTTP',
-        'Microsoft.XMLHTTP'
-    ], CONTENTTYPE = 'Content-Type';
+    var activeX = ['Msxml2.XMLHTTP.3.0',
+                   'Msxml2.XMLHTTP'],
+        CONTENTTYPE = 'Content-Type';
 
     // private
-    function setHeader(o)
-    {
-        var conn = o.conn, prop;
+    function setHeader(o) {
+        var conn = o.conn,
+            prop,
+            headers = {};
 
-        function setTheHeaders(conn, headers) {
+        function setTheHeaders(conn, headers){
             for (prop in headers) {
                 if (headers.hasOwnProperty(prop)) {
                     conn.setRequestHeader(prop, headers[prop]);
@@ -60,19 +59,13 @@ Ext.lib.Ajax = function() {
             }
         }
 
-        if (pub.defaultHeaders) {
-            setTheHeaders(conn, pub.defaultHeaders);
-        }
-
-        if (pub.headers) {
-            setTheHeaders(conn, pub.headers);
-            delete pub.headers;
-        }
+        Ext.apply(headers, pub.headers, pub.defaultHeaders);
+        setTheHeaders(conn, headers);
+        delete pub.headers;
     }
 
     // private
-    function createExceptionObject(tId, callbackArg, isAbort, isTimeout)
-    {
+    function createExceptionObject(tId, callbackArg, isAbort, isTimeout) {
         return {
             tId : tId,
             status : isAbort ? -1 : 0,
@@ -84,19 +77,19 @@ Ext.lib.Ajax = function() {
     }
 
     // private
-    function initHeader(label, value)
-    {
+    function initHeader(label, value) {
         (pub.headers = pub.headers || {})[label] = value;
     }
 
     // private
-    function createResponseObject(o, callbackArg)
-    {
+    function createResponseObject(o, callbackArg) {
         var headerObj = {},
             headerStr,
             conn = o.conn,
             t,
-            s;
+            s,
+            // see: https://prototype.lighthouseapp.com/projects/8886/tickets/129-ie-mangles-http-response-status-code-204-to-1223
+            isBrokenStatus = conn.status == 1223;
 
         try {
             headerStr = o.conn.getAllResponseHeaders();
@@ -114,10 +107,11 @@ Ext.lib.Ajax = function() {
 
         return {
             tId : o.tId,
-            status : conn.status,
-            statusText : conn.statusText,
+            // Normalize the status and statusText when IE returns 1223, see the above link.
+            status : isBrokenStatus ? 204 : conn.status,
+            statusText : isBrokenStatus ? 'No Content' : conn.statusText,
             getResponseHeader : function(header){return headerObj[header.toLowerCase()];},
-            getAllResponseHeaders : function(){return headerStr},
+            getAllResponseHeaders : function(){return headerStr;},
             responseText : conn.responseText,
             responseXML : conn.responseXML,
             argument : callbackArg
@@ -137,8 +131,7 @@ Ext.lib.Ajax = function() {
     }
 
     // private
-    function handleTransactionResponse(o, callback, isAbort, isTimeout)
-    {
+    function handleTransactionResponse(o, callback, isAbort, isTimeout) {
         if (!callback) {
             releaseObject(o);
             return;
@@ -186,8 +179,7 @@ Ext.lib.Ajax = function() {
                             callback.failure.apply(callback.scope, [responseObject]);
                         }
                     }
-                break;
-
+                    break;
                 default:
                     responseObject = createResponseObject(o, callback.argument);
                     if (callback.failure) {
@@ -205,9 +197,25 @@ Ext.lib.Ajax = function() {
         responseObject = null;
     }
 
+    function checkResponse(o, callback, conn, tId, poll, cbTimeout){
+        if (conn && conn.readyState == 4) {
+            clearInterval(poll[tId]);
+            poll[tId] = null;
+
+            if (cbTimeout) {
+                clearTimeout(pub.timeout[tId]);
+                pub.timeout[tId] = null;
+            }
+            handleTransactionResponse(o, callback);
+        }
+    }
+
+    function checkTimeout(o, callback){
+        pub.abort(o, callback, true);
+    }
+
     // private
-    function handleReadyState(o, callback)
-    {
+    function handleReadyState(o, callback){
         callback = callback || {};
         var conn = o.conn,
             tId = o.tId,
@@ -215,26 +223,10 @@ Ext.lib.Ajax = function() {
             cbTimeout = callback.timeout || null;
 
         if (cbTimeout) {
-            pub.timeout[tId] = setTimeout(function() {
-                pub.abort(o, callback, true);
-            }, cbTimeout);
+            pub.conn[tId] = conn;
+            pub.timeout[tId] = setTimeout(checkTimeout.createCallback(o, callback), cbTimeout);
         }
-
-        poll[tId] = setInterval(
-            function() {
-                if (conn && conn.readyState == 4) {
-                    clearInterval(poll[tId]);
-                    poll[tId] = null;
-
-                    if (cbTimeout) {
-                        clearTimeout(pub.timeout[tId]);
-                        pub.timeout[tId] = null;
-                    }
-
-                    handleTransactionResponse(o, callback);
-                }
-            },
-            pub.pollInterval);
+        poll[tId] = setInterval(checkResponse.createCallback(o, callback, conn, tId, poll, cbTimeout), pub.pollInterval);
     }
 
     /**
@@ -286,8 +278,9 @@ Ext.lib.Ajax = function() {
 
 
     // private
-    function _asyncRequest(method, uri, callback, postData, o)
-    {
+    function _asyncRequest(method, uri, callback, postData) {
+        var o = getConnectionObject() || null;
+
         if (o) {
             o.conn.open(method, uri, true);
 
@@ -310,12 +303,10 @@ Ext.lib.Ajax = function() {
     }
 
     // private
-    function getConnectionObject()
-    {
+    function getConnectionObject() {
         var o;
 
         try {
-            //console.log(pub.transactionId+" is the current transaction id");
             if (o = createXhrObject(pub.transactionId)) {
                 pub.transactionId++;
             }
@@ -326,14 +317,13 @@ Ext.lib.Ajax = function() {
     }
 
     // private
-    function createXhrObject(transactionId)
-    {
+    function createXhrObject(transactionId) {
         var http;
 
         try {
             http = new XMLHttpRequest();
         } catch(e) {
-            for (var i = 0; i < activeX.length; ++i) {
+            for (var i = Ext.isIE6 ? 1 : 0; i < activeX.length; ++i) {
                 try {
                     http = new ActiveXObject(activeX[i]);
                     break;
@@ -345,7 +335,6 @@ Ext.lib.Ajax = function() {
     }
 
     var pub = {
-
         request : function(method, uri, cb, data, options) {
             if(options){
                 var me = this,
@@ -360,40 +349,35 @@ Ext.lib.Ajax = function() {
                     if(!hs || !hs[CONTENTTYPE]){
                         initHeader(CONTENTTYPE, xmlData ? 'text/xml' : 'application/json');
                     }
-                    data = xmlData || (Ext.isObject(jsonData) ? Ext.encode(jsonData) : jsonData);
+                    data = xmlData || (!Ext.isPrimitive(jsonData) ? Ext.encode(jsonData) : jsonData);
                 }
             }
             return asyncRequest(method || options.method || "POST", uri, cb, data);
         },
 
-        serializeForm : function(form)
-        {
-            var fElements = form.elements || (document.forms[form] || Ext.getDom(form)).elements,
-                hasSubmit = false,
-                encoder = encodeURIComponent,
-                element,
-                options,
-                name,
-                val,
-                data = '',
-                type;
-
-            Ext.each(fElements, function(element) {
+        serializeForm : function(form) {
+            var fElements = form.elements || (document.forms[form] || Ext.getDom(form)).elements, 
+                hasSubmit = false, 
+                encoder = encodeURIComponent, 
+                name, 
+                data = '', 
+                type, 
+                hasValue;
+    
+            Ext.each(fElements, function(element){
                 name = element.name;
                 type = element.type;
-
-                if (!element.disabled && name){
-                    if(/select-(one|multiple)/i.test(type)){
-                        Ext.each(element.options, function(opt) {
+        
+                if (!element.disabled && name) {
+                    if (/select-(one|multiple)/i.test(type)) {
+                        Ext.each(element.options, function(opt){
                             if (opt.selected) {
-                                data += String.format("{0}={1}&",
-                                                     encoder(name),
-                                                     encoder((opt.hasAttribute ? opt.hasAttribute('value') : opt.getAttribute('value') !== null) ? opt.value : opt.text));
+                                hasValue = opt.hasAttribute ? opt.hasAttribute('value') : opt.getAttributeNode('value').specified;
+                                data += String.format("{0}={1}&", encoder(name), encoder(hasValue ? opt.value : opt.text));
                             }
                         });
-                    } else if(!/file|undefined|reset|button/i.test(type)) {
-                        if(!(/radio|checkbox/i.test(type) && !element.checked) && !(type == 'submit' && hasSubmit)){
-
+                    } else if (!(/file|undefined|reset|button/i.test(type))) {
+                        if (!(/radio|checkbox/i.test(type) && !element.checked) && !(type == 'submit' && hasSubmit)) {
                             data += encoder(name) + '=' + encoder(element.value) + '&';
                             hasSubmit = /submit/i.test(type);
                         }
@@ -409,9 +393,9 @@ Ext.lib.Ajax = function() {
         defaultXhrHeader : 'XMLHttpRequest',
         poll : {},
         timeout : {},
+        conn: {},
         pollInterval : 50,
         transactionId : 0,
-
 
         abort : function(o, callback, isTimeout)
         {
