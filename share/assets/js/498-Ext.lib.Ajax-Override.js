@@ -1,15 +1,18 @@
-/* http://www.sencha.com/forum/showthread.php?19171-2.0rc1-Queue-for-concurrent-Ajax-calls */
-
 /**
- * Overrides ext-adapter behavior for allowing queuing of AJAX requests.
+ *    *** Custom Ext.lib.Ajax library for RapidApp ***
  *
- */
-/*
- * Portions of this code are based on pieces of Yahoo User Interface Library
- * Copyright (c) 2007, Yahoo! Inc. All rights reserved.
- * YUI licensed under the BSD License:
- * http://developer.yahoo.net/yui/license.txt
- */
+ * Overrides ext-adapter behavior for allowing queuing of AJAX requests.
+ * 
+ * This code was adapted from here:
+ *  http://www.sencha.com/forum/showthread.php?19171-2.0rc1-Queue-for-concurrent-Ajax-calls
+ *
+ * But has been reworked and had its logic updated to match the version of Ext.lib.Ajax found
+ * in Ext JS 3.4 (since the above was a modified version from 3.0). Additionally, request 
+ * header functionality which was broken as of the original version from the above thread has
+ * been fixed in this file
+ *
+**/
+
 Ext.lib.Ajax = function() {
 
     /**
@@ -234,7 +237,7 @@ Ext.lib.Ajax = function() {
      * na dimmediately processes the queue.
      *
      */
-    function asyncRequest(method, uri, callback, postData)
+    function asyncRequest(method, uri, callback, postData, options)
     {
         var o = getConnectionObject();
 
@@ -246,7 +249,8 @@ Ext.lib.Ajax = function() {
                method   : method,
                uri      : uri,
                callback : callback,
-               postData : postData
+               postData : postData,
+               options  : options
             });
             //console.log(o.tId+" was put into the queue");
             var head = _processQueue();
@@ -272,17 +276,29 @@ Ext.lib.Ajax = function() {
         if (to && _activeRequests < _concurrentRequests) {
             to = _queue.shift();
             _activeRequests++;
-            return _asyncRequest(to.method, to.uri, to.callback, to.postData, to.o);
+            return _asyncRequest(to.method, to.uri, to.callback, to.postData, to.options);
         }
     }
 
 
     // private
-    function _asyncRequest(method, uri, callback, postData) {
+    function _asyncRequest(method, uri, callback, postData, options) {
         var o = getConnectionObject() || null;
 
         if (o) {
             o.conn.open(method, uri, true);
+            
+            // ------
+            // New: we have to manually apply this in order for the headers to get carried
+            // from/through the queue process. This is needed because of the ugly way in
+            // which request headers are set via a temp global variable
+            if(options && options.headers) {
+              // pub.headers is the global Ext.lib.Ajax.headers object, it will get deleted
+              // by setHeader(o) call further down
+              pub.headers = pub.headers || {};
+              Ext.apply(pub.headers,options.headers);
+            }
+            // ------
 
             if (pub.useDefaultXhrHeader) {
                 initHeader('X-Requested-With', pub.defaultXhrHeader);
@@ -291,7 +307,7 @@ Ext.lib.Ajax = function() {
             if(postData && pub.useDefaultHeader && (!pub.headers || !pub.headers[CONTENTTYPE])){
                 initHeader(CONTENTTYPE, pub.defaultPostHeader);
             }
-
+            
             if (pub.defaultHeaders || pub.headers) {
                 setHeader(o);
             }
@@ -352,7 +368,7 @@ Ext.lib.Ajax = function() {
                     data = xmlData || (!Ext.isPrimitive(jsonData) ? Ext.encode(jsonData) : jsonData);
                 }
             }
-            return asyncRequest(method || options.method || "POST", uri, cb, data);
+            return asyncRequest(method || options.method || "POST", uri, cb, data, options);
         },
 
         serializeForm : function(form) {
