@@ -1,5 +1,10 @@
 Revision history for RapidApp
 
+1.0203 2015-03-24
+    - Fixes related to internal Ajax JS queues (added in 1.02)
+      this fixes broken direct linking/loading of a URL (from the outside)
+    - Fixes/improvements to browser title update
+
 1.0202 2015-03-17
     - POD tweak
     - Fix js undef err outside of nav context (tree click)
