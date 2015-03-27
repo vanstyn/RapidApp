@@ -18,6 +18,16 @@ require Module::Locate;
 
 use RapidApp::Util ':all';
 
+sub BUILD {
+  my $self = shift;
+  
+  if (my $list = $self->inject_components) {
+    $self->config->{inject_components} ||= [];
+    push @{ $self->config->{inject_components} }, @$list;
+  }
+}
+
+
 has 'base_appname', is => 'ro', isa => Maybe[Str], default => sub { undef };
 
 has 'appname', is => 'ro', isa => Str, lazy => 1, default => sub {
@@ -49,6 +59,8 @@ around 'plugins' => sub {
 
   [ uniq( @plugins ) ]
 };
+
+has 'inject_components', is => 'ro', isa => Maybe[ArrayRef[ArrayRef[Str]]], default => sub { undef };
 
 has '_bootstrap_called', is => 'rw', isa => Bool, default => sub {0}, init_arg => undef;
 after 'bootstrap' => sub { (shift)->_bootstrap_called(1) };
@@ -127,6 +139,19 @@ is set to <MyApp1>, if that exists it is set to C<MyApp2> and so on.
 
 List of Catalyst plugins to load. The plugin 'RapidApp' is always loaded, and '-Debug' is loaded
 when C<debug> is set.
+
+=head2 inject_components
+
+Optional list of components (i.e. Catalyst Models, Views and Controllers) to inject into the
+application. These should be specified as 2-value ArrayRefs with the class name to inject as
+the first argument, and the name to inject it as in the application (relative to the app 
+namespace) as the second argument.
+
+For example, to inject a controller named 'Blah':
+
+ inject_components => [
+   [ 'Some::Catalyst::Controller::Foo' => 'Controller::Blah' ]
+ ]
 
 =head2 debug
 
