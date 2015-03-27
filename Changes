@@ -1,5 +1,12 @@
 Revision history for RapidApp
 
+1.0204 2015-03-27
+    - New ctx method $c->ra_builder returns RapidApp::Builder object - undef
+      unless the app was generated in that manner, such as Rapi::Fs
+    - New top-level Catalyst cfg option 'inject_components' (see below)
+    - New attr 'inject_components' available in RapidApp::Builder (see POD)
+    - Require Catalyst 5.90085 + DBIx::Class 0.082820
+
 1.0203 2015-03-24
     - Fixes related to internal Ajax JS queues (added in 1.02)
       this fixes broken direct linking/loading of a URL (from the outside)
