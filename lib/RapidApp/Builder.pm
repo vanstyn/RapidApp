@@ -25,6 +25,9 @@ sub BUILD {
     $self->config->{inject_components} ||= [];
     push @{ $self->config->{inject_components} }, @$list;
   }
+  
+  # Save a reference to the builder in the config - exposed via $c->ra_builder
+  $self->config->{_ra_builder} = $self;
 }
 
 
@@ -60,7 +63,7 @@ around 'plugins' => sub {
   [ uniq( @plugins ) ]
 };
 
-has 'inject_components', is => 'ro', isa => Maybe[ArrayRef[ArrayRef[Str]]], default => sub { undef };
+has 'inject_components', is => 'ro', isa => Maybe[ArrayRef[ArrayRef[Str]]], lazy => 1, default => sub { undef };
 
 has '_bootstrap_called', is => 'rw', isa => Bool, default => sub {0}, init_arg => undef;
 after 'bootstrap' => sub { (shift)->_bootstrap_called(1) };

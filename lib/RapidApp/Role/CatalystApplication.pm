@@ -25,6 +25,9 @@ sub rapidApp { (shift)->model("RapidApp"); }
 
 has 'request_id' => ( is => 'ro', default => sub { (shift)->rapidApp->requestCount; } );
 
+# This will be set if the app has been loaded by RapidApp::Builder:
+sub ra_builder { (shift)->config->{_ra_builder} }
+
 sub mount_url {
   my $c = shift;
   my $pfx = try{ $c->req->env->{SCRIPT_NAME} } || '';
