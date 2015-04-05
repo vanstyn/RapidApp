@@ -174,7 +174,7 @@ after 'setup_finalize' => sub {
   my $app = shift;
   $app->rapidApp->_setup_finalize;
   $app->log->info(sprintf(
-    " --- RapidApp (v$RapidApp::VERSION) Loaded in %0.3f seconds ---",
+    " --- $app (RapidApp v$RapidApp::VERSION) Loaded in %0.3f seconds ---",
     tv_interval($RapidApp::START)
   ));
 };
