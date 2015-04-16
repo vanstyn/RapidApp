@@ -20,6 +20,7 @@ use RapidApp::Data::Dmap qw(dmap);
 use URI::Escape;
 use Scalar::Util qw(looks_like_number);
 use Digest::SHA1;
+use DateTime;
 
 if($ENV{DBIC_TRACE}) {
   debug_around 'DBIx::Class::Storage::DBI::_execute', newline => 1, stack=>20;
