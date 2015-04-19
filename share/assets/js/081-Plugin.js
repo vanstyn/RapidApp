@@ -1029,6 +1029,10 @@ Ext.ux.RapidApp.Plugin.GridHmenuClearSort = Ext.extend(Ext.util.Observable,{
 		cmp.on('afterrender',this.onAfterrender,this);
 	},
 	
+	isMultiSort: function() {
+		return (this.cmp.use_multisort && this.cmp.store.multisort_enabled);
+	},
+
 	getClearSortButton: function(){
 		return {
 			text: 'Clear Current Sort',
@@ -1045,6 +1049,10 @@ Ext.ux.RapidApp.Plugin.GridHmenuClearSort = Ext.extend(Ext.util.Observable,{
 	beforeMenuShow: function(hmenu){
 		var clearSortItem = hmenu.getComponent('clear-sort');
 		if (!clearSortItem) { return; }
+		if (this.isMultiSort()) {
+			clearSortItem.setVisible(false);
+			return;
+		}
 		var store = this.cmp.getStore();
 		var curSort = store ? store.getSortState() : null;
 		clearSortItem.setVisible(curSort);
@@ -1052,13 +1060,296 @@ Ext.ux.RapidApp.Plugin.GridHmenuClearSort = Ext.extend(Ext.util.Observable,{
 	
 	onAfterrender: function() {
 		var hmenu = this.cmp.view.hmenu;
-		if(!hmenu) { return; }
+		if (!hmenu) { return; }
 		hmenu.insert(2,this.getClearSortButton());
 		hmenu.on('beforeshow',this.beforeMenuShow,this);
 	}
+
 });
 Ext.preg('grid-hmenu-clear-sort',Ext.ux.RapidApp.Plugin.GridHmenuClearSort);
 
+/*
+ Ext.ux.RapidApp.Plugin.GridHmenuMultiSort
+ 2015-04-06 by TR
+
+ Plugin for Ext.grid.GridPanel that adds "Multiple Sorting" options to Hmenu
+*/
+Ext.ux.RapidApp.Plugin.GridHmenuMultiSort = Ext.extend(Ext.util.Observable,{
+	init: function(cmp) {
+		this.cmp = cmp;
+
+		cmp.on('afterrender', this.onAfterrender, this);
+
+		cmp.on('viewready',function(){
+			var self = this;
+			var view = this.cmp.getView();
+			if (!view.updateHeaderSortStateOrig) {
+				view.updateHeaderSortStateOrig = view.updateHeaderSortState;
+			}
+			view.updateHeaderSortState = function(){
+				view.updateHeaderSortStateOrig();
+				self.updateHeaderSortState();
+				return;
+			};
+			if (!view.clearHeaderSortStateOrig) {
+				view.clearHeaderSortStateOrig = view.clearHeaderSortState;
+			}
+			view.clearHeaderSortState = function(){
+				view.clearHeaderSortStateOrig();
+				self.clearHeaderSortState();
+				return;
+			};
+		},this);
+
+		var store = cmp.store;
+		store.on('beforeload',function(store,options){
+			if (store.multisort_enabled) {
+				this.updateSorters();
+				// seems that ExtJS adds them later on again, that bastard - TR
+				// delete options.params['dir'];
+				// delete options.params['sort'];
+				// -----------------
+				options.params.sorters = Ext.encode(store.sorters);
+			}
+		},this);
+
+	},
+
+	addSortIcon : function(col, dir, pos) {
+		var gridView = this.cmp.view;
+		var sortClasses = gridView.sortClasses,
+			sortClass   = sortClasses[dir == "DESC" ? 1 : 0],
+			headers     = gridView.mainHd.select('td');
+
+		var item = headers.item(col);
+		item.addClass(sortClass);
+		if (Ext.isDefined(pos)) {
+			var newel = '<span class="multi-sort-pos">' + pos + '</span>';
+			var inner = item.select('div.x-grid3-hd-inner').first();
+			if (inner) {
+				inner.select('span.multi-sort-pos').remove();
+				inner.createChild(newel);
+			}
+		}
+	},
+
+	clearHeaderSortState: function() {
+		this.cmp.store.sorters = [];
+	},
+
+	updateHeaderSortState: function() {
+		if (this.cmp.store.multisort_enabled) {
+			this.updateSorters();
+			this.updateGrid();
+		}
+	},
+
+	updateGrid: function() {
+		this.addAllIcons();
+	},
+
+	addAllIcons: function() {
+		var cmp = this.cmp;
+		var cm  = this.cmp.colModel;
+		var store = cmp.store;
+		if (store.sorters.length == 1) {
+			var v = store.sorters[0];
+			this.addSortIcon(cm.findColumnIndex(v.field), v.direction);
+		} else if (store.sorters.length > 1) {
+			Ext.each(store.sorters, function(v,k){
+				this.addSortIcon(cm.findColumnIndex(v.field), v.direction, k + 1);
+			}, this);
+		}
+	},
+
+	updateSorters: function() {
+		var store = this.cmp.store;
+		var sortInfo = store.sortInfo;
+		if (!Ext.isDefined(sortInfo)) { return }
+		this.addSort(sortInfo.field, sortInfo.direction);
+	},
+
+	addSort: function(colName,dir) {
+		var store = this.cmp.store;
+		this.removeSort(colName);
+		if (!Ext.isDefined(store.sorters)) {
+			store.sorters = [];
+		}
+		store.sorters.unshift({
+			field: colName,
+			direction: dir
+		});
+	},
+
+	removeSort: function(colName) {
+		var sorters = this.cmp.store.sorters;
+		var found = this.idxSort(colName);
+		if (found !== false) {
+			this.cmp.store.sorters = sorters.remove(sorters[found]);
+		}
+		return found;
+	},
+
+	idxSort: function(colName) {
+		var found = false;
+		Ext.each(this.cmp.store.sorters,function(v,k){
+			if (v.field == colName) { found = k }
+		});
+		return found;
+	},
+
+	getEnableField: function() {
+		if(!this.enableField) {
+			var cnf = {
+				id: this.cmp.id + '-enable-multisort-field',
+				text: "Enable multiple sorting",
+				iconCls: 'ra-icon-cross',
+				handler: function(){
+					this.multiSortMenuUpdate(true);
+					this.updateSorters();
+				},
+				scope: this
+			};
+			this.enableField = Ext.ComponentMgr.create(cnf,'menuitem');
+		}
+		return this.enableField;
+	},
+
+	getDisableField: function() {
+		var store = this.cmp.store;
+		if(!this.disableField) {
+			var cnf = {
+				id: this.cmp.id + '-disable-multisort-field',
+				text: "Disable multiple sorting",
+				iconCls: 'ra-icon-checkbox',
+				handler: function(){
+					store.sorters = [];
+					this.multiSortMenuUpdate(false);
+					store.reload();
+				},
+				scope: this
+			};
+			this.disableField = Ext.ComponentMgr.create(cnf,'menuitem');
+		}
+		return this.disableField;
+	},
+
+	getClearMultiSortButton: function(){
+		var store = this.cmp.store;
+		if(!this.clearMultiSortButton) {
+			var cnf = {
+				text: 'Clear All Sorts',
+				itemId: this.cmp.id + '-clear-multisort',
+				iconCls: 'ra-icon-remove-sort',
+				handler: function() {
+					store.sorters = [];
+					store.setDefaultSort(null);
+					store.reload();
+				},
+				scope: this
+			};
+			this.clearMultiSortButton = Ext.ComponentMgr.create(cnf,'menuitem');
+		}
+		return this.clearMultiSortButton;
+	},
+
+	getRemoveCurrentSortButton: function(){
+		var store = this.cmp.store;
+		if(!this.removeCurrentSortButton) {
+			var cnf = {
+				text: 'Remove From Sort',
+				itemId: this.cmp.id + '-clear-currsort',
+				iconCls: 'ra-icon-remove-sort',
+				handler: function() {
+					var col = this.getActiveCol();
+					if (!col) { return }
+					this.removeSort(col.name);
+					store.setDefaultSort(null);
+					store.reload();
+				},
+				scope: this
+			};
+			this.removeCurrentSortButton = Ext.ComponentMgr.create(cnf,'menuitem');
+		}
+		return this.removeCurrentSortButton;
+	},
+
+	getColumnField: function(col,text,handler) {
+		return Ext.ComponentMgr.create({
+			id: this.cmp.id + '-multisort-field-' + col,
+			text: text,
+			handler: handler,
+			scope: this
+		},'menuitem');
+	},
+
+	insertMultiSortMenu: function(){
+		var hmenu = this.cmp.view.hmenu;
+		if(!hmenu) { return }
+
+		this.multiSortMenu = new Ext.menu.Menu({
+			id: this.cmp.id + '-multi-sort'
+		});
+
+		var index;
+		hmenu.items.each(function(v,k){
+			if (v.getItemId() == 'clear-sort') { index = k }
+		});
+		if (!Ext.isDefined(index)) { index = 2 }
+		hmenu.insert(index + 1, this.getRemoveCurrentSortButton());
+		hmenu.insert(index + 2, this.getClearMultiSortButton());
+		hmenu.insert(index + 3, this.getDisableField());
+		hmenu.insert(index + 4, this.getEnableField());
+
+		hmenu.on('beforeshow',this.beforeMenuShow,this);
+	},
+
+	getActiveCol: function() {
+		var view = this.cmp.getView();
+		if (!view || view.hdCtxIndex === undefined) {
+			return null;
+		}
+		return view.cm.config[view.hdCtxIndex];
+	},
+
+	multiSortMenuUpdate: function(state) {
+		var cmp   = this.cmp;
+		var store = cmp.store;
+		var view  = cmp.view;
+		var hmenu = view.hmenu;
+
+		if (Ext.isDefined(state)) {
+			store.multisort_enabled = state;
+		}
+
+		var on = store.multisort_enabled ? true : false;
+		this.disableField.setVisible(on);
+		this.enableField.setVisible(!on);
+
+		var sorts = ( Ext.isDefined(store.sorters) && store.sorters.length );
+
+		this.clearMultiSortButton.setVisible(sorts);
+		this.removeCurrentSortButton.setVisible(false);
+
+		var activeCol = this.getActiveCol();
+
+		if (on) {
+			if (activeCol && this.idxSort(activeCol.name) !== false) {
+				this.removeCurrentSortButton.setVisible(true);
+			}
+		}
+	},
+
+	beforeMenuShow: function() {
+		this.multiSortMenuUpdate();
+	},
+
+	onAfterrender: function() {
+		this.insertMultiSortMenu();
+	}
+
+});
+Ext.preg('grid-hmenu-multi-sort',Ext.ux.RapidApp.Plugin.GridHmenuMultiSort);
 
 
 // For use with Fields, returns empty strings as null
