@@ -1174,6 +1174,7 @@ Ext.ux.RapidApp.Plugin.GridHmenuMultiSort = Ext.extend(Ext.util.Observable,{
 	addSort: function(colName,dir) {
 		if (colName) {
 			var store = this.cmp.store;
+			this.removeSort(colName);
 			if (!Ext.isDefined(store.sorters)) {
 				store.sorters = [];
 			}
