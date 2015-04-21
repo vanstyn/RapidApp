@@ -1116,19 +1116,21 @@ Ext.ux.RapidApp.Plugin.GridHmenuMultiSort = Ext.extend(Ext.util.Observable,{
 	},
 
 	addSortIcon : function(col, dir, pos) {
-		var gridView = this.cmp.view;
-		var sortClasses = gridView.sortClasses,
-			sortClass   = sortClasses[dir == "DESC" ? 1 : 0],
-			headers     = gridView.mainHd.select('td');
+		if (col > 0) {
+			var gridView = this.cmp.view;
+			var sortClasses = gridView.sortClasses,
+				sortClass   = sortClasses[dir == "DESC" ? 1 : 0],
+				headers     = gridView.mainHd.select('td');
 
-		var item = headers.item(col);
-		item.addClass(sortClass);
-		if (Ext.isDefined(pos)) {
-			var newel = '<span class="multi-sort-pos">' + pos + '</span>';
-			var inner = item.select('div.x-grid3-hd-inner').first();
-			if (inner) {
-				inner.select('span.multi-sort-pos').remove();
-				inner.createChild(newel);
+			var item = headers.item(col);
+			item.addClass(sortClass);
+			if (Ext.isDefined(pos)) {
+				var newel = '<span class="multi-sort-pos">' + pos + '</span>';
+				var inner = item.select('div.x-grid3-hd-inner').first();
+				if (inner) {
+					inner.select('span.multi-sort-pos').remove();
+					inner.createChild(newel);
+				}
 			}
 		}
 	},
@@ -1170,15 +1172,16 @@ Ext.ux.RapidApp.Plugin.GridHmenuMultiSort = Ext.extend(Ext.util.Observable,{
 	},
 
 	addSort: function(colName,dir) {
-		var store = this.cmp.store;
-		this.removeSort(colName);
-		if (!Ext.isDefined(store.sorters)) {
-			store.sorters = [];
+		if (colName) {
+			var store = this.cmp.store;
+			if (!Ext.isDefined(store.sorters)) {
+				store.sorters = [];
+			}
+			store.sorters.unshift({
+				field: colName,
+				direction: dir
+			});			
 		}
-		store.sorters.unshift({
-			field: colName,
-			direction: dir
-		});
 	},
 
 	removeSort: function(colName) {
