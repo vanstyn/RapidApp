@@ -1251,7 +1251,7 @@ Ext.ux.RapidApp.Plugin.GridHmenuMultiSort = Ext.extend(Ext.util.Observable,{
 			var cnf = {
 				id: this.cmp.id + '-multisort-addsort-asc',
 				text: "Sort Ascending",
-				iconCls: 'ra-icon-sort-asc',
+				cls: 'xg-hmenu-sort-asc',
 				handler: function(){
 					var col = this.getActiveCol();
 					if (!col) { return }
@@ -1273,7 +1273,7 @@ Ext.ux.RapidApp.Plugin.GridHmenuMultiSort = Ext.extend(Ext.util.Observable,{
 			var cnf = {
 				id: this.cmp.id + '-multisort-addsort-desc',
 				text: "Sort Descending",
-				iconCls: 'ra-icon-sort-desc',
+				cls: 'xg-hmenu-sort-desc',
 				handler: function(){
 					var col = this.getActiveCol();
 					if (!col) { return }
