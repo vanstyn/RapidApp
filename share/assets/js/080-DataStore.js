@@ -339,6 +339,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				'limit',
 				'sort',
 				'dir',
+				'sorters',
 				'column_summaries'
 			];
 		

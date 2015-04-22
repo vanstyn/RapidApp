@@ -88,6 +88,10 @@ has 'autosize_hidden',         is => 'ro', isa => 'Bool', default => 0;
 has 'autosize_maxwidth',       is => 'ro', isa => 'Int', default => 450;
 # --
 
+# -- multisort options:
+has 'use_multisort',           is => 'ro', isa => 'Bool', default => 1;
+# --
+
 has 'allow_edit_frozen', is => 'ro', isa => 'Bool', default => 1;
 
 sub BUILD {
@@ -129,6 +133,7 @@ sub BUILD {
     column_allow_save_properties => [qw(width hidden)], 
     use_column_summaries => $self->use_column_summaries ? \1 : \0,
     use_autosize_columns => $self->use_autosize_columns ? \1 : \0,
+    use_multisort => $self->use_multisort ? \1 : \0,
     auto_autosize_columns => $self->auto_autosize_columns ? \1 : \0,
     auto_autosize_columns_deep => $self->auto_autosize_columns_deep ? \1 : \0,
     autosize_hidden => $self->autosize_hidden ? \1 : \0,

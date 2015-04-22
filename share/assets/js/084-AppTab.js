@@ -543,7 +543,9 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		'advanced_config_active',
 		'quicksearch_mode',
     'custom_headers',
-    'disable_cell_editing'
+    'disable_cell_editing',
+    'multisort_enabled',
+    'sorters'
 	],
 	
 	// Function to get the current grid state needed to save a search
@@ -551,6 +553,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 	getCurSearchData: function () {
 		var grid = this;
 		var colModel = grid.getColumnModel();
+		var store = grid.getStore();
 						
 		var columns = {};
 		var column_order = [];
@@ -565,12 +568,14 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		var view_config = {
 			columns: columns,
 			column_order: column_order,
-			sort: grid.getState().sort || null
 		};
 
-		var store = grid.getStore();
-		
-		
+		if (!store.multisort_enabled) {
+			var sort = grid.getState().sort;
+			if (sort) {
+				view_config.sort = sort;
+			}
+		}
 		
 		/*
 		//MultiFilter data:
@@ -699,7 +704,6 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		}
 		// --
 		
-		
 		if(this.storeReloadButton) {
 			this.tools = [{
 				id: 'refresh',
@@ -816,6 +820,11 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		this.plugins.push('grid-hmenu-clear-sort');
 		// ----------------------- //
 		
+		// ----- Multi Sort: ----- //
+		if (this.use_multisort) {
+			this.plugins.push('grid-hmenu-multi-sort');
+		}
+		// ----------------------- //
 		
 		// ------ Grid Quick Search --------- //
 		if (this.gridsearch && this.tbar) {

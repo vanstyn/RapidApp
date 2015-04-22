@@ -995,16 +995,30 @@ sub chain_Rs_req_base_Attr {
     push @{$attr->{'select'}}, $dbic_name;
     push @{$attr->{'as'}}, $col;
   }
-  
-  if ($params->{sort} and $params->{dir}) {
-    my $sort = lc($params->{sort});
-    my $sort_name = $self->resolve_dbic_render_colname($sort,$attr->{join});
+
+  my @sorts = defined $params->{sorters}
+    ? @{$self->param_decodeIf($params->{sorters},[])}
+    : $params->{sort}
+      ? ({ field => $params->{sort}, direction => (
+        $params->{dir} eq 'DESC' ? 'DESC' : 'ASC'
+      )})
+      : ();
+
+  for my $sort (@sorts) {
+    my $field = $sort->{field};
+    my $sort_name = $self->resolve_dbic_render_colname($field,$attr->{join});
     if (ref $sort_name eq 'HASH') {
       die "Can't sort by column if it doesn't have an SQL alias"
         unless exists $sort_name->{-as};
       $sort_name= $sort_name->{-as};
     }
-    $attr->{order_by} = { '-' . $params->{dir} => $sort_name } ;
+    my @order_by = ref $attr->{order_by} eq 'HASH'
+      ? ($attr->{order_by})
+      : ref $attr->{order_by} eq 'ARRAY'
+        ? @{$attr->{order_by}}
+        : ();
+    push @order_by, { '-' . lc($sort->{direction}) => $sort_name };
+    $attr->{order_by} = \@order_by;
   }
 
   return $self->_chain_search_rs($Rs,{},$attr);

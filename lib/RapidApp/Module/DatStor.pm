@@ -253,9 +253,9 @@ sub get_store_base_params {
   return $params;
 }
 
-
-
-
+# Multisort
+has 'multisort_enabled',       is => 'ro', isa => 'Bool', default => 0;
+has 'sorters',                 is => 'ro', isa => 'ArrayRef', default => sub {[]};
 
 # -- Moved from AppGrid2:
 has 'columns' => ( is => 'rw', default => sub {{}}, isa => 'HashRef', traits => ['RapidApp::Role::PerRequestBuildDefReset'] );
