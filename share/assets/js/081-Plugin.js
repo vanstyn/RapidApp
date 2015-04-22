@@ -1207,7 +1207,7 @@ Ext.ux.RapidApp.Plugin.GridHmenuMultiSort = Ext.extend(Ext.util.Observable,{
 			var cnf = {
 				id: this.cmp.id + '-enable-multisort-field',
 				text: "Enable multiple sorting",
-				iconCls: 'ra-icon-cross',
+				iconCls: 'ra-icon-multisort',
 				handler: function(){
 					this.multiSortMenuUpdate(true);
 					this.updateSorters();
@@ -1225,7 +1225,7 @@ Ext.ux.RapidApp.Plugin.GridHmenuMultiSort = Ext.extend(Ext.util.Observable,{
 			var cnf = {
 				id: this.cmp.id + '-disable-multisort-field',
 				text: "Disable multiple sorting",
-				iconCls: 'ra-icon-checkbox',
+				iconCls: 'ra-icon-multisort-cancel',
 				handler: function(){
 					store.sorters = [];
 					this.multiSortMenuUpdate(false);
@@ -1263,7 +1263,7 @@ Ext.ux.RapidApp.Plugin.GridHmenuMultiSort = Ext.extend(Ext.util.Observable,{
 			var cnf = {
 				text: 'Remove From Sort',
 				itemId: this.cmp.id + '-clear-currsort',
-				iconCls: 'ra-icon-remove-sort',
+				iconCls: 'ra-icon-multisort-remove',
 				handler: function() {
 					var col = this.getActiveCol();
 					if (!col) { return }
