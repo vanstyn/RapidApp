@@ -1171,17 +1171,24 @@ Ext.ux.RapidApp.Plugin.GridHmenuMultiSort = Ext.extend(Ext.util.Observable,{
 		this.addSort(sortInfo.field, sortInfo.direction);
 	},
 
-	addSort: function(colName,dir) {
+	addSort: function(colName, dir, atEnd) {
 		if (colName) {
 			var store = this.cmp.store;
 			this.removeSort(colName);
 			if (!Ext.isDefined(store.sorters)) {
 				store.sorters = [];
 			}
-			store.sorters.unshift({
-				field: colName,
-				direction: dir
-			});			
+			if (atEnd) {
+				store.sorters.push({
+					field: colName,
+					direction: dir
+				});
+			} else {
+				store.sorters.unshift({
+					field: colName,
+					direction: dir
+				});
+			}
 		}
 	},
 
@@ -1236,6 +1243,71 @@ Ext.ux.RapidApp.Plugin.GridHmenuMultiSort = Ext.extend(Ext.util.Observable,{
 			this.disableField = Ext.ComponentMgr.create(cnf,'menuitem');
 		}
 		return this.disableField;
+	},
+
+	getAddSortMenuAscField: function() {
+		var store = this.cmp.store;
+		if(!this.addSortMenuAscField) {
+			var cnf = {
+				id: this.cmp.id + '-multisort-addsort-asc',
+				text: "Sort Ascending",
+				iconCls: 'ra-icon-sort-asc',
+				handler: function(){
+					var col = this.getActiveCol();
+					if (!col) { return }
+					this.multiSortMenuUpdate(true);
+					this.updateSorters();
+					this.addSort(col.name,'ASC',true);
+					this.updateGrid();
+				},
+				scope: this
+			};
+			this.addSortMenuAscField = Ext.ComponentMgr.create(cnf,'menuitem');
+		}
+		return this.addSortMenuAscField;
+	},
+
+	getAddSortMenuDescField: function() {
+		var store = this.cmp.store;
+		if(!this.addSortMenuDescField) {
+			var cnf = {
+				id: this.cmp.id + '-multisort-addsort-desc',
+				text: "Sort Descending",
+				iconCls: 'ra-icon-sort-desc',
+				handler: function(){
+					var col = this.getActiveCol();
+					if (!col) { return }
+					this.multiSortMenuUpdate(true);
+					this.updateSorters();
+					this.addSort(col.name,'DESC',true);
+					this.updateGrid();
+				},
+				scope: this
+			};
+			this.addSortMenuDescField = Ext.ComponentMgr.create(cnf,'menuitem');
+		}
+		return this.addSortMenuDescField;
+	},
+
+	getAddSortMenuField: function() {
+		if(!this.addSortMenuField) {
+
+			this.addSortMenu = new Ext.menu.Menu({
+				id: this.cmp.id + '-multi-sort-addsort'
+			});
+
+			this.addSortMenu.add(this.getAddSortMenuAscField());
+			this.addSortMenu.add(this.getAddSortMenuDescField());
+
+			var cnf = {
+				id: this.cmp.id + '-multisort-addsort',
+				text: "Add to sort",
+				iconCls: 'ra-icon-multisort',
+				menu: this.addSortMenu
+			};
+			this.addSortMenuField = Ext.ComponentMgr.create(cnf,'menuitem');
+		}
+		return this.addSortMenuField;
 	},
 
 	getClearMultiSortButton: function(){
@@ -1300,10 +1372,11 @@ Ext.ux.RapidApp.Plugin.GridHmenuMultiSort = Ext.extend(Ext.util.Observable,{
 			if (v.getItemId() == 'clear-sort') { index = k }
 		});
 		if (!Ext.isDefined(index)) { index = 2 }
-		hmenu.insert(index + 1, this.getRemoveCurrentSortButton());
-		hmenu.insert(index + 2, this.getClearMultiSortButton());
-		hmenu.insert(index + 3, this.getDisableField());
-		hmenu.insert(index + 4, this.getEnableField());
+		hmenu.insert(index + 1, this.getAddSortMenuField());
+		hmenu.insert(index + 2, this.getRemoveCurrentSortButton());
+		hmenu.insert(index + 3, this.getClearMultiSortButton());
+		hmenu.insert(index + 4, this.getDisableField());
+		hmenu.insert(index + 5, this.getEnableField());
 
 		hmenu.on('beforeshow',this.beforeMenuShow,this);
 	},
@@ -1336,6 +1409,18 @@ Ext.ux.RapidApp.Plugin.GridHmenuMultiSort = Ext.extend(Ext.util.Observable,{
 		this.removeCurrentSortButton.setVisible(false);
 
 		var activeCol = this.getActiveCol();
+
+		var addSortVisible = false;
+
+		if (store.sorters && store.sorters.length) {
+			addSortVisible = true;
+		} else if (store.sortInfo) {
+			if (store.sortInfo.field && store.sortInfo.field != activeCol.name) {
+				addSortVisible = true;
+			}
+		}
+
+		this.addSortMenuField.setVisible(addSortVisible);
 
 		if (on) {
 			if (activeCol && this.idxSort(activeCol.name) !== false) {
