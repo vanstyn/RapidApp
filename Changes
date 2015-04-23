@@ -1,5 +1,9 @@
 Revision history for RapidApp
 
+1.0300 2015-04-23
+    - Grid Multi-Sort (#128, PR #133/#134)
+       * Contributed by Getty (Torsten Raudssus)
+
 1.0205 2015-04-16
     - Fix bug in relative date query handling
     - login_logo_url now properly handles mount_url
