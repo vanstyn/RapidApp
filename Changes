@@ -1,8 +1,10 @@
 Revision history for RapidApp
 
+1.0301 2015-04-26
+    - Fix for the "Add to sort" functionality of Grid Multi-Sort (GETTY)
+
 1.0300 2015-04-23
-    - Grid Multi-Sort (#128, PR #133/#134)
-       * Contributed by Getty (Torsten Raudssus)
+    - Grid Multi-Sort (#128, PR #133/#134) (GETTY)
 
 1.0205 2015-04-16
     - Fix bug in relative date query handling
