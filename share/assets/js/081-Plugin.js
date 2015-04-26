@@ -1259,6 +1259,8 @@ Ext.ux.RapidApp.Plugin.GridHmenuMultiSort = Ext.extend(Ext.util.Observable,{
 					this.updateSorters();
 					this.addSort(col.name,'ASC',true);
 					this.updateGrid();
+					store.setDefaultSort(null);
+					store.reload();
 				},
 				scope: this
 			};
@@ -1281,6 +1283,8 @@ Ext.ux.RapidApp.Plugin.GridHmenuMultiSort = Ext.extend(Ext.util.Observable,{
 					this.updateSorters();
 					this.addSort(col.name,'DESC',true);
 					this.updateGrid();
+					store.setDefaultSort(null);
+					store.reload();
 				},
 				scope: this
 			};
