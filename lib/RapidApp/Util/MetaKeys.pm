@@ -9,7 +9,7 @@ use Types::Standard qw(:all);
 use Scalar::Util qw(blessed);
 
 use RapidApp::Util::MetaKeys::FK;
-use JSON::DWIW;
+use JSON qw( from_json -support_by_pp );
 use Path::Class qw( file dir );
 use Try::Tiny;
 
@@ -54,7 +54,7 @@ sub data_from_string {
   
   my $data = scalar(
     # Assume JSON as the first format
-    try{ JSON::DWIW->from_json($string) } ||
+    try{ from_json($string, {allow_singlequote => 1, allow_barekey => 1}) } ||
     
     # free-form key/value text fallback
     try{ $self->parse_key_vals($string) }
