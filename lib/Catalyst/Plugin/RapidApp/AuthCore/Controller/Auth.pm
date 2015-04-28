@@ -34,8 +34,8 @@ sub logout :Local :Args(0) {
   my $self = shift;
   my $c = shift;
   
-  $c->logout;
   $c->delete_session('logout');
+  $c->logout;
   $c->delete_expired_sessions;
   
   return $self->do_redirect($c);
