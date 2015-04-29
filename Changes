@@ -1,5 +1,11 @@
 Revision history for RapidApp
 
+1.0302 2015-04-28
+    - Fixing bug in order of logout/delete_session in Auth Controller (GETTY)
+    - Requires DBIx::Class::Schema::Diff 1.03 (dist.ini) - fixes #136 (VANSTYN)
+    - Drop JSON::DWIW (Michael Lackhoff)
+    - Added all missing stopwords for podspelling release test (GETTY)
+
 1.0301 2015-04-26
     - Fix for the "Add to sort" functionality of Grid Multi-Sort (GETTY)
 
