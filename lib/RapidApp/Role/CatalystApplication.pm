@@ -111,7 +111,7 @@ sub setupRapidApp {
   my $app = shift;
   
   my @inject = (
-    @{ $app->config->{inject_components} || [] },
+    @{ $app->config->{ra_inject_components} || [] },
     ['RapidApp::RapidApp' => 'RapidApp']
   );
   

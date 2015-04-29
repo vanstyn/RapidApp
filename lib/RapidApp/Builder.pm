@@ -22,8 +22,8 @@ sub BUILD {
   my $self = shift;
   
   if (my $list = $self->inject_components) {
-    $self->config->{inject_components} ||= [];
-    push @{ $self->config->{inject_components} }, @$list;
+    $self->config->{ra_inject_components} ||= [];
+    push @{ $self->config->{ra_inject_components} }, @$list;
   }
   
   # Save a reference to the builder in the config - exposed via $c->ra_builder
