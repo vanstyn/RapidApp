@@ -1,5 +1,10 @@
 Revision history for RapidApp
 
+next-release
+    - 'gridsearch_remote' option now only enabled in Module::DbicGrid, not the
+      parent Module::Grid - fixes #139 (VANSTYN)
+    - inject_components compat fix for new Catalyst 5.90090 - #138 (VANSTYN)
+
 1.0302 2015-04-28
     - Fixing bug in order of logout/delete_session in Auth Controller (GETTY)
     - Requires DBIx::Class::Schema::Diff 1.03 (dist.ini) - fixes #136 (VANSTYN)

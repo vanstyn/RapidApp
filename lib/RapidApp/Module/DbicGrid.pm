@@ -32,7 +32,9 @@ sub BUILD {
     $self->add_plugin('grid-toggle-edit-cells');
 	}
 	
-	$self->apply_extconfig( 
+	$self->apply_extconfig(
+    use_multifilters   => \1,
+    gridsearch_remote  => \1,
     setup_bbar_store_buttons => \1,
     toggle_edit_cells_init_off => $self->toggle_edit_cells_init_off ? \1 : \0,
     
