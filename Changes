@@ -1,6 +1,6 @@
 Revision history for RapidApp
 
-next-release
+1.0303 2015-04-29
     - 'gridsearch_remote' option now only enabled in Module::DbicGrid, not the
       parent Module::Grid - fixes #139 (VANSTYN)
     - inject_components compat fix for new Catalyst 5.90090 - #138 (VANSTYN)
