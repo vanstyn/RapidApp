@@ -334,10 +334,15 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 				}
 				
 				if (setTitle) {
-					// Even if the title includes new lines or <br>'s, those
-					// shouldn't be displayed in the title tab, so that the tab
-					// view is not going 2 lines - GETTY
-					setTitle = setTitle.replace(/(\r\n|\n|\r|<br>|<\/br>)/gm,"");
+					// We strip all HTML and new lines from the title to not
+					// let it pollute our tab or any other visual component.
+					// WARNING: Title must be trusted source, this method
+					// would still allow JS injection.
+					// - GETTY
+					setTitle = setTitle.replace(/(\r\n|\n|\r)/gm,"");
+					var textdiv = document.createElement("div");
+					textdiv.innerHTML = setTitle;
+					setTitle = textdiv.textContent || textdiv.innerText || "";
 
 					tab.raw_title = setTitle;
 

@@ -1763,7 +1763,7 @@ a:hover, a:hover * { cursor: pointer; }
 /* Added for shorten_tab_titles feature by GETTY */
 
 .ra-short-tab-title {
-  width: 250px;
+  max-width: 250px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
