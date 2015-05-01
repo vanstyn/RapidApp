@@ -2468,6 +2468,7 @@ Ext.ux.RapidApp.Plugin.AppGridAutoColWidth = Ext.extend(Ext.util.Observable,{
 			
 			hmenu.insert(index,{
 				text: "AutoSize Columns",
+				itemId: 'autosize-columns',
 				iconCls: 'ra-icon-left-right',
 				handler:this.autoSizeColumns, //<-- this does the full autosize which could be slow
 				scope: this

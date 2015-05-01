@@ -41,6 +41,9 @@ has 'dashboard_url', is => 'ro', isa => 'Maybe[Str]', default => sub {undef};
 # New:
 has 'navtree_footer_template', is => 'ro', isa => 'Maybe[Str]', default => sub {undef};
 
+# Totally new:
+has 'shorten_tab_titles', is => 'ro', isa => 'Bool', default => 0;
+
 # Extra optional class for rendering any tt files or other files
 # Feature added with RapidApp::AppPageViewer in mind, but it doesn't
 # actually care. This module will be loaded as 'page' and nothing else
@@ -238,6 +241,8 @@ sub content_area {
     $cnf->{initLoadTabs} = [$initTab];
   }
   
+  $cnf->{shorten_tab_titles} = $self->shorten_tab_titles ? \1 : \0;
+
   return  RapidApp::JSONFunc->new(
     func => 'new Ext.ux.RapidApp.AppTab.TabPanel',
     parm => $cnf

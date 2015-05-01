@@ -109,22 +109,14 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 	
 	getContextMenuItems: function(tp,tab) {
 		var items = [];
-		
-		var close_item = {
+
+		var close_item = tp.items.getCount() >= 3 ? {
 			itemId: 'close_item',
 			text: 'Close Other Tabs',
 			iconCls: 'ra-icon-tabs-delete',
 			scope: tp,
 			handler: tp.closeAll.createDelegate(tp,[tab]),
-			hideShow: function(){
-				if (this.itemId != 'close_item') {
-					// Whoever called us was supposed to set the scope to the
-					// close_item but didn't
-					return;
-				}
-				this.setVisible(tp.items.getCount() >= 2);
-			}
-		};
+		} : null;
     
     var reload_item = Ext.isFunction(tab.reload) ? {
 			itemId: 'reload_item',
@@ -142,11 +134,19 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 			handler: tp.openAnother.createDelegate(tp,[tab])
 		} : null;
 		
+		var close_me = tab.closable ? {
+			itemId: 'close_me',
+			text: 'Close This Tab',
+			iconCls: 'ra-icon-tabs-delete',
+			scope: tp,
+			handler: tp.remove.createDelegate(tp,[tab]),
+		} : null;
+
     if(reload_item) { items.push(reload_item); }
 		if(close_item)	{ items.push(close_item); }
 		if(open_item)	{ items.push(open_item); }
-    
-		
+		if(close_me)	{ items.push(close_me); }
+
 		// -- New: Optionally get additional menu items defined in the tab itself:
 		if(Ext.isFunction(tab.getTabContextMenuItems)) {
 			var tabitems = tab.getTabContextMenuItems.call(tab,tp);
@@ -174,7 +174,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 				return;
 			}
 			if(item.itemId == 'open_item') { 
-				item.text = 'Open Another <b>' + tab.title + '</b>';
+				item.text = 'Open Another <b class="wrapword">' + ( Ext.isDefined(tab.raw_title) ? tab.raw_title : tab.title ) + '</b>';
         if(!tab.closable) { return; }
 			}
 			menuItems.push(item);
@@ -322,7 +322,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 				if(!setIconCls && tab.iconCls == 'ra-icon-loading') {
 					setIconCls = 'ra-icon-page';
 				}
-				
+
 				if(!setTitle && tab.title == 'Loading') {
 					var max_len = 10;
 					var url_st = cnf.autoLoad.url.split('').reverse().join('');
@@ -333,10 +333,25 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 					setTitle = 'Untitled (' + decodeURIComponent(str.split('').reverse().join('')) + ')';
 				}
 				
-        if(setTitle && setTitleCls) {
-          setTitle = '<span class="' + setTitleCls + '">' + setTitle + '</span>';
-        }
-				if(setTitle) { tab.setTitle(setTitle); }
+				if (setTitle) {
+					// Even if the title includes new lines or <br>'s, those
+					// shouldn't be displayed in the title tab, so that the tab
+					// view is not going 2 lines - GETTY
+					setTitle = setTitle.replace(/(\r\n|\n|\r|<br>|<\/br>)/gm,"");
+
+					tab.raw_title = setTitle;
+
+					if (setTitleCls) {
+	          setTitle = '<span class="' + setTitleCls + '">' + setTitle + '</span>';
+					}
+
+					if (tp.shorten_tab_titles) {
+						setTitle = '<div class="ra-short-tab-title">' + setTitle + '</div>';
+					}
+
+					tab.setTitle(setTitle);
+				}
+
 				if(setIconCls) { tab.setIconClass(setIconCls); }
 				
 				/* 'tabPath' - unfinished feature
@@ -808,7 +823,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			});
 			if(this.maxPageSize) { this.bbar.maxPageSize = this.maxPageSize; }
 		}
-		
+
 		// ----- MultiFilters: ----- //
 		if (this.use_multifilters) {
 			if(!this.plugins){ this.plugins = []; }
@@ -819,7 +834,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		// ----- Clear Sort: ----- //
 		this.plugins.push('grid-hmenu-clear-sort');
 		// ----------------------- //
-		
+
 		// ----- Multi Sort: ----- //
 		if (this.use_multisort) {
 			this.plugins.push('grid-hmenu-multi-sort');

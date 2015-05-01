@@ -101,6 +101,7 @@ before 'setup_components' => sub {
     navtree_footer_template
     navtree_load_collapsed
     navtree_disabled
+    shorten_tab_titles
   );
   $config->{$_} and $main_module_params->{$_} = $config->{$_} for (@copy_params);
   

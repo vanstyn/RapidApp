@@ -272,11 +272,12 @@ sub create_result_TableSpec {
 	
 	my $table = $ResultClass->table;
 	$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
+
 	my $TableSpec = RapidApp::TableSpec->new( 
 		name => $table,
 		%opt
 	);
-	
+
 	my $data_types = $self->TableSpec_data_type_profiles;
 	
 	## WARNING! This logic overlaps with logic further down (in default_TableSpec_cnf_columns)
