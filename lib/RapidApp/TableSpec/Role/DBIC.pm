@@ -1366,6 +1366,8 @@ sub resolve_dbic_rel_alias_by_column_name  {
 			my $function = $info->{function} || sub {
 				my ($self,$rel,$col,$join,$cond_data2,$name2) = @_;
 				my $sql = $info->{sql} || 'SELECT(NULL)';
+				# also see RapidApp::DBIC::Component::VirtualColumnsExt
+				$sql = $info->{sql}->($self->ResultClass, $col) if ref $sql eq 'CODE';
 				
 				# ** translate 'self.' into the relname of the current context. This
 				# should either be 'me.' or the join name. This logic is important

@@ -121,6 +121,8 @@ sub _virtual_column_select {
   if ($self->has_virtual_column($column)) {
     my $info = $self->column_info($column);
     my $sql = $info->{sql} or die "Missing virtual column 'sql' attr in info";
+    # also see RapidApp::TableSpec::Role::DBIC
+    $sql = $info->{sql}->($self, $column) if ref $sql eq 'CODE';
     my $rel = 'me';
     $sql =~ s/self\./${rel}\./g;
     $sql =~ s/\`self\`\./\`${rel}\`\./g; #<-- also support backtic quoted form (quote_sep)
