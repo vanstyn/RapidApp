@@ -96,7 +96,12 @@ __PACKAGE__->add_virtual_columns(
   expires_in => {
     data_type => "integer", 
     is_nullable => 1, 
-    sql => q|SELECT (self.expires - strftime('%s','now'))|
+    sql => sub {
+      # this is exactly the same method (with time()) how
+      # Catalyst::Plugin::Session::Store::DBIC is checking
+      # the session
+      'SELECT (self.expires - '.(time()).')'
+    },
   },
 );
 __PACKAGE__->apply_TableSpec;
