@@ -43,7 +43,7 @@ sub BUILD {
     $c->dispatcher->register( $c => Catalyst::Action->new({
       name      => 'tpl',
       code      => $self->can('tpl'),
-      class     => $self,
+      class     => $self->meta->name,
       namespace => $ns,
       reverse   => join('/',$ns,'tpl'),
       attributes => {
@@ -60,7 +60,7 @@ sub BUILD {
     $c->dispatcher->register( $c => Catalyst::Action->new({
       name      => 'tple',
       code      => $self->can('tple'),
-      class     => $self,
+      class     => $self->meta->name,
       namespace => $ns,
       reverse   => join('/',$ns,'tple'),
       attributes => {

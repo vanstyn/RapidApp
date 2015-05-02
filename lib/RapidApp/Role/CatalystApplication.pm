@@ -143,7 +143,20 @@ sub setupRapidApp {
   #  #  if($app->debug);
   #  push @inject,['RapidApp::Controller::DefaultRoot', 'Controller::RapidApp::Root'];
   #}
-  
+
+  my $has_root = 0;
+
+  for (keys %{ $app->components }) {
+    my $component = $app->components->{$_};
+    if ($component->can('action_namespace')) {
+      $has_root = 1 if $component->action_namespace eq '';
+    }
+  }
+
+  unless ($has_root) {
+    # push @inject, ;
+  }
+
   # Controllers:
   push @inject, (
     ['RapidApp::Controller::DefaultRoot'             => 'Controller::RapidApp::Root'             ],
@@ -154,7 +167,9 @@ sub setupRapidApp {
   );
   
   $app->injectUnlessExist( @{$_} ) for (@inject);
-  
+
+  use DDP; p($app->components);
+
 };
 
 sub root_module_controller {
