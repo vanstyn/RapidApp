@@ -68,10 +68,26 @@ before 'COMPONENT' => sub {
   $class->config( namespace => $ns );
 };
 
-
 sub process { (shift)->approot(@_) }
 
-sub approot :Path {
+before 'register_actions' => sub {
+  my ( $self, $c ) = @_;
+  my $ns = $self->config->{namespace};
+  $c->dispatcher->register( $c => Catalyst::Action->new({
+    name      => 'base',
+    code      => sub {},
+    class     => $self->meta->name,
+    namespace => $ns,
+    reverse   => join('/',$ns),
+    attributes => {
+      Chained     => [ '/' ],
+      PathPart    => [ $ns ],
+      CaptureArgs => [ 0 ],
+    }
+  }));
+};
+
+sub approot :Chained('.') :PathPart('') :Args {
   my ($self, $c, @args) = @_;
   
   # Handle url string mode:

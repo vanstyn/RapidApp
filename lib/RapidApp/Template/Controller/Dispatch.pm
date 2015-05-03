@@ -22,19 +22,15 @@ before 'COMPONENT' => sub {
   
   my $cnf = $app_class->config->{'Model::RapidApp'} || {};
   
-  # Claim the root namespace if the root module controller has 
-  # been setup at a different namespace
-  my $ns = $app_class->module_root_namespace;
-  $class->config( namespace => '' ) if ($ns && $ns ne '');
-
   $class->config( 
     root_template        => $cnf->{root_template} || 'rapidapp/default_root_template.html',
     root_template_prefix => $cnf->{root_template_prefix}
   );
 };
 
-
-sub default :Path {
+# I think this is with the Chained method now only relevant for
+# being called - GETTY
+sub default {
   my ($self, $c, @args) = @_;
 
   my $cfg = $self->config;

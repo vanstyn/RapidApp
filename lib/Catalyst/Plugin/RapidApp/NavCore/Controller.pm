@@ -13,7 +13,7 @@ use JSON qw(decode_json);
 # Controller for loading a saved search in CoreSchema via ID
 
 
-sub load :Path :Args(1) {
+sub load :Chained('/') :PathPart('view') :Args(1) {
   my ( $self, $c, $search_id ) = @_;
   
   ## ---

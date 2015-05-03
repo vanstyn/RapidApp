@@ -37,9 +37,8 @@ sub BUILD {
   
   if($self->read_alias_path) {
     my $path = $self->read_alias_path;
-    die "Bad read_alias_path '$path' - must start (but not end) with '/'" unless (
-      $path =~ /^\// && ! ($path =~ /\/$/)
-    );
+    $path =~ s/^\///;
+
     $c->dispatcher->register( $c => Catalyst::Action->new({
       name      => 'tpl',
       code      => $self->can('tpl'),
@@ -47,16 +46,15 @@ sub BUILD {
       namespace => $ns,
       reverse   => join('/',$ns,'tpl'),
       attributes => {
-        Path => [ $path ]
+        Chained  => [ '/' ],
+        PathPart => [ $path ],
       }
     }));
   }
   
   if($self->edit_alias_path) {
     my $path = $self->edit_alias_path;
-    die "Bad edit_alias_path '$path' - must start (but not end) with '/'" unless (
-      $path =~ /^\// && ! ($path =~ /\/$/)
-    );
+    $path =~ s/^\///;
     $c->dispatcher->register( $c => Catalyst::Action->new({
       name      => 'tple',
       code      => $self->can('tple'),
@@ -64,7 +62,8 @@ sub BUILD {
       namespace => $ns,
       reverse   => join('/',$ns,'tple'),
       attributes => {
-        Path => [ $path ]
+        Chained  => [ '/' ],
+        PathPart => [ $path ],
       }
     }));
   }
@@ -278,10 +277,10 @@ sub _resolve_template_name {
   return $template;
 }
 
-
+sub base :Chained('/') :PathPart('rapidapp/template') :CaptureArgs(0) {}
 
 # TODO: see about rendering with Catalyst::View::TT or a custom View
-sub view :Local {
+sub view :Chained('base') :Args {
   my ($self, $c, @args) = @_;
   my $template = $self->_resolve_template_name(@args)
     or die "No template specified";
@@ -452,7 +451,7 @@ sub view :Local {
 
 
 # Read (not compiled/rendered) raw templates:
-sub get :Local {
+sub get :Chained('base') :Args {
   my ($self, $c, @args) = @_;
   my $template = $self->_resolve_template_name(@args)
     or die "No template specified";
@@ -474,7 +473,7 @@ sub get :Local {
 }
 
 # Update raw templates:
-sub set :Local {
+sub set :Chained('base') :Args {
   my ($self, $c, @args) = @_;
   my $template = $self->_resolve_template_name(@args)
     or die "No template specified";
@@ -503,7 +502,7 @@ sub set :Local {
   return $self->_detach_response($c,200,'Template Updated');
 }
 
-sub create :Local {
+sub create :Chained('base') :Args {
   my ($self, $c, @args) = @_;
   my $template = $self->_resolve_template_name(@args)
     or die "No template specified";
@@ -522,7 +521,7 @@ sub create :Local {
   return $self->_detach_response($c,200,"Created template '$template'");
 }
 
-sub delete :Local {
+sub delete :Chained('base') :Args {
   my ($self, $c, @args) = @_;
   my $template = $self->_resolve_template_name(@args)
     or die "No template specified";

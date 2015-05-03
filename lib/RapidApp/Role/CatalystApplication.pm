@@ -167,9 +167,6 @@ sub setupRapidApp {
   );
   
   $app->injectUnlessExist( @{$_} ) for (@inject);
-
-  use DDP; p($app->components);
-
 };
 
 sub root_module_controller {
