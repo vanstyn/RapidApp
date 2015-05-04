@@ -104,7 +104,7 @@ sub application_has_root_controller {
   for (keys %{ $app->components }) {
     my $component = $app->components->{$_};
     if ($component->can('action_namespace')) {
-      return 1 if $component->action_namespace eq '';
+      return 1 if $component->action_namespace($app) eq '';
     }
   }
   return 0;
