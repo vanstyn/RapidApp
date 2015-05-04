@@ -11,6 +11,7 @@ use Catalyst::Utils;
 use Path::Class qw(file dir);
 use Time::HiRes qw(tv_interval);
 use Clone qw(clone);
+use Carp 'croak';
 require Data::Dumper::Concise;
 use URI::Escape;
 
@@ -98,7 +99,16 @@ before 'setup_middleware' => sub {
     '+RapidApp::Plack::Middleware'
 };
 
-
+sub application_has_root_controller {
+  my $app = shift;
+  for (keys %{ $app->components }) {
+    my $component = $app->components->{$_};
+    if ($component->can('action_namespace')) {
+      return 1 if $component->action_namespace eq '';
+    }
+  }
+  return 0;
+}
 
 around 'setup_components' => sub {
 	my ($orig, $app, @args)= @_;
@@ -114,7 +124,7 @@ sub setupRapidApp {
     @{ $app->config->{ra_inject_components} || [] },
     ['RapidApp::RapidApp' => 'RapidApp']
   );
-  
+
   # Views:
   push @inject, (
     ['Catalyst::View::TT'            => 'View::RapidApp::TT'         ],
@@ -144,18 +154,9 @@ sub setupRapidApp {
   #  push @inject,['RapidApp::Controller::DefaultRoot', 'Controller::RapidApp::Root'];
   #}
 
-  my $has_root = 0;
-
-  for (keys %{ $app->components }) {
-    my $component = $app->components->{$_};
-    if ($component->can('action_namespace')) {
-      $has_root = 1 if $component->action_namespace eq '';
-    }
-  }
-
-  unless ($has_root) {
-    # push @inject, ;
-  }
+  croak "Please use module_root_namespace, if you install your own Root Controller"
+    if $app->application_has_root_controller
+      && !$app->config->{RapidApp}->{module_root_namespace};
 
   # Controllers:
   push @inject, (
@@ -165,7 +166,7 @@ sub setupRapidApp {
     ['RapidApp::Template::Controller::Dispatch'      => 'Controller::RapidApp::TemplateDispatch' ],
     ['Catalyst::Controller::SimpleCAS'               => 'Controller::SimpleCAS'                  ],
   );
-  
+
   $app->injectUnlessExist( @{$_} ) for (@inject);
 };
 

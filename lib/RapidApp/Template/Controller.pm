@@ -46,8 +46,8 @@ sub BUILD {
       namespace => $ns,
       reverse   => join('/',$ns,'tpl'),
       attributes => {
-        Chained  => [ '/' ],
-        PathPart => [ $path ],
+        Chained    => ['/'],
+        PathPrefix => [''],
       }
     }));
   }
@@ -62,8 +62,8 @@ sub BUILD {
       namespace => $ns,
       reverse   => join('/',$ns,'tple'),
       attributes => {
-        Chained  => [ '/' ],
-        PathPart => [ $path ],
+        Chained    => ['/'],
+        PathPrefix => [''],
       }
     }));
   }
@@ -277,7 +277,7 @@ sub _resolve_template_name {
   return $template;
 }
 
-sub base :Chained('/') :PathPart('rapidapp/template') :CaptureArgs(0) {}
+sub base :Chained :PathPrefix :CaptureArgs(0) {}
 
 # TODO: see about rendering with Catalyst::View::TT or a custom View
 sub view :Chained('base') :Args {

@@ -9,7 +9,7 @@ use namespace::autoclean;
 
 use RapidApp::Util qw(:all);
 
-sub base :Chained('/') :PathPart('rapidapp/module') :CaptureArgs(0) {}
+sub base :Chained :PathPrefix :CaptureArgs(0) {}
 
 # This is a special controller designed to render a single RapidApp 
 # Module in its own Viewport (i.e. in an iFrame)

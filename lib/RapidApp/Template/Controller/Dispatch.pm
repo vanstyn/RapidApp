@@ -21,15 +21,20 @@ before 'COMPONENT' => sub {
   my $app_class = ref $_[0] || $_[0];
   
   my $cnf = $app_class->config->{'Model::RapidApp'} || {};
-  
+
   $class->config( 
     root_template        => $cnf->{root_template} || 'rapidapp/default_root_template.html',
-    root_template_prefix => $cnf->{root_template_prefix}
+    root_template_prefix => $cnf->{root_template_prefix},
   );
+
+  unless ($app_class->application_has_root_controller) {
+    $class->config( action => {
+      default => { Path => '/' },
+    });
+  } 
+
 };
 
-# I think this is with the Chained method now only relevant for
-# being called - GETTY
 sub default {
   my ($self, $c, @args) = @_;
 
@@ -50,7 +55,5 @@ sub default {
   $template =~ s/\/+/\//g; #<-- strip any double //
   return $c->template_controller->view($c, $template);
 }
-
-
 
 1;

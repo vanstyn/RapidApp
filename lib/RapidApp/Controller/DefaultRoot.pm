@@ -63,33 +63,16 @@ features could also be easily plugged into a custom top controller.
 before 'COMPONENT' => sub {
   my $class = shift;
   my $app_class = ref $_[0] || $_[0];
-  
-  my $ns = $app_class->module_root_namespace;
-  $class->config( namespace => $ns );
+
+  my $module_root_namespace = $app_class->module_root_namespace;
+  $class->config( namespace => $module_root_namespace || '' );
 };
 
 sub process { (shift)->approot(@_) }
 
-before 'register_actions' => sub {
-  my ( $self, $c ) = @_;
-  my $ns = $self->config->{namespace};
-  $c->dispatcher->register( $c => Catalyst::Action->new({
-    name      => 'base',
-    code      => sub {},
-    class     => $self->meta->name,
-    namespace => $ns,
-    reverse   => join('/',$ns),
-    attributes => {
-      Chained     => [ '/' ],
-      PathPart    => [ $ns ],
-      CaptureArgs => [ 0 ],
-    }
-  }));
-};
-
-sub approot :Chained('.') :PathPart('') :Args {
+sub approot :Chained :PathPrefix :Args {
   my ($self, $c, @args) = @_;
-  
+
   # Handle url string mode:
   if(scalar(@args) == 1 && $args[0] =~ /^\//) {
     my $url = $args[0];
@@ -104,7 +87,6 @@ sub approot :Chained('.') :PathPart('') :Args {
   
   $self->dispatch($c, @args);
 }
-
 
 sub end : ActionClass('RenderView') {}
 
