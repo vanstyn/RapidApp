@@ -14,6 +14,7 @@ use RapidApp::DBIC::Component::TableSpec;
 require Text::Glob;
 use Text::WagnerFischer qw(distance);
 use Clone qw( clone );
+use Digest::MD5 qw(md5_hex);
 
 # hackish performance tweak:
 my %match_glob_cache = ();
@@ -589,7 +590,7 @@ sub _colspec_test($$){
 	my @parts = split(/\./,$full_colspec); 
 	my $colspec = pop @parts;
 	my $relspec = join('.',@parts);
-	
+
 	my $sep = $self->relation_sep;
 	my $prefix = $relspec;
 	$prefix =~ s/\./${sep}/g;
@@ -623,12 +624,12 @@ sub _colspec_test($$){
 	return undef;
 }
 
-
 # New: caching wrapper for performance:
 sub colspec_test($$){
   my $self = shift;
   # There may be extra args, we need to include all in the cache hashkey
-  $self->{_colspec_test_cache}{join('|',@_)} //= $self->_colspec_test(@_)
+  my $colspec_key = join('|',@_);
+  $self->{_colspec_test_cache}{$colspec_key} //= $self->_colspec_test(@_)
 }
 
 # returns a list of loaded column names that match the supplied colspec set
@@ -667,6 +668,36 @@ sub colspec_matches_columns {
 	return 0;
 }
 
+# should get util function probably
+sub __make_key {
+	my $result = "";
+	for my $val (@_) {
+		if (ref $val eq 'HASH') {
+			for my $key (sort { $a cmp $b } keys %{$val}) {
+				$result .= $key."|";
+				$result .= __make_key($val->{$key});
+			}
+		} elsif (ref $val eq 'ARRAY') {
+			$result .= __make_key(@{$val});
+		} else {
+			$result .= "$val";
+		}
+	}
+	return $result;
+}
+
+has colspec_cache_colinfo_key => (
+	is => 'ro', isa => 'Str', lazy => 1, default => sub {
+		md5_hex(__make_key($_[0]->ResultSource->columns_info));
+	},
+);
+
+has colspec_cache_table_key => (
+	is => 'ro', isa => 'Str', lazy => 1, default => sub {
+		md5_hex($_[0]->ResultSource->result_class);
+	},
+);
+
 # Returns a sublist of the supplied columns that match the supplied colspec set.
 # The colspec set is considered as a whole, with each column name tested against
 # the entire compiled set, which can contain both positive and negative (!) colspecs,
@@ -674,7 +705,27 @@ sub colspec_matches_columns {
 sub colspec_select_columns {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-	
+
+# for the cache
+
+	# my $key = __make_key(\%opt);
+	# my $md5 = md5_hex($key);
+
+# use Cache::FileCache;
+
+# has 'cache' => ( is => 'ro', isa => 'Cache::BaseCache', lazy => 1, default => sub {
+# 	my ( $self ) = @_;
+# 	my $inc_file = $self->catalystAppClass;
+# 	$inc_file =~ s/::/\//g;
+# 	$inc_file .= '.pm';
+# 	my $file = $INC{$inc_file};
+# 	$file =~ s/\//__/g;
+# 	use DDP; p($file);
+# 	Cache::FileCache->new({ namespace => $file });
+# });
+
+# 	use DDP; p(); exit;
+
 	my $colspecs = $opt{colspecs} or die "colspec_select_columns(): expected 'colspecs'";
 	my $columns = $opt{columns} or die "colspec_select_columns(): expected 'columns'";
 	
@@ -688,7 +739,7 @@ sub colspec_select_columns {
 	$columns = [ $columns ] unless (ref $columns);
 	
 	$opt{match_data} = {} unless ($opt{match_data});
-	
+
 	my %match = map { $_ => 0 } @$columns;
 	my @order = ();
 	my $i = 0;
