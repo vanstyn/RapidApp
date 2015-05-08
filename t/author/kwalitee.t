@@ -4,10 +4,10 @@ use warnings;
 use Test::More;
 
 BEGIN {
-    unless ($ENV{RELEASE_TESTING})
+    unless ($ENV{AUTHOR_TESTING})
     {
         use Test::More;
-        plan skip_all => 'set RELEASE_TESTING to enable this test' unless $ENV{RELEASE_TESTING};
+        plan skip_all => 'set AUTHOR_TESTING to enable this test' unless $ENV{AUTHOR_TESTING};
     }
 }
 
