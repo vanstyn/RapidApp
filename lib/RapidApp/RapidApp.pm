@@ -220,7 +220,9 @@ sub incRequestCount {
 
 # RapidApp System Cache
 has 'use_cache' => ( is => 'ro', lazy => 1, default => (
-	defined $ENV{RAPIDAPP_NO_CACHE} ? $ENV{RAPIDAPP_NO_CACHE} : 1
+	defined $ENV{RAPIDAPP_NO_CACHE}
+		? ( $ENV{RAPIDAPP_NO_CACHE} ? 0 : 1 )
+		: 1
 ));
 
 has 'cache_class' => ( is => 'ro', lazy => 1, default => 'CHI' );
