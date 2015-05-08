@@ -219,11 +219,18 @@ sub incRequestCount {
 }
 
 # RapidApp System Cache
-has 'use_cache' => ( is => 'ro', lazy => 1, default => 1 );
+has 'use_cache' => ( is => 'ro', lazy => 1, default => (
+	defined $ENV{RAPIDAPP_NO_CACHE} ? $ENV{RAPIDAPP_NO_CACHE} : 1
+));
 
 has 'cache_class' => ( is => 'ro', lazy => 1, default => 'CHI' );
 
 has 'cache_opts' => ( is => 'ro', predicate => 'has_cache_opts' );
+
+has 'cache_dir' => ( is => 'ro', lazy => 1, default => sub {
+	my ( $self ) = @_;
+	return File::Spec->catfile(Catalyst::Utils::class2tempdir((ref $self || $self), 1), 'RapidAppCache');
+});
 
 has 'cache' => ( is => 'ro', default => sub {
 	my ( $self ) = @_;
@@ -231,18 +238,19 @@ has 'cache' => ( is => 'ro', default => sub {
 	if ($self->has_cache_opts) {
 		%cache_opts = %{$self->cache_opts};
 	} else {
-		my $tmpdir = File::Spec->tmpdir() or croak("No tmpdir on this system. Upgrade File::Spec?");
-		my $cachedir = File::Spec->catfile( $tmpdir, $self->cache_key );
 		%cache_opts = (
 			driver => 'File',
-			root_dir => $cachedir,
+			root_dir => $self->cache_dir,
 			depth => 5,
+			namespace => $self->cache_key,
 		);
 	}
 	my $cache_class = $self->cache_class;
 	Catalyst::Utils::ensure_class_loaded($cache_class);
 	my $cache = $cache_class->new( %cache_opts );
-
+	if ($ENV{RAPIDAPP_CLEAR_CACHE}) {
+		$cache->clear();
+	}
 	return $cache;
 });
 
@@ -251,7 +259,7 @@ has 'cache_key' => ( is => 'ro', lazy => 1, default => sub {
 	my $class = ref $self;
 	$class =~ s/::/_/g;
 	return join('_',
-		RapidApp => $class, $RapidApp::VERSION, $DBIx::Class::VERSION,
+		$class, $RapidApp::VERSION, $DBIx::Class::VERSION,
 	);
 });
 
