@@ -14,8 +14,6 @@ RapidApp::RootModule;
 
 RootModule adds a small amount of custom processing needed for the usual "root module".
 
-You can just as easily write your own root module.
-
 =head1 METHODS
 
 =head2 BUILD
@@ -40,14 +38,20 @@ around 'BUILDARGS' => sub {
 	return $params;
 };
 
+around 'apply_init_modules' => sub {
+  my ($orig,$self,@args) = @_;
+
+  # Make the root module instance available via global. We have to do it here so it is
+  # available to submodules that are still loading. This is a hack which is currently
+  # only used/needed in RapidApp::TableSpec::Role::DBIC::get_or_create_rapidapp_module()
+  local $RapidApp::ROOT_MODULE_INSTANCE = $self;
+
+  $self->$orig(@args)
+};
+
 sub BUILD {
 	my $self= shift;
   
-  # Make the root module instance available via global. We have to do it
-  # here so it is available to submodules that are still loading.
-  # This is a hack and needs to be fixed...
-  $RapidApp::ROOT_MODULE_INSTANCE = $self;
-	
 	# Execute arbitrary code setup earlier in the init process that needs
 	# to be called after the RapidApp Module tree has been loaded
 	# See RapidApp::Util::rapidapp_add_global_init_coderef() for more info
