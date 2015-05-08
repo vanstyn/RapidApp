@@ -350,8 +350,8 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 	          setTitle = '<span class="' + setTitleCls + '">' + setTitle + '</span>';
 					}
 
-					if (tp.shorten_tab_titles) {
-						setTitle = '<div class="ra-short-tab-title">' + setTitle + '</div>';
+					if (tp.tab_title_max_width) {
+						setTitle = '<div style="max-width:' + tp.tab_title_max_width + '" class="ra-short-tab-title">' + setTitle + '</div>';
 					}
 
 					tab.setTitle(setTitle);

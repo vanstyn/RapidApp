@@ -42,7 +42,7 @@ has 'dashboard_url', is => 'ro', isa => 'Maybe[Str]', default => sub {undef};
 has 'navtree_footer_template', is => 'ro', isa => 'Maybe[Str]', default => sub {undef};
 
 # Totally new:
-has 'shorten_tab_titles', is => 'ro', isa => 'Bool', default => 0;
+has 'tab_title_max_width', is => 'ro', isa => 'Str', default => '300px';
 
 # Extra optional class for rendering any tt files or other files
 # Feature added with RapidApp::AppPageViewer in mind, but it doesn't
@@ -241,7 +241,7 @@ sub content_area {
     $cnf->{initLoadTabs} = [$initTab];
   }
   
-  $cnf->{shorten_tab_titles} = $self->shorten_tab_titles ? \1 : \0;
+  $cnf->{tab_title_max_width} = $self->tab_title_max_width;
 
   return  RapidApp::JSONFunc->new(
     func => 'new Ext.ux.RapidApp.AppTab.TabPanel',
