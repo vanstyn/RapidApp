@@ -86,8 +86,6 @@ sub _colspec_attr_init_trigger {
 	});
 }
 
-
-
 sub BUILD {}
 after BUILD => sub {
 	my $self = shift;
@@ -624,12 +622,23 @@ sub _colspec_test($$){
 	return undef;
 }
 
+#
+# colspec_test_key is used to see if _colspec_test changed, this is
+# the only relevant indicator to refetch the result for the given
+# colspec_test
+#
+use B::Deparse;
+our $colspec_test_source;
+{
+	my $deparse = B::Deparse->new;
+	$colspec_test_source = $deparse->coderef2text(\&_colspec_test);
+}
+
 # New: caching wrapper for performance:
 sub colspec_test($$){
-  my $self = shift;
-  # There may be extra args, we need to include all in the cache hashkey
-  my $colspec_key = join('|',@_);
-  $self->{_colspec_test_cache}{$colspec_key} //= $self->_colspec_test(@_)
+  my ( $self, @args ) = @_;
+  my $colspec_key = join('|',@args);
+	return $self->{_colspec_test_cache}{$colspec_key} //= $self->_colspec_test(@args);
 }
 
 # returns a list of loaded column names that match the supplied colspec set
@@ -668,35 +677,7 @@ sub colspec_matches_columns {
 	return 0;
 }
 
-# should get util function probably
-sub __make_key {
-	my $result = "";
-	for my $val (@_) {
-		if (ref $val eq 'HASH') {
-			for my $key (sort { $a cmp $b } keys %{$val}) {
-				$result .= $key."|";
-				$result .= __make_key($val->{$key});
-			}
-		} elsif (ref $val eq 'ARRAY') {
-			$result .= __make_key(@{$val});
-		} else {
-			$result .= "$val";
-		}
-	}
-	return $result;
-}
-
-has colspec_cache_colinfo_key => (
-	is => 'ro', isa => 'Str', lazy => 1, default => sub {
-		md5_hex(__make_key($_[0]->ResultSource->columns_info));
-	},
-);
-
-has colspec_cache_table_key => (
-	is => 'ro', isa => 'Str', lazy => 1, default => sub {
-		md5_hex($_[0]->ResultSource->result_class);
-	},
-);
+our $colspec_select_columns_source;
 
 # Returns a sublist of the supplied columns that match the supplied colspec set.
 # The colspec set is considered as a whole, with each column name tested against
@@ -706,29 +687,34 @@ sub colspec_select_columns {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 
-# for the cache
-
-	# my $key = __make_key(\%opt);
-	# my $md5 = md5_hex($key);
-
-# use Cache::FileCache;
-
-# has 'cache' => ( is => 'ro', isa => 'Cache::BaseCache', lazy => 1, default => sub {
-# 	my ( $self ) = @_;
-# 	my $inc_file = $self->catalystAppClass;
-# 	$inc_file =~ s/::/\//g;
-# 	$inc_file .= '.pm';
-# 	my $file = $INC{$inc_file};
-# 	$file =~ s/\//__/g;
-# 	use DDP; p($file);
-# 	Cache::FileCache->new({ namespace => $file });
-# });
-
-# 	use DDP; p(); exit;
+	$self->{_colspec_select_columns_cache} = {}
+		unless defined $self->{_colspec_select_columns_cache};
 
 	my $colspecs = $opt{colspecs} or die "colspec_select_columns(): expected 'colspecs'";
 	my $columns = $opt{columns} or die "colspec_select_columns(): expected 'columns'";
-	
+	$columns = [ sort { $a cmp $b } @{$columns} ];
+	$colspecs = [ sort { $a cmp $b } @{$colspecs} ];
+
+	my $colspec_select_columns_key = join('_',
+		md5_hex(join('_',@{$colspecs})),
+		md5_hex(join('_',@{$columns})),
+	);
+
+	return @{$self->{_colspec_select_columns_cache}{$colspec_select_columns_key}}
+		if defined $self->{_colspec_select_columns_cache}{$colspec_select_columns_key};
+
+	my $cache_key;
+	if ($self->has_cache) {
+		$cache_key = join('_','colspec_select_columns_cache',
+			md5_hex($colspec_test_source.$colspec_select_columns_source),
+			md5_hex($self->ResultClass),
+			$colspec_select_columns_key,
+		);
+		my $cache_content = $self->cache->get($cache_key);
+		return @{$self->{_colspec_select_columns_cache}{$colspec_select_columns_key} = $cache_content}
+			if $cache_content;
+	}
+
 	# if best_match_look_ahead is true, the current remaining colspecs will be passed
 	# to each invocation of colspec_test which will cause it to only return a match
 	# when testing the *closest* (according to WagnerFischer edit distance) colspec
@@ -760,7 +746,16 @@ sub colspec_select_columns {
 		}
 	}
 	
-	return uniq(grep { $match{$_} > 0 } @order);
+	my $colspec_select_columns = [ uniq(grep { $match{$_} > 0 } @order) ];
+	if ($cache_key) {
+		$self->cache->set($cache_key,$colspec_select_columns);
+	}
+	return @{$self->{_colspec_select_columns_cache}{$colspec_select_columns_key} = $colspec_select_columns};
+}
+
+{
+	my $deparse = B::Deparse->new;
+	$colspec_select_columns_source = $deparse->coderef2text(\&colspec_select_columns);
 }
 
 # Applies the original column order defined in the table Schema:
@@ -985,11 +980,11 @@ sub add_related_TableSpec {
 		relspec_prefix => $relspec_prefix,
 		include_colspec => $self->include_colspec->get_subspec($rel),
 	);
-	
+
 	$params{updatable_colspec} = $self->updatable_colspec->get_subspec($rel) || []; 
 	$params{creatable_colspec} = $self->creatable_colspec->get_subspec($rel) || [];
 	$params{no_column_colspec} = $self->no_column_colspec->get_subspec($rel) || [];
-		
+
 	%params = ( %params, %opt );
 	
 	my $class = $self->ResultClass;

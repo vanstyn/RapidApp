@@ -205,11 +205,10 @@ sub _build_ResultClass {
   return $self->ResultSource->schema->class($source_name);
 }
 
-
 has 'TableSpec' => ( is => 'ro', isa => 'RapidApp::TableSpec', lazy_build => 1 );
 sub _build_TableSpec {
   my $self = shift;
-  
+
   my $table = $self->ResultClass->table;
   $table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
   my %opt = (
@@ -222,9 +221,13 @@ sub _build_TableSpec {
   $opt{updatable_colspec} = $self->updatable_colspec if (defined $self->updatable_colspec);
   $opt{creatable_colspec} = $self->creatable_colspec if (defined $self->creatable_colspec);
   $opt{always_fetch_colspec} = $self->always_fetch_colspec if (defined $self->always_fetch_colspec);
-  
+
+  if (!exists $opt{cache} && $self->app->rapidApp->use_cache) {
+    $opt{cache} = $self->app->rapidApp->cache;
+  }
+
   my $TableSpec = RapidApp::TableSpec::DbicTableSpec->new(%opt);
-  
+
   $TableSpec->apply_natural_column_order if ($self->natural_column_order);
   
   return $TableSpec;

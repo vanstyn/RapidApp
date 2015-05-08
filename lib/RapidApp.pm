@@ -28,7 +28,6 @@ our $ACTIVE_REQUEST_CONTEXT = undef;
 
 sub active_request_context { $ACTIVE_REQUEST_CONTEXT }
 
-
 # Convenience wrapper around RapidApp::Builder
 sub build_app {
   shift if ($_[0] && $_[0] eq __PACKAGE__);
