@@ -101,6 +101,7 @@ before 'setup_components' => sub {
     navtree_footer_template
     navtree_load_collapsed
     navtree_disabled
+    tab_title_max_width
   );
   $config->{$_} and $main_module_params->{$_} = $config->{$_} for (@copy_params);
   
