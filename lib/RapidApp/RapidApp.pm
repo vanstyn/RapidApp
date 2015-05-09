@@ -9,6 +9,7 @@ with 'Catalyst::Component::ApplicationAttribute';
 
 use RapidApp::Util qw(:all);
 use Time::HiRes qw(gettimeofday);
+use File::Spec;
 
 # the package name of the catalyst application, i.e. "GreenSheet" or "HOPS"
 has 'catalystAppClass', is => 'ro', isa => 'Str', lazy => 1,
@@ -88,7 +89,6 @@ sub _load_root_module {
   $self->rootModule($self->rootModuleClass->timed_new($mParams));
   
 }
-
 
 sub performModulePreload {
 	my $self= shift;
@@ -217,5 +217,52 @@ sub incRequestCount {
 	my $self= shift;
 	$self->_requestCount($self->_requestCount+1);
 }
+
+# RapidApp System Cache
+has 'use_cache' => ( is => 'ro', lazy => 1, default => (
+	defined $ENV{RAPIDAPP_NO_CACHE}
+		? ( $ENV{RAPIDAPP_NO_CACHE} ? 0 : 1 )
+		: 1
+));
+
+has 'cache_class' => ( is => 'ro', lazy => 1, default => 'CHI' );
+
+has 'cache_opts' => ( is => 'ro', predicate => 'has_cache_opts' );
+
+has 'cache_dir' => ( is => 'ro', lazy => 1, default => sub {
+	my ( $self ) = @_;
+	return File::Spec->catfile(Catalyst::Utils::class2tempdir((ref $self || $self), 1), 'RapidAppCache');
+});
+
+has 'cache' => ( is => 'ro', default => sub {
+	my ( $self ) = @_;
+	my %cache_opts;
+	if ($self->has_cache_opts) {
+		%cache_opts = %{$self->cache_opts};
+	} else {
+		%cache_opts = (
+			driver => 'File',
+			root_dir => $self->cache_dir,
+			depth => 5,
+			namespace => $self->cache_key,
+		);
+	}
+	my $cache_class = $self->cache_class;
+	Catalyst::Utils::ensure_class_loaded($cache_class);
+	my $cache = $cache_class->new( %cache_opts );
+	if ($ENV{RAPIDAPP_CLEAR_CACHE}) {
+		$cache->clear();
+	}
+	return $cache;
+});
+
+has 'cache_key' => ( is => 'ro', lazy => 1, default => sub {
+	my ( $self ) = @_;
+	my $class = ref $self;
+	$class =~ s/::/_/g;
+	return join('_',
+		$class, $RapidApp::VERSION, $DBIx::Class::VERSION,
+	);
+});
 
 1;

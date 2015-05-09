@@ -457,8 +457,9 @@ sub apply_permission_roles_to_datastore_columns {
 	#scream($self->roles_permissions_columns_map);
 }
 
-
-
+# If TableSpec should be cached, then here we need a Cache::Cache
+# object, which is given on DbicLnk if use_cache is on.
+has 'cache' => ( is => 'ro', predicate => 'has_cache' );
 
 no Moose;
 __PACKAGE__->meta->make_immutable;
