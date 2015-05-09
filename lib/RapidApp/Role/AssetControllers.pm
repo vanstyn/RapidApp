@@ -21,7 +21,7 @@ use RapidApp;
 use Alien::Web::ExtJS::V3;
 use Time::HiRes qw(gettimeofday tv_interval);
 
-use Catalyst::Controller::AutoAssets 0.31;
+use Catalyst::Controller::AutoAssets 0.32;
 with 'Catalyst::Plugin::AutoAssets';
 
 sub get_extjs_dir { Alien::Web::ExtJS::V3->dir->stringify }
