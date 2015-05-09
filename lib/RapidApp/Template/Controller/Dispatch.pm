@@ -21,20 +21,21 @@ before 'COMPONENT' => sub {
   my $app_class = ref $_[0] || $_[0];
   
   my $cnf = $app_class->config->{'Model::RapidApp'} || {};
-  
-  # Claim the root namespace if the root module controller has 
-  # been setup at a different namespace
-  my $ns = $app_class->module_root_namespace;
-  $class->config( namespace => '' ) if ($ns && $ns ne '');
 
   $class->config( 
     root_template        => $cnf->{root_template} || 'rapidapp/default_root_template.html',
-    root_template_prefix => $cnf->{root_template_prefix}
+    root_template_prefix => $cnf->{root_template_prefix},
   );
+
+  unless ($app_class->application_has_root_controller) {
+    $class->config( action => {
+      default => { Path => '/' },
+    });
+  } 
+
 };
 
-
-sub default :Path {
+sub default {
   my ($self, $c, @args) = @_;
 
   my $cfg = $self->config;
@@ -54,7 +55,5 @@ sub default :Path {
   $template =~ s/\/+/\//g; #<-- strip any double //
   return $c->template_controller->view($c, $template);
 }
-
-
 
 1;

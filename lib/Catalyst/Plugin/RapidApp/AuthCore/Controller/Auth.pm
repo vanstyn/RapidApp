@@ -8,8 +8,10 @@ use RapidApp::Util qw(:all);
 require Module::Runtime;
 require Catalyst::Utils;
 
+sub base :Chained :PathPrefix :CaptureArgs(0) {}
+
 # 'login' is the POST target of the new HTML login form:
-sub login :Local :Args(0) {
+sub login :Chained('base') :Args(0) {
   my $self = shift;
 	my $c = shift;
   
@@ -30,7 +32,7 @@ sub login :Local :Args(0) {
   return $self->do_redirect($c);
 }
 
-sub logout :Local :Args(0) {
+sub logout :Chained('base') :Args(0) {
   my $self = shift;
   my $c = shift;
   
@@ -65,7 +67,7 @@ sub do_redirect {
 }
 
 # For session timeout, re-auth by RapidApp JavaScript client:
-sub reauth :Local :Args(0) {
+sub reauth :Chained('base') :Args(0) {
 	my $self = shift;
 	my $c = shift;
 	
