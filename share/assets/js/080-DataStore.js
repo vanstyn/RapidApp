@@ -1341,28 +1341,15 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					return (c.title && c.setTitle)  ? true : false;
 				},this);
 
-				var modified_suffix = '&nbsp;<span class="ra-tab-dirty-flag">*</span>';
-
 				cmp.cascade(function(){
 					if(!this.store || !this.store.addTrackedToggleFunc){ return; }
 					this.store.addTrackedToggleFunc(function(store) {
 						var has_changes = cmp.store.hasAnyPendingChanges();
 						btn.setDisabled(!has_changes);
-						
+
 						// ---- Add/remove '*' suffix from the title based on the saved/unsaved status:
 						if(!title_parent) { return; }
-						if(has_changes) {
-							if(!title_parent.notUnsavedTitle) {
-								title_parent.notUnsavedTitle = title_parent.title;
-								title_parent.setTitle(title_parent.notUnsavedTitle + modified_suffix);
-							}
-						}
-						else {
-							if(title_parent.notUnsavedTitle) {
-								title_parent.setTitle(title_parent.notUnsavedTitle);
-								delete title_parent.notUnsavedTitle;
-							}
-						}
+            title_parent.setNewTitle(undefined, has_changes);
 						// ----
 					});
 				});

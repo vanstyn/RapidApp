@@ -332,29 +332,40 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 					}
 					setTitle = 'Untitled (' + decodeURIComponent(str.split('').reverse().join('')) + ')';
 				}
-				
-				if (setTitle) {
+
+				tab.setNewTitle = function(setTitle, dirty) {
 					// We strip all HTML and new lines from the title to not
 					// let it pollute our tab or any other visual component.
 					// WARNING: Title must be trusted source, this method
 					// would still allow JS injection.
 					// - GETTY
-					setTitle = setTitle.replace(/(\r\n|\n|\r)/gm,"");
-					var textdiv = document.createElement("div");
-					textdiv.innerHTML = setTitle;
-					setTitle = textdiv.textContent || textdiv.innerText || "";
-
-					tab.raw_title = setTitle;
+					if (Ext.isDefined(setTitle)) {
+						setTitle = setTitle.replace(/(\r\n|\n|\r)/gm,"");
+						var textdiv = document.createElement("div");
+						textdiv.innerHTML = setTitle;
+						setTitle = textdiv.textContent || textdiv.innerText || "";
+						this.raw_title = setTitle;
+					} else {
+						setTitle = this.raw_title || "";
+					}
 
 					if (setTitleCls) {
 	          setTitle = '<span class="' + setTitleCls + '">' + setTitle + '</span>';
+					}
+
+					if (dirty) {
+						setTitle = setTitle + '&nbsp;<span class="ra-tab-dirty-flag">*</span>';
 					}
 
 					if (tp.tab_title_max_width) {
 						setTitle = '<div style="max-width:' + tp.tab_title_max_width + '" class="ra-short-tab-title">' + setTitle + '</div>';
 					}
 
-					tab.setTitle(setTitle);
+					this.setTitle(setTitle);
+				};
+				
+				if (setTitle) {
+					tab.setNewTitle(setTitle,false);
 				}
 
 				if(setIconCls) { tab.setIconClass(setIconCls); }
