@@ -232,7 +232,7 @@ has 'cache_opts' => ( is => 'ro', predicate => 'has_cache_opts' );
 
 has 'cache_dir' => ( is => 'ro', lazy => 1, default => sub {
 	my ( $self ) = @_;
-	return File::Spec->catfile(Catalyst::Utils::class2tempdir((ref $self || $self), 1), 'RapidAppCache');
+	return File::Spec->catfile(File::Spec->tmpdir, 'RapidAppCache');
 });
 
 has 'cache' => ( is => 'ro', default => sub {
