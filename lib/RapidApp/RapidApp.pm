@@ -10,6 +10,7 @@ with 'Catalyst::Component::ApplicationAttribute';
 use RapidApp::Util qw(:all);
 use Time::HiRes qw(gettimeofday);
 use File::Spec;
+use Module::Runtime qw( use_module );
 
 # the package name of the catalyst application, i.e. "GreenSheet" or "HOPS"
 has 'catalystAppClass', is => 'ro', isa => 'Str', lazy => 1,
@@ -256,12 +257,17 @@ has 'cache' => ( is => 'ro', default => sub {
 	return $cache;
 });
 
+# so far for the main namespace, will probably be changed, every
+# systempart using the cache should make a clear key for the specific
+# input and code that 
 has 'cache_key' => ( is => 'ro', lazy => 1, default => sub {
 	my ( $self ) = @_;
 	my $class = ref $self;
 	$class =~ s/::/_/g;
 	return join('_',
-		$class, $RapidApp::VERSION, $DBIx::Class::VERSION,
+		$class, map { use_module($_)->VERSION } (qw(
+			RapidApp DBIx::Class SQL::Translator Catalyst::Runtime
+		)),
 	);
 });
 
