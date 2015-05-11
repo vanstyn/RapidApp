@@ -1,5 +1,24 @@
 Revision history for RapidApp
 
+1.0400 2015-05-11
+    - Require latest versions of key deps (VANSTYN)
+        - Catalyst 5.90091
+        - Catalyst::Controller::SimpleCAS 0.995
+        - Catalyst::Controller::AutoAssets 0.32
+        - SQL::Translator 0.11021
+        - Moose 2.1404, Moo 2.000001
+        - base 2.18, parent 0.232, namespace::autoclean  0.24 
+    - Switch to AUTHOR_TESTING for all release tests - PR #144 (GETTY)
+    - Introduce general 'RapidAppCache' - PR #143 (GETTY)
+        - General-purpose caching in tmpdir using CHI
+        - colspec calculations now cached for faster subsequent startups
+    - Internal controller dispatch now uses Chained - PR #142 (GETTY)
+    - 'sql' param of virtual_columns can now be a CodeRef - PR #141 (GETTY)
+    - Max width of TabGui tab titles now enforced - PR #140 (GETTY/VANSTYN)
+        - configurable with new 'tab_title_max_width' param (def 350px)
+    - Fix regression in 1.02 regarding 'load_modules' handling (VANSTYN)
+    - Misc other tweaks/bugfixes (VANSTYN/GETTY)
+
 1.0303 2015-04-29
     - 'gridsearch_remote' option now only enabled in Module::DbicGrid, not the
       parent Module::Grid - fixes #139 (VANSTYN)
