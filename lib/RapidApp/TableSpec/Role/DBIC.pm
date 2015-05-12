@@ -693,7 +693,6 @@ sub colspec_select_columns {
 	my $colspecs = $opt{colspecs} or die "colspec_select_columns(): expected 'colspecs'";
 	my $columns = $opt{columns} or die "colspec_select_columns(): expected 'columns'";
 	$columns = [ sort { $a cmp $b } @{$columns} ];
-	$colspecs = [ sort { $a cmp $b } @{$colspecs} ];
 
 	my $colspec_select_columns_key = join('_',
 		md5_hex(join('_',@{$colspecs})),
