@@ -262,6 +262,9 @@ sub DEFAULT_PROFILES {{
     # This currently applies only to single rels pointing at sources 
     # auto_editor_type set to 'combo' or 'dropdown'
     auto_editor_params => { user_editable => 1 }
+  },
+  hidden => {
+    no_column => \1, no_quick_search => \1, no_multifilter => \1
   }
 
 }};
