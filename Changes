@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+1.0401 2015-05-11
+    - Hotfix for wrong enforced alphabetical sorting of colspec (GETTY)
+
 1.0400 2015-05-11
     - Require latest versions of key deps (VANSTYN)
         - Catalyst 5.90091
