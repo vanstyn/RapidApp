@@ -334,16 +334,7 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 				}
 
 				tab.setNewTitle = function(setTitle, dirty) {
-					// We strip all HTML and new lines from the title to not
-					// let it pollute our tab or any other visual component.
-					// WARNING: Title must be trusted source, this method
-					// would still allow JS injection.
-					// - GETTY
 					if (Ext.isDefined(setTitle)) {
-						setTitle = setTitle.replace(/(\r\n|\n|\r)/gm,"");
-						var textdiv = document.createElement("div");
-						textdiv.innerHTML = setTitle;
-						setTitle = textdiv.textContent || textdiv.innerText || "";
 						this.raw_title = setTitle;
 					} else {
 						setTitle = this.raw_title || "";
