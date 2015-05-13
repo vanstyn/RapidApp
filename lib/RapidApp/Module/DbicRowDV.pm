@@ -40,6 +40,14 @@ sub _tt_file {
   )
 }
 
+around 'extra_tt_vars' => sub {
+  my ($orig, $self, @args) = @_;
+  return {
+    %{ $self->$orig(@args) },
+    Row => $self->req_Row
+  }
+};
+
 1;
 
 __END__
