@@ -4034,6 +4034,11 @@ Ext.ux.RapidApp.getDateFormatter = function(format,allow_zero) {
   if (!format) { format = "Y-m-d H:i:s"; }
   return function(date) {
     if(!allow_zero && date && Ext.isString(date)) {
+      // New: handle the case of input formats like 0000-00-00T00:00:00 that 
+      // can't natively parse -- these come from SQLite date/datetime cols
+      if(date.length == 19 && date.search('T') == 10) {
+        date = date.replace('T',' ');
+      }
       // New: handle the common case of an empty/zero date
       //  better than 'Nov 30, 00-1 12:00 AM' which is what the typical format returns
       if(date == '0000-00-00' || date == '0000-00-00 00:00:00') {
