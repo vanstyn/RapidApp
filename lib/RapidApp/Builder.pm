@@ -52,6 +52,9 @@ has 'appname', is => 'ro', isa => Str, lazy => 1, default => sub {
 # Don't use any of the defaults from the superclass:
 sub _build_plugins {[]}
 
+# Default version should derive from Builder subclass
+sub _build_version { (shift)->VERSION }
+
 around 'plugins' => sub {
   my ($orig,$self,@args) = @_;
 

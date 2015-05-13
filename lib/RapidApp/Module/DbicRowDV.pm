@@ -31,7 +31,17 @@ sub BUILD {
   );
   
   $self->_template_file; # init
+  
+  $self->set_default_tab_icon; # same as DbicPropPage
 }
+
+sub set_default_tab_icon {
+  my $self = shift;
+  my $class = $self->ResultClass or return;
+  my $iconCls = $class->TableSpec_get_conf('iconCls') or return;
+  $self->apply_extconfig( tabIconCls => $iconCls );
+}
+
 
 has '_template_file', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
