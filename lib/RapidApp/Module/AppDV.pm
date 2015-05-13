@@ -45,7 +45,7 @@ has 'tt_include_path' => (
 );
 
 has 'tt_file' => ( is => 'ro', isa => 'Str', required => 1 );
-
+sub _tt_file { (shift)->tt_file }
 
 has 'submodule_config_override' => (
   is        => 'ro',
@@ -136,7 +136,7 @@ sub xtemplate_cnf {
     %{ $self->extra_tt_vars }
   };
   
-  my $tt_file = $self->tt_file;
+  my $tt_file = $self->_tt_file;
   
   my $Template = Template->new({ INCLUDE_PATH => $self->tt_include_path });
   $Template->process($tt_file,$tt_vars,\$html_out)
@@ -302,10 +302,53 @@ sub print_view_button {
 }
 
 
-
-#### --------------------- ####
-
-
-no Moose;
-#__PACKAGE__->meta->make_immutable;
 1;
+
+__END__
+
+=head1 NAME
+
+RapidApp::Module::AppDV - General-purpose DataView module
+
+=head1 DESCRIPTION
+
+This module provides an interface to render a DataStore-driven module via an C<Ext.DataView>,
+including in-line edit capability. It is like a free-form version of L<RapidApp::Module::Grid>.
+
+This module is very complex and is still poorly documented. If you want a custom row page, you
+want L<RapidApp::Module::DbicRowDV>
+
+
+=head1 SEE ALSO
+
+=over
+
+=item *
+
+L<RapidApp>
+
+=item *
+
+L<RapidApp::Manual::Modules>
+
+=item *
+
+L<RapidApp::Module::DbicRowDV>
+
+=back
+
+=head1 AUTHOR
+
+Henry Van Styn <vanstyn@cpan.org>
+
+=head1 COPYRIGHT AND LICENSE
+
+This software is copyright (c) 2010 by IntelliTree Solutions llc.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+=cut
+
+
+
