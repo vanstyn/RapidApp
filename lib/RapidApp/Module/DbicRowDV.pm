@@ -17,7 +17,19 @@ has '+allow_restful_queries', default => 1;
 
 sub BUILD {
   my $self = shift;
-  $self->apply_extconfig( itemSelector => join('.','div',$self->selector_class) );
+  
+  $self->apply_extconfig( 
+    itemSelector => join('.','div',$self->selector_class),
+    autoHeight => \0,
+    autoScroll => \1,
+    # -- Set a border for AutoPanel, and allow the template content to set:
+    #  position:absolute;
+    #  top: 0; right: 0; bottom: 0; left: 0;
+    # ^^ and have it work as expected... OR postion 'relative' and scroll as expected:
+    style => 'border: 1px solid #D0D0D0; position:relative;'
+    # --
+  );
+  
   $self->_template_file; # init
 }
 
