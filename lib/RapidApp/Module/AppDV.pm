@@ -15,6 +15,10 @@ use RapidApp::Module::AppDV::TTController;
 
 use HTML::TokeParser::Simple;
 
+# If true, the content will be parsed for a <title> tag to set on the tab in
+# the same manner as this works on the JavaScript side for plain html content
+has 'parse_html_tabTitle', is => 'ro', isa => 'Bool', default => 1;
+
 has 'apply_css_restrict' => ( is => 'ro', default => 0 );
 
 has 'extra_tt_vars' => (
@@ -142,6 +146,8 @@ sub xtemplate_cnf {
   $Template->process($tt_file,$tt_vars,\$html_out)
     or die $Template->error . "  Template file: $tt_file";
   
+  $self->_parse_html_set_tabTitle(\$html_out) if ($self->parse_html_tabTitle);
+  
   return $html_out unless ($self->apply_css_restrict);
   
   return '<div class="' . join(' ',$self->xtemplate_cnf_classes) . '">' . $html_out . '</div>';
@@ -179,6 +185,28 @@ sub xtemplate_funcs {
   };
 }
 
+
+sub _parse_html_set_tabTitle {
+  my ($self, $htmlref) = @_;
+
+  my $parser = HTML::TokeParser::Simple->new($htmlref);
+  
+  while (my $token = $parser->get_token) {
+    if($token->is_start_tag('title')) {
+      my %cnf = ();
+      if(my $cls = $token->get_attr('class')) {
+        $cnf{tabIconCls} = $cls;
+      }
+      while (my $inToken = $parser->get_token) {
+        last if $inToken->is_end_tag('title');
+        my $inner = $inToken->as_is or next;
+        $cnf{tabTitle} ||= '';
+        $cnf{tabTitle} .= $inner;
+      }
+      $self->apply_extconfig( %cnf );
+    }
+  }
+}
 
 
 
