@@ -6,7 +6,10 @@ use warnings;
 # ABSTRACT: for DbicLnk modules to display a single Row instead of multiple
 
 use Moose::Role;
-with 'RapidApp::Module::StorCmp::Role::DbicLnk';
+
+# From RapidApp::Module::StorCmp::Role::DbicLnk, which must be loaded first
+requires 'allow_restful_queries';
+
 
 use RapidApp::Util qw(:all);
 

@@ -5,6 +5,7 @@ use warnings;
 
 use Moose;
 extends 'RapidApp::Module::StorCmp';
+with 'RapidApp::Module::StorCmp::Role::DbicLnk';
 with 'RapidApp::Module::StorCmp::Role::DbicLnk::RowPg';
 
 use RapidApp::Util qw(:all);

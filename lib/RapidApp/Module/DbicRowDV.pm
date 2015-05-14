@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use Moose;
-extends 'RapidApp::Module::AppDV';
+extends 'RapidApp::Module::DbicDV';
 with 'RapidApp::Module::StorCmp::Role::DbicLnk::RowPg';
 
 use RapidApp::Util qw(:all);
@@ -20,14 +20,6 @@ sub BUILD {
   
   $self->apply_extconfig( 
     itemSelector => join('.','div',$self->selector_class),
-    autoHeight => \0,
-    autoScroll => \1,
-    # -- Set a border for AutoPanel, and allow the template content to set:
-    #  position:absolute;
-    #  top: 0; right: 0; bottom: 0; left: 0;
-    # ^^ and have it work as expected... OR postion 'relative' and scroll as expected:
-    style => 'border: 1px solid #D0D0D0; position:relative;'
-    # --
   );
   
   $self->_template_file; # init
@@ -42,11 +34,10 @@ sub set_default_tab_icon {
   $self->apply_extconfig( tabIconCls => $iconCls );
 }
 
-
 has '_template_file', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   my $File = file( $self->tt_include_path, $self->template );
-  -e $File ? $File : die "RowDV template not found ($File)";
+  -e $File ? $File : die "DbicDV template not found ($File)";
 }, isa => 'Path::Class::File';
 
 has '+tt_file', required => 0;
@@ -69,6 +60,7 @@ around 'extra_tt_vars' => sub {
     Row => $self->req_Row
   }
 };
+
 
 1;
 

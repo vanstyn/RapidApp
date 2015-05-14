@@ -205,7 +205,7 @@ sub _parse_html_set_tabTitle {
         $cnf{tabTitle} ||= '';
         $cnf{tabTitle} .= $inner;
       }
-      $self->apply_extconfig( %cnf );
+      $self->apply_extconfig( %cnf ) if (scalar(keys %cnf) > 0);
     }
   }
 }
