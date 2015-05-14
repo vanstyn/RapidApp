@@ -42,8 +42,8 @@ has 'get_record_display' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default =
 has 'single_record_fetch', is => 'ro', isa => 'Bool', default => 0;
 
 
-# Colspec attrs can be specified as simple arrayrefs
-has 'include_colspec' => ( is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]} );
+# Colspec attrs can be specified as simple arrayrefs. Defaults to all local columns
+has 'include_colspec' => ( is => 'ro', isa => 'ArrayRef[Str]', default => sub {['*']} );
 has 'relation_sep' => ( is => 'ro', isa => 'Str', default => '__' );
 
 has 'updatable_colspec' => ( is => 'ro', isa => 'Maybe[ArrayRef[Str]]', default => undef );
@@ -79,6 +79,8 @@ has 'allow_set_quicksearch_mode', is => 'ro', isa => 'Bool', default => 1;
 # database/schema order, otherwise, order is based on the include_colspec
 has 'natural_column_order', is => 'ro', isa => 'Bool', default => 1;
 
+# Whether or not to pull the record key from the url/args for the query.
+# This only makes sense in the context of a single row view, not a set/grid
 has 'allow_restful_queries', is => 'ro', isa => 'Bool', default => 0;
 
 # Generate a param string unique to this module by URL/path. This only needs to be unique
