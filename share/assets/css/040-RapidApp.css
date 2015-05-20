@@ -715,7 +715,8 @@ html, body { height:100%; }
 }
 
 
-.editing-record .appdv-tt-generated .edit-record-toggle .save, .editing-record .appdv-tt-generated .edit-record-toggle .cancel {
+.editing-record .appdv-tt-generated .edit-record-toggle .save, 
+.editing-record .appdv-tt-generated .edit-record-toggle .cancel {
 	visibility:visible;
 	display:block;
 }
@@ -765,7 +766,8 @@ html, body { height:100%; }
     display: none !important;
 }
 
-.appdv-tt-generated .delete-record:hover, .appdv-tt-generated .print-view:hover {
+.appdv-tt-generated .delete-record:hover, 
+.appdv-tt-generated .print-view:hover {
 	border-bottom-style: dotted;
 	border-color: blue;
 	color: blue;
@@ -817,7 +819,8 @@ html, body { height:100%; }
 	visibility: hidden;
 }
 
-.editing-record .appdv-edit-field td.icons div, .record-update .appdv-edit-field td.icons div {
+.editing-record .appdv-edit-field td.icons div, 
+.record-update  .appdv-edit-field td.icons div {
 	visibility: hidden;
 }
 
@@ -842,14 +845,16 @@ html, body { height:100%; }
 }
 
 
-.appdv-edit-field .data-holder, .onepx-transparent-border-bottom {
+.appdv-edit-field .data-holder, 
+.onepx-transparent-border-bottom {
 	border-bottom-style: dotted;
 	border-bottom-width: 1px;
 	border-color: transparent;
 }
 
 /* prevent inheriting padding from parents */
-.appdv-edit-field td, .appdv-edit-field tr {
+.appdv-edit-field td, 
+.appdv-edit-field tr {
   padding: 0px !important;
 }
 
