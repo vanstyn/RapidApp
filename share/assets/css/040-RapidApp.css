@@ -738,9 +738,10 @@ html, body { height:100%; }
 
 /******************  record-delete  *****************/
 
-.appdv-tt-generated .delete-record, .appdv-tt-generated .print-view {
+.appdv-tt-generated .delete-record, 
+.appdv-tt-generated .print-view {
 	background:url(../../../assets/rapidapp/misc/static/images/cross.png) center right no-repeat;
-	padding:4px 18px 1px 1px;
+	padding:0px 18px 0px 1px;
 	width: 30;
 	cursor:	pointer;
 	font-size: 12px;
@@ -751,6 +752,7 @@ html, body { height:100%; }
 	float:left;
 	clear:both;
 	border-bottom-width: 1px;
+	border-bottom-style: solid;
 	border-color: transparent;
 	cursor:	pointer;
 }
