@@ -83,9 +83,9 @@ sub data_wrapper_div {
     $div .= ' style=" ' . $style . '"' if ($style);
   }
   
-  return '<div class="data-wrapper inln">' .
+  return '<div class="data-wrapper">' .
     $div . '>{' . $display . '}</div>' .
-    '<div class="field-holder inln"></div>' .
+    '<div class="field-holder"></div>' .
   '</div>' ;
 }
 
@@ -99,8 +99,8 @@ sub div_edit_field {
   return $self->div_editable_value($name,
     '<div class="appdv-edit-field inln">' .  
       '<table border="0" cellpadding="0" cellspacing="0" class="inln">' .
-      '<tbody class="inln"><tr class="inln">' .
-        '<td class="inln">' . $self->data_wrapper_div($name,$display) . '</td>' .
+      '<tbody><tr>' .
+        '<td>' . $self->data_wrapper_div($name,$display) . '</td>' .
                 
         '<td class="icons">' .
           '<div class="edit">&nbsp;</div>' .
@@ -122,7 +122,7 @@ sub div_edit_field_no_icons {
     '<div class="appdv-edit-field inln">' .  
       '<table border="0" cellpadding="0" cellspacing="0" class="inln">' .
       '<tbody class="inln"><tr class="inln">' .
-        '<td class="inln">' . $self->data_wrapper_div($name,$display) . '</td>' .
+        '<td>' . $self->data_wrapper_div($name,$display) . '</td>' .
 
       '</tr></tbody></table>' .
     '</div>'
