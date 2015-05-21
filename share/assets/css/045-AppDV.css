@@ -216,7 +216,8 @@
 
 .appdv-edit-field td.icons .edit {
   width: 14px;
-  background:url(../../../assets/rapidapp/misc/static/images/pencil_tiny.png) right center no-repeat;
+  visibility: visible;
+  background:url(../../../assets/rapidapp/misc/static/images/pencil_tiny_gray.png) right center no-repeat;
 }
 
 .appdv-edit-field td.icons .save {
@@ -231,6 +232,7 @@
 
 .appdv-edit-field:hover td.icons .edit {
   visibility: visible;
+  background:url(../../../assets/rapidapp/misc/static/images/pencil_tiny.png) right center no-repeat;
 }
 
 
