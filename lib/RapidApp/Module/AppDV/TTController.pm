@@ -26,7 +26,7 @@ sub dataview_id {
 
 sub div_wrapper {
   my $self = shift;
-  return '<div class="appdv-tt-generated ' . $self->dataview_id . '">' . 
+  return '<div class="appdv-tt-generated ' . $self->dataview_id . ' inln">' . 
     (shift) . 
   '</div>';
 }
@@ -37,7 +37,7 @@ sub div_wrapper {
 sub div_clickable {
   my $self = shift;
   return $self->div_wrapper(
-    '<div class="clickable">' . 
+    '<div class="clickable inln">' . 
       (shift) . 
     '</div>'
   );
@@ -62,7 +62,7 @@ sub div_editable_value{
   
   return $self->div_clickable(
     
-    '<div class="editable-value">' .
+    '<div class="editable-value inln">' .
       '<div class="field-name" style="display:none;">' . $name . '</div>' .
       (shift) .
     '</div>'
@@ -75,7 +75,7 @@ sub data_wrapper_div {
   my $display = shift;
   $display = $name unless ($display);
   
-  my $div = '<div class="data-holder"';
+  my $div = '<div class="data-holder inln"';
   
   my $Column = $self->AppDV->get_column($name);
   if($Column) {
@@ -83,9 +83,9 @@ sub data_wrapper_div {
     $div .= ' style=" ' . $style . '"' if ($style);
   }
   
-  return '<div class="data-wrapper">' .
+  return '<div class="data-wrapper inln">' .
     $div . '>{' . $display . '}</div>' .
-    '<div class="field-holder"></div>' .
+    '<div class="field-holder inln"></div>' .
   '</div>' ;
 }
 
@@ -97,16 +97,17 @@ sub div_edit_field {
   my $display = shift;
   $display = $name unless ($display);
   return $self->div_editable_value($name,
-    '<div class="appdv-edit-field">' .  
-      '<table border="0" cellpadding="0" cellspacing="0"><tr>' .
-        '<td>' . $self->data_wrapper_div($name,$display) . '</td>' .
+    '<div class="appdv-edit-field inln">' .  
+      '<table border="0" cellpadding="0" cellspacing="0" class="inln">' .
+      '<tbody class="inln"><tr class="inln">' .
+        '<td class="inln">' . $self->data_wrapper_div($name,$display) . '</td>' .
                 
         '<td class="icons">' .
           '<div class="edit">&nbsp;</div>' .
           '<div class="save" title="save">&nbsp;</div>' .
           '<div class="cancel" title="cancel">&nbsp;</div>' .
         '</td>' .
-      '</tr></table>' .
+      '</tr></tbody></table>' .
     '</div>'
   );
 }
@@ -118,11 +119,12 @@ sub div_edit_field_no_icons {
   my $display = shift;
   $display = $name unless ($display);
   return $self->div_editable_value($name,
-    '<div class="appdv-edit-field">' .  
-      '<table border="0" cellpadding="0" cellspacing="0"><tr>' .
-        '<td>' . $self->data_wrapper_div($name,$display) . '</td>' .
+    '<div class="appdv-edit-field inln">' .  
+      '<table border="0" cellpadding="0" cellspacing="0" class="inln">' .
+      '<tbody class="inln"><tr class="inln">' .
+        '<td class="inln">' . $self->data_wrapper_div($name,$display) . '</td>' .
 
-      '</tr></table>' .
+      '</tr></tbody></table>' .
     '</div>'
   );
 }

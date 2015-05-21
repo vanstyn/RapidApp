@@ -274,7 +274,8 @@ div.appdv-edit-bigfield {
   min-height: 20px;
 }
 
-.editing-record .appdv-edit-bigfield .icons div, .record-update .appdv-edit-bigfield .icons div {
+.editing-record .appdv-edit-bigfield .icons div, 
+.record-update .appdv-edit-bigfield .icons div {
   display:none !important;
 }
 
@@ -314,15 +315,19 @@ div.appdv-edit-bigfield {
   padding-right: 15px;
 }
 
-.appdv-edit-bigfield:hover .icons, .appdv-edit-bigfield:hover .icons .edit {
+.appdv-edit-bigfield:hover .icons, 
+.appdv-edit-bigfield:hover .icons .edit {
   display:block;
 }
 
-.editing .appdv-edit-bigfield .icons .edit, .appdv-edit-bigfield:hover .icons .save, .appdv-edit-bigfield:hover .icons .cancel {
+.editing .appdv-edit-bigfield .icons .edit, 
+.appdv-edit-bigfield:hover .icons .save, 
+.appdv-edit-bigfield:hover .icons .cancel {
   display:none;
 }
 
-.editing .appdv-edit-bigfield .icons .save, .editing .appdv-edit-bigfield .icons .cancel {
+.editing .appdv-edit-bigfield .icons .save, 
+.editing .appdv-edit-bigfield .icons .cancel {
   display:block;
   visibility:visible;
   position: relative;
@@ -399,17 +404,8 @@ div.appdv-edit-bigfield {
 
   NEW: AppDV inline styles
 
-  In the following rule definitions we are overriding ALL tags within
-  the appdv-tt-generated div to be inline (like <span>) instead of
-  block (div) and table tags which have their own, special display
-  settings, and then selectively turning back on normal display for
-  tags we need for the proper handling of the icons. We're also
-  forcing vertical-align: bottom across-the-board (which is really
-  only needed for table tags)
-
-  This combination allows the 'autofield' markup to be inline-able and
-  behave in the same manner as if it were normal text, so an AppDV
-  template containing this:
+  The 'inln' class is applied to edit-fields within AppDV server-side code
+  at multiple levels in order to make it so that this:
 
    <span>Foo is [% r.autofield.foo %] said Joe.</span>
 
@@ -419,16 +415,8 @@ div.appdv-edit-bigfield {
 
   But the former with support inline edit controls          */
 
-div.appdv-tt-generated, div.appdv-tt-generated * {
+div.appdv-tt-generated, div.appdv-tt-generated .inln {
   display: inline;
   vertical-align: bottom;
-}
-
-div.appdv-tt-generated td {
-  display: table-cell;
-}
-
-div.appdv-tt-generated .icons * {
-  display: block;
 }
 /**************************************************************************/
