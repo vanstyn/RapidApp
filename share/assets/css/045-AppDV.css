@@ -1,0 +1,395 @@
+/*
+
+.appdv-edit-box {
+  visibility:hidden;
+  position: absolute;
+  top: 0; 
+  right: 0;
+  padding-top:4px;
+  padding-left:4px;
+  cursor:  pointer;
+  z-index:500;
+  font-size: 10px;
+  font-family: arial;
+  background:url(../../../assets/rapidapp/misc/static/images/pencil_tiny.png) center right no-repeat floralwhite;
+  padding:1px 14px 1px 1px;
+  white-space:nowrap;
+  color: blue;
+  font-weight: normal;
+  text-decoration:underline;
+  border-style: dotted;
+  border-width: 1px;
+  border-color: blue;
+}
+
+.appdv-field-value:hover, .appdv-field-value:hover .appdv-edit-box {
+  visibility:visible;
+}
+
+
+.appdv-edit-box + .save, .appdv-edit-box + .cancel, .editing .appdv-edit-box {
+  display:none;
+}
+
+.editing .appdv-edit-box + .save, .editing .appdv-edit-box + .cancel {
+  display:block;
+  visibility:visible;
+  position: relative;
+  
+  background: floralwhite;
+  padding-right: 1px;
+  float:right;
+}
+
+.editing .appdv-edit-box + .save {
+  background:url(../../../assets/rapidapp/misc/static/images/bullet_disk.png) center right no-repeat floralwhite;
+  padding-right: 15px;
+  float:left;
+}
+
+*/
+
+
+
+
+
+
+
+
+
+/******************  edit-record-toggle  *****************/
+
+.appdv-tt-generated .edit-record-toggle {
+  padding: 4px;
+}
+
+.record-update .appdv-tt-generated .edit-record-toggle .edit {
+  display:none!important;
+}
+
+
+.appdv-tt-generated .edit-record-toggle div {
+  display: none;
+  visibility:hidden;
+  width: 30;
+  padding:4px 14px 1px 1px;
+  cursor:  pointer;
+  font-size: 11px;
+  font-family: arial;
+  white-space:nowrap;
+  color: blue;
+  font-weight: bold;
+  float:left;
+  clear:both;
+  border-bottom-width: 1px;
+  border-bottom-style: dotted;
+  border-color: transparent;
+}
+
+.appdv-tt-generated .edit-record-toggle div:hover {
+  border-color: blue;
+}
+
+.appdv-tt-generated .edit-record-toggle .edit {
+  display:block;
+}
+
+.editing-record .appdv-tt-generated .edit-record-toggle .edit {
+  display:none;
+}
+
+
+.record-over:hover .appdv-tt-generated .edit-record-toggle .edit {
+  visibility:visible;
+}
+
+
+.editing-record .appdv-tt-generated .edit-record-toggle .save, 
+.editing-record .appdv-tt-generated .edit-record-toggle .cancel {
+  visibility:visible;
+  display:block;
+}
+
+.appdv-tt-generated .edit-record-toggle .edit {
+  background:url(../../../assets/rapidapp/misc/static/images/pencil_tiny.png) center right no-repeat;
+}
+
+.appdv-tt-generated .edit-record-toggle .save {
+  background:url(../../../assets/rapidapp/misc/static/images/bullet_disk.png) center right no-repeat;
+}
+
+.appdv-tt-generated .edit-record-toggle .cancel {
+  background:url(../../../assets/rapidapp/misc/static/images/cross_tiny.png) center right no-repeat;
+}
+
+/******************  END edit-record-toggle  *****************/
+
+
+
+/******************  record-delete  *****************/
+
+.appdv-tt-generated .delete-record, 
+.appdv-tt-generated .print-view {
+  background:url(../../../assets/rapidapp/misc/static/images/cross.png) center right no-repeat;
+  padding:0px 18px 0px 1px;
+  width: 30;
+  cursor:  pointer;
+  font-size: 12px;
+  font-family: arial;
+  white-space:nowrap;
+  color: darkgray;
+  font-weight: bold;
+  float:left;
+  clear:both;
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+  border-color: transparent;
+  cursor:  pointer;
+}
+
+.appdv-tt-generated .print-view {
+    background:url(../../../assets/rapidapp/misc/static/images/printer.png) center right no-repeat;
+}
+
+.rapidapp-printview .appdv-tt-generated .print-view {
+    display: none !important;
+}
+
+.appdv-tt-generated .delete-record:hover, 
+.appdv-tt-generated .print-view:hover {
+  border-bottom-style: dotted;
+  border-color: blue;
+  color: blue;
+}
+
+
+.editing-record .appdv-tt-generated .delete-record {
+  display: none !important;
+}
+
+@media print {
+    .appdv-tt-generated .delete-record {
+        display: none !important;
+    }
+}
+
+/******************  END record-delete  *****************/
+
+
+
+/*
+.appdv-editable-value {
+  padding-right: 14px;
+}
+
+.appdv-editable-value:hover {
+  background:url(../../../assets/rapidapp/misc/static/images/pencil_tiny.png) center right no-repeat;
+  cursor:  pointer;
+}
+
+.appdv-editable-value:hover span {
+  border-bottom-style: dotted;
+  border-bottom-width: 1px;
+  border-color: blue;
+}
+*/
+
+
+/****************** appdv-edit-field ******************/
+
+.appdv-edit-field td.icons {
+  width:24px;
+}
+
+.appdv-edit-field td.icons div {
+  width: 12px;
+  float:left;
+  cursor:  pointer;
+  visibility: hidden;
+}
+
+.editing-record .appdv-edit-field td.icons div, 
+.record-update  .appdv-edit-field td.icons div {
+  visibility: hidden;
+}
+
+
+.appdv-edit-field td.icons .edit {
+  width: 14px;
+  background:url(../../../assets/rapidapp/misc/static/images/pencil_tiny.png) right center no-repeat;
+}
+
+.appdv-edit-field td.icons .save {
+  background:url(../../../assets/rapidapp/misc/static/images/bullet_disk.png) center center no-repeat;
+  display:none;
+}
+
+.appdv-edit-field td.icons .cancel {
+  background:url(../../../assets/rapidapp/misc/static/images/cross_tiny.png) center center no-repeat;
+  display:none;
+}
+
+.appdv-edit-field:hover td.icons .edit {
+  visibility: visible;
+}
+
+
+.appdv-edit-field .data-holder, 
+.onepx-transparent-border-bottom {
+  border-bottom-style: dotted;
+  border-bottom-width: 1px;
+  border-color: transparent;
+}
+
+/* prevent inheriting padding from parents */
+.appdv-edit-field td, 
+.appdv-edit-field tr {
+  padding: 0px !important;
+}
+
+.appdv-edit-field:hover .data-holder {
+  border-color: blue;
+  cursor:  pointer;
+}
+
+.editing .appdv-edit-field td.icons .save, 
+.editing .appdv-edit-field td.icons .cancel {
+  display:block;
+  visibility: visible;
+}
+
+.editing .appdv-edit-field td.icons .edit {
+  visibility: hidden;
+  display:none;
+}
+
+/****************** END appdv-edit-field ******************/
+
+
+
+/****************** appdv-edit-bigfield ******************/
+
+div.appdv-edit-bigfield {
+  position:relative;
+  min-height: 20px;
+}
+
+.editing-record .appdv-edit-bigfield .icons div, .record-update .appdv-edit-bigfield .icons div {
+  display:none !important;
+}
+
+
+.appdv-edit-bigfield .icons div {
+  display:none;
+  position: absolute;
+  top: 0; 
+  right: 0;
+  padding-top:4px;
+  padding-left:4px;
+  cursor:  pointer;
+  z-index:500;
+  font-size: 10px;
+  font-family: arial;
+  padding:1px 14px 1px 1px;
+  white-space:nowrap;
+  color: blue;
+  font-weight: normal;
+  text-decoration:underline;
+  border-style: dotted;
+  border-width: 1px;
+  border-color: blue;
+}
+
+.appdv-edit-bigfield .icons .edit {
+  background:url(../../../assets/rapidapp/misc/static/images/pencil_tiny.png) center right no-repeat floralwhite;
+}
+
+.appdv-edit-bigfield .icons .save {
+  background:url(../../../assets/rapidapp/misc/static/images/bullet_disk.png) center right no-repeat floralwhite;
+  padding-right: 15px;
+}
+
+.appdv-edit-bigfield .icons .cancel {
+  background:url(../../../assets/rapidapp/misc/static/images/cross_tiny.png) center right no-repeat floralwhite;
+  padding-right: 15px;
+}
+
+.appdv-edit-bigfield:hover .icons, .appdv-edit-bigfield:hover .icons .edit {
+  display:block;
+}
+
+.editing .appdv-edit-bigfield .icons .edit, .appdv-edit-bigfield:hover .icons .save, .appdv-edit-bigfield:hover .icons .cancel {
+  display:none;
+}
+
+.editing .appdv-edit-bigfield .icons .save, .editing .appdv-edit-bigfield .icons .cancel {
+  display:block;
+  visibility:visible;
+  position: relative;
+  float:right;
+}
+
+/****************** END appdv-edit-bigfield ******************/
+
+
+
+/* override to hide edit items if "no_update" is set and delete if no_destroy is set: */
+.no_update .edit, .no_destroy .delete-record {
+  display: none !important;
+}
+
+
+
+
+
+/*
+
+.appdv-tt-generated .clickable .editable-value .data {
+  padding-right: 14px;
+}
+
+.appdv-tt-generated .clickable .editable-value .data:hover {
+  background:url(../../../assets/rapidapp/misc/static/images/pencil_tiny.png) center right no-repeat;
+  cursor:  pointer;
+}
+
+.appdv-tt-generated .clickable .editable-value .data:hover span {
+  border-bottom-style: dotted;
+  border-bottom-width: 1px;
+  border-color: blue;
+}
+
+.appdv-tt-generated .clickable .editable-value .save, .appdv-tt-generated .clickable .editable-value .cancel {
+
+  position: absolute;
+  top: 0; 
+  right: 0;
+  padding-top:4px;
+  padding-left:4px;
+  cursor:  pointer;
+  z-index:500;
+  font-size: 10px;
+  font-family: arial;
+  background:url(../../../assets/rapidapp/misc/static/images/pencil_tiny.png) center right no-repeat floralwhite;
+  padding:1px 14px 1px 1px;
+  white-space:nowrap;
+  color: blue;
+  font-weight: normal;
+  text-decoration:underline;
+  border-style: dotted;
+  border-width: 1px;
+  border-color: blue;
+}
+
+
+.appdv-tt-generated .clickable .editable-value + .editing .save, .appdv-tt-generated .clickable .editable-value + .editing .cancel {
+  visibility:visible;
+}
+
+
+*/
+
+
+
+
+/************************************/
