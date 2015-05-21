@@ -393,3 +393,42 @@ div.appdv-edit-bigfield {
 
 
 /************************************/
+
+
+/**************************************************************************
+
+  NEW: AppDV inline styles
+
+  In the following rule definitions we are overriding ALL tags within
+  the appdv-tt-generated div to be inline (like <span>) instead of
+  block (div) and table tags which have their own, special display
+  settings, and then selectively turning back on normal display for
+  tags we need for the proper handling of the icons. We're also
+  forcing vertical-align: bottom across-the-board (which is really
+  only needed for table tags)
+
+  This combination allows the 'autofield' markup to be inline-able and
+  behave in the same manner as if it were normal text, so an AppDV
+  template containing this:
+
+   <span>Foo is [% r.autofield.foo %] said Joe.</span>
+
+  Will render roughly the same as:
+
+   <span>Foo is {foo} said Joe.</span>
+
+  But the former with support inline edit controls          */
+
+div.appdv-tt-generated, div.appdv-tt-generated * {
+  display: inline;
+  vertical-align: bottom;
+}
+
+div.appdv-tt-generated td {
+  display: table-cell;
+}
+
+div.appdv-tt-generated .icons * {
+  display: block;
+}
+/**************************************************************************/
