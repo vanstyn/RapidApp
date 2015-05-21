@@ -66,11 +66,10 @@ pre {
 }
 
 .with-inline-icon {
-	padding-left: 19px;
-	line-height: 19px;
+	padding-left: 18px;
+	line-height: 16px;
 	display: inline-block;
 	background-repeat: no-repeat;
-	background-position: 1px center;
 }
 
 .ra-icon-centered-16x16 {
