@@ -255,7 +255,7 @@ has 'autofield' => (
       }
       
       # read-only:
-      return '{' . $display . '}' unless ($Column->editor);
+      return $self->div_wrapper('{' . $display . '}') unless ($Column->editor);
       
       # -- TODO: this breaks create without update unless "allow_add" is specifically set on the column
       # Needs fixed... probably the best way to handle it is to dynamically turn on "allow_add" when
