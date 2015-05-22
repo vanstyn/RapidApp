@@ -123,7 +123,11 @@ sub div_edit_field_no_icons {
       '<table border="0" cellpadding="0" cellspacing="0" class="inln">' .
       '<tbody class="inln"><tr class="inln">' .
         '<td>' . $self->data_wrapper_div($name,$display) . '</td>' .
+        
+        '<td class="icons">' . # "no icons" now applies only to save/cancel
+          '<div class="edit">&nbsp;</div>' .
 
+        '</td>' .
       '</tr></tbody></table>' .
     '</div>'
   );
