@@ -438,7 +438,33 @@ Date.parseDate = function(input, format, strict) {
 }
 
 var orig_DateField_parseDate = Ext.form.DateField.prototype.parseDate;
+var orig_DateField_initComponent = Ext.form.DateField.prototype.initComponent;
 Ext.override(Ext.form.DateField, {
+  initComponent: function() {
+  
+    // Logic based on AppCombo2 -- just make click trigger/expand the selector,
+    // even in edit mode. Its an unfeature to make the user click on the trigger
+    // control all the way on the right, which they might not even notice
+    if(this.editable && ! this.no_click_trigger) {
+      this.on('afterrender',function(cmb){
+        cmb.getEl().on('click',function(el){
+          // This is not my favorite implementation, but it seems like the safest
+          // way to do it based on the way DateField's internal events are setup.
+          // Here we are simply triggering the toggle on every other click so that
+          // the user can still focus and manually type if they want
+          if(cmb.clickTriggerToggle) {
+            cmb.onTriggerClick();
+            cmb.clickTriggerToggle = false;
+          }
+          else {
+            cmb.clickTriggerToggle = true;
+          }
+        },{ scope: cmb, delay: 50 });
+      },this);
+    }
+
+    return orig_DateField_initComponent.call(this);
+  },
   parseDate: function(input, format) {
     // Special handling for SQLite which has no separate 'date' type, and stuffs
     // a zeroed time at the end. Strip this off and make it look like a date part only

@@ -2489,7 +2489,18 @@ Ext.preg('fieldhelp',Ext.ux.FieldHelp);
 */
 Ext.ns('Ext.ux.RapidApp.form');
 Ext.ux.RapidApp.form.DateTime2 = Ext.extend(Ext.ux.form.DateTime ,{
+  onTriggerClick: function() {
+    this.df.onTriggerClick();
+  },
 	initComponent: function() {
+    
+    // Pass in the 'allowBlank' flag because it is used by RapidApp
+    // for extra logic, like rendering of select '(None)'
+    if(typeof this.allowBlank !== 'undefined') {
+      this.dateConfig = this.dateConfig || {};
+      this.dateConfig.allowBlank = this.allowBlank;
+    }
+  
 		Ext.ux.RapidApp.form.DateTime2.superclass.initComponent.call(this);
 		this.addEvents( 'updated' );
 		this.on('change',this.updateValue,this);
