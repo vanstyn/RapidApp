@@ -119,7 +119,7 @@
 }
 
 .appdv-tt-generated .edit-record-toggle .cancel {
-  background:url(../../../assets/rapidapp/misc/static/images/cross_tiny.png) center right no-repeat;
+  background:url(../../../assets/rapidapp/misc/static/images/bullet_cross.png) center right no-repeat;
 }
 
 /******************  END edit-record-toggle  *****************/
@@ -226,7 +226,7 @@
 }
 
 .appdv-edit-field td.icons .cancel {
-  background:url(../../../assets/rapidapp/misc/static/images/cross_tiny.png) center center no-repeat;
+  background:url(../../../assets/rapidapp/misc/static/images/bullet_cross.png) center center no-repeat;
   display:none;
 }
 
@@ -292,8 +292,10 @@ div.appdv-edit-bigfield {
   cursor:  pointer;
   z-index:500;
   font-size: 10px;
+  line-height: 11px;
   font-family: arial;
-  padding:1px 14px 1px 1px;
+  padding:2px 16px 2px 2px;
+  margin-right:1px;
   white-space:nowrap;
   color: blue;
   font-weight: normal;
@@ -304,17 +306,24 @@ div.appdv-edit-bigfield {
 }
 
 .appdv-edit-bigfield .icons .edit {
-  background:url(../../../assets/rapidapp/misc/static/images/pencil_tiny.png) center right no-repeat floralwhite;
+  display:block;
+  color:transparent;
+  border-color: transparent;
+  background:url(../../../assets/rapidapp/misc/static/images/bullet_pencil_gray.png) center right no-repeat;
+}
+
+.appdv-edit-bigfield .icons .edit:hover {
+  color: blue;
+  border-color: blue;
+  background:url(../../../assets/rapidapp/misc/static/images/bullet_pencil.png) center right no-repeat floralwhite;
 }
 
 .appdv-edit-bigfield .icons .save {
   background:url(../../../assets/rapidapp/misc/static/images/bullet_disk.png) center right no-repeat floralwhite;
-  padding-right: 15px;
 }
 
 .appdv-edit-bigfield .icons .cancel {
-  background:url(../../../assets/rapidapp/misc/static/images/cross_tiny.png) center right no-repeat floralwhite;
-  padding-right: 15px;
+  background:url(../../../assets/rapidapp/misc/static/images/bullet_cross.png) center right no-repeat floralwhite;
 }
 
 .appdv-edit-bigfield:hover .icons, 
@@ -334,6 +343,11 @@ div.appdv-edit-bigfield {
   visibility:visible;
   position: relative;
   float:right;
+}
+
+.editing .appdv-edit-bigfield .icons .save:hover, 
+.editing .appdv-edit-bigfield .icons .cancel:hover {
+  color:#B8860B;
 }
 
 /****************** END appdv-edit-bigfield ******************/
