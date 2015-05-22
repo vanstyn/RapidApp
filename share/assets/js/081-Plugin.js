@@ -3542,11 +3542,8 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 		var newEl = existBtn.insertSibling({ tag: 'div', style: 'float:left;' },'after');
 		var noneBtn = new Ext.Button({
 			text: '<span style="font-size:.9em;color:grey;">(None)</span>',
-			handler: function(){ 
-				this.cmp.setValue(null); 
-				this.cmp.resumeEvents();
-				this.cmp.fireEvent('blur');
-				this.cmp.menu.hide();
+			handler: function(){
+        this.cmp.menu.fireEvent('select',null);
 			},
 			scope: this
 		});
