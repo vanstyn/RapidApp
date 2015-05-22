@@ -181,10 +181,13 @@ sub DEFAULT_PROFILES {{
     # really want it - this is just the default...
     no_quick_search => \1,
     editor => { 
-      xtype => 'xdatetime2', 
+      xtype => 'xdatetime2',
+      dateFormat => 'Y-m-d',
+      timeFormat => 'H:i', # default 'g:i A'
+      timeWidth => 55,
       plugins => ['form-relative-datetime'], 
       minWidth => 200,
-      editable => \0  #<-- force whole-field click/select
+      #editable => \0  #<-- force whole-field click/select
     },
     width => 130,
     renderer => ["Ext.ux.RapidApp.getDateFormatter('M d, Y g:i A')"],
@@ -195,10 +198,11 @@ sub DEFAULT_PROFILES {{
     # See comment above in the datetime section...
     no_quick_search => \1,
     editor => { 
-      xtype => 'datefield', 
+      xtype => 'datefield',
+      format => 'Y-m-d',
       plugins => ['form-relative-datetime'], 
       minWidth => 120,
-      editable => \0 #<-- force whole-field click/select
+      #editable => \0 #<-- force whole-field click/select
     },
     width => 80,
     renderer => ["Ext.ux.RapidApp.getDateFormatter('M d, Y')"],
