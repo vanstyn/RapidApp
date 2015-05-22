@@ -439,6 +439,7 @@ Date.parseDate = function(input, format, strict) {
 
 var orig_DateField_parseDate = Ext.form.DateField.prototype.parseDate;
 var orig_DateField_initComponent = Ext.form.DateField.prototype.initComponent;
+var orig_DateField_onTriggerClick = Ext.form.DateField.prototype.onTriggerClick;
 Ext.override(Ext.form.DateField, {
   initComponent: function() {
   
@@ -454,7 +455,6 @@ Ext.override(Ext.form.DateField, {
           // the user can still focus and manually type if they want
           if(cmb.clickTriggerToggle) {
             cmb.onTriggerClick();
-            cmb.clickTriggerToggle = false;
           }
           else {
             cmb.clickTriggerToggle = true;
@@ -462,8 +462,11 @@ Ext.override(Ext.form.DateField, {
         },{ scope: cmb, delay: 50 });
       },this);
     }
-
     return orig_DateField_initComponent.call(this);
+  },
+  onTriggerClick: function() {
+    this.clickTriggerToggle = false;
+    orig_DateField_onTriggerClick.call(this);
   },
   parseDate: function(input, format) {
     // Special handling for SQLite which has no separate 'date' type, and stuffs
