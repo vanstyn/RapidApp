@@ -425,3 +425,27 @@ Ext.override(Ext.Window, {
     return orig_Window_initComponent.call(this);
   }
 });
+
+
+var orig_Date_parseDate = Date.parseDate;
+Date.parseDate = function(input, format, strict) {
+  // New: handle the case of input formats like 0000-00-00T00:00:00 that 
+  // can't natively parse -- these come from SQLite date/datetime cols
+  if(Ext.isString(input) && input.length == 19 && input.search('T') == 10) {
+    input = input.replace('T',' ');
+  }
+  return orig_Date_parseDate.call(this, input, format, strict);
+}
+
+var orig_DateField_parseDate = Ext.form.DateField.prototype.parseDate;
+Ext.override(Ext.form.DateField, {
+  parseDate: function(input, format) {
+    // Special handling for SQLite which has no separate 'date' type, and stuffs
+    // a zeroed time at the end. Strip this off and make it look like a date part only
+    if(Ext.isString(input) && input.length == 19 && input.search('T00:00:00') == 10) {
+      input = input.split('T')[0];
+    }
+    return orig_DateField_parseDate.call(this, input, format);
+  }
+});
+
