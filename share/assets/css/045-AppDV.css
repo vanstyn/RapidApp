@@ -52,11 +52,6 @@
 
 
 
-
-
-
-
-
 /******************  edit-record-toggle  *****************/
 
 .appdv-tt-generated .edit-record-toggle {
@@ -197,40 +192,40 @@
 
 /****************** appdv-edit-field ******************/
 
-.appdv-edit-field td.icons {
+.appdv-edit-field .icons {
   width:24px;
 }
 
-.appdv-edit-field td.icons div {
+.appdv-edit-field .icons div {
   width: 12px;
-  float:left;
+  /*float:left;*/
   cursor:  pointer;
   visibility: hidden;
 }
 
-.editing-record .appdv-edit-field td.icons div, 
-.record-update  .appdv-edit-field td.icons div {
+.editing-record .appdv-edit-field .icons div, 
+.record-update  .appdv-edit-field .icons div {
   visibility: hidden;
 }
 
 
-.appdv-edit-field td.icons .edit {
+.appdv-edit-field .icons .edit {
   width: 14px;
   visibility: visible;
   background:url(../../../assets/rapidapp/misc/static/images/pencil_tiny_gray.png) right center no-repeat;
 }
 
-.appdv-edit-field td.icons .save {
+.appdv-edit-field .icons .save {
   background:url(../../../assets/rapidapp/misc/static/images/bullet_disk.png) center center no-repeat;
   display:none;
 }
 
-.appdv-edit-field td.icons .cancel {
+.appdv-edit-field .icons .cancel {
   background:url(../../../assets/rapidapp/misc/static/images/bullet_cross.png) center center no-repeat;
   display:none;
 }
 
-.appdv-edit-field:hover td.icons .edit {
+.appdv-edit-field:hover .icons .edit {
   visibility: visible;
   background:url(../../../assets/rapidapp/misc/static/images/pencil_tiny.png) right center no-repeat;
 }
@@ -254,13 +249,13 @@
   cursor:  pointer;
 }
 
-.editing .appdv-edit-field td.icons .save, 
-.editing .appdv-edit-field td.icons .cancel {
-  display:block;
+.editing .appdv-edit-field .icons .save, 
+.editing .appdv-edit-field .icons .cancel {
+  display:inline-block;
   visibility: visible;
 }
 
-.editing .appdv-edit-field td.icons .edit {
+.editing .appdv-edit-field .icons .edit {
   visibility: hidden;
   display:none;
 }
@@ -431,8 +426,16 @@ div.appdv-edit-bigfield {
 
   But the former with support inline edit controls          */
 
-div.appdv-tt-generated, div.appdv-tt-generated .inln {
-  display: inline;
-  vertical-align: bottom;
+div.appdv-tt-generated.inln, 
+div.appdv-tt-generated .inln,
+div.appdv-tt-generated .appdv-edit-field * {
+  display: inline-block;
 }
 /**************************************************************************/
+
+
+div.appdv-tt-generated .editable-value .appdv-edit-field .data-holder {
+  line-height: 100%;
+  padding-bottom:2px;
+}
+
