@@ -75,12 +75,12 @@
   padding:4px 14px 1px 1px;
   cursor:  pointer;
   font-size: 11px;
+  line-height: 12px;
   font-family: arial;
   white-space:nowrap;
   color: blue;
   font-weight: bold;
-  float:left;
-  clear:both;
+
   border-bottom-width: 1px;
   border-bottom-style: dotted;
   border-color: transparent;
@@ -91,7 +91,7 @@
 }
 
 .appdv-tt-generated .edit-record-toggle .edit {
-  display:block;
+  display:inline-block;
 }
 
 .editing-record .appdv-tt-generated .edit-record-toggle .edit {
@@ -107,7 +107,7 @@
 .editing-record .appdv-tt-generated .edit-record-toggle .save, 
 .editing-record .appdv-tt-generated .edit-record-toggle .cancel {
   visibility:visible;
-  display:block;
+  display:inline-block;
 }
 
 .appdv-tt-generated .edit-record-toggle .edit {
@@ -130,17 +130,17 @@
 
 .appdv-tt-generated .delete-record, 
 .appdv-tt-generated .print-view {
+  display:inline-block;
   background:url(../../../assets/rapidapp/misc/static/images/cross.png) center right no-repeat;
-  padding:0px 18px 0px 1px;
-  width: 30;
+  padding:0px 23px 0px 1px;
+  width: 30px;
   cursor:  pointer;
   font-size: 12px;
+  line-height: 16px;
   font-family: arial;
   white-space:nowrap;
   color: darkgray;
   font-weight: bold;
-  float:left;
-  clear:both;
   border-bottom-width: 1px;
   border-bottom-style: solid;
   border-color: transparent;
