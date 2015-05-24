@@ -364,23 +364,25 @@ sub _store_button_processor {
   my $btnCfgs = $self->AppDV->get_extconfig_param('store_button_cnf') || {};
   return sub {
     my $name = shift;
-    my $display = shift;
+    my $inner = shift;
     
     die join('',
       "Invalid store button '$name' (must be one of ",
       join(', ',@valid),')'
     ) unless ($valid{$name});
     
-    my $cfg = $btnCfgs->{$name} || {};
-    my $text = $display || $cfg->{text} || ucfirst($name);
-    
-    my @cls = (
-      $cfg->{iconCls} ? ('with-inline-icon', $cfg->{iconCls}) : (),
-      'store-button', $name
-    );
-    
+    unless($inner) {
+      my $cfg = $btnCfgs->{$name} || {};
+      my $text = $cfg->{text} || ucfirst($name);
+      
+      $inner = join('','<div', 
+        ($cfg->{iconCls} ? ' class="with-inline-icon '.$cfg->{iconCls}.'"' : ''),
+        '>',$text,'</div>'
+      );
+    }
+
     return $self->div_clickable_command(join('',
-      '<div class="',join(' ',@cls),'">',$text,'</div>'
+      '<div class="store-button '.$name.'">',$inner,'</div>'
     ));
   }
 }

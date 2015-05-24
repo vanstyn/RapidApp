@@ -478,5 +478,13 @@ div.appdv-tt-generated .editable-value .appdv-edit-field .data-holder {
   cursor: pointer;
 }
 
-
+.ra-dsbtn-deny-add    .appdv-tt-generated .store-button.add,
+.ra-dsbtn-deny-edit   .appdv-tt-generated .store-button.edit,
+.ra-dsbtn-deny-delete .appdv-tt-generated .store-button.delete,
+.ra-dsbtn-deny-reload .appdv-tt-generated .store-button.reload,
+.ra-dsbtn-deny-save   .appdv-tt-generated .store-button.save,
+.ra-dsbtn-deny-undo   .appdv-tt-generated .store-button.undo {
+  opacity: 0.2;
+  cursor: default;
+}
 
