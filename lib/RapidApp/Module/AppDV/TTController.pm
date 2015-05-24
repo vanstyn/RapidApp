@@ -47,7 +47,7 @@ sub div_clickable {
 
 sub delete_record {
   my $self = shift;
-  return $self->div_clickable('<div class="delete-record">Delete</div> ');
+  return $self->div_clickable('<div class="delete-record">Delete</div>');
 }
 
 sub print_view {

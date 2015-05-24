@@ -271,6 +271,10 @@ div.appdv-edit-bigfield {
   min-height: 20px;
 }
 
+div.appdv-edit-bigfield .data-wrapper .data-holder {
+  padding-right: 50px; /* make room for *edit* */
+}
+
 .editing-record .appdv-edit-bigfield .icons div, 
 .record-update .appdv-edit-bigfield .icons div {
   display:none !important;
