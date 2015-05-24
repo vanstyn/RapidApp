@@ -517,7 +517,16 @@ sub DbicLink_around_BUILD {
     remote_columns        => \1,
     loadMask          => \1,
     quicksearch_mode      => $self->quicksearch_mode,
-    allow_set_quicksearch_mode  => $self->allow_set_quicksearch_mode ? \1 : \0
+    allow_set_quicksearch_mode  => $self->allow_set_quicksearch_mode ? \1 : \0,
+
+    # Sane default for the add button/tab (moved from DbicGrid):
+    store_button_cnf => {
+      add => {
+        text    => 'Add ' . $self->ResultClass->TableSpec_get_conf('title'),
+        iconCls => 'ra-icon-add'
+      },
+    }
+
   );
   
   

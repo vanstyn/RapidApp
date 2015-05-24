@@ -38,13 +38,6 @@ sub BUILD {
     setup_bbar_store_buttons => \1,
     toggle_edit_cells_init_off => $self->toggle_edit_cells_init_off ? \1 : \0,
     
-    # Sane default for the add button/tab:
-    store_button_cnf => {
-      add => {
-        text    => 'Add ' . $self->ResultClass->TableSpec_get_conf('title'),
-        iconCls => 'ra-icon-add'
-      },
-    }
   );
 	
 	$self->apply_default_tabtitle;
