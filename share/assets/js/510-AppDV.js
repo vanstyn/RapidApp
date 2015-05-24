@@ -86,6 +86,12 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	onAdd: function(ds, records, index){
 		var count = this.all.getCount();
 		Ext.ux.RapidApp.AppDV.DataView.superclass.onAdd.apply(this, arguments);
+    
+    var dsPlug = this.datastore_plus_plugin;
+    if(dsPlug.use_add_form) {
+      return;
+    }
+    
 		if(count !== 0){
 			this.renderItems(index, index + records.length - 1);
 		}
@@ -548,10 +554,14 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
       
       var cmdEl = clickableEl.child('div.add-record');
       if(cmdEl) {
-        this.store.addRecordForm();
+        //this.store.addRecordForm();
           
-        //var dsPlug = this.datastore_plus_plugin;
-        //var Btn = dsPlug.getStoreButton('add');
+        var dsPlug = this.datastore_plus_plugin;
+        var Btn = dsPlug.getStoreButton('add');
+        if(Btn && Btn.handler) {
+          Btn.handler.call(this,Btn);
+        
+        }
         
         //console.dir(Btn);
       
