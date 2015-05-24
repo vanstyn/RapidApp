@@ -88,7 +88,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		Ext.ux.RapidApp.AppDV.DataView.superclass.onAdd.apply(this, arguments);
     
     var dsPlug = this.datastore_plus_plugin;
-    if(dsPlug.use_add_form) {
+    if(dsPlug.use_add_form || this.persist_immediately.create) {
       return;
     }
     
@@ -814,7 +814,10 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	scrollBottomToolbarIntoView: function(){
 		var node = this.getParentScrollNode(this.getEl().dom);
 		if(!node) { return; }
-		Ext.fly(this.ownerCt.getBottomToolbar().getEl()).scrollIntoView(node);
+    if(this.ownerCt && Ext.isFunction(this.ownerCt.getBottomToolbar)) {
+      var bbar = this.ownerCt.getBottomToolbar();
+      if(bbar) { Ext.fly(bbar.getEl()).scrollIntoView(node); }
+    }
 	},
 	
 	scrollRecordIntoView: function(Record) {
