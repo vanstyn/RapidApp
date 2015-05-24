@@ -561,13 +561,19 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
     // We only handle class="clickable command" (click_controller handles class="clickable")
     if(clickableEl && clickableEl.hasClass('command')) {
       
-      var cmdEl = clickableEl.child('div.add-record');
+      var cmdEl = clickableEl.child('div.store-button');
       if(cmdEl) {
         //this.store.addRecordForm();
           
-        var dsPlug = this.datastore_plus_plugin;
-        var Btn = dsPlug.getStoreButton('add');
-        if(Btn && Btn.handler) {
+        var Btn, dsPlug = this.datastore_plus_plugin;
+        Ext.each(dsPlug.store_buttons,function(itm){
+          if(cmdEl.hasClass(itm)) {
+            Btn = dsPlug.getStoreButton(itm);
+            return false; //<-- stop iteration
+          }
+        },this);
+        
+        if(Btn && !Btn.disabled && Btn.handler) {
           Btn.handler.call(this,Btn);
         
         }

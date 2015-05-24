@@ -52,11 +52,6 @@ sub div_clickable_command {
   );
 }
 
-sub add_record {
-  my $self = shift;
-  return $self->div_clickable_command('<div class="add-record">Add Record</div>');
-}
-
 
 
 sub delete_record {
@@ -352,7 +347,43 @@ sub _autofield_processor {
 }
 
 
+has 'store_button', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  return RapidApp::Module::AppDV::RecAutoload->new( 
+    process_coderef => $self->_store_button_processor
+  );
+}, isa => 'RapidApp::Module::AppDV::RecAutoload';
 
+
+sub _store_button_processor {
+  my $self = shift;
+  
+  my @valid = qw/add edit delete reload save undo/;
+  my %valid = map {$_=>1} @valid;
+  
+  my $btnCfgs = $self->AppDV->get_extconfig_param('store_button_cnf') || {};
+  return sub {
+    my $name = shift;
+    my $display = shift;
+    
+    die join('',
+      "Invalid store button '$name' (must be one of ",
+      join(', ',@valid),')'
+    ) unless ($valid{$name});
+    
+    my $cfg = $btnCfgs->{$name} || {};
+    my $text = $display || $cfg->{text} || ucfirst($name);
+    
+    my @cls = (
+      $cfg->{iconCls} ? ('with-inline-icon', $cfg->{iconCls}) : (),
+      'store-button', $name
+    );
+    
+    return $self->div_clickable_command(join('',
+      '<div class="',join(' ',@cls),'">',$text,'</div>'
+    ));
+  }
+}
   
     
 has 'submodule' => (
