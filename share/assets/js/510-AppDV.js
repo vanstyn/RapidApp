@@ -88,31 +88,31 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		Ext.ux.RapidApp.AppDV.DataView.superclass.onAdd.apply(this, arguments);
     
     var dsPlug = this.datastore_plus_plugin;
-    if(dsPlug.use_add_form || this.persist_immediately.create) {
-      return;
-    }
+    if(!dsPlug.use_add_form && !this.persist_immediately.create) {
     
-		if(count !== 0){
-			this.renderItems(index, index + records.length - 1);
-		}
+      if(count !== 0){
+        this.renderItems(index, index + records.length - 1);
+      }
+      
+      var Record;
+      //Get first phantom record:
+      Ext.each(records,function(rec) {
+        if(Record || !rec.phantom) { return; }
+        Record = rec;
+      },this);
+      
+      if(Record) {
+        this.currentEditRecord = Record;
+        var domEl = this.getNode(Record);
+        var editEl = new Ext.Element(domEl);
+        this.currentEditEl = editEl;
+        this.clearSelections();
+        this.handle_edit_record(editEl,editEl,Record,index,editEl);
+      }
+    }
 		
-		var Record;
-		//Get first phantom record:
-		Ext.each(records,function(rec) {
-			if(Record || !rec.phantom) { return; }
-			Record = rec;
-		},this);
-		
-		if(Record) {
-			this.currentEditRecord = Record;
-			var domEl = this.getNode(Record);
-			var editEl = new Ext.Element(domEl);
-			this.currentEditEl = editEl;
-			this.clearSelections();
-			this.handle_edit_record(editEl,editEl,Record,index,editEl);
-		}
-		
-		this.scrollRecordIntoView.defer(10,this,[records[records.length - 1]]);
+		//this.scrollRecordIntoView.defer(10,this,[records[records.length - 1]]);
+    this.scrollRecord.defer(10,this,[records[records.length - 1]]);
 		this.highlightRecord.defer(10,this,[records]);
 		this.toggleDirtyCssRecord(records,true);
 
@@ -140,6 +140,13 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			el.highlight();
 		},record);
 	},
+  
+  scrollRecord: function(record) {
+    var dvEl = this.el;
+    this.forEachRecordNode(function(el){
+      el.scrollIntoView(dvEl);
+    },record);
+  },
 	
 	puffRecord: function(record) {
 		this.forEachRecordNode(function(el){
