@@ -208,10 +208,12 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		if(this.cmp.setup_bbar_store_buttons) {
 			this.cmp.on('render',this.insertStoreButtonsBbar,this);
 		}
-		
-		if(this.cmp.setup_tbar_store_buttons) {
+		else if(this.cmp.setup_tbar_store_buttons) {
 			this.cmp.on('render',this.insertStoreButtonsTbar,this);
 		}
+    else {
+      this.cmp.on('render',this.initializeStoreButtons,this);
+    }
 		
 		// Only applies to editor grids; no effect/impact on other components
 		// without the beforeedit/afteredit events
@@ -1137,10 +1139,20 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	},
 	
 	getStoreButton: function(name,showtext) {
-		
-		if(this.exclude_btn_map[name]) { return; }
-		
-		if(!this.cmp.loadedStoreButtons[name]) {
+    var El = this.cmp.el;
+    if(typeof this.cmp.loadedStoreButtons[name] == "undefined") {
+    
+      if(this.exclude_btn_map[name]) {
+        if(El) {
+          if(El.hasClass('ra-dsbtn-allow-'+name)) {
+            El.removeClass('ra-dsbtn-allow-'+name);
+          }
+          El.addClass('ra-dsbtn-deny-'+name);
+        }
+        this.cmp.loadedStoreButtons[name] = null;
+        return null; 
+      }
+    
 			var constructor = this.getStoreButtonConstructors.call(this)[name];
 			if(! constructor) { return; }
 			
@@ -1151,6 +1163,28 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			
 			var btn = constructor(cnf,this.cmp,showtext);
 			if(!btn) { return; }
+      
+      // ----------
+      
+      if(El) {
+        btn.on('enable',function(b){
+          if(El.hasClass('ra-dsbtn-deny-'+name)) {
+            El.removeClass('ra-dsbtn-deny-'+name);
+          }
+          El.addClass('ra-dsbtn-allow-'+name);
+        },this);
+        
+        btn.on('disable',function(b){
+          if(El.hasClass('ra-dsbtn-allow-'+name)) {
+            El.removeClass('ra-dsbtn-allow-'+name);
+          }
+          El.addClass('ra-dsbtn-deny-'+name);
+        },this);
+      }
+      // Ensure the event is fired to set the correct initial state:
+      btn.disabled ? btn.fireEvent('disable',btn) : btn.fireEvent('enable',btn);
+      // ----------
+      
 			
 			this.cmp.loadedStoreButtons[name] = btn;
 			
@@ -1400,6 +1434,16 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			}
 		};
 	},
+  
+  // Alternative, pure initialization if we're not calling 
+  // insertStoreButtonsBbar/insertStoreButtonsTbar
+  initializeStoreButtons: function() {
+    var showtext = this.show_store_button_text ? true : false;
+    Ext.each(this.store_buttons,function(btn_name) {
+      this.getStoreButton(btn_name,showtext);
+    },this);
+  },
+  
 	
 	insertStoreButtonsBbar: function() {
 		var index = 0;
