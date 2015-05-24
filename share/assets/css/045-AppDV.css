@@ -281,7 +281,9 @@ div.appdv-edit-bigfield .data-wrapper .data-holder {
 }
 
 
-.appdv-edit-bigfield .icons div {
+.appdv-edit-bigfield div.edit,
+.appdv-edit-bigfield div.save,
+.appdv-edit-bigfield div.cancel {
   display:none;
   position: absolute;
   top: 0; 
@@ -298,11 +300,12 @@ div.appdv-edit-bigfield .data-wrapper .data-holder {
   white-space:nowrap;
   color: blue;
   font-weight: normal;
-  text-decoration:underline;
   border-style: dotted;
   border-width: 1px;
   border-color: blue;
 }
+
+
 
 .appdv-edit-bigfield .icons .edit {
   display:block;
@@ -311,9 +314,14 @@ div.appdv-edit-bigfield .data-wrapper .data-holder {
   background:url(../../../assets/rapidapp/misc/static/images/bullet_pencil_gray.png) center right no-repeat;
 }
 
-.appdv-edit-bigfield .icons .edit:hover {
+.appdv-edit-bigfield:hover .icons .edit {
+  color:grey;
+}
+
+.appdv-edit-bigfield:hover .icons:hover .edit {
   color: blue;
   border-color: blue;
+  text-decoration:underline;
   background:url(../../../assets/rapidapp/misc/static/images/bullet_pencil.png) center right no-repeat floralwhite;
 }
 
@@ -347,6 +355,28 @@ div.appdv-edit-bigfield .data-wrapper .data-holder {
 .editing .appdv-edit-bigfield .icons .save:hover, 
 .editing .appdv-edit-bigfield .icons .cancel:hover {
   color:#B8860B;
+}
+
+div.appdv-edit-bigfield .icons .pseudo-edit-wrapper {
+  display:none;
+  position: absolute;
+  top: 0; 
+  right: 0;
+  bottom: -2px;
+  left: -2px;
+  border-top-style: none;
+  border-right-style: none;
+  border-top-width: 0px;
+  border-right-width: 0px;
+  border-left-style: dotted;
+  border-bottom-style: dotted;
+  border-left-width: 1px;
+  border-bottom-width: 1px;
+  border-color: blue;
+}
+
+.appdv-edit-bigfield .icons .edit:hover + .pseudo-edit-wrapper {
+  display:block !important;
 }
 
 /****************** END appdv-edit-bigfield ******************/

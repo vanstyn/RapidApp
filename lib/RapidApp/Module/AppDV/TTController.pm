@@ -140,6 +140,7 @@ sub div_bigfield {
       $self->data_wrapper_div($name,$display)  . 
       '<div class="icons">' .
         '<div class="edit">edit</div>' .
+        '<div class="pseudo-edit-wrapper"></div>' .
         '<div class="cancel">cancel</div>' .
         '<div class="save">save</div>' .
       '</div>' .
