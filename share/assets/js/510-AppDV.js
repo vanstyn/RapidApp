@@ -488,8 +488,10 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		var Field = this.FieldCmp[index][fieldname];
 			
 		if(!Field.validate()) { return false; }
-		var val = Field.getValue();
-		Record.set(fieldname,val);
+    if(Field.isDirty()) {
+      var val = Field.getValue();
+      Record.set(fieldname,val);
+    }
 		
 		return true;
 	},
