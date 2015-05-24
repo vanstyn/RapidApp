@@ -43,6 +43,20 @@ sub div_clickable {
   );
 }
 
+sub div_clickable_command {
+  my $self = shift;
+  return $self->div_wrapper(
+    '<div class="clickable command inln">' . 
+      (shift) . 
+    '</div>'
+  );
+}
+
+sub add_record {
+  my $self = shift;
+  return $self->div_clickable_command('<div class="add-record">Add Record</div>');
+}
+
 
 
 sub delete_record {

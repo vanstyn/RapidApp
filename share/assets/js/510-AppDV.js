@@ -27,6 +27,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		// current edit record:
 		var cmp = this;
 		cmp.on('afterrender',function(){
+      this.el.on('click',this.el_click_controller,this);
+
 			cmp.store.addNotAllowed = function(){
 				if(cmp.currentEditRecord && cmp.currentEditRecord.editing) {
 					return true;
@@ -505,36 +507,69 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		}
 		delete this.currentEditingFieldScope;
 	},
-	
-	click_controller: function(dv, index, domNode, event) {
-		var target = event.getTarget(null,null,true);
-		
-		// --- Override nav links
-		var href = target.getAttribute('href');
-		if(href && target.is('a')) {
-			// New: ignore links with target attribute (i.e. target="_self", etc)
-			if(target.getAttribute('target')) {
-				return;
-			}
-			// HashNav links (a tags with href starting with '#!/'):
-			else if(href.search('#!/') === 0) {
-				window.location.hash = href;
-				return;
-			}
-		}
-		// ---
-			
-		var domEl = new Ext.Element(domNode);
+  
+  find_clickableEl: function(event,domNode) {
+    var target = event.getTarget(null,null,true);
+    
+    // --- Override nav links
+    var href = target.getAttribute('href');
+    if(href && target.is('a')) {
+      // New: ignore links with target attribute (i.e. target="_self", etc)
+      if(target.getAttribute('target')) {
+        return null;
+      }
+      // HashNav links (a tags with href starting with '#!/'):
+      else if(href.search('#!/') === 0) {
+        window.location.hash = href;
+        return null;
+      }
+    }
+    // ---
+      
+    // Limit processing to click nodes within this dataview (i.e. not in our submodules)
+    var topmostEl = target.findParent('div.appdv-tt-generated.' + this.id,null,true);
+    if(!topmostEl) { 
+      // Temporary: map to old function:
+      //return Ext.ux.RapidApp.AppDV.click_handler.apply(this,arguments);
+      return null; 
+    }
+    var clickableEl = topmostEl.child('div.clickable');
+  
+    return clickableEl;
+  },
 
-		// Limit processing to click nodes within this dataview (i.e. not in our submodules)
-		var topmostEl = target.findParent('div.appdv-tt-generated.' + dv.id,null,true);
-		if(!topmostEl) { 
-			// Temporary: map to old function:
-			//return Ext.ux.RapidApp.AppDV.click_handler.apply(this,arguments);
-			return; 
-		}
-		var clickableEl = topmostEl.child('div.clickable');
-		if(!clickableEl) { return; }
+  // The el_click_controller handles raw clicks on the whole content area, not just
+  // a specific record, like the click_controller
+  el_click_controller: function(event,domNode,o) {
+    var clickableEl = this.find_clickableEl(event,domNode);
+    
+    // We only handle class="clickable command" (click_controller handles class="clickable")
+    if(clickableEl && clickableEl.hasClass('command')) {
+      
+      var cmdEl = clickableEl.child('div.add-record');
+      if(cmdEl) {
+        this.store.addRecordForm();
+          
+        //var dsPlug = this.datastore_plus_plugin;
+        //var Btn = dsPlug.getStoreButton('add');
+        
+        //console.dir(Btn);
+      
+        return;
+      }
+      
+      // handle other commands ...
+    
+    }
+  },
+
+	click_controller: function(dv, index, domNode, event) {
+    var clickableEl = this.find_clickableEl.call(dv,event,domNode);
+    
+    if(!clickableEl) { return; }
+    
+    var target = event.getTarget(null,null,true);
+    var domEl = new Ext.Element(domNode);
 
 		var Store = this.getStore();
 		var Record = Store.getAt(index);
@@ -580,6 +615,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			}
 		}
 	},
+
 	get_fieldname_by_editEl: function(editEl) {
 		var fieldnameEl = editEl.child('div.field-name');
 		if(!fieldnameEl) { return false; }

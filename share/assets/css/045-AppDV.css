@@ -473,3 +473,10 @@ div.appdv-tt-generated .editable-value .appdv-edit-field .data-holder {
   padding-bottom:2px;
 }
 
+
+.appdv-tt-generated .clickable {
+  cursor: pointer;
+}
+
+
+
