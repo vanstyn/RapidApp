@@ -144,9 +144,12 @@ sub xtemplate_cnf {
   
   my $tt_file = $self->_tt_file;
   
-  my $Template = Template->new({ INCLUDE_PATH => $self->tt_include_path });
-  $Template->process($tt_file,$tt_vars,\$html_out)
-    or die $Template->error . "  Template file: $tt_file";
+  {
+    local $self->{_template_process_ctx} = {};
+    my $Template = Template->new({ INCLUDE_PATH => $self->tt_include_path });
+    $Template->process($tt_file,$tt_vars,\$html_out)
+      or die $Template->error . "  Template file: $tt_file";
+  }
   
   $self->_parse_html_set_tabTitle(\$html_out) if ($self->parse_html_tabTitle);
   

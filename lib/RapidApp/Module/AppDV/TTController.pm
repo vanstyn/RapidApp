@@ -236,40 +236,59 @@ has 'edit_click_field' => (
   }
 );
 
+# Like autofield, but forces read-only
+has 'renderfield', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  return RapidApp::Module::AppDV::RecAutoload->new( 
+    process_coderef => $self->_autofield_processor({ ro => 1 })
+  );
+}, isa => 'RapidApp::Module::AppDV::RecAutoload';
+
+has 'autofield', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  return RapidApp::Module::AppDV::RecAutoload->new( 
+    process_coderef => $self->_autofield_processor
+  );
+}, isa => 'RapidApp::Module::AppDV::RecAutoload';
 
 
-
-has 'autofield' => (
-  is => 'ro',
-  lazy => 1,
-  isa => 'RapidApp::Module::AppDV::RecAutoload',
-  default => sub {
-    my $self = shift;
-    return RapidApp::Module::AppDV::RecAutoload->new( process_coderef => sub {
+sub _autofield_processor {
+  my $self = shift;
+  my $cnf = shift || {};
+  return sub {
       my $name = shift;
       my $display = shift;
       $display = $name unless ($display);
       my $Column = $self->AppDV->get_column($name) or return '';
       
-      if($Column->renderer) {
-        $display = '[this.renderField("' . $name . '",values,' . $Column->renderer->func . ')]';
-      }
+      my $ro = $Column->editor ? 0 : 1;
       
-      # read-only:
-      return $self->div_wrapper('{' . $display . '}') unless ($Column->editor);
+      $ro = 1 if ($cnf->{ro});
       
       # -- TODO: this breaks create without update unless "allow_add" is specifically set on the column
       # Needs fixed... probably the best way to handle it is to dynamically turn on "allow_add" when
       # it isn't explicitly set but it should otherwise be addable (i.e. set in creatable_colspec)
-      return '{' . $display . '}' if (
+      $ro = 1 if (
         defined $Column->allow_edit and
         ! jstrue($Column->allow_edit) and
         ! jstrue($Column->allow_add)
       );
       # --
       
-      my $config = $Column->get_field_config;
+      # -- Only allow the same column through as editable once per template processing
+      if(my $hsh = $self->AppDV->{_template_process_ctx}){
+        $ro = 1 if (!$ro && $hsh->{seen_fieldnames}{$name}++);
+      }
+      # --
       
+      if($Column->renderer) {
+        $display = '[this.renderField("' . $name . '",values,' . $Column->renderer->func . ')]';
+      }
+      
+      # read-only:
+      return $self->div_wrapper('{' . $display . '}') if ($ro);
+      
+      my $config = $Column->get_field_config;
       
       # -- TODO: refactor AppDV for all the changes that came with TableSpec
       # in the mean time, this makes sure the editor/field isn't too small
@@ -315,9 +334,10 @@ has 'autofield' => (
       );
       
       return $self->div_edit_field($Column->name,$display);
-    });
   }
-);
+}
+
+
 
   
     
