@@ -105,17 +105,6 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		};
 		this.cmp.on('render',cmp.bubbleTieStoreParents,cmp);
 		
-		
-		this.cmp.origInitEvents = this.cmp.initEvents;
-		this.cmp.initEvents = function() {
-			cmp.origInitEvents.call(cmp);
-			if(cmp.loadMask){
-				cmp.loadMask = new Ext.LoadMask(cmp.bwrap,
-						  Ext.apply({store:cmp.store}, cmp.loadMask));
-			}
-		}
-		
-		
 		// -- instead of standard store 'autoLoad' param, 'store_autoLoad' happens
 		// on 'render' in order to be delayed, in the case of the component being
 		// within a collapsed panel, etc. This is partnered with the setting set
