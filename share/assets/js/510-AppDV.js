@@ -18,6 +18,12 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 		this.on('click',this.click_controller,this);
 		
+    this.on('containerclick',function(dv,event){
+      // Block the containerclick, which clears selections, for the special 
+      // AppDV-specific clickable command (i.e. store buttons, etc)
+      if(this.find_clickableEl(event)){ return false; };
+    },this);
+    
 		//if(!this.store) { this.store = this.ownerCt.store; }
 		
 		this.store.on('beforesave',this.onBeforesave,this);

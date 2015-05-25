@@ -79,7 +79,7 @@ sub BUILD {
     xtype        => 'appdv',
     autoHeight    => \1,
     multiSelect    => \1,
-    simpleSelect  => \1,
+    simpleSelect  => \0,
     overClass    => 'record-over',
     persist_on_add  => \scalar($self->persist_on_add),
     items => []
