@@ -466,11 +466,31 @@ div.appdv-tt-generated .appdv-edit-field * {
   display: inline-block;
   max-width:100%;
 }
-div.appdv-tt-generated.blk.inln, 
-div.appdv-tt-generated.blk .inln,
-div.appdv-tt-generated.blk .appdv-edit-field * {
-  display: block;
+
+/*  Special block 'blk' override, used for fields like cas-image-field */
+/* This right now is about the best we can do, which is to position the
+   edit icons to the outside on the right. We set a margin to make room,
+   but this margin probably won't be honored depending on the content,
+   such is the case of <img> autosized using  with max-width:100%. This
+   just means the user markup should leave a little extra gap if the img
+   is oversized and they don't want overlap
+ */
+div.appdv-tt-generated.blk .appdv-edit-field.inln {
+  position:relative;
+  margin-right:25px;
 }
+
+div.appdv-tt-generated.blk .appdv-edit-field.inln .icons {
+  position:absolute;
+  top:0;
+  right:-23px;
+  display: inline-block;
+}
+
+
+
+
+
 /**************************************************************************/
 
 
