@@ -227,6 +227,11 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		var doRemove = function(){
 			ds.remove.apply(this,arguments);
 			this.removeInProgress = false;
+      // we have to do this ourselves because we cancel the default remove event,
+      // normally this would be done for us by the DataStorePlus plugin
+      if(this.datastore_plus_plugin.persist_immediately.destroy) { 
+        ds.saveIfPersist();
+      }
 		};
 		doRemove.defer(300,this,[record]);
 		
