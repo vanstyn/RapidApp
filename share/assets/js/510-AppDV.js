@@ -366,11 +366,15 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		Ext.apply(cnf,{
 			ownerCt: this,
 			Record: Record,
-			value: Record.data[fieldname],
-			//renderTo: dataWrap
 			renderTo: fieldEl
 			//contentEl: dataEl
 		});
+    
+    if(Record && Record.data && typeof Record.data[fieldname] !== "undefined") {
+      // This will not get called in add record context, and we don't want it to:
+      cnf.value = Record.data[fieldname];
+    }
+    
 		
 		if(!cnf.width) {	cnf.width = dataEl.getWidth(); }
 		if(!cnf.height) { cnf.height = dataEl.getHeight(); }
