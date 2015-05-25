@@ -304,13 +304,17 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		
 		// -- Display a page-wide mask during save
 		if(this.store_write_mask) {
-			var myMask = new Ext.LoadMask(Ext.getBody(), {msg:"Saving Changes..."});
-			var show_mask = function() { myMask.show(); }
-			var hide_mask = function() { myMask.hide(); }
-			
-			cmp.store.on('beforewrite',show_mask,this);
-			cmp.store.on('write',hide_mask,this);
-			cmp.store.on('exception',hide_mask,this);
+      cmp.on('afterrender',function() {
+        var El = cmp.getEl() || Ext.getBody();
+        
+        var myMask = new Ext.LoadMask(El, {msg:"Saving Changes..."});
+        var show_mask = function() { myMask.show(); }
+        var hide_mask = function() { myMask.hide(); }
+        
+        cmp.store.on('beforewrite',show_mask,this);
+        cmp.store.on('write',hide_mask,this);
+        cmp.store.on('exception',hide_mask,this);
+      },this);
 		}
 		// --
 		
