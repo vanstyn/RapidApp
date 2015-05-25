@@ -9,6 +9,12 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		return this;
 	},
 	
+  
+  getLoadMaskEl: function() {
+    var El = this.getEl();
+    return El ? El.parent() : Ext.getBody();
+  },
+  
 	initComponent: function(){
 		Ext.each(this.items,function(item) {
 			item.ownerCt = this;
@@ -29,12 +35,19 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		this.store.on('beforesave',this.onBeforesave,this);
 		this.store.on('beforeremove',this.onBeforeremove,this);
 		
+    if(this.loadMask) {
+      this.on('afterrender',function(dv) {
+        var El = dv.getLoadMaskEl();
+        dv.readMask = new Ext.LoadMask(El, {store:this.store});
+      },this);
+    }
+    
 		// Special AppDV override: addNotAllowed based on
 		// current edit record:
 		var cmp = this;
 		cmp.on('afterrender',function(){
       this.el.on('click',this.el_click_controller,this);
-
+ 
 			cmp.store.addNotAllowed = function(){
 				if(cmp.currentEditRecord && cmp.currentEditRecord.editing) {
 					return true;

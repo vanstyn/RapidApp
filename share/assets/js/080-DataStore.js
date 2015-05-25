@@ -305,7 +305,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		// -- Display a page-wide mask during save
 		if(this.store_write_mask) {
       cmp.on('afterrender',function() {
-        var El = cmp.getEl() || Ext.getBody();
+        var El = Ext.isFunction(cmp.getLoadMaskEl) // <-- Allow the cmp to define (AppDV)
+          ? cmp.getLoadMaskEl() : cmp.getEl() || Ext.getBody();
         
         var myMask = new Ext.LoadMask(El, {msg:"Saving Changes..."});
         var show_mask = function() { myMask.show(); }
