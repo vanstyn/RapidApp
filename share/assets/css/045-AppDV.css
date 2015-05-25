@@ -466,6 +466,11 @@ div.appdv-tt-generated .appdv-edit-field * {
   display: inline-block;
   max-width:100%;
 }
+div.appdv-tt-generated.blk.inln, 
+div.appdv-tt-generated.blk .inln,
+div.appdv-tt-generated.blk .appdv-edit-field * {
+  display: block;
+}
 /**************************************************************************/
 
 

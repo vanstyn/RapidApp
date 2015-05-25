@@ -25,10 +25,12 @@ sub dataview_id {
 
 
 sub div_wrapper {
-  my $self = shift;
-  return '<div class="appdv-tt-generated ' . $self->dataview_id . ' inln">' . 
-    (shift) . 
-  '</div>';
+  my ($self,$inner) = @_;
+  my @cls = (
+    'appdv-tt-generated',$self->dataview_id,
+    ( $self->{_div_block} ? 'blk' : () ), 'inln'
+  );
+  return join('','<div class="',join(' ',@cls),'">',$inner,'</div>');
 }
 
 
@@ -294,10 +296,15 @@ sub _autofield_processor {
         $display = '[this.renderField("' . $name . '",values,' . $Column->renderer->func . ')]';
       }
       
+      local $self->{_div_block} = 0;
+      my $config = $Column->get_field_config;
+      
+      my @block_types = qw(cas-image-field);
+      my %block_types = map {$_=>1} @block_types;
+      $self->{_div_block} = 1 if($block_types{$config->{xtype}});
+      
       # read-only:
       return $self->div_wrapper('{' . $display . '}') if ($ro);
-      
-      my $config = $Column->get_field_config;
       
       # -- TODO: refactor AppDV for all the changes that came with TableSpec
       # in the mean time, this makes sure the editor/field isn't too small
@@ -330,7 +337,7 @@ sub _autofield_processor {
       
       # editable
       
-      my @bigfield_types = qw(textarea htmleditor ra-htmleditor);
+      my @bigfield_types = qw(textarea htmleditor ra-htmleditor cas-image-field);
       my %bf_types = map {$_=>1} @bigfield_types;
       return $self->div_bigfield($Column->name,$display) if (
         $bf_types{$config->{xtype}}

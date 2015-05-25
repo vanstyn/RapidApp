@@ -881,6 +881,7 @@ Ext.ux.RapidApp.CasUploadField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 
     var cfg = {
       title: this.uploadHeading,
+      closable: false,
       width: 440,
       height:140,
       url: this.getUploadUrl(),
@@ -942,7 +943,9 @@ Ext.reg('cas-upload-field',Ext.ux.RapidApp.CasUploadField);
 
 
 Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
-	
+
+  simple_value: false, // <-- this is only for back-compat!
+  
   uploadUrl: '/simplecas/upload_image', // <-- Note: the pfx will be applied within Ajax code 
   uploadHeading: 'Insert Image',
   selectHeading: 'Select Image',
@@ -954,7 +957,7 @@ Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
 	
 	minHeight: 2,
 	minWidth: 2,
-  renderValFn: 'Ext.ux.showNull',
+  renderValFn: 'Ext.ux.RapidApp.renderCasImg',
 	
 	getUploadUrl: function() {
 		url = this.uploadUrl;
@@ -996,18 +999,23 @@ Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
         icon: Ext.MessageBox.INFO
       });
     }
-		
-    var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
-    img.link_url = [pfx,'/simplecas/fetch_content/',img.checksum,'/',img.filename].join('');
-		
-		if(!img.width || img.width < this.minWidth) { img.width = this.minWidth; }
-		if(!img.height || img.height < this.minHeight) { img.height = this.minHeight; }
-		var img_tag = 
-			'<img alt="\<img: ' + img.filename + '\>" src="' + img.link_url + 
-				'" width=' + img.width + ' height=' + img.height + 
-				' style="background-color:yellow;"' +
-			'>';
-		this.setValue(img_tag);
+    
+    if(this.simple_value) {
+      var val = [img.checksum,'/',img.filename].join('');
+      this.setValue(val);
+    }
+    else {
+      var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
+      img.link_url = [pfx,'/simplecas/fetch_content/',img.checksum,'/',img.filename].join('');
+      if(!img.width || img.width < this.minWidth) { img.width = this.minWidth; }
+      if(!img.height || img.height < this.minHeight) { img.height = this.minHeight; }
+      var img_tag = 
+        '<img alt="\<img: ' + img.filename + '\>" src="' + img.link_url + 
+          '" width=' + img.width + ' height=' + img.height + 
+          ' style="background-color:yellow;"' +
+        '>';
+      this.setValue(img_tag);
+    }
 		this.onActionComplete();
 	}
 	

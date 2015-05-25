@@ -4960,6 +4960,55 @@ Ext.ux.RapidApp.renderCasLink = function(v){
   }
 }
 
+Ext.ux.RapidApp.extractImgSrc = function(str) {
+  var div = document.createElement('div');
+  div.innerHTML = str;
+  var domEl = div.firstChild;
+  if(domEl && domEl.tagName == 'IMG') {
+    return domEl.getAttribute('src');
+  }
+  return null;
+}
+
+
+Ext.ux.RapidApp.renderCasImg = function(v) {
+  var url, pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
+  if(!v) {
+    url = [pfx,'/assets/rapidapp/misc/static/images/img-placeholder.png'].join('');
+  }
+  else {
+    // Handle legacy, full <img> tag values
+    if(v.search('<img ') == 0) {
+      var src = Ext.ux.RapidApp.extractImgSrc(v);
+      if(!src) { return v; }
+      var parts = src.split('simplecas/fetch_content/');
+      if(parts.length == 2) {
+        v = parts[1];
+      }
+      else {
+        return v;
+      }
+    }
+    var parts = v.split('/');
+    if(parts.length <= 2) {
+      // Just for reference, this is what we expect:
+      //var sha1 = parts[0], filename = parts[1] || 'image.png';
+      url = [pfx,'/simplecas/fetch_content/',v].join('');
+    }
+    else {
+      // unexpected currently...
+      return v;
+    }
+  }
+
+  return [
+    '<img src="',url,'" ',
+    'style="max-width:100%;max-height:100%;">'
+  ].join('');
+}
+
+
+
 Ext.ux.RapidApp.nl2brWrap = function(v) {
   return v && v.length > 1 ? [
     '<span class="ra-wrap-on">',

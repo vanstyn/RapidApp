@@ -262,6 +262,13 @@ sub DEFAULT_PROFILES {{
     editor   => { xtype => 'cas-upload-field' },
     renderer => 'Ext.ux.RapidApp.renderCasLink'
   },
+  cas_img => {
+    editor => { 
+      xtype => 'cas-image-field', 
+      simple_value => 1 #<-- needed for back-compat
+    },
+    renderer => 'Ext.ux.RapidApp.renderCasImg'
+  },
   soft_rel => {
     # This currently applies only to single rels pointing at sources 
     # auto_editor_type set to 'combo' or 'dropdown'
