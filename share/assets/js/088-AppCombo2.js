@@ -954,11 +954,35 @@ Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
 	maxImageHeight: null,
 	
 	resizeWarn: true,
-	
-	minHeight: 2,
-	minWidth: 2,
+  
+  // boxMaxWidth is the only setting which will constrain the max size of the image
+  // when using the default 'Ext.ux.RapidApp.renderCasImg'. Note that setting this
+  // here also only applies to when the image is being rendered as a *field*, it will
+  // not affect how the *column* is rendered, such as in a grid or AppDV. (See special
+  // formMaxWidth setting below for setting boxMaxWidth only in a form)
+  //boxMaxWidth: 90,
+  
+  // formMaxWidth sets the max width that the field/image will render in *forms*. We
+  // need/want this because in other places, like grids and AppDV, they are able to
+  // already constrain box sizes in their own markup, and we want the column/inline 
+  // rendering to match the edit size rendering as much as possible. This is very 
+  // different from the add/edit form, which is non-custom and displaying a full-width 
+  // image is almost never going to be useful/helpful
+  formMaxWidth: 110,
+
+  autoSize: Ext.emptyFn,
+  
   renderValFn: 'Ext.ux.RapidApp.renderCasImg',
-	
+  
+  initComponent: function() {
+    if(this.ownerCt && this.ownerCt.xtype == 'form') {
+      if(this.formMaxWidth && !this.boxMaxWidth) {
+        this.boxMaxWidth = this.formMaxWidth;
+      }
+    }
+    return Ext.ux.RapidApp.CasImageField.superclass.initComponent.call(this);
+  },
+  
 	getUploadUrl: function() {
 		url = this.uploadUrl;
 		if(this.maxImageHeight && !this.maxImageWidth) {
