@@ -514,3 +514,8 @@ div.appdv-tt-generated .editable-value .appdv-edit-field .data-holder {
   cursor: default;
 }
 
+/* Give enough room for the dirty flag to display 
+  (needed to see it with content like images) */
+.appdv-tt-generated .x-grid3-dirty-cell {
+  padding-left:5px;
+}

@@ -183,30 +183,50 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	toggleDirtyCssRecord: function(record,tog) {
 		var dv = this;
 		this.forEachRecordNode(function(el,rec){
-			if(rec.dirtyEl) { rec.dirtyEl.remove(); }
+			//if(rec.dirtyEl) { rec.dirtyEl.remove(); }
 			if(tog && el && rec.dirty) {
-				
-				var domCfg = {
-					tag: 'div',
-					style: 'position:absolute;',
-					children:[{
-						tag: 'div',
-						cls: 'x-grid3-dirty-cell',
-						style: 'position:relative;top:0;left:0;z-index:15000;height:10px;width:10px;'
-					}]
-				};
-				
-				if(el.dom.tagName.toUpperCase() == 'TR') {
-					domCfg = {
-						tag: 'tr',
-						children:[{
-							tag: 'td',
-							children:[domCfg]
-						}]
-					};
-				}
-				
-				rec.dirtyEl = el.insertSibling(domCfg,'before');
+        
+        // New: sets the dirty flag on the appropriate, individual fields:
+        var fieldDoms = el.query('div.field-name'); 
+        Ext.each(fieldDoms,function(fDom) {
+          var fname = fDom.innerHTML;
+          if(rec.fields.get(fname)) {
+            var fEl = new Ext.Element(fDom);
+            var dWrap = fEl.parent('div.editable-value');
+            if(dWrap) {
+              if(dWrap.hasClass('x-grid3-dirty-cell')) {
+                dWrap.removeClass('x-grid3-dirty-cell');
+              }
+              if(typeof rec.modified[fname] !== "undefined") {
+                dWrap.addClass('x-grid3-dirty-cell');
+              }
+            }
+          }
+        },this);
+        
+				// This logic sets a dirty flag on the entire record... disabled 
+        // after adding the above, field-specific dirty flagging
+				//var domCfg = {
+				//	tag: 'div',
+				//	style: 'position:absolute;',
+				//	children:[{
+				//		tag: 'div',
+				//		cls: 'x-grid3-dirty-cell',
+				//		style: 'position:relative;top:0;left:0;z-index:15000;height:10px;width:10px;'
+				//	}]
+				//};
+				//
+				//if(el.dom.tagName.toUpperCase() == 'TR') {
+				//	domCfg = {
+				//		tag: 'tr',
+				//		children:[{
+				//			tag: 'td',
+				//			children:[domCfg]
+				//		}]
+				//	};
+				//}
+				//
+				//rec.dirtyEl = el.insertSibling(domCfg,'before');
 			}
 		},record);
 	},
