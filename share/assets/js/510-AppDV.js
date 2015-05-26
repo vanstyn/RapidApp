@@ -839,7 +839,9 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			},this);
 			
 			domEl.removeClass('editing-record');	
-			domEl.parent().removeClass('record-update');
+			if(domEl.parent()) {
+        domEl.parent().removeClass('record-update');
+      }
 			//Record.endEdit();
 			this.endEditRecord(Record);
 			
@@ -860,9 +862,10 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		}
 		else {
 			// abort if another record is already being updated:
-			if(domEl.parent().hasClass('record-update')) { return; }
-
-			domEl.parent().addClass('record-update');
+      if(domEl.parent()) {
+        if(domEl.parent().hasClass('record-update')) { return; }
+        domEl.parent().addClass('record-update');
+      }
 			domEl.addClass('editing-record');
 			
 			Ext.each(editEls,function(editEl) {
