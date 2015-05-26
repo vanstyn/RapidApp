@@ -478,3 +478,14 @@ Ext.override(Ext.form.DateField, {
   }
 });
 
+
+Ext.form.HtmlEditor.prototype.getDoc = function() {
+  // This is the original:
+  // return Ext.isIE ? this.getWin().document : (this.iframe.contentDocument || this.getWin().document);
+  if(!Ext.isIE && this.iframe && this.iframe.contentDocument) {
+    return this.iframe.contentDocument;
+  }
+  var win = this.getWin();
+  return win ? win.document : null;
+}
+

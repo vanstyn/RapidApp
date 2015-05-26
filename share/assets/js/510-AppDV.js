@@ -9,6 +9,12 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		return this;
 	},
 	
+  
+  getLoadMaskEl: function() {
+    var El = this.getEl();
+    return El ? El.parent() : Ext.getBody();
+  },
+  
 	initComponent: function(){
 		Ext.each(this.items,function(item) {
 			item.ownerCt = this;
@@ -18,15 +24,30 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 		this.on('click',this.click_controller,this);
 		
+    this.on('containerclick',function(dv,event){
+      // Block the containerclick, which clears selections, for the special 
+      // AppDV-specific clickable command (i.e. store buttons, etc)
+      if(this.find_clickableEl(event)){ return false; };
+    },this);
+    
 		//if(!this.store) { this.store = this.ownerCt.store; }
 		
 		this.store.on('beforesave',this.onBeforesave,this);
 		this.store.on('beforeremove',this.onBeforeremove,this);
 		
+    if(this.loadMask) {
+      this.on('afterrender',function(dv) {
+        var El = dv.getLoadMaskEl();
+        dv.readMask = new Ext.LoadMask(El, {store:this.store});
+      },this);
+    }
+    
 		// Special AppDV override: addNotAllowed based on
 		// current edit record:
 		var cmp = this;
 		cmp.on('afterrender',function(){
+      this.el.on('click',this.el_click_controller,this);
+ 
 			cmp.store.addNotAllowed = function(){
 				if(cmp.currentEditRecord && cmp.currentEditRecord.editing) {
 					return true;
@@ -84,27 +105,33 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	onAdd: function(ds, records, index){
 		var count = this.all.getCount();
 		Ext.ux.RapidApp.AppDV.DataView.superclass.onAdd.apply(this, arguments);
-		if(count !== 0){
-			this.renderItems(index, index + records.length - 1);
-		}
+    
+    var dsPlug = this.datastore_plus_plugin;
+    if(!dsPlug.use_add_form && !this.persist_immediately.create) {
+    
+      if(count !== 0){
+        this.renderItems(index, index + records.length - 1);
+      }
+      
+      var Record;
+      //Get first phantom record:
+      Ext.each(records,function(rec) {
+        if(Record || !rec.phantom) { return; }
+        Record = rec;
+      },this);
+      
+      if(Record) {
+        this.currentEditRecord = Record;
+        var domEl = this.getNode(Record);
+        var editEl = new Ext.Element(domEl);
+        this.currentEditEl = editEl;
+        this.clearSelections();
+        this.handle_edit_record(editEl,editEl,Record,index,editEl);
+      }
+    }
 		
-		var Record;
-		//Get first phantom record:
-		Ext.each(records,function(rec) {
-			if(Record || !rec.phantom) { return; }
-			Record = rec;
-		},this);
-		
-		if(Record) {
-			this.currentEditRecord = Record;
-			var domEl = this.getNode(Record);
-			var editEl = new Ext.Element(domEl);
-			this.currentEditEl = editEl;
-			this.clearSelections();
-			this.handle_edit_record(editEl,editEl,Record,index,editEl);
-		}
-		
-		this.scrollRecordIntoView.defer(10,this,[records[records.length - 1]]);
+		//this.scrollRecordIntoView.defer(10,this,[records[records.length - 1]]);
+    this.scrollRecord.defer(10,this,[records[records.length - 1]]);
 		this.highlightRecord.defer(10,this,[records]);
 		this.toggleDirtyCssRecord(records,true);
 
@@ -132,6 +159,13 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			el.highlight();
 		},record);
 	},
+  
+  scrollRecord: function(record) {
+    var dvEl = this.el;
+    this.forEachRecordNode(function(el){
+      el.scrollIntoView(dvEl);
+    },record);
+  },
 	
 	puffRecord: function(record) {
 		this.forEachRecordNode(function(el){
@@ -149,30 +183,50 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	toggleDirtyCssRecord: function(record,tog) {
 		var dv = this;
 		this.forEachRecordNode(function(el,rec){
-			if(rec.dirtyEl) { rec.dirtyEl.remove(); }
+			//if(rec.dirtyEl) { rec.dirtyEl.remove(); }
 			if(tog && el && rec.dirty) {
-				
-				var domCfg = {
-					tag: 'div',
-					style: 'position:absolute;',
-					children:[{
-						tag: 'div',
-						cls: 'x-grid3-dirty-cell',
-						style: 'position:relative;top:0;left:0;z-index:15000;height:10px;width:10px;'
-					}]
-				};
-				
-				if(el.dom.tagName.toUpperCase() == 'TR') {
-					domCfg = {
-						tag: 'tr',
-						children:[{
-							tag: 'td',
-							children:[domCfg]
-						}]
-					};
-				}
-				
-				rec.dirtyEl = el.insertSibling(domCfg,'before');
+        
+        // New: sets the dirty flag on the appropriate, individual fields:
+        var fieldDoms = el.query('div.field-name'); 
+        Ext.each(fieldDoms,function(fDom) {
+          var fname = fDom.innerHTML;
+          if(rec.fields.get(fname)) {
+            var fEl = new Ext.Element(fDom);
+            var dWrap = fEl.parent('div.editable-value');
+            if(dWrap) {
+              if(dWrap.hasClass('x-grid3-dirty-cell')) {
+                dWrap.removeClass('x-grid3-dirty-cell');
+              }
+              if(typeof rec.modified[fname] !== "undefined") {
+                dWrap.addClass('x-grid3-dirty-cell');
+              }
+            }
+          }
+        },this);
+        
+				// This logic sets a dirty flag on the entire record... disabled 
+        // after adding the above, field-specific dirty flagging
+				//var domCfg = {
+				//	tag: 'div',
+				//	style: 'position:absolute;',
+				//	children:[{
+				//		tag: 'div',
+				//		cls: 'x-grid3-dirty-cell',
+				//		style: 'position:relative;top:0;left:0;z-index:15000;height:10px;width:10px;'
+				//	}]
+				//};
+				//
+				//if(el.dom.tagName.toUpperCase() == 'TR') {
+				//	domCfg = {
+				//		tag: 'tr',
+				//		children:[{
+				//			tag: 'td',
+				//			children:[domCfg]
+				//		}]
+				//	};
+				//}
+				//
+				//rec.dirtyEl = el.insertSibling(domCfg,'before');
 			}
 		},record);
 	},
@@ -193,6 +247,11 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		var doRemove = function(){
 			ds.remove.apply(this,arguments);
 			this.removeInProgress = false;
+      // we have to do this ourselves because we cancel the default remove event,
+      // normally this would be done for us by the DataStorePlus plugin
+      if(this.datastore_plus_plugin.persist_immediately.destroy) { 
+        ds.saveIfPersist();
+      }
 		};
 		doRemove.defer(300,this,[record]);
 		
@@ -351,11 +410,15 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		Ext.apply(cnf,{
 			ownerCt: this,
 			Record: Record,
-			value: Record.data[fieldname],
-			//renderTo: dataWrap
 			renderTo: fieldEl
 			//contentEl: dataEl
 		});
+    
+    if(Record && Record.data && typeof Record.data[fieldname] !== "undefined") {
+      // This will not get called in add record context, and we don't want it to:
+      cnf.value = Record.data[fieldname];
+    }
+    
 		
 		if(!cnf.width) {	cnf.width = dataEl.getWidth(); }
 		if(!cnf.height) { cnf.height = dataEl.getHeight(); }
@@ -480,8 +543,10 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		var Field = this.FieldCmp[index][fieldname];
 			
 		if(!Field.validate()) { return false; }
-		var val = Field.getValue();
-		Record.set(fieldname,val);
+    if(Field.isDirty()) {
+      var val = Field.getValue();
+      Record.set(fieldname,val);
+    }
 		
 		return true;
 	},
@@ -505,36 +570,79 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		}
 		delete this.currentEditingFieldScope;
 	},
-	
-	click_controller: function(dv, index, domNode, event) {
-		var target = event.getTarget(null,null,true);
-		
-		// --- Override nav links
-		var href = target.getAttribute('href');
-		if(href && target.is('a')) {
-			// New: ignore links with target attribute (i.e. target="_self", etc)
-			if(target.getAttribute('target')) {
-				return;
-			}
-			// HashNav links (a tags with href starting with '#!/'):
-			else if(href.search('#!/') === 0) {
-				window.location.hash = href;
-				return;
-			}
-		}
-		// ---
-			
-		var domEl = new Ext.Element(domNode);
+  
+  find_clickableEl: function(event,domNode) {
+    var target = event.getTarget(null,null,true);
+    
+    // --- Override nav links
+    var href = target.getAttribute('href');
+    if(href && target.is('a')) {
+      // New: ignore links with target attribute (i.e. target="_self", etc)
+      if(target.getAttribute('target')) {
+        return null;
+      }
+      // HashNav links (a tags with href starting with '#!/'):
+      else if(href.search('#!/') === 0) {
+        window.location.hash = href;
+        return null;
+      }
+    }
+    // ---
+      
+    // Limit processing to click nodes within this dataview (i.e. not in our submodules)
+    var topmostEl = target.findParent('div.appdv-tt-generated.' + this.id,null,true);
+    if(!topmostEl) { 
+      // Temporary: map to old function:
+      //return Ext.ux.RapidApp.AppDV.click_handler.apply(this,arguments);
+      return null; 
+    }
+    var clickableEl = topmostEl.child('div.clickable');
+  
+    return clickableEl;
+  },
 
-		// Limit processing to click nodes within this dataview (i.e. not in our submodules)
-		var topmostEl = target.findParent('div.appdv-tt-generated.' + dv.id,null,true);
-		if(!topmostEl) { 
-			// Temporary: map to old function:
-			//return Ext.ux.RapidApp.AppDV.click_handler.apply(this,arguments);
-			return; 
-		}
-		var clickableEl = topmostEl.child('div.clickable');
-		if(!clickableEl) { return; }
+  // The el_click_controller handles raw clicks on the whole content area, not just
+  // a specific record, like the click_controller
+  el_click_controller: function(event,domNode,o) {
+    var clickableEl = this.find_clickableEl(event,domNode);
+    
+    // We only handle class="clickable command" (click_controller handles class="clickable")
+    if(clickableEl && clickableEl.hasClass('command')) {
+      
+      var cmdEl = clickableEl.child('div.store-button');
+      if(cmdEl) {
+        //this.store.addRecordForm();
+          
+        var Btn, dsPlug = this.datastore_plus_plugin;
+        Ext.each(dsPlug.store_buttons,function(itm){
+          if(cmdEl.hasClass(itm)) {
+            Btn = dsPlug.getStoreButton(itm);
+            return false; //<-- stop iteration
+          }
+        },this);
+        
+        if(Btn && !Btn.disabled && Btn.handler) {
+          Btn.handler.call(this,Btn);
+        
+        }
+        
+        //console.dir(Btn);
+      
+        return;
+      }
+      
+      // handle other commands ...
+    
+    }
+  },
+
+	click_controller: function(dv, index, domNode, event) {
+    var clickableEl = this.find_clickableEl.call(dv,event,domNode);
+    
+    if(!clickableEl) { return; }
+    
+    var target = event.getTarget(null,null,true);
+    var domEl = new Ext.Element(domNode);
 
 		var Store = this.getStore();
 		var Record = Store.getAt(index);
@@ -580,6 +688,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			}
 		}
 	},
+
 	get_fieldname_by_editEl: function(editEl) {
 		var fieldnameEl = editEl.child('div.field-name');
 		if(!fieldnameEl) { return false; }
@@ -768,7 +877,10 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	scrollBottomToolbarIntoView: function(){
 		var node = this.getParentScrollNode(this.getEl().dom);
 		if(!node) { return; }
-		Ext.fly(this.ownerCt.getBottomToolbar().getEl()).scrollIntoView(node);
+    if(this.ownerCt && Ext.isFunction(this.ownerCt.getBottomToolbar)) {
+      var bbar = this.ownerCt.getBottomToolbar();
+      if(bbar) { Ext.fly(bbar.getEl()).scrollIntoView(node); }
+    }
 	},
 	
 	scrollRecordIntoView: function(Record) {

@@ -523,16 +523,11 @@ Ext.ux.RapidApp.ClickActionField = Ext.extend(Ext.ux.RapidApp.UtilField,{
 	onShowMe: function() {
 		this.applyElOpts();
 		
-		if(this.actionOnShow && (this.nativeGetValue() || !this.isInForm())) {
-			// If there is no value yet *and* we're in a form, don't call the action
-			// We need this because in the case of a form we don't want the action to
-			// be called on show, we want it called on click. In the case of an edit 
-			// grid and AppDV, we want to run the action on show because on show in
-			// that context happens after we've clicked to start editing
-			this.callActionFn.defer(10,this);
-		}
+    if(this.actionOnShow && !this.isInForm()) {
+      this.callActionFn.defer(10,this);
+    }
 	},
-
+	
 	isInForm: function() {
 
 		if(this.ownerCt) {
@@ -543,6 +538,11 @@ Ext.ux.RapidApp.ClickActionField = Ext.extend(Ext.ux.RapidApp.UtilField,{
 			if(Ext.isObject(this.ownerCt.datafield_cnf)) { return true; }
 			
 			var xtype = this.ownerCt.getXType();
+      
+      if(xtype && xtype == 'appdv') {
+        return true;
+      }
+      
 			if(xtype == 'container' && this.ownerCt.initialConfig.ownerCt) {
 				// special case for compositfield, shows wrong xtype
 				xtype = this.ownerCt.initialConfig.ownerCt.getXType();
@@ -881,6 +881,7 @@ Ext.ux.RapidApp.CasUploadField = Ext.extend(Ext.ux.RapidApp.ClickActionField,{
 
     var cfg = {
       title: this.uploadHeading,
+      closable: false,
       width: 440,
       height:140,
       url: this.getUploadUrl(),
@@ -942,7 +943,9 @@ Ext.reg('cas-upload-field',Ext.ux.RapidApp.CasUploadField);
 
 
 Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
-	
+
+  simple_value: false, // <-- this is only for back-compat!
+  
   uploadUrl: '/simplecas/upload_image', // <-- Note: the pfx will be applied within Ajax code 
   uploadHeading: 'Insert Image',
   selectHeading: 'Select Image',
@@ -951,11 +954,35 @@ Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
 	maxImageHeight: null,
 	
 	resizeWarn: true,
-	
-	minHeight: 2,
-	minWidth: 2,
-  renderValFn: 'Ext.ux.showNull',
-	
+  
+  // boxMaxWidth is the only setting which will constrain the max size of the image
+  // when using the default 'Ext.ux.RapidApp.renderCasImg'. Note that setting this
+  // here also only applies to when the image is being rendered as a *field*, it will
+  // not affect how the *column* is rendered, such as in a grid or AppDV. (See special
+  // formMaxWidth setting below for setting boxMaxWidth only in a form)
+  //boxMaxWidth: 90,
+  
+  // formMaxWidth sets the max width that the field/image will render in *forms*. We
+  // need/want this because in other places, like grids and AppDV, they are able to
+  // already constrain box sizes in their own markup, and we want the column/inline 
+  // rendering to match the edit size rendering as much as possible. This is very 
+  // different from the add/edit form, which is non-custom and displaying a full-width 
+  // image is almost never going to be useful/helpful
+  formMaxWidth: 110,
+
+  autoSize: Ext.emptyFn,
+  
+  renderValFn: 'Ext.ux.RapidApp.renderCasImg',
+  
+  initComponent: function() {
+    if(this.ownerCt && this.ownerCt.xtype == 'form') {
+      if(this.formMaxWidth && !this.boxMaxWidth) {
+        this.boxMaxWidth = this.formMaxWidth;
+      }
+    }
+    return Ext.ux.RapidApp.CasImageField.superclass.initComponent.call(this);
+  },
+  
 	getUploadUrl: function() {
 		url = this.uploadUrl;
 		if(this.maxImageHeight && !this.maxImageWidth) {
@@ -996,18 +1023,23 @@ Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
         icon: Ext.MessageBox.INFO
       });
     }
-		
-    var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
-    img.link_url = [pfx,'/simplecas/fetch_content/',img.checksum,'/',img.filename].join('');
-		
-		if(!img.width || img.width < this.minWidth) { img.width = this.minWidth; }
-		if(!img.height || img.height < this.minHeight) { img.height = this.minHeight; }
-		var img_tag = 
-			'<img alt="\<img: ' + img.filename + '\>" src="' + img.link_url + 
-				'" width=' + img.width + ' height=' + img.height + 
-				' style="background-color:yellow;"' +
-			'>';
-		this.setValue(img_tag);
+    
+    if(this.simple_value) {
+      var val = [img.checksum,'/',img.filename].join('');
+      this.setValue(val);
+    }
+    else {
+      var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
+      img.link_url = [pfx,'/simplecas/fetch_content/',img.checksum,'/',img.filename].join('');
+      if(!img.width || img.width < this.minWidth) { img.width = this.minWidth; }
+      if(!img.height || img.height < this.minHeight) { img.height = this.minHeight; }
+      var img_tag = 
+        '<img alt="\<img: ' + img.filename + '\>" src="' + img.link_url + 
+          '" width=' + img.width + ' height=' + img.height + 
+          ' style="background-color:yellow;"' +
+        '>';
+      this.setValue(img_tag);
+    }
 		this.onActionComplete();
 	}
 	

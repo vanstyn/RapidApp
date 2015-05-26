@@ -1848,7 +1848,7 @@ sub get_multi_relationship_column_cnf {
 	
 	my $div_open = 
 		'<div' . 
-		( $conf->{multiIconCls} ? ' class="with-icon ' . $conf->{multiIconCls} . '"' : '' ) . '><span>' .
+		( $conf->{multiIconCls} ? ' class="with-inline-icon ' . $conf->{multiIconCls} . '"' : '' ) . '><span>' .
 		$title .
 		'&nbsp;<span class="superscript-navy">';
 	

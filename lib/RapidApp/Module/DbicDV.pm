@@ -12,7 +12,10 @@ use RapidApp::Util qw(:all);
 sub BUILD {
   my $self = shift;
   
-  $self->apply_extconfig( 
+  my $title  = $self->ResultClass->TableSpec_get_conf('title');
+  my $titles = $self->ResultClass->TableSpec_get_conf('title_multi');
+  
+  $self->apply_extconfig(
     # this should be set to whatever wraps each row in the tt template, it can be anything
     itemSelector => 'div.ra-appdv-item-select',
     autoHeight => \0,
@@ -21,11 +24,40 @@ sub BUILD {
     #  position:absolute;
     #  top: 0; right: 0; bottom: 0; left: 0;
     # ^^ and have it work as expected... OR postion 'relative' and scroll as expected:
-    style => 'border: 1px solid #D0D0D0; position:relative;'
+    style => 'border: 1px solid #D0D0D0; position:relative;',
     # --
+    
+    # Sane defaults for the store buttons:
+    store_button_cnf => {
+      add => {
+        text    => "Add $title",
+        iconCls => 'ra-icon-add'
+      },
+      edit => {
+        text    => "Edit $title",
+        iconCls => 'ra-icon-application-form-edit'
+      },
+      delete => {
+        text    => "Delete $titles",
+        iconCls => 'ra-icon-delete'
+      },
+      reload => {
+        text    => "Reload Data",
+        iconCls => 'x-tbar-loading'
+      },
+      save => {
+        text    => "Save",
+        iconCls => 'ra-icon-save-ok'
+      },
+      undo => {
+        text    => "Undo",
+        iconCls => 'ra-icon-arrow-undo'
+      },
+    }
   );
   
 }
+
 
 
 1;

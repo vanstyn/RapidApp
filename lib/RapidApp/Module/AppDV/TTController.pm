@@ -25,10 +25,12 @@ sub dataview_id {
 
 
 sub div_wrapper {
-  my $self = shift;
-  return '<div class="appdv-tt-generated ' . $self->dataview_id . '">' . 
-    (shift) . 
-  '</div>';
+  my ($self,$inner) = @_;
+  my @cls = (
+    'appdv-tt-generated',$self->dataview_id,
+    ( $self->{_div_block} ? 'blk' : () ), 'inln'
+  );
+  return join('','<div class="',join(' ',@cls),'">',$inner,'</div>');
 }
 
 
@@ -37,7 +39,16 @@ sub div_wrapper {
 sub div_clickable {
   my $self = shift;
   return $self->div_wrapper(
-    '<div class="clickable">' . 
+    '<div class="clickable inln">' . 
+      (shift) . 
+    '</div>'
+  );
+}
+
+sub div_clickable_command {
+  my $self = shift;
+  return $self->div_wrapper(
+    '<div class="clickable command inln">' . 
       (shift) . 
     '</div>'
   );
@@ -62,7 +73,7 @@ sub div_editable_value{
   
   return $self->div_clickable(
     
-    '<div class="editable-value">' .
+    '<div class="editable-value inln">' .
       '<div class="field-name" style="display:none;">' . $name . '</div>' .
       (shift) .
     '</div>'
@@ -75,7 +86,7 @@ sub data_wrapper_div {
   my $display = shift;
   $display = $name unless ($display);
   
-  my $div = '<div class="data-holder"';
+  my $div = '<div class="data-holder inln"';
   
   my $Column = $self->AppDV->get_column($name);
   if($Column) {
@@ -97,16 +108,14 @@ sub div_edit_field {
   my $display = shift;
   $display = $name unless ($display);
   return $self->div_editable_value($name,
-    '<div class="appdv-edit-field">' .  
-      '<table border="0" cellpadding="0" cellspacing="0"><tr>' .
-        '<td>' . $self->data_wrapper_div($name,$display) . '</td>' .
+    '<div class="appdv-edit-field inln">' .  
+        $self->data_wrapper_div($name,$display) . 
                 
-        '<td class="icons">' .
+        '<div class="icons">' .
           '<div class="edit">&nbsp;</div>' .
           '<div class="save" title="save">&nbsp;</div>' .
           '<div class="cancel" title="cancel">&nbsp;</div>' .
-        '</td>' .
-      '</tr></table>' .
+        '</div>' .
     '</div>'
   );
 }
@@ -118,11 +127,13 @@ sub div_edit_field_no_icons {
   my $display = shift;
   $display = $name unless ($display);
   return $self->div_editable_value($name,
-    '<div class="appdv-edit-field">' .  
-      '<table border="0" cellpadding="0" cellspacing="0"><tr>' .
-        '<td>' . $self->data_wrapper_div($name,$display) . '</td>' .
+    '<div class="appdv-edit-field inln">' .  
+        $self->data_wrapper_div($name,$display) . 
+        
+        '<div class="icons">' . # "no icons" now applies only to save/cancel
+          '<div class="edit">&nbsp;</div>' .
 
-      '</tr></table>' .
+        '</div>' .
     '</div>'
   );
 }
@@ -140,6 +151,7 @@ sub div_bigfield {
       $self->data_wrapper_div($name,$display)  . 
       '<div class="icons">' .
         '<div class="edit">edit</div>' .
+        '<div class="pseudo-edit-wrapper"></div>' .
         '<div class="cancel">cancel</div>' .
         '<div class="save">save</div>' .
       '</div>' .
@@ -235,40 +247,64 @@ has 'edit_click_field' => (
   }
 );
 
+# Like autofield, but forces read-only
+has 'renderfield', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  return RapidApp::Module::AppDV::RecAutoload->new( 
+    process_coderef => $self->_autofield_processor({ ro => 1 })
+  );
+}, isa => 'RapidApp::Module::AppDV::RecAutoload';
+
+has 'autofield', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  return RapidApp::Module::AppDV::RecAutoload->new( 
+    process_coderef => $self->_autofield_processor
+  );
+}, isa => 'RapidApp::Module::AppDV::RecAutoload';
 
 
-
-has 'autofield' => (
-  is => 'ro',
-  lazy => 1,
-  isa => 'RapidApp::Module::AppDV::RecAutoload',
-  default => sub {
-    my $self = shift;
-    return RapidApp::Module::AppDV::RecAutoload->new( process_coderef => sub {
+sub _autofield_processor {
+  my $self = shift;
+  my $cnf = shift || {};
+  return sub {
       my $name = shift;
       my $display = shift;
       $display = $name unless ($display);
       my $Column = $self->AppDV->get_column($name) or return '';
       
-      if($Column->renderer) {
-        $display = '[this.renderField("' . $name . '",values,' . $Column->renderer->func . ')]';
-      }
+      my $ro = $Column->editor ? 0 : 1;
       
-      # read-only:
-      return '{' . $display . '}' unless ($Column->editor);
+      $ro = 1 if ($cnf->{ro});
       
       # -- TODO: this breaks create without update unless "allow_add" is specifically set on the column
       # Needs fixed... probably the best way to handle it is to dynamically turn on "allow_add" when
       # it isn't explicitly set but it should otherwise be addable (i.e. set in creatable_colspec)
-      return '{' . $display . '}' if (
+      $ro = 1 if (
         defined $Column->allow_edit and
         ! jstrue($Column->allow_edit) and
         ! jstrue($Column->allow_add)
       );
       # --
       
+      # -- Only allow the same column through as editable once per template processing
+      if(my $hsh = $self->AppDV->{_template_process_ctx}){
+        $ro = 1 if (!$ro && $hsh->{seen_fieldnames}{$name}++);
+      }
+      # --
+      
+      if($Column->renderer) {
+        $display = '[this.renderField("' . $name . '",values,' . $Column->renderer->func . ')]';
+      }
+      
+      local $self->{_div_block} = 0;
       my $config = $Column->get_field_config;
       
+      my @block_types = qw(cas-image-field);
+      my %block_types = map {$_=>1} @block_types;
+      $self->{_div_block} = 1 if($block_types{$config->{xtype}});
+      
+      # read-only:
+      return $self->div_wrapper('{' . $display . '}') if ($ro);
       
       # -- TODO: refactor AppDV for all the changes that came with TableSpec
       # in the mean time, this makes sure the editor/field isn't too small
@@ -314,10 +350,49 @@ has 'autofield' => (
       );
       
       return $self->div_edit_field($Column->name,$display);
-    });
   }
-);
+}
 
+
+has 'store_button', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  return RapidApp::Module::AppDV::RecAutoload->new( 
+    process_coderef => $self->_store_button_processor
+  );
+}, isa => 'RapidApp::Module::AppDV::RecAutoload';
+
+
+sub _store_button_processor {
+  my $self = shift;
+  
+  my @valid = qw/add edit delete reload save undo/;
+  my %valid = map {$_=>1} @valid;
+  
+  my $btnCfgs = $self->AppDV->get_extconfig_param('store_button_cnf') || {};
+  return sub {
+    my $name = shift;
+    my $inner = shift;
+    
+    die join('',
+      "Invalid store button '$name' (must be one of ",
+      join(', ',@valid),')'
+    ) unless ($valid{$name});
+    
+    unless($inner) {
+      my $cfg = $btnCfgs->{$name} || {};
+      my $text = $cfg->{text} || ucfirst($name);
+      
+      $inner = join('','<div', 
+        ($cfg->{iconCls} ? ' class="with-inline-icon '.$cfg->{iconCls}.'"' : ''),
+        '>',$text,'</div>'
+      );
+    }
+
+    return $self->div_clickable_command(join('',
+      '<div class="store-button '.$name.'">',$inner,'</div>'
+    ));
+  }
+}
   
     
 has 'submodule' => (
@@ -436,7 +511,7 @@ sub toggle {
   my $self = shift;
   return {
     edit => $self->div_clickable(
-      '<div class="edit-record-toggle">' .
+      '<div class="edit-record-toggle inln">' .
         '<div class="edit">Edit</div>' .
         '<div class="save">Save</div>' .
         '<div class="cancel">Cancel</div>' .
