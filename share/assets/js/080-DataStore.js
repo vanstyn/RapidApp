@@ -773,6 +773,9 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				var sm = plugin.cmp.getSelectionModel();
 				count = sm.getCount();
 			}
+      else if(plugin.cmp.getSelectionCount) { // AppDV
+        count = plugin.cmp.getSelectionCount();
+      }
 			else {
 				count = store.getCount();
 			}
