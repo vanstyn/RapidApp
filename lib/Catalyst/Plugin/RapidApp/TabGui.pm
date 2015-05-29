@@ -112,11 +112,18 @@ before 'setup_components' => sub {
     if ($c->_authcore_enabled);
   # --
   
+  # New: allow the user to modify the main module class/params:
+  my $main_module_class = $config->{main_module_class} || 'RapidApp::Module::Explorer';
+  %$main_module_params = (
+    %$main_module_params,
+    %{ $config->{main_module_params} || {} }
+  );
+  
   my $cnf = {
     rootModuleClass => 'RapidApp::RootModule',
     rootModuleConfig => {
       app_title => $config->{title},
-      main_module_class => 'RapidApp::Module::Explorer',
+      main_module_class => $main_module_class,
       main_module_params => $main_module_params
     }
   };
