@@ -24,7 +24,7 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 0, size => 255 },
 );
 __PACKAGE__->set_primary_key("id");
-__PACKAGE__->add_unique_constraint("role", ["role"]);
+__PACKAGE__->add_unique_constraint("role_name", ["role"]);
 
 __PACKAGE__->has_many(
   "user_to_roles",
