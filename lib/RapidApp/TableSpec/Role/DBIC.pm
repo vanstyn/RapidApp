@@ -1237,16 +1237,26 @@ sub resolve_dbic_colname {
         # Strips <dbname>. prefix, if present:
         my $rtable = (reverse split(/\./,$rinfo->{table}))[0];
         my $rrtable = (reverse split(/\./,$rrinfo->{table}))[0];
-        
+
+        my $concat;
+        my $sqlt_type = $self->schema->storage->sqlt_type;
+        if ( $sqlt_type eq "PostgreSQL" ) {
+          $concat = "STRING_AGG(`$rrtable`.`$rrinfo->{cond_info}->{foreign}`,',')";
+        } else {
+          $concat = "GROUP_CONCAT(`$rrtable`.`$rrinfo->{cond_info}->{foreign}`)";
+        }
+
         my $sql = join(' ', '(',
-          # Generic (MySQL & SQLite):
-          "SELECT(GROUP_CONCAT(`$rrtable`.`$rrinfo->{cond_info}->{foreign}`))",
+          "SELECT($concat)",
           " FROM `$rtable`",
           " JOIN `$rrtable` `$rrtable`",
           "  ON `$rtable`.`$rrinfo->{cond_info}->{self}` = `$rrtable`.`$rrinfo->{cond_info}->{foreign}`",
           " WHERE `$rinfo->{cond_info}->{foreign}` = `$rel`.`$cond_data->{self}`",
         ')');
-        
+
+        # PostgreSQL doesnt accept backticks
+        $sql =~ s/`/"/g if $sqlt_type eq "PostgreSQL";
+
         return { '' => \$sql, -as => $fieldName };		
       }
       else {
