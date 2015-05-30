@@ -415,6 +415,8 @@ sub create_module {
   my $class_name = shift;
   my $params = shift;
   
+  die "Bad module name '$name' -- cannot contain '/'" if ($name =~ /\//);
+
   Module::Runtime::require_module($class_name);
   
   $params = $self->create_module_params unless (defined $params);
