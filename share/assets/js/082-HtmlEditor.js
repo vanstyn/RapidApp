@@ -563,7 +563,31 @@ Ext.preg('htmleditor-insertfile',Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile);
 
 Ext.ns('Ext.ux.RapidApp.Plugin.HtmlEditor');
 Ext.ux.RapidApp.HtmlEditor = Ext.extend(Ext.form.HtmlEditor,{
-	initComponent: function() {
+
+  // -------
+  // Replacement code for now deprecated 'clickablelinks' plugin --
+  // With the recent AppDV changes, we've now stopped using the plugin
+  // 'clickablelinks' which was being used for the very special HtmlEditor
+  // case. This was problematic code to begin with, since we probably
+  // don't want most links to be clickable within the editor body anyway, 
+  // *except* the specific case of filelinks which are created by the
+  // HtmlEditor itself. So we're handling *just* that case here, all 
+  // other links are ignored...
+  onEditorEvent: function(e) {
+    Ext.ux.RapidApp.HtmlEditor.superclass.onEditorEvent.call(this,e);
+    if(e.type == 'click') {
+      var target = e.getTarget(null,null,true);
+      if(target.is('a') && target.hasClass('filelink')) {
+        var href = target.getAttribute('href');
+        if (href && href != '#') {
+          document.location.href = href;
+        }
+      }
+    }
+  },
+  // -------
+  
+  initComponent: function() {
 		var plugins = this.plugins || [];
 		if(!Ext.isArray(plugins)) { plugins = [ this.plugins ]; }
 		
@@ -588,8 +612,8 @@ Ext.ux.RapidApp.HtmlEditor = Ext.extend(Ext.form.HtmlEditor,{
 			new Ext.ux.form.HtmlEditor.Divider(),
 			new Ext.ux.form.HtmlEditor.Table(),
 			new Ext.ux.form.HtmlEditor.IndentOutdent(),
-			new Ext.ux.form.HtmlEditor.SubSuperScript(),
-			'clickablelinks'
+			new Ext.ux.form.HtmlEditor.SubSuperScript()
+			//'clickablelinks'
 		);
 		this.plugins = plugins;
 			

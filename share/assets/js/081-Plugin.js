@@ -55,6 +55,13 @@ Ext.preg('autowidthtoolbars',Ext.ux.RapidApp.Plugin.AutoWidthToolbars);
 
 
 Ext.ux.RapidApp.Plugin.ClickableLinks = Ext.extend(Ext.util.Observable, {
+  init: function(){
+    throw "As of the latest version of AppDV, the 'clickablelinks' plugin should not be used";
+  }
+});
+Ext.preg('clickablelinks',Ext.ux.RapidApp.Plugin.ClickableLinks);
+/*
+Ext.ux.RapidApp.Plugin.ClickableLinks = Ext.extend(Ext.util.Observable, {
 	
 	constructor: function(cnf) {
 		Ext.apply(this,cnf);
@@ -101,7 +108,7 @@ Ext.ux.RapidApp.Plugin.ClickableLinks = Ext.extend(Ext.util.Observable, {
 	}
 });
 Ext.preg('clickablelinks',Ext.ux.RapidApp.Plugin.ClickableLinks);
-
+*/
 
 Ext.ns('Ext.ux.RapidApp.Plugin.Combo');
 Ext.ux.RapidApp.Plugin.Combo.Addable = Ext.extend(Ext.util.Observable, {

@@ -3,6 +3,15 @@ Ext.ns('Ext.ux.RapidApp.AppDV');
 
 Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	
+  // New option to enable all links (<a> tags)to be processed. This is not the default
+  // because this can result is navigating away from the interface which is
+  // usually not desired. Links with explicit target attributes (i.e. target="_blank")
+  // are already handled, and relative links are also already handled. The main
+  // reason for this setting and the fact that it is false by default is due both
+  // to back-compat, and also the fact that the native Ext.DataView code does not allow
+  // links through by default when singleSelect or multiSelect is on
+  allow_all_links: false,
+  
 	// TODO: make cascade recursive like in Ext.Container
 	cascade: function(fn,scope,args) {
 		fn.apply(scope || this, args || [this]);
@@ -21,7 +30,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		},this);
 		Ext.ux.RapidApp.AppDV.DataView.superclass.initComponent.call(this);
 		this.components = [];
-		
+    
+    this.on('beforeclick',this.onBeforeclick,this);
 		this.on('click',this.click_controller,this);
 		
     this.on('containerclick',function(dv,event){
@@ -635,6 +645,34 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
     
     }
   },
+  
+    
+  onBeforeclick: function(dv, index, domNode, event) {
+  
+    // Important: when multiSelect or singleSelect is enabled, if we don't return 
+    // *false* from this event to stop it, the native Ext.DataView code will block
+    // the ordinary browser event (by calling e.preventDefault()). This will stop
+    // ordinary links from working. So, if we want links to work, we have to handle
+    // here, manually:
+    
+    var target = event.getTarget(null,null,true);
+    if(target.is('a')) {
+      if(this.allow_all_links) {
+        return false;
+      }
+      // We're still not going to allow *ALL* links through... We are letting
+      // through links with the special 'filelink' class, and also letting 
+      // through links which have defined a target (i.e. target="_blank", etc),
+      // otherwise we will continue with the existing native behavior which is
+      // to make the link do nothing. Also, note that we are now enabling the
+      // 'ra-link-click-catcher' in AppDV per default (see AppDV.pm) so it may
+      // still pickup and handle relative URL links in the standard manner.
+      if(
+        target.hasClass('filelink') ||
+        target.getAttribute('target')
+      ) { return false; }
+    }
+  },
 
 	click_controller: function(dv, index, domNode, event) {
     var clickableEl = this.find_clickableEl.call(dv,event,domNode);
@@ -649,18 +687,6 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		
 		var editEl = clickableEl.child('div.editable-value');
 		if(editEl) {
-			
-			// -- Need this to prevent possible race condition in IE that could
-			// cause the click to get processed and then redirect/navigate the 
-			// page URL.
-			//http://www.sencha.com/forum/showthread.php?81996-Menu-sometimes-redirects-to-a-new-page.&p=393811&viewfull=1#post393811
-			// ---- special exception for "filelinks" - if this is a special filelink (rapidapp plugin) 
-			//      and we stop the event the download won't happen
-			if(!target.hasClass('filelink')) {
-				event.stopEvent();
-			}
-			// --
-			
 			
 			// abort if the Store doesn't have update in its API:
 			if(!Store.api.update) { return; } 

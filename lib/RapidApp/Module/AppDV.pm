@@ -85,6 +85,7 @@ sub BUILD {
     items => []
   );
   
+  $self->add_plugin( 'ra-link-click-catcher' );
   
   #$self->add_listener( afterrender  => 'Ext.ux.RapidApp.AppDV.afterrender_handler' );
   #$self->add_listener(  click     => 'Ext.ux.RapidApp.AppDV.click_handler' );
