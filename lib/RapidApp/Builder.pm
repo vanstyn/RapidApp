@@ -21,6 +21,14 @@ use RapidApp::Util ':all';
 sub BUILD {
   my $self = shift;
   
+  if(my $base_cnf = $self->base_config) {
+    %{ $self->config } = %{
+      Catalyst::Utils::merge_hashes(
+        $base_cnf, $self->config
+      )
+    }
+  }
+
   if (my $list = $self->inject_components) {
     $self->config->{ra_inject_components} ||= [];
     push @{ $self->config->{ra_inject_components} }, @$list;
@@ -48,6 +56,14 @@ has 'appname', is => 'ro', isa => Str, lazy => 1, default => sub {
   $class
 };
 
+# -- base_plugins and base_config are optional, private attrs that are available
+#    so authors can apply plugins/config values, but allow their users to still
+#    set 'config' and 'plugins' in the constructor w/o clobbering the base value.
+has 'base_plugins', is => 'ro', isa => 'ArrayRef',       lazy_build => 1;
+has 'base_config',  is => 'ro', isa => 'Maybe[HashRef]', lazy_build => 1;
+sub _build_base_plugins { [] }
+sub _build_base_config  { undef }
+# --
 
 # Don't use any of the defaults from the superclass:
 sub _build_plugins {[]}
@@ -58,7 +74,11 @@ sub _build_version { (shift)->VERSION }
 around 'plugins' => sub {
   my ($orig,$self,@args) = @_;
 
-  my @plugins = ( 'RapidApp', @{ $self->$orig(@args) } );
+  my @plugins = (
+    'RapidApp',
+    @{ $self->base_plugins },
+    @{ $self->$orig(@args) }
+  );
   
   # Handle debug properly:
   unshift @plugins, '-Debug' if ($self->debug);
