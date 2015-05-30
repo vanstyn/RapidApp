@@ -3170,6 +3170,12 @@ Ext.ux.RapidApp.Plugin.RelativeDateTime = Ext.extend(Ext.util.Observable,{
 	init: function(cmp) {
 		this.cmp = cmp;
 		var plugin = this;
+    
+    // New: make sure we start clean:
+    cmp.on('show',function(){
+      cmp.lastDurationString = null;
+    },this);
+    
 		
 		// Override parseDate, redirecting to parseRelativeDate for strings 
 		// starting with '-' or '+', otherwise, use native behavior
