@@ -89,6 +89,16 @@ sub dsn {
   return $self->config->{connect_info}{dsn};
 }
 
+sub connect_user {
+  my $self = shift;
+  return $self->config->{connect_info}{user};
+}
+
+sub connect_password {
+  my $self = shift;
+  return $self->config->{connect_info}{password};
+}
+
 # dsn for the "reference" coreschema database/file. This is used only for the
 # purposes of schema comparison
 has 'ref_dsn', is => 'ro', isa => 'Str', lazy => 1, default => sub { 
@@ -263,18 +273,22 @@ sub _load_connect_schema {
   my $self = shift;
   my $class = shift || 'RapidApp::CoreSchemaLoad';
   my $dsn = shift || $self->dsn;
+  my $user = shift;
+  my $password = shift;
+  $user = $self->connect_user unless defined $user;
+  $password = $self->connect_password unless defined $password;
   return DBIx::Class::Schema::Loader::make_schema_at(
     $class => {
       naming => { ALL => 'v7'},
       use_namespaces => 1,
       use_moose => 1,
       debug => 0,
-    },[ $dsn ]
+    },[ $dsn, $user, $password ]
   );
 }
 sub _load_connect_schema_ref {
   my $self = shift;
-  $self->_load_connect_schema('RapidApp::CoreSchemaLoadRef',$self->ref_dsn);
+  $self->_load_connect_schema('RapidApp::CoreSchemaLoadRef',$self->ref_dsn,'','');
 }
 
 
