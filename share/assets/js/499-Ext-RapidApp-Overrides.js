@@ -460,6 +460,21 @@ Ext.override(Ext.form.DateField, {
             cmb.clickTriggerToggle = true;
           }
         },{ scope: cmb, delay: 50 });
+
+        if(this.ownerCt) {
+          var xtype = this.ownerCt.getXType();
+          if(xtype && xtype == 'form') {
+            // If we're in a form, we want to start the toggle state on, so that the
+            // first click will will trigger instead of the second. The reason is that
+            // forms do not trigger the toggle automatically, while other contexts (i.e.
+            // AppDV and edit grid) do. So, we have to start with the toggle in the 
+            // reverse position for consistent/nice behavior. Note that this difference
+            // is already handled in RapidApp custom fields like AppCombo. We need to
+            // handle it separately here because we're modifying an existing field class.
+            cmb.clickTriggerToggle = true;
+          }
+        }
+
       },this);
     }
     return orig_DateField_initComponent.call(this);
