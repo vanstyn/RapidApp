@@ -3,6 +3,9 @@ Ext.Ajax.timeout = 90000; // 1.5 minute timeout (default is 30 seconds)
 
 Ext.ns('Ext.ux.RapidApp.util');
 
+// Base namespace reserved for client/user apps
+Ext.ns('RA.ux');
+
 Ext.ux.RapidApp.util.everyEvent = function(observable,fn) {
   Ext.iterate(observable.events,function(event_name,v) {
     observable.on(event_name,function(){
