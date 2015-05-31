@@ -119,14 +119,8 @@ sub get_columns {
 sub _virtual_column_select {
 	my ($self, $column) = @_;
   if ($self->has_virtual_column($column)) {
-    my $info = $self->column_info($column);
-    my $sql = $info->{sql} or die "Missing virtual column 'sql' attr in info";
-    # also see RapidApp::TableSpec::Role::DBIC
-    $sql = $info->{sql}->($self, $column) if ref $sql eq 'CODE';
     my $rel = 'me';
-    $sql =~ s/self\./${rel}\./g;
-    $sql =~ s/\`self\`\./\`${rel}\`\./g; #<-- also support backtic quoted form (quote_sep)
-    return \"($sql)";
+    return $self->_get_virtual_column_select_statement($column, $rel);
   }
   elsif($self->has_column($column)) {
     return "me.$column";
@@ -135,25 +129,31 @@ sub _virtual_column_select {
 }
 # ---
 
+sub _get_virtual_column_select_statement {
+  my ($self, $column, $rel) = @_;
+  my $info = $self->column_info($column);
+  my $sql = $info->{sql}
+    or die "Missing virtual column 'sql' attr in info";
+  # also see RapidApp::TableSpec::Role::DBIC
+  $sql = $info->{sql}->($self, $column) if ref $sql eq 'CODE';
+  $sql =~ s/self\./${rel}\./g;
+  $sql =~ s/\`self\`\./\`${rel}\`\./g; #<-- also support backtic quoted form (quote_sep)
+  return \"($sql)";
+}
 
 sub init_virtual_column_value {
 	my ($self, $column,$valref) = @_;
 	return if (exists $self->{_virtual_values}{$column});
-	my $info = try{$self->column_info($column)} or return;
-	my $sql = $info->{sql} or return;
-	
-  # Duplicated from _virtual_column_select() above. TODO/FIXME
 	my $rel = 'me';
-	$sql =~ s/self\./${rel}\./g;
-	$sql =~ s/\`self\`\./\`${rel}\`\./g; #<-- also support backtic quoted form (quote_sep)
-	
+  my $sql = $self->_get_virtual_column_select_statement($column, $rel);
 	my $Source = $self->result_source;
 	my $cond = { map { $rel . '.' . $_ => $self->get_column($_) } $Source->primary_columns };
 	my $attr = {
-		select => [{ '' => \"($sql)", -as => $column }],
+		select => [{ '' => $sql, -as => $column }],
 		as => [$column],
 		result_class => 'DBIx::Class::ResultClass::HashRefInflator'
 	};
+  my $info = $self->column_info($column);
 	$attr->{join} = $info->{join} if (exists $info->{join});
 	
 	my $row = $Source->resultset->search_rs($cond,$attr)->first or return undef;
