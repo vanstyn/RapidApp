@@ -281,7 +281,10 @@ sub saved_search_tree_items {
   my $Rs = $User->saved_states;
 	
 	#exclude searches with a node_id (which means they are shown in the public tree above)
-	$Rs = $Rs->search_rs({ 'me.node_id' => undef }); 
+	$Rs = $Rs->search_rs(
+    { 'me.node_id' => undef },
+    { order_by => { -asc => 'me.ordering' } }
+  ); 
 	
 	foreach my $State ($Rs->all) {
 		my $search_id = $State->get_column('id');

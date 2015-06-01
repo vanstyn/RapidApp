@@ -146,7 +146,10 @@ sub searches_nodes_for_User {
 	my $path = 'user_searches/' . $User->get_column('username');
 	
 	# Todo: use an accessor on $User instead of this (why am I doing it this way?):
-	my $PrivSearchesRs = $self->SearchesRs->search_rs({ 'me.node_id' => undef });
+	my $PrivSearchesRs = $self->SearchesRs->search_rs(
+    { 'me.node_id' => undef },
+    { order_by => { -asc => 'me.ordering' } }
+  );
 	#my $SearchObjectsRs = $self->c->model('DB::Object')->search_rs(
 	#	{ 'saved_state.node_id' => undef, 'type.name' => 'saved_state' },
 	#	{ join => [ 'saved_state', 'type' ] }
@@ -273,7 +276,7 @@ sub move_node {
 	# remap my_searches target for moves into "My Searches"
 	$target = $self->my_searches_target if ($target =~ /my_searches/);
 	
-	my $point_node = shift || $target;
+	my $point_node = shift;
 	
 	##
 	return $self->move_to_private_search($node,$target,$point,$point_node) if ($target =~ /user_searches/);
@@ -284,8 +287,10 @@ sub move_node {
 	my $pid = $self->get_node_id($target);
 	die "Failed to find target pid" unless (defined $pid);
 	
-	my $order = $self->get_order_string($point_node,$point);
-	
+  my $order = $point_node 
+    ? $self->get_order_string($point_node,$point)
+    : $self->_ordering_for_target_pid($pid,$Node);
+
 	return $Node->update({ 'node_id' => $pid, 'ordering' => $order }) if ($Node->can('node_id')); #<-- SavedSearch row
 	return $Node->update({ 'pid' => $pid, 'ordering' => $order });
 }
@@ -295,7 +300,7 @@ sub move_to_private_search {
 	my $node = shift;
 	my $target = shift;
 	my $point = shift;
-	my $point_node = shift || $target;
+	my $point_node = shift;
 	
 	my $State = $self->get_node_Row($node) || die "move_to_private_search failed";
 	my @path = split(/\//,$target);
@@ -308,15 +313,42 @@ sub move_to_private_search {
       or die "Failed to find target User by username '$username'";
 	
 	my $uid = $User->get_column('id');
+  
+  my $order = $point_node 
+    ? $self->get_order_string($point_node,$point)
+    : $self->_ordering_for_target_uid($uid,$State);
 	
 	$State->update({ user_id => $uid });
 	$self->unlink_search($State);
-	
-	my $order = $self->get_order_string($point_node,$point);
+  
 	$State->update({ ordering => $order });
 	
 	return 1;
 }
+
+sub _ordering_for_target_pid {
+  my ($self, $pid, $Node) = @_;
+  $self->_ordering_for_target_pid_uid($pid,$Node,undef)
+}
+
+sub _ordering_for_target_uid {
+  my ($self, $uid, $Node) = @_;
+  $self->_ordering_for_target_pid_uid(undef,$Node,$uid)
+}
+
+sub _ordering_for_target_pid_uid {
+  my ($self, $pid, $Node, $uid) = @_;
+  
+  my $cond = { $Node->can('node_id') ? 'node_id' : 'pid' => $pid };
+  $cond->{user_id} = $uid if ($uid);
+  
+  my $LastCurNode = $Node->result_source->resultset
+    ->search_rs($cond,{ order_by => { -desc => 'ordering' } })
+    ->first;
+  
+  $LastCurNode ? $LastCurNode->ordering + 1000 : 3000000;
+}
+
 
 sub copy_node {
 	my $self = shift;
