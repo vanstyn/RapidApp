@@ -61,11 +61,31 @@ sub insert {
   return $self->next::method;
 }
 
-sub update {
-  my $self = shift;
-  $self->_set_extra_columns(@_);
-  return $self->next::method;
-}
+use RapidApp::Util ':all';
+
+around 'update' => sub {
+  my ($orig,$self,@args) = @_;
+  $self->_set_extra_columns(@args);
+  
+  # This is terrible, but there are situations in which the session handling logic
+  # of the AuthCore + Session::Store::DBIC crazy straw will try to save a session
+  # that is not in the database, but tells dbic that it is, and tries to update it,
+  # which barfs. So, here are catching exceptions on update and trying to create
+  # as a new row instead. This situation seems to happen when attempting to 
+  # authenticate during the course of another request, when there is no session but
+  # the client browser has a session cookie. This is ugly but not all that unsafe,
+  # since if update throws an exception, something is already terribly wrong
+  try {
+    $self->$orig
+  }
+  catch {
+    $self = $self->result_source->resultset->create(
+      { $self->get_columns }
+    );
+  };
+   
+  return $self
+};
 
 sub _set_extra_columns {
   my $self = shift;
