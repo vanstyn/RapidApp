@@ -104,7 +104,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.SimpleCAS_Image = Ext.extend(Ext.ux.form.HtmlE
 				});
 			}
 			
-			img.link_url = [pfx,'/simplecas/fetch_content/',img.checksum,'/',img.filename].join('');
+			img.link_url = ['simplecas/fetch_content/',img.checksum,'/',img.filename].join('');
 			this.insertImage(img);
 		};
 		
@@ -541,7 +541,7 @@ Ext.ux.RapidApp.Plugin.HtmlEditor.InsertFile = Ext.extend(Ext.util.Observable, {
     
 		var callback = function(form,res) {
 			var packet = Ext.decode(res.response.responseText);
-			var url = [pfx,'/simplecas/fetch_content/',packet.checksum,'/',packet.filename].join('');
+			var url = ['simplecas/fetch_content/',packet.checksum,'/',packet.filename].join('');
 			var link = '<a class="' + packet.css_class + '" href="' + url + '">' + packet.filename + '</a>';
 			this.insertContent(link);
 		};

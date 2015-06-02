@@ -952,6 +952,15 @@ sub controller_dispatch {
     return $c->redispatch_public_path(
       $c->default_favicon_url
     ) if ($opt eq 'favicon.ico' && !$c->is_ra_ajax_req);
+    
+    # Special handling for relative requests to special/reserved controller paths.
+    # This allows us to use relative paths in front-side code and for it to just
+    # work, even if we change our mount path later on
+    return $c->redispatch_public_path($c->mount_url,$opt,@subargs) if (
+         $opt eq 'simplecas'
+      || $opt eq 'assets'
+      || $opt eq 'rapidapp'
+    );
 
     $self->c->log->debug(join('',"--> ",RED,BOLD,"unknown action: $opt",CLEAR)) if ($self->c->debug);
     $c->stash->{template} = 'rapidapp/http-404.html';

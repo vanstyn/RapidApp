@@ -1030,7 +1030,7 @@ Ext.ux.RapidApp.CasImageField = Ext.extend(Ext.ux.RapidApp.CasUploadField,{
     }
     else {
       var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
-      img.link_url = [pfx,'/simplecas/fetch_content/',img.checksum,'/',img.filename].join('');
+      img.link_url = ['simplecas/fetch_content/',img.checksum,'/',img.filename].join('');
       if(!img.width || img.width < this.minWidth) { img.width = this.minWidth; }
       if(!img.height || img.height < this.minHeight) { img.height = this.minHeight; }
       var img_tag = 
