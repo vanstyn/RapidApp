@@ -3767,6 +3767,10 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 	markDirty: true,
 	
 	use_edit_form: true,
+  
+  getLoadMaskEl: function() {
+    return this.getEl();
+  },
 	
 	initComponent: function() {
 		

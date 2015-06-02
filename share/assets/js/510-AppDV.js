@@ -21,7 +21,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
   
   getLoadMaskEl: function() {
     var El = this.getEl();
-    return El ? El.parent() : Ext.getBody();
+    return El ? El.parent().parent() : Ext.getBody();
   },
   
 	initComponent: function(){
@@ -45,13 +45,6 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		this.store.on('beforesave',this.onBeforesave,this);
 		this.store.on('beforeremove',this.onBeforeremove,this);
 		
-    if(this.loadMask) {
-      this.on('afterrender',function(dv) {
-        var El = dv.getLoadMaskEl();
-        dv.readMask = new Ext.LoadMask(El, {store:this.store});
-      },this);
-    }
-    
 		// Special AppDV override: addNotAllowed based on
 		// current edit record:
 		var cmp = this;

@@ -301,13 +301,15 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
       // are slow/bogged down, but I am not 100% sure...
 			},cmp.store,{ delay: 10 });
 		}
-		
-		// -- Display a page-wide mask during save
-		if(this.store_write_mask) {
-      cmp.on('afterrender',function() {
-        var El = Ext.isFunction(cmp.getLoadMaskEl) // <-- Allow the cmp to define (AppDV)
-          ? cmp.getLoadMaskEl() : cmp.getEl() || Ext.getBody();
-        
+    
+    cmp.addEvents('firstload');
+    
+    cmp.on('render',function() {
+      var El = Ext.isFunction(cmp.getLoadMaskEl) // <-- Allow the cmp to define (AppDV)
+        ? cmp.getLoadMaskEl() : cmp.getEl() || Ext.getBody();
+      
+      // -- Display a page-wide mask during save
+      if(this.store_write_mask) {
         var myMask = new Ext.LoadMask(El, {msg:"Saving Changes..."});
         var show_mask = function() { myMask.show(); }
         var hide_mask = function() { myMask.hide(); }
@@ -315,8 +317,45 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
         cmp.store.on('beforewrite',show_mask,this);
         cmp.store.on('write',hide_mask,this);
         cmp.store.on('exception',hide_mask,this);
-      },this);
-		}
+      }
+      
+      if(cmp.loadMask) {
+        // We want to delete loadMask to prevent the built-in logic in grid
+        // from initializing since we're handing it in a common manner
+        delete cmp.loadMask;
+        cmp.readMask = new Ext.LoadMask(El, {store:cmp.store});
+      
+        // ---- Workaround - manual single-use loadMask for the very first load
+        // Need to investigate more why this is needed, and why the 'loadMask' grid
+        // setting doesn't work on the first store load. I think it is related to
+        // load order and possibly autoPanel. 
+
+        // Check to make sure store_autoLoad has not been set to a false value in
+        // either the store or the grid config (which is now allowed to override the
+        // store setting, see datastore-plus code)
+        var store_autoLoad_disabled = (
+          (typeof cmp.store_autoLoad != 'undefined' && !cmp.store_autoLoad) || 
+          !cmp.store.store_autoLoad
+        ) ? true : false;
+      
+        if(!cmp.collapsed && !store_autoLoad_disabled) {
+          var lMask = new Ext.LoadMask(El,{ msg: "Loading Data Set" });
+          lMask.show();
+          var hide_fn;
+          hide_fn = function(){ 
+            cmp.fireEvent('firstload');
+            lMask.hide(); 
+            cmp.store.un('load',hide_fn);
+            cmp.store.un('exception',hide_fn); 
+          };
+          cmp.store.on('load',hide_fn,this);
+          cmp.store.on('exception',hide_fn,this);
+        }
+        // ----
+      }
+      
+    },this);
+		
 		// --
 		
 		

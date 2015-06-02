@@ -343,6 +343,9 @@ sub property_grid {
 		}),
 		plugins => [ 'titlecollapseplus' ]
 	};
+  
+  $self->has_extconfig_param($_) and $conf->{$_} = 
+    $self->get_extconfig_param($_) for qw/loadMask store_autoLoad/;
 	
 	return merge($conf,$opt);
 }
