@@ -308,15 +308,7 @@ sub view :Chained('base') :Args {
   # New: for non-external templates which are being accessed externally, 
   # (i.e. directly from browser) redirect to internal hashnav path:
   unless ($external || $ra_client) {
-    my $pre = $editable ? $self->tpl_path : $self->read_alias_path;
-    my $url = join('/','/#!',$pre,@args);
-    my %params = %{$c->req->params};
-    if(keys %params > 0) {
-      my $qs = join('&',map { $_ . '=' . uri_escape($params{$_}) } keys %params);
-      $url .= '?' . $qs;
-    }
-    $c->response->redirect($url);
-    return $c->detach;
+    return $c->auto_hashnav_redirect_current;
   }
   #---
   

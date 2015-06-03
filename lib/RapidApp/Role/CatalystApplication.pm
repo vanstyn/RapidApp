@@ -312,7 +312,7 @@ sub hashnav_redirect {
     $url .= '?' . $qs;
   }
 
-  $c->response->redirect($url);
+  $c->response->redirect($c->mount_url.$url);
   return $c->detach;
 }
 
