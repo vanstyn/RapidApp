@@ -4589,6 +4589,12 @@ Ext.ux.RapidApp.Plugin.LinkClickCatcher = Ext.extend(Ext.util.Observable,{
     if(href.search('#') !== 0 && href.search('/#') !== 0 && ! this.externalUrlRe.test(href)) {
       // Stop the link click event and convert to hashpath:
       event.stopEvent();
+      
+      var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
+      if(pfx.length > 0 && href.search(pfx) == 0) {
+        href = href.split(pfx,2)[1];
+      }
+      
       var hashpath = Ext.ux.RapidApp.HashNav.urlToHashPath(href);
       window.location.hash = hashpath;
     }
