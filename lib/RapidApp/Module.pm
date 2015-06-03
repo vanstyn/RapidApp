@@ -946,31 +946,21 @@ sub controller_dispatch {
   
   my $ct= $self->c->stash->{requestContentType};
   
-  if (defined $opt) {
+  $self->_maybe_special_path_redirect($opt,@subargs) if ($opt);
+  
+  # if there were unprocessed arguments which were not an action, and there was no default action, generate a 404
+  # UPDATE: unless new 'accept_subargs' attr is true (see attribute declaration above)
+  if (defined $opt && !$self->accept_subargs) {
     # Handle the special case of browser requests for 'favicon.ico' (#57)
     return $c->redispatch_public_path(
       $c->default_favicon_url
     ) if ($opt eq 'favicon.ico' && !$c->is_ra_ajax_req);
-    
-    # Special handling for relative requests to special/reserved controller paths.
-    # This allows us to use relative paths in front-side code and for it to just
-    # work, even if we change our mount path later on
-    return $c->redispatch_public_path($c->mount_url,$opt,@subargs) if (
-         $opt eq 'simplecas'
-      || $opt eq 'assets'
-      || $opt eq 'rapidapp'
-    );
-    
-    # if there were unprocessed arguments which were not an action, and there was no default action, generate a 404
-    # UPDATE: unless new 'accept_subargs' attr is true (see attribute declaration above)
-    unless($self->accept_subargs) {
 
-      $self->c->log->debug(join('',"--> ",RED,BOLD,"unknown action: $opt",CLEAR)) if ($self->c->debug);
-      $c->stash->{template} = 'rapidapp/http-404.html';
-      $c->stash->{current_view} = 'RapidApp::Template';
-      $c->res->status(404);
-      return $c->detach;
-    }
+    $self->c->log->debug(join('',"--> ",RED,BOLD,"unknown action: $opt",CLEAR)) if ($self->c->debug);
+    $c->stash->{template} = 'rapidapp/http-404.html';
+    $c->stash->{current_view} = 'RapidApp::Template';
+    $c->res->status(404);
+    return $c->detach;
   }
   # --
   # TODO: this is the last remaining logic from the old "web1" stuff (see the v0.996xx branch for
@@ -1004,6 +994,21 @@ sub controller_dispatch {
   }
   
 }
+
+sub _maybe_special_path_redirect {
+  my ($self, $opt, @subargs)= @_;
+  my $c = $self->c;
+  
+  # Special handling for relative requests to special/reserved controller paths.
+  # This allows us to use relative paths in front-side code and for it to just
+  # work, even if we change our mount path later on
+  return $c->redispatch_public_path($c->mount_url,$opt,@subargs) if (
+       $opt eq 'simplecas'
+    || $opt eq 'assets'
+    #|| $opt eq 'rapidapp'   #<-- we don't need this that much
+  );
+}
+
 
 # This call happens via local method so subclasses are able to override
 sub auto_hashnav_redirect_current {
