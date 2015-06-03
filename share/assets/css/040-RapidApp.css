@@ -1393,3 +1393,13 @@ a:hover, a:hover * { cursor: pointer; }
   word-break: break-all;
   white-space: normal;
 }
+
+
+/* This selector will match the tab strip loaded via /rapidapp/module/navable
+   and put the top border on which is disabled when rendered within the explorer,
+   because it already supplies borders */
+body > #main-load-target > .x-tab-panel-header {
+  border-top-width:1px;
+  border-left-width:1px;
+  border-right-width:1px;
+}
