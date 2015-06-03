@@ -5022,6 +5022,18 @@ Ext.ux.RapidApp.nl2brWrap = function(v) {
 
 // Called from ext_viewport.tt to initialize the main app UI:
 Ext.ux.RapidApp.MainViewportInit = function(opt) {
+  
+  // New: redirect to <path>/ if it doesn't already end with "/"
+  // we need to do this to ensure consistency for relative paths.
+  // We have to do it here, because the server side is not able to
+  // see the difference, otherwise we'd redirect there. This will
+  // only apply when the app is not mounted at the root
+  var loc = window.location;
+  if(loc.pathname.slice(-1) != '/') {
+    loc.href = [loc.pathname,'/',loc.search,loc.hash].join('');
+    return;
+  }
+  
   Ext.ux.RapidApp.HistoryInit();
 
   var panel_cfg = opt.panel_cfg || {
