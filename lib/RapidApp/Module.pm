@@ -945,9 +945,8 @@ sub controller_dispatch {
     if (defined $self->default_action);
   
   my $ct= $self->c->stash->{requestContentType};
-  # if there were unprocessed arguments which were not an action, and there was no default action, generate a 404
-  # UPDATE: unless new 'accept_subargs' attr is true (see attribute declaration above)
-  if (defined $opt && !$self->accept_subargs) {
+  
+  if (defined $opt) {
     # Handle the special case of browser requests for 'favicon.ico' (#57)
     return $c->redispatch_public_path(
       $c->default_favicon_url
@@ -961,12 +960,17 @@ sub controller_dispatch {
       || $opt eq 'assets'
       || $opt eq 'rapidapp'
     );
+    
+    # if there were unprocessed arguments which were not an action, and there was no default action, generate a 404
+    # UPDATE: unless new 'accept_subargs' attr is true (see attribute declaration above)
+    unless($self->accept_subargs) {
 
-    $self->c->log->debug(join('',"--> ",RED,BOLD,"unknown action: $opt",CLEAR)) if ($self->c->debug);
-    $c->stash->{template} = 'rapidapp/http-404.html';
-    $c->stash->{current_view} = 'RapidApp::Template';
-    $c->res->status(404);
-    return $c->detach;
+      $self->c->log->debug(join('',"--> ",RED,BOLD,"unknown action: $opt",CLEAR)) if ($self->c->debug);
+      $c->stash->{template} = 'rapidapp/http-404.html';
+      $c->stash->{current_view} = 'RapidApp::Template';
+      $c->res->status(404);
+      return $c->detach;
+    }
   }
   # --
   # TODO: this is the last remaining logic from the old "web1" stuff (see the v0.996xx branch for
