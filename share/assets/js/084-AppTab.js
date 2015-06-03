@@ -467,9 +467,11 @@ Ext.ux.RapidApp.AppTab.gridrow_nav = function(grid,rec) {
   // -- NEW: ignore phantom records (Github Issue #26)
   if(Record.phantom) { return; }
   // --
-
+  
+  var loadTarget = grid.loadTargetObj;
+  
   // --- NEW: try to use REST nav (Github Issue #34)
-  if(grid.open_record_via_rest && grid.open_record_url) {
+  if(loadTarget && grid.open_record_via_rest && grid.open_record_url) {
     var key = grid.open_record_rest_key ? grid.open_record_rest_key : 'id';
     var val = grid.open_record_rest_key ? Record.data[key] : Record.id;
     
@@ -481,9 +483,19 @@ Ext.ux.RapidApp.AppTab.gridrow_nav = function(grid,rec) {
   }
   // ---
   else {
-    // Original, pre-REST design
-    var loadTarget = grid.loadTargetObj;
-    return Ext.ux.RapidApp.AppTab.tryLoadTargetRecord(loadTarget,Record,grid);
+    if(loadTarget) {
+      // Original, pre-REST design
+      return Ext.ux.RapidApp.AppTab.tryLoadTargetRecord(loadTarget,Record,grid);
+    }
+    else {
+      // New: fall-back to the edit button action (if available if we're not 
+      // in a navable context, such loaded via /rapidapp/module/direct
+      var Btn = grid.datastore_plus_plugin.getStoreButton('edit');
+      if(Btn && !Btn.disabled && Btn.handler) {
+        return Btn.handler.call(grid,Btn);
+      }
+      return;
+    }
   }
 }
 
