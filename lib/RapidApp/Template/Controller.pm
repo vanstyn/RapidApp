@@ -69,17 +69,7 @@ sub BUILD {
   }
 }
 
-sub tpl { #:Path('/tpl') {
-  my ($self, $c) = @_;
-  $c->forward('view');
-}
 
-# Edit alias
-sub tple { #:Path('/tple') {
-  my ($self, $c) = @_;
-  $c->stash->{editable} = 1;
-  $c->forward('view');
-}
 
 sub tpl_path {
   my $self = shift;
@@ -278,6 +268,94 @@ sub _resolve_template_name {
 }
 
 sub base :Chained :PathPrefix :CaptureArgs(0) {}
+
+# -------
+# direct/navable dispatch to match the same pattern as Module DirectCmp
+#
+# We now have 'direct' and 'navable' controller actions to that the following
+# URL paths will behave is a consistent manner:
+#
+#  /rapidapp/module/direct/<module_path>
+#  /rapidapp/template/direct/tple/<template_path>
+#
+# We are simulating module viewport content with a simple autopanel cfg so
+# that a template can be rendered full-screen with the same functionality
+# as it has when rendered in a TabGui tab
+sub _validate_args_template_viewable {
+  my ($self, @args) = @_;
+  my $template = $self->_resolve_template_name(@args);
+  $self->get_Provider->template_exists($template)
+}
+
+sub _validate_enforce_arguments_path {
+  my ($self, $c, @args) = @_;
+  
+  shift @args if ($args[0] eq 'tpl' || $args[0] eq 'tple');
+  return 1 if ($self->_validate_args_template_viewable(@args));
+  
+  my @pre_args = ();
+  while(scalar(@args) > 1) {
+    
+    push @pre_args, shift @args;
+    
+    # Special handling for relative requests to special/reserved controller paths.
+    # this is based on the same logic/rules as in RapidApp::Module
+    $c->redispatch_public_path($c->mount_url,@args) && $c->detach if (
+      $self->_validate_args_template_viewable(@pre_args) && (
+           $args[0] eq 'simplecas'
+        || $args[0] eq 'assets'
+        || $args[0] eq 'rapidapp'
+      )
+    );
+  }
+  
+  $c->stash->{template} = 'rapidapp/http-404.html';
+  $c->stash->{current_view} = 'RapidApp::Template';
+  $c->res->status(404);
+  return $c->detach;
+}
+
+sub direct :Chained('base') :Args {
+  my ($self, $c, @args) = @_;
+  
+  $self->_validate_enforce_arguments_path($c,@args);
+  
+  $c->stash->{panel_cfg} = {
+    xtype => 'autopanel',
+    layout => 'fit',
+    autoLoad => {
+      url => join('/','',@args),
+      params => $c->req->params
+    }
+  };
+  
+  return $c->detach( $c->view('RapidApp::Viewport') );
+}
+
+sub navable :Chained('base') :Args {
+  my ($self, $c, @args) = @_;
+  $self->_validate_enforce_arguments_path($c,@args);
+  return $c->controller('RapidApp::Module')->navable($c,@args);
+}
+# --------
+
+sub tpl :Chained('base') :Args {
+  my ($self, $c, @args) = @_;
+  $self->view($c,@args)
+}
+
+# Edit alias
+sub tple :Chained('base') :Args {
+  my ($self, $c, @args) = @_;
+  
+  $c->stash->{editable} = 1;
+  $self->view($c,@args)
+}
+
+sub navable :Chained('base') :Args {
+  my ($self, $c, @args) = @_;
+  return $c->controller('RapidApp::Module')->navable($c,@args);
+}
 
 # TODO: see about rendering with Catalyst::View::TT or a custom View
 sub view :Chained('base') :Args {
