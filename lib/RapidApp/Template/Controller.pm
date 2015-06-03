@@ -352,11 +352,6 @@ sub tple :Chained('base') :Args {
   $self->view($c,@args)
 }
 
-sub navable :Chained('base') :Args {
-  my ($self, $c, @args) = @_;
-  return $c->controller('RapidApp::Module')->navable($c,@args);
-}
-
 # TODO: see about rendering with Catalyst::View::TT or a custom View
 sub view :Chained('base') :Args {
   my ($self, $c, @args) = @_;
