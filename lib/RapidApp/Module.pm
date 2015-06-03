@@ -1002,7 +1002,7 @@ sub _maybe_special_path_redirect {
   # Special handling for relative requests to special/reserved controller paths.
   # This allows us to use relative paths in front-side code and for it to just
   # work, even if we change our mount path later on
-  return $c->redispatch_public_path($c->mount_url,$opt,@subargs) if (
+  $c->redispatch_public_path($c->mount_url,$opt,@subargs) && $c->detach if (
        $opt eq 'simplecas'
     || $opt eq 'assets'
     #|| $opt eq 'rapidapp'   #<-- we don't need this that much
