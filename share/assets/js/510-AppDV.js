@@ -133,8 +133,13 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
       }
     }
 		
-		//this.scrollRecordIntoView.defer(10,this,[records[records.length - 1]]);
-    this.scrollRecord.defer(10,this,[records[records.length - 1]]);
+    // If scrollNodeClass, this should work:
+    if(this.scrollNodeClass) {
+      this.scrollRecordIntoView.defer(10,this,[records[records.length - 1]]);
+    }
+    else {
+      this.scrollRecord.defer(10,this,[records[records.length - 1]]);
+    }
 		this.highlightRecord.defer(10,this,[records]);
 		this.toggleDirtyCssRecord(records,true);
 
@@ -908,21 +913,39 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	scrollRecordIntoView: function(Record) {
 		if(!this.getStore()) { return; }
 		
-		if(Record == Record.store.getLastRecord()) {
-			return this.scrollBottomToolbarIntoView();
-		}
+		//if(Record == Record.store.getLastRecord()) {
+		//	return this.scrollBottomToolbarIntoView();
+		//}
+    
+    var recNode = this.getNode(Record);
 		
-		var node = this.getParentScrollNode(this.getEl().dom);
+		//var node = this.getParentScrollNode(this.getEl().dom);
+    var node = this.getParentScrollNode(recNode);
 		if(!node) { return; }
-		Ext.fly(this.getNode(Record)).scrollIntoView(node);
+		Ext.fly(recNode).scrollIntoView(node);
 
 	},
-	
-	getParentScrollNode: function(node) {
-		if(!node || !node.style) { return null; }
-		if(node.style.overflow == 'auto') { return node; }
-		if(node.parentNode) { return this.getParentScrollNode(node.parentNode); }
-		return null;
-	}
+  
+  scrollNodeClass: null,
+
+  getParentScrollNode: function(node) {
+    if(!node) { return null; }
+    if(this.scrollNodeClass) {
+      var nodeEl = new Ext.Element(node);
+      if(nodeEl.hasClass(this.scrollNodeClass)) {
+        console.dir(node);
+        return node;
+      }
+    }
+    if(node.style && (
+      node.style.overflow == 'auto' || 
+      node.style.overflow == 'scroll'
+    )){ return node; }
+      
+    if(node.parentNode) {
+      return this.getParentScrollNode(node.parentNode); 
+    }
+    return null;
+  }
 });
 Ext.reg('appdv', Ext.ux.RapidApp.AppDV.DataView);
