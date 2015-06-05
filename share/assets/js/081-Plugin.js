@@ -4555,6 +4555,11 @@ Ext.ux.RapidApp.Plugin.LinkClickCatcher = Ext.extend(Ext.util.Observable,{
     node = node.is('a') ? node : node.parent('a');
     if(! node) { return; }
     
+    var href = node.getAttribute('href');
+    
+    // Ignore if there is no href
+    if(!href) { return; }
+    
     // Exclude special "filelinks" created by HtmlEditor:
     if(node.hasClass('filelink')) { return; }
     
@@ -4574,12 +4579,9 @@ Ext.ux.RapidApp.Plugin.LinkClickCatcher = Ext.extend(Ext.util.Observable,{
       }
     }
     
-    var href = node.getAttribute('href');
-    
-    // New: Also skip if there is no href, and if the href is exactly
-    // '#', stop the event so it doesn't mess with the browser histroy,
-    // since href="#" is a standard convention for "no action"
-    if(!href || href == '#') { 
+    // Skip if the href is exactly '#', stop the event so it doesn't mess with 
+    // the browser histroy, since href="#" is a standard convention for "no action"
+    if(href == '#') { 
       event.stopEvent();
       return; 
     }
