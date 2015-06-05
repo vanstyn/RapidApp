@@ -166,6 +166,10 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		this.exclude_btn_map = {};
 		Ext.each(this.store_exclude_buttons,function(item) { this.exclude_btn_map[item] = true; },this);
 		if(!this.use_edit_form) { this.exclude_btn_map.edit = true; }
+    if(cmp.persist_all_immediately) {
+      this.exclude_btn_map.save = true;
+      this.exclude_btn_map.undo = true;
+    }
 		
 		this.initAdditionalStoreMethods.call(this,this.cmp.store,this);
 		
