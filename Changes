@@ -1,5 +1,26 @@
 Revision history for RapidApp
 
+1.0500 2015-06-03
+    - Lots of fixes/improvements to AppDV (VANSTYN)
+    - DataStorePlus fixes and improvements (VANSTYN)
+    - Fix bug in drag/drop ordering in navtree (VANSTYN)
+    - factored out virtual column statement code to reduce duplication
+        - PR #148 (TBSilver)
+    - Fixes to DateTime field triggers (VANSTYN)
+    - Declare JS namespeace RA.ux officially for client apps (VANSTYN)
+    - Fixing _load_connect_schema in Model::CoreSchema - PR #147 (GETTY)
+    - RapidApp::Builder: new base_plugins/base_config for added (VANSTYN)
+    - CoreSchema fixes for PostgreSQL compatability - PR #146 (TBSilver)
+    - TabGui: expose main_module_(class|params) in cfg (VANSTYN)
+    - Add column profile 'cas_img' (VANSTYN)
+    - CSS tweaks and changes (VANSTYN)
+    - Module dispatch improvements + additions (VANSTYN)
+    - Require Catalyst::Controller::SimpleCAS 0.998 (VANSTYN/GETTY)
+    - New separate AppDV subclasses DbicDV and DbicRowDV (VANSTYN)
+    - DbicLnk: include_colspec now defaults to ['*'] (VANSTYN)
+    - Fix bug in rendering of SQLite date columns (VANSTYN)
+    - Lots of misc bug fixes (VANSTYN)
+    
 1.0401 2015-05-11
     - Hotfix for wrong enforced alphabetical sorting of colspec (GETTY)
 
