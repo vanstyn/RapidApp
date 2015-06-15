@@ -15,6 +15,7 @@ require Text::Glob;
 use Text::WagnerFischer qw(distance);
 use Clone qw( clone );
 use Digest::MD5 qw(md5_hex);
+use curry;
 
 # hackish performance tweak:
 my %match_glob_cache = ();
@@ -1205,8 +1206,8 @@ sub resolve_dbic_colname {
         # All these reasons are why I say this implementation is "partial" in
         # its current form.
 
-        my $rinfo = $m2m_attrs->{rinfo};
-        my $rrinfo = $m2m_attrs->{rrinfo};
+        my $rel_info = $m2m_attrs->{rinfo};
+        my $rev_rel_info = $m2m_attrs->{rrinfo};
       
         # initial hard-coded example the dynamic logic was based on:
         #my $sql = '(' .
@@ -1234,28 +1235,42 @@ sub resolve_dbic_colname {
         
         # TODO: support cross-db relations
         
-        # Strips <dbname>. prefix, if present:
-        my $rtable = (reverse split(/\./,$rinfo->{table}))[0];
-        my $rrtable = (reverse split(/\./,$rrinfo->{table}))[0];
+        local *_ = $self->schema->storage->sql_maker->curry::_quote;
 
-        my $concat;
-        my $sqlt_type = $self->schema->storage->sqlt_type;
-        if ( $sqlt_type eq "PostgreSQL" ) {
-          $concat = "STRING_AGG(`$rrtable`.`$rrinfo->{cond_info}->{foreign}`,',')";
-        } else {
-          $concat = "GROUP_CONCAT(`$rrtable`.`$rrinfo->{cond_info}->{foreign}`)";
-        }
+        my $rel_table_raw = $self->schema->source($rel_info->{source})->name;
+        my $rev_rel_table_raw = $self->schema->source($rev_rel_info->{source})->name;
 
-        my $sql = join(' ', '(',
-          "SELECT($concat)",
-          " FROM `$rtable`",
-          " JOIN `$rrtable` `$rrtable`",
-          "  ON `$rtable`.`$rrinfo->{cond_info}->{self}` = `$rrtable`.`$rrinfo->{cond_info}->{foreign}`",
-          " WHERE `$rinfo->{cond_info}->{foreign}` = `$rel`.`$cond_data->{self}`",
-        ')');
+        my $rel_table = _($rel_table_raw);
+        my $rev_rel_table = _($rev_rel_table_raw);
+        
+        my $rel_alias = (reverse split(/\./,$rel_table_raw))[0];
+        my $rev_rel_alias = (reverse split(/\./,$rev_rel_table_raw))[0];
+        
+        my $rel_join_col = _(join '.', $rel_alias, $rev_rel_info->{cond_info}{self});
+        my $rev_rel_join_col = _(join '.', $rev_rel_alias, $rev_rel_info->{cond_info}{foreign});
+        
+        my $rev_rel_col = _(join '.', $rel_alias, $rel_info->{cond_info}{foreign});
+        my $rel_col = _(join '.', $rel, $cond_data->{self});
 
-        # PostgreSQL doesnt accept backticks
-        $sql =~ s/`/"/g if $sqlt_type eq "PostgreSQL";
+        my $sql = do {
+
+          my $sqlt_type = $self->schema->storage->sqlt_type;
+          my $concat = do {
+            if ($sqlt_type eq 'PostgreSQL') {
+              "STRING_AGG($rev_rel_join_col, ',')"
+            } else {
+              "GROUP_CONCAT($rev_rel_join_col)";
+            }
+          };
+          join(' ', '(',
+            "SELECT($concat)",
+            " FROM $rel_table",
+            " JOIN $rev_rel_table",
+            "  ON $rel_join_col = $rev_rel_join_col",
+            " WHERE $rev_rel_col = $rel_col",
+          ')');
+
+        };
 
         return { '' => \$sql, -as => $fieldName };		
       }
