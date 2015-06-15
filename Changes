@@ -1,16 +1,19 @@
 Revision history for RapidApp
 
+1.0501 2015-06-15
+    - Support Postgres for m2m columns - PR #150 (TBSliver/MST)
+
 1.0500 2015-06-03
     - Lots of fixes/improvements to AppDV (VANSTYN)
     - DataStorePlus fixes and improvements (VANSTYN)
     - Fix bug in drag/drop ordering in navtree (VANSTYN)
     - factored out virtual column statement code to reduce duplication
-        - PR #148 (TBSilver)
+        - PR #148 (TBSliver)
     - Fixes to DateTime field triggers (VANSTYN)
     - Declare JS namespeace RA.ux officially for client apps (VANSTYN)
     - Fixing _load_connect_schema in Model::CoreSchema - PR #147 (GETTY)
     - RapidApp::Builder: new base_plugins/base_config for added (VANSTYN)
-    - CoreSchema fixes for PostgreSQL compatability - PR #146 (TBSilver)
+    - CoreSchema fixes for PostgreSQL compatability - PR #146 (TBSliver)
     - TabGui: expose main_module_(class|params) in cfg (VANSTYN)
     - Add column profile 'cas_img' (VANSTYN)
     - CSS tweaks and changes (VANSTYN)

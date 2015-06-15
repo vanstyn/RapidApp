@@ -1232,6 +1232,7 @@ sub resolve_dbic_colname {
         ### in PostgrSQL because it doesn't have GROUP_CONCAT. This will have to be implemented
         ### separately first each db. TODO: ask the storage engine for the db type and apply
         ### a correct version of the function:
+        ###   UPDATE: Now works with PostgreSQL - PR #150, mst++, TBSliver++
         
         # TODO: support cross-db relations
         
