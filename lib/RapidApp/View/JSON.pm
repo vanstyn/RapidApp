@@ -5,7 +5,6 @@ use namespace::autoclean;
 BEGIN { extends 'Catalyst::View'; }
 
 use RapidApp::JSON::MixedEncoder;
-use Data::Dumper;
 use Scalar::Util 'blessed', 'reftype';
 use HTML::Entities;
 use RapidApp::Util qw(:all);

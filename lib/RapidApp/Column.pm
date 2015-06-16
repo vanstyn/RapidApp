@@ -200,7 +200,7 @@ sub apply_attributes {
 	#There should be nothing left over in %new:
 	if (scalar(keys %new) > 0) {
 		#die "invalid attributes (" . join(',',keys %new) . ") passed to apply_attributes";
-		use Data::Dumper;
+		#use Data::Dumper;
 		die  "invalid attributes (" . join(',',keys %new) . ") passed to apply_attributes :\n" . Dumper(\%new);
 	}
 }
@@ -218,7 +218,7 @@ sub applyIf_attributes {
 	#There should be nothing left over in %new:
 	if (scalar(keys %new) > 0) {
 		#die "invalid attributes (" . join(',',keys %new) . ") passed to apply_attributes";
-		use Data::Dumper;
+		#use Data::Dumper;
 		die  "invalid attributes (" . join(',',keys %new) . ") passed to apply_attributes :\n" . Dumper(\%new);
 	}
 }
