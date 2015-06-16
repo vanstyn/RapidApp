@@ -5,7 +5,7 @@ RapidApp::Manual::TableSpec - RapidApp/DBIC metadata config options
 =head1 DESCRIPTION
  
 TableSpecs are RapidApp-specific metadata associated with DBIx::Class 
-Result Classes which effect the behavior of automatically generated 
+Result Classes which affect the behavior of automatically generated 
 interfaces, interacting with the given source, throughout the RapidApp 
 application.
 
@@ -83,7 +83,7 @@ searching on the display_column alone is sufficient to distinguish them between 
 is only suitable when both are the case, but is more than sufficient and optimal when it is (i.e.
 for things like a 'status' table with just a handful of static rows).
 
-C<grid> is by far the most powerful choice, but the tradeoff is that is much slower to interact
+C<grid> is by far the most powerful choice, but the tradeoff is that it is much slower to interact
 with since it loads an entire grid interface in a pop-up window, instead of quick little inline
 combo/dropdown box. But, this mode has all the same capabilities as any other grid, including not 
 only the query tools like quick search and filters, but also the ability to select a row that 
@@ -122,7 +122,7 @@ grids. Defaults to true.
 
 =head2 no_column
 
-Boolean. Hides the column from being shown/selected as a column in grid views. Does not effect other
+Boolean. Hides the column from being shown/selected as a column in grid views. Does not affect other
 contexts, such as Quick Search and MultiFilters (see C<no_quick_search>/C<no_multifilter> options).
 Defaults to false.
 
@@ -177,7 +177,7 @@ is set to a false or empty value it will disable editing for the column across t
 
 String or ArrayRef of Strings containing a valid JavaScript function name(s). The function should 
 accept the value as the only argument and return the formatted value. (For example, 
-C<'Ext.util.Format.usMoney'>. If multiple functions are supplied, the functions are chained, with 
+C<'Ext.util.Format.usMoney'>). If multiple functions are supplied, the functions are chained, with 
 the return value of the previous becoming the input to the next.
 
 Again, this is automatically configured based on the column type info.

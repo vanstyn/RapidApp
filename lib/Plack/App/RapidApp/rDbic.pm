@@ -450,7 +450,7 @@ For example:
 
  dsn => 'dbi:mysql:mydb,dbuser,dbpass'
 
-Is equivelent to:
+Is equivalent to:
 
  connect_info => ['dbi:mysql:mydb','dbuser','dbpass']
 

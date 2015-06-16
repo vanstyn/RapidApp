@@ -23,7 +23,7 @@ a single shell command:
   rdbic.pl dbi:mysql:mydb
 
 To learn more, see the L<Catalyst::Plugin::RapidApp::RapidDbic> documentation itself. Also, the 
-exmaples in L<RapidApp::Manual::Bootstrap> mainly cover RapidDbic, which show how to bootstrap a new 
+examples in L<RapidApp::Manual::Bootstrap> mainly cover RapidDbic, which show how to bootstrap a new 
 app from scratch, also with a single command, which can then be further customized and developed.
 
 Additionally, the Chinook Demo video series on the RapidApp website covers building an app using 
