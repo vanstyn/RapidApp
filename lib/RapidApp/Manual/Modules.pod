@@ -56,7 +56,7 @@ to prepare the HTML markup to accomplish this automatically are provided, such a
 L<RapidApp::View::Viewport>, which is what is used by plugins like
 L<TabGui|Catalyst::Plugin::RapidApp::TabGui> to render the RESTful navigation interface.
 
-Modules return a HashRef sctructure when their URL controller path is accessed from the
+Modules return a HashRef structure when their URL controller path is accessed from the
 JavaScript client by the C<AutoPanel> function, which should represent a valid ExtJS xtype
 panel/component config. This is returned by the C<content()> method of the Module class,
 and is automatically serialized as JSON and returned to the client by the Module dispatch
