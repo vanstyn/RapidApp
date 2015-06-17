@@ -46,6 +46,11 @@ my $run_webapi   = 0;
 my $includes     = [];
 my $metakeys;
 
+my $limit_tables_re    = undef;
+my $limit_schemas_re   = undef;
+my $exclude_tables_re  = undef;
+my $exclude_schemas_re = undef;
+
 # From 'prove': Allow cuddling the paths with -I, -M and -e
 @ARGV = map { /^(-[IMe])(.+)/ ? ($1,$2) : $_ } @ARGV;
 
@@ -60,7 +65,13 @@ GetOptions(
   'crud-profile=s'  => \$crud_profile,
   'run-webapi+'     => \$run_webapi,
   'I=s@'            => $includes,
-  'metakeys=s'      => \$metakeys
+  'metakeys=s'      => \$metakeys,
+  
+  'limit_tables_re|limit-tables-re=s'       => \$limit_tables_re,
+  'limit_schemas_re|limit-schemas-re=s'     => \$limit_schemas_re,
+  'exclude_tables_re|exclude-tables-re=s'   => \$exclude_tables_re,
+  'exclude_schemas_re|exclude-schemas-re=s' => \$exclude_schemas_re,
+  
 );
 
 pod2usage(1) if ($help || !$dsn);
@@ -80,7 +91,12 @@ if (@$includes) {
     no_cleanup       => $no_cleanup,
     crud_profile     => $crud_profile,
     isolate_app_tmp  => 1,
-    metakeys         => $metakeys
+    metakeys         => $metakeys,
+    
+    limit_tables_re    => $limit_tables_re,
+    limit_schemas_re   => $limit_schemas_re,
+    exclude_tables_re  => $exclude_tables_re,
+    exclude_schemas_re => $exclude_schemas_re,
   };
   
   $cnf->{schema_class} = $schema_class if ($schema_class);
@@ -177,6 +193,11 @@ rdbic.pl - Instant CRUD webapp for your database using RapidApp/Catalyst/DBIx::C
    --run-webapi    EXPERIMENTAL: Run WebAPI::DBIC w/ HAL Browser instead of RapidApp
    --metakeys      EXPERIMENTAL: Path to a RapidApp::Util::MetaKeys data file
 
+   --limit-tables-re     EXPERIMENTAL: Regex string limits included table names
+   --limit-schemas-re    EXPERIMENTAL: Regex string limits included RDBMS 'schema' names
+   --exclude-tables-re   EXPERIMENTAL: Regex string excludes table names
+   --exclude-schemas-re  EXPERIMENTAL: Regex string excludes RDBMS 'schema' names
+
    --crud-profile  One of five choices to broadly control CRUD interface behavior (see below)
 
     -I  Specifies Perl library include paths, like "perl"'s -I option. You
@@ -210,6 +231,8 @@ rdbic.pl - Instant CRUD webapp for your database using RapidApp/Catalyst/DBIx::C
    rdbic.pl dbi:mysql:foo,root,'' --run-webapi
 
    rdbic.pl my_sqlt.db -Ilib --schema-class My::Existing::Schema
+
+   rdbic.pl dbi:Pg:dbname=foo,usr,1234 --exclude-schemas-re='^testing_'
 
 =head1 DESCRIPTION
 

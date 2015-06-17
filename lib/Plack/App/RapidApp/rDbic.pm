@@ -68,6 +68,11 @@ has 'isolate_app_tmp', is => 'ro', isa => Bool, default => 0;
 
 has 'metakeys', is => 'ro', isa => Maybe[Any], default => sub { undef };
 
+has 'limit_tables_re',    is => 'ro', isa => Maybe[Str], default => sub { undef };
+has 'limit_schemas_re',   is => 'ro', isa => Maybe[Str], default => sub { undef };
+has 'exclude_tables_re',  is => 'ro', isa => Maybe[Str], default => sub { undef };
+has 'exclude_schemas_re', is => 'ro', isa => Maybe[Str], default => sub { undef };
+
 has '_def_ns_pfx', is => 'ro', isa => Str, default => sub { 'rDbicApp' };
 
 has 'app_namespace', is => 'ro', isa => Str,  lazy => 1, default => sub { 
@@ -247,6 +252,9 @@ sub _bootstrap {
   my $name = $self->app_namespace;
   
   die "App class namespace '$name' already loaded!" if (is_class_loaded $name);
+  
+  my @keys = qw/metakeys limit_schemas_re exclude_schemas_re limit_tables_re exclude_tables_re/;
+  my $extra = { map { $_ => scalar $self->$_ } @keys };
 
   my $helper = RapidApp::Helper->new_with_traits({
       '.newfiles' => 1, 'makefile' => 0, 'scripts' => 0,
@@ -255,7 +263,7 @@ sub _bootstrap {
         'model-name'   => $self->model_name,
         'schema-class' => $self->schema_class,
         crud_profile   => $self->crud_profile,
-        metakeys       => $self->metakeys
+        %$extra
       },
       traits => ['RapidApp::Helper::Traits::RapidDbic'],
       name   => $name,

@@ -17,12 +17,20 @@ sub new {
   
   my $metakeys_data = exists $args{metakeys} ? delete $args{metakeys} : undef;
   
-  # test - remove me
-  #$metakeys_data = '/root/metakeys.txt';
+  # -- NEW: Experimental limit/exclude opts (Added for GitHub Issue #152):
+  my @prps = qw/limit_schemas_re exclude_schemas_re limit_tables_re exclude_tables_re/;
+  my $limExcl = { map {
+    $args{$_} ? do {
+      my $re = delete $args{$_};
+      ( $_ => qr/$re/ )
+    } : ()
+  } @prps };
+  # --
   
   my $self = $class->next::method(%args);
   
   $self->MetaKeys( $metakeys_data );
+  $self->limExcl( $limExcl );
   
   # Logic duplicated from DBIx::Class::Schema::Loader::DBI
   my $driver = $self->dbh->{Driver}->{Name};
@@ -52,6 +60,11 @@ sub MetaKeys {
   $self->{_MetaKeys} //= undef
 }
 
+sub limExcl {
+  my ($self, $new) = @_;
+  $self->{_limExcl} = $new if ($new);
+  $self->{_limExcl} //= {}
+}
 
 sub _table_fk_info {
   my ($self, $table) = @_;
@@ -108,6 +121,37 @@ sub _fk_cnf_for_metakey {
   }
 }
 
+
+sub _tables_list {
+  my ($self, @args) = @_;
+  
+  my $incl = sub {
+    my $Tbl = shift;
+    if(my $schema = $Tbl->schema) {
+      return 0 if (
+        $self->limExcl->{'limit_schemas_re'}
+        && ! ($schema =~ $self->limExcl->{'limit_schemas_re'})
+      );
+      return 0 if (
+        $self->limExcl->{'exclude_schemas_re'}
+        && ($schema =~ $self->limExcl->{'exclude_schemas_re'})
+      );
+    }
+    if(my $table = $Tbl->name) {
+      return 0 if (
+        $self->limExcl->{'limit_tables_re'}
+        && ! ($table =~ $self->limExcl->{'limit_tables_re'})
+      );
+      return 0 if (
+        $self->limExcl->{'exclude_tables_re'}
+        && ($table =~ $self->limExcl->{'exclude_tables_re'})
+      );
+    }
+    return 1; # Include unless excluded above
+  };
+  
+  grep { $incl->($_) } $self->next::method(@args)
+}
 
 
 1;
