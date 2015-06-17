@@ -1,5 +1,11 @@
 Revision history for RapidApp
 
+1.0502 2015-06-16
+    - rdbic.pl: ADDED EXPERIMENTAL limit/exclude OPTS - #152 (VANSTYN/TIMB)
+    - Require DBIx::Class::Schema::Loader 0.07043 (dist.ini)
+    - Fix subroutine redefine warnings (Dumper()) (VANSTYN)
+    - Misc POD spelling/typo fixes - PR #151 (SCROTTIE)
+
 1.0501 2015-06-15
     - Support Postgres for m2m columns - PR #150 (TBSliver/MST)
 
