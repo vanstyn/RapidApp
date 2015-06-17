@@ -726,6 +726,18 @@ sub rs_all {
   $want ? @ret : $ret[0]
 }
 
+
+has '_count_col', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  
+  my @pris = $self->ResultSource->primary_columns;
+  if(scalar(@pris) == 1) {
+    return $pris[0];
+  }
+  return undef;
+
+}, isa => 'Maybe[Str]';
+
 sub rs_count { 
   my $self = shift;
   my $Rs2 = shift;
@@ -743,6 +755,26 @@ sub rs_count {
   
   #return $self->rs_count_via_pager($Rs2);
   #return $self->rs_count_manual($Rs2);
+  
+  if(my $col = $self->_count_col) {
+    return try {
+      $Rs2->search_rs(undef,{ 
+        page => undef, rows => undef, order_by => undef,
+        select => { count => join('.',$Rs2->current_source_alias,$col) },
+        as => 'count'
+      })
+      ->get_column('count')
+      ->first
+    }
+    catch {
+      warn RED . "\n\n" . $self->extract_db_error_from_exception($_) . CLEAR;
+      warn RED.BOLD . "\n\n" .
+        'COUNT VIA _count_col FAILED, FAILING BACK TO PAGER COUNT' .
+      "\n\n" . CLEAR;
+      return $self->rs_count_with_fallbacks($Rs2);
+    };
+  }
+  
   return $self->rs_count_with_fallbacks($Rs2);
 }
 
