@@ -730,6 +730,12 @@ sub rs_all {
 has '_count_col', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   
+  # We only want to use this optimization for PostgreSQL, since it is
+  # known to perform poorly with the standard count(*) method, which
+  # is uniquely a Pg issue....
+  my $sqlt_type = $self->ResultSource->schema->storage->sqlt_type || '';
+  $sqlt_type eq 'PostgreSQL' or return undef;
+
   my @pris = $self->ResultSource->primary_columns;
   if(scalar(@pris) == 1) {
     return $pris[0];
