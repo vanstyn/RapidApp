@@ -11,12 +11,16 @@ use RapidApp::Util qw(:all);
 
 has 'show_base_conditions_in_header', is => 'ro', isa => 'Bool', default => 1;
 
+# This property defines whether or not the 'Cell Editing' toggle button should start
+# in the 'Off' or 'On' position. This only applies when the grid is initialized with
+# a top toolbar, so there is a place to render the button, and also when the plugin
+# grid-toggle-edit-cells is loaded (which it is, by default)
 has 'toggle_edit_cells_init_off', default => sub {
   my $self = shift;
-  # Set to the same value as 'use_add_form' (defaults to false, see DataStore2).
-  # If there is no add form, it doesn't make sense to have cell editing
-  # off by default. Otherwise, intial edit state defaults to off
-  return $self->use_add_form ? 1 : 0;
+  # By default, we will initialize with 'Cell Editing Off' as long as there
+  # is both an open_record_url and the grid uses the add form. Unless both 
+  # of these conditions are true, we initialize with 'Cell Editing On'
+  return $self->use_add_form && $self->open_record_url ? 1 : 0;
 }, is => 'ro', isa => 'Bool', lazy => 1;
 
 sub BUILD {
