@@ -4473,11 +4473,6 @@ Ext.ux.RapidApp.Plugin.GridToggleEditCells = Ext.extend(Ext.util.Observable,{
       
 	onRender: function() {
   
-    // allow starting the toggle to off if it hasn't been set yet:
-    if( this.grid.toggle_edit_cells_init_off && 
-        typeof this.grid.store.disable_cell_editing == 'undefined'
-    ) { this.grid.store.disable_cell_editing = true; }
-  
     if(!this.grid.store.api.update || this.grid.disable_toggle_edit_cells) {
       return;
     }
@@ -4486,12 +4481,21 @@ Ext.ux.RapidApp.Plugin.GridToggleEditCells = Ext.extend(Ext.util.Observable,{
     if(this.countEditableColumns() == 0) { return; }
     
     var tbar = this.grid.getTopToolbar();
-    if(! tbar) { return; }
+    if(! tbar || tbar.items.getCount() < 1) { return; }
+
+    var index = 0;
+
+    // Place the button after the Options button (if its there)
     var optionsBtn = tbar.getComponent('options-button');
-    if(! optionsBtn) { return; }
-    
-    var index = tbar.items.indexOf(optionsBtn) + 1;
-    
+    if(optionsBtn) { 
+      index = tbar.items.indexOf(optionsBtn) + 1;
+    }
+
+    // allow starting the toggle to off if it hasn't been set yet:
+    if( this.grid.toggle_edit_cells_init_off && 
+        typeof this.grid.store.disable_cell_editing == 'undefined'
+    ) { this.grid.store.disable_cell_editing = true; }
+
     this.btn = new Ext.Button({
       text: this.onText,
       iconCls: this.onIconCls,
