@@ -411,7 +411,7 @@ sub _resolve_rel_obj_method {
   my ($key,$val,$rel) = split('/',$rs_method,3);
   my $Row = $self->restGetRow($key,$val);
   die usererr "No such relationship $rel at ''$rs_method''" unless ($Row->has_relationship($rel));
-  return $Row->$rel;
+  return wantarray ? (scalar $Row->$rel, $Row) : $Row->$rel;
 }
 
 sub redirect_handle_rest_rel_request {
@@ -419,7 +419,7 @@ sub redirect_handle_rest_rel_request {
   my $c = $self->c;
   
   my $mth_path = join('/',$key,$val,$rel);
-  my $RelObj = $self->_resolve_rel_obj_method($mth_path);
+  my ($RelObj, $Row) = $self->_resolve_rel_obj_method($mth_path);
   my $Src = $RelObj->result_source;
   my $class = $Src->schema->class($Src->source_name);
   
@@ -431,13 +431,35 @@ sub redirect_handle_rest_rel_request {
     my $url = try{$class->TableSpec_get_conf('open_url_multi')}
       or die usererr "No path (open_url_multi) defined to render Result Class: $class";
 
-    %{$c->req->params} = (
-      base_params => $self->json->encode({ 
-        rs_path   => $self->module_path,
-        rs_method => join('/',$key,$val,$rel)
-      })
-    );
-  
+    my $p = {
+      rs_path   => $self->module_path,
+      rs_method => join('/',$key,$val,$rel)
+    };
+
+    # ---
+    # New: For the case of a multi-relationship, attempt to resolve the reverse 
+    # relationship (i.e. the belongs_to) and set the new 'rs_lock_keys' info to
+    # declare to the target Module the fk value that must be maintained and
+    # enforced for this relationship. This is then used when adding new records
+    # and editability of the linking relationship is disabled.
+    if(my $rev_rel_info = $Row->result_source->reverse_relationship_info($rel)) {
+      my ($rev_rel, $info) = %$rev_rel_info;
+      if($info && $info->{cond}) {
+        require RapidApp::DBIC::Component::TableSpec;
+        my $cdta = RapidApp::DBIC::Component::TableSpec
+          ->parse_relationship_cond($info->{cond}) || {};
+        my @pks = $Row->result_source->primary_columns;
+        if(scalar(@pks) == 1 && $cdta->{self} && $cdta->{foreign} && $pks[0] eq $cdta->{foreign}) {
+          $p->{rs_lock_keys} = $self->json->encode({
+            $cdta->{self} => $val,
+            $rev_rel      => $val,
+          });
+        }
+      }
+    }
+    # ---
+
+    %{$c->req->params} = ( %$p, base_params => $self->json->encode( $p ) );
     $c->root_module_controller->approot($c,$url);
     return $c->detach;
   }
@@ -470,6 +492,39 @@ sub redirect_handle_rest_rel_request {
     }
   }
 }
+
+
+sub _get_rs_lock_keys {
+  my $self = shift;
+
+  my $c = RapidApp->active_request_context or return undef;
+  my $lk_enc = $c->req->params->{rs_lock_keys} or return undef;
+  try{$self->json->decode($lk_enc)}
+}
+
+
+before 'apply_store_to_extconfig' => sub {
+  my $self = shift;
+
+  if(my $lock_keys = $self->_get_rs_lock_keys) {
+    my @cols = ();
+    for my $name (keys %$lock_keys) {
+      my $Column = $self->get_column($name) or next;
+      push @cols, $name;
+      # Set the default value of the editor to the locked key value, and then
+      # set to 'disabled' to prevent the user from changing it
+      my $editor = $Column->{editor} or next;
+      $editor->{value} = $lock_keys->{$name};
+      $editor->{disabled} = \1;
+    }
+    if(scalar(@cols) > 0) {
+      # Sets each locked fk to be the first column (top of teh add form), and not editable
+      $self->apply_columns_ordered(0, map { $_ => {
+        allow_edit => \0
+      }} @cols );
+    }
+  }
+};
 
 
 # ---
