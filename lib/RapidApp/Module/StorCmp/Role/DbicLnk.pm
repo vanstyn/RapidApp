@@ -2284,9 +2284,16 @@ sub process_update_queue {
   my $self = shift;
   my @update_queue = @_;
   
+  my $lock_keys = $self->_get_rs_lock_keys;
+  my @excl = $lock_keys ? keys %$lock_keys : ();
+
   foreach my $upd (@update_queue) {
-    if($upd->{change}) {
-      $upd->{row}->update($upd->{change});
+    if(my $chg = $upd->{change}) {
+      # We simply exclude the lock_keys from the update instead of changing them, because
+      # this is safer. They should already be the same, but if they aren't, it is more
+      # likely taht the client has outdated data than the server is somehow wrong
+      exists $chg->{$_} and delete $chg->{$_} for (@excl);
+      $upd->{row}->update($chg);
     }
     elsif($upd->{rel_update}) {
       # Special handling for updates to relationship columns 
