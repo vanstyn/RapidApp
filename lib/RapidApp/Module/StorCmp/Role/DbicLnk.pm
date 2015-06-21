@@ -190,6 +190,11 @@ sub _CreateData {
   my $self = shift;
   my $data = $self->baseCreateData(@_);
   $data = $self->CreateData($data) if ($self->can('CreateData'));
+
+  if(my $lock_keys = $self->_get_rs_lock_keys) {
+    $data = { %{ $data || {} }, %$lock_keys }
+  }
+
   return $data;
 }
 
