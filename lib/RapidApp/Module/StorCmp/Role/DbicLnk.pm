@@ -508,7 +508,7 @@ sub _get_rs_lock_keys {
 }
 
 
-before 'apply_store_to_extconfig' => sub {
+before 'store_init_onrequest' => sub {
   my $self = shift;
 
   if(my $lock_keys = $self->_get_rs_lock_keys) {
