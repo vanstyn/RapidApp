@@ -11,6 +11,18 @@ BEGIN { $ENV{TMPDIR} or RapidApp::Test::EnvUtil::set_tmpdir_env() }
 use Test::More;
 use Test::HTML::Content;
 
+# ----------------
+# This is a development option to be able to run this test app
+# interactively (i.e. just like the test server script) instead
+# of actually running the tests
+if($ENV{RA_INTERACTIVE}) {
+  use Catalyst::ScriptRunner;
+  Catalyst::ScriptRunner->run('TestRA::ChinookDemo', 'Server');
+  # the above line never returns...
+  exit;
+}
+# ----------------
+
 use RapidApp::Test 'TestRA::ChinookDemo';
 
 run_common_tests();
@@ -121,6 +133,11 @@ is_deeply(
   "Got expected genre_grid store read data (empty)"
 );
 
+my $foo_get = client->browser_get_raw('/foo');
+is(
+  $foo_get => "This is user-defined :Path controller action '/foo'",
+  "Got expected content from locally-defined :Path controller action"
+);
 
 done_testing;
 

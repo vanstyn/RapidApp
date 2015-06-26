@@ -70,7 +70,19 @@ before 'COMPONENT' => sub {
 
 sub process { (shift)->approot(@_) }
 
-sub approot :Chained :PathPrefix :Args {
+# --- Update to GitHub PR #142 ---
+# SWITCHED approot FROM :Chained BACK TO ORIGINAL :Path
+#
+# It seems that :Chained actions override and take priority over :Path actions
+# and so switching approot breaks some legacy applications which define their
+# own actions using :Path(). We always want to give locally defined controllers
+# priority, and so for now we're switching just this action back to :Path. The
+# other actions which were converted from :Path to :Chained in PR #142 all still
+# seem to be working so for now they are being left as-is, and approot is now
+# the lone :Path controller action
+#
+#sub approot :Chained :PathPrefix :Args {
+sub approot :Path {
   my ($self, $c, @args) = @_;
 
   # Handle url string mode:
