@@ -706,9 +706,10 @@ Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
 Ext.ux.RapidApp.ajaxRequestContentType = function(conn,options) {
   if (!options.headers) { options.headers= {}; }
   
-  if(options.url) {
+  if(options.url && !options.pfx_applied) {
     var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
     options.url = [pfx,options.url].join('');
+    options.pfx_applied = true;
   }
   
   options.headers['X-RapidApp-RequestContentType']= 'JSON';
