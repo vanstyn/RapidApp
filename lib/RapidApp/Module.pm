@@ -114,18 +114,39 @@ sub viewport {
   $self->c->stash->{title} ||= $self->module_name;
   $self->c->stash->{config_url} ||= $self->base_url;
   if (scalar keys %{$self->c->req->params}) {
-    $self->c->stash->{config_params} ||= { %{$self->c->req->params} };
+    $self->c->stash->{config_params} //= { %{$self->c->req->params} };
   }
 }
 
 sub printview {
   my $self= shift;
   $self->c->stash->{current_view} ||= 'RapidApp::Printview';
-  $self->c->stash->{title} ||= $self->module_name;
-  $self->c->stash->{config_url} ||= $self->base_url;
-  if (scalar keys %{$self->c->req->params}) {
-    $self->c->stash->{config_params} ||= { %{$self->c->req->params} };
-  }
+  return $self->viewport;
+}
+
+sub navable {
+  my $self = shift;
+
+  # Apply common stash params:
+  $self->viewport;
+
+  my $c = $self->c;
+
+  my $url    = delete $c->stash->{config_url};
+  my $params = exists $c->stash->{config_params} ? delete $c->stash->{config_params} : {};
+
+  $c->stash->{panel_cfg} = {
+    xtype => 'apptabpanel',
+    id => 'main-load-target',
+    initLoadTabs => [{
+      closable => \0,
+      autoLoad => {
+        url    => $url,
+        params => $params
+      }
+    }]
+  };
+
 }
 
 
@@ -977,6 +998,9 @@ sub controller_dispatch {
     my $rdr_vp = $self->c->stash->{render_viewport};
     if($rdr_vp && $rdr_vp eq 'printview' && $self->can('printview')) {
       return $self->printview;
+    }
+    elsif($rdr_vp && $rdr_vp eq 'navable' && $self->can('navable')) {
+      return $self->navable;
     }
     elsif($rdr_vp && $self->can('viewport')) {
       return $self->viewport;

@@ -22,50 +22,34 @@ sub default :Chained('base') :PathPart('') :Args {
 
 sub direct :Chained('base') :Args {
   my ($self, $c, @args) = @_;
-
-  $c->req->params->{__no_hashnav_redirect} = 1;
   $c->stash->{render_viewport} = 1;
-
-  return $c->redispatch_public_path(@args);
+  $self->_redispatch_viewport($c,@args)
 }
 
 sub printview :Chained('base') :Args {
   my ($self, $c, @args) = @_;
-
-  $c->req->params->{__no_hashnav_redirect} = 1;
   $c->stash->{render_viewport} = 'printview';
-
-  return $c->redispatch_public_path(@args);
+  $self->_redispatch_viewport($c,@args)
 }
 
 sub navable :Chained('base') :Args {
   my ($self, $c, @args) = @_;
-  
-  # Render a tabpanel *only* if the path end-point is a module:
-  if( try{$c->rapidApp->rootModule->get_Module(join('/',@args))} ) {
-    # Return a one-off AppTab with a tab pointing to the supplied module 
-    # url/path. This will allow any hashnav links inside the module's
-    # content to function as expected, loading as additional tabs
-    $c->stash->{panel_cfg} = {
-      xtype => 'apptabpanel',
-      id => 'main-load-target',
-      initLoadTabs => [{
-        closable => \0,
-        autoLoad => {
-          url => join('/','',@args),
-          params => $c->req->params
-        }
-      }]
-    };
-    return $c->detach( $c->view('RapidApp::Viewport') );
-  }
-  else {
-    # The path isn't a module end-point, but still redirect into the dispatcher from
-    # here so that sub-path actions and special relative urls (like assets, etc) 
-    # still work as expected, in the same manner as 'direct' above:
-    return $c->redispatch_public_path(@args);
-  }
+  $c->stash->{render_viewport} = 'navable';
+  $self->_redispatch_viewport($c,@args)
 }
+
+sub _redispatch_viewport {
+  my ($self, $c, @args) = @_;
+
+  $c->stash->{config_url}    = join('/','',@args);
+  $c->stash->{config_params} = { %{$c->req->params} };
+
+  $c->req->params->{__no_hashnav_redirect} = 1;
+  
+  return $c->redispatch_public_path(@args);
+}
+
+
 
 
 no Moose;
