@@ -41,22 +41,30 @@ sub printview :Chained('base') :Args {
 sub navable :Chained('base') :Args {
   my ($self, $c, @args) = @_;
   
-  # Return a one-off AppTab with a tab pointing to the supplied module 
-  # url/path. This will allow any hashnav links inside the module's
-  # content to function as expected, loading as additional tabs
-  $c->stash->{panel_cfg} = {
-    xtype => 'apptabpanel',
-    id => 'main-load-target',
-    initLoadTabs => [{
-      closable => \0,
-      autoLoad => {
-        url => join('/','',@args),
-        params => $c->req->params
-      }
-    }]
-  };
-  
-  return $c->detach( $c->view('RapidApp::Viewport') );
+  # Render a tabpanel *only* if the path end-point is a module:
+  if( try{$c->rapidApp->rootModule->get_Module(join('/',@args))} ) {
+    # Return a one-off AppTab with a tab pointing to the supplied module 
+    # url/path. This will allow any hashnav links inside the module's
+    # content to function as expected, loading as additional tabs
+    $c->stash->{panel_cfg} = {
+      xtype => 'apptabpanel',
+      id => 'main-load-target',
+      initLoadTabs => [{
+        closable => \0,
+        autoLoad => {
+          url => join('/','',@args),
+          params => $c->req->params
+        }
+      }]
+    };
+    return $c->detach( $c->view('RapidApp::Viewport') );
+  }
+  else {
+    # The path isn't a module end-point, but still redirect into the dispatcher from
+    # here so that sub-path actions and special relative urls (like assets, etc) 
+    # still work as expected, in the same manner as 'direct' above:
+    return $c->redispatch_public_path(@args);
+  }
 }
 
 
