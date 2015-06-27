@@ -463,6 +463,10 @@ Ext.override(Ext.form.DateField, {
 
         if(this.ownerCt) {
           var xtype = this.ownerCt.getXType();
+          if(xtype && xtype == 'xdatetime2' && this.ownerCt.ownerCt){
+            // if we're part of a datetime, consider its ownerCt:
+            xtype = this.ownerCt.ownerCt.getXType();
+          }
           if(xtype && xtype == 'form') {
             // If we're in a form, we want to start the toggle state on, so that the
             // first click will will trigger instead of the second. The reason is that
