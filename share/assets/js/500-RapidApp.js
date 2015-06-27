@@ -2567,7 +2567,31 @@ Ext.ux.RapidApp.form.DateTime2 = Ext.extend(Ext.ux.form.DateTime ,{
   // it hasn't and producing a db update
   getValue: function() {
     var dt = this.dateValue ? new Date(this.dateValue) : null;
+
+    // --- NEW: check to see if the formatted date+time value (i.e. the only section
+    // of the value the user has access to modify) has actually changed since it
+    // was set, and if it hasn't, return the original set value. This prevents us
+    // from changing the time portion val of '12:23:45' to '12:23:00' by accident when the
+    // timeFormat does not contain the 'seconds' field. We test that '12:23' == '12:23'
+    // and then return the original, internally stored value '12:23:45' (which keeps
+    // the field from changing in the datastore and triggering a server update)
+    if(dt && Ext.isString(this._rawLastSetValue)) {
+      var lDt = Date.parseDate(this._rawLastSetValue, this.hiddenFormat);
+      if(lDt) {
+        var dispFormat = [this.dateFormat,this.timeFormat].join(' ');
+        if(dt.format(dispFormat) == lDt.format(dispFormat)) {
+          return this._rawLastSetValue;
+        }
+      }
+    }
+    // ---
+
     return dt ? dt.format(this.hiddenFormat) : '';
+  },
+
+  setValue: function(val) {
+    this._rawLastSetValue = val;
+    return Ext.ux.RapidApp.form.DateTime2.superclass.setValue.call(this,val);
   }
 });
 Ext.reg('xdatetime2', Ext.ux.RapidApp.form.DateTime2);
