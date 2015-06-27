@@ -2566,6 +2566,7 @@ Ext.ux.RapidApp.form.DateTime2 = Ext.extend(Ext.ux.form.DateTime ,{
   // this prevents the system seeing the value as changed when
   // it hasn't and producing a db update
   getValue: function() {
+    this.updateValue();
     var dt = this.dateValue ? new Date(this.dateValue) : null;
 
     // --- NEW: check to see if the formatted date+time value (i.e. the only section
@@ -2592,6 +2593,14 @@ Ext.ux.RapidApp.form.DateTime2 = Ext.extend(Ext.ux.form.DateTime ,{
   setValue: function(val) {
     this._rawLastSetValue = val;
     return Ext.ux.RapidApp.form.DateTime2.superclass.setValue.call(this,val);
+  },
+  
+  // The TimeField is a combo, so we need to pass in calls to assertValue(), which
+  // is called by the EditorGrid when hitting ENTER, TAB, etc. Without this, hitting
+  // ENTER after manually typing a time value will not persist the change. We also
+  // needed to call updateValue() before getValue (see above) for this to work.
+  assertValue: function() {
+    this.tf.assertValue();
   }
 });
 Ext.reg('xdatetime2', Ext.ux.RapidApp.form.DateTime2);
