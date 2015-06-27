@@ -73,13 +73,14 @@ sub process { (shift)->approot(@_) }
 # --- Update to GitHub PR #142 ---
 # SWITCHED approot FROM :Chained BACK TO ORIGINAL :Path
 #
-# It seems that :Chained actions override and take priority over :Path actions
-# and so switching approot breaks some legacy applications which define their
-# own actions using :Path(). We always want to give locally defined controllers
-# priority, and so for now we're switching just this action back to :Path. The
-# other actions which were converted from :Path to :Chained in PR #142 all still
-# seem to be working so for now they are being left as-is, and approot is now
-# the lone :Path controller action
+# 'approot' is the special controller action which is the catch-all that hands
+# off the dispatch into the Module controller hierarchy, which is a very non-standard
+# setup in terms of the Catalyst dispatcher. The switch to :Chained in PR #142
+# for approot results in it getting higher priority than locally defined :Path
+# controllers - which we don't want - so for now we're switching just this action 
+# back to :Path. The rest of the controller actions that were switched to :Chained 
+# in PR #142 are working fine and will be kept as-is, since :Chained is still preferred.
+# TODO: revisit this again to see if there is a better solution...
 #
 #sub approot :Chained :PathPrefix :Args {
 sub approot :Path {
