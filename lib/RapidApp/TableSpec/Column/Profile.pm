@@ -184,7 +184,7 @@ sub DEFAULT_PROFILES {{
       xtype => 'xdatetime2',
       dateFormat => 'Y-m-d',
       timeFormat => 'H:i', # default 'g:i A'
-      timeWidth => 55,
+      timeWidth => 60,
       dateConfig => { plugins => ['form-relative-datetime'] }, 
       minWidth => 200,
       #editable => \0  #<-- force whole-field click/select
