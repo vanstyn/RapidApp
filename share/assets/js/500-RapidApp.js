@@ -2508,6 +2508,12 @@ Ext.ux.RapidApp.form.DateTime2 = Ext.extend(Ext.ux.form.DateTime ,{
 		this.relayEvents(this.df, ['change','select']);
 		this.relayEvents(this.tf, ['change','select']);
 		this.setMinMax();
+
+    // Disable the focus() method in the date field to prevent extra/conflicting focus
+    // calls between the time field and the date field. We're already handling focus()
+    // in this outer class. This fixes the problem where you have to click the time field
+    // twice for it to get focus
+    this.df.focus = Ext.emptyFn;
 	},
 	
 	setMinMax: function(newDate) {
