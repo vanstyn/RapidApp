@@ -301,7 +301,7 @@ sub _autofield_processor {
       
       my @block_types = qw(cas-image-field);
       my %block_types = map {$_=>1} @block_types;
-      $self->{_div_block} = 1 if($block_types{$config->{xtype}});
+      $self->{_div_block} = 1 if($config->{xtype} && $block_types{$config->{xtype}});
       
       # read-only:
       return $self->div_wrapper('{' . $display . '}') if ($ro);
