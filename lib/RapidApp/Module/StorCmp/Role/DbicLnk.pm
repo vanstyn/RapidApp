@@ -301,6 +301,7 @@ sub record_pk_cond {
   return \%cond;
 }
 
+# TODO: deprecate/remove in favor of better _ra-rel-mnt_ solution - GitHub Issue #153
 around '_maybe_special_path_redirect' => sub {
   my ($orig, $self, $opt, @subargs)= @_;
 

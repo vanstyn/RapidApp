@@ -1019,6 +1019,8 @@ sub controller_dispatch {
   
 }
 
+
+# TODO: deprecate/remove in favor of better _ra-rel-mnt_ solution - GitHub Issue #153
 sub _maybe_special_path_redirect {
   my ($self, $opt, @subargs)= @_;
   my $c = $self->c;

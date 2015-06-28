@@ -4980,7 +4980,7 @@ Ext.ux.RapidApp.renderCasLink = function(v){
       if (fnparts.length > 1) {
         cls.push(fnparts.pop().toLowerCase());
       }
-      var url = ['simplecas/fetch_content/',sha1,'/',filename].join('');
+      var url = ['_ra-rel-mnt_/simplecas/fetch_content/',sha1,'/',filename].join('');
       return [
         '<div class="',cls.join(' '),'">',
           '<span>',filename,'</span>',
@@ -5035,7 +5035,7 @@ Ext.ux.RapidApp.renderCasImg = function(v) {
     if(parts.length <= 2) {
       // Just for reference, this is what we expect:
       //var sha1 = parts[0], filename = parts[1] || 'image.png';
-      url = ['simplecas/fetch_content/',v].join('');
+      url = ['_ra-rel-mnt_/simplecas/fetch_content/',v].join('');
     }
     else {
       // unexpected currently...
