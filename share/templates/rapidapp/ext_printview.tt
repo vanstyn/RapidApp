@@ -11,8 +11,12 @@
 
         var BodyEl = Ext.getBody();
         BodyEl.addClass('rapidapp-printview');
+        
+        var ldMask = new Ext.LoadMask(BodyEl, {msg:"Loading Printview..."});
+        ldMask.show();
 
         Ext.Ajax.request({
+            callback: function(){ ldMask.hide() },
             url: config_url,
             params: config_params,
 				headers: { 'X-RapidApp-View': 'print' },
