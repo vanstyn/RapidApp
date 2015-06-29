@@ -1421,10 +1421,12 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 						var has_changes = cmp.store.hasAnyPendingChanges();
 						btn.setDisabled(!has_changes);
 
-						// ---- Add/remove '*' suffix from the title based on the saved/unsaved status:
-						if(!title_parent) { return; }
-            title_parent.setNewTitle(undefined, has_changes);
-						// ----
+            // ---- Add/remove '*' suffix from the title based on the saved/unsaved status:
+            if(title_parent && Ext.isFunction(title_parent.setNewTitle)) { 
+              title_parent.setNewTitle(undefined, has_changes);
+            }
+            else { return; }
+            // ----
 					});
 				});
 				
