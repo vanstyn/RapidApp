@@ -79,10 +79,20 @@ sub run_common_tests {
     '/assets/rapidapp/misc/static/images/rapidapp_powered_logo_tiny.png',
     "Fetched RapidApp logo from the Misc asset controller"
   );
+  
+  action_ok(
+    '/any/prefix/path/_ra-rel-mnt_/assets/rapidapp/misc/static/images/rapidapp_powered_logo_tiny.png',
+    "Fetched RapidApp logo from the Misc asset controller (via _ra-rel-mnt_)"
+  );
 
   action_notfound(
     '/assets/rapidapp/misc/static/some/bad/file.txt',
     "Invalid asset path not found as expected"
+  );
+  
+  action_notfound(
+    '/any/prefix/path/_ra-rel-mnt_/assets/rapidapp/misc/static/some/bad/file.txt',
+    "Invalid asset path not found as expected (via _ra-rel-mnt_)"
   );
 
 }
