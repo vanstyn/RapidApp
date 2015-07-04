@@ -149,11 +149,11 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
       $module_name =~ s/\:\:/_/g;
       $self->apply_init_modules( $module_name => {
         class => $grid_class,
-        params => { 
+        params => {
+          require_role => $require_role,
           %$cust_merged, 
           ResultSource => $Source, 
           source_model => $model . '::' . $source,
-          require_role => $require_role
         }
       });
       
