@@ -4544,7 +4544,8 @@ Ext.ux.RapidApp.DbicRelRestRender = function(c) {
 	var key_value = c.record.data[c.key_col];
 
   // multi-rel: no link for 0 records:
-  if(c.multi_rel && c.value == '0') { return disp; }
+  // UPDATE: *DO* show links for 0 now that these can be used to add new related records
+  //if(c.multi_rel && c.value == '0') { return disp; }
 	
 	if(!c.value) { 
 		if(!disp && !key_value) {
