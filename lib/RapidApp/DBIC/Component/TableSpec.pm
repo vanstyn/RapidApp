@@ -534,6 +534,7 @@ sub default_TableSpec_cnf_columns {
         $cols->{$col}->{profiles} ||= [];
         push @{$cols->{$col}->{profiles}}, 'relcol';
         push @{$cols->{$col}->{profiles}}, 'virtual_source' if ($is_virtual);
+        push @{$cols->{$col}->{profiles}}, 'multirel' if ($info->{attrs}->{accessor} eq 'multi');
 			}
 			next;
 		}

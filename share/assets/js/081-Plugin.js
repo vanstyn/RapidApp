@@ -2275,7 +2275,7 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 			if (o.data[c.name]) {
 				p.value = o.data[c.name];
 				if(this.orig_renderer_map[func]) {
-					p.value = c.renderer(o.data[c.name], p, o);
+					p.value = c.renderer(o.data[c.name]);
 				}
 				
 				if(o.data[c.name] == 'BadFunc!' || o.data[c.name] == 'FuncError!') {

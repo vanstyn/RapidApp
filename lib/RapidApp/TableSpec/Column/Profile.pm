@@ -276,6 +276,12 @@ sub DEFAULT_PROFILES {{
   },
   hidden => {
     no_column => \1, no_quick_search => \1, no_multifilter => \1
+  },
+  multirel => {
+    multifilter_type => 'number',
+    no_quick_search => \1,
+    editor => '',
+    summary_functions => \@number_summary_funcs
   }
 
 }};

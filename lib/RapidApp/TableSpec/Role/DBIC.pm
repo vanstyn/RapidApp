@@ -262,9 +262,6 @@ sub add_db_column($@) {
 		# the future, but it will require a bit of effort (see the complex/custom code
 		# in multifilters with the conversion into a 'HAVING' clause
 		$opt{no_quick_search} = \1;
-		
-		# Also, need to disable column summaries (added 2012-10-13 by HV):
-		$opt{no_summary} = \1;
 	}
 	# --
 	
@@ -1564,10 +1561,11 @@ sub get_relationship_column_cnf {
 	# off quick searching. This *could* be supported in the future; it would require
 	# some special coding. It is probably not something that should be on per
 	# default anyway, because searching on a virtual column could be slow 
-	# (see the complex HAVING stuff for multifilters)
+	# (see the complex HAVING stuff for multifilters)**
 	$conf = { %$conf,
+    # TODO: this can probably be enabled much easier now, just like column summaries (#93)
+    #   the complex 'HAVING' stuff mentioned above has since been unfactored (#51)
 		no_quick_search => \1,
-		no_summary => \1, #<-- also disable column summaries
 	} if (try{$self->ResultSource->related_class($rel)->has_virtual_column($conf->{displayField})});
 	#
 	# ---
@@ -1828,15 +1826,6 @@ sub get_multi_relationship_column_cnf {
 		if ($opt{relationship_cond_data}->{attrs}->{m2m_attrs});
 	
 	my $conf = \%opt;
-	
-
-	#$conf->{no_multifilter} = \1;
-	$conf->{multifilter_type} = 'number';
-	
-	$conf->{no_quick_search} = \1;
-	$conf->{no_summary} = \1;
-	
-	$conf->{editor} = '';
 	
 	my $rel_data = clone($conf->{relationship_cond_data});
 	

@@ -4540,6 +4540,15 @@ Ext.ux.RapidApp.num2pct = function(num) {
 Ext.ux.RapidApp.NO_DBIC_REL_LINKS = false;
 
 Ext.ux.RapidApp.DbicRelRestRender = function(c) {
+  // -- New: support case of no record object and render the disp/value outright. This
+  // is an unusual use case, but could happen if the user calls the column 'renderer'
+  // manually with a single value argument (see server-side code for the renderer 
+  // which wraps/calls this function). This is the best way to handle this case:
+  if(typeof c.record == 'undefined') {
+    return Ext.ux.showNull(c.disp || c.value);
+  }
+  // --
+
 	var disp = c.disp || c.record.data[c.render_col] || c.value;
 	var key_value = c.record.data[c.key_col];
 

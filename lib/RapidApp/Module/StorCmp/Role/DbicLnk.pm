@@ -1036,40 +1036,13 @@ sub calculate_column_summaries {
   }
   
   try {
-  
-    my $agg_row;
-    if($Rs->{attrs}->{having}) {
-      # ---
-      # Special support for queries with HAVING clause:
-      #  This is heavily tied in with the custom building of
-      #  'having' in this class and is slated to be refactored at
-      #  some point... Conditions are converted from 'where' to
-      #  'having' for virtual columns. For this case, we need to
-      #  wrap in a subselect because the having relies on the AS
-      #  within the select, which is replaced for the summary query.
-      #  This special handling finally fixes Summary Functions when
-      #  there is a virtual column setup in MultiFilters
-      $agg_row = $self->_chain_search_rs($Rs,undef,{
-        page => undef,
-        rows => undef,
-        order_by => undef,
-      })->as_subselect_rs->search_rs(undef,{
-        select => $select,
-        as => $as,
-      })->first or return;
-      # ---
-    }
-    else {
-      $agg_row = $self->_chain_search_rs($Rs,undef,{
-        page => undef,
-        rows => undef,
-        order_by => undef,
-        select => $select,
-        as => $as
-      })->first or return;
-    }
-    
-    $ret->{column_summaries} = { $agg_row->get_columns, %extra };
+    my $agg = $self->_chain_search_rs($Rs,undef,{
+      rows => 1, page => undef, order_by => undef,
+      select => $select, as => $as,
+      result_class => 'DBIx::Class::ResultClass::HashRefInflator'
+    })->first or return;
+
+    $ret->{column_summaries} = { %$agg, %extra };
   }
   catch {
     $self->c->log->error("$_");
@@ -1082,12 +1055,31 @@ sub get_col_summary_select {
   my $col = shift;
   my $func = shift;
   
+  # ---
+  # NEW: Look for and extract the SQL literal from the special ''/-as structure
+  # which is how virtual columns appear. This is the structure needed for the
+  # select, we need to strip this wrapper out for use here
+  $col = $col->{''} if (
+       ref($col) && ref($col) eq 'HASH'
+    && scalar(keys $col) == 2
+    && $col->{''} && $col->{'-as'}
+  );
+  # Normalize to a ScalarRef from several known nested structures (multi-rel vs virtual)
+  if(ref($col)) {
+    $col = $$col     if (ref($col) eq 'REF');
+    $col = $col->[0] if (ref($col) eq 'ARRAY');
+    $col = \"$col" unless (ref $col);
+  }
+  # ---
+
   $func =~ s/^\s+//;
   $func =~ s/\s+$//;
   
   # Simple function name
   return { uc($func) => $col } if ($func =~ /^[a-zA-Z]+$/);
   
+  $col = $$col if (ref($col) && ref($col) eq 'SCALAR');
+
   # Replace macro string '{x}' with the column name
   $func =~ s/\{x\}/${col}/g;
   
