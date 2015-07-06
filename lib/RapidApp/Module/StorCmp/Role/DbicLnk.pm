@@ -1061,7 +1061,7 @@ sub get_col_summary_select {
   # select, we need to strip this wrapper out for use here
   $col = $col->{''} if (
        ref($col) && ref($col) eq 'HASH'
-    && scalar(keys $col) == 2
+    && scalar(keys %$col) == 2
     && $col->{''} && $col->{'-as'}
   );
   # Normalize to a ScalarRef from several known nested structures (multi-rel vs virtual)
