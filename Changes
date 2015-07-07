@@ -1,5 +1,21 @@
 Revision history for RapidApp
 
+1.0600 2015-07-06
+    - Column Summaries on virtual (including multi-rel) columns - #93 (VANSTYN)
+    - Add Row via REST multi-rel pre-sets parent FK (rs_lock_keys') (VANSTYN)
+    - Multi-rel columns show open link even if the count is 0 (VANSTYN)
+    - Fix ability to set 'require_role' in grid_configs (VANSTYN)
+    - Add magic relative path keyword '_ra-rel-mnt_' - #153 (VANSTYN)
+    - Fix asset paths/links for odd module dispatch - also #153 (VANSTYN)
+    - Module 'printview' now shows loading indicator (VANSTYN)
+    - Fix misc Perl and JS warn bugs (VANSTYN)
+    - More 'datetime' column editor improvements (VANSTYN)
+    - Fix broken local app :Path() actions - ref PR #142 (VANSTYN)
+    - Fix bug in reauth when app is mounted at sub-url (VANSTYN)
+    - DirectCmp module dispatch refactors/improvements (VANSTYN)
+    - grid-toggle-edit-cells - initiation bugfixes (VANSTYN)
+    - total_count via pk col instead of count(*) in Pg (for speed) (VANSTYN)
+
 1.0502 2015-06-16
     - rdbic.pl: ADDED EXPERIMENTAL limit/exclude OPTS - #152 (VANSTYN/TIMB)
     - Require DBIx::Class::Schema::Loader 0.07043 (dist.ini)
