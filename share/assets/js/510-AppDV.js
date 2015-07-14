@@ -89,8 +89,29 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	refresh: function(){
 		Ext.destroy(this.components);
 		this.components = [];
-		Ext.ux.RapidApp.AppDV.DataView.superclass.refresh.call(this);
-		this.renderItems(0, this.store.getCount() - 1);
+
+    //Ext.ux.RapidApp.AppDV.DataView.superclass.refresh.call(this);
+    // --- Orig refresh(), with modified 'emptyText' behavior (GitHub Issue #157)---
+    this.clearSelections(false, true);
+    var el = this.getTemplateTarget(),
+        records = this.store.getRange();
+        
+    el.update('');
+    // We do not apply the 'emptyText' if it is empty (new for GH #157):
+    if(records.length < 1 && this.emptyText && this.emptyText != ''){
+        if(!this.deferEmptyText || this.hasSkippedEmptyText){
+            el.update(this.emptyText);
+        }
+        this.all.clear();
+    }else{
+        this.tpl.overwrite(el, this.collectData(records, 0));
+        this.all.fill(Ext.query(this.itemSelector, el.dom));
+        this.updateIndexes(0);
+    }
+    this.hasSkippedEmptyText = true;
+    // ---
+
+    this.renderItems(0, this.store.getCount() - 1);
 	},
 	
 	onUpdate: function(ds, record){
