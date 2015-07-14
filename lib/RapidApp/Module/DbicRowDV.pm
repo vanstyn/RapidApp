@@ -36,8 +36,14 @@ sub set_default_tab_icon {
 
 has '_template_file', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
-  my $File = file( $self->tt_include_path, $self->template );
-  -e $File ? $File : die "DbicDV template not found ($File)";
+  for my $path (split(/\:/,$self->tt_include_path)) {
+    my $File = file( $path, $self->template );
+    return $File if (-e $File);
+  }
+  die join('',
+    "DbicRowDV: template '", $self->template,"' not found (looked in: '",
+    $self->tt_include_path,"')"
+  );
 }, isa => 'Path::Class::File';
 
 has '+tt_file', required => 0;
