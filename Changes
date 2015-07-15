@@ -1,5 +1,9 @@
 Revision history for RapidApp
 
+1.0601 2015-07-14
+    - DbicRowDV: fix bug in the way tt_include_path is parsed (VANSTYN)
+    - AppDV: fix rendering bug with zero records - #157 (VANSTYN)
+
 1.0600 2015-07-06
     - Column Summaries on virtual (including multi-rel) columns - #93 (VANSTYN)
     - Add Row via REST multi-rel pre-sets parent FK (rs_lock_keys') (VANSTYN)
