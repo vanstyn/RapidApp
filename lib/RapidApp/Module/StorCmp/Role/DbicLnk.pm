@@ -83,6 +83,11 @@ has 'natural_column_order', is => 'ro', isa => 'Bool', default => 1;
 # This only makes sense in the context of a single row view, not a set/grid
 has 'allow_restful_queries', is => 'ro', isa => 'Bool', default => 0;
 
+# Expose the DatStor 'reload_on_save' option so the user can turn it on
+# TODO - this is a stop-gap until the DatStor as a separate module design
+# can be refactored to make it easier to apply store aoptions in general
+has 'reload_on_save', is => 'ro', isa => 'Bool', default => 0;
+
 # Generate a param string unique to this module by URL/path. This only needs to be unique
 # among modules whose ->content may be rendered within the same request, which is only
 # being done for good measure
@@ -2119,7 +2124,7 @@ before DataStore2_BUILD => sub {
   
   my $store_params = {
     store_autoLoad => 1,
-    reload_on_save => 0,
+    reload_on_save => $self->reload_on_save,
     remoteSort => \1,
     store_fields => \@store_fields
   };
