@@ -18,6 +18,19 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		return this;
 	},
 	
+  // collectData() is called whenever rendering/refreshing the template:
+  collectData: function() {
+    // New: Save the latest response data within the XTemplate object via the
+    // reference keys which are now made available via DataStorePlus. This
+    // enables the template environment to get this data via '[{this.resData}]'
+    try{
+      this.tpl.resData = this.store.lastJsonData
+        // The lastJsonData might not be populated on the first load, for this 
+        // case,   // reach into the lastResponse, which is also now tracked, and decode it
+        || Ext.decode(this.store.proxy.lastResponse.responseText);
+    }catch(err){};
+    return Ext.ux.RapidApp.AppDV.DataView.superclass.collectData.apply(this,arguments);
+  },
   
   getLoadMaskEl: function() {
     var El = this.getEl();
@@ -70,6 +83,13 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		},this);
 		
 		this.on('beforeselect',this.onBeforeselect,this);
+    
+    if(this.refresh_on_save) {
+      this.store.on('write',function(){
+        this.refresh.apply(this,arguments);
+      },this);
+    }
+    
 	},
 	
 	onBeforeselect: function() {
