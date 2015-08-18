@@ -1140,6 +1140,39 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
         store.undoChanges.call(store);
       }
     },store);
+    
+    
+    // ------
+    //  NEW: track the last response AND decoded data in a common location for both read/write:
+    //
+    // Here we're hooking into the store events to capture the already decoded json data
+    store.lastJsonData = null;
+    store.on('load',function(store) {
+      store.lastJsonData = store.reader.jsonData;
+    },this);
+    store.on('write',function(store,action,result,res) {
+      if(res && res.raw) {
+        store.lastJsonData = res.raw;
+      }
+    },this);
+    
+    // Here we're reaching further down into the stack to capture the real Ajax response object
+    // which is not available by hooking the store 'load' event, as we're doing above. The reason
+    // we are doing both of these is to make all of the data available w/o having to decode the
+    // responseText twice. Since this is deeper, lastResponse is available slighter sooner than 
+    // lastJsonData. lastJsonData (above) should be the same as: Ext.decode(lastResponse.responsetext)
+    if(store.proxy && store.proxy instanceof Ext.data.HttpProxy) {
+      store.proxy.lastResponse = null;
+      store.proxy.onRead = function(action, o, response) {
+        this.lastResponse = response;
+        return this.__proto__.onRead.apply(this,arguments);
+      };
+      store.proxy.onWrite = function(action, o, response) {
+        this.lastResponse = response;
+        return this.__proto__.onWrite.apply(this,arguments);
+      };
+    }
+    // ------
 	},
 	
 	// Only applies to Editor Grids implementing the 'beforeedit' event
