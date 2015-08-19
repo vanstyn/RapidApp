@@ -15,6 +15,8 @@ use RapidApp::Module::AppDV::TTController;
 
 use HTML::TokeParser::Simple;
 
+has 'refresh_on_save', is => 'ro', isa => 'Bool', default => 0, traits => ['ExtProp'];
+
 # If true, the content will be parsed for a <title> tag to set on the tab in
 # the same manner as this works on the JavaScript side for plain html content
 has 'parse_html_tabTitle', is => 'ro', isa => 'Bool', default => 1;

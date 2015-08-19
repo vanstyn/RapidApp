@@ -5,6 +5,8 @@ use Moose;
 
 extends 'RapidApp::Module';
 
+use RapidApp::Module::Meta::Trait::ExtProp;
+
 use RapidApp::Util qw(:all);
 
 # New: ability to programatically set the Ext panel header/footer
@@ -76,6 +78,10 @@ sub BUILD {
   $self->apply_extconfig( 
     require_role => $self->require_role
   ) if ($self->require_role);
+
+  foreach my $attr ($self->meta->get_all_attributes) {
+    $attr->_apply_ext_value($self) if ($attr->does('ExtProp'));
+  }
 
 }
 
