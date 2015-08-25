@@ -192,19 +192,17 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
   cmpConfig: {},
   update_cmpConfig: null,
   
-  onAutoLoadFailure: function(el,response) {
-    // --- RapidApp Exceptions are handled in global Ajax handlers:
-    if(
-      response && Ext.isFunction(response.getResponseHeader) &&
-      response.getResponseHeader('X-RapidApp-Exception')
-    ) { return; }
-    // ---
+  errorDataForResponse: function(response) {
+    var opt = { 
+      tabTitle: '<span style="color:gray;">(load failed)</span>',
+      tabIconCls: 'ra-icon-warning' 
+    };
     
     var retry_text = [
      'Please try again later.&nbsp;&nbsp;',
      '<div style=height:20px;"></div>',
      '<span style="font-size:.7em;">',
-     '<i>If you continue to receive this message, please contact your ',
+     '<i style="white-space:normal;">If you continue to receive this message, please contact your ',
      'System Administrator.</i></span>',
      '<div class="retry-foot">',
       '<center>',
@@ -216,21 +214,18 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
      '</div>'
     ].join(' ');
     
-    var title = 'Load Request Failed:';
-    var msg = '<div style="padding:10px;font-size:1.3em;color:navy;">&nbsp;&nbsp;' +
+    opt.title = 'Load Request Failed:';
+    opt.msg = '<div style="padding:10px;font-size:1.3em;color:navy;">&nbsp;&nbsp;' +
      response.statusText + 
      '&nbsp;</div>' +
      '<br>' + retry_text;
-    var opt = { 
-      tabTitle: '<span style="color:gray;">(load failed)</span>',
-      tabIconCls: 'ra-icon-warning' 
-    };
+    
     
     // All-purpose timeout message:
     if(response.isTimeout) {
       opt.tabTitle = '<span style="color:gray;">(timed out)</span>';
-      title = 'Load Request Timeout';
-      msg = 'The page/content load request timed out.<br><br>Possible causes:<br>' +
+      opt.title = 'Load Request Timeout';
+      opt.msg = 'The page/content load request timed out.<br><br>Possible causes:<br>' +
        '<ol style="list-style:circle inside;padding:20px;font-size:.8em;color:navy;">' +
        '<li>Connection problem. (check to make sure you can access other sites)</li>' +
        '<li>The server may be responding slowly due to an unusually high load.</li>' +
@@ -238,7 +233,21 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
        '</ol>' + retry_text;
     }
     
-    return this.setErrorBody(title,msg,opt);
+    return opt;
+  
+  },
+  
+  onAutoLoadFailure: function(el,response) {
+    // --- RapidApp Exceptions are handled in global Ajax handlers:
+    if(
+      response && Ext.isFunction(response.getResponseHeader) &&
+      response.getResponseHeader('X-RapidApp-Exception')
+    ) { return; }
+    // ---
+    
+    var opt = this.errorDataForResponse(response);
+
+    return this.setErrorBody(opt.title,opt.msg,opt);
   },
 
   // Save the ID of the AutoPanel in the Updater object for referencing if
@@ -463,13 +472,9 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
     this.insert(0,conf);
     this.doLayout();
   },
-
-  setErrorBody: function(title,msg,opt) {
-    opt = opt || {};
-    opt = Ext.apply({
-      tabTitle: 'Load Failed',
-      tabIconCls: 'ra-icon-cancel',
-      html: [
+  
+  htmlForError: function(title,msg) {
+    return [
         '<div class="ra-autopanel-error">',
           '<div class="ra-exception-heading">',
             title,
@@ -483,7 +488,15 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
           '</div>',
           '<div class="msg">',msg,'</div>',
         '</div>'
-      ].join('')
+      ].join('');
+  },
+
+  setErrorBody: function(title,msg,opt) {
+    opt = opt || {};
+    opt = Ext.apply({
+      tabTitle: 'Load Failed',
+      tabIconCls: 'ra-icon-cancel',
+      html: this.htmlForError(title,msg)
     },opt);
     
     opt.bodyConf = opt.bodyConf || {
@@ -896,10 +909,51 @@ Ext.ux.RapidApp.loadAsyncBoxes = function(Target) {
       El.dom.innerHTML = '';
       return Ext.ux.RapidApp.loadAsyncBoxes(Target);
     };
+    
+    // Hook to reload on 'ra-autopanel-reloader' clicks, just like AutoPanel
+    if(!El.reloadClickListener) {
+      El.reloadClickListener = function(e,t,o) {
+        var target = e.getTarget(null,null,true);
+        if(target && target.hasClass('ra-autopanel-reloader')) {
+          e.stopEvent(); 
+          reloadFn.call(El);
+        }
+      };
+      El.on('click',El.reloadClickListener,El);
+    }
 
     var failure = function(response,options) {
-      // TODO ....
     
+      // re-use markup code from AutoPanel:
+      var opt  = Ext.ux.AutoPanel.prototype.errorDataForResponse(response);
+      var html = Ext.ux.AutoPanel.prototype.htmlForError(opt.title,opt.msg);
+      
+      var size = El.getSize();
+      
+      var div = document.createElement('div');
+      var errEl = new Ext.Element(div);
+      
+      var height = size.height - 18;
+      var width  = size.width  - 18;
+      if(width  < 80) { width  = 80; }
+      if(height < 30) { height = 30; }
+      
+      errEl.setSize(width,height);
+
+      errEl.setStyle({ 
+        'position'    : 'relative', 
+        'overflow'    : 'auto',
+        'white-space' : 'nowrap'
+      });
+      
+      errEl.dom.innerHTML = html;
+      
+      El.dom.innerHTML = '';
+      El.appendChild(errEl); // must already be appened before we call boxWrap()
+      errEl.boxWrap(); // apply same styles as panel 'frame' option
+      
+      loadMask.hide();
+
     };
     
     var success = function(response,options) {
