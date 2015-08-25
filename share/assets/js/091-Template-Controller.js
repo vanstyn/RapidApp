@@ -29,11 +29,11 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
       var target = event.getTarget(null,null,true);
       var El = new Ext.Element(target);
       if (El.hasClass('edit')) {
-        var tplEl = El.parent('div.ra-template');
+        var tplEl = El.up('div.ra-template',1); // only consider immediate parent
         if (tplEl) { return this.editTplEl(tplEl); }
       }
       else if (El.hasClass('create')) {
-        var tplEl = El.parent('div.ra-template');
+        var tplEl = El.up('div.ra-template',2); // only consider immediate parent + 1
         if (tplEl) { return this.createTplEl(tplEl); }
       }
     },this,{stopEvent:true});
