@@ -36,7 +36,7 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
         var tplEl = El.parent('div.ra-template');
         if (tplEl) { return this.createTplEl(tplEl); }
       }
-    },this);
+    },this,{stopEvent:true});
 	},
   
   getTplElMeta: function(tplEl) {
@@ -101,6 +101,11 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
   },
   
   tabReload: function() {
+  
+    // New: if our own panel supports 'reload' -- use it
+    if(Ext.isFunction(this.panel.reload)) {
+      return this.panel.reload.call(this.panel);
+    }
     
     // Needed to keep a reference to the ownerCt for next time:
     var ownerCt = this.ownerCt || this.panel.ownerCt;

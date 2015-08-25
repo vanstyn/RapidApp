@@ -508,3 +508,15 @@ Ext.form.HtmlEditor.prototype.getDoc = function() {
   return win ? win.document : null;
 }
 
+// NEW: hook 'afterrender' on _every_ component class to call the function
+// to look for and load our special 'ra-async-box' tags (EXPERIMENTAL)
+var orig_Component_initComponent = Ext.Component.prototype.initComponent;
+Ext.override(Ext.Component,{
+  initComponent: function() {
+    orig_Component_initComponent.apply(this,arguments);
+    this.on('afterrender',function() {
+      Ext.ux.RapidApp.loadAsyncBoxes(this);
+    },this,{delay:200});
+  }
+});
+

@@ -842,41 +842,121 @@ Ext.ux.RapidApp.newConn = function(config) {
 /* ------------------------------------------------------------------------------------- */
 
 
-/* This is an experimental function to dynamically scan and convert html
-   elements into AutoPanels based on a special css selector class name
-   and attemping to decode the elements innerHTML as a JSON object to
-   use as 'autoLoad' for the AutoPanel. The function is working as designed
-   and expected, however it is not used anyplace yet, and may prove to
-   not be useful and be removed later. The original thought was to use
-   within normal HTML content, however, without the correct CSS, ExtJS
-   panels/grids don't render correctly, so those cases are now being pursued
-   using iFrames. However, I'm not deleting this yet because it may be
-   helpful later on...                                                        */
-Ext.ux.RapidApp.loadAsyncAutoPanels = function(Element) {
-  Element = Element || Ext.getBody();
-  var nodes = Element.query('.ra-async-autopanel');
+/*  ra-async-box
+
+NEW - general-purpose Ajax content loader, triggered by special CSS class 'ra-async-box'
+
+This is essentially a lighter, stand-alone version of 'AutoPanel' but it is designed
+to load on-the-fly in any tag with the 'ra-async-box' class and a 'src' attibute 
+defined. This is meant to follow the same pattern as iframe, but our use of 'src' is
+a bastardization. The content is designed to load either within another ExtJS component
+or not, and hooks the appropriate resize events in either case. If we're within another
+component, while we do hook its resize event, we do _NOT_ properly participate in its
+layout. We are essentially stand-alone, bound to the original element.
+
+The reason for this is to support more flexibility to load async content without needing
+to setup a full-blown container structure with child items, etc, as is the case with 
+AutoPanel. We may take some of these ideas back to AutoPanel as well
+
+   -- STILL EXPERIMENTAL --   */
+Ext.ux.RapidApp.loadAsyncBoxes = function(Target) {
+  
+  var Element, Container;
+  if(Target && Target instanceof Ext.BoxComponent) {
+    Container = Target;
+    Element = Container.getEl();
+  }
+  else {
+    Element = Target || Ext.getBody();
+  }
+  
+  if(!Element || ! (Element instanceof Ext.Element)) { return; }
+  
+  var nodes = Element.query('.ra-async-box');
   
   Ext.each(nodes,function(dom,index){
-    var el = new Ext.Element(dom);
-    if(el.hasClass('ra-async-autopanel-loaded')) {
-      return;
-    }
-    try {
-      decoded = Ext.decode(el.dom.innerHTML);
-      if(decoded && decoded.url) {
-        el.dom.innerHTML = '';
-        var Cmp = Ext.create({
-          xtype: 'autopanel',
-          autoLoad: decoded,
-          renderTo: el
-        });
-      }
-    }
-    catch(err) {
-      // If the innerHTML was not valid JSON, we will get here.
-      // do nothing - ignore the element
+    var El = new Ext.Element(dom);
+    if(El.hasClass('loaded')) { return; }
+    
+    var src = El.getAttribute('src');
+    if(!src) { return; }
+    
+    // Clear any existing content
+    El.dom.innerHTML = '';
+    
+    // Add the 'loaded' class early to ensure we're only processed once
+    El.addClass('loaded');
+    
+    var loadMask = new Ext.LoadMask(El);
+    loadMask.show();
+    
+    var reloadFn = function() {
+      loadMask.hide();
+      El.removeClass('loaded');
+      El.dom.innerHTML = '';
+      return Ext.ux.RapidApp.loadAsyncBoxes(Target);
     };
-    el.addClass('ra-async-autopanel-loaded');
-  });
-}
+
+    var failure = function(response,options) {
+      // TODO ....
+    
+    };
+    
+    var success = function(response,options) {
+      var ct = response.getResponseHeader('Content-Type');
+      if(ct) { ct = ct.split(';')[0]; }
+      
+      // The 'text/javascript' content type means this is a ExtJS config
+      if(ct && ct == 'text/javascript') {
+
+        var cnf = Ext.decode(response.responseText);
+        
+        // Our height and width is bound to the existing size of the element (if it has them)
+        var size = El.getSize();
+        if(size.height) { cnf.height = size.height; }
+        if(size.width)  { cnf.width  = size.width;  }
+        
+        cnf.renderTo = El;
+        
+        loadMask.hide();
+        var Cmp = Ext.create(cnf);
+        
+        var resizeFn = function(){
+          var size = El.getSize();
+          Cmp.setSize.call(Cmp,size.width,size.height);
+        };
+        
+        Cmp.reload = reloadFn;
+        
+        if(Container) {
+          // If we're within another component/container, we'll hook into its
+          // 'resize' event to trigger recalculation of our size. This only
+          // matters when the element's size changes, if it can, such as with
+          // absolute positioning or when a width percent value is supplied, etc
+          Container.on('resize',resizeFn,Cmp);
+          
+          // Set our ownerCt, even though we're not proper participants in the layout
+          Cmp.ownerCt = Container;
+        }
+        else {
+          // If we're not within a container, hook the raw browser resize
+          Ext.EventManager.onWindowResize(resizeFn, Cmp,{delay:300});
+        }
+      
+      }
+      else {
+        // If we're here it means the returned content is not module config.
+        // For now, we simply inline the raw text
+        loadMask.hide();
+        El.dom.innerHTML = response.responseText;
+      }
+    };
+
+    Ext.Ajax.request({
+      url     : src,
+      success : success,
+      failure : failure
+    });
+  },this);
+};
 
