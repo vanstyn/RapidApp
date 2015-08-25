@@ -726,3 +726,35 @@ li {
   display: list-item;
 }
 
+
+/*  Override/escape __back__ to ExtJS, for ExtJS-specific content 
+    This is needed for when we nest a module within a 'ra-doc' tag...
+    
+    These are some specific fixes to undo/override known issues
+    with the above with a standard grid module... There are
+    probabably many more scenarios which we'll add case-by-case  
+                                                                    */
+.x-btn button {
+  background-color: transparent;
+  border: 0 none;
+  cursor: pointer;
+  margin: 0;
+  outline: 0 none;
+  overflow: visible;
+  padding-left: 3px;
+  padding-right: 3px;
+  width: auto;
+  color: #333;
+  font: 11px arial,tahoma,verdana,helvetica;
+}
+
+.x-panel input {
+  border-radius: 0px;
+  margin-bottom: 0 ;
+}
+
+.x-panel .x-form-text, 
+.x-form-text, textarea.x-form-field {
+  padding: 1px 3px;
+}
+
