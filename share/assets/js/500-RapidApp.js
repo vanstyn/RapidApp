@@ -504,7 +504,24 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 //Default for RapidApp::AuthCore plugin:
 Ext.ux.RapidApp.loginUrl = '/auth/reauth';
 
+
+Ext.ux.RapidApp.ReAuthCallbacks = [];
+
 Ext.ux.RapidApp.ReAuthPrompt = function(success_callback) {
+
+  var winId = 'ra-reauth-prompt-win';
+  var existWin = Ext.getCmp(winId);
+
+  if(existWin && existWin.isVisible()) {
+    // Limit the number of callbacks that can queue up to 5:
+    if(success_callback && Ext.ux.RapidApp.ReAuthCallbacks.length <= 5) {
+      Ext.ux.RapidApp.ReAuthCallbacks.push(success_callback);
+    }
+    return;
+  }
+  else {
+    Ext.ux.RapidApp.ReAuthCallbacks = [success_callback];
+  }
 
 	 var fieldset = {
 		xtype: 'fieldset',
@@ -560,6 +577,7 @@ Ext.ux.RapidApp.ReAuthPrompt = function(success_callback) {
 	};
 
 	Ext.ux.RapidApp.WinFormPost({
+    winId: winId,
     manager: Ext.ux.RapidApp.CustomPromptWindowGroup,
 		title: "Session Expired",
 		height: 220,
@@ -569,11 +587,13 @@ Ext.ux.RapidApp.ReAuthPrompt = function(success_callback) {
 		closable: false,
 		submitBtnText: 'Login',
 		success: function(response,opts) {
-			//var res = Ext.decode(response.responseText);
-			//if (res.success == 0) {
-			//	Ext.ux.RapidApp.ReAuthPrompt();
-			//}
-			if(success_callback) return success_callback();
+      if(Ext.ux.RapidApp.ReAuthCallbacks.length > 0) {
+        var callbacks = Ext.ux.RapidApp.ReAuthCallbacks;
+        Ext.ux.RapidApp.ReAuthCallbacks = [];
+        Ext.each(callbacks,function(fn){
+          fn();
+        },this);
+      }
 		},
 		failure: function() {
 			 Ext.ux.RapidApp.ReAuthPrompt();
@@ -1022,12 +1042,13 @@ Ext.ux.RapidApp.WinFormPost
                              cause the button to never be re-enabled
  * @cfg {String} disableBtnText Text to set in the 'Save' button when disabled
  * @cfg {Array} extra_buttons List of any additional buttons
+ * @cfg {String} winId Optional id of the window (defaults to random string)
 */
 Ext.ns('Ext.ux.RapidApp.WinFormPost');
 Ext.ux.RapidApp.WinFormPost = function(cfg) {
 
   var rand = Math.floor(Math.random()*100000);
-  var winId = 'win-' + rand;
+  var winId = cfg.winId || 'win-' + rand;
   var formId = 'winformpost-' + rand;
   
   Ext.applyIf(cfg,{
