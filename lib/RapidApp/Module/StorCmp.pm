@@ -265,6 +265,7 @@ has 'add_edit_formpanel_defaults', is => 'ro', isa => 'HashRef', lazy => 1, defa
 	labelWidth => 100,
 	plugins => ['dynamic-label-width'],
 	bodyStyle => 'padding: 25px 10px 5px 5px;',
+  cls => 'ra-datastore-add-edit-form',
 	defaults => {
 		width => 250
 	},

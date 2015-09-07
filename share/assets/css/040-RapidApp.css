@@ -1423,3 +1423,13 @@ body > #main-load-target > .x-tab-panel-header {
     border-width:0; 
 }
 
+
+/* This style draws a line between the the form-panel items and the buttons, which
+   is only really important when there are enough items to force to scroll.
+   It is designed to work with the 'frame: true' setting, which is set in StoreCmp.
+   This isn't perfect, but its better than nothing and is safe, since the panel 
+   'frame' setting is a complex beast.   */
+.ra-datastore-add-edit-form>.x-panel-bwrap>.x-panel-bl {
+  border-top: 1px solid #D0D0D0;
+}
+

@@ -434,7 +434,18 @@ Ext.override(Ext.Window, {
       //  (See GitHub Issue #6 for more info)
       if(El.hasClass('x-grid-panel')) { El = El.parent(); }
       
-      this.renderTo = El;
+      // Special handling -- do not constrain/renderTo at all if we're already nested
+      // in an existing window (i.e. fall-back to full-browser. This was added to handle
+      // the case (specific to RapidApp) of add-and-select a related row in which the
+      // related grid is opened in a window which provides an "Add New" button. Regardless,
+      // its doubtful constraining across multiple layers of windows would ever be the
+      // desired behaviour in any case.
+      if(El.parent('div.x-window-body')) {
+        return;
+      }
+      else {
+        this.renderTo = El;
+      }
     }
     
     return orig_Window_initComponent.call(this);
