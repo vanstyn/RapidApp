@@ -1405,3 +1405,18 @@ body > #main-load-target > .x-tab-panel-header {
   border-left-width:1px;
   border-right-width:1px;
 }
+
+
+/* Fix CSS bug in ExtJS --
+   the "noborder" settings of panels which are nested within grids do not work due to
+   an apparent bug in ExtJS CSS. The 'border' style/rules of the grid end up being
+   more specific (and thus higher priority) than the noborder rule, and so the border
+   style meant for the grid's panel body get applied to child panel body's, even though
+   they have border: false and/or bodyBorder: false. Here we repeat the same rule that
+   is already in place, but prepend x-grid-panel to make it have higher priority.
+   This has been a long standing, annoying bug for a long time (note, this bug fix
+   might break things which relied on the bug) */
+.x-grid-panel .x-panel-noborder .x-panel-body-noborder {
+    border-width:0; 
+}
+

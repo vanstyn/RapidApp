@@ -4302,7 +4302,7 @@ Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
 			xtype: 'form',
 			frame: true,
 			labelAlign: 'right',
-			
+			border: false,
 			//plugins: ['dynamic-label-width'],
 			labelWidth: 70,
 			labelPad: 15,
@@ -4383,7 +4383,8 @@ Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
 			closable: true,
 			closeAction: 'close',
 			modal: true,
-			items: fp
+			items: fp,
+      renderTo: this.grid.getEl()
 		});
     
     this.win.show(); 

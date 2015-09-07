@@ -326,7 +326,8 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 				})
 			],
 			buttons: buttons,
-			buttonAlign: button_Align
+			buttonAlign: button_Align,
+      renderTo: this.grid.getEl()
 		});
 		
 		win.show();
@@ -1045,6 +1046,8 @@ Ext.reg('filteritem',Ext.ux.MultiFilter.Filter);
 
 
 Ext.ux.MultiFilter.FilterSetPanel = Ext.extend(Ext.Panel,{
+
+  border: false,
 
 	autoHeight: true,
 	
