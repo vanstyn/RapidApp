@@ -2949,7 +2949,7 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 			xtype: 'form',
 			frame: true,
 			labelAlign: 'right',
-			
+			border: false,
 			//plugins: ['dynamic-label-width'],
 			labelWidth: 130,
 			labelPad: 15,
@@ -3046,11 +3046,11 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 		items.unshift(
 			{ html: '<div class="ra-batch-edit-heading">' +
 				'Batch Modify <span class="num">' + editSpec.count + '</span> Records:' +
-			'</div>' },
+			'</div>', border: false },
 			{ html: '<div class="ra-batch-edit-sub-heading">' +
 				'Click the checkboxes below to enter field values to change/update in each record.<br>' + txt +
 				'<div class="warn-line"><span class="warn">WARNING</span>: This operation cannot be undone.</div>' +
-			'</div>'}
+			'</div>', border: false}
 		);
 			
 		items.push(
@@ -3058,7 +3058,7 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 			{ html: '<div class="ra-batch-edit-sub-heading">' +
 				'<div class="warn-line">' +
 					'<i><span class="warn">Note</span>: available fields limited to visible + editable columns</i>' +
-				'</div>'
+				'</div>', border: false
 			}
 		);
 		
@@ -3081,7 +3081,8 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 			closable: true,
 			closeAction: 'close',
 			modal: true,
-			items: fp
+			items: fp,
+      renderTo: this.grid.getEl()
 		});
 		
 		this.win.show();
