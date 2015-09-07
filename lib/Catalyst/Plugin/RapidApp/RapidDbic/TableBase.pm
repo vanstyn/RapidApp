@@ -90,7 +90,7 @@ has '_rapiddbic_default_views_model_name', is => 'ro', isa => 'Maybe[Str]', lazy
 sub BUILD {
 	my $self = shift;
   
-  $self->add_plugin('grid-custom-headers');
+  $self->add_plugin('grid-column-properties');
 	
 	# Init joined columns hidden:
 	$self->apply_columns( $_ => { hidden => \1 } ) 

@@ -742,7 +742,9 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					height: height,
 					closable: true,
 					modal: true,
-					items: formpanel
+					items: formpanel,
+          border: false,
+          smartRenderTo: plugin.cmp
 				},plugin.add_form_window_cnf);
 				
 				if(Ext.isFunction(plugin.cmp.add_form_onPrepare)) {
@@ -882,7 +884,9 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					height: height,
 					closable: true,
 					modal: true,
-					items: formpanel
+					items: formpanel,
+          border: false,
+          smartRenderTo: plugin.cmp
 				},plugin.add_form_window_cnf); //<-- use same custom config from add
 				
 				if(Ext.isFunction(plugin.cmp.edit_form_onPrepare)) {

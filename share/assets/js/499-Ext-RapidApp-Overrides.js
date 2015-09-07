@@ -421,7 +421,22 @@ Ext.override(Ext.Window, {
     // For now, only handle the case of supplied/set height & width values:
     if(Ext.isNumber(this.height)) { this.height = this.height < maxH ? this.height : maxH; }
     if(Ext.isNumber(this.width))  { this.width  = this.width  < maxW ? this.width  : maxW; }
-
+    
+    // More flexible way to supply renderTo for a window to contrain
+    if(this.smartRenderTo) {
+      var El = Ext.isFunction(this.smartRenderTo.getEl) 
+        ? this.smartRenderTo.getEl() 
+        : this.smartRenderTo;
+      
+      // ExtJS is full of CSS style bugs when trying to nest things within grid elements. It
+      // breaks scrolling, changes borders, etc, because of improperly overly-broad rules.
+      // So if this is a grid, jump up one element higher to escape this CSS space
+      //  (See GitHub Issue #6 for more info)
+      if(El.hasClass('x-grid-panel')) { El = El.parent(); }
+      
+      this.renderTo = El;
+    }
+    
     return orig_Window_initComponent.call(this);
   }
 });

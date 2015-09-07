@@ -327,7 +327,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			],
 			buttons: buttons,
 			buttonAlign: button_Align,
-      renderTo: this.grid.getEl()
+      smartRenderTo: this.grid
 		});
 		
 		win.show();

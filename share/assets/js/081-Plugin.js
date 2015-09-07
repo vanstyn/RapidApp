@@ -3046,11 +3046,11 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 		items.unshift(
 			{ html: '<div class="ra-batch-edit-heading">' +
 				'Batch Modify <span class="num">' + editSpec.count + '</span> Records:' +
-			'</div>', border: false },
+			'</div>' },
 			{ html: '<div class="ra-batch-edit-sub-heading">' +
 				'Click the checkboxes below to enter field values to change/update in each record.<br>' + txt +
 				'<div class="warn-line"><span class="warn">WARNING</span>: This operation cannot be undone.</div>' +
-			'</div>', border: false}
+			'</div>' }
 		);
 			
 		items.push(
@@ -3058,7 +3058,7 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 			{ html: '<div class="ra-batch-edit-sub-heading">' +
 				'<div class="warn-line">' +
 					'<i><span class="warn">Note</span>: available fields limited to visible + editable columns</i>' +
-				'</div>', border: false
+				'</div>'
 			}
 		);
 		
@@ -3082,7 +3082,7 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 			closeAction: 'close',
 			modal: true,
 			items: fp,
-      renderTo: this.grid.getEl(),
+      smartRenderTo: this.grid,
       border: false
 		});
 		
@@ -4279,8 +4279,7 @@ Ext.ux.RapidApp.Plugin.GridEditRawColumns = Ext.extend(Ext.util.Observable,{
 Ext.preg('grid-edit-raw-columns',Ext.ux.RapidApp.Plugin.GridEditRawColumns);
 
 
-
-Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
+Ext.ux.RapidApp.Plugin.GridColumnProperties = Ext.extend(Ext.util.Observable,{
 	
   menu_item_id: 'change-column-header',
   
@@ -4299,6 +4298,36 @@ Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
       current_header = '';
     }
     
+    var window_height = 175;
+    
+    var fp_items = [
+      {
+        name: 'colname',
+        xtype: 'displayfield',
+        fieldLabel: 'Column',
+        style: 'bottom:-1px;',
+        cls: 'blue-text-code',
+        value: column.name
+      },
+      { xtype: 'spacer', height: 5 },
+      {
+        name: 'header',
+        itemId: 'header',
+        xtype: 'textfield',
+        fieldLabel: 'Header',
+        value: current_header,
+        anchor: '-0'
+      }
+    ];
+    
+    if(column.documentation) {
+      fp_items.push(
+        { xtype: 'spacer', height: 20 },
+        { html: column.documentation }
+      );
+      window_height = 250;
+    }
+    
     var fp;
     fp = new Ext.form.FormPanel({
 			xtype: 'form',
@@ -4308,34 +4337,35 @@ Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
 			//plugins: ['dynamic-label-width'],
 			labelWidth: 70,
 			labelPad: 15,
-			bodyStyle: 'padding: 10px 10px 5px 5px;',
-			defaults: { anchor: '-0' },
-			autoScroll: true,
+			bodyStyle: 'padding: 10px 25px 10px 25px;',
+      autoScroll: true,
 			monitorValid: true,
 			buttonAlign: 'right',
 			minButtonWidth: 100,
 			
-			items: [
-				{
-          name: 'colname',
-          xtype: 'displayfield',
-          fieldLabel: 'Column',
-          style: 'bottom:-1px;',
-          cls: 'blue-text-code',
-          value: column.name
-        },
-        { xtype: 'spacer', height: 5 },
-        {
-					name: 'header',
-					itemId: 'header',
-					xtype: 'textfield',
-					fieldLabel: 'Header',
-					value: current_header,
-					anchor: '-0'
-				}
-			],
+			items: fp_items
 			
-			buttons: [
+			
+		});
+		
+		if(this.win) {
+			this.win.close();
+		}
+    
+    this.win = this.win = new Ext.Window({
+			title: 'Column Properties',
+			layout: 'fit',
+			width: 400,
+			height: window_height,
+			minWidth: 300,
+			minHeight: 150,
+			closable: true,
+			closeAction: 'close',
+			modal: true,
+      items: fp,
+      smartRenderTo: this.grid,
+      border: false,
+      buttons: [
 				{
 					name: 'apply',
 					text: 'Save',
@@ -4369,25 +4399,7 @@ Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
 					scope: this
 				}
 			]
-		});
-		
-		if(this.win) {
-			this.win.close();
-		}
-    
-    this.win = this.win = new Ext.Window({
-			title: 'Change Column Header',
-			layout: 'fit',
-			width: 400,
-			height: 175,
-			minWidth: 300,
-			minHeight: 150,
-			closable: true,
-			closeAction: 'close',
-			modal: true,
-			items: fp,
-      renderTo: this.grid.getEl(),
-      border: false
+      
 		});
     
     this.win.show(); 
@@ -4421,7 +4433,7 @@ Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
     }
     
     hmenu.insert(index,{
-      text: "Change Header",
+      text: "Column Properties",
       itemId: this.menu_item_id,
       iconCls: 'ra-icon-textfield-edit',
       handler:this.promptChangeHeader, 
@@ -4429,7 +4441,8 @@ Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
     });
 	}
 });
-Ext.preg('grid-custom-headers',Ext.ux.RapidApp.Plugin.GridCustomHeaders);
+Ext.preg('grid-column-properties',Ext.ux.RapidApp.Plugin.GridColumnProperties);
+Ext.preg('grid-custom-headers',Ext.ux.RapidApp.Plugin.GridColumnProperties);
 
 
 Ext.ux.RapidApp.Plugin.GridToggleEditCells = Ext.extend(Ext.util.Observable,{
