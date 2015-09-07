@@ -2495,8 +2495,9 @@ Ext.ux.FieldHelp = Ext.extend(Object, (function(){
 		  },
 
 		  init: function(f) {
-				f.helpAlign = this.align;
-				f.helpText = this.helpText;
+				// Updated to use existing field properties, if already set
+				f.helpAlign = f.helpAlign || this.align;
+				f.helpText  = f.helpText  || this.helpText;
 				f.afterRender = f.afterRender.createSequence(afterFieldRender);
 		  }
 	 };

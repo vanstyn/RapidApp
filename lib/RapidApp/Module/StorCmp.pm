@@ -340,6 +340,14 @@ sub get_add_edit_form_items {
     # set with allowBlank: false (common-sense failsafe):
     $field->{allowBlank} = \1 if (jstrue $field->{hidden});
     # ----
+    
+    # -- New: if column 'documentation' is present, render it via Ext.ux.FieldHelp plugin
+    if($Cnf->{documentation}) {
+      $field->{plugins} ||= [];
+      push @{$field->{plugins}}, 'fieldhelp';
+      $field->{helpText} = $Cnf->{documentation};
+    }
+    # --
 		
 		push @items, $field;
 	}
