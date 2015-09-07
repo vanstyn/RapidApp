@@ -3082,7 +3082,8 @@ Ext.ux.RapidApp.Plugin.AppGridBatchEdit = Ext.extend(Ext.util.Observable,{
 			closeAction: 'close',
 			modal: true,
 			items: fp,
-      renderTo: this.grid.getEl()
+      renderTo: this.grid.getEl(),
+      border: false
 		});
 		
 		this.win.show();
@@ -4385,7 +4386,8 @@ Ext.ux.RapidApp.Plugin.GridCustomHeaders = Ext.extend(Ext.util.Observable,{
 			closeAction: 'close',
 			modal: true,
 			items: fp,
-      renderTo: this.grid.getEl()
+      renderTo: this.grid.getEl(),
+      border: false
 		});
     
     this.win.show(); 
