@@ -187,6 +187,7 @@ Ext.ux.RapidApp.errMsgHandler = function(title,msg,as_text,extra_opts) {
 		width: extra_opts.win_width || 600,
 		height: extra_opts.win_height || 400,
 		modal: true,
+    border: false,
 		closable: true,
 		layout: 'fit',
 		items: {
