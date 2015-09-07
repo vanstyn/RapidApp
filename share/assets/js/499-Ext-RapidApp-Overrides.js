@@ -440,10 +440,7 @@ Ext.override(Ext.Window, {
       // related grid is opened in a window which provides an "Add New" button. Regardless,
       // its doubtful constraining across multiple layers of windows would ever be the
       // desired behaviour in any case.
-      if(El.parent('div.x-window-body')) {
-        return;
-      }
-      else {
+      if(! El.parent('div.x-window-body')) {
         this.renderTo = El;
       }
     }
