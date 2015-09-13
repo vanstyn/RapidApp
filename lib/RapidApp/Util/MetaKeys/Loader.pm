@@ -50,6 +50,8 @@ sub new {
     Class::C3::reinitialize() if $] < 5.009005;
   }
 
+  $self->_setup;
+
   return $self;
 }
 
