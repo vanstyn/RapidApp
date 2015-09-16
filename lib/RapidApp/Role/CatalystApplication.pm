@@ -18,6 +18,11 @@ use URI::Escape;
 use RapidApp;
 use Template;
 
+################################
+# JUST FOR TESTING TT EXCEPTIONS
+sub i_die { die "I died, because thats what I do" }
+################################
+
 use Catalyst::Controller::SimpleCAS 0.9981;
 
 sub rapidapp_version { $RapidApp::VERSION }
