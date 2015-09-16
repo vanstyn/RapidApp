@@ -1328,6 +1328,14 @@ a:hover, a:hover * { cursor: pointer; }
 .ra-autopanel-reloader             { visibility: hidden; }
 .ra-ap-body .ra-autopanel-reloader  { visibility: visible; }
 
+/* Selector path/rule to apply borders _ONLY_  
+   when rendered directly within an AutoPanel     */
+.ra-ap-body > .ra-ap-borders,
+.ra-ap-body > div > .ra-ap-borders,
+.ra-ap-body > div > div > .ra-ap-borders {
+  border: 1px solid #D0D0D0;
+}
+
 
 .ra-autopanel-reloader {
 	color: navy;
