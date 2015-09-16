@@ -132,6 +132,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
     // ---
 
     this.renderItems(0, this.store.getCount() - 1);
+    
 	},
 	
 	onUpdate: function(ds, record){
@@ -389,6 +390,9 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			}
 		}
 		this.components.splice.apply(this.components, args);
+    
+    // re-scan for ra-async-box elements -- codepath is specific to AppDV
+    Ext.ux.RapidApp.loadAsyncBoxes(this);
 	},
 	
 	destroyItems: function(index){

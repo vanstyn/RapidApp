@@ -543,3 +543,14 @@ Ext.override(Ext.Component,{
   }
 });
 
+// DataView's refresh() doesn't fire afterrender, so we handle it manually
+// (Note: this is not called by AppDV because it implements its own refresh() which
+// does not call the method from its superclass -- AppDV also manually calls this)
+var orig_DataView_refresh = Ext.DataView.prototype.refresh;
+Ext.override(Ext.DataView,{
+  refresh: function() {
+    orig_DataView_refresh.apply(this,arguments);
+    Ext.ux.RapidApp.loadAsyncBoxes.defer(150,this,[this]);
+  }
+});
+
