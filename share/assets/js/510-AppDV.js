@@ -473,8 +473,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
     }
     
 		
-		if(!cnf.width) {	cnf.width = dataEl.getWidth(); }
-		if(!cnf.height) { cnf.height = dataEl.getHeight(); }
+		if(!cnf.width) {	cnf.width = dataEl.getWidth() + 10; }
+		if(!cnf.height) { cnf.height = dataEl.getHeight() + 6; }
 		if(cnf.minWidth) { if(!cnf.width || cnf.width < cnf.minWidth) { cnf.width = cnf.minWidth; } }
 		if(cnf.minHeight) { if(!cnf.height || cnf.height < cnf.minHeight) { cnf.height = cnf.minHeight; } }
 		
