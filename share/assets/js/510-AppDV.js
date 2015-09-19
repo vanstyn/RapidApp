@@ -691,7 +691,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
   
     
   onBeforeclick: function(dv, index, domNode, event) {
-  
+
     // Important: when multiSelect or singleSelect is enabled, if we don't return 
     // *false* from this event to stop it, the native Ext.DataView code will block
     // the ordinary browser event (by calling e.preventDefault()). This will stop
@@ -699,7 +699,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
     // here, manually:
     
     var target = event.getTarget(null,null,true);
-    if(target.is('a')) {
+    target = target.is('a') ? target : target.parent('a');
+    if(target) {
       if(this.allow_all_links) {
         return false;
       }
