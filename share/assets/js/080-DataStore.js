@@ -307,6 +307,13 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		}
     
     cmp.addEvents('firstload');
+    cmp.onFirstLoad = function(ds){
+      ds.un('load',cmp.onFirstLoad);
+      // args contains our custom first two elements following by our arguments
+      var args = ['firstload',cmp].concat([].slice.call(arguments));
+      cmp.fireEvent.apply(cmp,args);
+    }
+    cmp.store.on('load',cmp.onFirstLoad,cmp.store);
     
     cmp.on('render',function() {
       var El = Ext.isFunction(cmp.getLoadMaskEl) // <-- Allow the cmp to define (AppDV)
@@ -347,7 +354,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
           lMask.show();
           var hide_fn;
           hide_fn = function(){ 
-            cmp.fireEvent('firstload');
+            //cmp.fireEvent('firstload');
             lMask.hide(); 
             cmp.store.un('load',hide_fn);
             cmp.store.un('exception',hide_fn); 
