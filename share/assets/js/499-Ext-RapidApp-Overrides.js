@@ -485,12 +485,14 @@ Ext.override(Ext.form.DateField, {
         },{ scope: cmb, delay: 50 });
 
         if(this.ownerCt) {
-          var xtype = this.ownerCt.getXType();
-          if(xtype && xtype == 'xdatetime2' && this.ownerCt.ownerCt){
+          var oCt = this.ownerCt;
+          var xtype = oCt.getXType();
+          if(xtype && xtype == 'xdatetime2' && oCt.ownerCt){
             // if we're part of a datetime, consider its ownerCt:
-            xtype = this.ownerCt.ownerCt.getXType();
+            oCt = oCt.ownerCt;
+            xtype = oCt.getXType();
           }
-          if(xtype && xtype == 'form') {
+          if((xtype && xtype == 'form') || oCt instanceof Ext.form.FormPanel) {
             // If we're in a form, we want to start the toggle state on, so that the
             // first click will will trigger instead of the second. The reason is that
             // forms do not trigger the toggle automatically, while other contexts (i.e.
