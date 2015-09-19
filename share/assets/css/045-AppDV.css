@@ -205,7 +205,7 @@
 
 .editing-record .appdv-edit-field .icons div, 
 .record-update  .appdv-edit-field .icons div {
-  visibility: hidden;
+  visibility: hidden !important;
 }
 
 
