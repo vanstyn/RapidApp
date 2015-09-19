@@ -17,6 +17,13 @@ use HTML::TokeParser::Simple;
 
 has 'refresh_on_save', is => 'ro', isa => 'Bool', default => 0, traits => ['ExtProp'];
 
+# Only makes sense when there is exactly one row; will beging editing the *first* record
+# as soon as the page/data is loaded. It is the developer's responsibility to 
+# include [% r.toggle.edit %] someplace in the template so the user can actually
+# save the changes. If the toggle control is not included, or it is otherwise not
+# possible for the user to have manually started the edit, this setting will do nothing.
+has 'init_record_editable', is => 'ro', isa => 'Bool', default => 0, traits => ['ExtProp'];
+
 # If true, the content will be parsed for a <title> tag to set on the tab in
 # the same manner as this works on the JavaScript side for plain html content
 has 'parse_html_tabTitle', is => 'ro', isa => 'Bool', default => 1;

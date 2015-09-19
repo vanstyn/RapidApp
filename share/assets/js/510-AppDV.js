@@ -90,6 +90,19 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
       },this);
     }
     
+    if(this.init_record_editable) {
+      this.on('firstload',function(cmp,ds){
+        var node = this.getNode(0,0);
+        if(node) {
+          var El = new Ext.Element(node);
+          var Toggle = El.child('div.edit-record-toggle');
+          if(Toggle) {
+            Toggle.dom.click();
+          }
+        }
+      },this);
+    }
+    
 	},
 	
 	onBeforeselect: function() {
