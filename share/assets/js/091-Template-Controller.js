@@ -36,7 +36,7 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
         var tplEl = El.up('div.ra-template',2); // only consider immediate parent + 1
         if (tplEl) { return this.createTplEl(tplEl); }
       }
-    },this,{stopEvent:true});
+    },this);
 	},
   
   getTplElMeta: function(tplEl) {
