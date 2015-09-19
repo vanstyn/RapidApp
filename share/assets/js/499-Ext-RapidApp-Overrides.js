@@ -519,6 +519,17 @@ Ext.override(Ext.form.DateField, {
       input = input.split('T')[0];
     }
     return orig_DateField_parseDate.call(this, input, format);
+  },
+  onMenuHide: function(){
+    // This focus call comes from ExtJS core and seems to be a bug -- why would we want to
+    // focus the field when we hide the menu? This is at best not very helpful, and at worst 
+    // harmful if for example the reason the menu hides is because the user clicked on a 
+    // different field; this steals the focus back. If the user wants to manually type after
+    // starting with the menu, they can click to focus the field themselves (which already
+    // hides the menu -- if the field doesn't have focus, it probably means the user doesn't
+    // want it to).
+    //this.focus(false, 60);
+    this.menuEvents('un');
   }
 });
 
