@@ -505,6 +505,16 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		//}
 		
 		var Store = this.getStore();
+    
+    cnf.AppDv_context = {
+      appdv: this,
+      Record: Record,
+      editEl:editEl,
+      index: index
+    };
+    cnf.plugins = cnf.plugins || [];
+    cnf.plugins.push('appdv-field-plugin');
+    
 		
 		var Field = Ext.create(cnf,'field');
 		
@@ -629,6 +639,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			if(Fld.contentEl) {
 				Fld.contentEl.appendTo(dataWrap);
 			}
+      // remove the field valid state from consideration (will clear if the field was invalid)
+      this.fireEvent('valid',Fld); 
 			Fld.destroy();
 			dataEl.setVisible(true);
 			
@@ -1008,3 +1020,67 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
   }
 });
 Ext.reg('appdv', Ext.ux.RapidApp.AppDV.DataView);
+
+Ext.ux.RapidApp.AppDV.FieldPlugin = Ext.extend(Ext.util.Observable,{
+
+  constructor: function(config){
+    this.addEvents('valid','invalid');
+    this.on('valid',this.onFieldValid,this);
+    this.on('invalid',this.onFieldInvalid,this);
+  },
+    
+  init: function(Field) {
+    var Ctx = Field.AppDv_context;
+    if(!Ctx) { return; }
+    
+    this.Field = Field; 
+    this.Ctx = Ctx;
+    
+    var recNode = Ctx.appdv.getNode(Ctx.index);
+    if(recNode) { 
+      Ctx.recEl = new Ext.Element(recNode); 
+    }
+
+    this.relayEvents(Field,['valid','invalid']);
+  },
+    
+  onFieldValid: function() {
+    var El = this.Ctx.editEl;
+    if(!El) { return; }
+    
+    if(El.hasClass('appdv-field-invalid')) {
+      El.removeClass('appdv-field-invalid');
+    }
+    this.checkRecEl.defer(100,this);
+  },
+  onFieldInvalid: function(Field,msg) {
+    var El = this.Ctx.editEl, recEl = this.Ctx.recEl;
+    if(!El) { return; }
+
+    if(!El.hasClass('appdv-field-invalid')) {
+      El.addClass('appdv-field-invalid');
+    }
+    
+    if(recEl && !recEl.hasClass('appdv-rec-invalids')) {
+      recEl.addClass('appdv-rec-invalids');
+    }
+  },
+  checkRecEl: function() {
+    var recEl = this.Ctx.recEl;
+
+    if(! recEl || ! recEl.hasClass('appdv-rec-invalids')) {
+      return;
+    }
+    
+    // If the record is marked invalid, but there are no longer
+    // any field invalids, clear it
+    if(! recEl.child('div.appdv-field-invalid')){
+      if(recEl.hasClass('appdv-rec-invalids')) {
+        recEl.removeClass('appdv-rec-invalids');
+      }
+    }
+  }
+   
+
+});
+Ext.preg('appdv-field-plugin',Ext.ux.RapidApp.AppDV.FieldPlugin);

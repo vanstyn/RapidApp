@@ -519,3 +519,10 @@ div.appdv-tt-generated .editable-value .appdv-edit-field .data-holder {
 .appdv-tt-generated .x-grid3-dirty-cell {
   padding-left:5px;
 }
+
+.appdv-rec-invalids .appdv-tt-generated .edit-record-toggle .save,
+.appdv-tt-generated .appdv-field-invalid .appdv-edit-field .icons .save {
+  cursor: default;
+  pointer-events: none;
+  opacity: 0.5;
+} 
