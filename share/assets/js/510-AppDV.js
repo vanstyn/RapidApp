@@ -24,6 +24,11 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
     // reference keys which are now made available via DataStorePlus. This
     // enables the template environment to get this data via '[{this.resData}]'
     try{
+      var hashval = window.location.hash;
+      if(hashval && hashval.search('#') == 0) { 
+        hashval = hashval.substring(1); 
+      }
+      this.tpl.hashval = hashval;
       this.tpl.resData = this.store.lastJsonData
         // The lastJsonData might not be populated on the first load, for this 
         // case,   // reach into the lastResponse, which is also now tracked, and decode it
@@ -100,6 +105,13 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
             Toggle.dom.click();
           }
         }
+      },this);
+    }
+    
+    if(this.refresh_on_hash_change) {
+      Ext.History.on('change',this.refresh,this);
+      this.on('beforedestroy',function(){
+        Ext.History.un('change',this.refresh,this);
       },this);
     }
     

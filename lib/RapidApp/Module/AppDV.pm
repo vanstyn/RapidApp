@@ -15,6 +15,9 @@ use RapidApp::Module::AppDV::TTController;
 
 use HTML::TokeParser::Simple;
 
+# If true, the template will refresh itself (client-side) after saving to the store.
+# This will make the whole template refresh instead of just the updated rows. This
+# is useful when updates involve changes to more than one row/data-point on the backend
 has 'refresh_on_save', is => 'ro', isa => 'Bool', default => 0, traits => ['ExtProp'];
 
 # Only makes sense when there is exactly one row; will beging editing the *first* record
@@ -23,6 +26,11 @@ has 'refresh_on_save', is => 'ro', isa => 'Bool', default => 0, traits => ['ExtP
 # save the changes. If the toggle control is not included, or it is otherwise not
 # possible for the user to have manually started the edit, this setting will do nothing.
 has 'init_record_editable', is => 'ro', isa => 'Bool', default => 0, traits => ['ExtProp'];
+
+# If true, the template will refresh itself (client-side) when the window.location.hash
+# changes. Within templates, the value of the hash (without '#') is available as:
+#   {[this.hashval]}
+has 'refresh_on_hash_change', is => 'ro', isa => 'Bool', default => 0, traits => ['ExtProp'];
 
 # If true, the content will be parsed for a <title> tag to set on the tab in
 # the same manner as this works on the JavaScript side for plain html content
