@@ -476,6 +476,7 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 		height: data.height,
 		closable: true,
 		modal: true,
+    border: false,
 		items: formpanel,
 		listeners: {
 			afterrender: function(w) {

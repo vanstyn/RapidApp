@@ -783,6 +783,61 @@ sub infostatus {
 }
 
 
+# -----
+# New sugar automates usage of CustomPrompt for the purposes of a simple
+# message with Ok/Cancel buttons. Returns the string name of the button
+# after the prompt round-trip. Example usage:
+#
+# if(throw_prompt_ok("really blah?") eq 'Ok') {
+#   # do blah ...
+# }
+#
+sub throw_prompt_ok {
+  my $msg;
+  $msg = shift if (scalar(@_) % 2 && ! (ref $_[0])); # argument list is odd, and first arg not a ref
+  
+  my %opt = (ref($_[0]) && ref($_[0]) eq 'HASH') ? %{$_[0]} : @_;
+  
+  $msg ||= $opt{msg};
+  $msg or die 'throw_prompt_ok(): must supply a "msg" as either first arg or named in hash key';
+  
+  my $c = RapidApp->active_request_context or die join(' ',
+    'throw_prompt_ok(): this sugar function can only be called from',
+    'within the context of an active request'
+  );
+  
+  $c->is_ra_ajax_req or die die join(' ',
+    'throw_prompt_ok(): this sugar function can only be called from',
+    'within the context of a RapidApp-generated Ajax request'
+  );
+
+  my %cust_prompt = (
+    title	=> 'Confirm',
+    items	=> { 
+      html => $msg
+    },
+    formpanel_cnf => {
+      defaults => {}
+    },
+    validate => \1,
+    noCancel => \1,
+    buttons	=> [ 'Ok', 'Cancel' ],
+    EnterButton => 'Ok',
+    EscButton => 'Cancel',
+    height	=> 175,
+    width	=> 350,
+    %opt
+  );
+  
+  if (my $button = $c->req->header('X-RapidApp-CustomPrompt-Button')){
+    # $button should contain 'Ok' or 'Cancel' (or whatever values were set in 'buttons')
+    return $button;
+  }
+  
+  die RapidApp::Responder::CustomPrompt->new(\%cust_prompt);
+}
+# -----
+
 
 
 
