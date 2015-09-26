@@ -54,7 +54,7 @@
 
 /******************  edit-record-toggle  *****************/
 
-.appdv-tt-generated .edit-record-toggle {
+.appdv-tt-generated .edit-record-toggle.default {
   padding: 4px;
 }
 
@@ -62,10 +62,16 @@
   display:none!important;
 }
 
-
-.appdv-tt-generated .edit-record-toggle div {
+.appdv-tt-generated .edit-record-toggle .edit,
+.appdv-tt-generated .edit-record-toggle .save,
+.appdv-tt-generated .edit-record-toggle .cancel {
   display: none;
   visibility:hidden;
+}
+
+.appdv-tt-generated .edit-record-toggle.default .edit,
+.appdv-tt-generated .edit-record-toggle.default .save,
+.appdv-tt-generated .edit-record-toggle.default .cancel {
   width: 30;
   padding:4px 14px 1px 1px;
   cursor:  pointer;
@@ -81,7 +87,9 @@
   border-color: transparent;
 }
 
-.appdv-tt-generated .edit-record-toggle div:hover {
+.appdv-tt-generated .edit-record-toggle.default .edit:hover,
+.appdv-tt-generated .edit-record-toggle.default .save:hover,
+.appdv-tt-generated .edit-record-toggle.default .cancel:hover {
   border-color: blue;
 }
 
@@ -105,15 +113,15 @@
   display:inline-block;
 }
 
-.appdv-tt-generated .edit-record-toggle .edit {
+.appdv-tt-generated .edit-record-toggle.default .edit {
   background:url(../../../assets/rapidapp/misc/static/images/pencil_tiny.png) center right no-repeat;
 }
 
-.appdv-tt-generated .edit-record-toggle .save {
+.appdv-tt-generated .edit-record-toggle.default .save {
   background:url(../../../assets/rapidapp/misc/static/images/bullet_disk.png) center right no-repeat;
 }
 
-.appdv-tt-generated .edit-record-toggle .cancel {
+.appdv-tt-generated .edit-record-toggle.default .cancel {
   background:url(../../../assets/rapidapp/misc/static/images/bullet_cross.png) center right no-repeat;
 }
 

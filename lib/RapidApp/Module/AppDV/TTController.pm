@@ -511,7 +511,7 @@ sub toggle {
   my $self = shift;
   return {
     edit => $self->div_clickable(
-      '<div class="edit-record-toggle inln">' .
+      '<div class="edit-record-toggle default inln">' .
         '<div class="edit">Edit</div>' .
         '<div class="save">Save</div>' .
         '<div class="cancel">Cancel</div>' .
