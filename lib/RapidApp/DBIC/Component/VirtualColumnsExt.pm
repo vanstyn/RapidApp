@@ -226,6 +226,12 @@ sub update {
   $self->next::method(@_);
     
   $self->execute_pending_set_functions;
+  
+  # NEW: if any of the set functions have left the row dirty, update again:
+  # (principal of least astonishment)
+  my %dirty = $self->get_dirty_columns;
+  $self->next::method if(scalar(keys %dirty) > 0);
+  
   return $self;
 }
 
