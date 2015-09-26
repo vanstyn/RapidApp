@@ -59,7 +59,7 @@ pre {
 .with-icon {
 	height: 16px;
 	padding-left: 19px;
-	background-repeat: no-repeat;
+	background-repeat: no-repeat !important;
 	background-position: 1px center;
 	display: table-cell;
 	vertical-align: middle;
@@ -69,7 +69,7 @@ pre {
 	padding-left: 18px;
 	line-height: 16px;
 	display: inline-block;
-	background-repeat: no-repeat;
+	background-repeat: no-repeat !important;
 }
 
 .ra-icon-centered-16x16 {
