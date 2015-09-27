@@ -67,13 +67,16 @@ sub print_view {
 }
 
 
-sub div_editable_value{
+sub div_editable_value {
   my $self = shift;
   my $name = shift;
   
+  my @cls = qw/editable-value inln/;
+  push @cls, @{ $self->{_editable_value_extra_classes} || [] };
+  
   return $self->div_clickable(
     
-    '<div class="editable-value inln">' .
+    '<div class="'.join(' ',@cls).'">' .
       '<div class="field-name" style="display:none;">' . $name . '</div>' .
       (shift) .
     '</div>'
@@ -276,15 +279,24 @@ sub _autofield_processor {
       
       $ro = 1 if ($cnf->{ro});
       
-      # -- TODO: this breaks create without update unless "allow_add" is specifically set on the column
-      # Needs fixed... probably the best way to handle it is to dynamically turn on "allow_add" when
-      # it isn't explicitly set but it should otherwise be addable (i.e. set in creatable_colspec)
-      $ro = 1 if (
-        defined $Column->allow_edit and
-        ! jstrue($Column->allow_edit) and
-        ! jstrue($Column->allow_add)
-      );
-      # --
+      ## TODO: this stuff should be handled in the Column object, and will be 
+      ##       once RapidApp::Column is refactored
+      my $no_edit = (defined $Column->allow_edit and ! jstrue($Column->allow_edit)) ? 1 : 0;
+      my $no_add  =  defined $Column->allow_add ? ! jstrue($Column->allow_add) : $no_edit;
+      
+      # This is yet another case of overlapping logic for handling allow/deny rules
+      # but the duplication is the most efficient solution because we use this to
+      # set CSS further up the stack. HOWEVER, this only handles this one case which
+      # is not yet handled consistently elsewhere. This needs to be handled better,
+      # the main reason this is even being left here is for tmp reference. TODO/FIXME
+      if(my $excl = $self->AppDV->get_extconfig_param('store_exclude_api')) {
+        $excl = [$excl] unless (ref($excl) && ref($excl) eq 'ARRAY');
+        my %e = map {$_=>1} @$excl;
+        $no_edit = 1 if ($e{update});
+        $no_add = 1 if ($e{create});
+      }
+      
+      $ro = 1 if ($no_edit && $no_add);
       
       # -- Only allow the same column through as editable once per template processing
       if(my $hsh = $self->AppDV->{_template_process_ctx}){
@@ -305,6 +317,15 @@ sub _autofield_processor {
       
       # read-only:
       return $self->div_wrapper('{' . $display . '}') if ($ro);
+      
+      # -- New: add 'no-edit' to the list of css classes that will be applied to the div
+      # if this column is non-editable. This only matters when allow_add is true, meaning
+      # the column cannot be edited, except when its for a new record. This CSS class is
+      # used to distinguish between these cases when allow_edit and allow_add disagree
+      my @cls = ();
+      push @cls, 'no-edit' if $no_edit;
+      local $self->{_editable_value_extra_classes} = \@cls;
+      # --
       
       # -- TODO: refactor AppDV for all the changes that came with TableSpec
       # in the mean time, this makes sure the editor/field isn't too small

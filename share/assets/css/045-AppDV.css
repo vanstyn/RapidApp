@@ -211,8 +211,9 @@
   visibility: hidden;
 }
 
-.editing-record .appdv-edit-field .icons div, 
-.record-update  .appdv-edit-field .icons div {
+.editing-record .appdv-edit-field .icons div,
+.record-update  .appdv-edit-field .icons div,
+.non-phantom .no-edit .appdv-edit-field .icons div {
   visibility: hidden !important;
 }
 
@@ -257,6 +258,11 @@
   cursor:  pointer;
 }
 
+.non-phantom .no-edit .appdv-edit-field:hover .data-holder {
+  border-color: transparent;
+  cursor:  default;
+}
+
 .editing .appdv-edit-field .icons .save, 
 .editing .appdv-edit-field .icons .cancel {
   display:inline-block;
@@ -283,8 +289,9 @@ div.appdv-edit-bigfield .data-wrapper .data-holder {
   padding-right: 50px; /* make room for *edit* */
 }
 
-.editing-record .appdv-edit-bigfield .icons div, 
-.record-update .appdv-edit-bigfield .icons div {
+.editing-record .appdv-edit-bigfield .icons div,
+.record-update .appdv-edit-bigfield .icons div,
+.non-phantom .no-edit .appdv-edit-bigfield .icons div {
   display:none !important;
 }
 

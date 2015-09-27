@@ -156,8 +156,11 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
     this.hasSkippedEmptyText = true;
     // ---
 
+    // renderItems relates to the special case of sub-componenets, not 
+    // rendering the normal, local records/columns and their editors
     this.renderItems(0, this.store.getCount() - 1);
     
+    this.toggleDirtyCssRecord(records,false);
 	},
 	
 	onUpdate: function(ds, record){
@@ -303,6 +306,16 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 				//
 				//rec.dirtyEl = el.insertSibling(domCfg,'before');
 			}
+      
+      if(rec.phantom) {
+        if(el.hasClass('non-phantom')) { el.removeClass('non-phantom'); }
+        if(!el.hasClass('is-phantom')) { el.addClass('is-phantom'); }
+      }
+      else {
+        if(el.hasClass('is-phantom')) { el.removeClass('is-phantom'); }
+        if(!el.hasClass('non-phantom')) { el.addClass('non-phantom'); }
+      }
+      
 		},record);
 	},
 	
@@ -480,6 +493,12 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		var dataEl = editEl.child('div.data-holder');
 		var fieldEl = editEl.child('div.field-holder');
 		
+    // If the class 'no-edit' is set do nothing, unless the Record is phantom,
+    // which means this "edit" is happening in the context of *adding* a new record
+    // (this is probably means the column has: allow_add => 1, allow_edit => 0)
+    if(editEl.hasClass('no-edit') && !Record.phantom) {
+      return;
+    }
 		
 		editEl.addClass('editing');
 
@@ -645,9 +664,9 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		var dataEl = editEl.child('div.data-holder');
 		var fieldEl = editEl.child('div.field-holder');
 		
-		if(dataWrap && dataEl && fieldEl) {
-
-			var Fld = this.FieldCmp[index][fieldname];
+    var Fld = this.FieldCmp[index][fieldname];
+    if(Fld && dataWrap && dataEl && fieldEl) {
+			
 			if(Fld.contentEl) {
 				Fld.contentEl.appendTo(dataWrap);
 			}
