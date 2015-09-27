@@ -5,7 +5,7 @@ extends 'RapidApp::Module::ExtComponent';
 use strict;
 use RapidApp::Util qw(:all);
 use String::Random;
-use RapidApp::Column;
+use RapidApp::Module::DatStor::Column;
 use MIME::Base64;
 
 use Text::Glob qw( match_glob );
@@ -374,7 +374,7 @@ sub apply_columns {
     next unless ($self->valid_colname($name));
   
     unless (defined $self->columns->{$name}) {
-      $self->columns->{$name} = RapidApp::Column->new( name => $name );
+      $self->columns->{$name} = RapidApp::Module::DatStor::Column->new( name => $name );
       push @{ $self->column_order }, $name;
     }
     

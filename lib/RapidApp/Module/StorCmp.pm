@@ -214,7 +214,7 @@ sub apply_TableSpec_config {
 	$self->TableSpec or return;
 	$self->TableSpec_applied and return;
 	
-	my $prop_names = [ @RapidApp::Column::attrs ];
+	my $prop_names = [ @RapidApp::Module::DatStor::Column::attrs ];
 	my $columns = $self->TableSpec->columns_properties_limited($prop_names);
 	
 	$self->apply_columns($columns);

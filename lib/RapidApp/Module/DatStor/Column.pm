@@ -1,6 +1,10 @@
-package RapidApp::Column;
+package RapidApp::Module::DatStor::Column;
+
+# ** This class used to be RapidApp::Column **
+
 use strict;
 use warnings;
+
 use RapidApp::Util qw(:all);
 
 our @gridColParams= qw(

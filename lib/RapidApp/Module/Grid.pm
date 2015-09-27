@@ -9,7 +9,6 @@ extends 'RapidApp::Module::StorCmp';
 use RapidApp::Util qw(:all);
 
 use Try::Tiny;
-use RapidApp::Column;
 
 #has 'record_pk'      => ( is => 'ro', default => 'id' );
 #has 'DataStore_class'  => ( is => 'ro', default => 'RapidApp::Module::DatStor', isa => 'ClassName' );
