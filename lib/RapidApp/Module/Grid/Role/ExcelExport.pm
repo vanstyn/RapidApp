@@ -9,6 +9,7 @@ use RapidApp::Spreadsheet::ExcelTableWriter;
 use RapidApp::Util qw(:all);
 require JSON;
 require Text::CSV;
+use DateTime;
 
 sub BUILD {}
 before 'BUILD' => sub {
@@ -57,6 +58,11 @@ sub export_to_file {
 	
 	# Determine file name, defaulting to 'export', and apply the default file extension.
 	my $export_filename = $params->{export_filename} || 'export';
+  
+  # New: append the current date/time to the export filename:
+  my $dt = DateTime->now( time_zone => 'local' );
+  $export_filename .= join('','-',$dt->ymd('-'),'_',$dt->hms(''));
+  
 	$export_filename .= $export_format->{file_ext}
 		unless substr($export_filename,-length($export_format->{file_ext})) eq $export_format->{file_ext};
 

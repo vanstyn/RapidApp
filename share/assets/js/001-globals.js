@@ -25,3 +25,24 @@ Ext.ux.RapidApp.util.dumpEveryEvent = function(observable) {
     console.dir(arguments);
   });
 };
+
+// Based on Ext.ux.RapidApp.HashNav.updateTitle()
+Ext.ux.RapidApp.util.parseFirstTextFromHtml = function(str) {
+  if(str && Ext.isString(str)) {
+    // if it looks like a tag, attempt to parse it and use its innerHTML
+    if(str.search('<') == 0){
+      var el = document.createElement( 'div' );
+      el.innerHTML = str;
+      if(el && el.children.length > 0) {
+        return Ext.ux.RapidApp.util.parseFirstTextFromHtml(el.children[0].innerHTML);
+      }
+    }
+    
+    // This will have any html entities decoded, and stripped of leading/trailing whitespace:
+    var txtarea = document.createElement( 'textarea' );
+    txtarea.innerHTML = str;
+    str = txtarea.value.replace(/^\s+|\s+$/g,'');
+  }
+
+  return str;
+};

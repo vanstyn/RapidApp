@@ -1260,7 +1260,9 @@ Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu = Ext.extend(Ext.menu.Menu,{
 
 
 Ext.ux.RapidApp.AppTab.AppGrid2.excelExportHandler = function(grid,url,all_pages,all_columns,display_name,content_type) {
-	var export_filename = grid.title || grid.ownerCt.title || 'export';
+  var export_filename = Ext.ux.RapidApp.util.parseFirstTextFromHtml(
+    grid.title || grid.ownerCt.title || 'export'
+  );
 	
 	Ext.Msg.show({
 		title: display_name + " Export",
