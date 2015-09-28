@@ -279,22 +279,7 @@ sub _autofield_processor {
       
       $ro = 1 if ($cnf->{ro});
       
-      my $no_edit = ! $Column->allow_edit;
-      my $no_add  = ! $Column->allow_add;
-      
-      # This is yet another case of overlapping logic for handling allow/deny rules
-      # but the duplication is the most efficient solution because we use this to
-      # set CSS further up the stack. HOWEVER, this only handles this one case which
-      # is not yet handled consistently elsewhere. This needs to be handled better,
-      # the main reason this is even being left here is for tmp reference. TODO/FIXME
-      if(my $excl = $self->AppDV->get_extconfig_param('store_exclude_api')) {
-        $excl = [$excl] unless (ref($excl) && ref($excl) eq 'ARRAY');
-        my %e = map {$_=>1} @$excl;
-        $no_edit = 1 if ($e{update});
-        $no_add = 1 if ($e{create});
-      }
-      
-      $ro = 1 if ($no_edit && $no_add);
+      $ro = 1 unless ($Column->allow_edit || $Column->allow_add);
       
       # -- Only allow the same column through as editable once per template processing
       if(my $hsh = $self->AppDV->{_template_process_ctx}){
@@ -321,7 +306,7 @@ sub _autofield_processor {
       # the column cannot be edited, except when its for a new record. This CSS class is
       # used to distinguish between these cases when allow_edit and allow_add disagree
       my @cls = ();
-      push @cls, 'no-edit' if $no_edit;
+      push @cls, 'no-edit' unless($Column->allow_edit);
       local $self->{_editable_value_extra_classes} = \@cls;
       # --
       

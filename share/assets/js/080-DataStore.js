@@ -207,6 +207,8 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
     else {
       this.cmp.on('render',this.initializeStoreButtons,this);
     }
+    
+    this.cmp.on('render',this.updateCssForStoreAPI,this);
 		
 		// Only applies to editor grids; no effect/impact on other components
 		// without the beforeedit/afteredit events
@@ -1594,6 +1596,22 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 		Ext.each(tbar_items,function(btn) { tbar.insert(0,btn); },this);
 		
 	},
+  
+  // Sets/clears a CSS class/flag for each CRUD action missing from the store api
+  updateCssForStoreAPI: function() {
+    var El = this.cmp.getEl(), store = this.cmp.store;
+    var apis = ['create','read','update','destroy'];
+    Ext.each(apis,function(api){
+      var cls = ['ra-dsapi-deny-',api].join('');
+      if(store.api[api]) {
+        if(El.hasClass(cls)) { El.removeClass(cls); }
+      }
+      else {
+        if(!El.hasClass(cls)) { El.addClass(cls); }
+      }
+    },this);
+  },
+  
 	
 	beforeRemoveConfirm: function(c,component) {
 		if(component != this.cmp) {

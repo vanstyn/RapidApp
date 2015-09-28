@@ -97,7 +97,8 @@
   display:inline-block;
 }
 
-.editing-record .appdv-tt-generated .edit-record-toggle .edit {
+.editing-record .appdv-tt-generated .edit-record-toggle .edit,
+.ra-dsapi-deny-update .appdv-tt-generated .edit-record-toggle .edit {
   display:none;
 }
 
@@ -166,7 +167,8 @@
 }
 
 
-.editing-record .appdv-tt-generated .delete-record {
+.editing-record .appdv-tt-generated .delete-record,
+.ra-dsapi-deny-destroy .appdv-tt-generated .delete-record {
   display: none !important;
 }
 
@@ -213,7 +215,8 @@
 
 .editing-record .appdv-edit-field .icons div,
 .record-update  .appdv-edit-field .icons div,
-.non-phantom .no-edit .appdv-edit-field .icons div {
+.non-phantom .no-edit .appdv-edit-field .icons div,
+.ra-dsapi-deny-update .non-phantom .appdv-edit-field .icons div {
   visibility: hidden !important;
 }
 
@@ -258,7 +261,8 @@
   cursor:  pointer;
 }
 
-.non-phantom .no-edit .appdv-edit-field:hover .data-holder {
+.non-phantom .no-edit .appdv-edit-field:hover .data-holder,
+.ra-dsapi-deny-update .non-phantom .appdv-edit-field:hover .data-holder {
   border-color: transparent;
   cursor:  default;
 }
@@ -291,7 +295,8 @@ div.appdv-edit-bigfield .data-wrapper .data-holder {
 
 .editing-record .appdv-edit-bigfield .icons div,
 .record-update .appdv-edit-bigfield .icons div,
-.non-phantom .no-edit .appdv-edit-bigfield .icons div {
+.non-phantom .no-edit .appdv-edit-bigfield .icons div,
+.ra-dsapi-deny-update .non-phantom .appdv-edit-bigfield .icons div {
   display:none !important;
 }
 
