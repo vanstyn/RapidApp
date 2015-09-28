@@ -586,6 +586,9 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 				// request to request, so we can disable the edit button when that number is 0
 				store.editable_fields_count = edit_count;
 			}
+      
+      this.updateCssForStoreAPI();
+      
 		},this);
 		
 		store.hasLoadedColumn = function(name) {
@@ -1601,9 +1604,16 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
   updateCssForStoreAPI: function() {
     var El = this.cmp.getEl(), store = this.cmp.store;
     var apis = ['create','read','update','destroy'];
+    var testFn = function(api) {
+      if(!store.api[api]) { return false; }
+      // Extra test for update -- 
+      // if there are no editable columns, consider update as a whole denied:
+      if(api == 'update' && store.editableFieldsCount() == 0) { return false; }
+      return true;
+    };
     Ext.each(apis,function(api){
       var cls = ['ra-dsapi-deny-',api].join('');
-      if(store.api[api]) {
+      if(testFn(api)) {
         if(El.hasClass(cls)) { El.removeClass(cls); }
       }
       else {
@@ -1611,7 +1621,6 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
       }
     },this);
   },
-  
 	
 	beforeRemoveConfirm: function(c,component) {
 		if(component != this.cmp) {

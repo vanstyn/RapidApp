@@ -115,6 +115,9 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
       },this);
     }
     
+    // init
+    this.FieldCmp = {};
+    
 	},
 	
 	onBeforeselect: function() {
@@ -660,9 +663,9 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		var dataEl = editEl.child('div.data-holder');
 		var fieldEl = editEl.child('div.field-holder');
 		
-    var Fld = this.FieldCmp[index][fieldname];
-    if(Fld && dataWrap && dataEl && fieldEl) {
-			
+    
+    if(this.FieldCmp[index] && this.FieldCmp[index][fieldname] && dataWrap && dataEl && fieldEl) {
+			var Fld = this.FieldCmp[index][fieldname];
 			if(Fld.contentEl) {
 				Fld.contentEl.appendTo(dataWrap);
 			}
