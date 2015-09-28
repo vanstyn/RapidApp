@@ -4130,7 +4130,7 @@ Ext.ux.RapidApp.getDateFormatter = function(format,allow_zero) {
         return ['<span class="ra-null-val">',date,'</span>'].join('');
       }
     }
-    var dt = Date.parseDate(date,"Y-m-d H:i:s");
+    var dt = date instanceof Date ? date : Date.parseDate(date,"Y-m-d H:i:s");
     if (! dt) { return date; }
     return dt.format(format);
   }
