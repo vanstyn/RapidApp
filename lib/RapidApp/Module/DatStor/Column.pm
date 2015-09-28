@@ -228,19 +228,24 @@ sub applyIf_attributes {
 
 ## -----
 ##
-## This just ensures allow_add and allow_edit are always populated, with values which
-## are already implied by the existing rules. This just makes it easier to check later,
-## avoiding all the defined or not checks, etc
+## This just ensures allow_add/allow_edit/allow_view/no_column are always populated, with 
+## values which are already implied by the existing rules. This just makes it easier to 
+## check later, avoiding all the defined or not checks, etc
 ##
 sub _normalize_allow_add_edit { 
   my $self = shift;
   
+  $self->no_column(${$self->{no_column}}) if (ref $self->{no_column}); # consistent 0/1
+  $self->no_column(0) unless ($self->no_column);
+  
   $self->_normalize_allow_edit;
   $self->_normalize_allow_add;
+  $self->_normalize_allow_view;
   
   # Stick to consistent 0 or 1 (instead of \0 or \1) so we don't ever need to use jstrue again
   $self->allow_edit(${$self->{allow_edit}}) if (ref $self->{allow_edit});
   $self->allow_add(${$self->{allow_add}})   if (ref $self->{allow_add});
+  $self->allow_view(${$self->{allow_view}}) if (ref $self->{allow_view});
 }
 
 sub _normalize_allow_edit {
@@ -255,7 +260,8 @@ sub _normalize_allow_edit {
   # if its true (or not yet set, which implies true) test for any 
   # conditions which prevent it from being true 
   my $no_edit = (
-    ! $self->{editor}
+       ! $self->{editor}
+    || ( $self->no_column && ! jstrue($self->{allow_view}) && $self->{_allow_edit_init_unset} )
   );
   
   $self->allow_edit( $no_edit ? 0 : 1 )
@@ -281,6 +287,27 @@ sub _normalize_allow_add {
   );
   
   $self->allow_add( $no_add ? 0 : 1 )
+}
+
+sub _normalize_allow_view {
+  my $self = shift;
+  
+  # if its already set - and turned off - we're done:
+  return if (exists $self->{allow_view} && !jstrue($self->{allow_view}));
+  
+  # remember if allow_edit was *not* already set, because this effects the default for allow_add
+  $self->{_allow_view_init_unset} = 1 unless (exists $self->{allow_view});
+  
+  # If allow_edit was expressly set to false:
+  my $deny_edit = (! $self->allow_edit && ! $self->{_allow_edit_init_unset});
+  
+  # if its true (or not yet set, which implies true) test for any 
+  # conditions which prevent it from being true 
+  my $no_view = (
+     ($self->no_column || $deny_edit) && $self->{_allow_view_init_unset} 
+  );
+  
+  $self->allow_view( $no_view ? 0 : 1 )
 }
 ##
 ## -----

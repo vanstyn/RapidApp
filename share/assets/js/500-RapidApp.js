@@ -3915,22 +3915,34 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 			// Give the field editor a refernce back to us/the propgrid:
 			if(field.editor) { field.editor.propgrid = propgrid; }
 			
-			// prune out 'no_column' fields without either 'allow_edit' or 'allow_view':
-			if(field.no_column && !field.allow_edit && !field.allow_view) { return; }
-			
-			// prune out fields with 'allow_view' specificially set to false:
-			if(typeof field.allow_view !== "undefined" && !field.allow_view) { return; }
-			
-			field.allow_view = true;
-			
-			if(typeof field.allow_edit !== "undefined" && !field.allow_edit) { 
-				// prune out fields with 'allow_edit' by itself (without aithout allow_view)
-				// specificially set to false:
-				if(!field.allow_view) { return; }
-				
-				// Otherwise, remove the editor (if needed):
-				if(field.editor) { delete field.editor; }
-			}
+      // ** This ugly logic is no longer needed because it now happens in backend
+			//// prune out 'no_column' fields without either 'allow_edit' or 'allow_view':
+			//if(field.no_column && !field.allow_edit && !field.allow_view) { return; }
+			//
+			//// prune out fields with 'allow_view' specificially set to false:
+			//if(typeof field.allow_view !== "undefined" && !field.allow_view) { return; }
+			//
+			//field.allow_view = true;
+			//
+			//if(typeof field.allow_edit !== "undefined" && !field.allow_edit) { 
+			//	// prune out fields with 'allow_edit' by itself (without aithout allow_view)
+			//	// specificially set to false:
+			//	if(!field.allow_view) { return; }
+			//	
+			//	// Otherwise, remove the editor (if needed):
+			//	if(field.editor) { delete field.editor; }
+			//}
+      
+      // New: allow_edit and allow_view are now pre-normalized and populated from
+      // the back-end, so we can do this simple check instead of complex logic
+      if(!field.allow_view) { 
+        return; 
+      }
+      if(!field.allow_edit  && field.editor) {
+        delete field.editor;
+      }
+      // **
+      
 			
 			new_fields.push(field);
 		},this);

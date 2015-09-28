@@ -85,7 +85,7 @@ sub export_to_file {
 		my $colname = $field->render_column ? $field->render_column : $field->name;
 		
 		next if ($field->name eq 'icon');
-		next if ${ $field->no_column };
+		next if $field->no_column;
 		next unless (defined $field->header and defined $field->name);
 		push @colDefs, {
 			name => $colname,
