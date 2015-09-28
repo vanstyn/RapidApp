@@ -279,10 +279,8 @@ sub _autofield_processor {
       
       $ro = 1 if ($cnf->{ro});
       
-      ## TODO: this stuff should be handled in the Column object, and will be 
-      ##       once RapidApp::Column is refactored
-      my $no_edit = (defined $Column->allow_edit and ! jstrue($Column->allow_edit)) ? 1 : 0;
-      my $no_add  =  defined $Column->allow_add ? ! jstrue($Column->allow_add) : $no_edit;
+      my $no_edit = ! $Column->allow_edit;
+      my $no_add  = ! $Column->allow_add;
       
       # This is yet another case of overlapping logic for handling allow/deny rules
       # but the duplication is the most efficient solution because we use this to

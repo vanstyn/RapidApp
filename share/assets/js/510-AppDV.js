@@ -492,13 +492,9 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		var dataWrap = editEl.child('div.data-wrapper');
 		var dataEl = editEl.child('div.data-holder');
 		var fieldEl = editEl.child('div.field-holder');
-		
-    // If the class 'no-edit' is set do nothing, unless the Record is phantom,
-    // which means this "edit" is happening in the context of *adding* a new record
-    // (this is probably means the column has: allow_add => 1, allow_edit => 0)
-    if(editEl.hasClass('no-edit') && !Record.phantom) {
-      return;
-    }
+    
+    if(!this.fieldRecordCanEdit(fieldname,Record)) { return; }
+
 		
 		editEl.addClass('editing');
 
@@ -845,7 +841,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 		var Store = this.getStore();
 		
 		var fieldname = this.get_fieldname_by_editEl(editEl);
-		if(!fieldname) { return; }
+		if(!this.fieldRecordCanEdit(fieldname,Record)) { return; }
 		
 		var dataWrap = editEl.child('div.data-wrapper');
 		var dataEl = editEl.child('div.data-holder');
@@ -911,6 +907,24 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	simulateCancelClick: function(Record,index,editEl) {
 		return this.simulateEditRecordClick('div.cancel',Record,index,editEl);
 	},
+  
+  // Returns true/false if the field can edit, properly considering edit vs add
+  fieldRecordCanEdit: function(fieldname,Record) {
+    if(!fieldname || !Record) { return false; }
+    var column = Record.store.getColumnConfig(fieldname);
+    if(!column) { return false; }
+    if(Record.phantom) {
+      if(!column.allow_add) { return false; }
+      if(!Record.store.api.create) { return false; }
+    }
+    else {
+      if(!column.allow_edit) { return false; }
+      if(!Record.store.api.update) { return false; }
+    }
+    
+    return true;
+  },
+  
 	
 	handle_edit_record: function (target,editEl,Record,index,domEl) {
 		
@@ -943,7 +957,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			/***** SAVE RECORDS *****/
 			Ext.each(editEls,function(editEl) {
 				var fieldname = this.get_fieldname_by_editEl(editEl);
-				if(!fieldname) { return; }
+				if(!this.fieldRecordCanEdit(fieldname,Record)) { return; }
 				
 				if(save) {
 					if(!this.save_field_data(editEl,fieldname,index,Record)) { 
@@ -1035,7 +1049,6 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
     if(this.scrollNodeClass) {
       var nodeEl = new Ext.Element(node);
       if(nodeEl.hasClass(this.scrollNodeClass)) {
-        console.dir(node);
         return node;
       }
     }

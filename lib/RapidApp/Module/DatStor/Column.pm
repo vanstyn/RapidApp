@@ -24,7 +24,6 @@ our %triggers= (
 	render_fn				=> '_set_render_fn',
 	renderer  				=> '_set_renderer',
 	menu_select_editor	=> '_set_menu_select_editor',
-	allow_edit				=> '_set_allow_edit'
 );
 
 
@@ -54,6 +53,9 @@ eval 'sub apply_defaults {
 	my $self= shift;
 	'.join(';', map { 'exists $self->{'.$_.'} or $self->{'.$_.'}= '.$defaults{$_} } keys %defaults).'
 }';
+
+
+
 
 sub _set_render_fn {
 	my ($self,$new,$old) = @_;
@@ -167,13 +169,6 @@ sub _set_menu_select_editor {
   $self->{editor}->{width} = $new->{width} if ($new->{width});
 }
 
-sub _set_allow_edit {
-	my ($self,$new,$old) = @_;
-	return unless (defined $new);
-	
-	# This line is still causing issues, removed for now
-	#$self->{editor} = '' if(!jstrue($new) and defined $self->{editor} and !jstrue($self->allow_add));
-}
 
 our %attrKeySet= map { $_ => 1 } @attrs;
 our %gridColParamKeySet= map { $_ => 1 } @gridColParams;
@@ -207,6 +202,8 @@ sub apply_attributes {
 		#use Data::Dumper;
 		die  "invalid attributes (" . join(',',keys %new) . ") passed to apply_attributes :\n" . Dumper(\%new);
 	}
+  
+  $self->_normalize_allow_add_edit
 }
 
 sub applyIf_attributes {
@@ -225,7 +222,69 @@ sub applyIf_attributes {
 		#use Data::Dumper;
 		die  "invalid attributes (" . join(',',keys %new) . ") passed to apply_attributes :\n" . Dumper(\%new);
 	}
+  
+  $self->_normalize_allow_add_edit
 }
+
+## -----
+##
+## This just ensures allow_add and allow_edit are always populated, with values which
+## are already implied by the existing rules. This just makes it easier to check later,
+## avoiding all the defined or not checks, etc
+##
+sub _normalize_allow_add_edit { 
+  my $self = shift;
+  
+  $self->_normalize_allow_edit;
+  $self->_normalize_allow_add;
+  
+  # Stick to consistent 0 or 1 (instead of \0 or \1) so we don't ever need to use jstrue again
+  $self->allow_edit(${$self->{allow_edit}}) if (ref $self->{allow_edit});
+  $self->allow_add(${$self->{allow_add}})   if (ref $self->{allow_add});
+}
+
+sub _normalize_allow_edit {
+  my $self = shift;
+  
+  # if its already set - and turned off - we're done:
+  return if (exists $self->{allow_edit} && !jstrue($self->{allow_edit}));
+  
+  # remember if allow_edit was *not* already set, because this effects the default for allow_add
+  $self->{_allow_edit_init_unset} = 1 unless (exists $self->{allow_edit});
+  
+  # if its true (or not yet set, which implies true) test for any 
+  # conditions which prevent it from being true 
+  my $no_edit = (
+    ! $self->{editor}
+  );
+  
+  $self->allow_edit( $no_edit ? 0 : 1 )
+}
+
+sub _normalize_allow_add {
+  my $self = shift;
+  
+  # if its already set - and turned off - we're done:
+  return if (exists $self->{allow_add} && !jstrue($self->{allow_add}));
+
+  # Go with allow_edit when it's explicitly false and we weren't set
+  return $self->allow_add(0) if(
+       ! exists $self->{allow_add} 
+    && ! $self->allow_edit 
+    && ! $self->{_allow_edit_init_unset}
+  ); 
+  
+  # if its true (or not yet set, which implies true) test for any 
+  # conditions which prevent it from being true 
+  my $no_add = (
+    ! $self->{editor}
+  );
+  
+  $self->allow_add( $no_add ? 0 : 1 )
+}
+##
+## -----
+
 
 sub get_grid_config {
 	my $self = shift;
