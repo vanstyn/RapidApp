@@ -306,50 +306,6 @@ sub record_pk_cond {
   return \%cond;
 }
 
-# TODO: deprecate/remove in favor of better _ra-rel-mnt_ solution - GitHub Issue #153
-around '_maybe_special_path_redirect' => sub {
-  my ($orig, $self, $opt, @subargs)= @_;
-
-  # This will detach if the special path test matches (original method):
-  $self->$orig($opt, @subargs);
-
-  # Re-test if this is a special path (and redirect) again after stripping
-  # prefixed arguments which correspond to RESTful path patterns, specific to
-  # DbicLnk. This allows relative paths to assets and simplecas, etc, from 
-  # content generated within modules which are loaded in this manner 
-  # (e.g. <module>/item/34/rel/foobar/ and so on)
-  if($self->allow_restful_queries) {
-
-    my $s = sub {
-      my @sargs = @_;
-      # The rel/name form:
-      if($sargs[0] eq 'rel' || $sargs[0] eq 'rs') {
-        shift @sargs;
-        shift @sargs;
-      }
-      $self->$orig(@sargs)
-    };
-
-    # To limit the risk of namespace collisions (since now we're sharing our
-    # namespace with record pk values), require more arguments. This still doesn't
-    # fully eliminate the possibility; if a key/col value matches the pattern like
-    # 'simplecas/<something>/<something>' (with literal '/' chars) then we will
-    # collide and that record path will be unreachable. I consider this risk to
-    # be low enough to live with for now, and its not worth doing further validation
-    # since this test happens on every request (hence we want to keep it lightweight)
-    if (scalar(@subargs) > 2) {
-      # The pk value form (<path>/<pk_value>/...):
-      $s->(@subargs);
-
-      # The name/value form (<path>/<col_name>/<col_value>/...):
-      if(scalar(@subargs) > 3) {
-        shift @subargs;
-        $s->(@subargs);
-      }
-    }
-  }
-};
-
 
 # --- Handle RESTful URLs - convert 'id/1234' into '?___record_pk=1234'
 #has 'restful_record_pk_alias', is => 'ro', isa => 'Str', default => '_id';
