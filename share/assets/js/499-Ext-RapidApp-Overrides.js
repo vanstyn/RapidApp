@@ -408,19 +408,9 @@ Ext.override(Ext.form.Field, {
 
 
 
-// We never want Windows to render larger than the browser. I can't imagine any situation
-// where this would be wanted, so this is being implemented as a global override for now:
 var orig_Window_initComponent = Ext.Window.prototype.initComponent;
 Ext.override(Ext.Window, {
   initComponent: function() {
-
-    var browserSize = Ext.getBody().getViewSize();
-    var maxW = browserSize.width  - 10;
-    var maxH = browserSize.height - 10;
-
-    // For now, only handle the case of supplied/set height & width values:
-    if(Ext.isNumber(this.height)) { this.height = this.height < maxH ? this.height : maxH; }
-    if(Ext.isNumber(this.width))  { this.width  = this.width  < maxW ? this.width  : maxW; }
     
     // More flexible way to supply renderTo for a window to contrain
     if(this.smartRenderTo) {
@@ -444,6 +434,27 @@ Ext.override(Ext.Window, {
         this.renderTo = El;
       }
     }
+
+    // We never want Windows to render larger than the browser. I can't imagine any situation
+    // where this would be wanted, so this is being implemented as a global override for now:
+    var browserSize = Ext.getBody().getViewSize();
+    var maxW = browserSize.width  - 10;
+    var maxH = browserSize.height - 10;
+
+    // If we're rendering to a renderTo Element, limit max size further down to it:
+    if(this.renderTo && this.renderTo instanceof Ext.Element) {
+      var renderToSize = this.renderTo.getViewSize();
+      if(renderToSize && renderToSize.width && renderToSize.height) {
+        var w = renderToSize.width - 10;
+        var h = renderToSize.height - 10;
+        maxW = w < maxW ? w : maxW;
+        maxH = h < maxH ? w : maxH;
+      }
+    }
+
+    // For now, only handle the case of supplied/set height & width values:
+    if(Ext.isNumber(this.height)) { this.height = this.height < maxH ? this.height : maxH; }
+    if(Ext.isNumber(this.width))  { this.width  = this.width  < maxW ? this.width  : maxW; }
     
     return orig_Window_initComponent.call(this);
   }
