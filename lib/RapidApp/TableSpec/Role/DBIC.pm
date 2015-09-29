@@ -77,6 +77,9 @@ has 'creatable_colspec', is => 'ro', isa => 'ColSpec',
 has 'always_fetch_colspec', is => 'ro', isa => 'ColSpec', 
 	default => sub {[]}, coerce => \&_coerce_ColSpec, trigger => sub { (shift)->_colspec_attr_init_trigger(@_) };
 
+# See attr in RapidApp::Module::StorCmp::Role::DbicLnk
+has 'no_header_transform', is => 'ro', isa => 'Bool', default => 0;
+
 sub _colspec_attr_init_trigger {
 	my ($self,$ColSpec) = @_;
 	my $sep = $self->relation_sep;
@@ -976,6 +979,7 @@ sub add_related_TableSpec {
 		relation_sep => $self->relation_sep,
 		relspec_prefix => $relspec_prefix,
 		include_colspec => $self->include_colspec->get_subspec($rel),
+    no_header_transform => $self->no_header_transform
 	);
 
 	$params{updatable_colspec} = $self->updatable_colspec->get_subspec($rel) || []; 
@@ -995,8 +999,9 @@ sub add_related_TableSpec {
 		# it is such a ubiquotous need and it is just more intuitive than creating yet
 		# other param that will always be 'on'. I am sure there are cases where this is
 		# not desired, but until I run across them it will just be hard coded:
-		unless($params{column_property_transforms}->{header}) {
-			$params{column_property_transforms}->{header} = sub { $_ ? "$_ ($relspec_prefix)" : $_ };
+    #  * Update: Yes, we do want an option to turn this off, and now there is (2015-09-29 by HV)
+		unless($self->no_header_transform) {
+			$params{column_property_transforms}->{header} ||= sub { $_ ? "$_ ($relspec_prefix)" : $_ };
 		}
 		# --
 		

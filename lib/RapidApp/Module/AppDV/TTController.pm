@@ -265,6 +265,12 @@ has 'autofield', is => 'ro', lazy => 1, default => sub {
   );
 }, isa => 'RapidApp::Module::AppDV::RecAutoload';
 
+has 'column_info', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  return RapidApp::Module::AppDV::RecAutoload->new( 
+    process_coderef => $self->_autofield_processor({ special => 'column_info' })
+  );
+}, isa => 'RapidApp::Module::AppDV::RecAutoload';
 
 sub _autofield_processor {
   my $self = shift;
@@ -274,6 +280,13 @@ sub _autofield_processor {
       my $display = shift;
       $display = $name unless ($display);
       my $Column = $self->AppDV->get_column($name) or return '';
+      
+      if (my $special = $cnf->{special}) {
+        return clone( $Column ) if ($special eq 'column_info');
+        
+        # future use ...
+        die "Bad/unknown 'special' code $special";
+      }
       
       my $ro = $Column->editor ? 0 : 1;
       

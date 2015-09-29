@@ -7,6 +7,13 @@ use Moose;
 extends 'RapidApp::Module::AppDV';
 with 'RapidApp::Module::StorCmp::Role::DbicLnk';
 
+# Default this newly available option to true for DV Modules. This turns off
+# the very old behavior of appending relationship paths to column headers,
+# which makes more sense for grids, since grids support custom headers. AppDV
+# has never used header before just now, since we're exposing all column attrs
+# via the new TTController method [% r.column_info.<COLUMN_NAME>.<ATTR> %]
+has '+no_header_transform', default => 1;
+
 use RapidApp::Util qw(:all);
 
 sub BUILD {

@@ -88,6 +88,10 @@ has 'allow_restful_queries', is => 'ro', isa => 'Bool', default => 0;
 # can be refactored to make it easier to apply store aoptions in general
 has 'reload_on_save', is => 'ro', isa => 'Bool', default => 0;
 
+# Passed into TableSpec objects -- disables the default behaviour which
+# transforms the header of related columns by appending the relationship path
+has 'no_header_transform', is => 'ro', isa => 'Bool', default => 0;
+
 # Generate a param string unique to this module by URL/path. This only needs to be unique
 # among modules whose ->content may be rendered within the same request, which is only
 # being done for good measure
@@ -227,7 +231,8 @@ sub _build_TableSpec {
     name => $table,
     relation_sep => $self->relation_sep,
     ResultSource => $self->ResultSource,
-    include_colspec => $self->include_colspec
+    include_colspec => $self->include_colspec,
+    no_header_transform => $self->no_header_transform
   );
   
   $opt{updatable_colspec} = $self->updatable_colspec if (defined $self->updatable_colspec);
