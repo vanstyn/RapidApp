@@ -205,7 +205,7 @@ a.ra-icon-magnify-tiny {
   zoom: 1; 
   /* -- */
   
-  background-repeat:no-repeat;
+  background-repeat:no-repeat !important;
   background-position: 0% 90%;
   padding-left: 10px;
   margin-left: 2px;
@@ -242,7 +242,7 @@ a.ra-icon-refresh-tiny {
   zoom: 1; 
   /* -- */
   
-  background-repeat:no-repeat;
+  background-repeat:no-repeat !important;
   background-position: 0% 90%;
   padding-left: 10px;
   margin-left: 2px;
@@ -280,7 +280,7 @@ a.ra-icon-paperclip-tiny {
   zoom: 1; 
   /* -- */
   
-  background-repeat:no-repeat;
+  background-repeat:no-repeat !important;
   background-position: 0% 90%;
   padding-left: 10px;
   margin-left: 2px;
