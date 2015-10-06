@@ -762,10 +762,15 @@ sub colspec_select_columns {
 sub apply_natural_column_order {
 	my $self = shift;
 	my $class = $self->ResultClass;
+
+  # New: need to consult the TableSpec method now that we move single-rels up into the column
+  # list at the location of their FK column -- its no longer as simple as columns then rels
+  my @local = $class->can('default_TableSpec_cnf_column_order')
+    ? ( $class->default_TableSpec_cnf_column_order )
+    : ( $class->columns, $class->relationships     ); # fall-back for good measure
+
 	$self->reorder_by_colspec_list(
-		$class->columns,
-		$class->relationships,
-		@{ $self->include_colspec->colspecs || [] }
+    @local, @{ $self->include_colspec->colspecs || [] }
 	);
 }
 

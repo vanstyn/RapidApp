@@ -697,7 +697,10 @@ sub TableSpec_valid_db_columns {
   $self->TableSpec_set_conf('multi_relationship_column_names',\@multi_rels);
   $self->TableSpec_set_conf('relationship_column_fks_map',\%fk_cols);
 
-  return uniq($self->columns,@single_rels,@multi_rels,@virtual_single_rels);
+  # New: move single rels up to immediately follow their FK column:
+  my @cols = map { $_, ( $fk_cols{$_} ? $fk_cols{$_} : () ) } $self->columns;
+
+  return uniq(@cols,@single_rels,@multi_rels,@virtual_single_rels);
 }
 
 # There is no longer extra logic at this stage because we're
