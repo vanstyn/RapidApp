@@ -244,6 +244,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			xtype: 'button',
 			text: 'Save and Close',
 			iconCls: 'ra-icon-save-ok',
+      scope: this,
 			handler: function(btn) {
 				var win = btn.ownerCt.ownerCt;
 				var set = win.getComponent('filSet');
@@ -254,7 +255,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 				
 				win.multifilter.updateFilterBtn();
 				
-				win.close();
+        win.hide(this.filtersBtn.el,win.close,win);
         
         // Added for Github Issue #20 (and copied from Quick Search code)
         // clear start (necessary if we have paging) - resets to page 1
@@ -302,7 +303,7 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
     // --
     
 		var win = new Ext.Window({
-		
+      animateTarget: this.filtersBtn.el,
 			//id: 'mywin',
 			multifilter: this,
 			title: 'MultiFilter',
