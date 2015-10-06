@@ -281,7 +281,8 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
 			anchor: '-0',
 			style: 'padding:2px;',
 			buttonAlign: 'center',
-			buttons: hbuttons
+			buttons: hbuttons,
+      hidden: true // start hidden; will be toggled visible when frozen conditions exist
 		});
 		
     // -- NEW: Set the window size taking the active 
@@ -303,7 +304,6 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
     // --
     
 		var win = new Ext.Window({
-      animateTarget: this.filtersBtn.el,
 			//id: 'mywin',
 			multifilter: this,
 			title: 'MultiFilter',
@@ -331,16 +331,17 @@ Ext.ux.MultiFilter.Plugin = Ext.extend(Ext.util.Observable,{
       smartRenderTo: this.grid
 		});
 		
-		win.show();
-		
-		var set = win.getComponent('filSet');
-		set.loadData(this.store.filterdata || []);
-		set.filterdata_frozen = this.store.filterdata_frozen || [];
-		set.on('remove',update_selections.createDelegate(this,[set]),this);
-		set.on('add',update_selections.createDelegate(this,[set]),this,{ buffer: 20 });
+    // Move into show callback to avoid race condition:
+    win.show(this.filtersBtn.el,function(){
+      var set = win.getComponent('filSet');
+      set.loadData(this.store.filterdata || []);
+      set.filterdata_frozen = this.store.filterdata_frozen || [];
+      set.on('remove',update_selections.createDelegate(this,[set]),this);
+      set.on('add',update_selections.createDelegate(this,[set]),this,{ buffer: 20 });
 
-		update_selections(set);
-		
+      update_selections(set);
+    },this);
+
 		return win;
 	}
 });
