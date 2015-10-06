@@ -273,6 +273,8 @@ sub _normalize_allow_add {
   # if its already set - and turned off - we're done:
   return if (exists $self->{allow_add} && !jstrue($self->{allow_add}));
 
+  $self->{_allow_add_init_unset} = 1 unless (exists $self->{allow_add});
+
   # Go with allow_edit when it's explicitly false and we weren't set
   return $self->allow_add(0) if(
        ! exists $self->{allow_add} 
@@ -283,7 +285,8 @@ sub _normalize_allow_add {
   # if its true (or not yet set, which implies true) test for any 
   # conditions which prevent it from being true 
   my $no_add = (
-    ! $self->{editor}
+       ! $self->{editor}
+    || ( $self->no_column && ! $self->allow_edit && $self->{_allow_add_init_unset} )
   );
   
   $self->allow_add( $no_add ? 0 : 1 )
