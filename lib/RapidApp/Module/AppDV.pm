@@ -201,8 +201,14 @@ sub xtemplate_funcs {
     disableFormats => \1,
     renderField => RapidApp::JSONFunc->new( raw => 1, func =>
       'function(name,values,renderer) {' .
-        'var record = { data: values };' .
-        'return renderer(values[name],{},record);' .
+        #'var record = { data: values };' .
+        #'return renderer(values[name],{},record);' .
+        'var dsp = this.store.datastore_plus_plugin;'.
+        'var record = this.store.getById(values.___record_pk);' .
+        'var args = [values[name],{},record];' .
+        'return dsp._masterColumnRender(' .
+          '{ renderer: renderer, args: args, name: name }'.
+        ');'.
       '}'
     )
   };

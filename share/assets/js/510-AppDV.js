@@ -58,6 +58,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
       if(this.find_clickableEl(event)){ return false; };
     },this);
     
+    this.tpl.store = this.store;
+    
 		//if(!this.store) { this.store = this.ownerCt.store; }
 		
 		this.store.on('beforesave',this.onBeforesave,this);

@@ -3996,10 +3996,14 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 				// Translate the renderer to work like in a normal grid:
 				if(orig_renderer) {
 					if(!bindRec) { 
-						value = orig_renderer.apply(field,arguments); 
+            value = orig_renderer.apply(field,arguments);
 					}
 					else {
-						value = orig_renderer.call(field,value,metaData,bindRec,0,0,propgrid.bindStore);
+            var dsp = bindRec.store.datastore_plus_plugin;
+            value = dsp ? dsp._masterColumnRender({
+              name: field.name, renderer: orig_renderer, scope: field, 
+              args: [value,metaData,bindRec,0,0,propgrid.bindStore]
+            }) : orig_renderer.call(field,value,metaData,bindRec,0,0,propgrid.bindStore);
 					}
 				}
 				

@@ -1922,9 +1922,16 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			},
 			scope: this
 		});
-	}
+	},
 	// --- ^^ ---
 
+  // NEW: rendering for all columns now passes through this common/master, private wrapper function:
+  _masterColumnRender: function(p) {
+    // Currently passive ...
+
+    var scope = p.scope || this;
+    return p.renderer.apply(scope,p.args);
+  }
 });
 Ext.preg('datastore-plus',Ext.ux.RapidApp.Plugin.CmpDataStorePlus);
 

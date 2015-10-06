@@ -587,3 +587,99 @@ Ext.override(Ext.DataView,{
   }
 });
 
+
+Ext.override(Ext.grid.GridView, {
+
+    // ********************************************************************************** //
+    // ** copy/paste of the entire orioginal doRender() from Ext.grid.GridView (3.4.0) **
+    // While having to resort to doing this is unfortunate,there is just no other way
+    // to extend and move forward with a more sophisticated model for column rendering.
+    // Because of the way the code is structured, there is no cleaner place to hook. 
+    // this is a copy/paste of the original function, changing only the line which 
+    // calls the renderer from the column model/object
+    doRender : function(columns, records, store, startRow, colCount, stripe) {
+        var templates = this.templates,
+            cellTemplate = templates.cell,
+            rowTemplate = templates.row,
+            last = colCount - 1,
+            tstyle = 'width:' + this.getTotalWidth() + ';',
+            // buffers
+            rowBuffer = [],
+            colBuffer = [],
+            rowParams = {tstyle: tstyle},
+            meta = {},
+            len  = records.length,
+            alt,
+            column,
+            record, i, j, rowIndex;
+
+        //build up each row's HTML
+        for (j = 0; j < len; j++) {
+            record    = records[j];
+            colBuffer = [];
+
+            rowIndex = j + startRow;
+
+            //build up each column's HTML
+            for (i = 0; i < colCount; i++) {
+                column = columns[i];
+                
+                meta.id    = column.id;
+                meta.css   = i === 0 ? 'x-grid3-cell-first ' : (i == last ? 'x-grid3-cell-last ' : '');
+                meta.attr  = meta.cellAttr = '';
+                meta.style = column.style;
+
+                // *** modified line(s) *** //
+                var dsp = store.datastore_plus_plugin;
+                if(dsp) {
+                  meta.value = dsp._masterColumnRender({
+                    name: column.name, renderer: column.renderer, scope: column.scope,
+                    args: [record.data[column.name], meta, record, rowIndex, i, store]
+                  });
+                }
+                else {
+                  // original code:
+                  meta.value = column.renderer.call(column.scope, record.data[column.name], meta, record, rowIndex, i, store);
+                }
+                // ************************ //
+
+                if (Ext.isEmpty(meta.value)) {
+                    meta.value = '&#160;';
+                }
+
+                if (this.markDirty && record.dirty && typeof record.modified[column.name] != 'undefined') {
+                    meta.css += ' x-grid3-dirty-cell';
+                }
+
+                colBuffer[colBuffer.length] = cellTemplate.apply(meta);
+            }
+
+            alt = [];
+            //set up row striping and row dirtiness CSS classes
+            if (stripe && ((rowIndex + 1) % 2 === 0)) {
+                alt[0] = 'x-grid3-row-alt';
+            }
+
+            if (record.dirty) {
+                alt[1] = ' x-grid3-dirty-row';
+            }
+
+            rowParams.cols = colCount;
+
+            if (this.getRowClass) {
+                alt[2] = this.getRowClass(record, rowIndex, rowParams, store);
+            }
+
+            rowParams.alt   = alt.join(' ');
+            rowParams.cells = colBuffer.join('');
+
+            rowBuffer[rowBuffer.length] = rowTemplate.apply(rowParams);
+        }
+
+        return rowBuffer.join('');
+    }
+    // ********************************************************************************** //
+
+});
+
+
