@@ -77,6 +77,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 	init: function(cmp) {
 		this.cmp = cmp;
 		cmp.datastore_plus_plugin = this;
+		cmp.store.datastore_plus_plugin = this; // also save a ref in the store
     
     // ---
     // Auto-cleanup of entries in Ext.StoreMgr on destroy

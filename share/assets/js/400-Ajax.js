@@ -670,7 +670,7 @@ Ext.ux.RapidApp.showAjaxError = function(title,msg,options,data) {
       return Ext.ux.RapidApp.WinFormPost(data.winform);
     }
     else {
-      return Ext.ux.RapidApp.errMsgHandler(title,msg,data.as_text);
+      return Ext.ux.RapidApp.errMsgHandler(title,msg,data.as_text,data.extra_opts);
     }
   
   }
@@ -731,7 +731,26 @@ Ext.ux.RapidApp.ajaxRequestContentType = function(conn,options) {
 
 
 Ext.ux.RapidApp.ajaxException = function(conn,response,options) {
-  if (response && response.getResponseHeader) {
+
+  var opts = options, Cmp = opts && opts.request && opts.request.scope // ref to the store object
+    && opts.request.scope.datastore_plus_plugin // if the store has the DataStorePlus plugin loaded
+    ? opts.request.scope.datastore_plus_plugin.cmp : null;
+
+  if(response && response.isTimeout){
+    var timeout = opts.timeout ? (opts.timeout/1000) : null;
+    timeout = timeout ? timeout : conn.timeout ? (conn.timeout/1000) : null;
+    var msg = timeout ? 'Ajax Request Timed Out (' + timeout + ' seconds).' : 'Ajax Request Timed Out.';
+
+    var title = 'Timeout';
+    Ext.ux.RapidApp.errMsgHandler(title,msg,null,{
+      win_title: response.statusText || 'Ajax Timeout',
+      warn_icon: true,
+      win_width: 350,
+      win_height: 200,
+      smartRenderTo: Cmp
+    });
+  }
+  else if (response && response.getResponseHeader) {
     if(response.getResponseHeader('X-RapidApp-Exception')) {
       // If this is an exception with the X-RapidApp-Exception header,
       // pass it off to the normal check exception logic
@@ -746,7 +765,8 @@ Ext.ux.RapidApp.ajaxException = function(conn,response,options) {
       // this point:
       return Ext.ux.RapidApp.showAjaxError(
         'Ajax Exception - ' + response.statusText + ' (' + response.status + ')',
-        '<pre>' + Ext.util.Format.htmlEncode(response.responseText) + '</pre>'
+        '<pre>' + Ext.util.Format.htmlEncode(response.responseText) + '</pre>',
+        null, { extra_opts: { smartRenderTo: Cmp } }
       );
     }
   }
@@ -769,7 +789,8 @@ Ext.ux.RapidApp.ajaxException = function(conn,response,options) {
       'Ajax Request Failed',
       '<div style="padding:10px;font-size:1.5em;color:navy;">&nbsp;&nbsp;' +
         '<b>' + msg + '</b>' +
-      '&nbsp;</div>'
+      '&nbsp;</div>',
+      null, { extra_opts: { smartRenderTo: Cmp } }
     );
   }
 }
@@ -800,23 +821,6 @@ Ext.Ajax.on('beforerequest',Ext.ux.RapidApp.ajaxShowGlobalMask,this);
 Ext.Ajax.on('requestcomplete',Ext.ux.RapidApp.ajaxHideGlobalMask,this);
 Ext.Ajax.on('requestexception',Ext.ux.RapidApp.ajaxHideGlobalMask,this);
 
-
-Ext.Ajax.on('requestexception',function(conn,response,options){
-  
-  if(response && response.isTimeout){
-    
-    var timeout = options.timeout ? (options.timeout/1000) : null;
-    timeout = timeout ? timeout : conn.timeout ? (conn.timeout/1000) : null;
-    var msg = timeout ? 'Request Timed Out (' + timeout + ' secs).' : 'Request Timed Out.';
-    
-    Ext.Msg.show({
-      title:'Timeout',
-      msg: msg,
-      icon: Ext.Msg.WARNING,
-      buttons: Ext.Msg.OK
-    });
-  }
-});
 
 
 /* -------------------------------------------------------------------------------------

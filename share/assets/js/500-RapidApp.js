@@ -162,7 +162,7 @@ Ext.ux.RapidApp.errMsgHandler = function(title,msg) {
 
 Ext.ux.RapidApp.errMsgHandler = function(title,msg,as_text,extra_opts) {
   extra_opts = extra_opts || {};
-	var win;
+	var win, rtCmp = extra_opts.smartRenderTo;
 	
 	var body = as_text ? '<pre>' + Ext.util.Format.nl2br(msg) + '</pre>' : msg;
 
@@ -183,6 +183,7 @@ Ext.ux.RapidApp.errMsgHandler = function(title,msg,as_text,extra_opts) {
 	
 	win = new Ext.Window({
 		manager: Ext.ux.RapidApp.CustomPromptWindowGroup,
+    smartRenderTo: rtCmp, // if set, purely optional
     title: extra_opts.win_title || 'Exception',
 		width: extra_opts.win_width || 600,
 		height: extra_opts.win_height || 400,
@@ -199,15 +200,16 @@ Ext.ux.RapidApp.errMsgHandler = function(title,msg,as_text,extra_opts) {
 				html: title
 			},
 			autoScroll: true,
-			html: '<div class="ra-exception-body">' + body + '</div>',
-			bodyStyle: 'padding:5px;'
+			html: '<div class="ra-exception-body" style="padding:5px;">' + body + '</div>',
+			//bodyStyle: 'padding:5px;'
 		},
 		buttonAlign: 'center',
 		buttons: [{
 			text: 'Ok',
 			handler: function() { win.close(); }
 		}],
-		listeners: {
+    // New: do NOT auto-close on nav events when a smartRenderTo is supplied:
+		listeners: rtCmp ? {} : {
 			render: function(){
 				// Catch navload events and auto-close the exception window:
 				var loadTarget = Ext.getCmp("main-load-target");

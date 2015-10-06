@@ -433,6 +433,15 @@ Ext.override(Ext.Window, {
       if(! El.parent('div.x-window-body')) {
         this.renderTo = El;
       }
+
+      // Force enable 'constrain' for smartRenderTo -- this ensures that the window stays
+      // within the borders of the target element. Without it, the window could be rendered
+      // off of the screen if an error occurs when calculating alignment (this happens if
+      // the target smartRenderTo is not visible at the time the window is shown.)
+      // TODO: properly figure out and handle this case. For now, turning this on solves
+      // the immediate problem, but the window gets rendered in the top-left instead of the
+      // center, and also has some odd sizing issues.
+      this.constrain = true;
     }
 
     // We never want Windows to render larger than the browser. I can't imagine any situation
