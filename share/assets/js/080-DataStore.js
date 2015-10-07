@@ -1724,11 +1724,18 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			
 			// Use a copy of the new record in case the save fails and we need to try again:
 			var newRecord = newRec.copy();
+      if(newRec._dirty_display_data) {
+        newRecord._dirty_display_data = newRec._dirty_display_data;
+      }
 			newRecord.phantom = true; //<-- the copy doesn't have this set like the original... why?
 			
 			form.updateRecord(newRecord);
 			
 			store.add(newRecord);
+      
+      if(plugin.cmp.view && plugin.cmp.view.refresh){
+        plugin.cmp.view.refresh();
+      }
 			
 			if(plugin.persist_immediately.create) {
 				
@@ -1778,6 +1785,13 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
         }
         else if(button.name == 'cancel') {
           button.handler = cancel_handler;
+        }
+      },this);
+      
+      Ext.each(formpanel.items,function(field) {
+        field.reportDirtyDisplayVal = function(disp) {
+          newRec._dirty_display_data = newRec._dirty_display_data || {};
+          newRec._dirty_display_data[field.name] = disp;
         }
       },this);
       
@@ -1843,6 +1857,10 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			store.on('exception',fp_enable_handler,this);
 			
 			form.updateRecord(Rec);
+      
+      if(plugin.cmp.view && plugin.cmp.view.refresh){
+        plugin.cmp.view.refresh();
+      }
 			
 			if(plugin.persist_immediately.update) {
 				
@@ -1912,6 +1930,12 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 					// Don't try to edit fields that aren't loaded, exclude them from the form:
 					if(!store.hasLoadedColumn(field.name)){ return; }
 					field.value = Rec.data[field.name];
+          
+          field.reportDirtyDisplayVal = function(disp) {
+            Rec._dirty_display_data = Rec._dirty_display_data || {};
+            Rec._dirty_display_data[field.name] = disp;
+          }
+          
 					new_items.push(field);
 				},this);
 				formpanel.items = new_items;
