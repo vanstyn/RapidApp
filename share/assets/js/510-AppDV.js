@@ -549,6 +549,11 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
     
 		
 		var Field = Ext.create(cnf,'field');
+    
+    Field.reportDirtyDisplayVal = function(disp) {
+      Record._dirty_display_data = Record._dirty_display_data || {};
+      Record._dirty_display_data[Field.name] = disp;
+    }
 		
 		if(!Ext.isObject(this.FieldCmp)) { this.FieldCmp = {} }
 		if(!Ext.isObject(this.FieldCmp[index])) { this.FieldCmp[index] = {} }

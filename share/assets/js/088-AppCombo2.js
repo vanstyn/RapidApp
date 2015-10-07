@@ -120,6 +120,15 @@ Ext.ux.RapidApp.AppCombo2.ComboBox = Ext.extend(Ext.form.ComboBox,{
 
   getValue: function(){
     var v = Ext.ux.RapidApp.AppCombo2.ComboBox.superclass.getValue.call(this);
+    
+    if(this.reportDirtyDisplayVal) {
+      var record = this.findRecord(this.valueField, v);
+      if(record) {
+        var disp = !v ? this.selectNoneLabel : record.data[this.displayField];
+        this.reportDirtyDisplayVal(disp);
+      }
+    }
+    
     // Return empty string as the "none" value
     return v == '' ? this.selectNoneValue : v;
   },
@@ -1207,10 +1216,16 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 	},
 	
 	getValue: function() {
-		if(typeof this.dataValue !== "undefined") {
-			return this.dataValue;
-		}
-		return this.nativeGetValue();
+    var value = typeof this.dataValue !== "undefined"
+      ? this.dataValue
+      : this.nativeGetValue();
+      
+    if(this.reportDirtyDisplayVal) {
+      var disp = this.lookupDisplayValue(value);
+      this.reportDirtyDisplayVal(disp);
+    }
+      
+    return value;
 	},
 	
 	displayWindow: function() {

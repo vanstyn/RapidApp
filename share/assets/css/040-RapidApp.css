@@ -1364,6 +1364,11 @@ a:hover, a:hover * { cursor: pointer; }
 .ra-null-val {
   color:darkgrey;
 }
+.ra-dirty-display-val {
+  opacity: 0.8;
+  font-style: italic;
+  border-bottom: 1px dotted #c00000;
+}
 
 .ra-hex-string {
   color: #083772;

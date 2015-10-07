@@ -16,8 +16,18 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlusX = {
     if(ed) {
       var field = ed.field;
       if(field && !field.DataStorePlusApplied) {
+      
+        field.reportDirtyDisplayVal = function(disp) {
+          var Record = cmp.bindRecord || ed.record; // bindRecord applies to PropertyGrid
+          Record._dirty_display_data = Record._dirty_display_data || {};
+          Record._dirty_display_data[field.name] = disp;
+        }
         
-        var stopEditFn = cmp.stopEditing.createDelegate(cmp);
+        var _stopEditFn = cmp.stopEditing.createDelegate(cmp);
+        var stopEditFn = function() {
+          _stopEditFn();
+          cmp.view.refresh();
+        }
         
         // --- Handle Ctrl+S/Ctrl+Z ('save'/'undo' keyboard shortcuts) for in-progress edit:
         field.on('afterrender', function(){
@@ -1927,7 +1937,17 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 
   // NEW: rendering for all columns now passes through this common/master, private wrapper function:
   _masterColumnRender: function(p) {
-    // Currently passive ...
+  
+    var Rec = p.args[2], dirtyRender = (
+      Rec && Rec.dirty && p.name && Rec.modified && Rec._dirty_display_data 
+      && typeof Rec.modified[p.name] != 'undefined'
+      && typeof Rec._dirty_display_data[p.name] != 'undefined'
+    ) ? true : false;
+    
+    if(dirtyRender) {
+      var disp = Rec._dirty_display_data[p.name];
+      return [ '<span class="ra-dirty-display-val">',Ext.ux.showNull(disp),'</span>'].join('');
+    }
 
     var scope = p.scope || this;
     return p.renderer.apply(scope,p.args);
