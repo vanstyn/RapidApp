@@ -3836,6 +3836,8 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
   getLoadMaskEl: function() {
     return this.getEl();
   },
+  
+  show_column_documentation: true,
 	
 	initComponent: function() {
 		
@@ -3913,6 +3915,14 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		Ext.each(this.fields,function(field) {
 			field.id = field.dataIndex;
 			columns.push(field.dataIndex);
+      
+      if(field.documentation && this.show_column_documentation) {
+        this.has_documentation_fields = true;
+        field.header = [field.header,'<br>',
+        '<div style="padding-left:4px;padding-bottom:0px;" class="x-form-helptext">',
+          field.documentation,
+        '</div>'].join('');
+      }
 			
 			// Give the field editor a refernce back to us/the propgrid:
 			if(field.editor) { field.editor.propgrid = propgrid; }
@@ -3950,6 +3960,11 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		},this);
 		this.fields = new_fields;
 		
+    // Bump up the width of the name column if there are fields with documentation:
+    if(this.has_documentation_fields && this.nameWidth) {
+      this.nameWidth = this.nameWidth + 75;
+    }
+    
 		
 		Ext.each(this.fields,function(field) {
 			
