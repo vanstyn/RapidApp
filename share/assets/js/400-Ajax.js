@@ -974,8 +974,6 @@ Ext.ux.RapidApp.loadAsyncBoxes = function(Target) {
         if(size.height) { cnf.height = size.height; }
         if(size.width)  { cnf.width  = size.width;  }
         
-        cnf.renderTo = El;
-        
         loadMask.hide();
         var Cmp = Ext.create(cnf);
         
@@ -1000,7 +998,12 @@ Ext.ux.RapidApp.loadAsyncBoxes = function(Target) {
           // If we're not within a container, hook the raw browser resize
           Ext.EventManager.onWindowResize(resizeFn, Cmp,{delay:300});
         }
-      
+
+        // Trigger resize after render so any dynamic sizes can
+        // update after the new content is present:
+        Cmp.on('afterrender',resizeFn,Cmp,{delay:50});
+
+        Cmp.render(El);
       }
       else {
         // If we're here it means the returned content is not module config.
