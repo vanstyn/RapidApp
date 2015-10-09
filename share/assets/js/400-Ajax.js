@@ -977,31 +977,65 @@ Ext.ux.RapidApp.loadAsyncBoxes = function(Target) {
         loadMask.hide();
         var Cmp = Ext.create(cnf);
         
+        Cmp.reload = reloadFn;
+        
+        // --
+        // resizeFn: Calls itself recursively up to 20 times until the height is greater than 0.
+        // This gives the dom extra time to finish updating itself for when the ra-async-box has
+        // its size determined by its content (which we're setting)
         var resizeFn = function(){
-          var size = El.getSize();
-          Cmp.setSize.call(Cmp,size.width,size.height);
+          var _reSize;
+          _reSize = function(count) {
+            count = (count || 0) + 1;
+            var size = El.getSize();
+            if(size.height == 0 && count < 20) {
+              var delay = 15 + (count*3);
+              _reSize.defer(delay,this,[count]);
+            }
+            else {
+              Cmp.setSize.call(Cmp,size.width,size.height);
+            }
+          }
+          _reSize();
         };
         
-        Cmp.reload = reloadFn;
+        // Save a reference to the resizeFn within the DOM object so it can be found again
+        // later by the asyncBoxesOnResize listener, below - but NOT found if the element
+        // is removed or no longer contained within the DOM (.
+        dom._onAsyncBoxResize = resizeFn;
+        // --
         
         if(Container) {
           // If we're within another component/container, we'll hook into its
           // 'resize' event to trigger recalculation of our size. This only
           // matters when the element's size changes, if it can, such as with
           // absolute positioning or when a width percent value is supplied, etc
-          Container.on('resize',resizeFn,Cmp);
+          // --
+          // NEW: hook using a global function only ONCE - this prevents duplicate listeners
+          // from being attached to the same componenet mutliple times, which can 
+          // happen when AppDV templates, or other dynamic content include ra-async-box
+          // that is updated or replaced via refresh of other mechanism. This listener
+          // is applied exactly 1 time per unique Container object, and uses the DOM
+          // to scan and find the ra-async-box elements again, and call their resize
+          // listeners (dom._onAsyncBoxResize, as set above). This is yet another example
+          // of a bastardized replacement for real layout manager
+          if(! Container._asyncBoxResizeListener) {
+            Container._asyncBoxResizeListener = Ext.ux.RapidApp.asyncBoxesOnResize;
+            Container.on('resize',Container._asyncBoxResizeListener,Container);
+          }
           
           // Set our ownerCt, even though we're not proper participants in the layout
           Cmp.ownerCt = Container;
         }
         else {
           // If we're not within a container, hook the raw browser resize
+          // TODO: should we also setup this case to hook only once?
           Ext.EventManager.onWindowResize(resizeFn, Cmp,{delay:300});
         }
 
         // Trigger resize after render so any dynamic sizes can
         // update after the new content is present:
-        Cmp.on('afterrender',resizeFn,Cmp,{delay:50});
+        Cmp.on('afterrender',resizeFn,Cmp);//,{delay:50});
 
         Cmp.render(El);
       }
@@ -1020,4 +1054,25 @@ Ext.ux.RapidApp.loadAsyncBoxes = function(Target) {
     });
   },this);
 };
-
+// This is the global async resize listener function which we attach to 
+Ext.ux.RapidApp.asyncBoxesOnResize = function(Target) {
+  var args = arguments;
+  var Element, Container;
+  if(Target && Target instanceof Ext.BoxComponent) {
+    Container = Target;
+    Element = Container.getEl();
+  }
+  else {
+    Element = Target || Ext.getBody();
+  }
+  
+  if(!Element || ! (Element instanceof Ext.Element)) { return; }
+  
+  var nodes = Element.query('.ra-async-box');
+  
+  Ext.each(nodes,function(dom,index){
+    if (dom._onAsyncBoxResize) {
+      dom._onAsyncBoxResize.apply(Target,args);
+    }
+  },this);
+};
