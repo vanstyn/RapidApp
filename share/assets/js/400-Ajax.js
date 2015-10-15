@@ -984,7 +984,7 @@ Ext.ux.RapidApp.loadAsyncBoxes = function(Target) {
         // This gives the dom extra time to finish updating itself for when the ra-async-box has
         // its size determined by its content (which we're setting). Once the size has updated
         // and there is a positive height, it will continue to call itself until both the height
-        // and width are unchanged for two iterations (50 ms apart). This is a general-purpose
+        // and width are unchanged for three iterations (80 ms apart). This is a general-purpose
         // handler for dynamic sizing, with a reletively small footprint. There is no native way
         // to handle element resize detection w/o setting up some kind of polling/timer, so this
         // is actually less hackish than it might appear on first glance...
@@ -996,6 +996,7 @@ Ext.ux.RapidApp.loadAsyncBoxes = function(Target) {
             else        {  ttl--;   }
 
             var size = El.getSize();
+
             if(size.height == 0 && ttl >= 0) {
               var delay = 15 + ((20-ttl)*3);
               _reSize.defer(delay,this,[ttl]);
@@ -1008,12 +1009,12 @@ Ext.ux.RapidApp.loadAsyncBoxes = function(Target) {
                   lastSize = null;
                 }
               }
-              // call ourselves again until the size stays the same, twice more in a row
+              // call ourselves again until the size stays the same, thrice more in a row
               if(!lastSize) {
                 lastSize = size;
-                ttl = 1;
+                ttl = 2;
               }
-              _reSize.defer(50,this,[ttl]);
+              _reSize.defer(80,this,[ttl]);
             }
           }
           _reSize();
