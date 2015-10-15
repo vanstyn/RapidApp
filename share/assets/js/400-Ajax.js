@@ -982,18 +982,38 @@ Ext.ux.RapidApp.loadAsyncBoxes = function(Target) {
         // --
         // resizeFn: Calls itself recursively up to 20 times until the height is greater than 0.
         // This gives the dom extra time to finish updating itself for when the ra-async-box has
-        // its size determined by its content (which we're setting)
+        // its size determined by its content (which we're setting). Once the size has updated
+        // and there is a positive height, it will continue to call itself until both the height
+        // and width are unchanged for two iterations (50 ms apart). This is a general-purpose
+        // handler for dynamic sizing, with a reletively small footprint. There is no native way
+        // to handle element resize detection w/o setting up some kind of polling/timer, so this
+        // is actually less hackish than it might appear on first glance...
         var resizeFn = function(){
-          var _reSize;
-          _reSize = function(count) {
-            count = (count || 0) + 1;
+          var _reSize, lastSize;
+          _reSize = function(ttl) {
+            ttl = typeof ttl == "undefined" ? 20 : ttl;
+            if(ttl < 0) {  return;  }
+            else        {  ttl--;   }
+
             var size = El.getSize();
-            if(size.height == 0 && count < 20) {
-              var delay = 15 + (count*3);
-              _reSize.defer(delay,this,[count]);
+            if(size.height == 0 && ttl >= 0) {
+              var delay = 15 + ((20-ttl)*3);
+              _reSize.defer(delay,this,[ttl]);
             }
             else {
               Cmp.setSize.call(Cmp,size.width,size.height);
+              if(lastSize) {
+                // Reset if the size has changed:
+                if(lastSize.height != size.height || lastSize.width != size.width) {
+                  lastSize = null;
+                }
+              }
+              // call ourselves again until the size stays the same, twice more in a row
+              if(!lastSize) {
+                lastSize = size;
+                ttl = 1;
+              }
+              _reSize.defer(50,this,[ttl]);
             }
           }
           _reSize();
