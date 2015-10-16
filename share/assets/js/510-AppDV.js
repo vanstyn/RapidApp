@@ -761,7 +761,8 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
     // here, manually:
     
     var target = event.getTarget(null,null,true);
-    target = target.is('a') ? target : target.parent('a');
+    var anchor = target.is('a') ? target : target.parent('a');
+    target = anchor || target;
     if(target) {
       if(this.allow_all_links) {
         return false;
@@ -775,7 +776,10 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
       // still pickup and handle relative URL links in the standard manner.
       if(
         target.hasClass('filelink') ||
-        target.getAttribute('target')
+        target.getAttribute('target') || 
+        // New: if this is a form submit button/input, assume the user means it
+        // to submit as usual and allow it through:
+        (target.getAttribute('type') && target.getAttribute('type')  == 'submit')
       ) { return false; }
     }
   },
