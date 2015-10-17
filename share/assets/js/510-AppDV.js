@@ -753,25 +753,24 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
   
     
   onBeforeclick: function(dv, index, domNode, event) {
-
+  
     // Important: when multiSelect or singleSelect is enabled, if we don't return 
     // *false* from this event to stop it, the native Ext.DataView code will block
     // the ordinary browser event (by calling e.preventDefault()). This will stop
     // ordinary links from working. So, if we want links to work, we have to handle
     // here, manually:
-    
-    var target = event.getTarget(null,null,true);
-    var anchor = target.is('a') ? target : target.parent('a');
-    target = anchor || target;
-    if(target) {
-      if(this.allow_all_links) {
-        return false;
-      }
+  
+    // testTarget()
+    // Returns true if the supplied target should be handled by AppDV, false if
+    // it should be handled natively by the browser
+    var testTarget;
+    testTarget = function(target) {
       // We're still not going to allow *ALL* links through... We are letting
       // through links with the special 'filelink' class, and also letting 
       // through links which have defined a target (i.e. target="_blank", etc),
       // otherwise we will continue with the existing native behavior which is
-      // to make the link do nothing. Also, note that we are now enabling the
+      // to make the link do nothing in the browser, but be handled in AppDV. 
+      // Also, note that we are now enabling the
       // 'ra-link-click-catcher' in AppDV per default (see AppDV.pm) so it may
       // still pickup and handle relative URL links in the standard manner.
       if(
@@ -780,10 +779,39 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
         // New: if this is a form submit button/input, assume the user means it
         // to submit as usual and allow it through:
         (target.getAttribute('type') && target.getAttribute('type')  == 'submit')
-      ) { return false; }
-    }
+      ) {
+        // If we're here it means the target matches one of our exclusions, so we'll
+        // return false to allow the browser to handle it **unless** it is within a
+        // declared, appdv clickable element. We always want to handle these ourselves
+        var click_parent = target.parent('div.clickable');
+        if(click_parent && click_parent.parent('div.appdv-tt-generated')){
+          return true;
+        }
+        else {
+          return false; 
+        }
+      }
+      
+      if(target.is('a')) {
+        if(this.allow_all_links) {
+          return false;
+        }
+      }
+      else {
+        // If we're not an <a> tag, check to see if we are within an <a> tag, and
+        // for that case consider the parent <a> tag:
+        var parent = target.parent('a');
+        if(parent) {
+          return testTarget(parent);
+        }
+      }
+      
+      return true;
+    };
+    
+    return testTarget( event.getTarget(null,null,true) );
   },
-
+  
 	click_controller: function(dv, index, domNode, event) {
     var clickableEl = this.find_clickableEl.call(dv,event,domNode);
     
