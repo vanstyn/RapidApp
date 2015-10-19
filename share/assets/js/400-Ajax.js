@@ -1063,6 +1063,9 @@ Ext.ux.RapidApp.loadAsyncBoxes = function(Target) {
         Cmp.on('afterrender',resizeFn,Cmp);//,{delay:50});
 
         Cmp.render(El);
+        if(Ext.isFunction(Cmp.doLayout)) {
+          Cmp.doLayout();
+        }
       }
       else {
         // If we're here it means the returned content is not module config.
