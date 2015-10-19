@@ -1003,6 +1003,10 @@ Ext.ux.RapidApp.loadAsyncBoxes = function(Target) {
             }
             else {
               Cmp.setSize.call(Cmp,size.width,size.height);
+              // Re-apply the element height to prevent recursive scenario where dynamic heights
+              // cause a infinite loop progressing stepping the height, if the component setSize
+              // changed the element height -- TODO: there may be more cases yet to handle...
+              El.setHeight(size.height);
               if(lastSize) {
                 // Reset if the size has changed:
                 if(lastSize.height != size.height || lastSize.width != size.width) {
