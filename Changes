@@ -1,5 +1,53 @@
 Revision history for RapidApp
 
+1.1000 2015-10-19
+    - Better handling for dirty (changed but unsaved) single rel cols (VANSTYN)
+    - FK single rel column ordering next to the physical FK - #163 (VANSTYN)
+    - MultiFilter dialog open animation + fixed race-condition bug (VANSTYN)
+    - Most windows/dialogs now limited to local Tab - #6 (VANSTYN)
+    - Ajax timeout now produces a single dialog (VANSTYN)
+    - AppDV: Expose column attrs in tpls via 'r.column_info' (VANSTYN)
+    - AppDV: expose 'resData' to JavaScript-side tempalte env (VANSTYN)
+    - AppDV: Fixes to enable/disable logic for store buttons (VANSTYN)
+    - AppDV: improvements to field controls show/hide rules (VANSTYN)
+    - AppDV: full-blown, per field validation monitoring (VANSTYN)
+    - AppDV: new attr feature options: (VANSTYN) 
+        - refresh_on_hash_change
+        - init_record_editable
+        - refresh_on_save
+    - AppDV: now allows normal browser behavior of form submits (VANSTYN)
+    - Lots of other fixes/tweaks/improvements to AppDV (VANSTYN)
+    - Misc improvements to the DbicDV subclass (VANSTYN)
+    - Improvements to dirty value rendering for date columns (VANSTYN)
+    - Refactoring/cleanup of column 'allow_' flags logic to backend (VANSTYN)
+    - Moved RapidApp::Column to RapidApp::Module::DatStor::Column (VANSTYN)
+    - Fix bug in filename in Excel/CSV export, + append timestamp (VANSTYN)
+    - New sugar func 'throw_prompt_ok' (custom prompt system) (VANSTYN)
+    - Virtual Columns /w 'set_function' auto call ->update, if dirty (VANSTYN)
+    - DataStorePlus 'firstload' event now available in all contexts (VANSTYN)
+    - More improvements to Date/Time editors (VANSTYN)
+    - Fixed display bug related to autoload_added_record - #161 (VANSTYN)
+    - Fix 'Useless bare catch' via TT (lost exceptions) (VANSTYN/RIBASUSHI)
+    - Fix bug MetaKeys::Loader subclass - PR #159 (ILMARI)
+    - New feature: ra-async-box (VANSTYN)
+    - New column property 'documentation' - shows up: (VANSTYN)
+       - Add/edit forms
+       - Column Properties menupoint (grid column hmenu)
+       - Default Property Grid (default row page)
+    - Fix overly thick borders in a number of dialog boxes (VANSTYN)
+    - Reauth dialog now utilizes queue to prevent duplicates (VANSTYN)
+    - Module attr trait 'ExtProp' auto applies extconfig (VANSTYN)
+    - DataStorePlus 'lastJsonData' saved in store obj for all CRUD reqs (VANSTYN)
+    - DataStorePlus: new attr option 'reload_on_save' (VANSTYN)
+    - CSS 'scopify' assets now support rule groups (VANSTYN)
+    - Moved JS renderer function collection into 530-renderers.js (VANSTYN)
+    - Require Catalyst::Controller::AutoAssets 0.33 (VANSTYN)
+    - Require Catalyst::Controller::SimpleCAS 0.9981 (VANSTYN)
+    - Require Template 2.26 (VANSTYN)
+    - Require Plack 1.0037 (VANSTYN)
+    - Require Catalyst 5.90101 (VANSTYN)
+    - Lots of other misc tweaks and bug fixes (VANSTYN)
+
 1.0601 2015-07-14
     - DbicRowDV: fix bug in the way tt_include_path is parsed (VANSTYN)
     - AppDV: fix rendering bug with zero records - #157 (VANSTYN)
