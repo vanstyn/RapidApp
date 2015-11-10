@@ -189,6 +189,10 @@ sub new {
 sub apply_attributes {
 	my $self = shift;
 	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+  
+  # Ignore attribute names which start with underscore (_) -- backcompat fix for special
+  # flag/keys added in 1.1000 for the "allow_*" refactor
+  delete $new{$_} for (grep { $_ =~ /^\_/ } keys %new);
 	
 	foreach my $attr (@attrs) {
 		next unless (exists $new{$attr});
@@ -209,6 +213,10 @@ sub apply_attributes {
 sub applyIf_attributes {
 	my $self = shift;
 	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+  
+  # Ignore attribute names which start with underscore (_) -- backcompat fix for special
+  # flag/keys added in 1.1000 for the "allow_*" refactor
+  delete $new{$_} for (grep { $_ =~ /^\_/ } keys %new);
 	
 	foreach my $attr (@attrs) {
 		next unless (exists $new{$attr});
