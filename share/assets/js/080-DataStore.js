@@ -1613,6 +1613,9 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
   
   // Sets/clears a CSS class/flag for each CRUD action missing from the store api
   updateCssForStoreAPI: function() {
+    // Things will break if we try to run this logic before we're rendered:
+    if(!this.cmp.rendered) { return; }
+    
     var El = this.cmp.getEl(), store = this.cmp.store;
     var apis = ['create','read','update','destroy'];
     var testFn = function(api) {
