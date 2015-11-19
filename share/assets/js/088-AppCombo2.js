@@ -1220,7 +1220,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
       ? this.dataValue
       : this.nativeGetValue();
       
-    if(this.reportDirtyDisplayVal) {
+    if(this.reportDirtyDisplayVal && !this.__queryResolveDisplayValue_Call) {
       var disp = this.lookupDisplayValue(value);
       this.reportDirtyDisplayVal(disp);
     }
@@ -1634,10 +1634,13 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 		
 		this.queryTask = new Ext.util.DelayedTask(function(){
 
+      // flag to avoid deep recursion
+      this.__queryResolveDisplayValue_Call = true;
 			if(!this.valueDirty || !this.getValue()) { return; }
 			
 			var store = this.appStore;
-			if(!this.rendered || !store || this.loadPending) { 
+			if(!this.rendered || !store || this.loadPending) {
+        this.__queryResolveDisplayValue_Call = false;
 				return this.queryTask.delay(delay);
 			}
 			
@@ -1662,12 +1665,18 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 						if(row) {
 							var val = row[valueField], disp = row[displayField];
 							
+              // flag to avoid deep recursion
+              this.__queryResolveDisplayValue_Call = true;
 							if(val == this.getValue()) {
 								this.setData(val,disp);
 							}
 						}
 					}
+          this.__queryResolveDisplayValue_Call = false;
 				},
+        failure: function(response,options) {
+          this.__queryResolveDisplayValue_Call = false;
+        },
 				scope: this
 			});
 			
