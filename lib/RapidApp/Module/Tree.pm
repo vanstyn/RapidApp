@@ -291,7 +291,7 @@ sub call_fetch_nodes {
   
   foreach my $n (@$nodes) {
     die "Invalid node definition: duplicate id ($n->{id}): " . Dumper($n)
-      if($seen_id{$n->{id}}++);
+      if($n->{id} && $seen_id{$n->{id}}++);
     
     $self->prepare_node($n,$node);
   }
