@@ -1912,14 +1912,15 @@ sub get_multi_relationship_column_cnf {
 
 		# Fall back to the old thick, ugly loadCnf inlineLink:
     #  This code path should never happen with RapidDbic, but will still happen for
-    #  manual setups where there is no 'open_url' or other missing TableSpec data:
+    #  manual setups where there is no 'open_url', other missing TableSpec data,
+    #  or the fallback 'allow_rel_rest_origin => 0' has been set
 		$conf->{renderer} = $rel_data->{self} ? jsfunc(
 			'function(value, metaData, record, rowIndex, colIndex, store) {' .
 				"var div_open = '$div_open';" .
 				"var disp = div_open + value + '</span>';" .
 				
 				#'var key_key = ' .
-				'var key_val = record.data["' . $rSelfCol . '"];' .
+				'var key_val = record && record.data ? record.data["' . $rSelfCol . '"] : null;' .
 				
 				'var attr = ' . RapidApp::JSON::MixedEncoder::encode_json($rel_data->{attrs}) . ';' .
 				
