@@ -166,9 +166,18 @@
   color: blue;
 }
 
-
+/*
 .editing-record .appdv-tt-generated .delete-record,
 .ra-dsapi-deny-destroy .appdv-tt-generated .delete-record {
+  display: none !important;
+}
+*/
+
+/* This rule has been moved into 510-AppDV.js to be dynamically generated for each
+   AppDV on an experimental basis. If this works out, many more styles will moved
+   to be generated this way, to avoid rules of nested AppDV modules from conflicting
+ra-dsapi-deny-destroy .appdv-tt-generated .delete-record, */
+.editing-record .appdv-tt-generated .delete-record {
   display: none !important;
 }
 

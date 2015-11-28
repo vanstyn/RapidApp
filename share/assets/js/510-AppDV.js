@@ -166,6 +166,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
     this.renderItems(0, this.store.getCount() - 1);
     
     this.toggleDirtyCssRecord(records,false);
+    this.injectDynamicStylesheet();
 	},
 	
 	onUpdate: function(ds, record){
@@ -1103,7 +1104,21 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
       return this.getParentScrollNode(node.parentNode); 
     }
     return null;
+  },
+
+  // proof-of-concept: preliminary styles moved out of 045-AppDV.css to be generated
+  // on-the-fly for each AppDB component. This is being done so that the override
+  // style will match ONLY the correct AppDV, and not any nested AppDV modules
+  dynStylesheetTpl: new Ext.XTemplate("<style type=\"text/css\">            \
+    #{id}.ra-dsapi-deny-destroy .appdv-tt-generated.{id} .delete-record {   \
+      display: none !important;                                             \
+    }                                                                       \
+  </style>").compile(),
+  
+  injectDynamicStylesheet: function() {
+    this.dynStylesheetTpl.append(this.el,{ id: this.id });
   }
+
 });
 Ext.reg('appdv', Ext.ux.RapidApp.AppDV.DataView);
 
