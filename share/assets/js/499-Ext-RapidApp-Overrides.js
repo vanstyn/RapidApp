@@ -414,9 +414,34 @@ Ext.override(Ext.Window, {
     
     // More flexible way to supply renderTo for a window to contrain
     if(this.smartRenderTo) {
-      var El = Ext.isFunction(this.smartRenderTo.getEl) 
+      var El;
+      
+      // GitHub Issue #6
+      // New: the main purpose of this feature is to facilitate containing pop-up
+      // windows to their local tab, instead of the whole browser. Places out in the
+      // code set 'smartRenderTo' as their associated component (for instance, the
+      // MultiFilter window sets it to the grid, the edit record window sets it to
+      // whatever the component is that is bound to the datastore, etc). This works
+      // great for the typical case which is a module living directly within a tab,
+      // however, for other cases where a module is nested inline, ExtJS seems to
+      // have difficulty correctly masking the content and constraining the window
+      // to the parent. For this reason, we're now bubbling up to find the first 
+      // Tab (i.e. within a TabPanel) and constraining to it. This ensures more 
+      // reliable behavior, and still fully accomplishes the goal of #6
+      if(Ext.isFunction(this.smartRenderTo.bubble)) {
+        this.smartRenderTo.bubble(function(cmp) {
+          if(cmp && cmp.ownerCt && cmp.ownerCt instanceof Ext.TabPanel) {
+            El = cmp.body || cmp.el;
+            return false;
+          }
+        },this);
+      }
+      
+      // Still fall-back - the above bubble only happens when the value supplied in smartRenderTo
+      // is a component; it can still be an element (like the built-in 'renderTo')
+      El = El || (Ext.isFunction(this.smartRenderTo.getEl) 
         ? this.smartRenderTo.getEl() 
-        : this.smartRenderTo;
+        : this.smartRenderTo);
       
       // ExtJS is full of CSS style bugs when trying to nest things within grid elements. It
       // breaks scrolling, changes borders, etc, because of improperly overly-broad rules.
