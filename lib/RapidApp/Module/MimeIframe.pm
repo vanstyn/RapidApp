@@ -7,6 +7,7 @@ use Moose;
 extends 'RapidApp::Module::ExtComponent';
 
 use RapidApp::Util qw(:all);
+use HTML::Entities 'encode_entities';
 
 has 'get_id_code', is => 'ro', lazy => 1, isa => 'CodeRef', default => sub { die "Virtual Method!" };
 has 'get_content_code', is => 'ro', lazy => 1, isa => 'CodeRef', default => sub { die "Virtual Method!" };
@@ -93,8 +94,16 @@ sub mime_content {
   my $html = '';
   
   $html .= '<div style="font-size:90%;">';
-  #$html .= $p . '<b>' . $_ . ':&nbsp;</b>' . join(',',$Rich->header($_)) . '</p>' for ($Rich->header_names);
-  $html .= $p . '<b>' . $_ . ':&nbsp;</b>' . join(',',$Message->header($_)) . '</p>' for (qw(From Date To Subject));
+  
+  # -- any of the these headers which exist, in this order, and in their original case
+  my @inc_headers = ('from', 'reply-to', 'date', 'to', 'cc', 'subject');
+  my %has_headers = map { lc($_) => $_ } $Message->header_names;
+  my @Headers = map { $has_headers{$_} } grep { $has_headers{$_} } @inc_headers;
+  $html .= $p . '<b>' . $_ . ':&nbsp;</b>' . 
+    join(',',encode_entities($Message->header($_))) . 
+  '</p>' for (@Headers);
+  # --
+  
   $html .= '</div>';
   
   $html .= '<hr><div style="padding-top:15px;"></div>';
