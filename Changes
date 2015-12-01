@@ -1,5 +1,16 @@
 Revision history for RapidApp
 
+1.1001 2015-11-30
+    - Improve the way windows/dialogs limit to local Tab - #6 (VANSTYN)
+    - AppDV: experimental, dynamically generated stylesheets (VANSTYN)
+    - Minor tweaks to MimeIframe module (VANSTYN)
+    - Bugfix for normalize allow_add/allow_edit changes in 1.1000 (VANSTYN)
+    - Bugfix for dirty (changed but unsaved) single rel cols (VANSTYN)
+    - Misc AppDV bugfixes (VANSTYN)
+    - Require Catalyst::Controller::SimpleCAS 0.9982 (VANSTYN)
+    - Require Catalyst 5.90103 (VANSTYN)
+    - misc other bugfixes (VANSTYN)
+
 1.1000 2015-10-19
     - Better handling for dirty (changed but unsaved) single rel cols (VANSTYN)
     - FK single rel column ordering next to the physical FK - #163 (VANSTYN)
