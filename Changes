@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+1.1002 2015-12-01
+    - AppDV: added option 'multi_editable_autofield' (VANSTYN)
+
 1.1001 2015-11-30
     - Improve the way windows/dialogs limit to local Tab - #6 (VANSTYN)
     - AppDV: experimental, dynamically generated stylesheets (VANSTYN)
