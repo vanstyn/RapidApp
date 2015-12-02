@@ -296,7 +296,7 @@ sub _autofield_processor {
       
       # -- Only allow the same column through as editable once per template processing
       if(my $hsh = $self->AppDV->{_template_process_ctx}){
-        $ro = 1 if (!$ro && $hsh->{seen_fieldnames}{$name}++);
+        $ro = 1 if (!$ro && ! $self->AppDV->multi_editable_autofield && $hsh->{seen_fieldnames}{$name}++);
       }
       # --
       

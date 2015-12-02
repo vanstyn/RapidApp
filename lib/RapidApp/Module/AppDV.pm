@@ -36,6 +36,10 @@ has 'refresh_on_hash_change', is => 'ro', isa => 'Bool', default => 0, traits =>
 # the same manner as this works on the JavaScript side for plain html content
 has 'parse_html_tabTitle', is => 'ro', isa => 'Bool', default => 1;
 
+# If true, every call to [% r.autofield.<COLUMN> %] will produce an editable control
+# instead of just the first one:
+has 'multi_editable_autofield', is => 'ro', isa => 'Bool', default => 0;
+
 has 'apply_css_restrict' => ( is => 'ro', default => 0 );
 
 has 'extra_tt_vars' => (
