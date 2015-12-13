@@ -73,5 +73,71 @@ ok(! $Col->allow_view => "[4] allow_view is false as expected");
 
 
 
+ok(
+  $Col = RapidApp::Module::DatStor::Column->new({ 
+    name      => 'col',
+    editor    => { xtype => 'textfield' },
+    allow_edit => 0
+  }),
+  "[5] Object construction success"
+);
+$Col->apply_attributes;
+
+ok(! $Col->no_column  => "[5] no_column is false as expected");
+ok(! $Col->allow_add  => "[5] allow_add is false as expected");
+ok(! $Col->allow_edit => "[5] allow_edit is false as expected");
+ok(! $Col->allow_view => "[5] allow_view is false as expected");
+
+
+ok(
+  $Col = RapidApp::Module::DatStor::Column->new({ 
+    name      => 'col',
+    editor    => { xtype => 'textfield' },
+    allow_edit => 0, allow_add => 1
+  }),
+  "[6] Object construction success"
+);
+$Col->apply_attributes;
+
+ok(! $Col->no_column  => "[6] no_column is false as expected");
+ok(  $Col->allow_add  => "[6] allow_add is true as expected");
+ok(! $Col->allow_edit => "[6] allow_edit is false as expected");
+ok(! $Col->allow_view => "[6] allow_view is false as expected");
+
+
+
+ok(
+  $Col = RapidApp::Module::DatStor::Column->new({ 
+    name      => 'col',
+    editor    => { xtype => 'textfield' },
+    no_column => 1, allow_add => 1
+  }),
+  "[7] Object construction success"
+);
+$Col->apply_attributes;
+
+ok(  $Col->no_column  => "[7] no_column is true as expected");
+ok(  $Col->allow_add  => "[7] allow_add is true as expected");
+ok(! $Col->allow_edit => "[7] allow_edit is false as expected");
+ok(! $Col->allow_view => "[7] allow_view is false as expected");
+
+
+
+ok(
+  $Col = RapidApp::Module::DatStor::Column->new({ 
+    name      => 'col',
+    editor    => { xtype => 'textfield' },
+    no_column => 1, allow_view => 1
+  }),
+  "[8] Object construction success"
+);
+$Col->apply_attributes;
+
+ok(  $Col->no_column  => "[8] no_column is true as expected");
+ok(! $Col->allow_add  => "[8] allow_add is false as expected");
+ok(! $Col->allow_edit => "[8] allow_edit is false as expected");
+ok(  $Col->allow_view => "[8] allow_view is true as expected");
+
+
 
 done_testing;

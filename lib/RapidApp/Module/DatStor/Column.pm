@@ -269,7 +269,7 @@ sub _normalize_allow_edit {
   # conditions which prevent it from being true 
   my $no_edit = (
        ! $self->{editor}
-    || ( $self->no_column && ! jstrue($self->{allow_view}) && $self->{_allow_edit_init_unset} )
+    || ( $self->no_column && $self->{_allow_edit_init_unset} )
   );
   
   $self->allow_edit( $no_edit ? 0 : 1 )
