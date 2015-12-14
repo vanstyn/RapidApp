@@ -247,13 +247,14 @@ sub _normalize_allow_add_edit {
   $self->no_column(0) unless ($self->no_column);
   
   $self->_normalize_allow_edit;
-  $self->_normalize_allow_add;
-  $self->_normalize_allow_view;
-  
-  # Stick to consistent 0 or 1 (instead of \0 or \1) so we don't ever need to use jstrue again
   $self->allow_edit(${$self->{allow_edit}}) if (ref $self->{allow_edit});
+
+  $self->_normalize_allow_add;
   $self->allow_add(${$self->{allow_add}})   if (ref $self->{allow_add});
+  
+  $self->_normalize_allow_view;
   $self->allow_view(${$self->{allow_view}}) if (ref $self->{allow_view});
+  
 }
 
 sub _normalize_allow_edit {
@@ -286,7 +287,7 @@ sub _normalize_allow_add {
   # Go with allow_edit when it's explicitly false and we weren't set
   return $self->allow_add(0) if(
        ! exists $self->{allow_add} 
-    && ! $self->allow_edit 
+    && ! $self->allow_edit
     && ! $self->{_allow_edit_init_unset}
   ); 
   

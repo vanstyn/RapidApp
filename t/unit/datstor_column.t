@@ -139,5 +139,55 @@ ok(! $Col->allow_edit => "[8] allow_edit is false as expected");
 ok(  $Col->allow_view => "[8] allow_view is true as expected");
 
 
+ok(
+  $Col = RapidApp::Module::DatStor::Column->new({ 
+    name      => 'col',
+    editor    => { xtype => 'textfield' },
+    no_column => \1, allow_view => \0
+  }),
+  "[9] Object construction success"
+);
+$Col->apply_attributes;
+
+ok(  $Col->no_column  => "[9] no_column is true as expected");
+ok(! $Col->allow_add  => "[9] allow_add is false as expected");
+ok(! $Col->allow_edit => "[9] allow_edit is false as expected");
+ok(! $Col->allow_view => "[9] allow_view is false as expected");
+
+
+ok(
+  $Col = RapidApp::Module::DatStor::Column->new({ 
+    name      => 'timeslot_id',
+    editor    => { xtype => 'textfield' },
+    no_column => \1, allow_view => \0, allow_edit => \0
+  }),
+  "[10] Object construction success"
+);
+$Col->apply_attributes;
+
+ok(  $Col->no_column  => "[10] no_column is true as expected");
+ok(! $Col->allow_add  => "[10] allow_add is false as expected");
+ok(! $Col->allow_edit => "[10] allow_edit is false as expected");
+ok(! $Col->allow_view => "[10] allow_view is false as expected");
+
+
+
+ok(
+  $Col = RapidApp::Module::DatStor::Column->new({ 
+    width => 110, 	header => 'Col',
+    editor    => { xtype => 'textfield' }, 
+  }),
+  "[11] Object construction success"
+);
+$Col->apply_attributes;
+
+ok(! $Col->no_column  => "[11] no_column is false as expected");
+ok(  $Col->allow_add  => "[11] allow_add is true as expected");
+ok(  $Col->allow_edit => "[11] allow_edit is true as expected");
+ok(  $Col->allow_view => "[11] allow_view is true as expected");
+
+
+
+
 
 done_testing;
