@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+1.1003 2015-12-14
+    - Tweaks/fixes to allow add/edit rules (VANSTYN)
+
 1.1002 2015-12-01
     - AppDV: added option 'multi_editable_autofield' (VANSTYN)
 
