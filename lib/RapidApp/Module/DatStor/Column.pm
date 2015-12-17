@@ -311,12 +311,12 @@ sub _normalize_allow_view {
   $self->{_allow_view_init_unset} = 1 unless (exists $self->{allow_view});
   
   # If allow_edit was expressly set to false:
-  my $deny_edit = (! $self->allow_edit && ! $self->{_allow_edit_init_unset});
+  #my $deny_edit = (! $self->allow_edit && ! $self->{_allow_edit_init_unset});
   
   # if its true (or not yet set, which implies true) test for any 
   # conditions which prevent it from being true 
   my $no_view = (
-     ($self->no_column || $deny_edit) && $self->{_allow_view_init_unset} 
+     $self->no_column && $self->{_allow_view_init_unset} 
   );
   
   $self->allow_view( $no_view ? 0 : 1 )

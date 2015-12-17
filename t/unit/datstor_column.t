@@ -86,7 +86,7 @@ $Col->apply_attributes;
 ok(! $Col->no_column  => "[5] no_column is false as expected");
 ok(! $Col->allow_add  => "[5] allow_add is false as expected");
 ok(! $Col->allow_edit => "[5] allow_edit is false as expected");
-ok(! $Col->allow_view => "[5] allow_view is false as expected");
+ok(  $Col->allow_view => "[5] allow_view is true as expected");
 
 
 ok(
@@ -102,7 +102,7 @@ $Col->apply_attributes;
 ok(! $Col->no_column  => "[6] no_column is false as expected");
 ok(  $Col->allow_add  => "[6] allow_add is true as expected");
 ok(! $Col->allow_edit => "[6] allow_edit is false as expected");
-ok(! $Col->allow_view => "[6] allow_view is false as expected");
+ok(  $Col->allow_view => "[6] allow_view is true as expected");
 
 
 
