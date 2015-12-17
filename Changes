@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+1.1004 2015-12-17
+    - Fix the way the default allow_view is calculated (VANSTYN)
+
 1.1003 2015-12-14
     - Tweaks/fixes to allow add/edit rules (VANSTYN)
 
