@@ -12,6 +12,7 @@ use Catalyst::ScriptRunner;
 use Path::Class qw/file dir/;
 use FindBin;
 use List::Util;
+use IPC::Cmd qw[can_run run_forked];
 
 requires '_ra_catalyst_plugins';
 requires '_ra_catalyst_configs';
@@ -35,19 +36,36 @@ has '_ra_rapiddbic_opts', is => 'ro', isa => 'HashRef', lazy => 1, default => su
   GetOptionsFromArray(\@args,\%opts,
     'dsn=s',
     'from-sqlite=s',
+    'from-sqlite-ddl=s',
     'loader-option=s@',
     'connect-option=s@'
   );
   
-  die "RapidDbic: --dsn and --from-sqlite options cannot be used together\n"
-    if (exists $opts{dsn} && exists $opts{'from-sqlite'});
+  my $count = 0;
+  exists $opts{dsn} and $count++;
+  exists $opts{'from-sqlite'} and $count++;
+  exists $opts{'from-sqlite-ddl'} and $count++;
   
-  die "RapidDbic: must supply either --dsn or --from-sqlite options\n"
-    unless (exists $opts{dsn} || exists $opts{'from-sqlite'});
-    
+  die "RapidDbic: must supply --dsn, --from-sqlite or --from-sqlite-ddl option\n" 
+    unless($count);
+  
+  die "RapidDbic: --dsn|--from-sqlite|--from-sqlite-ddl options cannot be used together\n"
+    if ($count > 1);
+  
   if($opts{'from-sqlite'}) {
     my $sqlt_orig = file($opts{'from-sqlite'});
     die "RapidDbic: --from-sqlite file '$sqlt_orig' not found\n" unless (-f $sqlt_orig);
+  }
+  elsif($opts{'from-sqlite-ddl'}) {
+    can_run('sqlite3') or die "RapidDbic: sqlite3 not found - cannot bootstrap from DDL\n";
+    my $ddl = file($opts{'from-sqlite-ddl'});
+    die "RapidDbic: --from-sqlite-ddl file '$ddl' not found\n" unless (-f $ddl);
+    
+    # For safety, if the file is huge its probably not the right thing anyway, setting
+    # a 20M limit is still way way huge for what we ever expect which is a few K
+    my $size = $ddl->stat->size;
+    die "RapidDbic: ddl file '$ddl' size ($size b) exceeds max allowed 20MB limit"
+      if($size > 20*1024*1024);
   }
   
   my $name = $self->{name};
@@ -112,6 +130,65 @@ sub _ra_rapiddbic_generate_model {
       $sqlt_orig->copy_to( $sqlt );
       die "RapidDbic: unexpected error copying '$sqlt_orig' to '$sqlt'" unless (-f $sqlt);
     }
+
+    # We are using the current, *absolute* path to the db file here on purpose. This 
+    # will be dynamically converted to be a *runtime* relative path in the actual
+    # model class which is created by our DBIC::Schema::ForRapidDbic model helper:
+    @connect_info = ( join(':','dbi','SQLite',$sqlt->absolute->resolve->stringify) );
+  }
+  elsif($opts->{'from-sqlite-ddl'}) {
+    
+    my $home = dir( $self->{dir} );
+    die "RapidDbic: error finding new app home dir '$home'" unless (-d $home);
+    
+    my $sqldir = $home->subdir('sql');
+    $sqldir->mkpath(1) unless (-d $sqldir);
+    
+    my $ddl_orig = file($opts->{'from-sqlite-ddl'});
+    my $ddl = file($sqldir,$ddl_orig->basename);
+    
+    if (-f $ddl) {
+      die "RapidDbic: error - will not overwrite existing file '$ddl'\n" ;
+      #print " exists \"$sqlt\"\n";
+    }
+    else {
+      print "Copying \"$ddl_orig\" to \"$ddl\"\n";
+      $ddl_orig->copy_to( $ddl );
+      die "RapidDbic: unexpected error copying '$ddl_orig' to '$ddl'" unless (-f $ddl);
+    }
+    
+    my $bn = $ddl->basename;
+    $bn =~ s/\.(sql|ddl)$//i; # strip extension if its .sql or .ddl
+    
+    my $sqlt = file($home,$bn . '.db');
+    
+    if (-f $sqlt) {
+      # TODO: support the regenerate/rescan and/or -force cases...
+      die "RapidDbic: error - will not overwrite existing file '$sqlt'\n" ;
+      #print " exists \"$sqlt\"\n";
+    }
+    else {
+      my $ddl_text = $ddl->slurp;
+      my $sqlite3 = can_run('sqlite3') or die 'sqlite3 not available!';
+      
+      my @cmd = ($sqlite3,$sqlt);
+      
+      print "  calling command -->  sqlite3 $sqlt < $ddl ";
+      
+      my $result = run_forked( \@cmd, { child_stdin => $ddl_text });
+      my $exit = $result->{exit_code};
+      
+      print " [exit: $exit]\n";
+      
+      if($exit) {
+        print join("\n",'',"STDERR:",
+          $result->{'stderr'},''
+        );
+        die $result->{err_msg};
+      }
+    }
+    
+    -f $sqlt or die "db file '$sqlt' wasn't created; an unknown error has occured.";
 
     # We are using the current, *absolute* path to the db file here on purpose. This 
     # will be dynamically converted to be a *runtime* relative path in the actual
