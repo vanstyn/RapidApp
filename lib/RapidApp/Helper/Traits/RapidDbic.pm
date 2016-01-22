@@ -170,22 +170,16 @@ sub _ra_rapiddbic_generate_model {
     else {
       my $ddl_text = $ddl->slurp;
       my $sqlite3 = can_run('sqlite3') or die 'sqlite3 not available!';
+
+      print "\n-->> calling system command:  sqlite3 $sqlt < $ddl ";
       
-      my @cmd = ($sqlite3,$sqlt);
-      
-      print "  calling command -->  sqlite3 $sqlt < $ddl ";
-      
-      my $result = run_forked( \@cmd, { child_stdin => $ddl_text });
+      my $result = run_forked([$sqlite3,$sqlt], { child_stdin => $ddl_text });
       my $exit = $result->{exit_code};
       
       print " [exit: $exit]\n";
+      die "\n" . $result->{err_msg} if ($exit);
       
-      if($exit) {
-        print join("\n",'',"STDERR:",
-          $result->{'stderr'},''
-        );
-        die $result->{err_msg};
-      }
+      print "\n";
     }
     
     -f $sqlt or die "db file '$sqlt' wasn't created; an unknown error has occured.";
