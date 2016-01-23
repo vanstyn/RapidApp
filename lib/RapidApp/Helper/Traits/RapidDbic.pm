@@ -37,6 +37,7 @@ has '_ra_rapiddbic_opts', is => 'ro', isa => 'HashRef', lazy => 1, default => su
     'dsn=s',
     'from-sqlite=s',
     'from-sqlite-ddl=s',
+    'blank-ddl+',
     'loader-option=s@',
     'connect-option=s@'
   );
@@ -45,6 +46,7 @@ has '_ra_rapiddbic_opts', is => 'ro', isa => 'HashRef', lazy => 1, default => su
   exists $opts{dsn} and $count++;
   exists $opts{'from-sqlite'} and $count++;
   exists $opts{'from-sqlite-ddl'} and $count++;
+  exists $opts{'blank-ddl'} and $count++;
   
   die "RapidDbic: must supply --dsn, --from-sqlite or --from-sqlite-ddl option\n" 
     unless($count);
@@ -173,6 +175,61 @@ sub _ra_rapiddbic_generate_model {
       print "\n-->> calling system command:  sqlite3 $sqlt < $ddl ";
       
       my $result = run_forked([$sqlite3,$sqlt], { child_stdin => $ddl_text });
+      my $exit = $result->{exit_code};
+      
+      print " [exit: $exit]\n";
+      die "\n" . $result->{err_msg} if ($exit);
+      
+      print "\n";
+    }
+    
+    -f $sqlt or die "db file '$sqlt' wasn't created; an unknown error has occured.";
+
+    # We are using the current, *absolute* path to the db file here on purpose. This 
+    # will be dynamically converted to be a *runtime* relative path in the actual
+    # model class which is created by our DBIC::Schema::ForRapidDbic model helper:
+    @connect_info = ( join(':','dbi','SQLite',$sqlt->absolute->resolve->stringify) );
+  }
+  elsif($opts->{'blank-ddl'}) {
+    my $sqldir = $home->subdir('sql');
+    $sqldir->mkpath(1) unless (-d $sqldir);
+    
+    my $bn = $self->{appprefix};
+    $ddl = file($sqldir,$bn . '.sql');
+    my $sqlt = file($home,$bn . '.db');
+    
+    if (-f $ddl) {
+      die "RapidDbic: error - will not overwrite existing file '$ddl'\n" ;
+      #print " exists \"$sqlt\"\n";
+    }
+    else {
+      my $blank_content = join("\n-- ",
+        #'-------------------------------------------------------------------------------',
+        ('-' x 80),
+        '  *** ' . $ddl->relative($home) . '  --  DO NOT MOVE OR RENAME THIS FILE ***','',
+        "Add your DDL here (i.e. CREATE TABLE statements)",'',
+        "To (re)initialize your SQLite database (" . $sqlt->relative($home) . ") and (re)generate",
+        "your DBIC schema classes, run this command from your app home directory:",'',
+        "   perl devel/regen_schema_from_ddl.pl",
+        "\n" . ('-' x 80) . "\n" 
+      );
+      
+      print "Initializing blank DDL file \"$ddl\"\n";
+      $ddl->spew( $blank_content );
+    }
+    
+    if (-f $sqlt) {
+      # TODO: support the regenerate/rescan and/or -force cases...
+      die "RapidDbic: error - will not overwrite existing file '$sqlt'\n" ;
+      #print " exists \"$sqlt\"\n";
+    }
+    else {
+      my $sqlite3 = can_run('sqlite3') or die 'sqlite3 not available!';
+      
+      print "Initializing blank SQLite database '" . $sqlt->relative . "'\n";
+      print "\n-->> calling system command:  sqlite3 $sqlt \".databases\" ";
+      
+      my $result = run_forked([$sqlite3,$sqlt,'".databases"']);
       my $exit = $result->{exit_code};
       
       print " [exit: $exit]\n";
