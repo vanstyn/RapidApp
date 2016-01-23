@@ -263,9 +263,13 @@ sub _ra_rapiddbic_generate_model {
   my $contents = $tpl->slurp(iomode =>  "<:raw");
   my $vars = $self->_ra_appclass_tt_vars;
   $vars->{model_class} = join('::',$self->{name},'Model',$opts->{'model-name'});
-  $vars->{from_ddl} = $ddl->relative($home) if ($ddl);
   
   $self->render_file_contents($contents,file($self->{ra_devel},"regen_schema.pl"),$vars);
+  
+  if ($ddl) {
+    $vars->{from_ddl} = $ddl->relative($home);
+    $self->render_file_contents($contents,file($self->{ra_devel},"regen_schema_from_ddl.pl"),$vars);
+  }
   
 }
 

@@ -25,9 +25,6 @@ use lib "$FindBin::Bin/../lib";
 my $app_class   = '[%- name -%]';
 my $model_class = '[%- model_class -%]';
 
-#my $app_class   = 'AcademyExpo';
-#my $model_class = 'AcademyExpo::Model::DB';
-
 my $approot = "$FindBin::Bin/..";
 my $applib = "$approot/lib";
 
@@ -54,9 +51,6 @@ my ($schema_class,$dsn,$user,$pass) = (
 
   my $sqlite3 = can_run('sqlite3') or die 'FATAL: sqlite3 command not available!';
   my $ddl = file($approot,'[%- from_ddl -%]')->resolve;
-  
-  #my $ddl  = file("$approot/sql/academyexpo.sql")->resolve;
-  #my $sqlt = file("$approot/academyexpo.db")->resolve;
 
   my ($dbi,$driver,$db_path) = split(/\:/,$dsn,3);
   die "malformed dsn '$dsn' - expected it to start with 'dbi:'" unless ($dbi eq 'dbi');
@@ -118,7 +112,9 @@ my ($schema_class,$dsn,$user,$pass) = (
 }
 [% END %]
 
-print "\nDumping schema '$schema_class' to '$applib'";
+my @connect = ($dsn,$user,$pass);
+print "\nDumping schema \"$schema_class\" to \"" . file($applib)->resolve->relative . "\"\n";
+print "[ " . join(' ',map { $_||"''" } @connect) . " ]\n\n";
 
 DBIx::Class::Schema::Loader::make_schema_at(
   $schema_class, 
@@ -129,8 +125,7 @@ DBIx::Class::Schema::Loader::make_schema_at(
     components => ["InflateColumn::DateTime"],
   },
   [ 
-    #"dbi:SQLite:$sqlt",'','',
-    $dsn,$user,$pass,
+    @connect,
     { loader_class => 'RapidApp::Util::MetaKeys::Loader' }
   ]
 );
