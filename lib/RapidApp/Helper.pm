@@ -113,6 +113,10 @@ sub _ra_mk_dirs {
   $self->mk_dir( $self->{ra_js} );
   $self->{ra_misc} = dir( $self->{ra_assets}, 'misc' );
   $self->mk_dir( $self->{ra_misc} );
+  
+  # new devel/ dir for misc development scripts
+  $self->{ra_devel} = dir( $self->{dir}, 'devel' );
+  $self->mk_dir( $self->{ra_devel} );
 
 }
 

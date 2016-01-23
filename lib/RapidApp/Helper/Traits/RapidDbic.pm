@@ -107,15 +107,17 @@ sub _ra_rapiddbic_generate_model {
   my $self = shift;
   
   my $name = $self->{name};
+  my $home = dir( $self->{dir} );
+  die "RapidDbic: error finding new app home dir '$home'" unless (-d $home);
+  
   my $opts = $self->_ra_rapiddbic_opts;
   
   my @connect_info = $opts->{dsn} ? split(/\,/,$opts->{dsn},3) : ();
   push @connect_info, '' while (scalar(@connect_info) < 3);
   
+  my $ddl = undef;
+  
   if($opts->{'from-sqlite'}) {
-    
-    my $home = dir( $self->{dir} );
-    die "RapidDbic: error finding new app home dir '$home'" unless (-d $home);
     
     my $sqlt_orig = file($opts->{'from-sqlite'});
     my $sqlt = file($home,$sqlt_orig->basename);
@@ -138,14 +140,11 @@ sub _ra_rapiddbic_generate_model {
   }
   elsif($opts->{'from-sqlite-ddl'}) {
     
-    my $home = dir( $self->{dir} );
-    die "RapidDbic: error finding new app home dir '$home'" unless (-d $home);
-    
     my $sqldir = $home->subdir('sql');
     $sqldir->mkpath(1) unless (-d $sqldir);
     
     my $ddl_orig = file($opts->{'from-sqlite-ddl'});
-    my $ddl = file($sqldir,$ddl_orig->basename);
+    $ddl = file($sqldir,$ddl_orig->basename);
     
     if (-f $ddl) {
       die "RapidDbic: error - will not overwrite existing file '$ddl'\n" ;
@@ -254,6 +253,20 @@ sub _ra_rapiddbic_generate_model {
     );
     Catalyst::ScriptRunner->run($name => 'Create');
   }
+  
+  
+  # New: create regen_schema.pl devel script:
+  
+  my $tpl = file(RapidApp->share_dir,qw(devel bootstrap regen_schema.pl.tt));
+  confess "Error: template file '$tpl' not found" unless (-f $tpl);
+  
+  my $contents = $tpl->slurp(iomode =>  "<:raw");
+  my $vars = $self->_ra_appclass_tt_vars;
+  $vars->{model_class} = join('::',$self->{name},'Model',$opts->{'model-name'});
+  $vars->{from_ddl} = $ddl->relative($home) if ($ddl);
+  
+  $self->render_file_contents($contents,file($self->{ra_devel},"regen_schema.pl"),$vars);
+  
 }
 
 
