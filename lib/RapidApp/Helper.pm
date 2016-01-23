@@ -134,6 +134,13 @@ sub _ra_mk_appclass {
   my $vars = $self->_ra_appclass_tt_vars;
   
   $self->render_file_contents($contents,"$mod.pm",$vars);
+
+  # -- New: also create app.psgi so 'plackup' works w/o arguments
+  my $apptpl = file(RapidApp->share_dir,qw(devel bootstrap app.psgi.tt));
+  confess "Error: template file '$apptpl' not found" unless (-f $apptpl);
+  my $appcontents = $apptpl->slurp(iomode =>  "<:raw");
+  $self->render_file_contents($appcontents,file($self->{dir},"app.psgi"),$vars);
+  # --
 }
 
 sub _ra_appclass_tt_vars {
