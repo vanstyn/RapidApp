@@ -167,8 +167,8 @@ sub _gen_model {
           
           $helper->{pre_config_perl_code} = join('',
             q{use Path::Class qw(file);},"\n",
-            q{use Catalyst::Utils;},"\n",
-            q{my $db_path = file(Catalyst::Utils::home('},
+            q{use RapidApp::Util ':all';},"\n",
+            q{my $db_path = file(RapidApp::Util::find_app_home('},
               $helper->{app},q{'),'},$rel->stringify,q{');},"\n",
             q|sub _sqlt_db_path { "$db_path" }; # exposed for use by the regen devel script|
           );
@@ -293,6 +293,7 @@ __compclass__
 package [% class %];
 use Moo;
 extends 'Catalyst::Model::DBIC::Schema';
+with 'RapidApp::Util::Role::ModelDBIC';
 
 use strict;
 use warnings;
