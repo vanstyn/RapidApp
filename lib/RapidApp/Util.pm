@@ -860,4 +860,30 @@ push @EXPORT_OK, @pkg_methods;
 ##########################################################################################
 ##########################################################################################
 
+# The same as Catalyst::Utils::home but just a little bit more clever:
+sub find_app_home {
+  $_[0] && $_[0] eq __PACKAGE__ and shift;
+  
+  require Catalyst::Utils;
+  require Module::Locate;
+  
+  my $class = shift or die "find_app_home(): expected app class name argument";
+  
+  my $path = Catalyst::Utils::home($class);
+  
+  unless($path) {
+    # make an $INC{ $key } style string from the class name
+    (my $file = "$class.pm") =~ s{::}{/}g;
+    unless ($INC{$file}) {
+      if(my $pm_path = Module::Locate::locate($class)) {
+        local $INC{$file} = $pm_path;
+        $path = Catalyst::Utils::home($class);
+      }
+    }
+  }
+  
+  return $path;
+}
+
+
 1;
