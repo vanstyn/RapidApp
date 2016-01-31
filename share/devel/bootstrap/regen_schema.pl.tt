@@ -69,7 +69,7 @@ my ($schema_class,$dsn,$user,$pass) = (
   my $sqlt = file( $model_class->can('_sqlt_db_path') 
     ? $model_class->_sqlt_db_path() 
     : $db_path
-  )->resolve;
+  );
   
   print join("\n",'',
     "Regenerating SQLite database from DDL - EXISTING DATA WILL BE DESTROYED!",'',
