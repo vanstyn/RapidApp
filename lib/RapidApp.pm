@@ -63,6 +63,10 @@ See L<www.rapidapp.info|http://www.rapidapp.info> and L<RapidApp::Manual> for mo
   MyApp/script/myapp_server.pl
 
 
+  # OR, create a new app starting from an SQLite DDL file:
+  rapidapp.pl --helpers RapidDbic MyApp -- --from-sqlite-ddl my-sqlt-schema.sql
+
+
   # OR, start up an instant database CRUD app/utility at http://localhost:3500/
   rdbic.pl dbi:mysql:database=somedb,root,''
 
