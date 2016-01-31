@@ -88,6 +88,8 @@ rapidapp.pl - Bootstrap a RapidApp/Catalyst application
    rapidapp.pl --helpers Templates,TabGui,AuthCore,NavCore MyApp
    rapidapp.pl --helpers RapidDbic MyApp -- --dsn dbi:mysql:database=somedb,root,''
    rapidapp.pl --helpers RapidDbic MyApp -- --from-sqlite /path/to/existing/sqlt.db
+   rapidapp.pl --helpers RapidDbic MyApp -- --from-sqlite-ddl my-schema.sql
+   rapidapp.pl --helpers RapidDbic MyApp -- --blank-ddl
 
 =head1 DESCRIPTION
 

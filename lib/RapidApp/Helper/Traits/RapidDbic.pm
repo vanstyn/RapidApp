@@ -189,6 +189,14 @@ sub _ra_rapiddbic_generate_model {
     # will be dynamically converted to be a *runtime* relative path in the actual
     # model class which is created by our DBIC::Schema::ForRapidDbic model helper:
     @connect_info = ( join(':','dbi','SQLite',$sqlt->absolute->resolve->stringify) );
+    
+    $self->_ra_add_rapiddbic_extra_info(
+      "NOTE: Your DDL (i.e. native SQLite schema) has been copied to: $ddl",
+      "you can modify this file later on and recreate your database and DBIC",
+      "schema classes by calling this script from your app home dir:\n",
+      "  perl devel/regen_schema_from_ddl.pl\n"
+    );
+    
   }
   elsif($opts->{'blank-ddl'}) {
     my $sqldir = $home->subdir('sql');
@@ -244,6 +252,15 @@ sub _ra_rapiddbic_generate_model {
     # will be dynamically converted to be a *runtime* relative path in the actual
     # model class which is created by our DBIC::Schema::ForRapidDbic model helper:
     @connect_info = ( join(':','dbi','SQLite',$sqlt->absolute->resolve->stringify) );
+    
+    $self->_ra_add_rapiddbic_extra_info(
+      "NOTE: A blank DDL (i.e. native SQLite schema) has been setup at: $ddl",
+      "now write your schema (i.e. CREATE TABLE statements) in this file and ",
+      "generate your database and DBIC schema classes by calling this script ",
+      "from your app home dir:\n",
+      "  perl devel/regen_schema_from_ddl.pl\n",
+      "(you can run this script over and over to regenerate at any time)"
+    );
   }
   
   my @loader_opts = $opts->{'loader-option'} ? @{$opts->{'loader-option'}} : qw/generate_pod=0/;
@@ -331,6 +348,7 @@ sub _ra_rapiddbic_generate_model {
 }
 
 
+
 ## No longer using these configs in favor of letting the ForRapidDbic create
 ## script create the config within the individual model (new feature)
 #
@@ -371,5 +389,23 @@ sub _ra_rapiddbic_generate_model {
 #  );
 #
 #};
+
+
+sub _ra_add_rapiddbic_extra_info {
+  my $self = shift;
+  return unless (defined $_[0]);
+  
+  $self->{_ra_rapiddbic_extra_info} ||= [];
+  push @{$self->{_ra_rapiddbic_extra_info}}, @_
+}
+
+after '_mk_information' => sub {
+  my $self = shift;
+  
+  if (my $nfos = $self->{_ra_rapiddbic_extra_info}) {
+    print "\n";
+    print "$_\n" for (@$nfos);
+  }
+};
 
 1;
