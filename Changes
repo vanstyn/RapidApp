@@ -1,5 +1,13 @@
 Revision history for RapidApp
 
+1.1005 2016-01-31
+    - New RapidDbic apps bootstrapped with 'regen_schema' scripts (VANSTYN)
+    - Added new RapidDbic bootstrap options: (VANSTYN)
+        * --from-sqlite-ddl
+        * --blank-ddl
+    - New utility function RapidApp::Util::find_app_home() (VANSTYN)
+    - All new apps bootstrap with an app.psgi for 'plackup' (VANSTYN)
+
 1.1004 2015-12-17
     - Fix the way the default allow_view is calculated (VANSTYN)
 
