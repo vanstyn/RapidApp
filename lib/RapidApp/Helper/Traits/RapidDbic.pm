@@ -12,7 +12,7 @@ use Catalyst::ScriptRunner;
 use Path::Class qw/file dir/;
 use FindBin;
 use List::Util;
-use IPC::Cmd qw[can_run run_forked];
+use IPC::Cmd 0.94 qw[can_run run_forked];
 
 requires '_ra_catalyst_plugins';
 requires '_ra_catalyst_configs';
