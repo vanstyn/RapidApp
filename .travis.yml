@@ -1,5 +1,6 @@
 language: perl
 perl:
+   - "5.22"
    - "5.20"
    - "5.18"
    - "5.16"
@@ -14,7 +15,13 @@ install:
    - cpanm --quiet --notest --skip-satisfied DBIx::Class
    - cpanm --quiet --notest --skip-satisfied Catalyst
    - "dzil authordeps | cpanm --quiet --notest --skip-satisfied"
-   - "dzil listdeps   | cpanm --quiet --skip-satisfied"
+   
+   ##FIXME: now installing *ALL* deps with notests until the CPAN stack is 
+   # more reliable. The frequency of failures due to temporary upstream 
+   # broken dists has become too much of a nuisance
+   - "dzil listdeps   | cpanm --quiet --notest --skip-satisfied"
+   #- "dzil listdeps   | cpanm --quiet --skip-satisfied"
+   ##
 
 script:
    - HARNESS_PERL_SWITCHES=-MDevel::Cover=-coverage,statement,branch,condition,path,subroutine dzil test --author --release --keep
