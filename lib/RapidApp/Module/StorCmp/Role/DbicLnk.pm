@@ -1096,6 +1096,18 @@ sub chain_Rs_req_base_Attr {
       $dbic_name = $alias . '_' . $count . '.' . $field if($count > 1);
     }
     
+    # -----
+    # NEW: extract the nested select ref from the special ''/-as structure for
+    # the query, throwing away the outer layer and the -as. It does not appear
+    # to be needed here, and for the case of multi-rels under MSSQL specifically, 
+    # this was resulting in 'AS' being added twice in the generated query
+    $dbic_name = $dbic_name->{''} if (
+      ref($dbic_name)||'' eq 'HASH' &&
+      exists $dbic_name->{''} && ref($dbic_name->{''}) &&
+      $dbic_name->{-as} && scalar(keys %$dbic_name) == 2
+    );
+    # -----
+    
     push @{$attr->{'select'}}, $dbic_name;
     push @{$attr->{'as'}}, $col;
   }
