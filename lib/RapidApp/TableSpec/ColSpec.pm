@@ -79,8 +79,8 @@ my $TYPE_ColSpecStr = Type::Tiny->new(
   name       => "ColSpecStr",
   constraint => sub {
     /\s+/ and warn "ColSpec '$_' is invalid because it contains whitespace" and return 0;
-    /[A-Z]+/ and warn "ColSpec '$_' is invalid because it contains upper case characters" and return 0;
-    /([^\#a-z0-9\-\_\.\!\*\?\[\]\{\}\:])/ and warn "ColSpec '$_' contains invalid characters ('$1')." and return 0;
+    #/[A-Z]+/ and warn "ColSpec '$_' is invalid because it contains upper case characters" and return 0;
+    /([^\#a-zA-Z0-9\-\_\.\!\*\?\[\]\{\}\:])/ and warn "ColSpec '$_' contains invalid characters ('$1')." and return 0;
     /^\./ and warn "ColSpec '$_' is invalid: \".\" cannot be the first character" and return 0;
     /\.$/ and warn "ColSpec '$_' is invalid: \".\" cannot be the last character (did you mean '$_*' ?)" and return 0;
 
