@@ -223,6 +223,16 @@ around '_gen_static_schema' => sub {
   my $connect_info = $self->connect_info;
   my $loader_args  = $self->loader_args;
   
+  # ---
+  # TODO/FIXME: Temp hack to solve a particular case with table names ending in '+'
+  # this should be removed once proper support for passing loader args in 
+  # rapidapp.pl and rdbic.pl
+  $loader_args->{moniker_map} = sub { 
+    my $table = shift; $table =~ s{\+$}{_plus}; 
+    join '', map ucfirst, split /[\W_]+/, lc $table 
+  };
+  # ---
+  
   no warnings 'redefine';
 
   local *connect_info = sub {
