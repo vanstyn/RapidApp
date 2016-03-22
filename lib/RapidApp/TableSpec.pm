@@ -16,6 +16,26 @@ sub BUILD {
 	$self->add_onrequest_columns_mungers( $self->column_permissions_roles_munger );
 }
 
+around BUILDARGS => sub {
+  my $orig = shift;
+  my $class = shift;
+  my %params = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+  
+  # -- New: handle rogue name values, like ScalarRefs which DBIC sometimes uses 
+  # for the ->table attr of Result classes, and also normalize values
+  if(my $table = $params{name}) {
+    $table = $$table if (ref($table)||'' eq 'SCALAR');
+    $table =~ s/("|')//g;
+    $table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
+    $params{name} = $table;
+  }
+  # --
+  
+  return $class->$orig(%params);
+};
+
+
+
 has 'ResultClass' => ( is => 'ro', isa => 'Str' );
 
 has 'name' => ( is => 'ro', isa => 'Str', required => 1 );
