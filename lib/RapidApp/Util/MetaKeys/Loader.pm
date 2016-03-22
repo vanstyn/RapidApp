@@ -12,6 +12,8 @@ require RapidApp::Util::MetaKeys;
 use RapidApp::Util qw(:all);
 use Data::Printer;
 
+use DBI::Const::GetInfoType '%GetInfoType'; 
+
 sub new {
   my ($class, %args) = @_;
   
@@ -34,6 +36,13 @@ sub new {
   
   # Logic duplicated from DBIx::Class::Schema::Loader::DBI
   my $driver = $self->dbh->{Driver}->{Name};
+  
+  # New: detect the MSSQL/ODBC case - TODO: generalize this properly
+  if($driver eq 'ODBC') {
+    my $dbms_name = $self->dbh->get_info($GetInfoType{SQL_DBMS_NAME});
+    $driver = 'MSSQL' if ($dbms_name eq 'Microsoft SQL Server');
+  }
+  
   my $subclass = 'DBIx::Class::Schema::Loader::DBI::' . $driver;
   Module::Runtime::require_module($subclass);
   
