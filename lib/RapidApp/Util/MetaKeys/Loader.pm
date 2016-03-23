@@ -29,6 +29,11 @@ sub new {
   } @prps };
   # --
   
+  # For databases like Pg which can have multiple "schemas" within each database,
+  # we set the db_schema loader option to '%' which means all. For rdbic.pl, the
+  # limit-schemas-re option can be supplied to narrow to a specific schema(s)
+  $args{db_schema} ||= '%';
+  
   my $self = $class->next::method(%args);
   
   $self->MetaKeys( $metakeys_data );
