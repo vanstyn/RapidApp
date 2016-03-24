@@ -263,37 +263,34 @@ sub _ra_rapiddbic_generate_model {
     );
   }
   
-  my @loader_opts = $opts->{'loader-option'} ? @{$opts->{'loader-option'}} : qw/generate_pod=0/;
-  my @connect_opts = ();
-  if($opts->{'connect-option'}) {
-    @connect_opts = @{$opts->{'connect-option'}};
-  }
-  else {
-    # When there are no user-supplied connect options, set some 
-    # sane defaults for certain common DBD driver types:
-    if($connect_info[0] && $connect_info[0] =~ /^dbi\:SQLite\:/) {
-      # Turn on unicode and forein keys for SQLite:
-      @connect_opts = qw/sqlite_unicode=1 on_connect_call=use_foreign_keys/;
-    }
-    elsif($connect_info[0] && $connect_info[0] =~ /^dbi\:mysql\:/) {
-      # Turn on unicode and auto-reconnect for MySQL:
-      @connect_opts = qw/mysql_enable_utf8=1 mysql_auto_reconnect=1/;
-    }
-    # TODO: add default opts for pgsql, etc
-    #...
-  }
   
-  # quote_names is always required for newly generated schemas:
-  push @connect_opts, 'quote_names=1' unless (
-    List::Util::first { $_ eq 'quote_names=1' } @connect_opts
+  my $connect_opt_defaults = [];
+  if($connect_info[0] && $connect_info[0] =~ /^dbi\:SQLite\:/) {
+    # Turn on unicode and forein keys for SQLite:
+    $connect_opt_defaults = [qw/sqlite_unicode=1 on_connect_call=use_foreign_keys/];
+  }
+  elsif($connect_info[0] && $connect_info[0] =~ /^dbi\:mysql\:/) {
+    # Turn on unicode and auto-reconnect for MySQL:
+    $connect_opt_defaults = [qw/mysql_enable_utf8=1 mysql_auto_reconnect=1/];
+  }
+  # TODO: add default opts for pgsql, etc
+  #...
+  
+  unshift @$connect_opt_defaults, 'quote_names=1';
+  
+  my @connect_opts = $self->_normalize_option_list(
+    $opts->{'connect-option'} || [],
+    $connect_opt_defaults
   );
   
-  die "loader-option 'create=dynamic' is not allowed - use create=static" if (
-    List::Util::first { $_ eq 'create=dynamic' } @loader_opts
+  my @loader_opts = $self->_normalize_option_list(
+    $opts->{'loader-option'} || [],
+    [qw/create=static generate_pod=0/]
   );
   
-  # create=static is always required, and must be the first arg:
-  @loader_opts = ('create=static', grep { $_ ne 'create=static' } @loader_opts);
+  die "create=static is the only allowed value for loader-option 'create'" if (
+    List::Util::first { $_ =~ /^create\=/ && $_ ne 'create=static' } @loader_opts
+  );
   
   my $schema_class = $opts->{'schema-class'} or die "missing required opt 'schema-class'";
   
@@ -345,6 +342,27 @@ sub _ra_rapiddbic_generate_model {
     $self->render_file_contents($contents,file($self->{ra_devel},"regen_schema_from_ddl.pl"),$vars);
   }
   
+}
+
+# take a list of option=value options with optional defaults and prune to unique
+# option, with later values taking priority, and changing '-' to '_' in option name
+sub _normalize_option_list {
+  my $self = shift;
+  my $opts = shift;
+  my $defs = shift || [];
+  
+  my @order = ();
+  my %o = ();
+  
+  map {
+    my ($k,$v) = split(/\=/,$_,2);
+    $k =~ s/\-/\_/g;
+    push @order, $k unless (exists $o{$k});
+    $o{$k} = $v;
+  } (@$defs, @$opts);
+  
+  # Put back into list form:
+  return map { exists $o{$_} ? join('=',$_,$o{$_}) : () } @order
 }
 
 
