@@ -96,6 +96,10 @@ rapidapp.pl - Bootstrap a RapidApp/Catalyst application
      --loader-option db_schema='%' --loader-option generate_pod=1 \
      --connect-option quote_names=0
 
+   rapidapp.pl --helpers RapidDbic MyApp -- --dsn \
+     'dbi:ODBC:Driver=TDS;TDS_Version=7.0;Server=10.1.2.3;Port=1433;Database=Blah',sa,topsecret \
+
+
 =head1 DESCRIPTION
 
 The C<rapidapp.pl> script bootstraps a RapidApp/Catalyst application, creating a

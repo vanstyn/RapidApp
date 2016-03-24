@@ -243,8 +243,8 @@ rdbic.pl - Instant CRUD webapp for your database using RapidApp/Catalyst/DBIx::C
 
    rdbic.pl my_sqlt.db -Ilib --schema-class My::Existing::Schema
 
-   rdbic.pl \
-     --dsn 'dbi:ODBC:Driver=TDS;Server=10.1.2.3;Port=1433;Database=Blah',sa,topsecret \
+   rdbic.pl --dsn \
+     'dbi:ODBC:Driver=TDS;TDS_Version=7.0;Server=10.1.2.3;Port=1433;Database=Blah',sa,topsecret \
      --loader-option db_schema='{ Blah => "%" }' --loader-option use_moose=0
 
 
