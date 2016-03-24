@@ -73,6 +73,10 @@ has 'limit_schemas_re',   is => 'ro', isa => Maybe[Str], default => sub { undef 
 has 'exclude_tables_re',  is => 'ro', isa => Maybe[Str], default => sub { undef };
 has 'exclude_schemas_re', is => 'ro', isa => Maybe[Str], default => sub { undef };
 
+has 'loader_options',  is => 'ro', isa => ArrayRef[Str], default => sub { [] };
+has 'connect_options', is => 'ro', isa => ArrayRef[Str], default => sub { [] };
+
+
 has '_def_ns_pfx', is => 'ro', isa => Str, default => sub { 'rDbicApp' };
 
 has 'app_namespace', is => 'ro', isa => Str,  lazy => 1, default => sub { 
@@ -255,6 +259,9 @@ sub _bootstrap {
   
   my @keys = qw/metakeys limit_schemas_re exclude_schemas_re limit_tables_re exclude_tables_re/;
   my $extra = { map { $_ => scalar $self->$_ } @keys };
+  
+  $extra->{'loader-option'}  = $self->loader_options;
+  $extra->{'connect-option'} = $self->connect_options;
 
   my $helper = RapidApp::Helper->new_with_traits({
       '.newfiles' => 1, 'makefile' => 0, 'scripts' => 0,
@@ -585,6 +592,26 @@ true this will be within the C<workdir>, or whatever directory is set in C<local
 Otherwise it is the standard location returned by C<Catalyst::Utils::class2tempdir> for
 the generated app (which is not cleaned up).
 
+=head2 loader_options
+
+Optional ArrayRef of loader_options which will be passed to the Schema::Loader. These should
+be supplied as a list of name=value pairs, for example:
+
+  loader_options => [qw/db_schema='%' generate_pod=1/]
+
+This has the same effect as C<-o> options supplied to L<dbicdump>. For a complete list of
+suported options, see L<DBIx::Class::Schema::Loader::Base>.
+
+=head2 connect_options
+
+Optional ArrayRef of connect_options to be added to the C<%extra_attributes> of the C<connect_info>.
+(See L<DBIx::Class::Storage::DBI/connect_info>). Like C<loader_options>, these should be supplied 
+as a list of name=value pairs, for example:
+
+  connect_options => [qw/quote_names=0 mysql_enable_utf8=0/]
+
+Note: the options in the above example are both set to C<'1'> by default (second only for MySQL).
+So the above example is how you would go about turning these options off if needed for some reason.
 
 =head1 SEE ALSO
 

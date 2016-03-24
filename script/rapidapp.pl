@@ -91,6 +91,11 @@ rapidapp.pl - Bootstrap a RapidApp/Catalyst application
    rapidapp.pl --helpers RapidDbic MyApp -- --from-sqlite-ddl my-schema.sql
    rapidapp.pl --helpers RapidDbic MyApp -- --blank-ddl
 
+   rapidapp.pl --helpers RapidDbic MyApp -- \
+     --dsn 'dbi:Pg:dbname=foo;host=localhost;port=5432',larry,secretpw \
+     --loader-option db_schema='%' --loader-option generate_pod=1 \
+     --connect-option quote_names=0
+
 =head1 DESCRIPTION
 
 The C<rapidapp.pl> script bootstraps a RapidApp/Catalyst application, creating a

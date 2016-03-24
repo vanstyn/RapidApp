@@ -51,6 +51,9 @@ my $limit_schemas_re   = undef;
 my $exclude_tables_re  = undef;
 my $exclude_schemas_re = undef;
 
+my $loader_options  = [];
+my $connect_options = [];
+
 # From 'prove': Allow cuddling the paths with -I, -M and -e
 @ARGV = map { /^(-[IMe])(.+)/ ? ($1,$2) : $_ } @ARGV;
 
@@ -71,6 +74,9 @@ GetOptions(
   'limit_schemas_re|limit-schemas-re=s'     => \$limit_schemas_re,
   'exclude_tables_re|exclude-tables-re=s'   => \$exclude_tables_re,
   'exclude_schemas_re|exclude-schemas-re=s' => \$exclude_schemas_re,
+  
+  'loader-option=s@'  => \$loader_options,
+  'connect-option=s@' => \$connect_options
   
 );
 
@@ -97,6 +103,8 @@ if (@$includes) {
     limit_schemas_re   => $limit_schemas_re,
     exclude_tables_re  => $exclude_tables_re,
     exclude_schemas_re => $exclude_schemas_re,
+    loader_options     => $loader_options,
+    connect_options    => $connect_options
   };
   
   $cnf->{schema_class} = $schema_class if ($schema_class);
@@ -193,10 +201,13 @@ rdbic.pl - Instant CRUD webapp for your database using RapidApp/Catalyst/DBIx::C
    --run-webapi    EXPERIMENTAL: Run WebAPI::DBIC w/ HAL Browser instead of RapidApp
    --metakeys      EXPERIMENTAL: Path to a RapidApp::Util::MetaKeys data file
 
-   --limit-tables-re     EXPERIMENTAL: Regex string limits included table names
-   --limit-schemas-re    EXPERIMENTAL: Regex string limits included RDBMS 'schema' names
-   --exclude-tables-re   EXPERIMENTAL: Regex string excludes table names
-   --exclude-schemas-re  EXPERIMENTAL: Regex string excludes RDBMS 'schema' names
+   --loader-option   DBIC::SL name=value opt(s), can be used more than once (same as -o in dbicdump)
+   --connect-option  name=value opt(s) to add to connect_info %extra_attributes
+
+   --limit-tables-re     Regex limits included table names (see also 'exclude' loader-option)
+   --limit-schemas-re    Regex limits RDBMS 'schema' names (see also 'db_schema' loader-option)
+   --exclude-tables-re   Regex string excludes table names 
+   --exclude-schemas-re  Regex string excludes RDBMS 'schema' names
 
    --crud-profile  One of five choices to broadly control CRUD interface behavior (see below)
 
@@ -232,7 +243,10 @@ rdbic.pl - Instant CRUD webapp for your database using RapidApp/Catalyst/DBIx::C
 
    rdbic.pl my_sqlt.db -Ilib --schema-class My::Existing::Schema
 
-   rdbic.pl dbi:Pg:dbname=foo,usr,1234 --exclude-schemas-re='^testing_'
+   rdbic.pl \
+     --dsn 'dbi:ODBC:Driver=TDS;Server=10.1.2.3;Port=1433;Database=Blah',sa,topsecret \
+     --loader-option db_schema='{ Blah => "%" }' --loader-option use_moose=0
+
 
 =head1 DESCRIPTION
 
