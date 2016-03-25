@@ -1,5 +1,18 @@
 Revision history for RapidApp
 
+1.1006 2016-03-25
+    - rdbic.pl/rapidapp.pl --loader-option + --connect-option (VANSTYN)
+    - Updated usage docs with examples setting db_schema and MSSQL dsn (VANSTYN)
+    - Update shebang of all scripts/* to use '#!/usr/bin/env perl' (VANSTYN)
+    - Misc fixes/improvements for MSSQL support (VANSTYN)
+    - Properly detect/load MSSQL DBIC::SL driver during bootstrap (VANSTYN)
+    - JSON encoder handles \'now()' values (sets undef) (VANSTYN)
+    - Require IPC::Cmd 0.94 (VANSTYN)
+    - Require DBIx::Class::Schema::Loader 0.07045 (VANSTYN)
+    - Require DBIx::Class 0.082821 (VANSTYN)
+    - Add travis job for perl 5.22 (VANSTYN)
+    - Stop running unit tests for deps in travis (VANSTYN)
+
 1.1005 2016-01-31
     - New RapidDbic apps bootstrapped with 'regen_schema' scripts (VANSTYN)
     - Added new RapidDbic bootstrap options: (VANSTYN)
