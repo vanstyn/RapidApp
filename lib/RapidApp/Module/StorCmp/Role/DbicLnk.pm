@@ -767,6 +767,29 @@ sub apply_first_records {
 sub rs_all { 
   my ($self, $Rs) = @_;
   my $want = wantarray;
+  
+  # ----- GitHub Issue #165
+  # NEW: extract the nested select refs from the special ''/-as structure for
+  # the query, throwing away the outer layer and the -as. This is being done 
+  # for MSSQL specificially because this was causing 'AS' being added twice 
+  # in the generated query. We are now doing this here, after the fact, to 
+  # avoid having to refactor a lot of existing code which expects and looks for
+  # these ''/-as structures (but this is a TODO to revisit). The only ramification
+  # of stripping this structure appears to be in sorting; we can no longer sort
+  # according to the '-as' name for virtual columns (see also the change further down
+  # regarding sorting, also tagged as #165). So, istead we have to sort
+  # on the select ref again. We already had to give up on using predeclared names
+  # for HAVING because Pg didn't like them (#51), and it seems MSSQL doesn't like
+  # it for sorting either. So we are falling back to the broadest compatability.
+  # TODO: optimize cases for each different backend
+  if(my $sels = $Rs->{attrs}{select}) {
+    @$sels = map { (
+      (ref($_)||'') eq 'HASH' &&
+      exists $_->{''} && exists $_->{-as} &&
+      scalar(keys %$_) == 2
+    ) ? $_->{''} : $_ } @$sels
+  }
+  # -----
 
   my @ret = ();
   try {
@@ -1096,18 +1119,6 @@ sub chain_Rs_req_base_Attr {
       $dbic_name = $alias . '_' . $count . '.' . $field if($count > 1);
     }
     
-    # -----
-    # NEW: extract the nested select ref from the special ''/-as structure for
-    # the query, throwing away the outer layer and the -as. It does not appear
-    # to be needed here, and for the case of multi-rels under MSSQL specifically, 
-    # this was resulting in 'AS' being added twice in the generated query
-    $dbic_name = $dbic_name->{''} if (
-      ref($dbic_name)||'' eq 'HASH' &&
-      exists $dbic_name->{''} && ref($dbic_name->{''}) &&
-      $dbic_name->{-as} && scalar(keys %$dbic_name) == 2
-    );
-    # -----
-    
     push @{$attr->{'select'}}, $dbic_name;
     push @{$attr->{'as'}}, $col;
   }
@@ -1123,11 +1134,19 @@ sub chain_Rs_req_base_Attr {
   for my $sort (@sorts) {
     my $field = $sort->{field};
     my $sort_name = $self->resolve_dbic_render_colname($field,$attr->{join});
-    if (ref $sort_name eq 'HASH') {
-      die "Can't sort by column if it doesn't have an SQL alias"
-        unless exists $sort_name->{-as};
-      $sort_name= $sort_name->{-as};
-    }
+
+    # ----- GitHub Issue #165
+    # (See also comments tagged with #165 in rs_all further up...)
+    $sort_name = ref($sort_name) ? $self->_extract_virtual_subselect_ref($sort_name) : $sort_name;
+    # we can no longer use the '-as' name for sorting with virtual columns because
+    # MSSQL doesn't like it. So we're just using the actual select/ref again, which
+    # is probably slower, but works the same across different backends.
+    #if (ref $sort_name eq 'HASH') {
+    #  die "Can't sort by column if it doesn't have an SQL alias"
+    #    unless exists $sort_name->{-as};
+    #  $sort_name= $sort_name->{-as};
+    #}
+    # -----
     my @order_by = ref $attr->{order_by} eq 'HASH'
       ? ($attr->{order_by})
       : ref $attr->{order_by} eq 'ARRAY'
