@@ -39,7 +39,7 @@ do_source_vars() {
       fi;
     fi;
   else
-    echo "Error! $PRL script not found! Did you move this script?";
+    echo "Error! $prl script not found! Did you move this script?";
     # note: we're not calling exit here because we've been sourced 
     # and this would cause the parent shell to exit
   fi;
