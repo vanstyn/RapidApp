@@ -283,9 +283,18 @@ sub _ra_rapiddbic_generate_model {
     $connect_opt_defaults
   );
   
+  my $loader_opt_defaults = [qw/create=static generate_pod=0/];
+  
+  # -- GitHub Issue #164 --
+  # turn on qualify_objects by default whenever a 'db-schema' is supplied:
+  push @$loader_opt_defaults, 'qualify_objects=1' if (
+    List::Util::first { $_ =~ /^db[-_]schema\=/ } @{$opts->{'loader-option'} || []}
+  );
+  # --
+  
   my @loader_opts = $self->_normalize_option_list(
     $opts->{'loader-option'} || [],
-    [qw/create=static generate_pod=0/]
+    $loader_opt_defaults
   );
   
   die "create=static is the only allowed value for loader-option 'create'" if (
