@@ -1,5 +1,11 @@
 Revision history for RapidApp
 
+1.1007 2016-04-01
+    - Loader default 'qualify_objects=1' set with 'db_schema' - #164 (VANSTYN)
+    - Added dev utility devel/source_dev_shell_vars.bash - #166 (VANSTYN)
+    - Fix virtual column bugs/regressions introduced in 1.1006 - #165 (VANSTYN)
+    - More improvements to MSSQL support (VANSTYN)
+
 1.1006 2016-03-25
     - rdbic.pl/rapidapp.pl --loader-option + --connect-option (VANSTYN)
     - Updated usage docs with examples setting db_schema and MSSQL dsn (VANSTYN)
