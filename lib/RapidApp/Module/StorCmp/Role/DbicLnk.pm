@@ -768,6 +768,18 @@ sub rs_all {
   my ($self, $Rs) = @_;
   my $want = wantarray;
   
+  ## ---------
+  ## Experimental override to force all joins to be LEFT joins, since in the
+  ## context of the grid, it is never helpful to inner join which can cause
+  ## rows to not show up when the foreign key isn't found, which is never what
+  ## we want to happen.
+  my $orig_resolve_join = \&DBIx::Class::ResultSource::_resolve_join;
+  local *DBIx::Class::ResultSource::_resolve_join = sub {
+    my ($self, $join, $alias, $seen, $jpath, $parent_force_left) = @_;
+    return $orig_resolve_join->($self, $join, $alias, $seen, $jpath, 1)
+  };
+  ## ---------
+
   # ----- GitHub Issue #165
   # NEW: extract the nested select refs from the special ''/-as structure for
   # the query, throwing away the outer layer and the -as. This is being done 
