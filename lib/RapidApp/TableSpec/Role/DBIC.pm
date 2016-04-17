@@ -233,7 +233,10 @@ sub init_local_columns  {
 	my $self = shift;
 	
 	my $class = $self->ResultClass;
-	$class->set_primary_key( $class->columns ) unless ( $class->primary_columns > 0 );
+	unless ( $class->primary_columns > 0 ) {
+    local $SIG{__WARN__} = sub {}; # GitHub Issue #167 - TODO/FIXME
+    $class->set_primary_key( $class->columns )
+  }
 	
 	my @order = @{$self->Cnf_columns_order};
 	@order = $self->filter_base_columns(@order);

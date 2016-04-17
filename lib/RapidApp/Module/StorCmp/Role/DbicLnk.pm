@@ -260,6 +260,7 @@ has 'primary_columns' => ( is => 'ro', isa => 'ArrayRef[Str]', lazy => 1, defaul
   # If the db has no primary columns, then we have to use ALL the columns:
   unless ($self->ResultSource->primary_columns > 0) {
     my $class = $self->ResultSource->schema->class($self->ResultSource->source_name);
+    local $SIG{__WARN__} = sub {}; # GitHub Issue #167 - TODO/FIXME
     $class->set_primary_key( $self->ResultSource->columns );
     $self->ResultSource->set_primary_key( $self->ResultSource->columns );
   }
