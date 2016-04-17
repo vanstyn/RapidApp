@@ -774,6 +774,7 @@ sub rs_all {
   ## context of the grid, it is never helpful to inner join which can cause
   ## rows to not show up when the foreign key isn't found, which is never what
   ## we want to happen - TODO: add test cases for this
+  no warnings 'redefine';
   my $orig_resolve_join = \&DBIx::Class::ResultSource::_resolve_join;
   local *DBIx::Class::ResultSource::_resolve_join = sub {
     my ($self, $join, $alias, $seen, $jpath, $parent_force_left) = @_;
