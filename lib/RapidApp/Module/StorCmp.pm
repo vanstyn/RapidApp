@@ -246,6 +246,25 @@ sub store_init_onrequest {
 }
 
 
+# ----
+# NEW: use Tie::IxHash to setup the extconfig hash to be ordered with the 'store'
+# key predeclared as the first key. Because the ExtJS client decodes and processes
+# JSON in order, we want to make sure the store is processed before other parts
+# which may need to reference it by storeId. This is needed after perl 5.18 because
+# the order of hashes was changed in that version. We just happened to be lucky
+# that the order before 5.18 just happened to have the store key showup earlier
+# than we happened to be using it. After 5.18, its random. This solves the problem
+# once and for all. (Note: the case where this was a problem was in cases of
+# several nested modules maing use of defer_to_store_module feature which is not
+# a common use-case, so this was only an issue for very specific circumstances)
+has '+extconfig', default => sub {
+  use Tie::IxHash;
+  my %cfg;
+  tie(%cfg, 'Tie::IxHash', store => undef );
+  return \%cfg
+};
+# ----
+
 sub apply_store_to_extconfig {
 	my $self = shift;
 	
