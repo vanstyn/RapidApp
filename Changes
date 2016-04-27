@@ -1,5 +1,12 @@
 Revision history for RapidApp
 
+1.1100 2016-04-27
+    - Added '--total-counts-off' option to rdbic.pl - #168 (VANSTYN)
+    - Grids now support turning the total count on/off (UI) - #168 (VANSTYN)
+    - Moved Column Summary function defs to be client-side - #68 (VANSTYN)
+    - Refactoring of Column Summaries internals (VANSTYN)
+    - Fix 5.18+ bugs in extconfig hash order using Tie::IxHash (VANSTYN)
+
 1.1008 2016-04-16
     - Silence DBIC-generated nullable PK warnings for now - #167 (VANSTYN)
     - Override force all joins 'LEFT' within grid/module read scope (VANSTYN)
