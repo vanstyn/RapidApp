@@ -3257,7 +3257,8 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 		
 		
 		this.beforePageText = '';
-		this.displayMsg = '{0} - {1} of <span style="font-size:1.1em;color:#083772;">{2}</span>';
+		//this.displayMsg = '{0} - {1} of <span style="font-size:1.1em;color:#083772;">{2}</span>';
+    this.displayMsg = '{0} - {1} of</span>';
 		
 		// place the query time label immediately after 'refresh'
 		this.prependButtons = false;
@@ -3271,6 +3272,43 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 		Ext.ux.RapidApp.PagingToolbar.superclass.initComponent.call(this);
 		
     this.insert(this.items.getCount() - 1,this.pageSizeButton,' ');
+
+    this.totalCountButton = new Ext.Button({
+      text: '???',
+      cls: 'ra-paging-total-count-btn',
+      menu: {
+        showSeparator: false,
+        items: {
+          xtype: 'menuitem',
+          text: 'toggle counts',
+          handler: function(btn) {
+            if(paging.store.total_count_off) {
+              paging.store.total_count_off = false;
+              paging.doRefresh.call(paging);
+            }
+            else {
+              paging.store.total_count_off = true;
+              paging.updateInfo.call(paging);
+            }
+          }
+        },
+        listeners: {
+          beforeshow: function(menu) {
+            var btn = menu.items.first();
+            if(paging.store.total_count_off) {
+              btn.setText('Turn On Total Count');
+              btn.setIconClass('ra-icon-bullet-tick');
+            }
+            else {
+              btn.setText('Turn Off Total Count');
+              btn.setIconClass('ra-icon-bullet-cross');
+            }
+          }
+        }
+      }
+    });
+    this.insert(this.items.getCount(),this.totalCountButton);
+
 		
 		this.store.on('load',function(store) {
 			if(store.reader && store.reader.jsonData) {
@@ -3318,8 +3356,6 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
     return Ext.ux.RapidApp.PagingToolbar.superclass.doRefresh.apply(this,arguments);
   },
 
-  // NEW: override private method 'updateInfo()' to commify values 
-  // (Added for Github Issue #15)
   updateInfo : function(){
     if(this.displayItem){
       var count = this.store.getCount();
@@ -3328,10 +3364,21 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
         String.format(
           this.displayMsg,
           Ext.util.Format.number(this.cursor+1,'0,000'), 
-          Ext.util.Format.number(this.cursor+count,'0,000'), 
-          Ext.util.Format.number(this.store.getTotalCount(),'0,000')
+          Ext.util.Format.number(this.cursor+count,'0,000') 
         );
       this.displayItem.setText(msg);
+
+      if(this.store.total_count_off) {
+        this.afterTextItem.setVisible(false);
+        this.last.setVisible(false);
+        this.totalCountButton.setText('<span class="off">(total count off)</span>');
+      }
+      else {
+        this.afterTextItem.setVisible(true);
+        this.last.setVisible(true);
+        var total = count == 0 ? '--' : Ext.util.Format.number(this.store.getTotalCount(),'0,000');
+        this.totalCountButton.setText(total);
+      }
     }
   },
 
@@ -3358,6 +3405,20 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
     this.inputItem.setMaxValue(d.pages);
     
     //this.syncSize(); //<-- commented out for GitHub Issue #161
+  },
+  
+  getPageData : function() {
+    if(this.store.total_count_off) {
+      var total = 999999999;
+      return {
+          total : total,
+          activePage : Math.ceil((this.cursor+this.pageSize)/this.pageSize),
+          pages :  total < this.pageSize ? 1 : Math.ceil(total/this.pageSize)
+      };
+    }
+    else {
+      return Ext.ux.RapidApp.PagingToolbar.superclass.getPageData.apply(this,arguments);
+    }
   }
 
 });

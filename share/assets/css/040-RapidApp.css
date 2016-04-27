@@ -1446,3 +1446,19 @@ body > #main-load-target > .x-tab-panel-header {
   border-top: 1px solid #D0D0D0;
 }
 
+.ra-paging-total-count-btn button {
+  font-size:1.1em;
+  color:#083772;
+  padding-left: 0px !important;
+  margin-left: -4px;
+  padding-right: 0px !important;
+}
+
+.ra-paging-total-count-btn button .off {
+  font-size:.9em;
+  color:grey;
+  font-style: italic !important; 
+  margin-left: 4px;
+  /*border-bottom: 1px dotted grey;
+  font-family: "Lucida Console", Monaco, monospace;*/
+}

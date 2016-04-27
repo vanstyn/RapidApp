@@ -445,6 +445,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 
 				cmp.store.on('beforeload',function(store,options) {
 					var next_opts = {};
+          store.baseParams.no_total_count = store.total_count_off ? 1 : 0;
 					Ext.apply(next_opts,store.baseParams || {});
 					Ext.apply(next_opts,store.lastOptions.params || {});
 					Ext.apply(next_opts,options.params);

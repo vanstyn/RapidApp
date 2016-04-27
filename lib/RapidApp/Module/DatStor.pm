@@ -633,7 +633,7 @@ sub read_raw {
     # data should be a hash with rows (arrayref) and results (number):
     die "unexpected data returned in read_raw" unless (
       ref($data) eq 'HASH' and 
-      defined $data->{results} and
+      exists $data->{results} and
       ref($data->{rows}) eq 'ARRAY'
     );
   } else {
