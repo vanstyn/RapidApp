@@ -23,6 +23,10 @@ has 'toggle_edit_cells_init_off', default => sub {
   return $self->use_add_form && $self->open_record_url ? 1 : 0;
 }, is => 'ro', isa => 'Bool', lazy => 1;
 
+
+# Initial state for the total count toggle - See GitHub Issue #168
+has 'init_total_count_off', is => 'ro', isa => 'Bool', default => 0, traits => ['ExtProp'];
+
 sub BUILD {
 	my $self = shift;
 	

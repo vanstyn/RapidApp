@@ -579,7 +579,8 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
     'custom_headers',
     'disable_cell_editing',
     'multisort_enabled',
-    'sorters'
+    'sorters',
+    'total_count_off'
 	],
 	
 	// Function to get the current grid state needed to save a search

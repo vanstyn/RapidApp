@@ -173,6 +173,13 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
 			'store_write_mask',
 			'confirm_on_destroy'
 		]);
+    
+    if(cmp.init_total_count_off && typeof cmp.store.total_count_off == 'undefined') {
+      cmp.store.total_count_off = 1;
+    }
+    
+    cmp.store.baseParams = cmp.store.baseParams || {};
+    cmp.store.baseParams.no_total_count = cmp.store.total_count_off ? 1 : 0;
 		
 		this.exclude_btn_map = {};
 		Ext.each(this.store_exclude_buttons,function(item) { this.exclude_btn_map[item] = true; },this);
