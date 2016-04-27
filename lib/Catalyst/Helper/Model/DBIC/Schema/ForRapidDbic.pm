@@ -72,22 +72,28 @@ sub crud_profile {
 sub _get_grid_params_section {
     my $self = shift;
     
-    # Default/original 'read-only'
-    return q~
-       grid_params => {
-          # The special '*defaults' key applies to all sources at once
-          '*defaults' => {
+    my $colspecs = q~
+             include_colspec     => ['*'], #<-- default already ['*']
+             updatable_colspec   => ['*'],
+             creatable_colspec   => ['*'],
+             destroyable_relspec => ['*'],~;
+    
+    my $maybe_total_counts = $self->_ra_rapiddbic_opts->{total_counts_off}
+             ? q~
+             init_total_count_off => 1,~ 
+             : '';
+    
+    my $inner = '';
+    
+    if ($self->crud_profile eq 'read-only' ) {
+      $colspecs = q~
              include_colspec      => ['*'], #<-- default already ['*']
              ## uncomment these lines to turn on editing in all grids
              #updatable_colspec   => ['*'],
              #creatable_colspec   => ['*'],
-             #destroyable_relspec => ['*'],
-          }
-       },
-    ~ if ($self->crud_profile eq 'read-only');
-    
-    my $inner = '';
-    if ($self->crud_profile eq 'editable') {
+             #destroyable_relspec => ['*'],~;
+    }
+    elsif ($self->crud_profile eq 'editable') {
       $inner = q~
              persist_immediately => {
                create  => 1,
@@ -126,11 +132,9 @@ sub _get_grid_params_section {
     q~
        grid_params => {
           # The special '*defaults' key applies to all sources at once
-          '*defaults' => {
-             include_colspec     => ['*'], #<-- default already ['*']
-             updatable_colspec   => ['*'],
-             creatable_colspec   => ['*'],
-             destroyable_relspec => ['*'],~ .
+          '*defaults' => {~ .
+             $colspecs .
+             $maybe_total_counts .
              $inner . q~
              extra_extconfig => {
                store_button_cnf => {

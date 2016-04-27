@@ -63,6 +63,8 @@ has 'crud_profile',
   isa => Enum[qw/editable edit-instant edit-gridadd ed-inst-gridadd read-only/],
   is => 'ro', default => sub { 'editable' };
 
+has 'total_counts_off', is => 'ro', isa => Bool, default => 0;
+
 has 'no_cleanup',      is => 'ro', isa => Bool, default => sub {0};
 has 'isolate_app_tmp', is => 'ro', isa => Bool, default => 0;
 
@@ -270,6 +272,7 @@ sub _bootstrap {
         'model-name'   => $self->model_name,
         'schema-class' => $self->schema_class,
         crud_profile   => $self->crud_profile,
+        total_counts_off => $self->total_counts_off,
         %$extra
       },
       traits => ['RapidApp::Helper::Traits::RapidDbic'],
@@ -612,6 +615,11 @@ as a list of name=value pairs, for example:
 
 Note: the options in the above example are both set to C<'1'> by default (second only for MySQL).
 So the above example is how you would go about turning these options off if needed for some reason.
+
+=head2 total_counts_off
+
+If set to true, grids will be initialized with the total count turned off (but they can still
+be turned back on). Defaults to false (0)
 
 =head1 SEE ALSO
 

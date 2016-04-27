@@ -40,6 +40,7 @@ my $no_cleanup   = 0;
 my $help         = 0;
 my $name         = 'rDbicServer';
 my $crud_profile = 'editable';
+my $total_counts_off = 0;
 my $tmpdir       = dir( File::Spec->tmpdir );
 my $port         = 3500;
 my $run_webapi   = 0;
@@ -66,6 +67,7 @@ GetOptions(
   'no-cleanup+'     => \$no_cleanup,
   'app-class=s'     => \$name,
   'crud-profile=s'  => \$crud_profile,
+  'total-counts-off+' => \$total_counts_off,
   'run-webapi+'     => \$run_webapi,
   'I=s@'            => $includes,
   'metakeys=s'      => \$metakeys,
@@ -96,6 +98,7 @@ if (@$includes) {
     tmpdir           => $tmpdir,
     no_cleanup       => $no_cleanup,
     crud_profile     => $crud_profile,
+    total_counts_off => $total_counts_off,
     isolate_app_tmp  => 1,
     metakeys         => $metakeys,
     
@@ -208,6 +211,7 @@ rdbic.pl - Instant CRUD webapp for your database using RapidApp/Catalyst/DBIx::C
    --limit-schemas-re    Regex limits RDBMS 'schema' names (see also 'db_schema' loader-option)
    --exclude-tables-re   Regex string excludes table names 
    --exclude-schemas-re  Regex string excludes RDBMS 'schema' names
+   --total-counts-off    Initialize grids with total counts off (useful for very large tables)
 
    --crud-profile  One of five choices to broadly control CRUD interface behavior (see below)
 
