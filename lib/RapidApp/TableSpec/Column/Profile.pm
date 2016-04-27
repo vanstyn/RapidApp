@@ -14,33 +14,35 @@ sub DEFAULT_BASE_PROFILES {(
   'BASE'
 )}
 
-
-our @number_summary_funcs = (
-  { function => 'sum', title => 'Total' },
-  { function => 'max', title => 'Max Val' },
-  { function => 'min', title => 'Min Val' },
-  { function => 'count(distinct({x}))', title => 'Count Unique' },
-  { function => 'count', title => 'Count (Set)' },
-);
-
-our @text_summary_funcs = (
-  { function => 'count(distinct({x}))', title => 'Count Unique' },
-  { function => 'count', title => 'Count (Set)' },
-  #{ function => 'max(length({x})', title => 'Longest' },
-);
-
-our @date_summary_funcs = (
-  @number_summary_funcs,
-  @text_summary_funcs,
-  #{ function => 'CONCAT(DATEDIFF(NOW(),avg({x})),\' days\')', title => 'Ave Age (days)' }, #<-- doesn't work
-  { function => 'CONCAT(DATEDIFF(NOW(),min({x})),\' days\')', title => 'Oldest (days)' },
-  { function => 'CONCAT(DATEDIFF(NOW(),max({x})),\' days\')', title => 'Youngest (days)' },
-  { function => 'CONCAT(DATEDIFF(max({x}),min({x})),\' days\')', title => 'Age Range (days)' }
-);
-
-push @number_summary_funcs, (
-  { function => 'round(avg({x}),2)', title => 'Average' },
-);
+##### ---------------------------------------
+##  THESE ARE NOW IN THE CLIENT-SIDE: Ext.ux.RapidApp.Plugin.AppGridSummary
+#our @number_summary_funcs = (
+#  { function => 'sum', title => 'Total' },
+#  { function => 'max', title => 'Max Val' },
+#  { function => 'min', title => 'Min Val' },
+#  { function => 'count(distinct({x}))', title => 'Count Unique' },
+#  { function => 'count', title => 'Count (Set)' },
+#);
+#
+#our @text_summary_funcs = (
+#  { function => 'count(distinct({x}))', title => 'Count Unique' },
+#  { function => 'count', title => 'Count (Set)' },
+#  #{ function => 'max(length({x})', title => 'Longest' },
+#);
+#
+#our @date_summary_funcs = (
+#  @number_summary_funcs,
+#  @text_summary_funcs,
+#  #{ function => 'CONCAT(DATEDIFF(NOW(),avg({x})),\' days\')', title => 'Ave Age (days)' }, #<-- doesn't work
+#  { function => 'CONCAT(DATEDIFF(NOW(),min({x})),\' days\')', title => 'Oldest (days)' },
+#  { function => 'CONCAT(DATEDIFF(NOW(),max({x})),\' days\')', title => 'Youngest (days)' },
+#  { function => 'CONCAT(DATEDIFF(max({x}),min({x})),\' days\')', title => 'Age Range (days)' }
+#);
+#
+#push @number_summary_funcs, (
+#  { function => 'round(avg({x}),2)', title => 'Average' },
+#);
+##### ---------------------------------------
 
 # Default named column profiles. Column properties will be merged
 # with the definitions below if supplied by name in the property 'profiles'
@@ -51,7 +53,7 @@ sub DEFAULT_PROFILES {{
     is_nullable => 1, #<-- initial/default
     renderer => ['Ext.ux.showNull'] ,
     editor => { xtype => 'textfield', minWidth => 80, minHeight => 22 },
-    summary_functions => \@text_summary_funcs
+    summary_functions => 'text_summary_funcs'
   },
   
   relcol => {
@@ -72,7 +74,7 @@ sub DEFAULT_PROFILES {{
     broad_data_type => 'number',
     editor => { xtype => 'numberfield', style => 'text-align:left;' },
     multifilter_type => 'number',
-    summary_functions => \@number_summary_funcs
+    summary_functions => 'number_summary_funcs'
   },
   int => {
     broad_data_type => 'integer',
@@ -123,19 +125,19 @@ sub DEFAULT_PROFILES {{
   text => {
     width => 100,
     editor => { xtype => 'textfield', grow => \0 },
-    summary_functions => \@text_summary_funcs 
+    summary_functions => 'text_summary_funcs' 
   },
   bigtext => {
     width => 150,
     renderer 	=> ['Ext.ux.RapidApp.nl2brWrap'],
     editor		=> { xtype => 'textarea', grow => \1 },
-    summary_functions => \@text_summary_funcs 
+    summary_functions => 'text_summary_funcs' 
   },
   monotext => {
     width => 150,
     renderer 	=> ['Ext.ux.RapidApp.renderMonoText'],
     editor		=> { xtype => 'textarea', grow => \1 },
-    summary_functions => \@text_summary_funcs 
+    summary_functions => 'text_summary_funcs' 
   },
   blob => {
     width    => 130,
@@ -166,7 +168,7 @@ sub DEFAULT_PROFILES {{
   email => {
     width => 100,
     editor => { xtype => 'textfield', vtype => 'email' },
-    summary_functions => \@text_summary_funcs,
+    summary_functions => 'text_summary_funcs',
   },
   datetime => {
     # We now disable quick search by default for datetime/date columns because
@@ -192,7 +194,7 @@ sub DEFAULT_PROFILES {{
     width => 130,
     renderer => ["Ext.ux.RapidApp.getDateFormatter('M d, Y g:i A')"],
     multifilter_type => 'datetime',
-    summary_functions => \@date_summary_funcs
+    summary_functions => 'date_summary_funcs'
   },
   date => {
     # See comment above in the datetime section...
@@ -207,7 +209,7 @@ sub DEFAULT_PROFILES {{
     width => 80,
     renderer => ["Ext.ux.RapidApp.getDateFormatter('M d, Y')"],
     multifilter_type => 'date',
-    summary_functions => \@date_summary_funcs
+    summary_functions => 'date_summary_funcs'
   },
   otherdate => { 
     # for other general 'date' columns that we have no special handling for yet,
@@ -217,12 +219,12 @@ sub DEFAULT_PROFILES {{
   money => {
     editor => { xtype => 'numberfield', style => 'text-align:left;', decimalPrecision => 2 },
     renderer => 'Ext.ux.showNullusMoney',
-    summary_functions => \@number_summary_funcs
+    summary_functions => 'number_summary_funcs'
   },
   percent => {
      editor => { xtype => 'numberfield', style => 'text-align:left;' },
      renderer => ['Ext.ux.RapidApp.num2pct'],
-     summary_functions => \@number_summary_funcs
+     summary_functions => 'number_summary_funcs'
   },
   noadd => {
     allow_add => \0,
@@ -281,7 +283,7 @@ sub DEFAULT_PROFILES {{
     multifilter_type => 'number',
     no_quick_search => \1,
     editor => '',
-    summary_functions => \@number_summary_funcs
+    summary_functions => 'number_summary_funcs'
   }
 
 }};

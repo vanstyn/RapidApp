@@ -1810,6 +1810,46 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 	onRefresh : function () {
 		this.updateColumnHeadings();
 	},
+  
+  
+  getSummaryFuncsFor: function(name) {
+    if(!this._summary_funcs_map) {
+      var texts = [
+        { function: 'count(distinct({x}))', title: 'Count Unique' },
+        { function: 'count',                title: 'Count (Set)'  }
+      ];
+      
+      var numbers = [  
+        { function: 'sum',                  title: 'Total' },
+        { function: 'max',                  title: 'Max Val' },
+        { function: 'min',                  title: 'Min Val' },
+        { function: 'count(distinct({x}))', title: 'Count Unique' },
+        { function: 'count',                title: 'Count (Set)' }
+      ];
+      
+      var dates = numbers.concat(texts);
+      
+      dates.push(
+        // NOTE: these only work in MySQL -- TODO: we need to return a different 
+        // set for each type of backend database server
+        { function: 'CONCAT(DATEDIFF(NOW(),min({x})),\' days\')',    title: 'Oldest (days)' },
+        { function: 'CONCAT(DATEDIFF(NOW(),max({x})),\' days\')',    title: 'Youngest (days)' },
+        { function: 'CONCAT(DATEDIFF(max({x}),min({x})),\' days\')', title: 'Age Range (days)' }
+      );
+      
+      numbers.push(
+        { function: 'round(avg({x}),2)', title: 'Average' }
+      );
+    
+      this._summary_funcs_map = {
+        text_summary_funcs    : texts,
+        number_summary_funcs  : numbers,
+        date_summary_funcs    : dates
+      };
+    }
+    return this._summary_funcs_map[name];
+  },
+  
 	
 	getSummaryCols: function() {
 		if(!this.summaryCols) {
@@ -1823,11 +1863,21 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 				if(this.allow_cust_funcs){
 					column.summary_functions = column.summary_functions || [];
 				}
-				
-				if(Ext.isArray(column.summary_functions)) {
-					summaryCols[column.name] = column.summary_functions;
-					count++
-				}
+        
+        var func_list = [];
+        if(Ext.isArray(column.summary_functions)) {
+          func_list = column.summary_functions;
+        }
+        else if (Ext.isString(column.summary_functions)) {
+          func_list = this.getSummaryFuncsFor(column.summary_functions) || [];
+        }
+        
+        if(func_list.length > 0) {
+          summaryCols[column.name] = func_list;
+          count++
+        }
+        
+        
 			},this);
 			this.summaryCols = summaryCols;
 			if(count == 0) { this.summaryCols = null; }
