@@ -1823,19 +1823,15 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
         { function: 'sum',                  title: 'Total' },
         { function: 'max',                  title: 'Max Val' },
         { function: 'min',                  title: 'Min Val' },
-        { function: 'count(distinct({x}))', title: 'Count Unique' },
-        { function: 'count',                title: 'Count (Set)' }
-      ];
+      ].concat(texts);
       
-      var dates = numbers.concat(texts);
-      
-      dates.push(
+      var dates = numbers.concat([
         // NOTE: these only work in MySQL -- TODO: we need to return a different 
         // set for each type of backend database server
         { function: 'CONCAT(DATEDIFF(NOW(),min({x})),\' days\')',    title: 'Oldest (days)' },
         { function: 'CONCAT(DATEDIFF(NOW(),max({x})),\' days\')',    title: 'Youngest (days)' },
         { function: 'CONCAT(DATEDIFF(max({x}),min({x})),\' days\')', title: 'Age Range (days)' }
-      );
+      ]);
       
       numbers.push(
         { function: 'round(avg({x}),2)', title: 'Average' }
