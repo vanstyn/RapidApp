@@ -22,6 +22,8 @@ use Scalar::Util qw(looks_like_number);
 use Digest::SHA1;
 use DateTime;
 
+use DBI::Const::GetInfoType '%GetInfoType'; 
+
 if($ENV{DBIC_TRACE}) {
   debug_around 'DBIx::Class::Storage::DBI::_execute', newline => 1, stack=>20;
 }
@@ -1006,6 +1008,57 @@ sub query_time {
 }
 
 
+has '_dbh_driver', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  
+  my $dbh = $self->ResultSource->schema->storage->dbh;
+  
+  my $driver = $dbh->{Driver}->{Name};
+  
+  if($driver eq 'ODBC') {
+    my $dbms_name = $dbh->get_info($GetInfoType{SQL_DBMS_NAME});
+    $driver = 'MSSQL' if ($dbms_name eq 'Microsoft SQL Server');
+  }
+  
+  return $driver
+}, isa => 'Str';
+
+has '_named_column_summaries', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  
+  my $d = {
+    sum        => 'sum',
+    max        => 'max',
+    min        => 'min',
+    count      => 'count',
+    count_uniq => 'count(distinct({x}))',
+    avg        => 'round(avg({x}),2)',
+  };
+  
+  if($self->_dbh_driver eq 'mysql') {
+    %$d = ( %$d,
+      oldest_days    => 'CONCAT(DATEDIFF(NOW(),min({x})),\' days\')',
+      youngest_days  => 'CONCAT(DATEDIFF(NOW(),max({x})),\' days\')',
+      age_range_days => 'CONCAT(DATEDIFF(max({x}),min({x})),\' days\')',
+    );
+  }
+  elsif($self->_dbh_driver eq 'SQLite') {
+    # TODO ...
+    
+  }
+  elsif($self->_dbh_driver eq 'Pg') {
+    # TODO ...
+  
+  }
+  elsif($self->_dbh_driver eq 'MSSQL') {
+    # TODO ...
+  
+  }
+  
+  return $d
+
+}, isa => 'HashRef';
+
 sub calculate_column_summaries {
   my ($self,$ret,$Rs,$params) = @_;
   return unless ($params && $params->{column_summaries});
@@ -1031,23 +1084,31 @@ sub calculate_column_summaries {
     my $sum = $sums->{$col};
     if($sum) {
       my $dbic_name = $self->resolve_dbic_render_colname($col);
+      local $self->{_get_col_summary_select_msg} = undef;
       my $sel = $self->get_col_summary_select($dbic_name,$sum);
       if($sel) {
         push @$select, $sel;
         push @$as, $col;
       }
-      else { $extra{$col} = 'BadFunc!'; }
+      else { 
+        $extra{$col} = $self->{_get_col_summary_select_msg} || 'BadFunc!'; 
+      }
     }
   }
   
   try {
-    my $agg = $self->_chain_search_rs($Rs,undef,{
-      rows => 1, page => undef, order_by => undef,
-      select => $select, as => $as,
-      result_class => 'DBIx::Class::ResultClass::HashRefInflator'
-    })->first or return;
+    if(scalar(@$select) > 0) {
+      my $agg = $self->_chain_search_rs($Rs,undef,{
+        rows => 1, page => undef, order_by => undef,
+        select => $select, as => $as,
+        result_class => 'DBIx::Class::ResultClass::HashRefInflator'
+      })->first or return;
 
-    $ret->{column_summaries} = { %$agg, %extra };
+      $ret->{column_summaries} = { %$agg, %extra };
+    }
+    else {
+      $ret->{column_summaries} = \%extra;
+    }
   }
   catch {
     $self->c->log->error("$_");
@@ -1059,6 +1120,20 @@ sub get_col_summary_select {
   my $self = shift;
   my $col = shift;
   my $func = shift;
+  
+  # Lookup by predefined name if starts with '&'
+  if($func =~ /^\&(.+)$/) {
+    my $name = $1;
+    $func = $self->_named_column_summaries->{$name};
+    unless($func) {
+      $self->{_get_col_summary_select_msg} = 'Unsupported' if(exists $self->{_get_col_summary_select_msg});
+      return undef;
+    }
+  }
+  else {
+    # TODO: check to enforce allow_custom_summary_functions is true or die
+    
+  }
   
   # ---
   # NEW: Look for and extract the SQL literal from the special ''/-as structure

@@ -1811,30 +1811,29 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 		this.updateColumnHeadings();
 	},
   
-  
   getSummaryFuncsFor: function(name) {
     if(!this._summary_funcs_map) {
       var texts = [
-        { function: 'count(distinct({x}))', title: 'Count Unique' },
-        { function: 'count',                title: 'Count (Set)'  }
+        { function: '&count_uniq', title: 'Count Unique' },
+        { function: '&count',      title: 'Count (Set)'  }
       ];
       
       var numbers = [  
-        { function: 'sum',                  title: 'Total' },
-        { function: 'max',                  title: 'Max Val' },
-        { function: 'min',                  title: 'Min Val' },
+        { function: '&sum',   title: 'Total' },
+        { function: '&max',   title: 'Max Val' },
+        { function: '&min',   title: 'Min Val' },
       ].concat(texts);
       
       var dates = numbers.concat([
         // NOTE: these only work in MySQL -- TODO: we need to return a different 
         // set for each type of backend database server
-        { function: 'CONCAT(DATEDIFF(NOW(),min({x})),\' days\')',    title: 'Oldest (days)' },
-        { function: 'CONCAT(DATEDIFF(NOW(),max({x})),\' days\')',    title: 'Youngest (days)' },
-        { function: 'CONCAT(DATEDIFF(max({x}),min({x})),\' days\')', title: 'Age Range (days)' }
+        { function: '&oldest_days',    title: 'Oldest (days)' },
+        { function: '&youngest_days',  title: 'Youngest (days)' },
+        { function: '&age_range_days', title: 'Age Range (days)' }
       ]);
       
       numbers.push(
-        { function: 'round(avg({x}),2)', title: 'Average' }
+        { function: '&avg', title: 'Average' }
       );
     
       this._summary_funcs_map = {
@@ -1845,6 +1844,7 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
     }
     return this._summary_funcs_map[name];
   },
+  
   
 	
 	getSummaryCols: function() {
@@ -2329,6 +2329,11 @@ Ext.ux.RapidApp.Plugin.AppGridSummary = Ext.extend(Ext.ux.grid.GridSummary, {
 						o.data[c.name] +
 					'</span>';
 				}
+        else if(o.data[c.name] == 'Unsupported') {
+          p.value = '<i style="font-size:.9em;font-family:Courier;color:grey;">' +
+              o.data[c.name] +
+            '</i>';
+        }
 				
 				var title = summary.title;
 					
