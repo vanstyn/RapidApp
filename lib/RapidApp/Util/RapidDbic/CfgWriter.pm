@@ -96,21 +96,14 @@ has 'TableSpecs_stmt', is => 'ro', lazy => 1, default => sub {
   #my $ind = $self->_cur_line_indent( $self->TableSpecs_kword );
   
 
+  my $is_new = 0;
   my $Stmt = $self->_first_stmt( $struct );
   
-  scream_color(MAGENTA,$Stmt);
-  
   unless($Stmt) {
-    $struct->remove_child($_) for ($struct->children);
-    $self->_ensure_indents($struct);
-    my $F = $self->_last_next_ws( $struct->child(0) );
-    
-    scream($F);
-    
+    $is_new = 1;
     $Stmt = PPI::Statement::Expression->new();
-    $F->insert_after($Stmt);
   }
-
+  
   $self->_push_kv({
     node => $Stmt, 
     key => 'blarb', value => 'SOMETHING'
@@ -118,7 +111,83 @@ has 'TableSpecs_stmt', is => 'ro', lazy => 1, default => sub {
   });
   
   
-  scream_color(GREEN.BOLD,$struct->elements);
+  if($is_new) {
+    
+    
+    my $sWs = $self->_ws_factory($struct,2);
+    my $lWs = $self->_ws_factory($struct);
+    
+    $struct->{children} = [
+      $sWs->(\"\n"),
+      $Stmt,
+      $lWs->(\"\n")
+    
+    ];
+    
+    
+    
+    #$struct->remove_child($_) for ($struct->children);
+    #
+    #$struct->add_element($sWs->(\"\n"));
+    #$struct->add_element($Stmt);
+    #$struct->add_element($lWs->(\"\n"));
+    
+    
+    #$_->delete for ($struct->elements);
+    
+    #$struct->finish->remove;
+    
+    scream($struct);
+    
+    #my $F = $struct->finish;
+    #$F->insert_before($sWs->(\"\n"));
+    #$F->insert_before($Stmt);
+    #$F->insert_before($lWs->(\"\n"));
+    
+    
+    #$_->delete for ($struct->elements);
+    
+    #$struct->add_element($sWs->(\"\n"));
+    #$struct->add_element($Stmt);
+    #$struct->add_element($lWs->(\"\n"));
+    
+    #$self->_ensure_indents($struct);
+    #my $F = $self->_last_next_ws( $struct->child(0) );
+    #$F->insert_after($Stmt);
+  }
+  
+  
+  
+  #scream_color(MAGENTA,$Stmt);
+  
+  ##unless($Stmt) {
+  ##  #$struct->remove_child($_) for ($struct->children);
+  ##  
+  ##  my @chld = $struct->children;
+  ##  
+  ##  #
+  ##  $self->_ensure_indents($struct);
+  ##  my $F = $self->_last_next_ws( $struct->child(0) );
+  ##  
+  ##  #scream($F);
+  ##  
+  ##  $Stmt = PPI::Statement::Expression->new();
+  ##  $F->insert_after($Stmt);
+  ##  
+  ##  $_->delete for (@chld);
+  ##}
+  ##
+  ##$self->_push_kv({
+  ##  node => $Stmt, 
+  ##  key => 'blarb', value => 'SOMETHING'
+  ##
+  ##});
+  ##
+  ##scream_color(MAGENTA.BOLD,$Stmt);
+  ##
+  ##scream_color(GREEN,$struct);
+  
+  #scream_color(GREEN.BOLD,$struct->elements);
   
   
   
@@ -192,26 +261,40 @@ sub _push_kv {
   my $indWs = $self->_ws_factory($Node);
   
   my @els = (
-    PPI::Token::Word->new($cfg->{key}),
+    #PPI::Token::Word->new($cfg->{key}),
+    bless( { content => "'$cfg->{key}'", separator => "'" }, 'PPI::Token::Quote::Single' ),
     $indWs->(' '),
     PPI::Token::Operator->new('=>'),
     $indWs->(' '),
-    PPI::Token::Quote::Single->new("'$cfg->{value}'")
+    bless( { content => "'$cfg->{value}'", separator => "'" }, 'PPI::Token::Quote::Single' )
+    #PPI::Token::Quote::Single->new("'$cfg->{value}'")
   );
+  
+  
   
   my $Last = $Node->last_element;
   if($Last) {
+    scream($Last);
     unshift @els, $indWs->("\n"), $indWs->();
+    $Last->insert_after( $_ ) and $Last = $_ for @els;
+  }
+  else {
+    $_->delete for ($Node->children);
+    $Node->add_element( $_ ) for @els;
+    #$Last = shift @els;
+    #$Node->add_element($Last);
+
   }
   
-  $Node->add_element($_) for @els;
-  
-  #else {
-  #  $Last = shift @els;
-  #  $Node->add_element($Last);
-  #}
+  #$Last = $Node->last_element;
+  #
+  #scream_color(CYAN.BOLD,$Last);
+  #
   #
   #$Last->insert_after( $_ ) and $Last = $_ for @els;
+  #
+  scream_color(CYAN,$Node);
+  
 }
 
 
@@ -244,7 +327,7 @@ sub _ws_factory {
   my ($self, $El, $addl) = @_;
   my $ind = $self->_cur_line_indent($El);
   $ind .= (' ' x $addl) if ($addl);
-  sub { 
+  return sub { 
     my $cnt = $_[0] || $ind;
     # accept extra prefix content via scalarref:
     $cnt = $$cnt . $ind if (ref($cnt));
@@ -255,28 +338,17 @@ sub _ws_factory {
 sub _ensure_indents {
   my ($self, $Stmt) = @_;
   
-  scream_color(RED,$Stmt);
-  
-  my $indWs = $self->_ws_factory($Stmt,2);
+  my $sWs = $self->_ws_factory($Stmt,2);
+  my $lWs = $self->_ws_factory($Stmt);
   
   if(my $First = $Stmt->child(0)) {
-    $First->insert_before($indWs->(\"\n")) unless($self->_ws_has_newline($First));
+    $First->insert_before($sWs->(\"\n")) unless($self->_ws_has_newline($First));
   }
   else {
-    $Stmt->add_element($indWs->(\"\n"));
+    $Stmt->add_element($sWs->(\"\n"));
   }
   
-  my $lWs = $self->_ws_factory($Stmt);
-
-  #return $Stmt->child(0)->insertement($lWs->(\"\n")) unless (scalar($Stmt->children) > 1);
-  
-  
-  
-  
   my $Last = (reverse $Stmt->children)[0];
-  
-  scream_color(BLUE,$Stmt,$Last,scalar($Stmt->children));
-  
   
   $Last->insert_after($lWs->(\"\n")) if (
     scalar($Stmt->children) == 1 ||
@@ -287,9 +359,7 @@ sub _ensure_indents {
 
 sub _ws_has_newline {
   my ($self, $Ws) = @_;
-  
-  scream($Ws);
-  
+
   while($Ws && $Ws->isa('PPI::Token::Whitespace')) {
     return 1 if ($Ws->content =~ /\n/);
     $Ws = $Ws->next_sibling;
@@ -315,18 +385,27 @@ sub _backup_nl_ws {
   my $El = shift or return undef;
   my $recur = shift || 0;
   
+  $El = $El->previous_sibling if ($El->previous_sibling && !$recur);
+  
   return $self->_backup_nl_ws($El->previous_sibling || $El->parent,1) unless (
     $El->content =~ /\n/
   );
   
   $El = $El->next_sibling if ($recur && $El->content =~ /\r?\n$/);
   
+  #scream_color(YELLOW,$El);
+  
+  #$El = $El->find_first('PPI::Token::Whitespace') if ($El->isa('PPI::Node'));
+  #
+  #scream_color(YELLOW,$El);
+  
   return $El
 }
 
 sub _cur_line_indent {
   my $self = shift;
-  my $El = $self->_backup_nl_ws(shift) or return '';
+  my $El = shift;
+  $El = $self->_backup_nl_ws($El) or return '';
 
   my $spc = (reverse split(/\r?\n/,$El->content))[0] || '';
   while($spc =~ /^\s+$/) {
@@ -336,6 +415,7 @@ sub _cur_line_indent {
     $spc .= shift(@p);
     last unless (scalar(@p) == 0);
   }
+
   return $spc
 }
 
