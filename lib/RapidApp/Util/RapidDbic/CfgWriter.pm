@@ -14,6 +14,7 @@ use Module::Runtime;
 use RapidApp::Util ':all';
 
 use PPI;
+use Perl::Tidy;
 
 sub BUILD {
   my $self = shift;
@@ -135,8 +136,27 @@ sub _process_TableSpecs {
   my $Stmt = $self->TableSpecs_stmt;
   
   for my $source (@{$self->source_names}) {
-    my $kVal = $self->_find_or_make_kval( $Stmt, $source );
-    my $SnStmt = $self->_find_or_make_inner_stmt( $kVal );
+    my $SnStmt = $self->_find_or_make_inner_stmt( 
+      $self->_find_or_make_kval( $Stmt, $source )
+    );
+    
+    
+    # ...
+    
+    my $colsStmt = $self->_find_or_make_inner_stmt(
+      $self->_find_or_make_kval( $SnStmt, 'columns' )
+    );
+    
+    my $Source = $self->schema_class->source($source);
+    my @cols = sort $Source->columns;
+    push @cols, sort $Source->relationships;
+    
+    for my $col (@cols) {
+      my $cStmt = $self->_find_or_make_inner_stmt( 
+        $self->_find_or_make_kval( $colsStmt, $col )
+      );
+    
+    }
     
     # ...
     
@@ -146,7 +166,18 @@ sub _process_TableSpecs {
 }
 
 
-
+sub _save_to {
+  my ($self, $path) = @_;
+  
+  my $serialized = $self->ppi_document->serialize;
+  
+  Perl::Tidy::perltidy(
+    source      => \$serialized,
+    destination => $path,
+    argv => '-i=2 -l=100 -nbbc'
+  );
+  
+}
 
 
 sub _find_or_make_inner_stmt {
@@ -167,11 +198,7 @@ sub _find_or_make_inner_stmt {
 sub _find_or_make_kval {
   my ($self, $Node, $key) = @_;
   
-  my $Tok = List::Util::first {
-    $_->content eq $key ||
-    $_->content =~ /^('|"){1}${key}('|"){1}$/
-  } grep { $_->isa('PPI::Token') } $Node->children;
-  
+  my $Tok = $self->_first_kword($Node, $key);  
   return $self->_first_kval($Node,$Tok) if ($Tok);
   
   my @els = ();
@@ -184,8 +211,12 @@ sub _find_or_make_kval {
     }
   }
   
+  my $kWord = $key =~ /^\w+$/ 
+    ? PPI::Token::Word->new($key)
+    : bless( { content => "'$key'", separator => "'" }, 'PPI::Token::Quote::Single' );
+  
   push @els, (
-    bless( { content => "'$key'", separator => "'" }, 'PPI::Token::Quote::Single' ),
+    $kWord,
     PPI::Token::Whitespace->new(' '),
     PPI::Token::Operator->new('=>'),
     PPI::Token::Whitespace->new(' ')
@@ -204,9 +235,12 @@ sub _find_or_make_kval {
       content => "{"
     }, 'PPI::Token::Structure' )
   }, 'PPI::Structure::Constructor' );
-  
-  
-  push @els, $kVal;
+
+  push @els, (
+    $kVal,
+    #PPI::Token::Operator->new(','),
+    #PPI::Token::Whitespace->new("\n")
+  );
   
   $self->_push_children( $Node, @els );
   
@@ -224,9 +258,9 @@ sub _first_kword {
   my ($self, $Node, $key) = @_;
   
   List::Util::first {
-    ($_->isa('PPI::Token::Word')  && $_->content eq $key) ||
-    ($_->isa('PPI::Token::Quote') && $_->content =~ /^('|"){1}${key}('|"){1}$/)
-  } $Node->children;
+    $_->content eq $key ||
+    $_->content =~ /^('|"){1}${key}('|"){1}$/
+  } grep { $_->isa('PPI::Token') } $Node->children
 }
 
 sub _first_kval {
