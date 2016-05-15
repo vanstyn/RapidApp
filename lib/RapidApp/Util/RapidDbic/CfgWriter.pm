@@ -9,6 +9,7 @@ use Types::Standard qw(:all);
 use Path::Class qw(file dir);
 use Scalar::Util qw(blessed);
 use List::Util;
+use Module::Runtime;
 
 use RapidApp::Util ':all';
 
@@ -19,9 +20,20 @@ sub BUILD {
   $self->TableSpecs_stmt; # init early
 }
 
+sub _update_incs {
+  my $self = shift;
+  
+  my $next = file( $self->pm_file )->resolve->absolute->parent;
+  
+  until ($next->basename eq 'lib') {
+    $next = $next->parent or return undef;
+    return undef if ("$next" eq '/' or "$next" eq '.');
+  }
+  
+  eval "use lib '$next'";
+}
 
 has 'pm_file', is => 'ro', required => 1, isa => Str;
-
 
 has 'ppi_document', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
@@ -42,13 +54,48 @@ has 'config_stmt', is => 'ro', lazy => 1, default => sub {
 
   scalar(@$m) == 0 and die '__PACKAGE__->config statement not found';
   scalar(@$m) > 1  and die 'Multiple __PACKAGE__->config statements found';
-
-  $m->[0]
+  
+  my $stmt = $m->[0]
     ->child(3)
     ->find_first('PPI::Statement::Expression');
+  
+  # -- Make sure there is a trailing comma (,) ... this will keep perltidy from
+  # getting confused about the indentation of the last }
+  my $Last = (reverse $stmt->children)[0];
+  unless($Last->isa('PPI::Token::Operator') && $Last->content eq ',') {
+    $Last->insert_after(PPI::Token::Operator->new(','));
+  }
+  # --
+  
+  return $stmt;
 
 }, isa => InstanceOf['PPI::Statement::Expression'];
 
+
+has 'schema_class', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  
+  my $tok = $self->_first_kval(
+    $self->config_stmt,
+    'schema_class'
+  ) or die "'schema_class' config key not found!";
+  
+  my $class = $tok->content;
+  $class =~ s/^('|")//;
+  $class =~ s/('|")$//;
+  
+  $self->_update_incs;
+  Module::Runtime::require_module( $class );
+  
+  $class
+
+}, isa => ClassName;
+
+
+has 'source_names', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  [ sort $self->schema_class->sources ]
+}, isa => ArrayRef[Str];
 
 has 'rapiddbic_struct', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
@@ -62,239 +109,114 @@ has 'rapiddbic_struct', is => 'ro', lazy => 1, default => sub {
 has 'rapiddbic_stmt', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   $self->_first_stmt( $self->rapiddbic_struct )
-}, isa => InstanceOf['PPI::Statement'];
+}, isa => InstanceOf['PPI::Statement::Expression'];
 
 has 'grid_params_stmt', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   $self->_first_stmt( $self->_first_kval($self->rapiddbic_stmt,'grid_params') )
-}, isa => InstanceOf['PPI::Statement'];
-
-
-has 'TableSpecs_kword', is => 'ro', lazy => 1, default => sub {
-  my $self = shift;
-  $self->_first_kword($self->rapiddbic_stmt,'TableSpecs') 
-    or die "'TableSpecs' config key not found!";
-}, isa => InstanceOf['PPI::Token::Word'];
+}, isa => InstanceOf['PPI::Statement::Expression'];
 
 has 'TableSpecs_stmt', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   
-  my $struct = $self->_first_kval(undef,$self->TableSpecs_kword);
-  #$self->_ensure_indents($struct);
+  my $struct = $self->_first_kval(
+    $self->rapiddbic_stmt,
+    'TableSpecs'
+  ) or die "TableSpecs config key not found!";
   
- 
-  
-  #my $F = $self->_last_next_ws( (       $struct->children)[0] );
-  #my $L = $self->_last_prev_ws( (reverse $struct->children)[0] );
-  
-  #my $F = $self->_last_next_ws( $struct->first_element );
-  #my $L = $self->_last_prev_ws( $struct->last_element );
-  
-  scream_color(GREEN,$struct);
-  
-  
-  #my $ind = $self->_cur_line_indent( $self->TableSpecs_kword );
-  
-
-  my $is_new = 0;
-  my $Stmt = $self->_first_stmt( $struct );
-  
-  unless($Stmt) {
-    $is_new = 1;
-    $Stmt = PPI::Statement::Expression->new();
-  }
-  
-  $self->_push_kv({
-    node => $Stmt, 
-    key => 'blarb', value => 'SOMETHING'
-  
-  });
-  
-  
-  if($is_new) {
-    
-    
-    my $sWs = $self->_ws_factory($struct,2);
-    my $lWs = $self->_ws_factory($struct);
-    
-    $struct->{children} = [
-      $sWs->(\"\n"),
-      $Stmt,
-      $lWs->(\"\n")
-    
-    ];
-    
-    
-    
-    #$struct->remove_child($_) for ($struct->children);
-    #
-    #$struct->add_element($sWs->(\"\n"));
-    #$struct->add_element($Stmt);
-    #$struct->add_element($lWs->(\"\n"));
-    
-    
-    #$_->delete for ($struct->elements);
-    
-    #$struct->finish->remove;
-    
-    scream($struct);
-    
-    #my $F = $struct->finish;
-    #$F->insert_before($sWs->(\"\n"));
-    #$F->insert_before($Stmt);
-    #$F->insert_before($lWs->(\"\n"));
-    
-    
-    #$_->delete for ($struct->elements);
-    
-    #$struct->add_element($sWs->(\"\n"));
-    #$struct->add_element($Stmt);
-    #$struct->add_element($lWs->(\"\n"));
-    
-    #$self->_ensure_indents($struct);
-    #my $F = $self->_last_next_ws( $struct->child(0) );
-    #$F->insert_after($Stmt);
-  }
-  
-  
-  
-  #scream_color(MAGENTA,$Stmt);
-  
-  ##unless($Stmt) {
-  ##  #$struct->remove_child($_) for ($struct->children);
-  ##  
-  ##  my @chld = $struct->children;
-  ##  
-  ##  #
-  ##  $self->_ensure_indents($struct);
-  ##  my $F = $self->_last_next_ws( $struct->child(0) );
-  ##  
-  ##  #scream($F);
-  ##  
-  ##  $Stmt = PPI::Statement::Expression->new();
-  ##  $F->insert_after($Stmt);
-  ##  
-  ##  $_->delete for (@chld);
-  ##}
-  ##
-  ##$self->_push_kv({
-  ##  node => $Stmt, 
-  ##  key => 'blarb', value => 'SOMETHING'
-  ##
-  ##});
-  ##
-  ##scream_color(MAGENTA.BOLD,$Stmt);
-  ##
-  ##scream_color(GREEN,$struct);
-  
-  #scream_color(GREEN.BOLD,$struct->elements);
-  
-  
-  
-  #unless($Stmt) {
-  #  $Stmt = ;
-  #  
-  #  
-  #  
-  #  my $Ws = $self->TableSpecs_kword->previous_sibling;
-  #  
-  #  if($Ws && $Ws->isa('PPI::Token::Whitespace')) {
-  #    $Stmt->add_element( bless( { content => "\n" }, 'PPI::Token::Whitespace' ) );
-  #    $Stmt->add_element( bless( { content => $Ws->content }, 'PPI::Token::Whitespace' ) );
-  #  }
-  # 
-  #  $Stmt->add_element( bless( { content => "  " }, 'PPI::Token::Whitespace' ) );
-  #  $Stmt->add_element( bless( { content => "blarbie" }, 'PPI::Token::Word' ) );
-  #  $Stmt->add_element( bless( { content => " " }, 'PPI::Token::Whitespace' ) );
-  #  $Stmt->add_element( bless( { content => "=>" }, 'PPI::Token::Operator' ) );
-  #  $Stmt->add_element( bless( { content => " " }, 'PPI::Token::Whitespace' ) );
-  #  $Stmt->add_element( bless( { content => "'SOMETHING'", separator => "'" }, 'PPI::Token::Quote::Single' ) );
-  #  #
-  #  
-  #  
-  #  
-  #  
-  #  
-  #  if($Ws && $Ws->isa('PPI::Token::Whitespace')) {
-  #    $Stmt->add_element( bless( { content => "\n" }, 'PPI::Token::Whitespace' ) );
-  #    $Stmt->add_element( bless( { content => $Ws->content }, 'PPI::Token::Whitespace' ) );
-  #  }
-  #  
-  #  
-  #  
-  #  
-  #  
-  #  #scream($struct);
-  #  
-  #}
-  #
-  #my $ind = $self->_cur_line_indent( $Stmt );
-  #scream_color(RED.BOLD, $ind, length($ind) );
-  
-  $Stmt
+  $self->_find_or_make_inner_stmt( $struct )
   
 }, isa => InstanceOf['PPI::Statement'];
 
 
-sub _last_next_ws {
-  my ($self, $Ws) = @_;
-  my $Next = $Ws->next_sibling;
-  return $self->_last_next_ws($Next) if ($Next && $Next->isa('PPI::Token::Whitespace'));
+sub _process_TableSpecs {
+  my $self = shift;
   
-  $Ws->isa('PPI::Token::Whitespace') ? $Ws : undef
+  my $Stmt = $self->TableSpecs_stmt;
+  
+  for my $source (@{$self->source_names}) {
+    my $kVal = $self->_find_or_make_kval( $Stmt, $source );
+    my $SnStmt = $self->_find_or_make_inner_stmt( $kVal );
+    
+    # ...
+    
+  
+  }
+  
 }
 
-sub _last_prev_ws {
-  my ($self, $Ws) = @_;
-  my $Next = $Ws->previous_sibling;
-  return $self->_last_next_ws($Next) if ($Next && $Next->isa('PPI::Token::Whitespace'));
+
+
+
+
+sub _find_or_make_inner_stmt {
+  my ($self, $Node) = @_;
   
-  $Ws->isa('PPI::Token::Whitespace') ? $Ws : undef
+  my $Stmt = $self->_first_stmt( $Node );
+  return $Stmt if ($Stmt);
+  
+  scalar($Node->schildren) == 0 or die "unexepted inner value";
+  
+  $Stmt = PPI::Statement::Expression->new;
+  $Node->add_element( $Stmt );
+  
+  return $Stmt
 }
-
-
-sub _push_kv {
-  my ($self, $cfg) = @_;
-  $cfg->{$_} or die "'$_' opt missing" for qw/node key value/;
   
-  my $Node = $cfg->{node};
-  my $indWs = $self->_ws_factory($Node);
+
+sub _find_or_make_kval {
+  my ($self, $Node, $key) = @_;
   
-  my @els = (
-    #PPI::Token::Word->new($cfg->{key}),
-    bless( { content => "'$cfg->{key}'", separator => "'" }, 'PPI::Token::Quote::Single' ),
-    $indWs->(' '),
+  my $Tok = List::Util::first {
+    $_->content eq $key ||
+    $_->content =~ /^('|"){1}${key}('|"){1}$/
+  } grep { $_->isa('PPI::Token') } $Node->children;
+  
+  return $self->_first_kval($Node,$Tok) if ($Tok);
+  
+  my @els = ();
+  
+  my @schld = $Node->schildren;
+  if(scalar(@schld) > 0) {
+    my $Last = pop @schld;
+    unless($Last->content eq ',') {
+      push @els, PPI::Token::Operator->new(',');
+    }
+  }
+  
+  push @els, (
+    bless( { content => "'$key'", separator => "'" }, 'PPI::Token::Quote::Single' ),
+    PPI::Token::Whitespace->new(' '),
     PPI::Token::Operator->new('=>'),
-    $indWs->(' '),
-    bless( { content => "'$cfg->{value}'", separator => "'" }, 'PPI::Token::Quote::Single' )
-    #PPI::Token::Quote::Single->new("'$cfg->{value}'")
+    PPI::Token::Whitespace->new(' ')
   );
   
+  my $kVal = bless( {
+    children => [
+      bless( {
+        children => []
+      }, 'PPI::Statement::Expression' )
+    ],
+    finish => bless( {
+      content => "}"
+    }, 'PPI::Token::Structure' ),
+    start => bless( {
+      content => "{"
+    }, 'PPI::Token::Structure' )
+  }, 'PPI::Structure::Constructor' );
   
   
-  my $Last = $Node->last_element;
-  if($Last) {
-    scream($Last);
-    unshift @els, $indWs->("\n"), $indWs->();
-    $Last->insert_after( $_ ) and $Last = $_ for @els;
-  }
-  else {
-    $_->delete for ($Node->children);
-    $Node->add_element( $_ ) for @els;
-    #$Last = shift @els;
-    #$Node->add_element($Last);
+  push @els, $kVal;
+  
+  $self->_push_children( $Node, @els );
+  
+  return $kVal
+}
 
-  }
-  
-  #$Last = $Node->last_element;
-  #
-  #scream_color(CYAN.BOLD,$Last);
-  #
-  #
-  #$Last->insert_after( $_ ) and $Last = $_ for @els;
-  #
-  scream_color(CYAN,$Node);
-  
+
+sub _push_children {
+  my ($self, $Node, @els) = @_;
+  $Node->add_element($_) for @els
 }
 
 
@@ -302,8 +224,8 @@ sub _first_kword {
   my ($self, $Node, $key) = @_;
   
   List::Util::first {
-    $_->isa('PPI::Token::Word') && 
-    $_->content eq $key
+    ($_->isa('PPI::Token::Word')  && $_->content eq $key) ||
+    ($_->isa('PPI::Token::Quote') && $_->content =~ /^('|"){1}${key}('|"){1}$/)
   } $Node->children;
 }
 
@@ -323,101 +245,7 @@ sub _first_stmt {
   List::Util::first { $_->isa('PPI::Statement') } $El->children
 }
 
-sub _ws_factory {
-  my ($self, $El, $addl) = @_;
-  my $ind = $self->_cur_line_indent($El);
-  $ind .= (' ' x $addl) if ($addl);
-  return sub { 
-    my $cnt = $_[0] || $ind;
-    # accept extra prefix content via scalarref:
-    $cnt = $$cnt . $ind if (ref($cnt));
-    PPI::Token::Whitespace->new($cnt) 
-  }
-}
 
-sub _ensure_indents {
-  my ($self, $Stmt) = @_;
-  
-  my $sWs = $self->_ws_factory($Stmt,2);
-  my $lWs = $self->_ws_factory($Stmt);
-  
-  if(my $First = $Stmt->child(0)) {
-    $First->insert_before($sWs->(\"\n")) unless($self->_ws_has_newline($First));
-  }
-  else {
-    $Stmt->add_element($sWs->(\"\n"));
-  }
-  
-  my $Last = (reverse $Stmt->children)[0];
-  
-  $Last->insert_after($lWs->(\"\n")) if (
-    scalar($Stmt->children) == 1 ||
-    ! $self->_ws_has_newline($Last)
-  );
-}
-
-
-sub _ws_has_newline {
-  my ($self, $Ws) = @_;
-
-  while($Ws && $Ws->isa('PPI::Token::Whitespace')) {
-    return 1 if ($Ws->content =~ /\n/);
-    $Ws = $Ws->next_sibling;
-  }
-  return 0;
-}
-
-
-
-sub _backup_kword {
-  my ($self,$El) = @_;
-  
-  my $Op = $El->sprevious_sibling;
-  $Op && $Op->content eq '=>' or return undef;
-
-  my $kWord = $Op->sprevious_sibling;
-  $kWord && $kWord->isa('PPI::Token::Word') ? $kWord : undef
-}
-
-
-sub _backup_nl_ws {
-  my $self = shift;
-  my $El = shift or return undef;
-  my $recur = shift || 0;
-  
-  $El = $El->previous_sibling if ($El->previous_sibling && !$recur);
-  
-  return $self->_backup_nl_ws($El->previous_sibling || $El->parent,1) unless (
-    $El->content =~ /\n/
-  );
-  
-  $El = $El->next_sibling if ($recur && $El->content =~ /\r?\n$/);
-  
-  #scream_color(YELLOW,$El);
-  
-  #$El = $El->find_first('PPI::Token::Whitespace') if ($El->isa('PPI::Node'));
-  #
-  #scream_color(YELLOW,$El);
-  
-  return $El
-}
-
-sub _cur_line_indent {
-  my $self = shift;
-  my $El = shift;
-  $El = $self->_backup_nl_ws($El) or return '';
-
-  my $spc = (reverse split(/\r?\n/,$El->content))[0] || '';
-  while($spc =~ /^\s+$/) {
-    $El = $El->next_sibling;
-    last unless ($El && $El->isa('PPI::Token::Whitespace'));
-    my @p = split(/\S/,$El->content);
-    $spc .= shift(@p);
-    last unless (scalar(@p) == 0);
-  }
-
-  return $spc
-}
 
 1;
 
