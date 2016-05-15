@@ -129,12 +129,23 @@ has 'TableSpecs_stmt', is => 'ro', lazy => 1, default => sub {
   
 }, isa => InstanceOf['PPI::Statement'];
 
+has 'virtual_columns_stmt', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  $self->_first_stmt( $self->_first_kval($self->rapiddbic_stmt,'virtual_columns') )
+}, isa => Maybe[InstanceOf['PPI::Statement::Expression']];
+
+has 'virtual_columns_hash', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  my $Stmt = $self->virtual_columns_stmt or return {};
+  return try{ eval(join('','{',$Stmt->content,'}')) } || {};
+}, isa => HashRef;
+
 
 sub _process_TableSpecs {
   my $self = shift;
   
   my $Stmt = $self->TableSpecs_stmt;
-  
+
   for my $source (@{$self->source_names}) {
     my $SnStmt = $self->_find_or_make_inner_stmt( 
       $self->_find_or_make_kval( $Stmt, $source )
@@ -150,6 +161,10 @@ sub _process_TableSpecs {
     my $Source = $self->schema_class->source($source);
     my @cols = sort $Source->columns;
     push @cols, sort $Source->relationships;
+    
+    if(my $vcols = $self->virtual_columns_hash->{$source}) {
+      push @cols, sort (keys %$vcols) if (ref($vcols)||'' eq 'HASH');
+    }
     
     for my $col (@cols) {
       my $cStmt = $self->_find_or_make_inner_stmt( 
