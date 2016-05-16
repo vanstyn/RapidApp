@@ -12,6 +12,7 @@ use List::Util;
 use Module::Runtime;
 
 use RapidApp::Util ':all';
+require Data::Dumper;
 
 use PPI;
 use Perl::Tidy;
@@ -166,10 +167,12 @@ sub _process_TableSpecs {
       push @cols, sort (keys %$vcols) if (ref($vcols)||'' eq 'HASH');
     }
     
-    for my $col (@cols) {
+    for my $col (uniq @cols) {
       my $cStmt = $self->_find_or_make_inner_stmt( 
         $self->_find_or_make_kval( $colsStmt, $col )
       );
+      
+      $self->_find_or_add_entry( $cStmt, header => "$col" );
     
     }
     
@@ -216,27 +219,6 @@ sub _find_or_make_kval {
   my $Tok = $self->_first_kword($Node, $key);  
   return $self->_first_kval($Node,$Tok) if ($Tok);
   
-  my @els = ();
-  
-  my @schld = $Node->schildren;
-  if(scalar(@schld) > 0) {
-    my $Last = pop @schld;
-    unless($Last->content eq ',') {
-      push @els, PPI::Token::Operator->new(',');
-    }
-  }
-  
-  my $kWord = $key =~ /^\w+$/ 
-    ? PPI::Token::Word->new($key)
-    : bless( { content => "'$key'", separator => "'" }, 'PPI::Token::Quote::Single' );
-  
-  push @els, (
-    $kWord,
-    PPI::Token::Whitespace->new(' '),
-    PPI::Token::Operator->new('=>'),
-    PPI::Token::Whitespace->new(' ')
-  );
-  
   my $kVal = bless( {
     children => [
       bless( {
@@ -250,16 +232,74 @@ sub _find_or_make_kval {
       content => "{"
     }, 'PPI::Token::Structure' )
   }, 'PPI::Structure::Constructor' );
-
-  push @els, (
-    $kVal,
-    #PPI::Token::Operator->new(','),
-    #PPI::Token::Whitespace->new("\n")
+  
+  my @els = $self->_els_for_next_kv(
+    $Node,
+    $self->_create_kword_tok($key),
+    $kVal
   );
   
   $self->_push_children( $Node, @els );
   
   return $kVal
+}
+
+sub _create_kword_tok {
+  my ($self, $key) = @_;
+  
+  $key =~ /^\w+$/ 
+    ? PPI::Token::Word->new($key)
+    : bless( { content => "'$key'", separator => "'" }, 'PPI::Token::Quote::Single' );
+}
+
+sub _create_value_tok {
+  my ($self, $val) = @_;
+  
+  local $Data::Dumper::Terse = 1;
+  my $value = Data::Dumper::Dumper($val);
+  chomp $value;
+  
+  @{ PPI::Tokenizer->new( \$value )->all_tokens }
+}
+
+
+sub _find_or_add_entry {
+  my ($self, $Node, $key, $val) = @_;
+  
+  my $El = $self->_first_kword($Node,$key) || $self->_first_cmt_kword($Node,$key);
+  return $El if ($El);
+  
+  my @els = $self->_els_for_next_kv(
+    $Node,
+    $self->_create_kword_tok($key),
+    $self->_create_value_tok($val)
+  );
+  
+  $self->_push_children( $Node, @els );
+}
+
+sub _els_for_next_kv {
+  my ($self, $Node, $Keytok, @Valtoks) = @_;
+
+  my @els = ();
+  
+  my @schld = $Node->schildren;
+  if(scalar(@schld) > 0) {
+    my $Last = pop @schld;
+    unless($Last->content eq ',') {
+      push @els, PPI::Token::Operator->new(',');
+    }
+  }
+  
+  push @els, (
+    $Keytok,
+    PPI::Token::Whitespace->new(' '),
+    PPI::Token::Operator->new('=>'),
+    PPI::Token::Whitespace->new(' '),
+    @Valtoks
+  );
+  
+  return @els
 }
 
 
@@ -276,6 +316,16 @@ sub _first_kword {
     $_->content eq $key ||
     $_->content =~ /^('|"){1}${key}('|"){1}$/
   } grep { $_->isa('PPI::Token') } $Node->children
+}
+
+
+# TODO: not working yet:
+sub _first_cmt_kword {
+  my ($self, $Node, $key) = @_;
+  
+  List::Util::first {
+    $_->content =~ /^\#\s*('|")??${key}('|")??\s+/
+  } grep { $_->isa('PPI::Token::Comment') } $Node->children
 }
 
 sub _first_kval {
