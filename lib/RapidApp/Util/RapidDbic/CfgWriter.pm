@@ -36,6 +36,7 @@ sub _update_incs {
 }
 
 has 'pm_file', is => 'ro', required => 1, isa => Str;
+has 'use_perltidy', is => 'ro', isa => Bool, default => 1;
 
 has 'ppi_document', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
@@ -172,7 +173,13 @@ sub _process_TableSpecs {
         $self->_find_or_make_kval( $colsStmt, $col )
       );
       
+
+      
       $self->_find_or_add_entry( $cStmt, header => "$col" );
+      $self->_find_or_add_entry( $cStmt, width => 100, 1 );
+      $self->_find_or_add_entry( $cStmt, sortable => 1);
+      
+      $self->_find_or_add_entry( $cStmt, profiles => [], 1);
     
     }
     
@@ -183,18 +190,18 @@ sub _process_TableSpecs {
   
 }
 
+has 'perltidy_argv', is => 'ro', isa => Str, default => sub { '-i=2 -l=100 -nbbc' };
 
 sub _save_to {
   my ($self, $path) = @_;
   
-  my $serialized = $self->ppi_document->serialize;
-  
-  Perl::Tidy::perltidy(
-    source      => \$serialized,
-    destination => $path,
-    argv => '-i=2 -l=100 -nbbc'
-  );
-  
+  $self->use_perltidy    
+    ? Perl::Tidy::perltidy(
+      source      => \$self->ppi_document->serialize,
+      destination => $path,
+      argv        => $self->perltidy_argv
+    ) 
+    : $self->ppi_document->save($path)
 }
 
 
@@ -264,9 +271,14 @@ sub _create_value_tok {
 
 
 sub _find_or_add_entry {
-  my ($self, $Node, $key, $val) = @_;
+  my ($self, $Node, $key, $val, $as_comment) = @_;
   
-  my $El = $self->_first_kword($Node,$key) || $self->_first_cmt_kword($Node,$key);
+  my $El = $self->_first_kword($Node,$key) 
+    || $self->_first_cmt_kword($Node,$key)
+    # needed when comments are the first lines within the {} block -- these will
+    # not show up as a child of the Statement::Expression, but of the parent structure
+    || $self->_first_cmt_kword($Node->parent,$key); 
+  
   return $El if ($El);
   
   my @els = $self->_els_for_next_kv(
@@ -275,6 +287,12 @@ sub _find_or_add_entry {
     $self->_create_value_tok($val)
   );
   
+  if($as_comment) {
+    shift @els if($els[0]->isa('PPI::Token::Operator'));
+    my $str = join('',"\n   #",(map { $_->content } @els),"\n" );
+    @els = ( PPI::Token::Comment->new($str) );
+  }
+
   $self->_push_children( $Node, @els );
 }
 
@@ -296,7 +314,8 @@ sub _els_for_next_kv {
     PPI::Token::Whitespace->new(' '),
     PPI::Token::Operator->new('=>'),
     PPI::Token::Whitespace->new(' '),
-    @Valtoks
+    @Valtoks,
+    PPI::Token::Operator->new(',')
   );
   
   return @els
@@ -321,6 +340,7 @@ sub _first_kword {
 
 sub _first_cmt_kword {
   my ($self, $Node, $key) = @_;
+  return undef unless ($Node);
   
   List::Util::first {
     $_->content =~ /^\s*\#+\s*('|")??${key}('|")??\s+/
