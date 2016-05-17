@@ -319,13 +319,12 @@ sub _first_kword {
 }
 
 
-# TODO: not working yet:
 sub _first_cmt_kword {
   my ($self, $Node, $key) = @_;
   
   List::Util::first {
-    $_->content =~ /^\#\s*('|")??${key}('|")??\s+/
-  } grep { $_->isa('PPI::Token::Comment') } $Node->children
+    $_->content =~ /^\s*\#+\s*('|")??${key}('|")??\s+/
+  } grep { $_->isa('PPI::Token::Comment') } $Node->children;
 }
 
 sub _first_kval {
