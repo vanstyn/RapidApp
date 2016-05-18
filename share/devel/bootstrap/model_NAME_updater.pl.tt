@@ -1,23 +1,44 @@
-# ----------  perl
-# This file intentionally left w/o execute permission. Intended to be called
-# manually via 'perl' command to make sure it is the same interpreter/env as
-# the one used to run the app, which may not be the system perl.
+#!/usr/bin/env perl
 #
-# From the app root:
+# File bootstrapped by RapidApp [% ra_ver %]
 #
-#    perl devel/regen_schema.pl
-#
-# ----------
 
 use strict;
 use warnings;
+
+use Getopt::Long;
+use Pod::Usage;
 
 use DBIx::Class::Schema::Loader;
 use Module::Runtime;
 use IPC::Cmd qw[can_run run_forked];
 use Path::Class qw(file dir);
 
-my $Go = $ARGV[0] && $ARGV[0] eq '--go';
+require Module::Locate;
+use RapidApp::Util::RapidDbic::CfgWriter;
+
+my($from_ddl,$schema,$cfg,$all,$Go);
+
+GetOptions(
+[%- IF from_ddl -%] 'from-ddl+' => \$from_ddl, [%- END -%]
+  'schema+' => \$schema,
+  'cfg+'    => \$cfg,
+  'all+'    => \$all,
+  'go+'     => \$Go
+);
+
+if($all) {
+  $cfg    = 1;
+  $schema = 1;
+  [%- IF from_ddl -%] $from_ddl = 1; [%- END -%]
+}
+
+$schema = 1 if ($from_ddl);
+
+
+pod2usage(1) unless ($schema || $cfg);
+
+
 
 use FindBin;
 use lib "$FindBin::Bin/../lib";
@@ -47,7 +68,7 @@ my ($schema_class,$dsn,$user,$pass) = (
 );
 
 [% IF from_ddl %]
-{ # from_ddl logic
+if($from_ddl) { # from_ddl logic
 
   my $sqlite3 = can_run('sqlite3') or die 'FATAL: sqlite3 command not available!';
   my $ddl = file($approot,'[%- from_ddl -%]')->resolve;
@@ -112,23 +133,69 @@ my ($schema_class,$dsn,$user,$pass) = (
 }
 [% END %]
 
-my @connect = ($dsn,$user,$pass);
-print "\nDumping schema \"$schema_class\" to \"" . file($applib)->resolve->relative . "\"\n";
-print "[ " . join(' ',map { $_||"''" } @connect) . " ]\n\n";
+if($schema) {
 
-DBIx::Class::Schema::Loader::make_schema_at(
-  $schema_class, 
-  {
-    debug => 1,
-    dump_directory => $applib,
-    use_moose	=> 1, generate_pod => 0,
-    components => ["InflateColumn::DateTime"],
-  },
-  [ 
-    @connect,
-    { loader_class => 'RapidApp::Util::MetaKeys::Loader' }
-  ]
-);
+  my @connect = ($dsn,$user,$pass);
+  print "\nDumping schema \"$schema_class\" to \"" . file($applib)->resolve->relative . "\"\n";
+  print "[ " . join(' ',map { $_||"''" } @connect) . " ]\n\n";
 
-print "\n";
+  DBIx::Class::Schema::Loader::make_schema_at(
+    $schema_class, 
+    {
+      debug => 1,
+      dump_directory => $applib,
+      use_moose	=> 1, generate_pod => 0,
+      components => ["InflateColumn::DateTime"],
+    },
+    [ 
+      @connect,
+      { loader_class => 'RapidApp::Util::MetaKeys::Loader' }
+    ]
+  );
+
+  print "\n";
+
+}
+
+if($cfg) {
+  my $pm_path = Module::Locate::locate($model_class);
+  dir($applib)->contains($pm_path) or die "$pm_path is not within the local dir!";
+  
+  print "\n==> Updating configs in $pm_path ... ";
+  
+  my $CfgW = RapidApp::Util::RapidDbic::CfgWriter->new({ pm_file => $pm_path });
+
+  $CfgW->save_to( "$pm_path" );
+  
+  print "done.\n";
+}
+
+
+1;
+__END__
+
+=head1 NAME
+
+[%- updater_script_name -%] - updater script for RapidDbic model '[%- model_class -%]'
+
+=head1 SYNOPSIS
+
+ perl devel/[%- updater_script_name -%] [options]
+
+ Options:
+   --schema    Regenerate DBIx::Class schema   [% IF from_ddl %]
+   --from-ddl  Recreate db from DDL (implies --schema) 
+   --go        Do not prompt before overwriting db from DDL [% END %]
+   --cfg       Update TableSpec configs for new defaults (nondestructive)
+[% IF from_ddl %]
+   --all       Shortcut for: --from-ddl --schema --cfg [% ELSE %]
+   --all       Shortcut for: --schema --cfg [% END %]
+
+
+ TableSpec Config Update (--cfg):
+   When called with the --cfg option, the TableSpec configs within the RapidDbic section of
+   the model will be updated to match the schema class. This is a non-destructive operation,
+   it will not change any existing configs, just add defaults that do not already exist. This
+   adds boilerplate for new tables and columns which were added after the app was bootstrapped.
+
 

@@ -119,6 +119,8 @@ sub _ra_rapiddbic_generate_model {
   
   my $ddl = undef;
   
+  my $updater_script_name = join('_','model',$opts->{'model-name'},'updater.pl');
+  
   if($opts->{'from-sqlite'}) {
     
     my $sqlt_orig = file($opts->{'from-sqlite'});
@@ -192,9 +194,10 @@ sub _ra_rapiddbic_generate_model {
     
     $self->_ra_add_rapiddbic_extra_info(
       "NOTE: Your DDL (i.e. native SQLite schema) has been copied to: $ddl",
-      "you can modify this file later on and recreate your database and DBIC",
-      "schema classes by calling this script from your app home dir:\n",
-      "  perl devel/regen_schema_from_ddl.pl\n"
+      "you can modify this file later on and recreate your database, DBIC",
+      "schema classes and update your base TableSpec configs by calling this",
+      "script from your app home dir:\n",
+      "  perl devel/$updater_script_name --from-ddl --cfg\n"
     );
     
   }
@@ -217,8 +220,9 @@ sub _ra_rapiddbic_generate_model {
         '  *** ' . $ddl->relative($home) . '  --  DO NOT MOVE OR RENAME THIS FILE ***','',
         "Add your DDL here (i.e. CREATE TABLE statements)",'',
         "To (re)initialize your SQLite database (" . $sqlt->relative($home) . ") and (re)generate",
-        "your DBIC schema classes, run this command from your app home directory:",'',
-        "   perl devel/regen_schema_from_ddl.pl",
+        "your DBIC schema classes and update your base TableSpec configs, run this command",
+        "from your app home directory:",'',
+        "   perl devel/$updater_script_name --from-ddl --cfg",
         "\n" . ('-' x 80) . "\n" 
       );
       
@@ -256,9 +260,9 @@ sub _ra_rapiddbic_generate_model {
     $self->_ra_add_rapiddbic_extra_info(
       "NOTE: A blank DDL (i.e. native SQLite schema) has been setup at: $ddl",
       "now write your schema (i.e. CREATE TABLE statements) in this file and ",
-      "generate your database and DBIC schema classes by calling this script ",
-      "from your app home dir:\n",
-      "  perl devel/regen_schema_from_ddl.pl\n",
+      "generate your database and DBIC schema classes and update your base ",
+      "TableSpec configs by calling this script from your app home dir:\n",
+      "  perl devel/$updater_script_name --from-ddl --cfg\n",
       "(you can run this script over and over to regenerate at any time)"
     );
   }
@@ -337,19 +341,16 @@ sub _ra_rapiddbic_generate_model {
   
   # New: create regen_schema.pl devel script:
   
-  my $tpl = file(RapidApp->share_dir,qw(devel bootstrap regen_schema.pl.tt));
+  my $tpl = file(RapidApp->share_dir,qw(devel bootstrap model_NAME_updater.pl.tt));
   confess "Error: template file '$tpl' not found" unless (-f $tpl);
   
   my $contents = $tpl->slurp(iomode =>  "<:raw");
   my $vars = $self->_ra_appclass_tt_vars;
   $vars->{model_class} = join('::',$self->{name},'Model',$opts->{'model-name'});
-  
-  $self->render_file_contents($contents,file($self->{ra_devel},"regen_schema.pl"),$vars);
-  
-  if ($ddl) {
-    $vars->{from_ddl} = $ddl->relative($home);
-    $self->render_file_contents($contents,file($self->{ra_devel},"regen_schema_from_ddl.pl"),$vars);
-  }
+
+  $vars->{from_ddl} = $ddl->relative($home) if ($ddl);
+  $vars->{updater_script_name} = $updater_script_name;
+  $self->render_file_contents($contents,file($self->{ra_devel},$updater_script_name),$vars);
   
 }
 

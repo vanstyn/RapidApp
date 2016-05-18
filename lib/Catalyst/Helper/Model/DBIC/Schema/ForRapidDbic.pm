@@ -42,6 +42,7 @@ use Path::Class qw/file dir/;
 use Module::Runtime;
 
 use RapidApp::Util qw(:all);
+use RapidApp::Util::RapidDbic::CfgWriter;
 
 # This is ugly/temporary -- mechanism to pull in additional configs from the
 # RapidDbic helper trait. Currently this is only exposed in rdbic.pl (--crud-profile)
@@ -196,6 +197,10 @@ sub _gen_model {
     };
     
     $helper->render_file('compclass', $helper->{file} );
+    
+    my $CfgW = RapidApp::Util::RapidDbic::CfgWriter->new({ pm_file => "$helper->{file}" });
+    $CfgW->save_to( "$helper->{file}" );
+    
 }
 
 # Must be called *after* _gen_static_schema() is called

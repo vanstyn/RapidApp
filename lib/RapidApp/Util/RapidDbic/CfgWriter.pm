@@ -19,7 +19,7 @@ use Perl::Tidy;
 
 sub BUILD {
   my $self = shift;
-  $self->TableSpecs_stmt; # init early
+  $self->_process_TableSpecs; # init early
 }
 
 sub _update_incs {
@@ -264,7 +264,7 @@ sub _process_TableSpecs {
 
 has 'perltidy_argv', is => 'ro', isa => Str, default => sub { '-i=2 -l=100 -nbbc' };
 
-sub _save_to {
+sub save_to {
   my ($self, $path) = @_;
   
   $self->use_perltidy    
@@ -410,6 +410,7 @@ sub _push_children {
 
 sub _first_kword {
   my ($self, $Node, $key) = @_;
+  return undef unless ($Node);
   
   List::Util::first {
     $_->content eq $key ||
@@ -429,6 +430,7 @@ sub _first_cmt_kword {
 
 sub _first_kval {
   my ($self, $Node, $key) = @_;
+  return undef unless ($Node);
   
   my $kWord = blessed($key) ? $key : $self->_first_kword($Node, $key) or return undef;
   
@@ -440,6 +442,7 @@ sub _first_kval {
 
 sub _first_stmt {
   my ($self,$El) = @_;
+  return undef unless ($El);
   List::Util::first { $_->isa('PPI::Statement') } $El->children
 }
 
@@ -457,11 +460,18 @@ RapidApp::Util::RapidDbic::CfgWriter - Updates RapidDbic model configs using PPI
 =head1 SYNOPSIS
 
  use RapidApp::Util::RapidDbic::CfgWriter;
-
+ 
+ my $CfgW = RapidApp::Util::RapidDbic::CfgWriter->new({ pm_file => "$pm_path" });
+ $CfgW->save_to( "$pm_path" );
 
 =head1 DESCRIPTION
 
-Experimental external definitions of foreign keys
+This module non-destructively updates the C<TableSpecs> configs of RapidDbic-based
+model classes based on the current state of the associated DBIx:Class schema set
+in the C<schema_class> config. The purpose is to add the base boilerplate configs
+for the schema if it has been changed since the application was originally 
+bootstrapped. It is designed to NOT clobber user-supplied configs by only adding
+the defaults of missing options, leaving the rest alone.
 
 
 =head1 METHODS
@@ -474,10 +484,21 @@ Create a new RapidApp::Util::RapidDbic::CfgWriter instance. The following build 
 
 =item pm_file
 
-Path to Model pm file
+Path to the Model pm file. Required.
+
+=item use_perltidy
+
+When true (default) the file is post-processed by L<Perl::Tidy>.
+
+=item perltidy_argv
+
+The options supplied to C<perltidy> - defaults to C<'-i=2 -l=100 -nbbc'>
 
 =back
 
+=head2 save_to
+
+Writes out the updated file contents to the supplied path.
 
 =head1 SEE ALSO
 
