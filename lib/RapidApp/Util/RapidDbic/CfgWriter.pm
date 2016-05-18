@@ -43,6 +43,71 @@ has 'ppi_document', is => 'ro', lazy => 1, default => sub {
   PPI::Document->new( file( $self->pm_file )->resolve->stringify )
 }, isa => InstanceOf['PPI::Document'];
 
+
+
+has 'get_default_source_entries', is => 'ro', default => sub {
+  sub {
+    my $Source = shift;
+    my $name = $Source->source_name;
+    my @pks = $Source->primary_columns;
+    
+    # Here we will take the liberty of setting the display_column to
+    # 'title' or 'name' if either of those column names exist
+    my $disp_col =
+      $Source->has_column('title') ? 'title' :
+      $Source->has_column('name')  ? 'name'  :
+      scalar(@pks) == 1             ? $pks[0] : undef;
+
+    return [
+      $disp_col 
+        ? [ display_column => $disp_col  ] 
+        : [ display_column => '', 1      ], #this will be a comment
+      [ title        => $name,              ],
+      [ title_multi  => "$name Rows",       ],
+      [ iconCls      => 'ra-icon-pg',       ],
+      [ multiIconCls => 'ra-icon-pg-multi'  ],
+    ]
+  }
+}, isa => CodeRef;
+
+
+has 'get_default_column_entries', is => 'ro', default => sub {
+  sub {
+    my $Source = shift;
+    my $col    = shift;
+    
+    my $opts = [
+      [ header     => $col,        ],
+      [ width      => 100,   1     ],
+    ];
+    
+    my $is_virt = 0;
+    
+    if($Source->has_relationship($col)) {
+      my $info = $Source->relationship_info($col) || {};
+      $is_virt = 1 if ($info->{accessor}||'' eq 'multi');
+    }
+    elsif(!$Source->has_column($col)) { # must be a virtual column
+      $is_virt = 1;
+    }
+    
+    push @$opts, [ sortable => 1, 1 ] if ($is_virt);
+    
+    push @$opts, (
+      [ renderer => 'RA.ux.App.someJsFunc', 1 ],
+      [ profiles => [],                     1 ]
+    
+    );
+    
+    return $opts;
+    
+  }
+}, isa => CodeRef;
+
+
+
+
+
 has 'config_stmt', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   
@@ -149,18 +214,19 @@ sub _process_TableSpecs {
   my $Stmt = $self->TableSpecs_stmt;
 
   for my $source (@{$self->source_names}) {
+    my $Source = $self->schema_class->source($source);
+  
     my $SnStmt = $self->_find_or_make_inner_stmt( 
       $self->_find_or_make_kval( $Stmt, $source )
     );
     
-    
-    # ...
+    my $defs = $self->get_default_source_entries->($Source);
+    $self->_find_or_add_entry( $SnStmt, @$_ ) for @$defs;    
     
     my $colsStmt = $self->_find_or_make_inner_stmt(
       $self->_find_or_make_kval( $SnStmt, 'columns' )
     );
     
-    my $Source = $self->schema_class->source($source);
     my @cols = sort $Source->columns;
     push @cols, sort $Source->relationships;
     
@@ -173,21 +239,27 @@ sub _process_TableSpecs {
         $self->_find_or_make_kval( $colsStmt, $col )
       );
       
-
+      my $defs = $self->get_default_column_entries->($Source,$col);
+      $self->_find_or_add_entry( $cStmt, @$_ ) for @$defs;
       
-      $self->_find_or_add_entry( $cStmt, header => "$col" );
-      $self->_find_or_add_entry( $cStmt, width => 100, 1 );
-      $self->_find_or_add_entry( $cStmt, sortable => 1);
-      
-      $self->_find_or_add_entry( $cStmt, profiles => [], 1);
-    
+      # ------
+      # These are the hoops we have to jump through to ensure we haven't left a blank line.
+      # the reason this is hard is because we must consider if the parent structure ends
+      # with a newline as well as if our inner statement does. So we don't want to delete
+      # our last newline when there is no newline at the end of the parent ({}) structure
+      my $Last = $cStmt->last_element;
+      if ($Last->isa('PPI::Token::Whitespace') && $Last->content eq "\n") {
+        if(my $Parent = $cStmt->parent) {
+          my $pLast = (reverse $Parent->children)[0];
+          $pLast = $pLast->previous_sibling if (
+            $pLast->isa('PPI::Token::Whitespace') && !($pLast->content =~ /\n/)
+          );
+          $Last->delete if ( $pLast->isa('PPI::Token::Whitespace') && $pLast->content =~ /\n/);
+        }
+      }
+      # ------
     }
-    
-    # ...
-    
-  
   }
-  
 }
 
 has 'perltidy_argv', is => 'ro', isa => Str, default => sub { '-i=2 -l=100 -nbbc' };
@@ -288,9 +360,17 @@ sub _find_or_add_entry {
   );
   
   if($as_comment) {
-    shift @els if($els[0]->isa('PPI::Token::Operator'));
-    my $str = join('',"\n   #",(map { $_->content } @els),"\n" );
-    @els = ( PPI::Token::Comment->new($str) );
+    my $Op;
+    $Op = shift @els if($els[0]->isa('PPI::Token::Operator'));
+    my $Last = $Node->last_element;
+    my $cmt_start = $Last && $Last->content =~ /\n/ ? "  #" : "\n  #";
+    
+    my $str = join('',$cmt_start,(map { $_->content } @els) );
+    @els = ( 
+      PPI::Token::Comment->new($str),
+      PPI::Token::Whitespace->new("\n")
+    );
+    unshift @els, $Op if ($Op);
   }
 
   $self->_push_children( $Node, @els );
