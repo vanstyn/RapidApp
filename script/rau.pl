@@ -24,7 +24,7 @@ rau.pl - RapidApp umbrella utility script
  rau.pl [MODULE] [options]
  
  Available Modules:
-   * modal-update
+   * model-update
 
 =head1 DESCRIPTION
 
@@ -36,9 +36,9 @@ to the given module.
 Call a module with the argument C<--help> to see its usage.
 
 Module names are translated into CamelCased class named under the C<RapidApp::Util::Rau::*>
-namespace. For example, C<'modal-update'> becomes C<'RapidApp::Util::Rau::ModalUpdate'>.
+namespace. For example, C<'modal-update'> becomes C<'RapidApp::Util::Rau::ModelUpdate'>.
 
-So far, the only module which has been written is L<RapidApp::Util::Rau::ModalUpdate>.
+So far, the only module which has been written is L<RapidApp::Util::Rau::ModelUpdate>.
 
 
 =head1 SEE ALSO

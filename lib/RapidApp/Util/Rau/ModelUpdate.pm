@@ -1,4 +1,4 @@
-package RapidApp::Util::Rau::ModalUpdate;
+package RapidApp::Util::Rau::ModelUpdate;
 use strict;
 use warnings;
 
@@ -38,14 +38,14 @@ __END__
 
 =head1 NAME
 
-RapidApp::Util::Rau::ModalUpdate - TableSpecs config updater script
+RapidApp::Util::Rau::ModelUpdate - TableSpecs config updater script
 
 =head1 SYNOPSIS
 
- rau.pl modal-update [MODAL_PATH]
+ rau.pl model-update [MODAL_PATH]
  
  Examples:
-   rau.pl modal-update MyApp/lib/Modal/DB.pm
+   rau.pl model-update MyApp/lib/Modal/DB.pm
 
 =head1 DESCRIPTION
 
