@@ -307,6 +307,8 @@ sub _ra_rapiddbic_generate_model {
   
   my $schema_class = $opts->{'schema-class'} or die "missing required opt 'schema-class'";
   
+  $opts->{grid_class} = join('::',$name,'Module','GridBase');
+  
   try {
     # If this succeeds we are dealing with an existing schema - clear loader opts
     Module::Runtime::require_module($schema_class);
@@ -351,6 +353,18 @@ sub _ra_rapiddbic_generate_model {
   $vars->{from_ddl} = $ddl->relative($home) if ($ddl);
   $vars->{updater_script_name} = $updater_script_name;
   $self->render_file_contents($contents,file($self->{ra_devel},$updater_script_name),$vars);
+  
+  
+  $tpl = file(RapidApp->share_dir,qw(devel bootstrap GridBase.pm.tt));
+  confess "Error: template file '$tpl' not found" unless (-f $tpl);
+  $contents = $tpl->slurp(iomode =>  "<:raw");
+  
+  my $grid_path = "$opts->{grid_class}.pm";
+  $grid_path =~ s/::/\//g;
+  my $grid_file = file($self->{dir},'lib',$grid_path);
+  $grid_file->parent->mkpath(1) unless (-d $grid_file->parent);
+  
+  $self->render_file_contents($contents,$grid_file,$opts);
   
 }
 

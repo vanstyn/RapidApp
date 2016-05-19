@@ -73,13 +73,16 @@ sub crud_profile {
 sub _get_grid_params_section {
     my $self = shift;
     
+    my $opts = $self->_ra_rapiddbic_opts;
+    my $grid_class = $opts->{grid_class} || 'Catalyst::Plugin::RapidApp::RapidDbic::TableBase';
+    
     my $colspecs = q~
              include_colspec     => ['*'], #<-- default already ['*']
              updatable_colspec   => ['*'],
              creatable_colspec   => ['*'],
              destroyable_relspec => ['*'],~;
     
-    my $maybe_total_counts = $self->_ra_rapiddbic_opts->{total_counts_off}
+    my $maybe_total_counts = $opts->{total_counts_off}
              ? q~
              init_total_count_off => 1,~ 
              : '';
@@ -131,6 +134,7 @@ sub _get_grid_params_section {
     }
 
     q~
+       grid_class => '~ . $grid_class . q~',
        grid_params => {
           # The special '*defaults' key applies to all sources at once
           '*defaults' => {~ .
@@ -336,9 +340,9 @@ __PACKAGE__->config(
        # redundant literal column when the names are different:
        hide_fk_columns => 1,
 
-       # grid_params are used to configure the grid module which is 
-       # automatically setup for each source in the navtree
-[% grid_params_section %]
+       # The grid_class is used to automatically setup a module for each source in the
+       # navtree with the grid_params for each source supplied as its options.
+[%- grid_params_section -%]
        [% IF source_names %]
        # TableSpecs define extra RapidApp-specific metadata for each source
        # and is used/available to all modules which interact with them
