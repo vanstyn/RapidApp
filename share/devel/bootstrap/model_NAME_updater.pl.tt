@@ -6,6 +6,8 @@
 use strict;
 use warnings;
 
+use RapidApp::Util ':all';
+
 use Getopt::Long;
 use Pod::Usage;
 
@@ -117,15 +119,31 @@ if($from_ddl) { # from_ddl logic
   }
     
   my $ddl_text = $ddl->slurp;
-
-  print "\n-->> calling system command:  sqlite3 " . $sqlt->relative . ' < ' . $ddl->relative . '  ';
   
-  my $result = run_forked([$sqlite3,$sqlt], { child_stdin => $ddl_text });
+  my $i = 0;
+  my $sqlt_tmp = file($sqlt->parent, join('','.',$sqlt->basename,'.tmp'));
+  while(-e $sqlt_tmp) {
+    $sqlt_tmp = file($sqlt->parent, join('','.',$sqlt->basename,'.tmp.',++$i));
+  }
+
+  print "\n-->> calling system command:  sqlite3 " . $sqlt_tmp->relative . ' < ' . $ddl->relative . '  ';
+  
+  my $result = run_forked([$sqlite3,$sqlt_tmp], { child_stdin => $ddl_text });
   my $exit = $result->{exit_code};
   
   print " [exit: $exit]\n";
-  die "\n" . $result->{err_msg} if ($exit);
+  if ($exit) {
+    print " -- non-zero exit, removing temp file " . $sqlt_tmp->relative . " -- \n";
+    $sqlt_tmp->remove;
+    die $result->{err_msg};
+  }
+  else {
+    print join(' ',"-->> mv",$sqlt_tmp->relative,$sqlt->relative);
+    $sqlt->remove if (-f $sqlt);
+    $sqlt_tmp->move_to($sqlt);
+  }
   
+
   print "\n";
   
   # for good measure, make sure we're generating from $sqlt in the next step
@@ -158,12 +176,19 @@ if($schema) {
 }
 
 if($cfg) {
-  my $pm_path = Module::Locate::locate($model_class);
+  my $pm_path = file( scalar Module::Locate::locate($model_class) );
   dir($applib)->contains($pm_path) or die "$pm_path is not within the local dir!";
   
-  print "\n==> Updating configs in $pm_path ... ";
+  $pm_path = $pm_path->resolve->absolute;
+  my $appdir = dir($approot)->resolve->absolute;
   
-  my $CfgW = RapidApp::Util::RapidDbic::CfgWriter->new({ pm_file => $pm_path });
+  print join('',
+    "\n==> Updating TableSpecs configs in ",
+    $appdir->basename,'/',$pm_path->relative($appdir),
+    " ... "
+  );
+  
+  my $CfgW = RapidApp::Util::RapidDbic::CfgWriter->new({ pm_file => "$pm_path" });
 
   $CfgW->save_to( "$pm_path" );
   
