@@ -273,7 +273,9 @@ sub save_to {
       destination => $path,
       argv        => $self->perltidy_argv
     ) 
-    : $self->ppi_document->save($path)
+    : $self->ppi_document->save($path);
+    
+  return 1
 }
 
 
