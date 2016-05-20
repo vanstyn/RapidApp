@@ -42,6 +42,28 @@ sub default_favicon_url {
   join('',$c->mount_url,$path)
 }
 
+sub favicon_head_tag {
+  my $c = shift;
+  
+  # allow the user to override via config if they really want to:
+  my $custom = $c->config->{'RapidApp'}{favicon_head_tag};
+  return $custom if ($custom);
+  
+  my $url = $c->default_favicon_url;
+  return $url ? join('','<link rel="icon" href="',$url,'" type="image/x-icon" />') : undef
+}
+
+# This method comes from Catalyst::Plugin::AutoAssets
+around 'all_html_head_tags' => sub {
+  my ($orig,$c,@args) = @_;
+  
+  my $html = $c->$orig(@args);
+  if(my $tag = $c->favicon_head_tag) {
+    $html = join("\r\n",'<!-- AUTO GENERATED favicon_head_tag -->',$tag,'',$html);
+  }
+  return $html
+}; 
+
 
 # ---
 # Override dump_these to limit the depth of data structures which will get

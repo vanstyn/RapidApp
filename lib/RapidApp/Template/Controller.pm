@@ -483,6 +483,7 @@ sub view :Chained('base') :Args {
       # TODO: basically including everything but ExtJS CSS. This is ugly and should
       # be generalized/available in the Asset system as a simpler function call:
       push @head, (
+        $c->favicon_head_tag||'',
         $c->controller('Assets::RapidApp::CSS')->html_head_tags,
         $c->controller('Assets::RapidApp::Icons')->html_head_tags,
         $c->controller('Assets::ExtJS')->html_head_tags( js => [

@@ -9,15 +9,10 @@
 
 [% c.all_html_head_tags %]
 
-<!-- default favicon -->
-[% SET favicon = c.default_favicon_url %]
 [% TRY %]
   [% PROCESS templates/local_js_css.tt %]
 [% CATCH %]
 [% END %]
-
-<link rel="icon" href="[% favicon %]" type="image/x-icon" />
-
 
 <script type="text/javascript">
   Ext.ux.RapidApp.VERSION = [% c.rapidapp_version %];
