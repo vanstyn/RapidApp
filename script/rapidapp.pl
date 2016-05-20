@@ -43,6 +43,14 @@ sub _traits_list {
   } @list;
 }
 
+# --
+# Special default --dir for rapi/psgi
+# If we're being called from within the environment of the rapi/psgi docker image,
+# use the /opt/app directory as the default app target dir because it is the most
+# common-sense default for this scenario. See the rapi/psgi docs for more info
+$dir = "/opt/app" if($ENV{RAPI_PSGI_DOCKERIZED} && !$dir);
+# --
+
 my $helper = RapidApp::Helper->new_with_traits({
     '.newfiles' => !$force,
     'makefile'  => $makefile,
