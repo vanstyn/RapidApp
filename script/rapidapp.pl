@@ -10,15 +10,19 @@ my $force    = 0;
 my $help     = 0;
 my $makefile = 0;
 my $scripts  = 0;
+my $dir;
 
 my $helpers;
 
+# We no longer support "upgrading" existing apps like catalyst.pl
+# -- no longer accept those options from the command line
 GetOptions(
     'help|?'      => \$help,
-    'force|nonew' => \$force,
-    'makefile'    => \$makefile,
-    'scripts'     => \$scripts,
-    'helpers=s'   => \$helpers
+    #'force|nonew' => \$force,
+    #'makefile'    => \$makefile,
+    #'scripts'     => \$scripts,
+    'helpers=s'   => \$helpers,
+    'dir=s'       => \$dir
 );
 
 my $name = shift @ARGV;
@@ -45,6 +49,7 @@ my $helper = RapidApp::Helper->new_with_traits({
     'scripts'   => $scripts,
     'traits'    => [&_traits_list],
     name        => $name,
+    ( $dir ? ('dir' => $dir) : () ),
     extra_args  => \@extra_args
 });
 # Pass $ARGV[0] for compatibility with old ::Devel
@@ -62,15 +67,11 @@ rapidapp.pl - Bootstrap a RapidApp/Catalyst application
 
  rapidapp.pl [options] application-name [--] [extra options]
 
- 'rapidapp.pl' creates a skeleton for a new application, and allows you to
- upgrade the skeleton of your old application.
+ 'rapidapp.pl' creates a skeleton for a new RapidApp application
 
  Options:
-   -force      don't create a .new file where a file to be created exists
-   -help       display this help and exit
-   -makefile   only update Makefile.PL
-   -scripts    only update helper scripts
-
+  --help      display this help and exit
+  --dir       optional custom target directory (must be empty or not exist)
   --helpers   comma-separated list of helper traits (RapidApp::Helper::Traits::*)
 
  Extra Options:

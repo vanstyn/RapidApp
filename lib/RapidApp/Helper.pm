@@ -24,7 +24,8 @@ RapidApp::Helper - Bootstrap a RapidApp/Catalyst application
 
 use RapidApp;
 use Path::Class qw/dir file/;
-use List::MoreUtils qw(uniq);
+
+use RapidApp::Util ':all';
 
 # Override these functions to do nothing, because they create files we don't want:
 sub _mk_images    { 1 }
@@ -35,6 +36,78 @@ sub _mk_config    { 1 } #<-- since we don't setup ConfigLoader
 # Replace _mk_appclass to call the RapidApp version which is totally
 # different from the default:
 sub _mk_appclass  { (shift)->_ra_mk_appclass(@_) }
+
+# NEW: unlike our parent, Catalyst::Helper, we no longer support running against
+# an existing app/directory. We now check to see if the target directory directory
+# already exists, and if it does and is not empty, we error. We also now cleanup
+# after ourselves, tracking what we created and removing if an error occured.
+around 'mk_app' => sub {
+  my ($orig, $self, $name) = @_;
+  $name or die "App name is required";
+  
+  # Copied from parent (Catalyst::Helper) class:
+  if(!defined $self->{'dir'}) {
+      $self->{dir} = $name;
+      $self->{dir} =~ s/\:\:/-/g;
+  }
+  
+  my $dir = dir( $self->{dir} );
+  if(-e $dir) {
+    die "Error: app target dir '$dir' already exists but is not a directory.\n" unless (-d $dir);
+    my @children = $dir->children(no_hidden => 1);
+    if(scalar(@children) > 0) {
+      die "Error: app target dir '$dir' already exists but is not empty.\n";
+    }
+    else {
+      $self->{_dir_was_empty} = 1;
+    }
+  }
+  else {
+    $self->{_dir_not_exist} = 1;
+  }
+  
+  my $ret;
+  try {
+    $ret = $self->$orig($name);
+  }
+  catch {
+    my $err = shift;
+    warn "\nCaught exception:\n$err\n";
+    $self->_error_cleanup;
+    print "\n";
+    die $err;
+  };
+  
+  unless($ret) {
+    print "Bootstrap failed.\n";
+    $self->_error_cleanup;
+  }
+  
+  return $ret
+};
+
+
+sub _error_cleanup {
+  my $self = shift;
+  
+  if($self->{_dir_was_empty}) {
+    my $dir = dir( $self->{dir} );
+    if (-d $dir) {
+      print "Cleaning up directory $dir ... \n";
+      my @children = $dir->children(no_hidden => 1);
+      $_->is_dir ? $_->rmtree(1,1) : $_->remove for (@children);
+      print "done.\n";
+    }
+  }
+  elsif($self->{_dir_not_exist}) {
+    my $dir = dir( $self->{dir} );
+    if (-d $dir) {
+      print "Removing directory $dir ... \n";
+      $dir->rmtree(1,1) and print "done.\n";
+    }
+  }
+
+}
 
 # Overide the Catalyst _mk_dirs to prevent certain dirs from being created
 # (still mostly the same as the catalyst version)
