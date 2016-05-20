@@ -656,6 +656,7 @@ sub _get_template_error {
 sub template_render {
 	my ($self, $template, $vars, $c) = @_;
   $vars ||= {};
+  $c ||= RapidApp->active_request_context;
   
   # The current context may not be available:
   # see DummyAccess in RapidApp::Template::Access:
