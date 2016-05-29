@@ -26,6 +26,13 @@ __PACKAGE__->setup();
 
 1;
 
+[% IF bootstrap_cmd %]
+# ---
+# This app was initially generated/bootrapped with:
+#  [% bootstrap_cmd %]
+# ---
+[% END %]
+
 __END__
 
 =head1 NAME

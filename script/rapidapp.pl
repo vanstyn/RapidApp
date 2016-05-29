@@ -6,6 +6,8 @@ use Pod::Usage;
 
 use RapidApp::Helper;
 
+my $bootstrap_cmd = join(' ',(reverse split(/\//,$0))[0],@ARGV);
+
 my $force    = 0;
 my $help     = 0;
 my $makefile = 0;
@@ -58,7 +60,8 @@ my $helper = RapidApp::Helper->new_with_traits({
     'traits'    => [&_traits_list],
     name        => $name,
     ( $dir ? ('dir' => $dir) : () ),
-    extra_args  => \@extra_args
+    extra_args  => \@extra_args,
+    bootstrap_cmd => $bootstrap_cmd
 });
 # Pass $ARGV[0] for compatibility with old ::Devel
 pod2usage(1) unless $helper->mk_app( $name );
