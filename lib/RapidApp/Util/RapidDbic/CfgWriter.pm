@@ -91,7 +91,7 @@ has 'get_default_column_entries', is => 'ro', default => sub {
       my $info = $Source->column_info($col) || {};
       if($info->{is_auto_increment}) {
         # Assume we should turn off allow_add if this is an auto-inc column
-        push @$opts, [ allow_add => 0 ];
+        unshift @$opts, [ allow_add => 0 ];
       }
     }
     else { # must be a virtual column
@@ -234,7 +234,7 @@ sub _process_TableSpecs {
       $self->_find_or_make_kval( $SnStmt, 'columns' )
     );
     
-    my @cols = sort $Source->columns;
+    my @cols = $Source->columns;
     push @cols, sort $Source->relationships;
     
     if(my $vcols = $self->virtual_columns_hash->{$source}) {
