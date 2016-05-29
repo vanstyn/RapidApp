@@ -218,6 +218,13 @@ sub _ra_mk_appclass {
   my $appcontents = $apptpl->slurp(iomode =>  "<:raw");
   $self->render_file_contents($appcontents,file($self->{dir},"app.psgi"),$vars);
   # --
+  
+  # -- New: also create cpanfile
+  my $cftpl = file(RapidApp->share_dir,qw(devel bootstrap cpanfile.tt));
+  confess "Error: template file '$cftpl' not found" unless (-f $cftpl);
+  my $cfcontents = $cftpl->slurp(iomode =>  "<:raw");
+  $self->render_file_contents($cfcontents,file($self->{dir},"cpanfile"),$vars);
+  # --
 }
 
 sub _ra_appclass_tt_vars {
