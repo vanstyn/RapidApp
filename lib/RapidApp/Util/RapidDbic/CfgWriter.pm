@@ -87,7 +87,14 @@ has 'get_default_column_entries', is => 'ro', default => sub {
       my $info = $Source->relationship_info($col) || {};
       $is_virt = 1 if ($info->{accessor}||'' eq 'multi');
     }
-    elsif(!$Source->has_column($col)) { # must be a virtual column
+    elsif($Source->has_column($col)) {
+      my $info = $Source->column_info($col) || {};
+      if($info->{is_auto_increment}) {
+        # Assume we should turn off allow_add if this is an auto-inc column
+        push @$opts, [ allow_add => 0 ];
+      }
+    }
+    else { # must be a virtual column
       $is_virt = 1;
     }
     
