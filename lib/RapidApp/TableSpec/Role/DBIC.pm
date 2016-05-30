@@ -274,14 +274,17 @@ sub add_db_column($@) {
 	$opt{allow_edit} = \0 unless ($editable);
 	$opt{allow_add} = \0 unless ($creatable);
   
-  # New: flip the allow edit/add flags on if they are not already set to something,
-  # and no_column is not set. This is needed for the case of creatable but not
-  # editable, since the default allow_add is based on the value of allow_edit, which
-  # is intended for the case of it being set by the user
-  unless(jstrue($opt{no_column})) {
-    $opt{allow_edit} //= \1 if ($editable);
-    $opt{allow_add}  //= \1 if ($creatable);
-  }
+  # UPDATE: no longer flip these flags on since this logic should now be reduntant
+  # to the allow_add/edit normalization in RapidApp::Module::DatStor::Column and
+  # this was also conflicting with column profiles which attempt to set these flags
+  #### New: flip the allow edit/add flags on if they are not already set to something,
+  #### and no_column is not set. This is needed for the case of creatable but not
+  #### editable, since the default allow_add is based on the value of allow_edit, which
+  #### is intended for the case of it being set by the user
+  ###unless(jstrue($opt{no_column})) {
+  ###  $opt{allow_edit} //= \1 if ($editable);
+  ###  $opt{allow_add}  //= \1 if ($creatable);
+  ###}
 
 	unless ($editable or $creatable) {
 		$opt{rel_combo_field_cnf} = $opt{editor} if($opt{editor});
