@@ -261,7 +261,10 @@ sub _process_TableSpecs {
           $pLast = $pLast->previous_sibling if (
             $pLast->isa('PPI::Token::Whitespace') && !($pLast->content =~ /\n/)
           );
-          $Last->delete if ( $pLast->isa('PPI::Token::Whitespace') && $pLast->content =~ /\n/);
+          $Last->delete if ( 
+            ($pLast->isa('PPI::Token::Whitespace') || $pLast->isa('PPI::Token::Comment')) 
+            && $pLast->content =~ /\n$/
+          );
         }
       }
       # ------
