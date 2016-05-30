@@ -82,6 +82,7 @@ has 'get_default_column_entries', is => 'ro', default => sub {
     ];
     
     my $is_virt = 0;
+    my $profiles = [];
     
     if($Source->has_relationship($col)) {
       my $info = $Source->relationship_info($col) || {};
@@ -93,6 +94,25 @@ has 'get_default_column_entries', is => 'ro', default => sub {
         # Assume we should turn off allow_add if this is an auto-inc column
         unshift @$opts, [ allow_add => 0 ];
       }
+      
+      # ---
+      # If this is a foreign key column for a simple belongs_to that has a different
+      # name (i.e. column 'type_id' used by the rel 'type'), set the 'hidden' profile
+      # to prevent the fk_column from conflicting with the rel on add/edit screens.
+      if($info->{is_foreign_key}) {
+        push @$profiles, 'hidden' if List::Util::first {
+          $_->[0] eq $col || 
+          $_->[0] =~ /^self\.${col}$/ ||
+          $_->[1] =~ /^self\.${col}$/
+        } 
+          grep { scalar(@$_) == 2 }
+          map { [ %{ $_->{cond} || {} } ] } 
+          grep { ($_->{attrs}{accessor}||'') eq 'single' }
+          map { $Source->relationship_info($_) } 
+          $Source->relationships
+      }
+      # ---
+      
     }
     else { # must be a virtual column
       $is_virt = 1;
@@ -102,8 +122,7 @@ has 'get_default_column_entries', is => 'ro', default => sub {
     
     push @$opts, (
       [ renderer => 'RA.ux.App.someJsFunc', 1 ],
-      [ profiles => [],                     1 ]
-    
+      [ profiles => $profiles, scalar(@$profiles) == 0 ? 1 : 0 ]
     );
     
     return $opts;
