@@ -85,7 +85,7 @@ has 'get_default_column_entries', is => 'ro', default => sub {
     
     if($Source->has_relationship($col)) {
       my $info = $Source->relationship_info($col) || {};
-      $is_virt = 1 if ($info->{accessor}||'' eq 'multi');
+      $is_virt = 1 if ($info->{attrs}{accessor}||'' eq 'multi');
     }
     elsif($Source->has_column($col)) {
       my $info = $Source->column_info($col) || {};
