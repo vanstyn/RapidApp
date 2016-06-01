@@ -186,7 +186,6 @@ sub setupRapidApp {
     ['RapidApp::Controller::DirectCmp'               => 'Controller::RapidApp::Module'           ],
     ['RapidApp::Template::Controller'                => 'Controller::RapidApp::Template'         ],
     ['RapidApp::Template::Controller::Dispatch'      => 'Controller::RapidApp::TemplateDispatch' ],
-    ['Catalyst::Controller::SimpleCAS'               => 'Controller::SimpleCAS'                  ],
   );
 
   $app->injectUnlessExist( @{$_} ) for (@inject);

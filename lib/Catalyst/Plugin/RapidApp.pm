@@ -4,9 +4,12 @@ use namespace::autoclean;
 
 use RapidApp;
 
+use Catalyst::Plugin::SimpleCAS 1.000;
+
 # Built-in plugins required for all RapidApp Applications:
 with qw(
  RapidApp::Role::CatalystApplication
+ Catalyst::Plugin::SimpleCAS
  RapidApp::Role::AssetControllers
 );
 
