@@ -1,7 +1,18 @@
 =head1 NAME
  
 RapidApp::Manual::Installation - Installing RapidApp on a new system
- 
+
+=head1 Install with Docker
+
+A complete installation of the current version RapidApp is available on Docker Hub 
+in the L<rapi/psgi|https://hub.docker.com/r/rapi/psgi>. If you have docker on your
+system, this is the fastest way to install RapidApp and its dependencies:
+
+  docker pull rapi/psgi
+
+For more information, see the C<rapi/psgi> documentation on Docker Hub: 
+L<https://hub.docker.com/r/rapi/psgi>
+
 =head1 Install from CPAN
  
 RapidApp is a standard CPAN package and can be installed in the standard manner:
