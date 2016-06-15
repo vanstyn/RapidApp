@@ -1,5 +1,19 @@
 Revision history for RapidApp
 
+1.2000 2016-06-15
+    - RapidApp::Util::RapidDbic::CfgWriter system (VANSTYN)
+        * New apps bootstrap with devel/model_db_updater.pl script
+        * Supports regeneration of databases, schema + TableSpec cfgs
+    - Started new 'rau.pl' script/system (VANSTYN)
+    - RapidDbic bootstraps new apps with local grid_class (VANSTYN)
+    - TC: template_render() auto detects/uses $c, if available (VANSTYN)
+    - More consistent handling for 'default_favicon_url' (VANSTYN)
+    - rapidapp.pl no longer supports "upgrade" from catalyst.pl (VANSTYN)
+    - rapidapp.pl custom logic within rapi/psgi (VANSTYN)
+    - rapidapp.pl cmd used now recorded as comment in bootstrapped app (VANSTYN)
+    - Fix bug preventing column profiles from changing allow_add_edit (VANSTYN)
+    - Now using Catalyst::Plugin::SimpleCAS (1.000) API (VANSTYN)
+
 1.1100 2016-04-27
     - Added '--total-counts-off' option to rdbic.pl - #168 (VANSTYN)
     - Grids now support turning the total count on/off (UI) - #168 (VANSTYN)
