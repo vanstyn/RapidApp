@@ -1,10 +1,22 @@
 package RapidApp::DBIC::Component::VirtualColumnsExt;
+use strict;
+use warnings;
+
 #use base 'DBIx::Class';
 # this is for Attribute::Handlers:
 require base; base->import('DBIx::Class');
 
-use strict;
-use warnings;
+### FIXME - not sure why the above happens at runtime, but not digging in
+### due to severe lack of time
+###
+### Still we need to apply the markers otherwise things will be *LOUD*
+for my $m (qw( has_column columns )) {
+    attributes->import(
+        __PACKAGE__,
+        __PACKAGE__->can($m),
+        'DBIC_method_is_bypassable_resultsource_proxy',
+    );
+}
 
 use RapidApp::Util qw(:all);
 

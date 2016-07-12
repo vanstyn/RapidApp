@@ -328,11 +328,11 @@ column is virtual or not.
 =cut
 
 # keep as compat shim for 0.0828xx DBIC
-sub column_info {
+sub column_info :DBIC_method_is_indirect_sugar {
     $_[0]->columns_info([ $_[1] ])->{$_[1]};
 }
 
-sub columns_info {
+sub columns_info :DBIC_method_is_bypassable_resultsource_proxy {
     my( $self, $colnames ) = @_;
 
     my %virt_cols;
