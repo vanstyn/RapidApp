@@ -318,31 +318,44 @@ sub set_column {
     return $self->next::method($column, $value);
 }
 
-=head2 column_info
+=head2 columns_info
 
-Overloaded method. L<DBIx::Class::ResultSource/"column_info">
+Overloaded method. L<DBIx::Class::ResultSource/columns_info>
 
 Additionally returns the HASH key 'virtual' which indicates if the requested
 column is virtual or not.
 
 =cut
 
+# keep as compat shim for 0.0828xx DBIC
 sub column_info {
-    my ($self, $column) = @_;
-
-    # Fetch localized column info
-    if (defined $self->_virtual_columns
-        && exists $self->_virtual_columns->{$column}) {
-        my $column_info = $self->_virtual_columns->{$column};
-        $column_info->{virtual} = 1;
-        return $column_info;
-    }
-    
-    my $column_info = $self->next::method($column);
-    $column_info->{virtual} = 0;
-    return $column_info;
+    $_[0]->columns_info([ $_[1] ])->{$_[1]};
 }
 
+sub columns_info {
+    my( $self, $colnames ) = @_;
+
+    my %virt_cols;
+
+    if( my $vi = $self->_virtual_columns ) {
+        $virt_cols{$_} = {
+           %{ $vi->{$_} || {} },
+            virtual => 1,
+        } for keys %$vi;
+
+        # We can not ask DBIC about virtual columns
+        # New arrayref so we do not destroy the supplied argument
+        $colnames = [ grep
+            { ! $virt_cols{$_} }
+            @$colnames
+        ] if $colnames;
+    }
+
+    return {
+        %{ $self->next::method($colnames||()) },
+        %virt_cols
+    };
+}
 
 =head2 update
 
