@@ -1,7 +1,5 @@
 package RapidApp::DBIC::Component::TableSpec;
-#use base 'DBIx::Class';
-# this is for Attribute::Handlers:
-require base; base->import('DBIx::Class');
+use base 'DBIx::Class';
 
 use strict;
 use warnings;
