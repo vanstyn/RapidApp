@@ -363,7 +363,7 @@ sub prepare_rest_request {
   # ---
   
   return unless defined $args[0];
-  my $key = lc("$args[0]");
+  my $key = "$args[0]";
   my $val = $args[1];
   
   # Ignore paths that are submodules or actions:
