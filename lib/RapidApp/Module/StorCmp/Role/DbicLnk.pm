@@ -425,7 +425,14 @@ sub restGetRow {
 # object via arbitrary 'rs_method' path spec
 sub _resolve_rel_obj_method {
   my ($self, $rs_method) = @_;
-  my ($key,$val,$rel) = split('/',$rs_method,3);
+  
+  # New: Parse like this in case the middle $val contains '/'
+  my @parts = split('/',$rs_method);
+  my $key = shift @parts;
+  my $rel = pop @parts;
+  my $val = join('/',@parts);
+  #my ($key,$val,$rel) = split('/',$rs_method,3);
+  
   my $Row = $self->restGetRow($key,$val);
   die usererr "No such relationship $rel at ''$rs_method''" unless ($Row->has_relationship($rel));
   return wantarray ? (scalar $Row->$rel, $Row) : $Row->$rel;
