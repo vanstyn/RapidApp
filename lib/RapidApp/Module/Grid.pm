@@ -21,7 +21,7 @@ has 'open_record_class' => ( is => 'ro', default => undef, isa => 'Maybe[ClassNa
 has 'add_record_class' => ( is => 'ro', default => undef, isa => 'Maybe[ClassName|HashRef]' );
 
 has 'open_record_via_rest', is => 'ro', isa => 'Bool', default => 1;
-has 'open_record_rest_key', is => 'ro', isa => 'Maybe[Str]', default => undef;
+has 'open_record_rest_key', is => 'ro', isa => 'Maybe[Str]', lazy => 1, default => undef;
 
 # ---
 # If true, a special "open" link column will be prepended to the column list. This is useful for clients
