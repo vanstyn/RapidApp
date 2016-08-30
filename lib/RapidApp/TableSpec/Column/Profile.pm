@@ -288,6 +288,24 @@ sub DEFAULT_PROFILES {{
 
 }};
 
+our %NO_ALLOW_ADD_PROFILES = ();
+our %NO_ALLOW_EDIT_PROFILES = ();
+{
+  my $Defs = &DEFAULT_PROFILES;
+  for my $prof (keys %$Defs) {
+    my $p = $Defs->{$prof};
+    my ($a,$e) = ($p->{allow_add},$p->{allow_edit});
+    if(exists $p->{allow_add}) {
+      $a = $$a if (ref($a));
+      $NO_ALLOW_ADD_PROFILES{$prof} = 1 if ("$a" eq '0'); 
+    }
+    if(exists $p->{allow_edit}) {
+      $e = $$e if (ref($e));
+      $NO_ALLOW_EDIT_PROFILES{$prof} = 1 if ("$e" eq '0'); 
+    }
+  }
+}
+
 
 our $SKIP_BASE = 0;
 

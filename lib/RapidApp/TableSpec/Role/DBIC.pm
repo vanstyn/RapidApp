@@ -271,27 +271,43 @@ sub add_db_column($@) {
 	}
 	# --
   
+  ## -- (see also below comment and commit 2dccadc6f3 which was a regression)
+  ## Hate having to do this, but we have to consider the column profiles here,
+  ## because this happens before they are applied (->add_columns, at the end of this
+  ## method). Specifically, we need to consider profiles which turn OFF allow_add
+  ## and allow_edit, otherwise, we'll clobber those settings if we want to turn
+  ## them on here. And we do need to turn them on, specifically again for the case of
+  ## creatable but not editable, because the default of editable changes the default
+  ## for creatable.
+  $creatable = 0 if List::Util::first {
+    $RapidApp::TableSpec::Column::Profile::NO_ALLOW_ADD_PROFILES{$_}
+  } @{$opt{profiles}||[]};
+  
+  $editable = 0 if List::Util::first {
+    $RapidApp::TableSpec::Column::Profile::NO_ALLOW_EDIT_PROFILES{$_}
+  } @{$opt{profiles}||[]};
+  ## --
+  
+  
 	$opt{allow_edit} = \0 unless ($editable);
 	$opt{allow_add} = \0 unless ($creatable);
   
-  # UPDATE: no longer flip these flags on since this logic should now be reduntant
-  # to the allow_add/edit normalization in RapidApp::Module::DatStor::Column and
-  # this was also conflicting with column profiles which attempt to set these flags
-  #### New: flip the allow edit/add flags on if they are not already set to something,
-  #### and no_column is not set. This is needed for the case of creatable but not
-  #### editable, since the default allow_add is based on the value of allow_edit, which
-  #### is intended for the case of it being set by the user
-  ###unless(jstrue($opt{no_column})) {
-  ###  $opt{allow_edit} //= \1 if ($editable);
-  ###  $opt{allow_add}  //= \1 if ($creatable);
-  ###}
+  #### We do need this code after all -- see above comment. Was removed in 2dccadc6f3
+  # New: flip the allow edit/add flags on if they are not already set to something,
+  # and no_column is not set. This is needed for the case of creatable but not
+  # editable, since the default allow_add is based on the value of allow_edit, which
+  # is intended for the case of it being set by the user
+  unless(jstrue($opt{no_column})) {
+    $opt{allow_edit} //= \1 if ($editable);
+    $opt{allow_add}  //= \1 if ($creatable);
+  }
 
 	unless ($editable or $creatable) {
 		$opt{rel_combo_field_cnf} = $opt{editor} if($opt{editor});
 		$opt{editor} = '' ;
 	}
-	
-	return $self->add_columns(\%opt);
+
+	$self->add_columns(\%opt);
 }
 
 
