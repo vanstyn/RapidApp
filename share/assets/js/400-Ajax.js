@@ -318,7 +318,16 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
           
           // Expected content-type returned by a RapidApp module:
           if(cont_parts[0] == 'text/javascript') {
-            conf = Ext.decode(response.responseText);
+            try {
+              conf = Ext.decode(response.responseText);
+            }
+            catch(err) {
+              throw [
+                'RapidApp Ext.ux.AutoPanel render exception - ',
+                'Error encountered decoding response JSON/JavaScript (size: '+response.responseText.length+'):',
+                '  "'+err+'"',"STACK:",err.stack
+              ].join("\n");
+            };
           }
           else {
             var html, title, icon = 'ra-icon-document', 
