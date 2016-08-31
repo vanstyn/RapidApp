@@ -1945,6 +1945,40 @@ sub get_multi_relationship_column_cnf {
     #  This code path should never happen with RapidDbic, but will still happen for
     #  manual setups where there is no 'open_url', other missing TableSpec data,
     #  or the fallback 'allow_rel_rest_origin => 0' has been set
+    
+    ## -----
+    ## This code block generates the 'resultset_attr' json in perl instead of
+    ## in ExtJS (Ext.encode) so we can reach in and prevent the character sequence ']}'
+    ## which occurs if the last *value* of a hash (Object) happens to be an array
+    ## which only sometimes occurs (and, not consistently across restarts). The bug
+    ## this created was in the compile of Ext.XTemplate, because they use {[ ... ]} as
+    ## markers for inline javascript, so this would cause Syntax Exception.
+    ## The exact JavaScript logic was attempted to be reproduced, just to try to keep
+    ## the behavior as close to the way it was. Note that this codepath itself is
+    ## legacy and only happens in special cases (and then the bug was a special case
+    ## of a special case). This is probably the most ugly code in the whole codebase.
+    my $join_name = $conf->{open_url_multi_rs_join_name};
+    my $personality = $join_name; 
+    my $attr_json = do {
+      my $attr = clone($rel_data->{attrs});   
+      $attr->{join} ||= [];
+      push @{$attr->{join}}, $join_name;
+      @{$attr->{join}} = grep { $_ ne 'me' } @{$attr->{join}};
+      
+      $personality = $attr->{join}[0] if $attr->{join}[0] && $join_name eq 'me';
+      
+      if(scalar(@{$attr->{join}}) == 0)   { delete $attr->{join}; }
+      elsif(scalar(@{$attr->{join}}) == 1) { $attr->{join} = $attr->{join}[0]; }
+      
+      my $json = encode_json_utf8($attr);
+      
+      $json =~ s/\{\[/\{ \[/g;
+      $json =~ s/\]\}/\] \}/g;
+      
+      $json
+    };
+    ## -----
+    
 		$conf->{renderer} = $rel_data->{self} ? jsfunc(
 			'function(value, metaData, record, rowIndex, colIndex, store) {' .
 				"var div_open = '$div_open';" .
@@ -1953,26 +1987,26 @@ sub get_multi_relationship_column_cnf {
 				#'var key_key = ' .
 				'var key_val = record && record.data ? record.data["' . $rSelfCol . '"] : null;' .
 				
-				'var attr = ' . RapidApp::JSON::MixedEncoder::encode_json($rel_data->{attrs}) . ';' .
+				#'var attr = ' . RapidApp::JSON::MixedEncoder::encode_json($rel_data->{attrs}) . ';' .
 				
 				( # TODO: needs to be generalized better
 					$conf->{open_url_multi} ?
 						'if(key_val && value && value > 0 && !Ext.ux.RapidApp.NO_DBIC_REL_LINKS) {' .
 							'var loadCfg = ' . RapidApp::JSON::MixedEncoder::encode_json($loadCfg) . ';' .
 							
-							'var join_name = "' . $conf->{open_url_multi_rs_join_name} . '";' .
+							'var join_name = "' . $join_name . '";' .
 							
 							'var cond = {};' .
 							'cond[join_name + ".' . $rel_data->{foreign} . '"] = key_val;' .
 							
 							#'var attr = {};' .
-							'if(join_name != "me"){ if(!attr.join) { attr.join = []; } attr.join.push(join_name); }' .
+							#'if(join_name != "me"){ if(!attr.join) { attr.join = []; } attr.join.push(join_name); }' .
 							
 							# Fix!!!
-							'if(join_name == "me" && Ext.isArray(attr.join) && attr.join.length > 0) { join_name = attr.join[0]; }' .
+							#'if(join_name == "me" && Ext.isArray(attr.join) && attr.join.length > 0) { join_name = attr.join[0]; }' .
 							
-							#Fix!!
-							'loadCfg.autoLoad.params.personality = join_name;' .
+							#Fix!! -- Note that 'personality' is for a specific legacy app
+							'loadCfg.autoLoad.params.personality = "' . $personality . '";' .
 							
 							#'loadCfg.autoLoad.params.base_params = Ext.encode({' .
 							#	'resultset_condition: Ext.encode(cond),' .
@@ -1981,7 +2015,8 @@ sub get_multi_relationship_column_cnf {
 							
 							'loadCfg.autoLoad.params.base_params_base64 = base64.encode(Ext.encode({' .
 								'resultset_condition: Ext.encode(cond),' .
-								'resultset_attr: Ext.encode(attr)' .
+								#'resultset_attr: Ext.encode(attr)' .
+                "resultset_attr: '" . $attr_json . "'" .
 							'}));' .
 							
 							'var href = "#loadcfg:" + Ext.urlEncode({data: Ext.encode(loadCfg)});' .
