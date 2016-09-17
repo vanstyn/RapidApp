@@ -8,6 +8,8 @@ use base qw(DBIx::Class);
 
 our $VERSION = '1.03';
 
+sub _skip_namespace_frames { qr/^RapidApp::DBIC::Component/ }
+
 __PACKAGE__->mk_classdata('_virtual_columns');
 
 =encoding utf8

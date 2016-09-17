@@ -8,6 +8,8 @@ use warnings;
 
 use RapidApp::Util qw(:all);
 
+sub _skip_namespace_frames { qr/^RapidApp::DBIC::Component/ }
+
 # Load the vanilla/original DBIx::Class::VirtualColumns component:
 __PACKAGE__->load_components('+RapidApp::DBIC::Component::VirtualColumns');
 
