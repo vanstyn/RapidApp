@@ -23,6 +23,7 @@ around BUILDARGS => sub {
   
   # -- New: handle rogue name values, like ScalarRefs which DBIC sometimes uses 
   # for the ->table attr of Result classes, and also normalize values
+  # ** note: this should no longer be needed since we added _table_name_safe()
   if(my $table = $params{name}) {
     $table = $$table if (ref($table)||'' eq 'SCALAR');
     $table =~ s/("|')//g;

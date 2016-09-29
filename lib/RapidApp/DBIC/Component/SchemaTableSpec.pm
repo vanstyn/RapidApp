@@ -22,8 +22,7 @@ sub apply_TableSpecs {
 	# Optional coderef to dynamically calculate the "open_url" and "open_url_multi"
 	$opt{get_path_code} = $opt{get_path_code} || sub {
 		my $Source = $_;
-		my $table = $Source->schema->class($Source->source_name)->table;
-		$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
+		my $table = $Source->schema->class($Source->source_name)->_table_name_safe;
 		my $module_name = lc('table_' . $table);
 		my $path = '/tablespec/' . $module_name;
 	};
@@ -36,8 +35,7 @@ sub apply_TableSpecs {
 		
 		my ($disp) = ($Source->primary_columns,$Source->columns);
 		
-		my $table = $Source->schema->class($Source->source_name)->table;
-		$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
+		my $table = $Source->schema->class($Source->source_name)->_table_name_safe;
 		
 		my %conf = (
 			title => $table,

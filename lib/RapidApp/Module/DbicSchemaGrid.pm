@@ -96,8 +96,7 @@ sub schema_source_rows {
     my $Source = $self->Schema->source($_);
     my $class = $self->Schema->class($_);
     my $url = try{$class->TableSpec_get_conf('open_url_multi')};
-    my $table = $class->table;
-    $table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
+    my $table = $class->_table_name_safe;
     
     {
       source => $url ? '<a href="#!' . $url . '">' . $_ . '</a>' : $_,

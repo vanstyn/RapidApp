@@ -227,8 +227,7 @@ has 'TableSpec' => ( is => 'ro', isa => 'RapidApp::TableSpec', lazy_build => 1 )
 sub _build_TableSpec {
   my $self = shift;
 
-  my $table = $self->ResultClass->table;
-  $table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
+  my $table = $self->ResultClass->_table_name_safe;
   my %opt = (
     name => $table,
     relation_sep => $self->relation_sep,

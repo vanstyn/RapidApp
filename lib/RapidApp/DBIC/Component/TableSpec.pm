@@ -87,8 +87,8 @@ sub TableSpec_m2m {
 	my $rrinfo = $rinfo->{class}->relationship_info($remote_rel);
 	eval('require ' . $rrinfo->{class});
 	
-	$rinfo->{table} = $rinfo->{class}->table;
-	$rrinfo->{table} = $rrinfo->{class}->table;
+	$rinfo->{table} = &_table_name_safe($rinfo->{class}->table);
+	$rrinfo->{table} = &_table_name_safe($rrinfo->{class}->table);
 	
 	$rinfo->{cond_info} = $self->parse_relationship_cond($rinfo->{cond});
 	$rrinfo->{cond_info} = $self->parse_relationship_cond($rrinfo->{cond});
@@ -237,8 +237,7 @@ sub apply_TableSpec {
 	$self->TableSpec_set_conf( apply_TableSpec_timestamp => time );
 	
 	# --- Set some base defaults here:
-	my $table = $self->table;
-	$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
+	my $table = &_table_name_safe($self->table);
 	my ($pri) = ($self->primary_columns,$self->columns); #<-- first primary col, or first col
 	$self->TableSpec_set_conf(
 		display_column => $pri,
@@ -270,8 +269,7 @@ sub create_result_TableSpec {
 	my $ResultClass = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
 	
-	my $table = $ResultClass->table;
-	$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
+	my $table = &_table_name_safe($ResultClass->table);
 
 	my $TableSpec = RapidApp::TableSpec->new( 
 		name => $table,
@@ -326,8 +324,7 @@ sub default_TableSpec_cnf  {
   my $data = $set;
 	
 	
-	my $table = $self->table;
-	$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
+	my $table = &_table_name_safe($self->table);
   
   my $is_virtual = $self->_is_virtual_source;
   my $defs_i = $is_virtual ? 'ra-icon-pg-red' : 'ra-icon-pg';
@@ -1183,9 +1180,10 @@ sub apply_row_methods {
 
 
 sub _table_name_safe {
-  my $class = shift;
+  my $arg = shift;
+  
+  my $table = !(ref $arg) && $arg->can('table') ? $arg->table : $arg; # class method or straight function
 
-  my $table = $class->table;
   $table = $$table if ((ref($table)||'') eq 'SCALAR'); # Handle ScalarRef values
   $table = (reverse split(/\./,$table))[0]; # Handle 'db.table' and 'schema.db.table' formats
 

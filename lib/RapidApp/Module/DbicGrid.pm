@@ -73,11 +73,7 @@ sub apply_default_tabtitle {
 	# ---- apply default tab title and icon:
 	my $class = $self->ResultClass;
 	
-	my $title = try{$class->TableSpec_get_conf('title_multi')} || try{
-		my $table = $class->table;
-		$table = (split(/\./,$table,2))[1] || $table; #<-- get 'table' for both 'db.table' and 'table' format
-		return $table;
-	};
+	my $title = try{$class->TableSpec_get_conf('title_multi')} || try{$class->_table_name_safe};
 	
 	my $iconCls = try{$class->TableSpec_get_conf('multiIconCls')};
 	$self->apply_extconfig( tabTitle => $title ) if ($title);
