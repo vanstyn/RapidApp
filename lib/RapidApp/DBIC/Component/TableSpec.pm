@@ -1182,6 +1182,20 @@ sub apply_row_methods {
 }
 
 
+sub _table_name_safe {
+  my $class = shift;
+
+  my $table = $class->table;
+  $table = $$table if ((ref($table)||'') eq 'SCALAR'); # Handle ScalarRef values
+  $table = (reverse split(/\./,$table))[0]; # Handle 'db.table' and 'schema.db.table' formats
+
+  $table =~ s/[\'\"]//g; # Strip quotes
+  $table =~ s/\W/_/g;    # Convert any non-word characters to underscore
+
+  $table
+}
+
+
 
 ### -- old, pre-rest inlineNavLink:
 ## This function creates links just like the JavaScript function Ext.ux.RapidApp.inlineLink
