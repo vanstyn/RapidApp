@@ -238,8 +238,11 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		
 		if(cnf.newtab) { //<-- the newtab param is set by the "open another tab" plugin
 			delete cnf.newtab;
-			cnf.seq = cnf.seq || 0;
-			cnf.seq++;
+      // New: now track the 'seq' globally in the tabpanel. This way "Open Another" will
+      // always work and work multiple times for the same tab.
+      this.newtab_seq = this.newtab_seq || 0;
+      this.newtab_seq++;
+      cnf.seq = this.newtab_seq;
 			cnf.autoLoad = cnf.autoLoad || {};
 			cnf.autoLoad.params = cnf.autoLoad.params || {};
 			cnf.autoLoad.params['_seq'] = cnf.seq.toString();
