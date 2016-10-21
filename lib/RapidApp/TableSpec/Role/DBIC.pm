@@ -264,10 +264,6 @@ sub add_db_column($@) {
 			$editable = 0;
 			$creatable = 0;
 		}
-		# Hard-code exclude virtual columns from quick search. May add this support in
-		# the future, but it will require a bit of effort (see the complex/custom code
-		# in multifilters with the conversion into a 'HAVING' clause
-		$opt{no_quick_search} = \1;
 	}
 	# --
   
