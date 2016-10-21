@@ -1,5 +1,22 @@
 Revision history for RapidApp
 
+1.2100 2016-10-21
+    - Virtual columns now support quick search (VANSTYN)
+    - Exlcude blob columns from quick search (treat as integer) (VANSTYN)
+    - Fix "Open Another ..." tab when one is already open (VANSTYN)
+    - Now using '_skip_namespace_frames' for better DBIC errors (VANSTYN)
+    - Fix legacy multi-rel renderer edge case (VANSTYN)
+    - Improve JavaScript error/exception handling in AutoPanel (VANSTYN)
+    - REALLY fix bug preventing col profiles from changing allow_add_edit (VANSTYN)
+    - Fix bug in DbicLnk rest urls with case-sensitive key/cols (VANSTYN)
+    - Fix bug in rest PK vals containing slash '/' (VANSTYN)
+    - Merge PR #169 (RIBASUSHI)
+    - Require Path::Class 0.37 with important bug fix (VANSTYN)
+    - Require DBIx::Class 0.082840 (VANSTYN)
+    - Require Catalyst 5.90112 (VANSTYN)
+    - Require Plack 1.0042 (VANSTYN)
+    - Misc bug fixes (VANSTYN)
+
 1.2000 2016-06-15
     - RapidApp::Util::RapidDbic::CfgWriter system (VANSTYN)
         * New apps bootstrap with devel/model_db_updater.pl script
