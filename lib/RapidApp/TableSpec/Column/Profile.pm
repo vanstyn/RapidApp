@@ -149,7 +149,8 @@ sub DEFAULT_PROFILES {{
     # *does* want to edit, and manually sets allow_edit to true, the default editor
     # be a sane choice (hex) which will match the default renderer.
     editor     => { xtype => 'ra-hexfield', grow => \1 },
-    allow_edit => \0
+    allow_edit => \0,
+    broad_data_type => 'integer'
   },
   html => {
     width => 200,
