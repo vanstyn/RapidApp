@@ -807,11 +807,7 @@ sub rs_all {
   # it for sorting either. So we are falling back to the broadest compatability.
   # TODO: optimize cases for each different backend
   if(my $sels = $Rs->{attrs}{select}) {
-    @$sels = map { (
-      (ref($_)||'') eq 'HASH' &&
-      exists $_->{''} && exists $_->{-as} &&
-      scalar(keys %$_) == 2
-    ) ? $_->{''} : $_ } @$sels
+    @$sels = map { $self->_extract_hash_inner_AS($_) } @$sels
   }
   # -----
 
@@ -840,6 +836,18 @@ sub rs_all {
   };
 
   $want ? @ret : $ret[0]
+}
+
+
+sub _is_special_AS_hash {
+  my ($self, $h) = @_;
+  (ref($h)||'') eq 'HASH' && exists $h->{''} && exists $h->{-as} &&  scalar(keys %$h) == 2
+}
+
+# extract the nested select ref from the special ''/-as structure
+sub _extract_hash_inner_AS {
+  my ($self, $select) = @_;
+  $self->_is_special_AS_hash($select) ? $select->{''} : $select
 }
 
 
@@ -1455,7 +1463,7 @@ sub _resolve_quicksearch_condition {
   );
 
   my $dtype    = $cnf->{broad_data_type} || 'text';
-  my $dbicname = $self->resolve_dbic_colname($field,$join);
+  my $dbicname = $self->_extract_hash_inner_AS( $self->resolve_dbic_colname($field,$join) );
 
   # For numbers, force to 'exact' mode and discard (return undef) for queries
   # which are not numbers (since we already know they will not match anything). 
@@ -1485,8 +1493,8 @@ sub _resolve_quicksearch_condition {
 
   # 'text' is the only type which can do a LIKE (i.e. sub-string)
   return $mode eq 'like' 
-    ? { $dbicname => { $s->('like') => join('%','',$query,'') } }
-    : { $dbicname => { $s->('=')    => $query } };
+    ? $self->_op_fuse($dbicname => { $s->('like') => join('%','',$query,'') })
+    : $self->_op_fuse($dbicname => { $s->('=')    => $query });
 }
 
 
