@@ -1,7 +1,5 @@
 package RapidApp::DBIC::Component::SchemaTableSpec;
-#use base 'DBIx::Class';
-# this is for Attribute::Handlers:
-require base; base->import('DBIx::Class::Schema');
+use base 'DBIx::Class';
 
 use strict;
 use warnings;
