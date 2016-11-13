@@ -32,7 +32,7 @@ around 'options_menu_items' => sub {
 		iconCls	=> 'ra-icon-document-save',
 		menu => RapidApp::JSONFunc->new( func => 'new Ext.ux.RapidApp.AppTab.AppGrid2.ExcelExportMenu',
 			parm => {
-				url => $self->suburl('/export_to_file'),
+				url => $self->local_url('/export_to_file'),
 				# This shouldn't be required, but the sub menu's loose track of their parents!!
 				buttonId => $self->options_menu_button_Id
 			}
