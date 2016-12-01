@@ -1,5 +1,11 @@
 Revision history for RapidApp
 
+1.2101 2016-12-01
+    - Require JSON 2.90 (VANSTYN)
+    - Require JSON::PP 2.27400 (VANSTYN)
+    - Bugfix in ExcelExport when not mounted at '/' - #172 (VANSTYN)
+    - Merge PR #171 (RIBASUSHI)
+
 1.2100 2016-10-21
     - Virtual columns now support quick search (VANSTYN)
     - Exlcude blob columns from quick search (treat as integer) (VANSTYN)
