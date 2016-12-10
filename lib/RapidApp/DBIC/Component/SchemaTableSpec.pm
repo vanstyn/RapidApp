@@ -11,6 +11,7 @@ use warnings;
 # Schema -- DEPRECATED - do not use
 
 use RapidApp::Util qw(:all);
+require RapidApp::DBIC::Component::TableSpec;
 
 sub apply_TableSpecs {
 	my $self = shift;
@@ -22,7 +23,9 @@ sub apply_TableSpecs {
 	# Optional coderef to dynamically calculate the "open_url" and "open_url_multi"
 	$opt{get_path_code} = $opt{get_path_code} || sub {
 		my $Source = $_;
-		my $table = $Source->schema->class($Source->source_name)->_table_name_safe;
+		my $table = RapidApp::DBIC::Component::TableSpec::_table_name_safe(
+      $Source->schema->class($Source->source_name)->table
+    );
 		my $module_name = lc('table_' . $table);
 		my $path = '/tablespec/' . $module_name;
 	};
@@ -35,7 +38,9 @@ sub apply_TableSpecs {
 		
 		my ($disp) = ($Source->primary_columns,$Source->columns);
 		
-		my $table = $Source->schema->class($Source->source_name)->_table_name_safe;
+    my $table = RapidApp::DBIC::Component::TableSpec::_table_name_safe(
+      $Source->schema->class($Source->source_name)->table
+    );
 		
 		my %conf = (
 			title => $table,

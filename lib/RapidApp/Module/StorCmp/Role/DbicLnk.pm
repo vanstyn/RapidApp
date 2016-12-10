@@ -21,6 +21,7 @@ use URI::Escape;
 use Scalar::Util qw(looks_like_number);
 use Digest::SHA1;
 use DateTime;
+require RapidApp::DBIC::Component::TableSpec;
 
 use DBI::Const::GetInfoType '%GetInfoType'; 
 
@@ -227,7 +228,7 @@ has 'TableSpec' => ( is => 'ro', isa => 'RapidApp::TableSpec', lazy_build => 1 )
 sub _build_TableSpec {
   my $self = shift;
 
-  my $table = $self->ResultClass->_table_name_safe;
+  my $table = RapidApp::DBIC::Component::TableSpec::_table_name_safe($self->ResultClass->table);
   my %opt = (
     name => $table,
     relation_sep => $self->relation_sep,
