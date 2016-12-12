@@ -39,6 +39,12 @@ has 'Store', is => 'ro', lazy => 1, default => sub {
   $self->store_class->new({ Provider => $self, %{ $self->store_params||{} } });
 }, isa => InstanceOf['RapidApp::Template::Store'];
 
+sub _store_owns_template {
+  my ($self, $name) = @_;
+  return 0 if ($name =~ /^\//); # never ask about absolute paths
+  return $self->Store->owns_tpl($name)
+}
+
 # -------
 # The "DummyAccess" API is a quick/dirty way to turn off all access checks
 # This was added after the fact to be able to safely render templates outside
@@ -80,17 +86,18 @@ around 'fetch' => sub {
   # Save the template fetch name:
   local $self->{template_fetch_name} = $name;
   
-  return $self->Store->owns_tpl($name)
+  return $self->_store_owns_template($name)
     ? $self->Store->fetch($name)
     : $self->$orig($name)
 };
 
 around '_template_modified' => sub {
   my ($orig, $self, @args) = @_;
-  my $template = $self->{template_fetch_name} || join('/',@args); # FIXME!! -- just realized the second arg should be optional time!!
+  my ($name, $time) = @args;
+  my $template = $self->{template_fetch_name} || $name;
   
-  my $modified = $self->Store->owns_tpl($template)
-    ? $self->Store->template_modified($template)
+  my $modified = $self->_store_owns_template($template)
+    ? $self->Store->template_modified($template,$time)
     : $self->$orig(@args);
   
   # Need to return a virtual value to enable the virtual content for
@@ -183,7 +190,7 @@ sub update_template {
   my ($self, $template, $content) = @_;
   
   return $self->Store->create_template($template,$content)
-    if $self->Store->owns_tpl($template);
+    if $self->_store_owns_template($template);
   
   my $path = $self->get_template_path($template);
   my $File = file($path);
@@ -196,7 +203,7 @@ sub update_template {
 sub template_exists {
   my ($self, $template) = @_;
   local $self->{template_exists_call} = 1;
-  return $self->Store->owns_tpl($template)
+  return $self->_store_owns_template($template)
     ? $self->Store->template_exists($template)
     : $self->get_template_path($template) ? 1 : 0;
 }
@@ -241,7 +248,7 @@ sub create_template {
   my ($self, $template, $content) = @_;
   
   return $self->Store->create_template($template,$content)
-    if $self->Store->owns_tpl($template);
+    if $self->_store_owns_template($template);
  
   my $File = file($self->new_template_path,$template);
   die "create_templete(): ERROR - $File already exists!" if (-f $File);
@@ -262,7 +269,7 @@ sub create_template {
 sub delete_template {
   my ($self, $template) = @_;
   
-  return $self->Store->delete_template($template) if $self->Store->owns_tpl($template);
+  return $self->Store->delete_template($template) if $self->_store_owns_template($template);
  
   my $File = file($self->get_template_path($template));
   die "delete_templete(): ERROR - $File doesn't exist or is not a regular file" 
