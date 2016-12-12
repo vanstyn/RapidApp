@@ -8,7 +8,10 @@ use Path::Class qw(file dir);
 use RapidApp::Template::Access::Dummy;
 
 use Moo;
+use Types::Standard ':all';
 extends 'Template::Provider';
+
+use Module::Runtime;
 
 =pod
 
@@ -27,6 +30,14 @@ has 'Controller', is => 'ro', required => 1;
 # We need to be able to check certain template permissions for special markup
 # Actual permission checks happen in the RapidApp::Template::Controller
 has 'Access', is => 'ro', required => 1;
+
+has 'store_class',  is => 'ro', default => 'RapidApp::Template::Store';
+has 'store_params', is => 'ro', isa => Maybe[HashRef], default => sub {undef};
+has 'Store', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  Module::Runtime::require_module($self->store_class);
+  $self->store_class->new({ Provider => $self, %{ $self->store_params||{} } });
+}, isa => InstanceOf['RapidApp::Template::Store'];
 
 # -------
 # The "DummyAccess" API is a quick/dirty way to turn off all access checks
@@ -68,14 +79,19 @@ around 'fetch' => sub {
   
   # Save the template fetch name:
   local $self->{template_fetch_name} = $name;
-  return $self->$orig($name);
+  
+  return $self->Store->owns_tpl($name)
+    ? $self->Store->fetch($name)
+    : $self->$orig($name)
 };
 
 around '_template_modified' => sub {
   my ($orig, $self, @args) = @_;
-  my $template = $self->{template_fetch_name} || join('/',@args);
+  my $template = $self->{template_fetch_name} || join('/',@args); # FIXME!! -- just realized the second arg should be optional time!!
   
-  my $modified = $self->$orig(@args);
+  my $modified = $self->Store->owns_tpl($template)
+    ? $self->Store->template_modified($template)
+    : $self->$orig(@args);
   
   # Need to return a virtual value to enable the virtual content for
   # creating non-extistent templates
@@ -166,6 +182,9 @@ sub _decode_unicode {
 sub update_template {
   my ($self, $template, $content) = @_;
   
+  return $self->Store->create_template($template,$content)
+    if $self->Store->owns_tpl($template);
+  
   my $path = $self->get_template_path($template);
   my $File = file($path);
   
@@ -177,7 +196,9 @@ sub update_template {
 sub template_exists {
   my ($self, $template) = @_;
   local $self->{template_exists_call} = 1;
-  return $self->get_template_path($template) ? 1 : 0;
+  return $self->Store->owns_tpl($template)
+    ? $self->Store->template_exists($template)
+    : $self->get_template_path($template) ? 1 : 0;
 }
 
 # Copied from Template::Provider::load
@@ -218,6 +239,9 @@ sub get_template_path {
 
 sub create_template {
   my ($self, $template, $content) = @_;
+  
+  return $self->Store->create_template($template,$content)
+    if $self->Store->owns_tpl($template);
  
   my $File = file($self->new_template_path,$template);
   die "create_templete(): ERROR - $File already exists!" if (-f $File);
@@ -237,6 +261,8 @@ sub create_template {
 
 sub delete_template {
   my ($self, $template) = @_;
+  
+  return $self->Store->delete_template($template) if $self->Store->owns_tpl($template);
  
   my $File = file($self->get_template_path($template));
   die "delete_templete(): ERROR - $File doesn't exist or is not a regular file" 
@@ -289,6 +315,8 @@ sub list_templates {
       }
     );
   }
+  
+  push @files, @{ $self->Store->list_templates(@regexes) || [] };
   
   return \@files;
 }

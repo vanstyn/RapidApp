@@ -84,6 +84,8 @@ has 'provider_class', is => 'ro', default => 'RapidApp::Template::Provider';
 has 'access_class', is => 'ro', default => 'RapidApp::Template::Access';
 has 'access_params', is => 'ro', isa => 'HashRef', default => sub {{}};
 has 'include_paths', is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]};
+has 'store_class', is => 'ro', default => 'RapidApp::Template::Store';
+has 'store_params', is => 'ro', default => sub {undef};
 
 
 # -- 
@@ -155,6 +157,8 @@ sub _new_Template {
         $self->provider_class->new({
           Controller => $self,
           Access => $self->Access,
+          store_class  => $self->store_class,
+          store_params => $self->store_params,
           #INCLUDE_PATH => $self->_app->default_tt_include_path,
           INCLUDE_PATH => [
             map { dir($_)->stringify } @{ $self->include_paths },
