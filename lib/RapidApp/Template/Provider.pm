@@ -41,8 +41,11 @@ has 'Store', is => 'ro', lazy => 1, default => sub {
 
 sub _store_owns_template {
   my ($self, $name) = @_;
-  return 0 if ($name =~ /^\//); # never ask about absolute paths
-  return $self->Store->owns_tpl($name)
+  $self->{_store_owns_template}{$name} //= do { # Only ask the Store if it owns a template once
+    $name =~ /^\//
+      ? 0 # never ask about absolute paths
+      : $self->Store->owns_tpl($name)
+  }
 }
 
 # -------
