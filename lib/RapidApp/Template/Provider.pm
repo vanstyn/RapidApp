@@ -92,6 +92,17 @@ around 'fetch' => sub {
 };
 
 
+around 'load' => sub {
+  my ($orig, $self, $name) = @_;
+  
+  return $self->$orig($name) unless ($self->_store_owns_template($name));
+  
+  return $self->Store->template_exists($name)
+    ? ( $self->Store->template_content($name), Template::Constants::STATUS_OK    )
+    : ( "Template '$name' not found",          Template::Constants::STATUS_ERROR )
+};
+
+
 around '_template_modified' => sub {
   my ($orig, $self, @args) = @_;
   my ($name, $time) = @args;
