@@ -88,11 +88,9 @@ around 'fetch' => sub {
   
   # Save the template fetch name:
   local $self->{template_fetch_name} = $name;
-  
-  return $self->_store_owns_template($name)
-    ? $self->Store->fetch($name)
-    : $self->$orig($name)
+  return $self->$orig($name);
 };
+
 
 around '_template_modified' => sub {
   my ($orig, $self, @args) = @_;
@@ -120,22 +118,33 @@ around '_template_content' => sub {
   my ($orig, $self, @args) = @_;
   
   my $template = $self->{template_fetch_name} || join('/',@args);
-
-  return $self->$orig(@args) if ($self->template_exists($template));
-
-  # Return virtual non-existent content, optionally with markup 
-  # to enable on-the-fly creating the template:
-  my ($data, $error, $mod_date) = (
-    $self->_not_exist_content(
-      $template, 
-      ($self->div_wrap && $self->Access->template_creatable($template))
-    ), undef, 1
-  );  
+  
+  my ($data, $error, $mod_date);
+  
+  if ($self->template_exists($template)) {
+    return $self->$orig(@args) unless ($self->_store_owns_template($template));
+    # Proxy to the Store to return the content
+    ($data, $error, $mod_date) = (
+      $self->Store->template_content  ($template), undef,
+      $self->Store->template_modified ($template)
+    );
+  }
+  else {
+    # Return virtual non-existent content, optionally with markup 
+    # to enable on-the-fly creating the template:
+    ($data, $error, $mod_date) = (
+      $self->_not_exist_content(
+        $template, 
+        ($self->div_wrap && $self->Access->template_creatable($template))
+      ), undef, 1
+    );
+  }
   
   return wantarray
     ? ( $data, $error, $mod_date )
     : $data;
 };
+
 
 
 sub _not_exist_content {
