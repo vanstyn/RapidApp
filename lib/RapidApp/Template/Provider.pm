@@ -104,20 +104,24 @@ around 'load' => sub {
 
 
 around '_template_modified' => sub {
-  my ($orig, $self, @args) = @_;
-  my ($name, $time) = @args;
+  my ($orig, $self, $name) = @_;
   my $template = $self->{template_fetch_name} || $name;
   
-  my $modified = $self->_store_owns_template($template)
-    ? $self->Store->template_modified($template,$time)
-    : $self->$orig(@args);
+  my ($exists,$modified);
+  if($self->_store_owns_template($template)) {
+    $exists   = $self->Store->template_exists($template);
+    $modified = $self->Store->template_mtime($template) if ($exists);
+  }
+  else {
+    $modified = $self->$orig($name);
+    $exists   = $self->template_exists($template) unless ($self->{template_exists_call});
+  }
   
   # Need to return a virtual value to enable the virtual content for
   # creating non-extistent templates
   $modified = 1 if (
-    ! $modified &&
+    ! $modified && ! $exists &&
     ! $self->{template_exists_call} && #<-- localized in template_exists() below
-    ! $self->template_exists($template) &&
     $self->Access->template_creatable($template)
   );
   
@@ -136,8 +140,8 @@ around '_template_content' => sub {
     return $self->$orig(@args) unless ($self->_store_owns_template($template));
     # Proxy to the Store to return the content
     ($data, $error, $mod_date) = (
-      $self->Store->template_content  ($template), undef,
-      $self->Store->template_modified ($template)
+      $self->Store->template_content ($template), undef,
+      $self->Store->template_mtime   ($template)
     );
   }
   else {
@@ -212,7 +216,7 @@ sub _decode_unicode {
 sub update_template {
   my ($self, $template, $content) = @_;
   
-  return $self->Store->create_template($template,$content)
+  return $self->Store->update_template($template,$content)
     if $self->_store_owns_template($template);
   
   my $path = $self->get_template_path($template);
@@ -270,6 +274,9 @@ sub get_template_path {
 sub create_template {
   my ($self, $template, $content) = @_;
   
+  # TODO: formalize a way to dynamically set/specify the new/init content
+  $content = "New Template '$template'" unless (defined $content);
+  
   return $self->Store->create_template($template,$content)
     if $self->_store_owns_template($template);
  
@@ -281,9 +288,6 @@ sub create_template {
     $Dir->mkpath or die "create_templete(): mkpath failed for '$Dir'";
   }
   
-  # TODO: formalize a way to dynamically set/specify the new/init content
-  $content = "New Template '$template'" unless (defined $content);
-
   $File->spew(iomode => '>:raw', $content);
   
   return -f $File ? 1 : 0;
@@ -346,7 +350,11 @@ sub list_templates {
     );
   }
   
-  push @files, @{ $self->Store->list_templates(@regexes) || [] };
+  push @files, grep {
+    my ($name,$incl) = ($_, 1);
+    !($name =~ $_) and $incl = 0 for (@re);
+    $incl
+  } @{ $self->Store->list_templates(@regexes) || [] };
   
   return \@files;
 }

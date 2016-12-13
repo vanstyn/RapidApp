@@ -44,13 +44,13 @@ sub owns_tpl {
 }
 
 
-sub template_exists      { ... }
-sub template_modified    { ... }
-sub template_content     { ... }
-sub create_template      { ... }
-sub update_template      { ... }
-sub delete_template      { ... }
-sub list_templates       {[]}
+sub template_exists   { ... }
+sub template_mtime    { ... }
+sub template_content  { ... }
+sub create_template   { ... }
+sub update_template   { ... }
+sub delete_template   { ... }
+sub list_templates    {[]}
 
 
 
