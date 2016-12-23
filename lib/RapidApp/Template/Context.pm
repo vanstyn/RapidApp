@@ -4,7 +4,6 @@ use warnings;
 use autodie;
 
 use RapidApp::Util qw(:all);
-use Text::Markdown 1.000031 'markdown';
 use Try::Tiny;
 
 use Moo;
@@ -77,18 +76,26 @@ around 'process' => sub {
 sub post_process_output {
   my ($self, $template, $output_ref) = @_;
   
-  my $format = $self->Access->get_template_format($template)
-    or die "Access object didn't return a format string";
+  my $meta = $self->{_cached_template_metadata}{$template} //= do {
+    my $d = {};
+      $d->{format} = $self->Access->get_template_format($template)
+        or die "Access object didn't return a format string";
+      
+      if(my $class = $self->Access->template_post_processor_class($template)) {
+        unless ($self->{_loaded_post_processor_classes}{$class}) {
+          Module::Runtime::require_module($class);
+          $class->can('process') or die "FATAL: Postprocessor '$class' has no 'process' method!";
+          $self->{_loaded_post_processor_classes}{$class}++;
+        }
+        $d->{postprocessor} = $class
+      }
+    $d
+  };
   
-  # TODO: defer to actual format class/object, TBD
-  if($format eq 'markdown') {
-    $$output_ref = markdown($$output_ref);
-  }
-  # TODO: handle additional format types...
-  
+  $$output_ref = $meta->{postprocessor}->process($output_ref,$self) if ($meta->{postprocessor});
   
   return $self->div_wrap($template)
-    ? $self->_div_wrap_content($template,$format,$$output_ref)
+    ? $self->_div_wrap_content($template,$meta->{format},$$output_ref)
     : $$output_ref;
 }
 

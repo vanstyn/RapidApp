@@ -421,4 +421,25 @@ sub template_css_class {
 }
 
 
+# New: must return undef or a class name to use for "post-processing" of the
+# supplied template name. Returned class should be a valid perl package name 
+# which has a 'process' method which may be called as a class method, accepting 
+# a blob of text as ScalarRef and returning the post-processed content.
+# Will receive the RapidApp::Template::Context object as second argument.
+sub template_post_processor_class {
+  my ($self,@args) = @_;
+  my $template = join('/',@args);
+  
+  my $format = $self->get_template_format($template);
+  
+  return 
+    $format eq 'markdown' ? 'RapidApp::Template::Postprocessor::Markdown' :
+    # TODO: add additional postprocessors ...
+    
+    undef
+}
+
+
+
+
 1;
