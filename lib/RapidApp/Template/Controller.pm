@@ -362,9 +362,11 @@ sub view :Chained('base') :Args {
   my $template = $self->_resolve_template_name(@args)
     or die "No template specified";
 
+  my $ra_client = $c->is_ra_ajax_req;
+
   # Honor the existing status, if set, except for Ajax requests
   my $status = $c->res->status || 200;
-  $status = 200 if ($c->is_ra_ajax_req);
+  $status = 200 if ($ra_client);
 
   local $self->{_current_context} = $c;
   
@@ -376,8 +378,6 @@ sub view :Chained('base') :Args {
   $self->Access->template_viewable($template)
     or die "Permission denied - template '$template'";
 
-  my $ra_req = $c->req->header('X-RapidApp-RequestContentType');
-  my $ra_client = ($ra_req && $ra_req eq 'JSON');
   my $external = $self->is_external_template($c,$template);
   my $editable = $self->is_editable_request($c);
   
