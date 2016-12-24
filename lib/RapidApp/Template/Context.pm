@@ -52,7 +52,15 @@ around 'process' => sub {
   
   my $output;
   try {
-    $output = $self->$orig(@args);
+    if($self->Access->template_static_tpl($template) && $self->get_Provider->template_exists($template)) {
+      # If this is a 'static' template, do not process it through TT, 
+      # instead return the raw template content directly
+      ($output) = $self->get_Provider->load($template);
+    }
+    else {
+      $output = $self->$orig(@args);
+    }
+    
     $output = $self->post_process_output($template,\$output);
   }
   catch {

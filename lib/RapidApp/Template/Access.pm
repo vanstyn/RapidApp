@@ -136,6 +136,20 @@ has 'external_tpl', is => 'ro', lazy => 1, default => sub {
   ) ? 1 : 0;
 }, isa => Bool;
 
+
+# 'Static' templates are those which should not be processed through TT,
+# but rendered directly. This content will still be wrapped/post-processed
+has 'static_tpl', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+
+  # Defaults to off unless an express static_tpl option is supplied:
+  return (
+    $self->static_tpl_coderef ||
+    $self->static_tpl_regex
+  ) ? 1 : 0;
+}, isa => Bool;
+
+
 # New: default CSS class name to return for every template (called from template_css_class())
 # unless this is set to 'undef', this class name will be added to the div wrapper when
 # rendering the template (along with 'ra-template'). This attr will have no effect if
@@ -159,6 +173,7 @@ has 'deletable_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {unde
 has 'admin_tpl_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
 has 'non_admin_tpl_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
 has 'external_tpl_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
+has 'static_tpl_coderef', is => 'ro', isa => Maybe[CodeRef], default => sub {undef};
 
 # Optional Regex interfaces:
 has 'viewable_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
@@ -169,6 +184,7 @@ has 'deletable_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
 has 'admin_tpl_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
 has 'non_admin_tpl_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
 has 'external_tpl_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
+has 'static_tpl_regex', is => 'ro', isa => Maybe[Str], default => sub {undef};
 
 
 # Compiled regexes:
@@ -217,6 +233,12 @@ has '_non_admin_tpl_regexp', is => 'ro', lazy => 1, default => sub {
 has '_external_tpl_regexp', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   my $str = $self->external_tpl_regex or return undef;
+  return qr/$str/;
+}, isa => Maybe[RegexpRef];
+
+has '_static_tpl_regexp', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  my $str = $self->static_tpl_regex or return undef;
   return qr/$str/;
 }, isa => Maybe[RegexpRef];
 
@@ -364,6 +386,13 @@ sub template_external_tpl {
   return $self->_access_test($template,'external_tpl',1);
 }
 
+sub template_static_tpl {
+  my ($self,@args) = @_;
+  my $template = join('/',@args);
+  
+  return $self->_access_test($template,'static_tpl',1);
+}
+
 sub _access_test {
   my ($self,$template,$perm,$default) = @_;
   
@@ -438,7 +467,6 @@ sub template_post_processor_class {
     
     undef
 }
-
 
 
 
