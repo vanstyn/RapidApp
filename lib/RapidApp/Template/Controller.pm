@@ -380,7 +380,7 @@ sub view :Chained('base') :Args {
 
   my $external = $self->is_external_template($c,$template);
   my $editable = $self->is_editable_request($c);
-  
+ 
   # ---
   # New: for non-external templates which are being accessed externally, 
   # (i.e. directly from browser) redirect to internal hashnav path:
@@ -483,20 +483,35 @@ sub view :Chained('base') :Args {
     );
     
     if($external) {
-      # If we're editable and external we need to include CSS for template edit controls:
-      # TODO: basically including everything but ExtJS CSS. This is ugly and should
-      # be generalized/available in the Asset system as a simpler function call:
-      push @head, (
-        $c->favicon_head_tag||'',
-        $c->controller('Assets::RapidApp::CSS')->html_head_tags,
-        $c->controller('Assets::RapidApp::Icons')->html_head_tags,
-        $c->controller('Assets::ExtJS')->html_head_tags( js => [
-          'adapter/ext/ext-base.js',
-          'ext-all-debug.js',
-          'src/debug.js'
-        ]),
-        $c->controller('Assets::RapidApp::JS')->html_head_tags
-      ) if $editable;
+      
+      # Ask the Access class for custom headers for this external template, and
+      # if it has them, set them in the response object now. And pull out $content_type
+      # if this operation set it (i.e. the template provides its own Content-Type)
+      my $headers  = $external ? $self->Access->get_external_tpl_headers($template) : undef;
+      if($headers) {
+        $c->res->header( $_ => $headers->{$_} ) for (keys %$headers);
+        $content_type = $c->res->content_type;
+      }
+    
+      # If this external template provides its own headers, including Content-Type, and that is
+      # *not* text/html, don't populate @head, even if it is $editable (which is rare - or maybe 
+      # even impossible - here anyway)
+      unless($content_type && ! ($content_type =~ /^text\/html/)){
+        # If we're editable and external we need to include CSS for template edit controls:
+        # TODO: basically including everything but ExtJS CSS. This is ugly and should
+        # be generalized/available in the Asset system as a simpler function call:
+        push @head, (
+          $c->favicon_head_tag||'',
+          $c->controller('Assets::RapidApp::CSS')->html_head_tags,
+          $c->controller('Assets::RapidApp::Icons')->html_head_tags,
+          $c->controller('Assets::ExtJS')->html_head_tags( js => [
+            'adapter/ext/ext-base.js',
+            'ext-all-debug.js',
+            'src/debug.js'
+          ]),
+          $c->controller('Assets::RapidApp::JS')->html_head_tags
+        ) if $editable; # $editable is rarely true here, so @header will be empty here anyway
+      }
     }
     else {
       # Include all the ExtJS, RapidApp and local app CSS/JS
@@ -504,17 +519,21 @@ sub view :Chained('base') :Args {
     }
     
     # Only include the RapidApp/ExtJS assets and wrap 'ra-scoped-reset' if
-    # this is *not* an external template:
-    $output = $external ? join("\n",@head,$html) : join("\n",
-      '<head>', @head, '</head>',
-      '<div class="' . join(' ',@cls) . '">', $html, '</div>'
-    );
+    # this is *not* an external template. If it is an external template,
+    # ignore @head entirely if its empty:
+    $output = $external 
+      ? ( scalar(@head) == 0 ? $html : join("\n",@head,$html) ) 
+      : join("\n",
+          '<head>', @head, '</head>',
+          '<div class="' . join(' ',@cls) . '">', $html, '</div>'
+        )
+    ;
     
-    $content_type = 'text/html; charset=utf-8';
+    $content_type ||= 'text/html; charset=utf-8';
   }
   
   # Decode as UTF-8 for user consumption:
-  utf8::decode($output);
+  utf8::decode($output); # FIXME?? This probably shouldn't be always called anymore
 
   return $self->_detach_response($c,$status,$output,$content_type);
 }

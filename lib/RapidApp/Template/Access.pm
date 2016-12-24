@@ -469,5 +469,13 @@ sub template_post_processor_class {
 }
 
 
+# Optionally return headers (i.e. Content-Type, etc) associated with a given
+# external template.
+sub get_external_tpl_headers {
+  my ($self,@args) = @_;
+  my $template = join('/',@args);
+  return undef
+}
+
 
 1;
