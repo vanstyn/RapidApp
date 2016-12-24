@@ -42,6 +42,8 @@ sub div_wrap {
   return $self->Access->template_writable($template);
 }
 
+sub process_template_stack { @{(shift)->{_process_template_stack} || []} }
+sub process_nest_level     { scalar( (shift)->process_template_stack )    }
 
 around 'process' => sub {
   my ($orig, $self, @args) = @_;
@@ -49,6 +51,9 @@ around 'process' => sub {
   # This is probably a Template::Document object:
   my $template = blessed $args[0] ? $args[0]->name : $args[0];
   $template = $self->Controller->_resolve_template_name($template);
+  
+  # Localize to track a stack of templates, when templates include other templates:
+  local $self->{_process_template_stack} = [ $template, $self->process_template_stack ];
   
   my $output;
   try {
@@ -83,7 +88,7 @@ around 'process' => sub {
 # New/extended API:
 sub post_process_output {
   my ($self, $template, $output_ref) = @_;
-  
+
   my $meta = $self->{_cached_template_metadata}{$template} //= do {
     my $d = {};
       $d->{format} = $self->Access->get_template_format($template)
