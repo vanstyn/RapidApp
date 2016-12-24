@@ -84,7 +84,7 @@ has 'provider_class', is => 'ro', default => 'RapidApp::Template::Provider';
 has 'access_class', is => 'ro', default => 'RapidApp::Template::Access';
 has 'access_params', is => 'ro', isa => 'HashRef', default => sub {{}};
 has 'include_paths', is => 'ro', isa => 'ArrayRef[Str]', default => sub {[]};
-has 'store_class', is => 'ro', default => 'RapidApp::Template::Store';
+has 'store_class', is => 'ro',  default => sub {undef}; # Will be 'RapidApp::Template::Store' if undef
 has 'store_params', is => 'ro', default => sub {undef};
 
 

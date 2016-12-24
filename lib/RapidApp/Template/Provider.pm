@@ -31,12 +31,19 @@ has 'Controller', is => 'ro', required => 1;
 # Actual permission checks happen in the RapidApp::Template::Controller
 has 'Access', is => 'ro', required => 1;
 
-has 'store_class',  is => 'ro', default => 'RapidApp::Template::Store';
+has 'store_class', is => 'ro', default => sub {undef}; # Will be 'RapidApp::Template::Store' if undef
 has 'store_params', is => 'ro', isa => Maybe[HashRef], default => sub {undef};
 has 'Store', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
-  Module::Runtime::require_module($self->store_class);
-  $self->store_class->new({ Provider => $self, %{ $self->store_params||{} } });
+  
+  # Support an 'AccessStore' which means the Access class is both an Access and a Store at once.
+  # This gives the flexibility to design for a single interface, or separately. Currently this
+  # requires MI, but may change this to Roles...
+  return $self->Access if ($self->Access->isa('RapidApp::Template::Store'));
+  
+  my $class = $self->store_class || 'RapidApp::Template::Store';
+  Module::Runtime::require_module($class);
+  $class->new({ Provider => $self, %{ $self->store_params||{} } });
 }, isa => InstanceOf['RapidApp::Template::Store'];
 
 sub _store_owns_template {
