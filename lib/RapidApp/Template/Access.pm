@@ -39,6 +39,14 @@ sub catalyst_context { (shift)->Controller->{_current_context} }
 # being viewed/accessed directly.
 sub currently_viewing_template { (shift)->Controller->{_viewing_template} }
 
+# Optional internal caching object which may be used by the access class to cache any
+# data it wants for the life of the Controller request. This is localized at the top
+# of the view action in the Controller. It is the responsibility of the access class
+# to keep data organized among the multiple templates which could be processed in a
+# single request.
+sub local_cache { (shift)->{_local_cache} || {} };
+
+
 # Localized in RapidApp::Template::Context::process() to give the Access class
 # access to the current context object
 sub process_Context { (shift)->{_process_Context} };

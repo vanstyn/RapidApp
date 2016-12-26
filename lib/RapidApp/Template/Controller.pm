@@ -362,6 +362,8 @@ sub view :Chained('base') :Args {
   my $template = $self->_resolve_template_name(@args)
     or die "No template specified";
     
+  local $self->Access->{_local_cache} = {};
+    
   if(my $psgi_response = $self->Access->template_psgi_response($template,$c)) {
     $c->res->from_psgi_response( $psgi_response );
     return $c->detach;
