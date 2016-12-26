@@ -361,6 +361,11 @@ sub view :Chained('base') :Args {
   my ($self, $c, @args) = @_;
   my $template = $self->_resolve_template_name(@args)
     or die "No template specified";
+    
+  if(my $psgi_response = $self->Access->template_psgi_response($template,$c)) {
+    $c->res->from_psgi_response( $psgi_response );
+    return $c->detach;
+  }
 
   my $ra_client = $c->is_ra_ajax_req;
 

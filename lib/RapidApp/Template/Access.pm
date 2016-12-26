@@ -482,4 +482,14 @@ sub get_external_tpl_headers {
 }
 
 
+# This is called by the controller at the top of the view request, and if it
+# returns a value, that will be used as the psgi response, bypassing all other
+# logic/rules:
+sub template_psgi_response {
+  my ($self,$template,$c) = @_;
+  return undef
+}
+
+
+
 1;
