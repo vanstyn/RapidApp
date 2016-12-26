@@ -46,8 +46,8 @@ sub default {
     @args = ($cfg->{root_template});
   }
   else {
-    die "No root_template_prefix defined" unless ($cfg->{root_template_prefix});
-    @args = ($cfg->{root_template_prefix},@args)
+    my $prefix = $cfg->{root_template_prefix} or die "No root_template_prefix defined";
+    @args = ($cfg->{root_template_prefix},@args) unless ($prefix eq '/');
   }
   
   $c->stash->{editable} = 1; # <-- Enable template editing (if has perms)
