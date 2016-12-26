@@ -39,6 +39,10 @@ sub catalyst_context { (shift)->Controller->{_current_context} }
 # being viewed/accessed directly.
 sub currently_viewing_template { (shift)->Controller->{_viewing_template} }
 
+# Localized in RapidApp::Template::Context::process() to give the Access class
+# access to the current context object
+sub process_Context { (shift)->{_process_Context} };
+
 # -----
 # Optional *global* settings to toggle access across the board
 

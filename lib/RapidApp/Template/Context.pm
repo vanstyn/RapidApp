@@ -48,6 +48,8 @@ sub process_nest_level     { scalar( (shift)->process_template_stack )    }
 around 'process' => sub {
   my ($orig, $self, @args) = @_;
   
+  local $self->Access->{_process_Context} = $self;
+  
   # This is probably a Template::Document object:
   my $template = blessed $args[0] ? $args[0]->name : $args[0];
   $template = $self->Controller->_resolve_template_name($template);
@@ -99,6 +101,8 @@ sub get_template_post_processor {
   return undef
 }
 
+sub next_template { ((shift)->process_template_stack)[1] }
+
 
 # Returns the post-processor class of the *next* template (i.e. the second element)
 # in the process_template_stack. This is intended to be called from a post-processor
@@ -108,7 +112,7 @@ sub get_template_post_processor {
 sub next_template_post_processor {
   my $self = shift;
   
-  my $next_template = ($self->process_template_stack)[1] or return undef;
+  my $next_template = $self->next_template or return undef;
   $self->get_template_post_processor($next_template)
 }
 
