@@ -35,6 +35,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	node_action_reload: true,
 	node_action_expandall: true,
 	node_action_collapseall: true,
+  node_action_dump_attributes: false, // Debug option
 	
 	use_contextmenu: false,
 	no_dragdrop_menu: false,
@@ -168,6 +169,19 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 					this.persistNodeExpandState(node,0);
 				},this);
 			}
+      
+      // For Debug:
+      if(this.node_action_dump_attributes) {
+        this.node_actions.push({
+          text: 'Debug: console.dir(node.attributes)',
+          iconCls: 'ra-icon-information',
+          handler: function(node) { console.dir(node.attributes); },
+          rootValid: true,
+          leafValid: true,
+          noTbar: true,
+          tbarIconOnly: true
+        });
+      }
 			
 				
 			if(Ext.isArray(this.extra_node_actions)) {
@@ -532,6 +546,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	getTbarActionsButtons: function() {
 		var items = [];
 		Ext.each(this.node_actions,function(action) {
+      if(action.noTbar) { return; }
 			if(Ext.isString(action)) {
 				items.push(action);
 				return;
