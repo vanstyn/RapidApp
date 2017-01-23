@@ -138,15 +138,34 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			}
 			
 			if(this.add_node_url) {
-				this.node_actions.push({
-					text: this.add_node_text,
-					iconCls: this.add_node_iconCls,
-					handler: this.nodeAdd,
-					rootValid: true,
-					leafValid: false,
-					noTbar: false,
-					tbarIconOnly: false
-				});
+        var cnf = {
+          text: this.add_node_text,
+          iconCls: this.add_node_iconCls,
+          rootValid: true,
+          leafValid: false,
+          noTbar: false,
+          tbarIconOnly: false
+        };
+        
+        if(Ext.isArray(this.node_types)) {
+          var menuitems = [];
+          Ext.each(this.node_types,function(typ){
+            if(typ.addable) {
+              menuitems.push({
+                text: typ.title || typ.type,
+                iconCls: typ.iconCls || this.add_node_iconCls,
+                handler: this.nodeAdd
+              });
+            }
+          },this);
+          cnf.menuitems = menuitems;
+        }
+        else {
+          cnf.handler = this.nodeAdd;
+        }
+      
+      
+        this.node_actions.push(cnf);
 			}
 			
 			if(this.copy_node_url) {
@@ -556,18 +575,36 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 				nodeAction: action,
 				xtype: 'button',
 				text: action.text,
-				iconCls: action.iconCls,
-				handler: function() {
-					var node = this.getSelectionModel().getSelectedNode();
-					action.handler.call(this,node);
-				},
-				scope: this
+				iconCls: action.iconCls
 			};
 			if (action.tbarIconOnly) {
 				cnf.tooltip = cnf.text;
 				cnf.overflowText = cnf.text;
 				delete cnf.text;
 			}
+      
+      if(Ext.isArray(action.menuitems)) {
+        var itms = [];
+        Ext.each(action.menuitems,function(itm) {
+          var mi = Ext.apply({},itm);
+          mi.scope = this;
+          mi.handler = function() {
+            var node = this.getSelectionModel().getSelectedNode();
+            itm.handler.call(this,node);
+          }
+          itms.push(mi);
+        },this);
+        
+        cnf.menu = { items: itms };
+      }
+      else {
+        cnf.scope = this;
+        cnf.handler = function() {
+          var node = this.getSelectionModel().getSelectedNode();
+          action.handler.call(this,node);
+        };
+      }
+      
 			
 			cnf.notifyCurrentNode = function(node) {
 				var valid = this.tree.actionValidForNode(this.nodeAction,node);
@@ -592,13 +629,29 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 				return;
 			}
 			if(!this.actionValidForNode(action,node)) { return; }
-			menuItems.push({
-				text: action.text,
-				iconCls: action.iconCls,
-				handler: function() { action.handler.call(this,node); },
-				scope: this
-			});
-			
+      
+      var cnf = {
+        text: action.text,
+        iconCls: action.iconCls,
+      };
+      
+      if(Ext.isArray(action.menuitems)) {
+        var itms = [];
+        Ext.each(action.menuitems,function(itm) {
+          var mi = Ext.apply({},itm);
+          mi.scope = this;
+          mi.handler = function() { itm.handler.call(this,node); };
+          itms.push(mi);
+        },this);
+        
+        cnf.menu = { items: itms };
+      }
+      else {
+        cnf.scope = this;
+        cnf.handler = function() { action.handler.call(this,node); };
+      }
+      
+      menuItems.push(cnf);
 		},this);
 		
 		

@@ -28,6 +28,9 @@ has 'ddAppendOnly' => ( is => 'ro', isa => 'Bool', default => 1 );
 
 has 'extra_node_actions' => ( is => 'ro', isa => 'Maybe[ArrayRef]', lazy => 1, default => undef );
 
+has 'node_types', is => 'ro', isa => 'Maybe[ArrayRef[HashRef]]', default => undef, traits => ['ExtProp'];
+
+
 sub BUILD {
   my $self = shift;
   $self->apply_extconfig(

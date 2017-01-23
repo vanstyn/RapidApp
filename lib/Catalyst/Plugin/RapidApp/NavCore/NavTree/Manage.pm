@@ -34,6 +34,38 @@ sub apply_node_navopts {}
 
 has '+fetch_nodes_deep', default => 0;
 
+
+has '+node_types', default => sub {[
+  {
+    type     => 'folder',
+    title    => 'Folder',
+    iconCls  => 'ra-icon-folder',
+    addable  => 1,
+    editable => 1
+  },
+  {
+    type     => 'search',
+    title    => 'Saved Search',
+    addable  => 0,
+    editable => 1
+  },
+  {
+    type     => 'link',
+    title    => 'Custom Link',
+    iconCls  => 'ra-icon-application-go',
+    addable  => 1,
+    editable => 1,
+    fields => [{
+      name  => 'url', 
+      xtype => 'textfield',
+      fieldLabel => 'Link URL'
+    
+    }]
+  },
+
+]};
+
+
 sub auth_active {
   my $self = shift;
   return $self->c->can('user') ? 1 : 0;
