@@ -155,7 +155,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
                 text: typ.title || typ.type,
                 iconCls: typ.iconCls || this.add_node_iconCls,
                 handler: this.nodeAdd,
-                typeInfo: typ
+                nodeTypeName: typ.type
               });
             }
           },this);
@@ -280,6 +280,18 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		
 		Ext.ux.RapidApp.AppTree.superclass.initComponent.call(this);
 	},
+  
+  lookupNodeTypeInfo: function(type) {
+    if(!type || !Ext.isArray(this.node_types)) { return null; }
+    if(!this._nodeTypeInfoMap) {
+      this._nodeTypeInfoMap = {};
+      Ext.each(this.node_types,function(itm) {
+        if(!itm.type) { throw "bad node_types entry - missing 'type' name/value"; }
+        this._nodeTypeInfoMap[itm.type] = itm;
+      },this);
+    }
+    return this._nodeTypeInfoMap[type];
+  },
   
   expandChildNodes: function() {
     if(!this.childNodes) { return; }
@@ -591,7 +603,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
           mi.scope = this;
           mi.handler = function() {
             var node = this.getSelectionModel().getSelectedNode();
-            itm.handler.call(this,node,itm.typeInfo);
+            itm.handler.call(this,node,itm.nodeTypeName);
           }
           itms.push(mi);
         },this);
@@ -641,7 +653,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
         Ext.each(action.menuitems,function(itm) {
           var mi = Ext.apply({},itm);
           mi.scope = this;
-          mi.handler = function() { itm.handler.call(this,node,itm.typeInfo); };
+          mi.handler = function() { itm.handler.call(this,node,itm.nodeTypeName); };
           itms.push(mi);
         },this);
         
@@ -732,12 +744,13 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		});
 	},
 	
-	nodeAdd: function(node,typeInfo) {
+	nodeAdd: function(node,nodeTypeName) {
 		if(!node) { node = this.activeNonLeafNode(); }
 		
 		return this.nodeApplyDialog(node,{
 			title: this.add_node_text,
-			url: this.add_node_url
+			url: this.add_node_url,
+      nodeTypeName: nodeTypeName
 		});
 	},
 	
