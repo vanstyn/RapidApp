@@ -52,7 +52,7 @@ has '+node_types', default => sub {[
   {
     type     => 'link',
     title    => 'Custom Link',
-    iconCls  => 'ra-icon-application-go',
+    iconCls  => 'ra-icon-link-go',
     addable  => 1,
     editable => 1,
     fields => [{

@@ -154,7 +154,8 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
               menuitems.push({
                 text: typ.title || typ.type,
                 iconCls: typ.iconCls || this.add_node_iconCls,
-                handler: this.nodeAdd
+                handler: this.nodeAdd,
+                typeInfo: typ
               });
             }
           },this);
@@ -590,7 +591,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
           mi.scope = this;
           mi.handler = function() {
             var node = this.getSelectionModel().getSelectedNode();
-            itm.handler.call(this,node);
+            itm.handler.call(this,node,itm.typeInfo);
           }
           itms.push(mi);
         },this);
@@ -640,7 +641,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
         Ext.each(action.menuitems,function(itm) {
           var mi = Ext.apply({},itm);
           mi.scope = this;
-          mi.handler = function() { itm.handler.call(this,node); };
+          mi.handler = function() { itm.handler.call(this,node,itm.typeInfo); };
           itms.push(mi);
         },this);
         
@@ -731,7 +732,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		});
 	},
 	
-	nodeAdd: function(node) {
+	nodeAdd: function(node,typeInfo) {
 		if(!node) { node = this.activeNonLeafNode(); }
 		
 		return this.nodeApplyDialog(node,{
