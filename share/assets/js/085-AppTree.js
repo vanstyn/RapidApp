@@ -740,7 +740,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		return this.nodeApplyDialog(node,{
 			title: this.rename_node_text,
 			url: this.rename_node_url,
-			value: node.attributes.text
+			values: { name: node.attributes.text }
 		});
 	},
 	
@@ -822,23 +822,25 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 				point: 'below',
 				point_node: node.id
 			},
-			value: node.attributes.text + ' (Copy)'
+			values: { name: node.attributes.text + ' (Copy)' }
 		});
 	},
 	
 	// General purpose functon for several operations, like add, rename
 	nodeApplyDialog: function(node,opt) {
+    var typeInfo = this.lookupNodeTypeInfo(opt.nodeTypeName);
+    
 		var tree = this;
 		var cnf = Ext.apply({
 			url: null, // <-- url is required
 			title: 'Apply Node',
 			name: 'name',
 			fieldLabel: 'Name',
-			labelWidth: 40,
+			labelWidth: 80,
 			height: 130,
-			width: 350,
+			width: 450,
 			params: { node: node.id },
-			value: null
+			values: {}
 		},opt);
 		
 		if(!cnf.url) { throw "url is a required parameter"; }
@@ -847,7 +849,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			xtype: 'textfield',
 			name: cnf.name,
 			fieldLabel: cnf.fieldLabel,
-			value: cnf.value,
+			value: cnf.values[cnf.name],
 			anchor: '100%'
 		},'field');
 		
@@ -868,6 +870,22 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			//items: items
 			items: Field
 		};
+    
+    if(typeInfo && Ext.isArray(typeInfo.fields) && typeInfo.fields.length > 0) {
+      var items = [Field];
+      Ext.each(typeInfo.fields,function(fld){
+        var Fcfg = Ext.apply({
+          value: cnf.values[fld.name],
+          anchor: '100%'
+        },fld);
+        items.push(Ext.create(Fcfg,'field'));
+      },this);
+      items.push({ xtype: 'hidden', name: 'nodeTypeName', value: typeInfo.type });
+      fieldset.items = items;
+      if(typeInfo.applyDialogOpts) {
+        Ext.apply(cnf,typeInfo.applyDialogOpts);
+      }
+    }
 
 		var winform_cfg = {
 			title: cnf.title,

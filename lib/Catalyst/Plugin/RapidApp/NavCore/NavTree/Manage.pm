@@ -55,6 +55,9 @@ has '+node_types', default => sub {[
     iconCls  => 'ra-icon-link-go',
     addable  => 1,
     editable => 1,
+    applyDialogOpts => {
+      height => 160,
+    },
     fields => [{
       name  => 'url', 
       xtype => 'textfield',
