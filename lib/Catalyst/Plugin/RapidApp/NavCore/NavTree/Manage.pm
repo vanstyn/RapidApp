@@ -271,9 +271,7 @@ sub user_searches_nodes {
 
 
 sub add_node {
-	my $self = shift;
-	my $name = shift;
-	my $node = shift;
+  my ($self,$name,$node,$params) = @_;
 	
 	my $id = $self->get_node_id($node);
 	

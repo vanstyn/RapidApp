@@ -353,9 +353,10 @@ sub call_fetch_node {
 
 sub call_add_node {
   my $self = shift;
-  my $name = $self->c->req->params->{name};
-  my $node = $self->c->req->params->{node};
-  my $data = $self->add_node($name,$node);
+  my $params = clone($self->c->req->params);
+  my $name = $params->{name};
+  my $node = $params->{node};
+  my $data = $self->add_node($name,$node,$params);
   
   # The config/params of the created node should have been returned in the 'child' key:
   if ($data->{child}) {
