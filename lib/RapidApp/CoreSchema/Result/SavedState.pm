@@ -78,13 +78,18 @@ sub loadContentCnf {
 	
 	#my $params = $self->decoded_params;
 	#$params->{search_id} = $self->get_column('id');
+  
+  my $url = '/view/' . $self->get_column('id');
+  
+  # New: if there is no state_data or params, use the declared URL outright:
+  $url = $self->url unless($self->params || $self->state_data);
 
 	return {
 		title		=> $self->title,
 		iconCls	=> $self->iconcls,
 		autoLoad => {
 			#New REST url:
-			url => '/view/' . $self->get_column('id')
+			url => $url
 			#url => $self->url,
 			#params => $params,
 		}

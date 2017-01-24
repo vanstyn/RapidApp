@@ -293,8 +293,6 @@ sub add_node {
       ordering => $order,
       url => $url,
       iconcls => 'ra-icon-link-go',
-      params => '{}',
-      state_data => '{}',
     });
   }
   else {
