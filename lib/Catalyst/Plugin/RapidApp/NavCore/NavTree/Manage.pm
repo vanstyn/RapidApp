@@ -280,12 +280,30 @@ sub add_node {
 	$name =~ s/\s+$//;
 	
 	my $order = $self->get_order_string($id,'append');
-	
-	my $Node = $self->Rs->create({
-		pid => $id,
-		text => $name,
-		ordering => $order
-	});
+  
+  my $Node;
+  if(($params->{nodeTypeName}||'folder') eq 'link') {
+    my $url = $params->{url} or die usererr "Link URL is required";
+    my $uid = $self->c->user->get_column('id');
+    
+    $Node = $self->SearchesRs->create({
+      node_id => $id,
+      user_id => $uid,
+      title => $name,
+      ordering => $order,
+      url => $url,
+      iconcls => 'ra-icon-link-go',
+      params => '{}',
+      state_data => '{}',
+    });
+  }
+  else {
+    $Node = $self->Rs->create({
+      pid => $id,
+      text => $name,
+      ordering => $order
+    });
+  }
 	
 	return {
 		msg		=> 'Created',
