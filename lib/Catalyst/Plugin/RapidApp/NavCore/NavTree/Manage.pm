@@ -616,9 +616,7 @@ sub get_order_string {
 
 
 sub rename_node {
-	my $self = shift;
-	my $node = shift;
-	my $name = shift;
+  my ($self,$node,$name,$params) = @_;
 	
 	# strip whitespace
 	$name =~ s/^\s+//;
@@ -626,7 +624,7 @@ sub rename_node {
 	
 	#my $id = $self->get_node_id($node);
 	my $Node = $self->get_node_Row($node) or die "Failed to get Node";
-	return $self->rename_search($Node,$name) if ($Node->can('node_id'));
+	return $self->rename_search($Node,$name,$params) if ($Node->can('node_id'));
 	
 	#my $Node = $self->Rs->search_rs({ 'me.id' => $id })->first;
 	$Node->update({ 'text' => $name });
@@ -639,16 +637,27 @@ sub rename_node {
 }
 
 sub rename_search {
-	my $self = shift;
-	my $State = shift;
-	my $name = shift;
-	
-	return {
-		msg		=> 'Renamed Search',
-		success	=> \1,
-		new_text => $State->title
-	} if ($State->update({ title => $name }));
-	
+  my ($self,$State,$name,$params) = @_;
+  
+  my $nodeTypeName = $params->{nodeTypeName} || '';
+  
+  my $update = { title => $name };
+  $update->{url} = $params->{url} if($nodeTypeName eq 'link' && $params->{url});
+  
+  if ($State->update($update)) {
+    my $res = {
+      msg		=> 'Renamed Search',
+      success	=> \1,
+      new_text => $State->title
+    };
+    
+    if($nodeTypeName eq 'link') {
+      $res->{new_attributes} = $self->get_Node_config($State);
+    }
+    
+    return $res;
+  }
+  
 	die "Rename error";
 }
 

@@ -907,6 +907,10 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 				if (res.new_text) {
 					node.setText(res.new_text);
 				}
+        
+        if(res.new_attributes) {
+          Ext.apply(node.attributes,res.new_attributes);
+        }
 				
 				// if 'child' is supplied in the response then we add it as a child to the current node
 				if (res.child) {
@@ -962,7 +966,8 @@ Ext.ux.RapidApp.AppTree_rename_node = function(node) {
 		value: node.attributes.text
 	});
 	
-	
+// This code has been inactive for a while, commenting out to avoid confusion
+/*	
 	var items = [
 		{
 			xtype: 'textfield',
@@ -1010,6 +1015,7 @@ Ext.ux.RapidApp.AppTree_rename_node = function(node) {
 	};
 	
 	Ext.ux.RapidApp.WinFormPost(winform_cfg);
+*/
 }
 
 

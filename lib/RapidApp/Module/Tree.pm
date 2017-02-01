@@ -383,9 +383,10 @@ sub call_delete_node {
 
 sub call_rename_node {
   my $self = shift;
-  my $name = $self->c->req->params->{name};
-  my $node = $self->c->req->params->{node};
-  return $self->rename_node($node,$name);
+  my $params = clone($self->c->req->params);
+  my $name = $params->{name};
+  my $node = $params->{node};
+  return $self->rename_node($node,$name,$params);
 }
 
 sub call_expand_node {
