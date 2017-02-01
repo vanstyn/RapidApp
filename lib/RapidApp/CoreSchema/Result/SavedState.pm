@@ -97,6 +97,14 @@ sub loadContentCnf {
 }
 
 
+# Called from the tree module to get custom attrs
+sub customAttrs {
+  my $self = shift;
+  
+  # If there no state_data or params, this this is a 'link' node type, and we return
+  # a packet for 'customAttrs'. See the NavTree grid for additional logic.
+  return $self->params || $self->state_data  ? undef : { url => $self->url }
+}
 
 
 __PACKAGE__->load_components('+RapidApp::DBIC::Component::TableSpec');
