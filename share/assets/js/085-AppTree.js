@@ -21,7 +21,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	delete_node_iconCls: 'ra-icon-delete',
 	delete_node_url: null,
 	
-	rename_node_text: 'Rename',
+	rename_node_text: 'Modify',
 	rename_node_iconCls: 'ra-icon-textfield-rename',
 	rename_node_url: null,
 	
