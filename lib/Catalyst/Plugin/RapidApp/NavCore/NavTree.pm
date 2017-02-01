@@ -169,6 +169,14 @@ sub get_Node_config {
 			#href => '#!/view/' . $opts->{id}
 			# note: not using 'href' only because we don't want it in the ManageNavTree (subclass)
 		);
+    
+    # This module supports one custom node type - 'link' - which is identified if the Node
+    # object (i.e. SavedState row) returns a value for 'customAttrs'
+    if (my $attrs = $Node->customAttrs) {
+      $opts->{nodeTypeName} = 'link';
+      $opts->{customAttrs}  = $attrs;
+    }
+    
 	}
 	# Navtree Node specific
 	else {

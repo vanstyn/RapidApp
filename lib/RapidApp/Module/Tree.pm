@@ -28,6 +28,9 @@ has 'ddAppendOnly' => ( is => 'ro', isa => 'Bool', default => 1 );
 
 has 'extra_node_actions' => ( is => 'ro', isa => 'Maybe[ArrayRef]', lazy => 1, default => undef );
 
+has 'node_types', is => 'ro', isa => 'Maybe[ArrayRef[HashRef]]', default => undef, traits => ['ExtProp'];
+
+
 sub BUILD {
   my $self = shift;
   $self->apply_extconfig(
@@ -350,9 +353,10 @@ sub call_fetch_node {
 
 sub call_add_node {
   my $self = shift;
-  my $name = $self->c->req->params->{name};
-  my $node = $self->c->req->params->{node};
-  my $data = $self->add_node($name,$node);
+  my $params = clone($self->c->req->params);
+  my $name = $params->{name};
+  my $node = $params->{node};
+  my $data = $self->add_node($name,$node,$params);
   
   # The config/params of the created node should have been returned in the 'child' key:
   if ($data->{child}) {
@@ -379,9 +383,10 @@ sub call_delete_node {
 
 sub call_rename_node {
   my $self = shift;
-  my $name = $self->c->req->params->{name};
-  my $node = $self->c->req->params->{node};
-  return $self->rename_node($node,$name);
+  my $params = clone($self->c->req->params);
+  my $name = $params->{name};
+  my $node = $params->{node};
+  return $self->rename_node($node,$name,$params);
 }
 
 sub call_expand_node {

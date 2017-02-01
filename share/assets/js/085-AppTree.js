@@ -21,7 +21,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	delete_node_iconCls: 'ra-icon-delete',
 	delete_node_url: null,
 	
-	rename_node_text: 'Rename',
+	rename_node_text: 'Modify',
 	rename_node_iconCls: 'ra-icon-textfield-rename',
 	rename_node_url: null,
 	
@@ -35,6 +35,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	node_action_reload: true,
 	node_action_expandall: true,
 	node_action_collapseall: true,
+  node_action_dump_attributes: false, // Debug option
 	
 	use_contextmenu: false,
 	no_dragdrop_menu: false,
@@ -137,15 +138,35 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			}
 			
 			if(this.add_node_url) {
-				this.node_actions.push({
-					text: this.add_node_text,
-					iconCls: this.add_node_iconCls,
-					handler: this.nodeAdd,
-					rootValid: true,
-					leafValid: false,
-					noTbar: false,
-					tbarIconOnly: false
-				});
+        var cnf = {
+          text: this.add_node_text,
+          iconCls: this.add_node_iconCls,
+          rootValid: true,
+          leafValid: false,
+          noTbar: false,
+          tbarIconOnly: false
+        };
+        
+        if(Ext.isArray(this.node_types)) {
+          var menuitems = [];
+          Ext.each(this.node_types,function(typ){
+            if(typ.addable) {
+              menuitems.push({
+                text: typ.title || typ.type,
+                iconCls: typ.iconCls || this.add_node_iconCls,
+                handler: this.nodeAdd,
+                nodeTypeName: typ.type
+              });
+            }
+          },this);
+          cnf.menuitems = menuitems;
+        }
+        else {
+          cnf.handler = this.nodeAdd;
+        }
+      
+      
+        this.node_actions.push(cnf);
 			}
 			
 			if(this.copy_node_url) {
@@ -168,6 +189,19 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 					this.persistNodeExpandState(node,0);
 				},this);
 			}
+      
+      // For Debug:
+      if(this.node_action_dump_attributes) {
+        this.node_actions.push({
+          text: 'Debug: console.dir(node.attributes)',
+          iconCls: 'ra-icon-information',
+          handler: function(node) { console.dir(node.attributes); },
+          rootValid: true,
+          leafValid: true,
+          noTbar: true,
+          tbarIconOnly: true
+        });
+      }
 			
 				
 			if(Ext.isArray(this.extra_node_actions)) {
@@ -246,6 +280,18 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		
 		Ext.ux.RapidApp.AppTree.superclass.initComponent.call(this);
 	},
+  
+  lookupNodeTypeInfo: function(type) {
+    if(!type || !Ext.isArray(this.node_types)) { return null; }
+    if(!this._nodeTypeInfoMap) {
+      this._nodeTypeInfoMap = {};
+      Ext.each(this.node_types,function(itm) {
+        if(!itm.type) { throw "bad node_types entry - missing 'type' name/value"; }
+        this._nodeTypeInfoMap[itm.type] = itm;
+      },this);
+    }
+    return this._nodeTypeInfoMap[type];
+  },
   
   expandChildNodes: function() {
     if(!this.childNodes) { return; }
@@ -532,6 +578,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	getTbarActionsButtons: function() {
 		var items = [];
 		Ext.each(this.node_actions,function(action) {
+      if(action.noTbar) { return; }
 			if(Ext.isString(action)) {
 				items.push(action);
 				return;
@@ -541,18 +588,36 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 				nodeAction: action,
 				xtype: 'button',
 				text: action.text,
-				iconCls: action.iconCls,
-				handler: function() {
-					var node = this.getSelectionModel().getSelectedNode();
-					action.handler.call(this,node);
-				},
-				scope: this
+				iconCls: action.iconCls
 			};
 			if (action.tbarIconOnly) {
 				cnf.tooltip = cnf.text;
 				cnf.overflowText = cnf.text;
 				delete cnf.text;
 			}
+      
+      if(Ext.isArray(action.menuitems)) {
+        var itms = [];
+        Ext.each(action.menuitems,function(itm) {
+          var mi = Ext.apply({},itm);
+          mi.scope = this;
+          mi.handler = function() {
+            var node = this.getSelectionModel().getSelectedNode();
+            itm.handler.call(this,node,itm.nodeTypeName);
+          }
+          itms.push(mi);
+        },this);
+        
+        cnf.menu = { items: itms };
+      }
+      else {
+        cnf.scope = this;
+        cnf.handler = function() {
+          var node = this.getSelectionModel().getSelectedNode();
+          action.handler.call(this,node);
+        };
+      }
+      
 			
 			cnf.notifyCurrentNode = function(node) {
 				var valid = this.tree.actionValidForNode(this.nodeAction,node);
@@ -577,13 +642,29 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 				return;
 			}
 			if(!this.actionValidForNode(action,node)) { return; }
-			menuItems.push({
-				text: action.text,
-				iconCls: action.iconCls,
-				handler: function() { action.handler.call(this,node); },
-				scope: this
-			});
-			
+      
+      var cnf = {
+        text: action.text,
+        iconCls: action.iconCls,
+      };
+      
+      if(Ext.isArray(action.menuitems)) {
+        var itms = [];
+        Ext.each(action.menuitems,function(itm) {
+          var mi = Ext.apply({},itm);
+          mi.scope = this;
+          mi.handler = function() { itm.handler.call(this,node,itm.nodeTypeName); };
+          itms.push(mi);
+        },this);
+        
+        cnf.menu = { items: itms };
+      }
+      else {
+        cnf.scope = this;
+        cnf.handler = function() { action.handler.call(this,node); };
+      }
+      
+      menuItems.push(cnf);
 		},this);
 		
 		
@@ -659,16 +740,21 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 		return this.nodeApplyDialog(node,{
 			title: this.rename_node_text,
 			url: this.rename_node_url,
-			value: node.attributes.text
+			values: Ext.apply(
+        { name: node.attributes.text },
+        node.attributes.customAttrs || {}
+      ),
+      nodeTypeName: node.attributes.nodeTypeName
 		});
 	},
 	
-	nodeAdd: function(node) {
+	nodeAdd: function(node,nodeTypeName) {
 		if(!node) { node = this.activeNonLeafNode(); }
 		
 		return this.nodeApplyDialog(node,{
 			title: this.add_node_text,
-			url: this.add_node_url
+			url: this.add_node_url,
+      nodeTypeName: nodeTypeName
 		});
 	},
 	
@@ -740,23 +826,25 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 				point: 'below',
 				point_node: node.id
 			},
-			value: node.attributes.text + ' (Copy)'
+			values: { name: node.attributes.text + ' (Copy)' }
 		});
 	},
 	
 	// General purpose functon for several operations, like add, rename
 	nodeApplyDialog: function(node,opt) {
+    var typeInfo = this.lookupNodeTypeInfo(opt.nodeTypeName);
+    
 		var tree = this;
 		var cnf = Ext.apply({
 			url: null, // <-- url is required
 			title: 'Apply Node',
 			name: 'name',
 			fieldLabel: 'Name',
-			labelWidth: 40,
+			labelWidth: 80,
 			height: 130,
-			width: 350,
+			width: 450,
 			params: { node: node.id },
-			value: null
+			values: {}
 		},opt);
 		
 		if(!cnf.url) { throw "url is a required parameter"; }
@@ -765,7 +853,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			xtype: 'textfield',
 			name: cnf.name,
 			fieldLabel: cnf.fieldLabel,
-			value: cnf.value,
+			value: cnf.values[cnf.name],
 			anchor: '100%'
 		},'field');
 		
@@ -786,6 +874,22 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			//items: items
 			items: Field
 		};
+    
+    if(typeInfo && Ext.isArray(typeInfo.fields) && typeInfo.fields.length > 0) {
+      var items = [Field];
+      Ext.each(typeInfo.fields,function(fld){
+        var Fcfg = Ext.apply({
+          value: cnf.values[fld.name],
+          anchor: '100%'
+        },fld);
+        items.push(Ext.create(Fcfg,'field'));
+      },this);
+      items.push({ xtype: 'hidden', name: 'nodeTypeName', value: typeInfo.type });
+      fieldset.items = items;
+      if(typeInfo.applyDialogOpts) {
+        Ext.apply(cnf,typeInfo.applyDialogOpts);
+      }
+    }
 
 		var winform_cfg = {
 			title: cnf.title,
@@ -803,6 +907,10 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 				if (res.new_text) {
 					node.setText(res.new_text);
 				}
+        
+        if(res.new_attributes) {
+          Ext.apply(node.attributes,res.new_attributes);
+        }
 				
 				// if 'child' is supplied in the response then we add it as a child to the current node
 				if (res.child) {
@@ -858,7 +966,8 @@ Ext.ux.RapidApp.AppTree_rename_node = function(node) {
 		value: node.attributes.text
 	});
 	
-	
+// This code has been inactive for a while, commenting out to avoid confusion
+/*	
 	var items = [
 		{
 			xtype: 'textfield',
@@ -906,6 +1015,7 @@ Ext.ux.RapidApp.AppTree_rename_node = function(node) {
 	};
 	
 	Ext.ux.RapidApp.WinFormPost(winform_cfg);
+*/
 }
 
 

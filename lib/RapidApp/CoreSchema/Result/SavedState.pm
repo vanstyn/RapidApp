@@ -78,13 +78,18 @@ sub loadContentCnf {
 	
 	#my $params = $self->decoded_params;
 	#$params->{search_id} = $self->get_column('id');
+  
+  my $url = '/view/' . $self->get_column('id');
+  
+  # New: if there is no state_data or params, use the declared URL outright:
+  $url = $self->url unless($self->params || $self->state_data);
 
 	return {
 		title		=> $self->title,
 		iconCls	=> $self->iconcls,
 		autoLoad => {
 			#New REST url:
-			url => '/view/' . $self->get_column('id')
+			url => $url
 			#url => $self->url,
 			#params => $params,
 		}
@@ -92,6 +97,14 @@ sub loadContentCnf {
 }
 
 
+# Called from the tree module to get custom attrs
+sub customAttrs {
+  my $self = shift;
+  
+  # If there no state_data or params, this this is a 'link' node type, and we return
+  # a packet for 'customAttrs'. See the NavTree grid for additional logic.
+  return $self->params || $self->state_data  ? undef : { url => $self->url }
+}
 
 
 __PACKAGE__->load_components('+RapidApp::DBIC::Component::TableSpec');
