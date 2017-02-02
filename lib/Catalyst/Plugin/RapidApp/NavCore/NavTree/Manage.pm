@@ -56,13 +56,20 @@ has '+node_types', default => sub {[
     addable  => 1,
     editable => 1,
     applyDialogOpts => {
-      height => 160,
+      height => 180,
     },
     fields => [{
       name  => 'url', 
       xtype => 'textfield',
-      fieldLabel => 'Link URL'
-    
+      fieldLabel => 'Link URL',
+      plugins => [{
+        ptype => 'fieldhelp',
+        text  => "Local internal URL path, starting with '/'"
+      }],
+      allowBlank => \0,
+      validator => jsfunc join(' ','function(v) {',
+        'return (v && v.search("/") == 0) ? true : false;',
+      '}')
     }]
   },
 
