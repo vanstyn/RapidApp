@@ -56,9 +56,18 @@ has '+node_types', default => sub {[
     addable  => 1,
     editable => 1,
     applyDialogOpts => {
-      height => 180,
+      height => 220,
     },
     fields => [{
+      name  => 'iconcls',
+      xtype => 'textfield',
+      value => 'ra-icon-link-go',
+      fieldLabel => 'Icon',
+      plugins => [{
+        ptype => 'fieldhelp',
+        text  => "Icon CSS class name (iconCls)"
+      }],
+    },{
       name  => 'url', 
       xtype => 'textfield',
       fieldLabel => 'Link URL',
@@ -299,7 +308,7 @@ sub add_node {
       title => $name,
       ordering => $order,
       url => $url,
-      iconcls => 'ra-icon-link-go',
+      iconcls => $params->{iconcls} || 'ra-icon-link-go',
     });
   }
   else {
@@ -649,13 +658,17 @@ sub rename_search {
   my $nodeTypeName = $params->{nodeTypeName} || '';
   
   my $update = { title => $name };
-  $update->{url} = $params->{url} if($nodeTypeName eq 'link' && $params->{url});
+  if($nodeTypeName eq 'link') {
+    $update->{url}     = $params->{url}     if ($params->{url});
+    $update->{iconcls} = $params->{iconcls} if ($params->{iconcls});
+  }
   
   if ($State->update($update)) {
     my $res = {
       msg		=> 'Renamed Search',
       success	=> \1,
-      new_text => $State->title
+      new_text => $State->title,
+      new_iconcls => $State->iconcls
     };
     
     if($nodeTypeName eq 'link') {

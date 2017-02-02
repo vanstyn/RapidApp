@@ -879,9 +879,11 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
       var items = [Field];
       Ext.each(typeInfo.fields,function(fld){
         var Fcfg = Ext.apply({
-          value: cnf.values[fld.name],
           anchor: '100%'
         },fld);
+        if(cnf.values[fld.name]) {
+          Fcfg.value = cnf.values[fld.name];
+        }
         items.push(Ext.create(Fcfg,'field'));
       },this);
       items.push({ xtype: 'hidden', name: 'nodeTypeName', value: typeInfo.type });
@@ -907,6 +909,11 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 				if (res.new_text) {
 					node.setText(res.new_text);
 				}
+        
+        // if 'new_iconcls' is supplied in the response then update the iconCls of current node
+        if (res.new_iconcls) {
+          node.setIconCls(res.new_iconcls);
+        }
         
         if(res.new_attributes) {
           Ext.apply(node.attributes,res.new_attributes);
