@@ -1084,6 +1084,7 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
   
   var Btn;
   Btn = new Ext.Button({
+    formBind: true,
     text	: cfg.submitBtnText,
     handler	: function(btn) {
       if(cfg.disableBtn) {
@@ -1166,6 +1167,7 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 			fileUpload: cfg.fileUpload,
 			baseParams: cfg.baseParams,
 			buttons: win_buttons,
+      monitorValid: true,
 			listeners: {
 				afterrender: function(fp) {
 					new Ext.KeyMap(fp.el, {
