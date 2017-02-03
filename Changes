@@ -1,5 +1,13 @@
 Revision history for RapidApp
 
+1.2110 2017-02-03
+    - NavCore Manage Navtree now supports 'Custom Link' node types (VANSTYN)
+    - Tree API now supports custom-defined node types (VANSTYN)
+    - Auto-generation of icon-selector combo of all icon assets (VANSTYN)
+    - Fix edge-case bug in recently added _table_name_safe func (VANSTYN)
+    - Require Catalyst::Controller::AutoAssets 0.40 (VANSTYN)
+    - Require Catalyst 5.90114 (VANSTYN)
+
 1.2101 2016-12-01
     - Require JSON 2.90 (VANSTYN)
     - Require JSON::PP 2.27400 (VANSTYN)
