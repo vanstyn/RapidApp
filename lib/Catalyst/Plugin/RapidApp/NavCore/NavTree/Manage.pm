@@ -60,7 +60,7 @@ has '+node_types', default => sub {[
     },
     fields => [{
       name  => 'iconcls',
-      xtype => 'textfield',
+      xtype => 'ra-all-icon-assets-combo',
       value => 'ra-icon-link-go',
       fieldLabel => 'Icon',
       plugins => [{
