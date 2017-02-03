@@ -56,17 +56,13 @@ has '+node_types', default => sub {[
     addable  => 1,
     editable => 1,
     applyDialogOpts => {
-      height => 220,
+      height => 200,
     },
     fields => [{
       name  => 'iconcls',
       xtype => 'ra-all-icon-assets-combo',
       value => 'ra-icon-link-go',
       fieldLabel => 'Icon',
-      plugins => [{
-        ptype => 'fieldhelp',
-        text  => "Icon CSS class name (iconCls)"
-      }],
     },{
       name  => 'url', 
       xtype => 'textfield',
