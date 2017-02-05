@@ -103,7 +103,10 @@ sub customAttrs {
   
   # If there no state_data or params, this this is a 'link' node type, and we return
   # a packet for 'customAttrs'. See the NavTree grid for additional logic.
-  return $self->params || $self->state_data  ? undef : { url => $self->url }
+  return $self->params || $self->state_data ? undef : { 
+    url     => $self->url,
+    iconcls => $self->iconcls
+  }
 }
 
 

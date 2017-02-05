@@ -21,7 +21,7 @@ use RapidApp;
 use Alien::Web::ExtJS::V3;
 use Time::HiRes qw(gettimeofday tv_interval);
 
-use Catalyst::Controller::AutoAssets 0.33;
+use Catalyst::Controller::AutoAssets 0.40;
 with 'Catalyst::Plugin::AutoAssets';
 
 sub get_extjs_dir { Alien::Web::ExtJS::V3->dir->stringify }
@@ -169,6 +169,36 @@ around 'inject_asset_controllers' => sub {
   $c->config( 'Plugin::AutoAssets' => { assets => $assets } );
   
   my $ret = $c->$orig(@args);
+  
+  # -----------
+  # New: Setup a JS global to contain the list of all auto-generated iconcls values
+  my @icon_names = sort { $a cmp $b } uniq(
+    map { $_->{icon_name} }
+    map { values %{ $c->controller($_)->manifest } }
+    map { $_->{controller} } grep { $_->{type} eq 'IconSet' } @$assets
+  );
+  
+  my $JsCode = join("\n",'',
+    'Ext.ns("Ext.ux.RapidApp");',
+    'Ext.ux.RapidApp.AllIconAssetClsNames = [',
+    join(",\n", map { "  '$_'" } @icon_names),
+    '];'
+  );
+  
+  $c->_inject_single_asset_controller({
+    controller => 'Assets::RapidApp::GenJS',
+    type => 'JS',
+    include => \$JsCode,
+  });
+  
+  # tweak the order so the icon list is available to JS early
+  @{$c->asset_controllers} = uniq(
+    $c->asset_controllers->[0], # Keep the ExtJS assets first
+    'Assets::RapidApp::GenJS',  # Make us second
+    @{$c->asset_controllers}    # Then the rest of the assets
+  );
+  # -----------
+
   
   $c->log->debug(sprintf(
     "RapidApp - Asset Controllers Setup in %0.3f seconds",

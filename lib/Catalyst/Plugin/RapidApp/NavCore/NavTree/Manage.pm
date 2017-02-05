@@ -56,13 +56,25 @@ has '+node_types', default => sub {[
     addable  => 1,
     editable => 1,
     applyDialogOpts => {
-      height => 160,
+      height => 200,
     },
     fields => [{
+      name  => 'iconcls',
+      xtype => 'ra-all-icon-assets-combo',
+      value => 'ra-icon-link-go',
+      fieldLabel => 'Icon',
+    },{
       name  => 'url', 
       xtype => 'textfield',
-      fieldLabel => 'Link URL'
-    
+      fieldLabel => 'Link URL',
+      plugins => [{
+        ptype => 'fieldhelp',
+        text  => "Local internal URL path, starting with '/'"
+      }],
+      allowBlank => \0,
+      validator => jsfunc join(' ','function(v) {',
+        'return (v && v.search("/") == 0) ? true : false;',
+      '}')
     }]
   },
 
@@ -292,7 +304,7 @@ sub add_node {
       title => $name,
       ordering => $order,
       url => $url,
-      iconcls => 'ra-icon-link-go',
+      iconcls => $params->{iconcls} || 'ra-icon-link-go',
     });
   }
   else {
@@ -642,13 +654,17 @@ sub rename_search {
   my $nodeTypeName = $params->{nodeTypeName} || '';
   
   my $update = { title => $name };
-  $update->{url} = $params->{url} if($nodeTypeName eq 'link' && $params->{url});
+  if($nodeTypeName eq 'link') {
+    $update->{url}     = $params->{url}     if ($params->{url});
+    $update->{iconcls} = $params->{iconcls} if ($params->{iconcls});
+  }
   
   if ($State->update($update)) {
     my $res = {
       msg		=> 'Renamed Search',
       success	=> \1,
-      new_text => $State->title
+      new_text => $State->title,
+      new_iconcls => $State->iconcls
     };
     
     if($nodeTypeName eq 'link') {
