@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+1.2111 2017-02-26
+    - Minor bugfix in edge-case mutli-rel render (VANSTYN)
+
 1.2110 2017-02-03
     - NavCore Manage Navtree now supports 'Custom Link' node types (VANSTYN)
     - Tree API now supports custom-defined node types (VANSTYN)
