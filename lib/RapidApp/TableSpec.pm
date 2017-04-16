@@ -39,7 +39,7 @@ around BUILDARGS => sub {
 
 has 'ResultClass' => ( is => 'ro', isa => 'Str' );
 
-has 'name' => ( is => 'ro', isa => 'Str', required => 1 );
+has 'name' => ( is => 'ro', isa => 'Str|ScalarRef[Str]', required => 1 );
 has 'title' => ( is => 'ro', isa => 'Maybe[Str]', default => undef );
 has 'iconCls' => ( is => 'ro', isa => 'Maybe[Str]', default => undef );
 
