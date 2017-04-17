@@ -278,7 +278,12 @@ sub DEFAULT_PROFILES {{
     auto_editor_params => { user_editable => 1 }
   },
   hidden => {
-    no_column => \1, no_quick_search => \1, no_multifilter => \1
+    no_column => \1, 
+    allow_add => \0, 
+    allow_edit => \0,
+    allow_batchedit => \0,
+    no_quick_search => \1, 
+    no_multifilter => \1
   },
   multirel => {
     multifilter_type => 'number',
