@@ -166,6 +166,12 @@ sub DEFAULT_PROFILES {{
       anchor => '-25',
     },
   },
+  markdown => {
+    width => 250,
+    editor => {
+      xtype		=> 'ra-md-editor',
+    },
+  },
   email => {
     width => 100,
     editor => { xtype => 'textfield', vtype => 'email' },
