@@ -69,6 +69,9 @@ sub new {
 sub object_to_json {
 	my ($self, $obj)= @_;
   
+  # New: support on-the-fly calling of closures
+  return $self->object_to_json( $obj->() ) if (ref($obj) eq 'CODE');
+  
   if(ref($obj) eq 'SCALAR') {
     my $val = $$obj;
     # By design \0 and \1 are expected and will be handled as true/false. But,
@@ -97,6 +100,7 @@ sub object_to_json {
     my $method = $obj->can('TO_JSON_RAW');
     return $method->($obj) if defined $method;
   }
+  
   
   return $self->next::method($obj);
 }
