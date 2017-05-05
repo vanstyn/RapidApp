@@ -569,6 +569,31 @@ sub default_TableSpec_cnf_columns {
 	
 		## Set the 'default' field value to match the default from the db (if exists) for this column:
 		$editor->{value} = $info->{default_value} if (exists $info->{default_value});
+    
+    # -- NEW:
+    # ScalarRef values mean literal SQL which should be evaluated at the time. New feature in
+    # RapidApp::JSON::MixedEncoder supports CodeRef values, which call them at encode time. This
+    # lets us set the default editor value to what it should be at the time the form is loaded.
+    if((ref($info->{default_value})||'') eq 'SCALAR') {
+      $editor->{value} = sub {
+        my $value = $info->{default_value};
+        try {
+          # Actually ask the database via calling a select on the literal SQL. We're in a try
+          # block so if any of this fails, we fall back to the original ScalarRef which will
+          # probably end up being undef
+          $value = RapidApp->active_request_context
+            ->stash->{'RAPIDAPP_DISPATCH_MODULE'} # only way to get Module by the time we're called in the view
+            ->ResultSource->schema->storage->dbh
+            ->selectrow_arrayref( "SELECT $$value" )->[0];
+        };
+        return $value;
+      } unless (
+        # just because this one is so common, don't waste resources asking the database
+        ${$info->{default_value}} eq 'null'
+      ); 
+    }
+    # --
+    
 		
 		## This sets additional properties of the editor for numeric type columns according
 		## to the DBIC schema (max-length, signed/unsigned, float vs int). The API with "profiles" 

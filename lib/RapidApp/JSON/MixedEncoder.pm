@@ -61,6 +61,7 @@ sub new {
 }
 
 
+
 # We need to do this so that JSON won't quote the output of our
 # TO_JSON method and will allow us to return invalid JSON...
 # In this case, we're actually using the JSON lib to generate
@@ -68,6 +69,15 @@ sub new {
 # some special ScalarRef values to prevent JSON exceptions
 sub object_to_json {
 	my ($self, $obj)= @_;
+  
+  if (ref($obj) eq 'CODE') {
+    my $val = $obj->();
+    $val = '0' if ($val == 0); # <-- FIXME: there is a bug someplace
+    return $self->object_to_json( $val );
+  }
+  
+  # New: support on-the-fly calling of closures
+  #return $self->object_to_json( $obj->() ) if (ref($obj) eq 'CODE');
   
   if(ref($obj) eq 'SCALAR') {
     my $val = $$obj;
@@ -97,6 +107,7 @@ sub object_to_json {
     my $method = $obj->can('TO_JSON_RAW');
     return $method->($obj) if defined $method;
   }
+  
   
   return $self->next::method($obj);
 }

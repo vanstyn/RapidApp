@@ -956,6 +956,11 @@ sub controller_dispatch {
   my ($self, $opt, @subargs)= @_;
   my $c = $self->c;
   
+  # We're doing this because its the cleanest way to expose the currently dispatching module to
+  # other Catalyst Components, such as the view. We needed this specifically to add the literal
+  # sql default_value handling (i.e. default column values like \'current_timestamp').
+  $c->stash->{'RAPIDAPP_DISPATCH_MODULE'} = $self;
+  
   return $self->Module($opt)->Controller($self->c,@subargs)
     if ($opt && !$self->has_action($opt) && $self->_load_module($opt));
     
