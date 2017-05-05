@@ -354,7 +354,7 @@ sub _autofield_processor {
       
       # editable
       
-      my @bigfield_types = qw(textarea htmleditor ra-htmleditor);
+      my @bigfield_types = qw(textarea htmleditor ra-htmleditor ra-md-editor);
       my %bf_types = map {$_=>1} @bigfield_types;
       return $self->div_bigfield($Column->name,$display) if (
         $bf_types{$config->{xtype}}

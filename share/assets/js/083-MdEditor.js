@@ -2,6 +2,7 @@
 Ext.ux.RapidApp.MdEditor = Ext.extend(Ext.form.TextArea,{
   initComponent: function() {
     this.on('render',this.initMDE,this);
+    this.on('beforedestroy',this.destroyMDE,this);
     
     Ext.ux.RapidApp.MdEditor.superclass.initComponent.call(this);
   },
@@ -16,6 +17,13 @@ Ext.ux.RapidApp.MdEditor = Ext.extend(Ext.form.TextArea,{
       
     });
   
+  },
+  
+  destroyMDE: function() {
+    if(this.simplemde) {
+      this.simplemde.toTextArea();
+      this.simplemde = null;
+    }
   },
   
   //getValue: function() {
