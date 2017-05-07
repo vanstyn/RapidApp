@@ -21,7 +21,7 @@ Ext.ux.RapidApp.MdEditor = Ext.extend(Ext.form.TextArea,{
   
   destroyMDE: function() {
     if(this.simplemde) {
-      this.simplemde.toTextArea();
+      try{ this.simplemde.toTextArea() }catch(err){};
       this.simplemde = null;
     }
   },
