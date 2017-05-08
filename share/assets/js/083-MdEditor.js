@@ -1,44 +1,120 @@
 
-// this is the original non-iframe version, currently disabled
-Ext.ux.RapidApp.MdEditor_orig = Ext.extend(Ext.form.TextArea,{
-  initComponent: function() {
-    this.on('render',this.initMDE,this);
-    this.on('beforedestroy',this.destroyMDE,this);
-    
-    Ext.ux.RapidApp.MdEditor.superclass.initComponent.call(this);
-  },
-  
-  initMDE: function() {
-    this.simplemde = new SimpleMDE({ 
-      element: this.el.dom,
+Ext.ux.RapidApp.MdEditor = Ext.extend(Ext.form.Field,{
+
+// ---------------------------------------------------------------------------------------
+iframeHtml: 
+`<html>
+<head>
+  <link rel='stylesheet' href='https://simplemde.com/stylesheets/normalize.css' />
+  <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' />
+  <link rel='stylesheet' href='https://simplemde.com/stylesheets/stylesheet.css' />
+  <link rel='stylesheet' href='https://simplemde.com/stylesheets/github-light.css' />
+  <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css' />
+  <link rel='stylesheet' href='https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css' />
+  <script src='https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js'></script>
+</head>
+<body style='margin:0px;'>
+  <textarea 
+    id='ta-target' 
+    style='position:absolute; top:0; bottom:0; ;width:100%;border:0;'
+  ></textarea>
+  <script>
+    window.document.simplemde = new SimpleMDE({
+      element: document.getElementById("ta-target"),
       forceSync: true,
-      initialValue: this.value,
       spellChecker: false,
       status: false
-      
     });
+  </script>
+</body>
+</html>
+`
+// ---------------------------------------------------------------------------------------
+,
+
+  autoCreate:  { tag: 'div' },
   
+  initComponent: function() {
+    this.on('afterrender',this.injectIframe,this);
+    Ext.ux.RapidApp.iframeTextField.superclass.initComponent.call(this);
   },
   
-  destroyMDE: function() {
-    if(this.simplemde) {
-      try{ this.simplemde.toTextArea() }catch(err){};
-      this.simplemde = null;
+  injectIframe: function() {
+    if(!this.iframeDom) { 
+    
+      var iframe = document.createElement('iframe');
+      iframe.width = '100%'; 
+      iframe.height = '100%';
+      iframe.frameborder = 0;
+      iframe.src = 'about:blank';
+      
+      this.el.dom.appendChild(iframe);
+      
+      iframe.contentWindow.document.open('text/html', 'replace');
+      iframe.contentWindow.document.write(this.iframeHtml);
+      iframe.contentWindow.document.close();
+      
+      this.iframeDom = iframe;
     }
   },
   
-  //getValue: function() {
-  //  return this.simplemde.value();
-  //},
-  //
-  setValue: function(v) {
-    Ext.ux.RapidApp.MdEditor.superclass.setValue.apply(this,arguments);
-    try{ this.simplemde.value(v); } catch(err) {};
+  getSimpleMDE: function() {
+    if(!this.iframeDom) { return null; }
+    return this.iframeDom.contentWindow.document.simplemde;
+  },
+  
+  setRawValue : function(v){
+    return this.rendered ? (this.setTextAreaText(null,(Ext.isEmpty(v) ? '' : v))) : '';
+  },
+
+  setValue : function(v){
+    this.value = v;
+    if(this.rendered){
+        this.setTextAreaText('set',Ext.isEmpty(v) ? '' : v);
+    }
+    return this;
+  },
+
+  setTextAreaText: function(opt,v,count) {
+    count = count || 1;
+    if(count> 100) { return; }
+    
+    var simplemde = this.getSimpleMDE();
+    if(simplemde) {
+      simplemde.value(v);
+      if(opt == 'set') {
+        this.value = v;
+        this.validate();
+      }
+    }
+    else {
+      this.setTextAreaText.defer(10,this,[opt,v,count+1]);
+    }
+  },
+  
+  syncValue: function() {
+    var simplemde = this.getSimpleMDE();
+    if(simplemde) {
+      this.value = simplemde.value();
+    }
+  },
+  
+  getRawValue: function() {
+    this.syncValue();
+    return this.value;
+  },
+  
+  getValue : function(){
+    return this.getRawValue();
   }
   
 });
+Ext.reg('ra-md-editor',Ext.ux.RapidApp.MdEditor);
 
 
+// This was started in order to be the parent class for MdEditor, but after a redesign it no longer 
+// is. However, since its a working implementation of an iframe-based plaintext editor, it is being
+// left in the code for future reference
 Ext.ux.RapidApp.iframeTextField = Ext.extend(Ext.form.Field,{
 
   iframeHtmlHead: '<head></head>',
@@ -141,56 +217,3 @@ Ext.ux.RapidApp.iframeTextField = Ext.extend(Ext.form.Field,{
 });
 
 
-Ext.ux.RapidApp.MdEditor = Ext.extend(Ext.ux.RapidApp.iframeTextField,{
-
-  iframeHtmlHead: [
-    '<head>',
-      '<link rel=\'stylesheet\' href=\'https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css\'>',
-      '<link rel=\'stylesheet\' href=\'https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css\'>',
-      '<script src=\'https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js\'></script>',
-    '</head>'
-  ].join(''),
-  
-  syncOnKeyup: false,
-
-  initComponent: function() {
-    this.on('render',this.initMDE,this);
-    this.on('beforedestroy',this.destroyMDE,this);
-    
-    Ext.ux.RapidApp.MdEditor.superclass.initComponent.call(this);
-  },
-  
-  initMDE: function() {
-    var el = this.getTextAreaEl();
-    if(el) { 
-      this.simplemde = new SimpleMDE({
-        element: el.dom,
-        forceSync: true,
-        initialValue: this.value,
-        spellChecker: false,
-        status: false
-      });
-      var thisF = this;
-      this.simplemde.codemirror.on("change", function(){
-        thisF.syncValue.call(thisF);
-      });
-    }
-    else {
-      this.initMDE.defer(10,this);
-    }
-  },
-  
-  destroyMDE: function() {
-    if(this.simplemde) {
-      try{ this.simplemde.toTextArea() }catch(err){};
-      this.simplemde = null;
-    }
-  },
-  
-  setValue: function(v) {
-    Ext.ux.RapidApp.MdEditor.superclass.setValue.apply(this,arguments);
-    try{ this.simplemde.value(v); } catch(err) {};
-  }
-  
-});
-Ext.reg('ra-md-editor',Ext.ux.RapidApp.MdEditor);
