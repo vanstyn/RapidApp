@@ -5,13 +5,13 @@ Ext.ux.RapidApp.MdEditor = Ext.extend(Ext.form.Field,{
 iframeHtml: 
 `<html>
 <head>
-  <link rel='stylesheet' href='https://simplemde.com/stylesheets/normalize.css' />
+  <link rel='stylesheet' href='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/normalize.css' />
   <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' />
-  <link rel='stylesheet' href='https://simplemde.com/stylesheets/stylesheet.css' />
-  <link rel='stylesheet' href='https://simplemde.com/stylesheets/github-light.css' />
-  <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css' />
-  <link rel='stylesheet' href='https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.css' />
-  <script src='https://cdn.jsdelivr.net/simplemde/latest/simplemde.min.js'></script>
+  <link rel='stylesheet' href='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/stylesheet.css' />
+  <link rel='stylesheet' href='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/github-light.css' />
+  <link rel='stylesheet' href='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/font-awesome.min.css' />
+  <link rel='stylesheet' href='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/simplemde.min.css' />
+  <script src='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/simplemde.min.js'></script>
 </head>
 <body style='margin:0px;'>
   <textarea 
@@ -46,6 +46,8 @@ iframeHtml:
       
       // 50px is the toolbar height which gets added back within simplemde/codemirror logic
       var initHeight = elHeight - 50; 
+      
+      console.log('initHeight: ' + initHeight);
     
       var iframe = document.createElement('iframe');
       iframe.width = '100%'; 
