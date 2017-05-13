@@ -12,6 +12,7 @@ iframeHtml:
   <link rel='stylesheet' href='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/font-awesome.min.css' />
   <link rel='stylesheet' href='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/simplemde.min.css' />
   <script src='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/simplemde.min.js'></script>
+  <script src='_ra-rel-mnt_/assets/rapidapp/misc/current/simplemde/init.js'></script>
 </head>
 <body style='margin:0px;'>
   <textarea 
@@ -23,7 +24,8 @@ iframeHtml:
       element: document.getElementById("ta-target"),
       forceSync: true,
       spellChecker: false,
-      status: false
+      status: false,
+      toolbar: SimpleMDE_Toolbar
     });
   </script>
 </body>
