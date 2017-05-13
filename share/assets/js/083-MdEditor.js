@@ -9,10 +9,9 @@ iframeHtml:
   <link rel='stylesheet' href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' />
   <link rel='stylesheet' href='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/stylesheet.css' />
   <link rel='stylesheet' href='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/github-light.css' />
-  <link rel='stylesheet' href='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/font-awesome.min.css' />
+  <link rel='stylesheet' href='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/fonts/font-awesome.min.css' />
   <link rel='stylesheet' href='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/simplemde.min.css' />
   <script src='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/simplemde.min.js'></script>
-  <script src='_ra-rel-mnt_/assets/rapidapp/misc/current/simplemde/init.js'></script>
 </head>
 <body style='margin:0px;'>
   <textarea 
@@ -25,7 +24,33 @@ iframeHtml:
       forceSync: true,
       spellChecker: false,
       status: false,
-      toolbar: SimpleMDE_Toolbar
+      toolbar: [  
+        "bold", "italic", "strikethrough", "heading", "|",
+        "quote", "unordered-list", "ordered-list", "|",
+        "table", "code", "|", "fullscreen",
+        "|", {
+          name: "custom",
+          action: function customFunction(editor){
+          
+            // this is a proof-of-concept for a custom toolbar action that inserts text
+          
+            var cm = editor.codemirror;
+            var pos = cm.getCursor("start");
+            
+            var mytext = 'fooo!!';
+            
+            cm.replaceRange(mytext,pos);
+            pos.ch = pos.ch + mytext.length;
+            
+            cm.focus();
+            cm.doc.setCursor(pos);
+
+          },
+          className: "fa fa-star",
+          title: "Custom Test",
+        }
+      ]
+
     });
   </script>
 </body>
