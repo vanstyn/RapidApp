@@ -12,6 +12,7 @@ iframeHtml:
   <link rel='stylesheet' href='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/fonts/font-awesome.min.css' />
   <link rel='stylesheet' href='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/simplemde.min.css' />
   <script src='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/simplemde.min.js'></script>
+  <script src='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/picoModal.js'></script>
 </head>
 <body style='margin:0px;'>
   <textarea 
@@ -37,13 +38,25 @@ iframeHtml:
             var cm = editor.codemirror;
             var pos = cm.getCursor("start");
             
-            var mytext = 'fooo!!';
+            var onClose = function(){
             
-            cm.replaceRange(mytext,pos);
-            pos.ch = pos.ch + mytext.length;
+              var mytext = 'fooo!!';
+              
+              cm.replaceRange(mytext,pos);
+              pos.ch = pos.ch + mytext.length;
+              
+              cm.focus();
+              cm.doc.setCursor(pos);
+            }
             
-            cm.focus();
-            cm.doc.setCursor(pos);
+            
+            var modal = picoModal({
+              content: "<h3>A window!!</h3><p>content</p>",
+              modalStyles: function (styles) { styles.top = '60px'; },
+              focus: false
+            })
+              .afterClose(onClose)
+              .show();
 
           },
           className: "fa fa-star",
