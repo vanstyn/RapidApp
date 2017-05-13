@@ -72,7 +72,7 @@ sub object_to_json {
   
   if (ref($obj) eq 'CODE') {
     my $val = $obj->();
-    $val = '0' if ($val == 0); # <-- FIXME: there is a bug someplace
+    $val = '0' if ("$val" eq '0'); # <-- FIXME: there is a bug someplace
     return $self->object_to_json( $val );
   }
   
