@@ -42,10 +42,17 @@ iframeHtml:
   injectIframe: function() {
     if(!this.iframeDom) { 
     
+      var elHeight = this.el.getHeight(true);
+      
+      // 50px is the toolbar height which gets added back within simplemde/codemirror logic
+      var initHeight = elHeight - 50; 
+    
       var iframe = document.createElement('iframe');
       iframe.width = '100%'; 
-      iframe.height = '100%';
-      iframe.frameborder = 0;
+      //iframe.height = '100%';
+      iframe.height = initHeight;
+      iframe.frameborder = '0';
+      iframe.style = 'border: 0px;'; //position:absolute;top:0;right:0;bottom:0:left:0;';
       iframe.src = 'about:blank';
       
       this.el.dom.appendChild(iframe);
@@ -59,8 +66,35 @@ iframeHtml:
   },
   
   getSimpleMDE: function() {
-    if(!this.iframeDom) { return null; }
-    return this.iframeDom.contentWindow.document.simplemde;
+    if(!this.simplemde) {
+      if(!this.iframeDom) { return null; }
+      var simplemde = this.iframeDom.contentWindow.document.simplemde;
+      if(!simplemde) { return null; }
+      
+      // this is needed to get the starting size to cooporate (FIXME)
+      simplemde.codemirror.setSize(null,'100%');
+      
+      var iframe = this.iframeDom;
+      var Field = this;
+      
+      simplemde.codemirror.on('viewportChange',function() {
+        var iframe = Field.iframeDom;
+       
+        var sH = iframe.contentWindow.document.body.scrollHeight;
+        
+        // If we're taller than the scroll height, shrink us:
+        if(simplemde.codemirror.doc.height > sH) {
+          var nH = sH - 50; // extra 50px to make room for toolbar
+          simplemde.codemirror.setSize(null,nH);
+        }
+        
+        // Now update the iframe to match the scrollheight:
+        iframe.height = sH;
+      });
+      
+      this.simplemde = simplemde;
+    }
+    return this.simplemde;
   },
   
   setRawValue : function(v){
