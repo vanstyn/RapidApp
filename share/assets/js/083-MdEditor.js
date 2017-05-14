@@ -188,12 +188,26 @@ iframeHtml:
   
   doXhrCasUpload: function(File, addlCallback) {
     var scope = this;
-    var cm = this.getSimpleMDE().codemirror;
+    var editor = this.getSimpleMDE();
+    var picoModal = editor.options.picoModal;
+    var cm = editor.codemirror;
     var pos = cm.getCursor("start");
     
+    var progressModal = picoModal({
+      content: [
+        "<h3>Uploading...</h3>"
+        ,"<code>",File.name, ' (',File.size,')'
+      ].join(''),
+      closeButton: false,
+      modalStyles: function (styles) { styles.top = '60px'; },
+      focus: false,
+      width: 550
+    });
+    
+    progressModal.show();
+    
     var callback = function(E,event) {
-      //console.dir(cm);
-      
+      progressModal.close();
       var res = Ext.decode(E.currentTarget.responseText);
       if(res && res.filename && res.checksum) {
         var insertStr = [
@@ -210,9 +224,8 @@ iframeHtml:
     
       if(addlCallback) { addlCallback.apply(scope,arguments); }
     }
-  
-    //callback = callback || function(){};
     
+
     var Xhr = new XMLHttpRequest();
     Xhr.addEventListener('load',  function(E) { callback(E,'load')  }, false);
     Xhr.addEventListener('error', function(E) { callback(E,'error') }, false);
