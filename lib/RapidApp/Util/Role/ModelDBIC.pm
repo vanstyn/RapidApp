@@ -60,5 +60,23 @@ sub _connect_info_as_arrayref {
   ]
 }
 
+sub BUILD {}
+after 'BUILD' => sub { (shift)->_create_origin_model_closure };
+  
+# This injects a
+sub _create_origin_model_closure {
+my $self = shift;
+  my $schema_class = (ref $self->schema) or return undef;
+  
+  my $accessor = '_ra_catalyst_origin_model';
+  
+  $self->schema->{$accessor} ||= $self;
+  
+  unless($schema_class->can($accessor)) {
+    my $func = join('::',$schema_class,$accessor);
+    eval '*'.$func. ' = sub { (shift)->{'.$accessor.'} }';
+  }
+
+}
 
 1;
