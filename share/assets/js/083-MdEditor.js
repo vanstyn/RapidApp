@@ -28,7 +28,7 @@ iframeHtml:
       toolbar: [  
         "bold", "italic", "strikethrough", "heading", "|",
         "quote", "unordered-list", "ordered-list", "|",
-        "table", "code",
+        "table", "code", "preview",
         "|", "link", "image",
         "|", {
           name: "custom",
@@ -143,8 +143,6 @@ iframeHtml:
       // 50px is the toolbar height which gets added back within simplemde/codemirror logic
       var initHeight = elHeight - 50; 
       
-      console.log('initHeight: ' + initHeight);
-    
       var iframe = document.createElement('iframe');
       iframe.width = '100%'; 
       //iframe.height = '100%';
@@ -189,6 +187,25 @@ iframeHtml:
         // Now update the iframe to match the scrollheight:
         iframe.height = sH;
       });
+      
+      
+      
+      simplemde.codemirror.on('drop',function(cm,e) {
+        // If this drop event is an file:
+        //  (note: there is a bug in dumping this object in firebug, shows empty but isn't)
+        var File = e.dataTransfer.files[0];
+        if(!File) { return; }
+        
+        // prevent the browser/codemirror from any further processing:
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // TODO: handle upload....
+        
+        console.dir(File);
+
+      });
+      
       
       this.simplemde = simplemde;
     }
