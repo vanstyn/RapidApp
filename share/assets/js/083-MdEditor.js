@@ -100,10 +100,10 @@ iframeHtml:
       simplemde.codemirror.setSize(null,'100%');
       
       var iframe = this.iframeDom;
-      var Field = this;
+      var scope = this;
       
       simplemde.codemirror.on('viewportChange',function() {
-        var iframe = Field.iframeDom;
+        var iframe = scope.iframeDom;
        
         var sH = iframe.contentWindow.document.body.scrollHeight;
         
@@ -117,8 +117,6 @@ iframeHtml:
         iframe.height = sH;
       });
       
-      
-      
       simplemde.codemirror.on('drop',function(cm,e) {
         // If this drop event is an file:
         //  (note: there is a bug in dumping this object in firebug, shows empty but isn't)
@@ -129,13 +127,9 @@ iframeHtml:
         e.preventDefault();
         e.stopPropagation();
         
-        // TODO: handle upload....
-        
-        console.dir(File);
-
+        scope.doXhrCasUpload(File);
       });
-      
-      
+
       this.simplemde = simplemde;
     }
     return this.simplemde;
