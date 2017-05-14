@@ -32,15 +32,15 @@ iframeHtml:
       toolbar: [  
         "bold", "italic", "strikethrough", "heading", "|",
         "quote", "unordered-list", "ordered-list", "|",
-        "table", "code", "preview",
+        "table", "code", "preview", "side-by-side",
         "|", "link", "image",
         "|", {
-          name: "custom",
+          name: "upload",
           action: function customFunction(editor){
             return editor.options.customUploadActionFn(editor);
           },
-          className: "fa fa-star",
-          title: "Custom Test",
+          className: "fa fa-cloud-upload",
+          title: "Insert Image/File",
         }
       ]
 
@@ -187,6 +187,8 @@ iframeHtml:
     var cm = editor.codemirror;
     var pos = cm.getCursor("start");
     var Xhr;
+
+    var isImage = File.type.search('image/') == 0;
     
     var progressModal = picoModal({
       content: [
@@ -217,10 +219,19 @@ iframeHtml:
       progressModal.close();
       var res = Ext.decode(E.currentTarget.responseText);
       if(res && res.filename && res.checksum) {
-        var insertStr = [
-          '[',res.filename,']',
-          '(','_ra-rel-mnt_/simplecas/fetch_content/',res.checksum,'/',res.filename,')'
-        ].join('');
+        var insertStr;
+        if(isImage) {
+          insertStr = [
+            '![',res.filename,']',
+            '(','_ra-rel-mnt_/simplecas/fetch_content/',res.checksum,'/',res.filename,')'
+          ].join('');
+        }
+        else {
+          insertStr = [
+            '[',res.filename,']',
+            '(','_ra-rel-mnt_/simplecas/fetch_content/',res.checksum,'/',res.filename,')'
+          ].join('');
+        }
         
         cm.replaceRange(insertStr,pos);
         pos.ch = pos.ch + insertStr.length;
@@ -279,17 +290,13 @@ iframeHtml:
       }
     }
     
-    var formHtml = [
-      '<form enctype="multipart/form-data" method="post" action="_ra-rel-mnt_/simplecas/upload_file">',
-      '<div><input type="file" name="Filedata" /></div>',
-      
-      '</form>'
-    
-    ].join('');
-    
-    
     modal = picoModal({
-        content: "<h3>Input file</h3>" + formHtml,
+        content: [
+          "<h3>Upload and insert image/file</h3>",
+          '<form>',
+            '<div><input type="file" name="Filedata" /></div>',
+          '</form>'
+        ].join(''),
         modalStyles: function (styles) { styles.top = '60px'; },
         focus: false,
         width: 550
