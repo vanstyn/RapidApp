@@ -186,16 +186,27 @@ iframeHtml:
     var picoModal = editor.options.picoModal;
     var cm = editor.codemirror;
     var pos = cm.getCursor("start");
+    var Xhr;
     
     var progressModal = picoModal({
       content: [
         "<h3>Uploading...</h3>"
         ,"<code><span class='pct'>0</span>% ",File.name, ' (',File.size,')</code>'
       ].join(''),
-      closeButton: false,
+      overlayClose: false,
+      closeHtml: "<span>Cancel</span>",
+      closeStyles: {
+          position: "absolute", bottom: "15px", right: "10px",
+          background: "#eee", padding: "5px 10px", cursor: "pointer",
+          borderRadius: "5px", border: "1px solid #ccc"
+      },
       modalStyles: function (styles) { styles.top = '60px'; },
       focus: false,
       width: 550
+    }).beforeClose(function(modal,event){
+      if(Xhr && Xhr.readyState != 4) { // 4 means DONE
+        Xhr.abort();
+      }
     });
     
     progressModal.show();
@@ -221,7 +232,7 @@ iframeHtml:
       if(addlCallback) { addlCallback.apply(scope,arguments); }
     }
     
-    var Xhr = new XMLHttpRequest();
+    Xhr = new XMLHttpRequest();
     
     Xhr.upload.addEventListener('progress', function(E) {
       var pct = Math.floor((E.loaded/E.total)*100);
