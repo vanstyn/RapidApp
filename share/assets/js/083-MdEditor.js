@@ -196,7 +196,7 @@ iframeHtml:
     var progressModal = picoModal({
       content: [
         "<h3>Uploading...</h3>"
-        ,"<code>",File.name, ' (',File.size,')'
+        ,"<code><span class='pct'>0</span>% ",File.name, ' (',File.size,')</code>'
       ].join(''),
       closeButton: false,
       modalStyles: function (styles) { styles.top = '60px'; },
@@ -205,6 +205,8 @@ iframeHtml:
     });
     
     progressModal.show();
+    
+    var PctEl = progressModal.modalElem().getElementsByClassName('pct')[0];
     
     var callback = function(E,event) {
       progressModal.close();
@@ -225,8 +227,13 @@ iframeHtml:
       if(addlCallback) { addlCallback.apply(scope,arguments); }
     }
     
-
     var Xhr = new XMLHttpRequest();
+    
+    Xhr.upload.addEventListener('progress', function(E) {
+      var pct = Math.floor((E.loaded/E.total)*100);
+      PctEl.innerHTML = pct;
+    }, false);
+    
     Xhr.addEventListener('load',  function(E) { callback(E,'load')  }, false);
     Xhr.addEventListener('error', function(E) { callback(E,'error') }, false);
     Xhr.addEventListener('abort', function(E) { callback(E,'abort') }, false);
