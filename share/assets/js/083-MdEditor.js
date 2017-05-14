@@ -28,33 +28,89 @@ iframeHtml:
       toolbar: [  
         "bold", "italic", "strikethrough", "heading", "|",
         "quote", "unordered-list", "ordered-list", "|",
-        "table", "code", "|", "fullscreen",
+        "table", "code",
+        "|", "link", "image",
         "|", {
           name: "custom",
           action: function customFunction(editor){
           
             // this is a proof-of-concept for a custom toolbar action that inserts text
           
+            var modal, insertStr;
             var cm = editor.codemirror;
             var pos = cm.getCursor("start");
             
+            
+            function doUpload(File, callback) {
+              callback = callback || function(){};
+              
+              var Xhr = new XMLHttpRequest();
+              Xhr.addEventListener('load',  function(E) { callback(E,'load')  }, false);
+              Xhr.addEventListener('error', function(E) { callback(E,'error') }, false);
+              Xhr.addEventListener('abort', function(E) { callback(E,'abort') }, false);
+              
+              var formData = new FormData();
+              formData.append('Filedata', File);
+              
+              Xhr.open('POST', '_ra-rel-mnt_/simplecas/upload_file');
+              Xhr.send(formData);
+            }
+            
             var onClose = function(){
             
-              var mytext = 'fooo!!';
-              
-              cm.replaceRange(mytext,pos);
-              pos.ch = pos.ch + mytext.length;
+              if(insertStr) {
+                cm.replaceRange(insertStr,pos);
+                pos.ch = pos.ch + insertStr.length;
+              }
               
               cm.focus();
               cm.doc.setCursor(pos);
             }
             
+            function onInputChange(e) {
+              var file = e.target.files[0];
+              
+              doUpload(file,function(E,event) {
+                var res = window.JSON.parse(E.currentTarget.responseText);
+                
+                console.dir(res);
+                
+                if(res.filename && res.checksum) {
+                  insertStr = [
+                    '[',res.filename,']',
+                    '(','_ra-rel-mnt_/simplecas/fetch_content/',res.checksum,'/',res.filename,')'
+                  ].join('');
+                  
+                  modal.close();
+                }
+                
+                
+              });
+              
+              //console.log('on input change!');
+            }
             
-            var modal = picoModal({
-              content: "<h3>A window!!</h3><p>content</p>",
-              modalStyles: function (styles) { styles.top = '60px'; },
-              focus: false
-            })
+            var formHtml = [
+              '<form enctype="multipart/form-data" method="post" action="_ra-rel-mnt_/simplecas/upload_file">',
+              '<div><input type="file" name="Filedata" /></div>',
+              
+              '</form>'
+            
+            ].join('');
+            
+            
+            modal = picoModal({
+                content: "<h3>Input file</h3>" + formHtml,
+                modalStyles: function (styles) { styles.top = '60px'; },
+                focus: false,
+                width: 550
+              })
+              .afterCreate(function(m){
+                var input = m.modalElem().getElementsByTagName('input')[0];
+                if(input) {
+                  input.onchange = onInputChange;
+                }
+              })
               .afterClose(onClose)
               .show();
 
