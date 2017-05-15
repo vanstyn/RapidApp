@@ -100,6 +100,18 @@ Ext.ux.RapidApp.renderMonoText = function(v) {
   return '<pre class="ra-pre-wrap">' + v + '</pre>';
 }
 
+// Note that this renderer cannot be chained via one which does nl2br, while
+// renderMonoText above can because it doesn't encode html entities
+Ext.ux.RapidApp.renderSourceCode = function(v) {
+  if (v == null || v === "") { return Ext.ux.showNull(v); }
+  return [
+    '<pre class="ra-pre-wrap">',
+      Ext.util.Format.htmlEncode(v),
+    '</pre>'
+  ].join("\n");
+}
+
+
 Ext.ux.RapidApp.getWithIconClsRenderer = function(icon_cls) {
   return function(value, metaData) {
     if(icon_cls) { metaData.css = 'grid-cell-with-icon ' + icon_cls; }

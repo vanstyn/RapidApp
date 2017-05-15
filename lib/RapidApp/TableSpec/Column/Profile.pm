@@ -168,6 +168,7 @@ sub DEFAULT_PROFILES {{
   },
   markdown => {
     width => 250,
+    renderer 	=> 'Ext.ux.RapidApp.renderSourceCode', # this cannot be "chained" with []
     editor => {
       xtype		=> 'ra-md-editor',
     },
