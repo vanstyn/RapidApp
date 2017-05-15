@@ -1800,9 +1800,11 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
       },this);
       
       Ext.each(formpanel.items,function(field) {
-        field.reportDirtyDisplayVal = function(disp) {
-          newRec._dirty_display_data = newRec._dirty_display_data || {};
-          newRec._dirty_display_data[field.name] = disp;
+        if(field) {
+          field.reportDirtyDisplayVal = function(disp) {
+            newRec._dirty_display_data = newRec._dirty_display_data || {};
+            newRec._dirty_display_data[field.name] = disp;
+          }
         }
       },this);
       
