@@ -111,6 +111,24 @@ Ext.ux.RapidApp.renderSourceCode = function(v) {
   ].join("\n");
 }
 
+Ext.ux.RapidApp.renderSourceCodeLineNumbers = function(v) {
+  if (v == null || v === "") { return Ext.ux.showNull(v); }
+  var code = Ext.util.Format.htmlEncode(v);
+  
+  var numlines = code.split(/\r\n|\r|\n/).length;
+  var pad = numlines.toString().length;
+  var style = 'color:red;opacity:0.5;font-weight:bolder;';
+  
+  var line = 1;
+  code = code.replace(/^/gm, function() {
+    var digits = line.toString().length;
+    var prefix = (new Array((pad-digits)+1)).join('&nbsp;');
+    return [prefix,'<span style="',style,'">',line++,':','</span>&nbsp;'].join('');
+  });
+  
+  return ['<pre class="ra-pre-wrap">',code,'</pre>'].join("\n");
+}
+
 
 Ext.ux.RapidApp.getWithIconClsRenderer = function(icon_cls) {
   return function(value, metaData) {
