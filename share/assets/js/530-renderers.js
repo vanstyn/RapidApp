@@ -202,8 +202,8 @@ Ext.ux.RapidApp.DbicRelRestRender = function(c) {
   // UPDATE: *DO* show links for 0 now that these can be used to add new related records
   //if(c.multi_rel && c.value == '0') { return disp; }
   
-  if(!c.value) { 
-    if(!disp && !key_value) {
+  if(!c.value && c.value != 0) { 
+    if(!disp && (!key_value && key_value != 0)) {
       // If everything is unset, including the key_col value itself,
       // we render like a normal empty value. It is only when the 
       // key_col is set but the value/disp is not (indicating a broken
@@ -215,9 +215,9 @@ Ext.ux.RapidApp.DbicRelRestRender = function(c) {
     c.value = key_value; 
   }
   
-  if(!c.value)    { return disp; }
-  if(!disp)       { return c.value; }
-  if(!c.open_url)  { return disp; }
+  if(!c.value && c.value != 0) { return disp; }
+  if(!disp)                    { return c.value; }
+  if(!c.open_url)              { return disp; }
   
   var url = '#!' + c.open_url + '/';
   if(c.rest_key) { url += c.rest_key + '/'; }
@@ -255,8 +255,8 @@ Ext.ux.RapidApp.DbicSingleRelationshipColumnRender = function(c) {
   var disp = c.record.data[c.render_col];
   var key_value = c.record.data[c.key_col];
 
-  if(!c.value) { 
-    if(!disp && !key_value) {
+  if(!c.value && c.value != 0) { 
+    if(!disp && (!key_value && key_value != 0)) {
       // If everything is unset, including the key_col value itself,
       // we render like a normal empty value. It is only when the 
       // key_col is set but the value/disp is not (indicating a broken
@@ -286,9 +286,9 @@ Ext.ux.RapidApp.DbicSingleRelationshipColumnRender = function(c) {
     '</span>';
   }
   
-  if(!c.value)    { return disp; }
-  if(!disp)       { return c.value; }
-  if(!c.open_url)  { return disp; }
+  if(!c.value && c.value != 0) { return disp; }
+  if(!disp)                    { return c.value; }
+  if(!c.open_url)              { return disp; }
   
   var loadCfg = { 
     title: disp, 

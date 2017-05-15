@@ -1182,7 +1182,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 		this.lastDispRecordsLookupsFound = false;
 		
 		var store = this.appStore;
-		if(!store || !value) { return null; }
+		if(!store || (!value && value != 0)) { return null; }
 		
 		var index = this.findRecordIndex(value);
 		if(index == -1) { return null; }
@@ -1199,14 +1199,14 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 	},
 	
 	lookupDisplayValue: function(value) {
-		if(!value || this.noDisplayLookups) { 
+		if((!value && value != 0) || this.noDisplayLookups) { 
 			this.valueDirty = false;
 			return value;
 		}
 		
 		// If the value is not already dirty and we already have it in our cache,
 		// return the cached value:
-		if(!this.valueDirty && this.displayCache[value]) {
+		if(!this.valueDirty && (this.displayCache[value] || this.displayCache[value] == 0)) {
 			return this.displayCache[value];
 		}
 		
@@ -1618,7 +1618,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 			// 'me.' to prevent ambiguous column error. This is very specific to DbicLink2
 			colname = 'me.' + colname;
 		}
-		if (value) { rs_cond[colname] = value; }
+		if (value || value == 0) { rs_cond[colname] = value; }
 		return Ext.encode(rs_cond);
 	},
 	
@@ -1644,7 +1644,7 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 
       // flag to avoid deep recursion
       this.__queryResolveDisplayValue_Call = true;
-			if(!this.valueDirty || !this.getValue()) { return; }
+			if(!this.valueDirty || (!this.getValue() && this.getValue() != 0)) { return; }
 			
 			var store = this.appStore;
 			if(!this.rendered || !store || this.loadPending) {
