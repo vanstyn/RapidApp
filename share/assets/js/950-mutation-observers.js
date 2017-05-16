@@ -92,13 +92,16 @@
   </div>
   
 */
+
 ready('.ra-mo-expandable-max-height', function(el) {
-  var contentEl = el.getElementsByClassName('content')[0];
-  if(!contentEl) { return; }
-  
+
+  // For good measure, make sure we only process a node once:
+  if(el.raMoExpandableMaxHeightInitialized) { return; }
+  el.raMoExpandableMaxHeightInitialized = true;
+
   var getPctShown = function() {
-    if(!contentEl.clientHeight) { return 0; }
-    var pct = Math.floor((contentEl.clientHeight/contentEl.scrollHeight)*10000);
+    if(!el.clientHeight) { return 0; }
+    var pct = Math.floor((el.clientHeight/el.scrollHeight)*10000);
     if(! pct) return 0;
     return pct < 500 ? pct/100 : Math.floor(pct/100);
   }
@@ -106,22 +109,28 @@ ready('.ra-mo-expandable-max-height', function(el) {
   // Do nothing if nothing is hidden:
   if(getPctShown() == 100) { return; }
 
-  var origMH = contentEl.style['max-height'];
+  var origMH = el.style['max-height'];
+  
+  var wrapEl = document.createElement('div');
+  el.parentNode.insertBefore(wrapEl,el);
+  wrapEl.appendChild(el);
+
+  var toggleWrap = document.createElement('div');
+  toggleWrap.style['padding-top']   = '5px';
+  toggleWrap.style['text-align']    = 'center';
   
   var toggle = document.createElement('a');
-  //toggle.raMoToggleExpanded     = true; // so will get flipped to false on init
-  toggle.style['display']       = 'block';
-  toggle.style['padding-top']   = '5px';
-  toggle.style['text-align']    = 'center';
   toggle.style['color']         = '#0088cc';
+  
+  toggleWrap.appendChild(toggle);
 
   var updateToggle = function() {
     if(toggle.raMoToggleExpanded) {
-      contentEl.style['max-height'] = 'none';
+      el.style['max-height'] = 'none';
       toggle.innerHTML = '[ show less ]';
     }
     else {
-      contentEl.style['max-height'] = origMH;
+      el.style['max-height'] = origMH;
       var pct = getPctShown();
       toggle.innerHTML = pct + '% [ show more ]';
     }
@@ -141,6 +150,5 @@ ready('.ra-mo-expandable-max-height', function(el) {
   
   updateToggle(); //init
 
-  el.appendChild(toggle);
+  wrapEl.appendChild(toggleWrap);
 });
-

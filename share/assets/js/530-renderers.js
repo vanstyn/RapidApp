@@ -134,14 +134,14 @@ Ext.ux.RapidApp.renderSourceCodeLineNumbers = function(v) {
 // Reference/proof-of-concept
 Ext.ux.RapidApp.renderSourceCodeLineNumbersExpand = function(v) {
   var val = Ext.ux.RapidApp.renderSourceCodeLineNumbers(v);
- 
+  
+  
   return [
-    '<div class="ra-mo-expandable-max-height">', 
-      '<div class="content" style="max-height: 150px; overflow: hidden;">',
-        val,
-      '</div>',
+    '<div class="ra-mo-expandable-max-height" style="max-height: 150px; overflow: hidden;">', 
+      val,
     '</div>'
   ].join("\n");
+  
 }
 
 
