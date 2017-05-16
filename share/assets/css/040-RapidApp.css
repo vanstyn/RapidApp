@@ -1462,3 +1462,11 @@ body > #main-load-target > .x-tab-panel-header {
   /*border-bottom: 1px dotted grey;
   font-family: "Lucida Console", Monaco, monospace;*/
 }
+
+/* see logic in 950-mutation-observers.js */
+.ra-mo-expandable-max-height {
+  display: block;
+  overflow: hidden;
+}
+
+

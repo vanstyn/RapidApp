@@ -94,11 +94,37 @@
 */
 
 ready('.ra-mo-expandable-max-height', function(el) {
-
-  // For good measure, make sure we only process a node once:
+  // For good measure, make sure we only process a given node once:
   if(el.raMoExpandableMaxHeightInitialized) { return; }
   el.raMoExpandableMaxHeightInitialized = true;
+  
+  // Do nothing if we contain another ra-mo-expandable-max-height element:
+  //  Not yet decided if this should be done. What would really need to happen in this case is
+  //  to somehow figure out what the max-height of the children are, and then turn them
+  //  off or us off depending on which is smaller. For now, with this commented out, nested
+  //  layers display when the parent is smaller than the child, while may not be ideal, is at
+  //  least arguably the most expected behaviour
+  //if(el.getElementsByClassName('ra-mo-expandable-max-height')[0]) { return; }
+  
+  var CssStyle = window.getComputedStyle(el,null); // live object representing current styles
+  var hasMaxHeight = function() {
+    var prop = CssStyle.getPropertyValue('max-height');
+    return prop && prop != '' && prop != 'none' ? true : false;
+  }
 
+  var resetMH;
+  if(!hasMaxHeight()) {
+    // Set max-height via special 'mh-PIXELS' class name (e.g. 'mh-235')
+    for (var i = 0; i < el.classList.length; i++) {
+      var parts = el.classList[i].split('-');
+      if(parts.length == 2 && parts[0] == 'mh' && parseInt(parts[1])) {
+        resetMH = el.style['max-height'];
+        el.style['max-height'] = parts[1]+'px';
+        break;
+      }
+    }
+  }
+  
   var getPctShown = function() {
     if(!el.clientHeight) { return 0; }
     var pct = Math.floor((el.clientHeight/el.scrollHeight)*10000);
@@ -107,8 +133,15 @@ ready('.ra-mo-expandable-max-height', function(el) {
   }
   
   // Do nothing if nothing is hidden:
-  if(getPctShown() == 100) { return; }
-
+  if(getPctShown() == 100) {
+    // if we already changed the max-height due to special class we need to set it back
+    if(typeof resetMH != undefined) { el.style['max-height'] = resetMH; }
+    return; 
+  }
+  
+  // This only works if there is a max-height:
+  if(!hasMaxHeight()) { return; }
+  
   var origMH = el.style['max-height'];
   
   var wrapEl = document.createElement('div');
