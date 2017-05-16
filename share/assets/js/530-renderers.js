@@ -130,6 +130,23 @@ Ext.ux.RapidApp.renderSourceCodeLineNumbers = function(v) {
 }
 
 
+
+// Reference/proof-of-concept
+Ext.ux.RapidApp.renderSourceCodeLineNumbersExpand = function(v) {
+  var val = Ext.ux.RapidApp.renderSourceCodeLineNumbers(v);
+ 
+  return [
+    '<div class="ra-mo-expandable-max-height">', 
+      '<div class="content" style="max-height: 150px; overflow: hidden;">',
+        val,
+      '</div>',
+    '</div>'
+  ].join("\n");
+}
+
+
+
+
 Ext.ux.RapidApp.getWithIconClsRenderer = function(icon_cls) {
   return function(value, metaData) {
     if(icon_cls) { metaData.css = 'grid-cell-with-icon ' + icon_cls; }
