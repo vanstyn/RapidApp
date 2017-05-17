@@ -533,6 +533,12 @@ div.appdv-tt-generated .editable-value .appdv-edit-field .data-holder {
   cursor: pointer;
 }
 
+.appdv-tt-generated .appdv-edit-bigfield .data-wrapper {
+  cursor:  default;
+}
+
+
+
 .ra-dsbtn-deny-add     .appdv-tt-generated .store-button.add,
 .ra-dsapi-deny-create  .appdv-tt-generated .store-button.add,
 .ra-dsbtn-deny-edit    .appdv-tt-generated .store-button.edit,
@@ -558,3 +564,41 @@ div.appdv-tt-generated .editable-value .appdv-edit-field .data-holder {
   pointer-events: none;
   opacity: 0.5;
 } 
+
+
+/* 
+  appdv-fill-absolute class name can be set on a tag which encloses a big-field where it uses
+  absolute positioning and you want the field and its editor to fill the area completely. This
+  is useful for very large text areas that are the last elements of a page.
+*/
+.appdv-fill-absolute > .appdv-tt-generated {
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+.appdv-fill-absolute > .appdv-tt-generated > .clickable,
+.appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value
+{
+  max-height: 100%;
+  max-width: 100%;
+}
+
+.appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-bigfield {
+  position: static;
+  max-height: 100%;
+  max-width: 100%;
+}
+
+.appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-bigfield .data-holder,
+.appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-bigfield .field-holder .x-form-field
+ {
+  position: absolute;
+  top: 0px;
+  right:0px;
+  bottom: 0px;
+  left: 0px;
+  overflow: auto;
+}
+
+

@@ -56,6 +56,11 @@ iframeHtml:
   
   initComponent: function() {
     this.on('afterrender',this.injectIframe,this);
+    // temp: FIXME
+    if(this.ownerCt && this.ownerCt.xtype == 'appdv') {
+      this.autoHeight = true;
+      this.autoWidth = true;
+    }
     Ext.ux.RapidApp.iframeTextField.superclass.initComponent.call(this);
   },
   
