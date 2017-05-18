@@ -78,8 +78,6 @@ iframeHtml:
 // ---------------------------------------------------------------------------------------
 ,
 
-  autoCreate:  { tag: 'div' },
-  
   // Currently the only way this field editor can work well is to not be managed by ExtJS
   // for dynamic size. This means that the only way for dynamic sizing to work is via
   // native browser sizing of the div, such as using absolute positioning, which can be
@@ -90,6 +88,10 @@ iframeHtml:
   
   initComponent: function() {
     this.on('afterrender',this.injectIframe,this);
+    this.on('destroy',this.tearDown,this);
+    
+    this.autoCreate = { tag: 'div' };
+    
     Ext.ux.RapidApp.iframeTextField.superclass.initComponent.call(this);
   },
   
@@ -332,6 +334,15 @@ iframeHtml:
       })
       //.afterClose(onClose)
       .show();
+  },
+  
+  tearDown: function() {
+    var iframe = this.iframeDom;
+    if(iframe) {
+      if(iframe.parentNode) {
+        iframe.parentNode.removeChild(iframe);
+      }
+    }
   }
   
 });
