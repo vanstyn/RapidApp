@@ -29,6 +29,10 @@ iframeHtml:
     // disable display of the icon used for fullscreen - fullscreen doesn't work, but is needed
     // by "side-by-side". This is hacky, but is the cleanest solution at this point
     `.editor-toolbar a.fa-arrows-alt { display: none; }
+    `+
+    // This is mainly for the "preview" but it doesn't really ever make sense at this point
+    // to ever allow images to render wider than the display area
+    `img { max-width: 100%; }
   </style>
 </head>
 <body style='margin:0px;'>
