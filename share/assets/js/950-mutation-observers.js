@@ -169,7 +169,8 @@ ready('.ra-mo-expandable-max-height', function(el) {
     }
   }
   
-  var toggleFn = function() {
+  var toggleFn = function(e) {
+    e.stopPropagation();
     if(toggle.raMoToggleExpanded) {
       toggle.raMoToggleExpanded = false;
     }
