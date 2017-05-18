@@ -14,16 +14,21 @@ iframeHtml:
   <script src='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/simplemde.min.js'></script>
   <script src='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/picoModal.js'></script>
   <style>
-    .CodeMirror, .CodeMirror-scroll { min-height: 150px; }
-    body { background-color: white; }
-    .editor-toolbar {
-      border-top-left-radius: 0;
-      border-top-right-radius: 0;
-    }
-    .CodeMirror {
-      border-bottom-left-radius: 0;
-      border-bottom-right-radius: 0;
-    }
+    `+
+    // the min-height here must agree with the iframe in order for things to display properly
+    `.CodeMirror, .CodeMirror-scroll { min-height: 150px; }
+    `+
+    // here we are making the editor *not* transparent so that in contexts where it might be
+    // rendered on top of other content (such as in a grid) it doesn't show through in the
+    // toolbar. Then we're also disabling rounded corners because the white shows through and
+    // is ugly
+    `body           { background-color: white; }
+    .editor-toolbar { border-top-left-radius: 0;    border-top-right-radius: 0; }
+    .CodeMirror     { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+    `+
+    // disable display of the icon used for fullscreen - fullscreen doesn't work, but is needed
+    // by "side-by-side". This is hacky, but is the cleanest solution at this point
+    `.editor-toolbar a.fa-arrows-alt { display: none; }
   </style>
 </head>
 <body style='margin:0px;'>
@@ -44,7 +49,11 @@ iframeHtml:
       toolbar: [  
         "bold", "italic", "strikethrough", "heading", "|",
         "quote", "unordered-list", "ordered-list", "|",
-        "table", "code", "preview", "side-by-side",
+        "table", "code", "preview",
+        `+
+        // fullscreen is listed but its display is disabled in css above. fullscreen is needed
+        // for side-by-side to work properly (seems to be a simplemde bug)
+        `"side-by-side", "fullscreen",
         "|", "link", "image",
         "|", {
           name: "upload",
