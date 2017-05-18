@@ -53,33 +53,25 @@ iframeHtml:
 ,
 
   autoCreate:  { tag: 'div' },
+  autoHeight: true,
+  autoWidth: true,
   
   initComponent: function() {
     this.on('afterrender',this.injectIframe,this);
-    // temp: FIXME
-    if(this.ownerCt && this.ownerCt.xtype == 'appdv') {
-      this.autoHeight = true;
-      this.autoWidth = true;
-    }
     Ext.ux.RapidApp.iframeTextField.superclass.initComponent.call(this);
   },
   
   injectIframe: function() {
     if(!this.iframeDom) { 
     
-      var elHeight = this.el.getHeight(true);
-      
-      // 50px is the toolbar height which gets added back within simplemde/codemirror logic
-      var initHeight = elHeight - 50; 
-      
       var iframe = document.createElement('iframe');
-      iframe.width = '100%'; 
-      //iframe.height = '100%';
-      iframe.height = initHeight;
       iframe.frameborder = '0';
-      iframe.style = 'border: 0px;'; //position:absolute;top:0;right:0;bottom:0:left:0;';
       iframe.src = 'about:blank';
       
+      iframe.style['border']   = '0px';
+      iframe.style['width']    = '100%';
+      iframe.style['height']   = '100%';
+
       this.el.dom.appendChild(iframe);
       
       iframe.contentWindow.document.open('text/html', 'replace');
@@ -97,30 +89,16 @@ iframeHtml:
       if(!simplemde) { return null; }
       
       var scope = this;
+      var iframe = this.iframeDom;
+      
+      simplemde.codemirror.setSize(null,iframe.clientHeight - 50);
+      iframe.contentWindow.document.body.onresize = function() {
+        simplemde.codemirror.setSize(null,iframe.clientHeight - 50);
+      }
+      
       simplemde.options.customUploadActionFn = function() {
         return scope.customUploadActionFn.apply(scope,arguments);
       }
-      
-      // this is needed to get the starting size to cooporate (FIXME)
-      simplemde.codemirror.setSize(null,'100%');
-      
-      var iframe = this.iframeDom;
-      var scope = this;
-      
-      simplemde.codemirror.on('viewportChange',function() {
-        var iframe = scope.iframeDom;
-       
-        var sH = iframe.contentWindow.document.body.scrollHeight;
-        
-        // If we're taller than the scroll height, shrink us:
-        if(simplemde.codemirror.doc.height > sH) {
-          var nH = sH - 50; // extra 50px to make room for toolbar
-          simplemde.codemirror.setSize(null,nH);
-        }
-        
-        // Now update the iframe to match the scrollheight:
-        iframe.height = sH;
-      });
       
       simplemde.codemirror.on('drop',function(cm,e) {
         // If this drop event is an file:
