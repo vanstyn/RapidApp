@@ -13,6 +13,9 @@ iframeHtml:
   <link rel='stylesheet' href='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/simplemde.min.css' />
   <script src='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/simplemde.min.js'></script>
   <script src='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/picoModal.js'></script>
+  <style>
+    .CodeMirror, .CodeMirror-scroll { min-height: 150px; }
+  </style>
 </head>
 <body style='margin:0px;'>
   <textarea 
@@ -71,6 +74,7 @@ iframeHtml:
       iframe.style['border']   = '0px';
       iframe.style['width']    = '100%';
       iframe.style['height']   = '100%';
+      iframe.style['min-height'] = '200px';
 
       this.el.dom.appendChild(iframe);
       
