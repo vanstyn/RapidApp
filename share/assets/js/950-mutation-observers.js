@@ -125,10 +125,45 @@ ready('.ra-mo-expandable-max-height', function(el) {
     }
   }
   
+  var getRealHeights = function() {
+    var heights;
+    if(el.offsetParent) {
+      heights = [el.clientHeight,el.scrollHeight];
+    }
+    else {
+      // If we're here, el.offsetParent is not defined...
+      // this means we're not currently rendered/visible, so we can't find out our dimensions. To
+      // get the browser to tell us what they really are, we have to create a temp hidden element,
+      // move our element to it, then retrieve the dimensions, then move it back to the original
+      // parent element and then clean-up/remove the temp element. 
+      var origParent = el.parentElement;
+      var origSibling = el.nextSibling;
+
+      var hidEl = document.createElement('div');
+      hidEl.style.opacity = 0;
+      hidEl.style.position = 'absolute';
+      document.body.appendChild(hidEl);
+      hidEl.appendChild(el);
+      
+      heights = [el.clientHeight,el.scrollHeight];
+    
+      if(origSibling) {
+        origParent.insertBefore(el,origSibling);
+      }
+      else {
+        origParent.appendChild(el);
+      }
+      
+      document.body.removeChild(hidEl);
+    }
+    return heights;
+  }
+  
   var getPctShown = function() {
-    if(!el.clientHeight) { return 0; }
-    var pct = Math.floor((el.clientHeight/el.scrollHeight)*10000);
-    if(! pct) return 0;
+    var heights = getRealHeights() || [];
+    if(!heights[1]) { return 100; }
+    var pct = Math.floor((heights[0]/heights[1])*10000);
+    if(! pct) { return 100; }
     return pct < 500 ? pct/100 : Math.floor(pct/100);
   }
   
