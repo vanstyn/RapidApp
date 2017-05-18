@@ -15,6 +15,15 @@ iframeHtml:
   <script src='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/picoModal.js'></script>
   <style>
     .CodeMirror, .CodeMirror-scroll { min-height: 150px; }
+    body { background-color: white; }
+    .editor-toolbar {
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+    }
+    .CodeMirror {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+    }
   </style>
 </head>
 <body style='margin:0px;'>
@@ -56,6 +65,12 @@ iframeHtml:
 ,
 
   autoCreate:  { tag: 'div' },
+  
+  // Currently the only way this field editor can work well is to not be managed by ExtJS
+  // for dynamic size. This means that the only way for dynamic sizing to work is via
+  // native browser sizing of the div, such as using absolute positioning, which can be
+  // done within an AppDV. Within a grid/form, the size will be stuck at the min-height and
+  // min-width set on the iframe below
   autoHeight: true,
   autoWidth: true,
   
@@ -75,6 +90,7 @@ iframeHtml:
       iframe.style['width']    = '100%';
       iframe.style['height']   = '100%';
       iframe.style['min-height'] = '200px';
+      iframe.style['min-width'] = '500px'; // this is about as small as it can be w/o toolbar wrap
 
       this.el.dom.appendChild(iframe);
       
@@ -95,10 +111,13 @@ iframeHtml:
       var scope = this;
       var iframe = this.iframeDom;
       
-      simplemde.codemirror.setSize(null,iframe.clientHeight - 50);
-      iframe.contentWindow.document.body.onresize = function() {
-        simplemde.codemirror.setSize(null,iframe.clientHeight - 50);
+      var syncHeight = function() {
+        var editorToolbarHeight = 49;
+        simplemde.codemirror.setSize(null,iframe.clientHeight - editorToolbarHeight);
       }
+      
+      syncHeight();
+      iframe.contentWindow.document.body.onresize = syncHeight;
       
       simplemde.options.customUploadActionFn = function() {
         return scope.customUploadActionFn.apply(scope,arguments);
