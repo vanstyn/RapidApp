@@ -14,6 +14,7 @@ iframeHtml:
   <script src='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/simplemde.min.js'></script>
   <script src='_ra-rel-mnt_/assets/rapidapp/misc/static/simplemde/picoModal.js'></script>
   <style>
+    .CodeMirror { padding: 0px; }
     `+
     // the min-height here must agree with the iframe in order for things to display properly
     `.CodeMirror, .CodeMirror-scroll { min-height: 150px; }
@@ -136,7 +137,10 @@ iframeHtml:
         return scope.customUploadActionFn.apply(scope,arguments);
       }
       
-      simplemde.codemirror.on('drop',function(cm,e) {
+      var cm = simplemde.codemirror;
+      cm.setOption('lineNumbers',true);
+      
+      cm.on('drop',function(cm,e) {
         // If this drop event is an file:
         //  (note: there is a bug in dumping this object in firebug, shows empty but isn't)
         var File = e.dataTransfer.files[0];
