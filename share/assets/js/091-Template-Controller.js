@@ -264,7 +264,7 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
       fieldLabel: 'Template',
       hideLabel: true,
       value: content,
-      anchor: '-0 -0'
+      anchor: '-0 -5'
     };
     // Format-specific config:
     Ext.apply(editField,this.getFormatEditorCnf(format));
