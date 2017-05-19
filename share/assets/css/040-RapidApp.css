@@ -1450,8 +1450,9 @@ body > #main-load-target > .x-tab-panel-header {
   font-size:1.1em;
   color:#083772;
   padding-left: 0px !important;
-  margin-left: -4px;
+  margin-left: 0px;
   padding-right: 0px !important;
+  margin-bottom: -3px;
 }
 
 .ra-paging-total-count-btn button .off {
