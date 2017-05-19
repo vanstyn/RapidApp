@@ -99,6 +99,10 @@ has 'no_header_transform', is => 'ro', isa => 'Bool', default => 0;
 # makes sense in the context of a single record view, and only works with standard tabs
 has 'close_on_destroy', is => 'ro', isa => 'Bool', traits => ['ExtProp'], default => 0;
 
+# If set to true, every time the component is shown (i.e. re-activating the tab) the 
+# store will reload itself to refresh data.
+has 'reload_on_show', is => 'ro', isa => 'Bool', , traits => ['ExtProp'], default => 0;
+
 # Generate a param string unique to this module by URL/path. This only needs to be unique
 # among modules whose ->content may be rendered within the same request, which is only
 # being done for good measure

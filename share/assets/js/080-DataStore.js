@@ -1196,6 +1196,16 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
     }
     // --
     
+    // New option to reload every time we're activated
+    if(this.cmp.reload_on_show) {
+      this.cmp.on('afterrender',function(){
+        this.cmp.on('show',function() {
+         store.reload();
+        });
+      },this);
+    }
+    
+    
     // ------
     //  NEW: track the last response AND decoded data in a common location for both read/write:
     //

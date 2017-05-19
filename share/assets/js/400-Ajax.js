@@ -478,8 +478,11 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
     // described in Github Issue #46 which this change was added for).
     if(clear) { thisEl.dom.innerHTML = ''; }
     
-    this.insert(0,conf);
+    var cmp = this.insert(0,conf);
     this.doLayout();
+    if(cmp && Ext.isFunction(cmp.relayEvents)) {
+      cmp.relayEvents(this,['show','activate']);
+    }
   },
   
   htmlForError: function(title,msg) {
