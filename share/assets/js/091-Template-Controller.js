@@ -218,6 +218,12 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
         no_autosizers: true
       };
     }
+    else if (format == 'markdown') {
+      return {
+        xtype: 'ra-md-editor',
+        _noAutoHeight: true 
+      }
+    }
     else {
       // TODO: add smart editors for various other formats, like markdown
       return {

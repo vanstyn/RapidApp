@@ -78,17 +78,20 @@ iframeHtml:
 // ---------------------------------------------------------------------------------------
 ,
 
-  // Currently the only way this field editor can work well is to not be managed by ExtJS
-  // for dynamic size. This means that the only way for dynamic sizing to work is via
-  // native browser sizing of the div, such as using absolute positioning, which can be
-  // done within an AppDV. Within a grid/form, the size will be stuck at the min-height and
-  // min-width set on the iframe below
-  autoHeight: true,
-  autoWidth: true,
-  
   initComponent: function() {
     this.on('afterrender',this.injectIframe,this);
     this.on('destroy',this.tearDown,this);
+    
+    if(!this._noAutoHeight) {
+      // Currently the only way this field editor can work well for default/random scenarios
+      // is to not be managed by ExtJS for dynamic size. This means that the only way for dynamic 
+      // sizing to work is via native browser sizing of the div, such as using absolute positioning, 
+      // which can be done within an AppDV. Within a grid/form, the size will be stuck at the 
+      // min-height and min-width set on the iframe below. But, we do provide a special override
+      // config option '_noAutoHeight' to bypass (this API is expected to change)
+      this.autoHeight = true;
+      this.autoWidth  = true;
+    }
     
     this.autoCreate = { tag: 'div' };
     
