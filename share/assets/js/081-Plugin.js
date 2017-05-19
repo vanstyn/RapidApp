@@ -4677,3 +4677,25 @@ Ext.ux.RapidApp.Plugin.LinkClickCatcher = Ext.extend(Ext.util.Observable,{
 });
 Ext.preg('ra-link-click-catcher',Ext.ux.RapidApp.Plugin.LinkClickCatcher);
 
+
+
+// This plugin handles the specific case of the last item in a container being glued to
+// the bottom of it. This is quick and dirty and was mainy created for add/edit forms,
+// when we want the last item to use all the remaining space (i.e. a big/text field)
+// I wrote this because I was tired of trying to figure out how to get anchor to work for this
+Ext.ux.RapidApp.Plugin.ParentGlueBottom = Ext.extend(Ext.util.Observable,{
+
+  init: function(cmp) {
+    this.cmp = cmp;
+    cmp.on('render',this.onRender,this);
+  },
+  
+  onRender: function() {
+    this.cmp.ownerCt.on('resize',function(c, adjWidth, adjHeight, rawWidth, rawHeight ) {
+      var offset = this.cmp.container.dom.offsetTop;
+      var height = adjHeight - offset - 60;
+      this.cmp.setHeight(height);
+    },this);
+  }
+});
+Ext.preg('ra-parent-gluebottom', Ext.ux.RapidApp.Plugin.ParentGlueBottom);
