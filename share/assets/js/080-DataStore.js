@@ -1176,6 +1176,25 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
       }
     },store);
     
+    // --
+    // New close_on_destroy option: will attempt to close by locating the main-load-target
+    // parent. Will not do anything in any other scenario than the stanard explorer/tab scenario
+    if(this.cmp.close_on_destroy) {
+      store.on('save',function(ds,batch,data) {
+        if(data && typeof data.destroy != 'undefined') {
+          this.cmp.bubble(function() {
+            var container = this;
+            var parent = container.ownerCt;
+            if(!parent) { return false; }
+            if(parent.id == 'main-load-target') {
+              parent.remove(container);
+              return false;
+            }
+          })
+        }
+      },this);
+    }
+    // --
     
     // ------
     //  NEW: track the last response AND decoded data in a common location for both read/write:

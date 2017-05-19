@@ -95,6 +95,10 @@ has 'reload_on_save', is => 'ro', isa => 'Bool', default => 0;
 # transforms the header of related columns by appending the relationship path
 has 'no_header_transform', is => 'ro', isa => 'Bool', default => 0;
 
+# If set to true, the component will try to close itself after a delete/destroy. Only
+# makes sense in the context of a single record view, and only works with standard tabs
+has 'close_on_destroy', is => 'ro', isa => 'Bool', traits => ['ExtProp'], default => 0;
+
 # Generate a param string unique to this module by URL/path. This only needs to be unique
 # among modules whose ->content may be rendered within the same request, which is only
 # being done for good measure
