@@ -48,9 +48,9 @@ sub _create_linkedRow {
 }
 
 sub _push_linkedRow {
-  my $self = shift;
+  my ($self, $Row) = @_;
   my $shared_cols = $self->_get_linked_shared_columns or return undef;
-  my $Row = $self->_find_linkedRow or return $self->_create_linkedRow;
+  $Row ||= $self->_find_linkedRow or return $self->_create_linkedRow;
   
   local $Row->{_pushing_linkedRow} = 1;
   $Row->$_( $self->$_ ) for (@$shared_cols);
@@ -68,9 +68,13 @@ sub _delete_linkedRow {
 sub update {
   my $self = shift;
   my $columns = shift;
+  
+  my $Row;
+  $Row = $self->_find_linkedRow unless ($self->{_pushing_linkedRow});
+  
   $self->set_inflated_columns($columns) if $columns;
   
-  $self->_push_linkedRow unless ($self->{_pushing_linkedRow});
+  $self->_push_linkedRow($Row) unless ($self->{_pushing_linkedRow});
   
   $self->next::method;
 }

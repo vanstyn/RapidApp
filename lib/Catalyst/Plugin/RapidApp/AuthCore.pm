@@ -211,7 +211,7 @@ sub _initialize_linked_user_model {
     unless ($lSource->has_column($key_col));
 
   my @shared_cols = grep { 
-    $_ ne 'id' && $_ ne $key_col && $cClass->has_column($_) 
+    $_ ne 'id' && $cClass->has_column($_) 
   } $lClass->columns;
   
   $lClass->load_components('+RapidApp::DBIC::Component::LinkedResult');
