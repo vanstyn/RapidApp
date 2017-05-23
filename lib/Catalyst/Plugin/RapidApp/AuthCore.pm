@@ -153,6 +153,8 @@ after 'setup_finalize' => sub {
     
     return $self->$orig(@_);
   });
+  
+  $class->_initialize_linked_user_model;
 };
 
 
@@ -190,6 +192,37 @@ sub delete_expired_sessions {
     $c->session_store_dbic_expires_field => undef,
   ])->delete;
 }
+
+sub _initialize_linked_user_model {
+  my $c = shift;
+  
+  my $model = $c->config->{'Plugin::RapidApp::AuthCore'}{linked_user_model} or return undef;
+  my $M = $c->model($model) or die "AuthCore: Failed to load linked_user_model '$model'";
+  
+  my $lSource = $M->result_source;
+  my $cSource = $c->model('RapidApp::CoreSchema::User')->result_source;
+  
+  my $key_col = 'username';
+  
+  die "linked_user_model '$model' does not have '$key_col' column" 
+    unless ($lSource->has_column($key_col));
+  
+  my @shared_cols = grep { 
+    $_ ne 'id' && $_ ne $key_col && $cSource->has_column($_) 
+  } $lSource->columns;
+  
+  $lSource->result_class->load_components('+RapidApp::DBIC::Component::LinkedResult');
+  $lSource->{_linked_source} = $cSource;
+  $lSource->{_linked_key_column} = $key_col;
+  $lSource->{_linked_shared_columns} = [@shared_cols];
+  
+  $cSource->result_class->load_components('+RapidApp::DBIC::Component::LinkedResult');
+  $cSource->{_linked_source} = $lSource;
+  $cSource->{_linked_key_column} = $key_col;
+  $cSource->{_linked_shared_columns} = [@shared_cols];
+  
+}
+
 
 1;
 
