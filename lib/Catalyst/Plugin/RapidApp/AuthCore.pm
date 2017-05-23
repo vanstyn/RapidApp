@@ -200,23 +200,26 @@ sub _initialize_linked_user_model {
   my $M = $c->model($model) or die "AuthCore: Failed to load linked_user_model '$model'";
   
   my $lSource = $M->result_source;
+  my $lClass  = $lSource->result_class;
+  
   my $cSource = $c->model('RapidApp::CoreSchema::User')->result_source;
+  my $cClass  = $cSource->result_class;
   
   my $key_col = 'username';
   
   die "linked_user_model '$model' does not have '$key_col' column" 
     unless ($lSource->has_column($key_col));
-  
+
   my @shared_cols = grep { 
-    $_ ne 'id' && $_ ne $key_col && $cSource->has_column($_) 
-  } $lSource->columns;
+    $_ ne 'id' && $_ ne $key_col && $cClass->has_column($_) 
+  } $lClass->columns;
   
-  $lSource->result_class->load_components('+RapidApp::DBIC::Component::LinkedResult');
+  $lClass->load_components('+RapidApp::DBIC::Component::LinkedResult');
   $lSource->{_linked_source} = $cSource;
   $lSource->{_linked_key_column} = $key_col;
   $lSource->{_linked_shared_columns} = [@shared_cols];
   
-  $cSource->result_class->load_components('+RapidApp::DBIC::Component::LinkedResult');
+  $cClass->load_components('+RapidApp::DBIC::Component::LinkedResult');
   $cSource->{_linked_source} = $lSource;
   $cSource->{_linked_key_column} = $key_col;
   $cSource->{_linked_shared_columns} = [@shared_cols];
