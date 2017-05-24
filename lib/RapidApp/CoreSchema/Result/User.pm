@@ -129,6 +129,20 @@ __PACKAGE__->add_virtual_columns( set_pw => {
 
 __PACKAGE__->apply_TableSpec;
 
+
+# Always returns undef unless 'linked_user_model' is configured
+sub linkedRow {
+  my $self = shift;
+  $self->{_linkedRow} //= do {
+    my $Row = undef;
+    if($self->can('_find_linkedRow')) {
+      $Row = $self->_find_linkedRow || $self->_create_linkedRow;
+    }
+    $Row
+  }
+}
+
+
 __PACKAGE__->TableSpec_set_conf( 
 	title => 'User',
 	title_multi => 'Users',
