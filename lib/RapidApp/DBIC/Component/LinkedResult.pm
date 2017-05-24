@@ -31,19 +31,34 @@ sub _find_linkedRow {
     ->first
 }
 
+sub _linkedRow_set_columns {
+  my ($pushRow, $pullRow) = @_;
+  if($pullRow->can('_linkedRow_pull_set_columns')) {
+    $pullRow->_linkedRow_pull_set_columns($pushRow);
+  }
+  else {
+    die "remote LinkedResult not configured";
+  }
+  $_[0]->maybe::next::method($_[1])
+}
+
+sub _linkedRow_pull_set_columns {
+  my ($pullRow, $pushRow) = @_;
+  my $shared_cols = $pushRow->_get_linked_shared_columns or die "failed _get_linked_shared_columns";  
+  $pullRow->$_( $pushRow->$_ ) for (@$shared_cols);
+  $_[0]->maybe::next::method($_[1])
+}
+
 sub _create_linkedRow {
   my $self = shift;
   my $Rs = $self->_get_linkedRs or return undef;
   my $key = $self->_get_linked_key_column or return undef;
   my $shared_cols = $self->_get_linked_shared_columns or return undef;
-  
-  my $columns = { map { $_ => $self->$_ } @$shared_cols };
-  
-  $columns->{$key} = $self->$key;
-  
-  my $Row = $Rs->new($columns);
-  
-  local $Row->{_pushing_linkedRow} = 1;
+
+  my $Row = $Rs->new({});
+  $self->_linkedRow_set_columns($Row);
+  local $Row->{_pulling_linkedRow} = $self;
+
   $Row->insert
 }
 
@@ -52,8 +67,8 @@ sub _push_linkedRow {
   my $shared_cols = $self->_get_linked_shared_columns or return undef;
   $Row ||= $self->_find_linkedRow or return $self->_create_linkedRow;
   
-  local $Row->{_pushing_linkedRow} = 1;
-  $Row->$_( $self->$_ ) for (@$shared_cols);
+  local $Row->{_pulling_linkedRow} = $self;
+  $self->_linkedRow_set_columns($Row);
   $Row->update
 }
 
@@ -61,7 +76,7 @@ sub _delete_linkedRow {
   my $self = shift;
   my $Row = $self->_find_linkedRow or return undef;
   
-  local $Row->{_pushing_linkedRow} = 1;
+  local $Row->{_pulling_linkedRow} = $self;
   $Row->delete
 }
 
@@ -70,11 +85,11 @@ sub update {
   my $columns = shift;
   
   my $Row;
-  $Row = $self->_find_linkedRow unless ($self->{_pushing_linkedRow});
+  $Row = $self->_find_linkedRow unless ($self->{_pulling_linkedRow});
   
   $self->set_inflated_columns($columns) if $columns;
   
-  $self->_push_linkedRow($Row) unless ($self->{_pushing_linkedRow});
+  $self->_push_linkedRow($Row) unless ($self->{_pulling_linkedRow});
   
   $self->next::method;
 }
@@ -84,15 +99,17 @@ sub insert {
   my $columns = shift;
   $self->set_inflated_columns($columns) if $columns;
   
-  $self->_push_linkedRow unless ($self->{_pushing_linkedRow});
-  
   $self->next::method;
+  
+  $self->_push_linkedRow unless ($self->{_pulling_linkedRow});
+  
+  $self
 }
 
 sub delete {
   my $self = shift;
 
-  $self->_delete_linkedRow unless ($self->{_pushing_linkedRow});
+  $self->_delete_linkedRow unless ($self->{_pulling_linkedRow});
   
   $self->next::method;
 }
