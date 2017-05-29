@@ -4691,11 +4691,28 @@ Ext.ux.RapidApp.Plugin.ParentGlueBottom = Ext.extend(Ext.util.Observable,{
   },
   
   onRender: function() {
-    this.cmp.ownerCt.on('resize',function(c, adjWidth, adjHeight, rawWidth, rawHeight ) {
-      var offset = this.cmp.container.dom.offsetTop;
-      var height = adjHeight - offset - 60;
-      this.cmp.setHeight(height);
+    this.cmp.ownerCt.on('afterlayout',this.syncHeight,this);
+    
+    // If any of our peers have collapse/expand, trigger sync. This is somewhat
+    // of a unique case which was added specifically for the Rapi::Blog Post add form
+    // which has a collapsible fieldset to be able to give the editor more height
+    this.cmp.ownerCt.items.each(function(itm) {
+      if(itm != this.cmp) {
+        itm.on('collapse',this.syncHeight,this);
+        itm.on('expand',this.syncHeight,this);
+      }
     },this);
+
+    this.syncHeight();
+  },
+  
+  syncHeight: function() {
+    var Owner = this.cmp.ownerCt;
+    if(Owner) {
+      var offset = this.cmp.container.dom.offsetTop;
+      var height = Owner.getHeight() - offset - 60;
+      this.cmp.setHeight(height);
+    }
   }
 });
 Ext.preg('ra-parent-gluebottom', Ext.ux.RapidApp.Plugin.ParentGlueBottom);
