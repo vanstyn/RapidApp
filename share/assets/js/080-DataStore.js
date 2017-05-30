@@ -2100,6 +2100,16 @@ Ext.ux.RapidApp.DataStoreDedicatedAddForm = Ext.extend(Ext.Panel, {
       };
       this.source_cmp.store.on('load',on_load,this);
       
+      // New: because of the way the complex initialization logic works, we have to perform a load
+      // on the underlying source_cmp store in order to get the meta info loaded, etc, but change the
+      // limit to only fetch one row and no total count. This is a bit hacky, but greatly improves
+      // performance in some situations. The real/proper solution would be to not load at all but that
+      // will require a deeper dive (this is a very after-the-fact feature as it is)
+      this.source_cmp.store.on('beforeload',function(ds,options){ 
+        options.params.limit = 1;
+        options.params.no_total_count = 1;
+      },this);
+      
       // We need to do our own close handler manually:
       var close_fn = function() { 
         if(thisC && thisC.autopanel) {
