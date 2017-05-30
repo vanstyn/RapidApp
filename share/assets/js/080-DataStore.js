@@ -2127,7 +2127,13 @@ Ext.ux.RapidApp.DataStoreDedicatedAddForm = Ext.extend(Ext.Panel, {
       // to do any post-write operations (like autoload_added_record) before we destroy
       // it since the original add_form close handling code doesn't destroy the store
       var on_save;
-      on_save = function(ds) {
+      on_save = function(ds,batch,data) {
+        // We should get back a created record. If we don't, smething probably went wrong,
+        // dont close the page
+        if(!(data && Ext.isArray(data.create) && data.create.length > 0 &&  data.create[0])) {
+          return;
+        }
+      
         ds.un('save',on_save);
         // This is still a race condition, since we don't know how long it might take for
         // post-save operations to complete. For the special autoload_added_record case
