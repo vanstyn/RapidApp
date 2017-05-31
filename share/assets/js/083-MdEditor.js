@@ -250,9 +250,16 @@ iframeHtml:
         var insertStr;
         if(isImage) {
           insertStr = [
-            '![',res.filename,']',
-            '(','_ra-rel-mnt_/simplecas/fetch_content/',res.checksum,'/',res.filename,')'
+            '<img ',"\n",
+              '  src="','_ra-rel-mnt_/simplecas/fetch_content/',res.checksum,'/',res.filename,'" ',"\n",
+              '  style="max-width:100%;"',"\n",
+            ' />'
           ].join('');
+          
+          //insertStr = [
+          //  '![',res.filename,']',
+          //  '(','_ra-rel-mnt_/simplecas/fetch_content/',res.checksum,'/',res.filename,')'
+          //].join('');
         }
         else {
           insertStr = [
