@@ -55,7 +55,7 @@ sub _create_linkedRow {
   my $key = $self->_get_linked_key_column or return undef;
   my $shared_cols = $self->_get_linked_shared_columns or return undef;
 
-  my $Row = $Rs->new({});
+  my $Row = $Rs->new_result({});
   $self->_linkedRow_set_columns($Row);
   local $Row->{_pulling_linkedRow} = $self;
 
