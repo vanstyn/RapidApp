@@ -606,6 +606,8 @@ div.appdv-tt-generated .editable-value .appdv-edit-field .data-holder {
   bottom: 0px;
   left: 0px;
   overflow: auto;
+  overflow-x: hidden;
+  text-overflow: ellipsis; 
   padding:0px;
   margin: 0px;
 }
