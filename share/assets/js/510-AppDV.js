@@ -548,6 +548,16 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
     cnf.plugins = cnf.plugins || [];
     cnf.plugins.push('appdv-field-plugin');
     
+    // New: handle the special appdv-fill-absolute case - remove all
+    // dynamic sizing options and apply the target rule to set 'absolute'
+    // from and according to the CSS
+    if(editEl.findParent('div.appdv-fill-absolute')) {
+      if(cnf.grow) { cnf.grow = false; }
+      cnf.cls = 'appdv-fill-absolute-target-rule';
+      cnf.width = '100%';
+      cnf.height = 'auto';
+    }
+    
 		
 		var Field = Ext.create(cnf,'field');
     

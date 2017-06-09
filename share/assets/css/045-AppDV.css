@@ -591,14 +591,34 @@ div.appdv-tt-generated .editable-value .appdv-edit-field .data-holder {
 }
 
 .appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-bigfield .data-holder,
-.appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-bigfield .field-holder .x-form-field
- {
+.appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-bigfield .field-holder .x-form-field,
+.appdv-fill-absolute > .appdv-tt-generated .appdv-fill-absolute-target-rule {
   position: absolute;
   top: 0px;
   right:0px;
   bottom: 0px;
   left: 0px;
   overflow: auto;
+  padding:0px;
+  margin: 0px;
+}
+
+.appdv-fill-absolute.space-for-icons > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-bigfield .data-holder,
+.appdv-fill-absolute.space-for-icons > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-bigfield .field-holder .x-form-field,
+.appdv-fill-absolute.space-for-icons > .appdv-tt-generated .appdv-fill-absolute-target-rule {
+  bottom: 17px;
+}
+
+.appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-bigfield .icons {
+  position: absolute;
+  bottom:0px;
+  right:0px;
+
+}
+
+.appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-bigfield .icons > * {
+  float:right;
+  position: relative;
 }
 
 
