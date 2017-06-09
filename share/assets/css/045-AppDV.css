@@ -571,6 +571,10 @@ div.appdv-tt-generated .editable-value .appdv-edit-field .data-holder {
   absolute positioning and you want the field and its editor to fill the area completely. This
   is useful for very large text areas that are the last elements of a page.
 */
+.appdv-fill-absolute {
+  height:100%;
+}
+
 .appdv-fill-absolute > .appdv-tt-generated {
   position: relative;
   height: 100%;
@@ -584,7 +588,8 @@ div.appdv-tt-generated .editable-value .appdv-edit-field .data-holder {
   max-width: 100%;
 }
 
-.appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-bigfield {
+.appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-bigfield,
+.appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-field {
   position: static;
   max-height: 100%;
   max-width: 100%;
@@ -592,6 +597,8 @@ div.appdv-tt-generated .editable-value .appdv-edit-field .data-holder {
 
 .appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-bigfield .data-holder,
 .appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-bigfield .field-holder .x-form-field,
+.appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-field .data-holder,
+.appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-field .field-holder .x-form-field,
 .appdv-fill-absolute > .appdv-tt-generated .appdv-fill-absolute-target-rule {
   position: absolute;
   top: 0px;
@@ -605,7 +612,7 @@ div.appdv-tt-generated .editable-value .appdv-edit-field .data-holder {
 
 .appdv-fill-absolute.space-for-icons > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-bigfield .data-holder,
 .appdv-fill-absolute.space-for-icons > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-bigfield .field-holder .x-form-field,
-.appdv-fill-absolute.space-for-icons > .appdv-tt-generated .appdv-fill-absolute-target-rule {
+.appdv-fill-absolute.space-for-icons > .appdv-tt-generated .appdv-edit-bigfield .appdv-fill-absolute-target-rule {
   bottom: 17px;
 }
 
@@ -613,10 +620,22 @@ div.appdv-tt-generated .editable-value .appdv-edit-field .data-holder {
   position: absolute;
   bottom:0px;
   right:0px;
-
 }
 
-.appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-bigfield .icons > * {
+.appdv-fill-absolute.space-for-icons > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-field .data-holder,
+.appdv-fill-absolute.space-for-icons > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-field .field-holder .x-form-field,
+.appdv-fill-absolute.space-for-icons > .appdv-tt-generated .appdv-fill-absolute-target-rule {
+  right: 38px;
+}
+
+.appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-field .icons {
+  position: absolute;
+  right:0px;
+  bottom:2px;
+}
+
+.appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-bigfield .icons > *,
+.appdv-fill-absolute > .appdv-tt-generated > .clickable > .editable-value > .appdv-edit-field .icons > * {
   float:right;
   position: relative;
 }

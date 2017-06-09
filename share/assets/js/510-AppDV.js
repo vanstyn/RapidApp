@@ -554,7 +554,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
     if(editEl.findParent('div.appdv-fill-absolute')) {
       if(cnf.grow) { cnf.grow = false; }
       cnf.cls = 'appdv-fill-absolute-target-rule';
-      cnf.width = '100%';
+      //cnf.width = '100%';
       cnf.height = 'auto';
     }
     
