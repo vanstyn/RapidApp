@@ -94,6 +94,12 @@ around 'inject_asset_controllers' => sub {
       html_head_css_subfiles => ['filelink.css']
     },
     {
+      controller => 'Assets::RapidApp::FontAwesome',
+      type => 'Directory',
+      include => $share_dir . '/assets/font-awesome',
+      html_head_css_subfiles => ['css/font-awesome.min.css']
+    },
+    {
       controller => 'Assets::RapidApp::Misc',
       type => 'Directory',
       include => $share_dir . '/assets/misc',
