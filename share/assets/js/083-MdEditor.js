@@ -29,6 +29,10 @@ iframeHtml: '<html>  \
     // disable display of the icon used for fullscreen - fullscreen doesn"t work, but is needed
     // by "side-by-side". This is hacky, but is the cleanest solution at this point
     '.editor-toolbar a.fa-arrows-alt { display: none; }  \
+    .editor-toolbar .toolbar-text { \
+      font-size:11px; line-height:10px; font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; \
+      display: inline-block; vertical-align:middle; margin-bottom:7px; margin-left:5px; \
+    }\
     '+ 
     // This is mainly for the "preview" but it doesn"t really ever make sense at this point 
     // to ever allow images to render wider than the display area 
@@ -159,8 +163,32 @@ iframeHtml: '<html>  \
       });
 
       this.simplemde = simplemde;
+      
+      this.mungeEditorToolbar();
     }
     return this.simplemde;
+  },
+  
+  mungeEditorToolbar: function() {
+    var simplemde = this.simplemde;
+    var tbEl = this.simplemde.gui.toolbar;
+    
+    var textify = function(el,text) {
+      el.style['width'] = 'auto';
+      el.style['padding-left'] = '5px';
+      el.style['padding-right'] = '5px';
+      el.innerHTML = '<span class="toolbar-text">'+text+'</span>';
+    }
+    
+    var upldEl =  tbEl.getElementsByClassName('fa-cloud-upload')[0];
+    if(upldEl) {
+      textify(upldEl,'insert file / image<br>[or drag &amp; drop]');
+    }
+    
+    var sbsEl =  tbEl.getElementsByClassName('fa-columns')[0];
+    if(sbsEl) {
+      textify(sbsEl,'side-by-side<br>preview');
+    }
   },
   
   setRawValue : function(v){
