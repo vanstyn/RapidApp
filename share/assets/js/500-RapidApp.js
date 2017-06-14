@@ -1157,6 +1157,7 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 		width: cfg.width,
 		height: cfg.height,
 		closable: cfg.closable,
+    border: false,
 		modal: true,
 		items: {
 			xtype: 'form',

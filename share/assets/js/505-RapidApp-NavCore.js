@@ -90,7 +90,7 @@ Ext.ux.RapidApp.NavCore.SaveSearchHandler = function(cmp,cnf) {
 	return Ext.ux.RapidApp.WinFormPost({
 		title: "Save Search",
 		height: 195,
-		width: 325,
+		width: 330,
 		url: save_url,
 		params: {
 			cur_search_id: search_id,
