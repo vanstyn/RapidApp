@@ -1,5 +1,27 @@
 Revision history for RapidApp
 
+1.3000 2017-06-14
+    - Added Font Awesome (4.7.0) as a built-in asset (VANSTYN)
+    - Added new AppDV css classname feature 'appdv-fill-absolute' (VANSTYN)
+    - Added LinkedResult DBIC component (VANSTYN)
+    - AuthCore:  'linked_user_model' option/feature (VANSTYN)
+    - AuthCore: new ?to= and 'to_referer' login/dispatch endpoints (VANSTYN)
+    - Fix error handling in dedicated-add-form (VANSTYN)
+    - Added ExtJS plugin 'ra-parent-gluebottom' (VANSTYN)
+    - Added http-404.html as a public template (VANSTYN)
+    - Added 'reload_on_show' DataStore option (VANSTYN)
+    - Added 'close_on_destroy' DataStore option (VANSTYN)
+    - NEW COLUMN EDITOR 'MdEditor' + column profile 'markdown' (VANSTYN)
+    - New feature 'ra-mo-expandable-max-height' (VANSTYN)
+    - Grids now limit the default max-height of rows (VANSTYN)
+    - New JS renderer 'renderSourceCode' which shows line numbers (VANSTYN)
+    - Role::ModelDBIC now injects schema->_ra_catalyst_origin_model (VANSTYN)
+    - Configs which render to JSON now support coderef vals (VANSTYN)
+    - GREATLY EXPAND TEMPLATE PROVIDER STORE API (VANSTYN)
+    - Many misc CSS/style tweaks + bugfixes (VANSTYN)
+    - Require Catalyst::Controller::SimpleCAS 1.001 (VANSTYN)
+    - Require Catalyst 5.90115 (VANSTYN)
+
 1.2111 2017-02-26
     - Minor bugfix in edge-case mutli-rel render (VANSTYN)
 
