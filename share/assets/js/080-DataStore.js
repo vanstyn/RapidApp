@@ -2053,7 +2053,6 @@ Ext.ux.RapidApp.DataStoreDedicatedAddForm = Ext.extend(Ext.Panel, {
 
   initComponent: function() {
 
-    this.init_hash = window.location.hash;
     this.bodyStyle = 'border:none;';
     this.layout = 'fit';
 
@@ -2074,6 +2073,7 @@ Ext.ux.RapidApp.DataStoreDedicatedAddForm = Ext.extend(Ext.Panel, {
     this.on('beforerender',function() {
   
       var thisC = this;
+      var init_hash;
       
       this.source_cmp.hidden = true;
       this.source_cmp.store_autoLoad = true;
@@ -2095,6 +2095,8 @@ Ext.ux.RapidApp.DataStoreDedicatedAddForm = Ext.extend(Ext.Panel, {
         this.dsPlugin.getAddFormPanel.call(this.dsPlugin,
           newRec,close_handler,callback,use_formpanel
         );
+        
+        init_hash = window.location.hash;
       
         ds.un('load',on_load);
       };
@@ -2133,7 +2135,7 @@ Ext.ux.RapidApp.DataStoreDedicatedAddForm = Ext.extend(Ext.Panel, {
         if(!(data && Ext.isArray(data.create) && data.create.length > 0 &&  data.create[0])) {
           return;
         }
-      
+
         ds.un('save',on_save);
         // This is still a race condition, since we don't know how long it might take for
         // post-save operations to complete. For the special autoload_added_record case
@@ -2144,7 +2146,7 @@ Ext.ux.RapidApp.DataStoreDedicatedAddForm = Ext.extend(Ext.Panel, {
         if(this.dsPlugin.autoload_added_record) {
           var closeIf, loop_count = 0;
           closeIf = function() {
-            if(window.location.hash == this.init_hash && loop_count < 100) {
+            if(window.location.hash == init_hash && loop_count < 100) {
               loop_count++;
               closeIf.defer(50);
             }
@@ -2152,7 +2154,7 @@ Ext.ux.RapidApp.DataStoreDedicatedAddForm = Ext.extend(Ext.Panel, {
               close_fn();
             }
           }
-          closeIf();
+          closeIf.defer(50);
         }
         else {
           // otherwise close outright, but give it a bit extra time for good measure
