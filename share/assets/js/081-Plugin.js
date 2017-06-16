@@ -4716,3 +4716,21 @@ Ext.ux.RapidApp.Plugin.ParentGlueBottom = Ext.extend(Ext.util.Observable,{
   }
 });
 Ext.preg('ra-parent-gluebottom', Ext.ux.RapidApp.Plugin.ParentGlueBottom);
+
+// Should only be used with the MainnViewPort -- once the last
+Ext.ux.RapidApp.Plugin.LastPanelRedirect = Ext.extend(Ext.util.Observable,{
+
+  init: function(cmp) {
+    this.cmp = cmp;
+    cmp.on('remove',this.onRemove,this);
+  },
+  
+  onRemove: function(parent,child) {
+    if(this.cmp.items.length == 0) {
+      var url = this.cmp.last_panel_redirect_url || '/';
+      window.location.href = url;
+    }
+  }
+});
+Ext.preg('ra-last-panel-redirect', Ext.ux.RapidApp.Plugin.LastPanelRedirect);
+

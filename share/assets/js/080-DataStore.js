@@ -1186,7 +1186,7 @@ Ext.ux.RapidApp.Plugin.CmpDataStorePlus = Ext.extend(Ext.util.Observable,{
             var container = this;
             var parent = container.ownerCt;
             if(!parent) { return false; }
-            if(parent.id == 'main-load-target') {
+            if(parent.id == 'main-load-target' || parent.id == 'maincontainer') {
               parent.remove(container);
               return false;
             }

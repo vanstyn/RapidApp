@@ -4478,6 +4478,9 @@ Ext.ux.RapidApp.MainViewportInit = function(opt) {
   };
 
   panel_cfg.id = panel_cfg.id || 'maincontainer';
+  
+  panel_cfg.plugins = panel_cfg.plugins || [];
+  panel_cfg.plugins.push('ra-last-panel-redirect');
 
   new Ext.Viewport({
     plugins: ['ra-link-click-catcher'],
