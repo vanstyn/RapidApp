@@ -998,15 +998,8 @@ sub controller_dispatch {
   }
   # --
   else {
-    my $rdr_vp = $self->c->stash->{render_viewport};
-    if($rdr_vp && $rdr_vp eq 'printview' && $self->can('printview')) {
-      return $self->printview;
-    }
-    elsif($rdr_vp && $rdr_vp eq 'navable' && $self->can('navable')) {
-      return $self->navable;
-    }
-    elsif($rdr_vp && $self->can('viewport')) {
-      return $self->viewport;
+    if(my $ret = $self->_maybe_render_viewport) {
+      return $ret;
     }
     else {
       ## ---
@@ -1020,6 +1013,23 @@ sub controller_dispatch {
     }
   }
   
+}
+
+
+sub _maybe_render_viewport {
+  my $self = shift;
+
+  my $rdr_vp = $self->c->stash->{render_viewport} or return 0;
+  
+  if($rdr_vp && $rdr_vp eq 'printview' && $self->can('printview')) {
+    return $self->printview;
+  }
+  elsif($rdr_vp && $rdr_vp eq 'navable' && $self->can('navable')) {
+    return $self->navable;
+  }
+  elsif($rdr_vp && $self->can('viewport')) {
+    return $self->viewport;
+  }
 }
 
 
@@ -1051,6 +1061,10 @@ sub process_action {
   ) if ($self->c->debug);
   
   my $coderef = $self->get_action($opt) or die "No action named $opt";
+  
+  if(my $ret = $self->_maybe_render_viewport) {
+    return $ret;
+  }
   
   # If $coderef is not actually a coderef, we assume its a string representing an 
   # object method and we call it directly:
