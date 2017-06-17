@@ -1,5 +1,12 @@
 Revision history for RapidApp
 
+1.3001 2017-06-16
+    - Fix close_on_destroy where it would run even after failure (VANSTYN)
+    - MainViewport now redirects the page after it is empty/useless (VANSTYN)
+    - Module direct/navable routes now also work for module actions (VANSTYN)
+    - MdEditor now shows text labels in toolbar for key buttons (VANSTYN)
+    - More bug fixes in dedicated-add-form post save logic (VANSTYN)
+
 1.3000 2017-06-14
     - Added Font Awesome (4.7.0) as a built-in asset (VANSTYN)
     - Added new AppDV css classname feature 'appdv-fill-absolute' (VANSTYN)
