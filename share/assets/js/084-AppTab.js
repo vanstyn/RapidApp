@@ -554,17 +554,7 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
         // Select/highlight the new rows:
         sm.selectRange(fNdx,lNdx);
       }
-		},
-    
-    // NEW: 'ra-mo-expandable-max-height mh-200' triggers logic to limit row height, but with
-    // the ability for the user to click "show more" to display all of it
-    cellTpl: new Ext.Template(
-      '<td class="x-grid3-col x-grid3-cell x-grid3-td-{id} {css}" style="{style}" tabIndex="0" {cellAttr}>',
-        '<div class="x-grid3-cell-inner ra-mo-expandable-max-height mh-200 x-grid3-col-{id} x-unselectable" unselectable="on" {attr}>{value}</div>',
-      '</td>'
-    )
-    
-    
+		}
 		// --
 	},
 	

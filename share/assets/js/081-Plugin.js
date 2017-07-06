@@ -4734,3 +4734,33 @@ Ext.ux.RapidApp.Plugin.LastPanelRedirect = Ext.extend(Ext.util.Observable,{
 });
 Ext.preg('ra-last-panel-redirect', Ext.ux.RapidApp.Plugin.LastPanelRedirect);
 
+Ext.ux.RapidApp.Plugin.GridExpandMaxCellHeight = Ext.extend(Ext.util.Observable,{
+
+  init: function(grid) {
+    this.grid = grid;
+    
+    grid.getView = function() {
+      if (!this.view) {
+        var cfg = Ext.apply({},this.viewConfig || {});
+        // 'ra-mo-expandable-max-height mh-200' triggers logic to limit row height, but with
+        // the ability for the user to click "show more" to display all of it. .....   This was 
+        // originally implemented across-the-board in AppGrid, but due to performance considerations
+        // it was moved into this plugin which must be manually loaded. TODO: come up with a more
+        // efficient implementation... The problem is that this logic runs for every cell, even
+        // if the outcome of most of them is to take no action, it still takes some cycles and when
+        // there are many rows/columns, this hit becomes significant...
+        cfg.cellTpl = new Ext.Template(
+          '<td class="x-grid3-col x-grid3-cell x-grid3-td-{id} {css}" style="{style}" tabIndex="0" {cellAttr}>',
+            '<div class="x-grid3-cell-inner ra-mo-expandable-max-height mh-200 x-grid3-col-{id} x-unselectable" unselectable="on" {attr}>{value}</div>',
+          '</td>'
+        );
+        this.view = new Ext.grid.GridView(cfg);
+      }
+      return this.view;
+    }; 
+  }
+  
+});
+Ext.preg('ra-grid-expand-max-cell-height', Ext.ux.RapidApp.Plugin.GridExpandMaxCellHeight);
+  
+
