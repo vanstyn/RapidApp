@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+1.3002 2017-07-06
+    - Grid max-height now in plugin (ra-grid-expand-max-cell-height) (VANSTYN)
+
 1.3001 2017-06-16
     - Fix close_on_destroy where it would run even after failure (VANSTYN)
     - MainViewport now redirects the page after it is empty/useless (VANSTYN)
