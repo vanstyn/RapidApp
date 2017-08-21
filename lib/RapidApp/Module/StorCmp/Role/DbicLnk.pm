@@ -2638,7 +2638,7 @@ sub hashtree_col_alias_map_deep {
     next if ($Source->has_column($col));
     my $info = $Source->relationship_info($col) or next;
     my $m2m_attrs = $info->{attrs}->{m2m_attrs} or next;
-    my $keycol = $m2m_attrs->{rrinfo}->{cond_info}->{foreign};
+    my $keycol = $m2m_attrs->{rrinfo}->{cond_info}->{self};
     
     my @ids = split(/\s*,\s*/,$hash->{$col});
     
