@@ -1,5 +1,9 @@
 Revision history for RapidApp
 
+1.3003 2017-09-17
+    - Minor bugfix in TableSpec_m2m (VANSTYN)
+    - Travis CI now tests on Perl 5.24 and 5.26
+
 1.3002 2017-07-06
     - Grid max-height now in plugin (ra-grid-expand-max-cell-height) (VANSTYN)
 
