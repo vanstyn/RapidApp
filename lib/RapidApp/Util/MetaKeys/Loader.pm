@@ -17,6 +17,12 @@ use DBI::Const::GetInfoType '%GetInfoType';
 sub new {
   my ($class, %args) = @_;
   
+  # Force set option to turn off potentially damaging "load_external" feature
+  # of Schema::Loader unless the option is specifically set to 0
+  $args{skip_load_external} = 1 unless (
+    exists $args{skip_load_external} && !$args{skip_load_external} 
+  );
+  
   my $metakeys_data = exists $args{metakeys} ? delete $args{metakeys} : undef;
   
   # -- NEW: Experimental limit/exclude opts (Added for GitHub Issue #152):
