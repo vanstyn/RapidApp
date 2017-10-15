@@ -80,5 +80,25 @@ ok(
   "Create new Album with artistid value"
 );
 
+
+# -----
+# This test is known to fail on DBIx::Class 0.082899_15 (dev release)
+#  bisect shows the first breaking commit:
+#  https://github.com/dbsrgits/dbix-class/commit/786c1cddede6675b9fc5fc46ae4e1e136ef2c392
+ok(
+  my $NewAlbum = $albRs->create({
+    title => "Death Metal Banjo Skullcrush",
+    artistid => $NewArtist
+  }),
+  "Create new Album with artist Row object"
+);
+# The failure/error output on these dbic versions is:
+#
+#    DBIx::Class::ResultSource::resolve_relationship_condition(): The key 'some_cool_virtual_column' 
+#    supplied as part of 'foreign_values' during relationship resolution is not a column on related 
+#    source 'Artist' at t/04_virtual_columns.t line 88
+#
+# -----
+
 done_testing;
 
