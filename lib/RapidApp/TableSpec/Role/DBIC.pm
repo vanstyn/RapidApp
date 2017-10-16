@@ -11,6 +11,9 @@ use RapidApp::Util qw(:all);
 
 use RapidApp::DBIC::Component::TableSpec;
 
+use DBIx::Class::Helpers 2.033003;
+require DBIx::Class::Helper::ResultSet::Util;
+
 require Text::Glob;
 use Text::WagnerFischer qw(distance);
 use Clone qw( clone );
@@ -1395,22 +1398,10 @@ sub resolve_dbic_colname {
   }
 }
 
-# Copied directly from DBIx::Class::Helper::ResultSet::CorrelateRelationship::correlate
+# Now a passthrough to the stand-alone DBIx::Class::Helpers util function:
 sub _correlate_rs_rel {
    my ($self, $Rs, $rel) = @_;
- 
-   my $source = $Rs->result_source;
-   my $rel_info = $source->relationship_info($rel);
- 
-   return $source->related_source($rel)->resultset
-      ->search(scalar $source->_resolve_condition(
-         $rel_info->{cond},
-         "${rel}_alias",
-         $Rs->current_source_alias,
-         $rel
-      ), {
-         alias => "${rel}_alias",
-      })
+   DBIx::Class::Helper::ResultSet::Util::correlate( $Rs, $rel )
 }
 
 sub resolve_dbic_rel_alias_by_column_name  {
