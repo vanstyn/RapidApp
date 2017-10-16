@@ -14,6 +14,8 @@ use RapidApp::DBIC::Component::TableSpec;
 use DBIx::Class::Helpers 2.033003;
 require DBIx::Class::Helper::ResultSet::Util;
 
+use DBIx::Class::_Util qw/sigwarn_silencer/;
+
 require Text::Glob;
 use Text::WagnerFischer qw(distance);
 use Clone qw( clone );
@@ -1312,7 +1314,7 @@ sub resolve_dbic_colname {
         return { '' => \$sql, -as => $fieldName };		
       }
       else {
-
+      
         die '"parent_source" missing from $cond_data -- cannot correlate sub-select for "$col"'
           unless ($cond_data->{parent_source});
         
@@ -1321,9 +1323,11 @@ sub resolve_dbic_colname {
         
         my $rel_rs;
         
+        my $recent_dbic = $p_source->can('resolve_relationship_condition') ? 1 : 0;
+        
         # Github Issue #95
         if(!$rel_attrs->{where}) {
-          # The new correlate logic does not work with relationships with a 'where'
+          # correlate logic works as-is unless the relationship has a 'where'
           $rel_rs = $self->_correlate_rs_rel(
             $p_source->resultset->search_rs(undef,{ alias => $rel }), 
             $col
@@ -1350,27 +1354,42 @@ sub resolve_dbic_colname {
           # This was the original, manual condition generation which only supported
           # single-key relationship conditions (and not multi-key or CodeRef):
           #my $cond = { "${rel}_alias.$cond_data->{foreign}" => \[" = $rel.$cond_data->{self}"] };
-
-          # This is the new way which uses DBIC's internal machinery in the proper way
-          # and works for any multi-rel cond type, including CodeRef:
-          # UPDATE (#68): Starting in DBIC 0.08280 this invocation is producing a
-          # warning because it doesn't know what "${col}_alias" is
-          # (we're declaring it as the alias in $rel_rs above). It thinks
-          # it should be a relationship, but it is just the local ('me')
-          # alias (from the perspective of $rel_rs)
+          
           my $cond = do {
-            # TEMP/FIXME - This is not the way _resolve_condition is supposed to be called
-            # and this will stop working in the next major DBIC release. _resolve_condition
-            # needs to be called with a valid relname which we do not have in this case. In
-            # order to fix this, we need to call _resolve_condition from one rel higher so
-            # we can pass $col as the rel. For now we are just ignoring the warning which
-            # we know is being produced. See Github Issue #68
-            local $SIG{__WARN__} = sub {};
-            $source->_resolve_condition(
-              $cond_data->{info}{cond},
-              $rel_rs->current_source_alias, #<-- the self alias ("${col}_alias" as set above)
-              $rel, #<-- the foreign alias
-            )
+            if($recent_dbic) {
+              # On recent versions on DBIC, we now have a public method to do this:
+              $p_source->resolve_relationship_condition(
+                rel_name       => $col,
+                foreign_alias  => $rel_rs->current_source_alias,
+                self_alias     => $rel
+              )->{condition}
+            }
+            else {
+              # LEGACY - this code path only applies to relationships with a 'where' in their attrs
+              # and on a version of DBIC prior to the addition of ->resolve_relationship_condition
+              #
+              # Original/old comments on this block - 
+              # This is the new way which uses DBIC's internal machinery in the proper way
+              # and works for any multi-rel cond type, including CodeRef:
+              # UPDATE (#68): Starting in DBIC 0.08280 this invocation is producing a
+              # warning because it doesn't know what "${col}_alias" is
+              # (we're declaring it as the alias in $rel_rs above). It thinks
+              # it should be a relationship, but it is just the local ('me')
+              # alias (from the perspective of $rel_rs)
+              #
+              # This is not the way _resolve_condition is supposed to be called
+              # and this will stop working in the next major DBIC release. _resolve_condition
+              # needs to be called with a valid relname which we do not have in this case. In
+              # order to fix this, we need to call _resolve_condition from one rel higher so
+              # we can pass $col as the rel. For now we are just ignoring the warning which
+              # we know is being produced. See Github Issue #68
+              local $SIG{__WARN__} = sigwarn_silencer(qr/\Qresolution on non-existent relationship/);
+              $source->_resolve_condition(
+                $cond_data->{info}{cond},
+                $rel_rs->current_source_alias, #<-- the self alias ("${col}_alias" as set above)
+                $rel, #<-- the foreign alias
+              )
+            }
           };
           # ---
 
