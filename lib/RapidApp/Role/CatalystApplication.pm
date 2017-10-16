@@ -366,7 +366,10 @@ around 'finalize_error' => sub {
       $error .= join("\n",
         "\n\n",
         "RapidApp v$RapidApp::VERSION\n",
-        map { Data::Dumper::Concise::Dumper($_) } $c->dump_these
+        # Stop dumping this altogether because it is almost never useful,
+        # and in big apps can be huge and cause the failed request to
+        # timeout.
+        #map { Data::Dumper::Concise::Dumper($_) } $c->dump_these
       );
     };
     $c->res->body($error);
