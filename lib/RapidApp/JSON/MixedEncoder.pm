@@ -6,7 +6,9 @@ use Scalar::Util 'blessed';
 use Data::Dumper;
 use base 'JSON::PP';
 
-our @EXPORT = qw{encode_json decode_json encode_json_utf8 decode_json_utf8};
+our @EXPORT = qw{
+  encode_json decode_json encode_json_utf8 decode_json_utf8 encode_json_ascii decode_json_ascii
+};
 
 # ---
 # These are values that we might encounter as ScalarRefs and how to
@@ -54,6 +56,19 @@ sub encode_json_utf8 ($) { # encode
 sub decode_json_utf8 ($) { # decode
 	($JSONUtf8 ||= __PACKAGE__->new->utf8)->decode($_[0]);
 }
+
+## ---
+## Note: even though it is "ascii" encoding of unicode characters will still work
+## and encode high characters as \uXXXX (e.g. \x{1f4a9}) and this is often the best
+## route to support unicode when working with JSON
+my $JSONascii; # cache
+sub encode_json_ascii ($) { # encode
+  ($JSONascii ||= __PACKAGE__->new->ascii)->encode($_[0]);
+}
+sub decode_json_ascii ($) { # decode
+  ($JSONascii ||= __PACKAGE__->new->ascii)->decode($_[0]);
+}
+# ---
 
 
 sub new {

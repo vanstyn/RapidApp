@@ -12,7 +12,9 @@ use Try::Tiny;
 use Time::HiRes qw(gettimeofday tv_interval);
 use Data::Dumper::Concise qw(Dumper);
 use Term::ANSIColor qw(:constants);
-use RapidApp::JSON::MixedEncoder qw(encode_json decode_json encode_json_utf8 decode_json_utf8);
+use RapidApp::JSON::MixedEncoder qw(
+  encode_json decode_json encode_json_utf8 decode_json_utf8 encode_json_ascii decode_json_ascii
+);
 
 use Hash::Merge qw( merge );
 Hash::Merge::set_behavior( 'RIGHT_PRECEDENT' );
@@ -34,7 +36,7 @@ BEGIN {
     try catch finally
     gettimeofday tv_interval
     Dumper
-    encode_json decode_json encode_json_utf8 decode_json_utf8
+    encode_json decode_json encode_json_utf8 decode_json_utf8 encode_json_ascii decode_json_ascii
     merge
   );
 
