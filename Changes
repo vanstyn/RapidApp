@@ -1,5 +1,14 @@
 Revision history for RapidApp
 
+1.3005 2017-10-24
+    - Added new util sugar funcs encode_json_ascii and decode_json_ascii (VANSTYN)
+    - Pre-support for next DBIC release (resolve_relationship_condition) (VANSTYN)
+    - Now using correlate in proper DBIx::Class::Helpers package (VANSTYN)
+    - Turned off overly verbose debug mode dumps in ajax exceptions (VANSTYN)
+    - Additional test coverage, specifically virtual columns (VANSTYN)
+    - Require recent CPAN deps (VANSTYN)
+    - Always use 'skip_load_external' option with Schema::Loader (VANSTYN)
+
 1.3004 2017-10-01
     - Force left join override now applies to entire ->read_records call (VANSTYN)
     - Require DBIx::Class::Schema::Diff 1.05 (VANSTYN)
