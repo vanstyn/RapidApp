@@ -16,6 +16,7 @@ use RapidApp::Util qw(:all);
 
 use RapidApp::TableSpec;
 use RapidApp::Module::DbicCombo;
+use Module::Runtime;
 
 #__PACKAGE__->load_components(qw/IntrospectableM2M/);
 
@@ -85,7 +86,14 @@ sub TableSpec_m2m {
 		unless ($rinfo->{attrs}->{accessor} eq 'multi');
 		
 	my $rrinfo = $rinfo->{class}->relationship_info($remote_rel);
-	eval('require ' . $rrinfo->{class});
+  unless($rrinfo) {
+    # Note: we're not dying here because this is known to happen when called from Schema::Loader
+    # and we don't want that to fail. It is not known to fail during normal operation. TODO/FIXME
+    warn "TableSpec_m2m(): unable to resolve remote rel '$remote_rel' -- falling back to many_to_many\n";
+    return $self->many_to_many($m2m,$local_rel,$remote_rel);
+  }
+  
+  Module::Runtime::require_module($rrinfo->{class});
 	
 	$rinfo->{table} = &_table_name_safe($rinfo->{class}->table);
 	$rrinfo->{table} = &_table_name_safe($rrinfo->{class}->table);
