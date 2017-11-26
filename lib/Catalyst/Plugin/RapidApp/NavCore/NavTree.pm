@@ -20,6 +20,9 @@ has 'plugin_config', is => 'ro', lazy => 1, default => sub {
   # (also requires Auth to be enabled)
   $config->{user_views} //= $c->can('_authcore_load_plugins') ? 1 : 0;
   
+  # User may supply additional custom tree node configs in an ArrayRef here:
+  $config->{custom_navtree_nodes} //= undef;
+  
   return $config;
 };
 
@@ -273,6 +276,8 @@ sub TreeConfig {
 
 	push @items, $self->organize_navtree_node 
     if ($self->plugin_config->{allow_manage});
+    
+  push @items, $self->custom_navtree_nodes;
 
 	return \@items;
 }
@@ -319,8 +324,6 @@ sub saved_search_tree_items {
 
 
 
-
-
 sub organize_navtree_node {
 	my $self = shift;
 	return {
@@ -334,6 +337,32 @@ sub organize_navtree_node {
 		children	=> []
 	};
 }
+
+
+sub custom_navtree_nodes {
+  my $self = shift;
+  my $nodes = $self->plugin_config->{custom_navtree_nodes} or return ();
+  $nodes = [$nodes] unless ((ref($nodes)||'') eq 'ARRAY');
+  return map { $self->_prepare_custom_node_cfg($_) } @$nodes
+}
+
+sub _prepare_custom_node_cfg {
+  my $self = shift;
+  my $node = clone(shift);
+  
+  my $chlds = $node->{children} || [];
+  $chlds = [] unless ((ref($chlds)||'') eq 'ARRAY');
+  if(scalar(@$chlds) > 0) {
+    $node->{children} = [ map { $self->_prepare_custom_node_cfg($_) } @$chlds ];
+  }
+  else {
+    $node->{leaf} = 1;
+    $node->{expanded} = 1;
+  }
+  return $node
+}
+
+
 
 #sub deleted_objects_node {{
 #	id			=> 'deleted_objects',
