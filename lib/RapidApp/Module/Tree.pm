@@ -504,68 +504,69 @@ has 'root_node' => ( is => 'ro', lazy => 1, default => sub {
 });
 
 
-has 'tbar' => ( is => 'ro', lazy => 1, default => sub {
-  my $self = shift;
-  return undef;
-  return ['->'];
-  
-  my $tbar = [];
 
-  push @$tbar, $self->delete_button if ($self->can('delete_node'));
-  push @$tbar, $self->add_button if ($self->can('add_node'));
+# Note: the client JavaScript (AppTree) handles setup of the tbar by default, however, 
+# it can be overridden in the tbar attribute. The commented out lines are being left for reference
+has 'tbar', is => 'ro', lazy => 1, default => sub { undef };
 
-  return undef unless (scalar @$tbar > 0);
-
-  unshift @$tbar, '->';
-
-  return $tbar;
-});
-
-
-
-
-
-
-sub add_button {
-  my $self = shift;
-  
-  return RapidApp::JSONFunc->new(
-    func => 'new Ext.Button', 
-    parm => {
-      text     => $self->add_button_text,
-      iconCls  => $self->add_button_iconCls,
-      handler   => RapidApp::JSONFunc->new( 
-        raw => 1, 
-        func => 'function(btn) { ' . 
-          'var tree = btn.ownerCt.ownerCt;'.
-          'tree.nodeAdd();' .
-          #'tree.nodeAdd(tree.activeNonLeafNode());' .        
-        '}'
-      )
-  });
-}
-
-
-sub delete_button {
-  my $self = shift;
-  
-  return RapidApp::JSONFunc->new(
-    func => 'new Ext.Button', 
-    parm => {
-      tooltip    => $self->delete_button_text,
-      iconCls  => $self->delete_button_iconCls,
-      handler   => RapidApp::JSONFunc->new( 
-        raw => 1, 
-        func => 'function(btn) { ' . 
-          'var tree = btn.ownerCt.ownerCt;'.
-          'tree.nodeDelete(tree.getSelectionModel().getSelectedNode());' .
-          #'Ext.ux.RapidApp.AppTree.del(tree,"' . $self->suburl('/delete') . '");' .
-          
-        '}'
-      )
-  });
-}
-
+#has 'tbar' => ( is => 'ro', lazy => 1, default => sub {
+#  my $self = shift;
+#  return undef;
+#  return ['->'];
+#  
+#  my $tbar = [];
+#
+#  push @$tbar, $self->delete_button if ($self->can('delete_node'));
+#  push @$tbar, $self->add_button if ($self->can('add_node'));
+#
+#  return undef unless (scalar @$tbar > 0);
+#
+#  unshift @$tbar, '->';
+#
+#  return $tbar;
+#});
+#
+#
+#sub add_button {
+#  my $self = shift;
+#  
+#  return RapidApp::JSONFunc->new(
+#    func => 'new Ext.Button', 
+#    parm => {
+#      text     => $self->add_button_text,
+#      iconCls  => $self->add_button_iconCls,
+#      handler   => RapidApp::JSONFunc->new( 
+#        raw => 1, 
+#        func => 'function(btn) { ' . 
+#          'var tree = btn.ownerCt.ownerCt;'.
+#          'tree.nodeAdd();' .
+#          #'tree.nodeAdd(tree.activeNonLeafNode());' .        
+#        '}'
+#      )
+#  });
+#}
+#
+#
+#sub delete_button {
+#  my $self = shift;
+#  
+#  return RapidApp::JSONFunc->new(
+#    func => 'new Ext.Button', 
+#    parm => {
+#      tooltip    => $self->delete_button_text,
+#      iconCls  => $self->delete_button_iconCls,
+#      handler   => RapidApp::JSONFunc->new( 
+#        raw => 1, 
+#        func => 'function(btn) { ' . 
+#          'var tree = btn.ownerCt.ownerCt;'.
+#          'tree.nodeDelete(tree.getSelectionModel().getSelectedNode());' .
+#          #'Ext.ux.RapidApp.AppTree.del(tree,"' . $self->suburl('/delete') . '");' .
+#          
+#        '}'
+#      )
+#  });
+#}
+#
 
 
 
