@@ -1471,3 +1471,30 @@ body > #main-load-target > .x-tab-panel-header {
 }
 
 
+.pad-top-10px {
+  padding-top: 10px;
+}
+
+.pad-top-7px {
+  padding-top: 7px;
+}
+
+.pad-top-bottom-7px {
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+.pad-bottom-7px {
+  padding-bottom: 7px;
+}
+
+.pad-top-bottom-4px {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.pad-top-7px-bottom-4px {
+  padding-top: 7px;
+  padding-bottom: 4px;
+}
+
