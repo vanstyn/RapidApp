@@ -110,7 +110,7 @@ around 'content' => sub {
   
   return $content unless ($self->double_tree);
 
-  return {
+  my $cfg = {
     xtype => 'container',
     
     #Emulate border layout:
@@ -142,6 +142,11 @@ around 'content' => sub {
       }
     ]
   };
+  
+  my @p = qw/tabTitle tabIconCls/;
+  $content->{$_} and $cfg->{$_} = $content->{$_} for (@p);
+  
+  return $cfg
 };
 
 
