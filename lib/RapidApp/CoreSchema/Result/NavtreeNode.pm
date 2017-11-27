@@ -107,9 +107,15 @@ __PACKAGE__->TableSpec_set_conf(
 
 __PACKAGE__->TableSpec_set_conf('column_properties_ordered', 
 
-	id => { no_column => \1, no_multifilter => \1, no_quick_search => \1 },
 	pid => { no_column => \1, no_multifilter => \1, no_quick_search => \1 },
 	navtree_node_to_roles => { no_column => \1, no_multifilter => \1, no_quick_search => \1 },
+  
+  id => {
+    header => 'Id',
+    width  => 55,
+    allow_edit => \0,
+    allow_add  => \0
+  },
 
 	text => {
 		header => 'Text',
@@ -131,6 +137,11 @@ __PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 		allow_edit => \0,
 		hidden => \1
 	},
+  
+  ordering => {
+    header => 'Ordering',
+    width	=> 80,
+  },
 	
 	navtree_nodes => {
 		header => 'Child Nodes',
