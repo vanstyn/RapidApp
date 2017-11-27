@@ -35,52 +35,6 @@ sub apply_node_navopts {}
 has '+fetch_nodes_deep', default => 0;
 
 
-has '+node_types', default => sub {[
-  {
-    type     => 'folder',
-    title    => 'Folder',
-    iconCls  => 'ra-icon-folder',
-    addable  => 1,
-    editable => 1
-  },
-  {
-    type     => 'search',
-    title    => 'Saved Search',
-    addable  => 0,
-    editable => 1
-  },
-  {
-    type     => 'link',
-    title    => 'Custom Link',
-    iconCls  => 'ra-icon-link-go',
-    addable  => 1,
-    editable => 1,
-    applyDialogOpts => {
-      height => 200,
-    },
-    fields => [{
-      name  => 'iconcls',
-      xtype => 'ra-all-icon-assets-combo',
-      value => 'ra-icon-link-go',
-      fieldLabel => 'Icon',
-    },{
-      name  => 'url', 
-      xtype => 'textfield',
-      fieldLabel => 'Link URL',
-      plugins => [{
-        ptype => 'fieldhelp',
-        text  => "Local internal URL path, starting with '/'"
-      }],
-      allowBlank => \0,
-      validator => jsfunc join(' ','function(v) {',
-        'return (v && v.search("/") == 0) ? true : false;',
-      '}')
-    }]
-  },
-
-]};
-
-
 sub auth_active {
   my $self = shift;
   return $self->c->can('user') ? 1 : 0;
@@ -311,7 +265,8 @@ sub add_node {
     $Node = $self->Rs->create({
       pid => $id,
       text => $name,
-      ordering => $order
+      ordering => $order,
+      iconcls => $params->{iconcls}
     });
   }
 	
@@ -641,10 +596,16 @@ sub rename_node {
 	#my $Node = $self->Rs->search_rs({ 'me.id' => $id })->first;
 	$Node->update({ 'text' => $name });
 	
+  $Node->text($name);
+  $Node->iconcls($params->{iconcls}) if ($params->{iconcls});
+  
+  $Node->update;
+  
 	return {
 		msg		=> 'Renamed',
 		success	=> \1,
 		new_text => $Node->text,
+    new_iconcls => $Node->iconcls
 	};
 }
 
@@ -655,9 +616,10 @@ sub rename_search {
   
   my $update = { title => $name };
   if($nodeTypeName eq 'link') {
-    $update->{url}     = $params->{url}     if ($params->{url});
-    $update->{iconcls} = $params->{iconcls} if ($params->{iconcls});
+    $update->{url} = $params->{url} if ($params->{url});
   }
+  
+  $update->{iconcls} = $params->{iconcls} if ($params->{iconcls});
   
   if ($State->update($update)) {
     my $res = {

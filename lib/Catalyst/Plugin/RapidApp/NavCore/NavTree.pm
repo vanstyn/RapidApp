@@ -6,6 +6,69 @@ extends 'RapidApp::Module::NavTree';
 
 use RapidApp::Util qw(:all);
 
+# ---
+# Note: This is only actually used by the "Manage" subclass, but we are defining it here because
+# this class still has the duty of setting the nodeTypeName value in fetch_nodes, so it makes
+# more sense to declare in the same place.
+has '+node_types', default => sub {
+  my $self = shift;
+  
+  my $iconF = {
+    name  => 'iconcls',
+    xtype => 'ra-all-icon-assets-combo',
+    fieldLabel => 'Icon',
+  };
+  
+  my $urlF = {
+    name  => 'url', 
+    xtype => 'textfield',
+    fieldLabel => 'Link URL',
+    plugins => [{
+      ptype => 'fieldhelp',
+      text  => "Local internal URL path, starting with '/'"
+    }],
+    allowBlank => \0,
+    validator => jsfunc join(' ','function(v) {',
+      'return (v && v.search("/") == 0) ? true : false;',
+    '}')
+  };
+  
+  return [{
+    type     => 'folder',
+    title    => 'Folder',
+    iconCls  => 'ra-icon-folder',
+    addable  => 1,
+    editable => 1,
+    applyDialogOpts => {
+      height => 170,
+    },
+    fields => [{ %$iconF, value => 'x-tree-node-icon' }]
+  },
+  {
+    type     => 'search',
+    title    => 'Saved Search',
+    addable  => 0,
+    editable => 1,
+    applyDialogOpts => {
+      height => 170,
+    },
+    fields => [$iconF]
+  },
+  {
+    type     => 'link',
+    title    => 'Custom Link',
+    iconCls  => 'ra-icon-link-go',
+    addable  => 1,
+    editable => 1,
+    applyDialogOpts => {
+      height => 200,
+    },
+    fields => [{ %$iconF, value => 'ra-icon-link-go' },$urlF]
+  }]
+};  
+# ---
+
+
 has 'plugin_config', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   my $c = $self->app;
@@ -179,10 +242,14 @@ sub get_Node_config {
       $opts->{nodeTypeName} = 'link';
       $opts->{customAttrs}  = $attrs;
     }
+    else {
+      $opts->{nodeTypeName} = 'search';
+    }
     
 	}
 	# Navtree Node specific
 	else {
+    $opts->{nodeTypeName} = 'folder';
 		$opts->{allowCopy} = \0;
 	}
 	

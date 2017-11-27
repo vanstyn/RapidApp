@@ -741,7 +741,7 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			title: this.rename_node_text,
 			url: this.rename_node_url,
 			values: Ext.apply(
-        { name: node.attributes.text },
+        { name: node.attributes.text, iconcls: node.attributes.iconCls },
         node.attributes.customAttrs || {}
       ),
       nodeTypeName: node.attributes.nodeTypeName
