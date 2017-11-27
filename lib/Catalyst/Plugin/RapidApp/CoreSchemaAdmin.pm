@@ -22,8 +22,11 @@ before 'setup_components' => sub {
     my %src = ();
     ++$src{Session} if ($c->can('session'));
     ++$src{User} and ++$src{Role} if ($c->can('_authcore_load_plugins'));
-    ++$src{DefaultView} if ($c->can('_navcore_inject_controller'));
-    ++$src{SavedState} if ($c->can('_navcore_inject_controller'));
+    if ($c->can('_navcore_inject_controller')) {
+      ++$src{DefaultView};
+      ++$src{SavedState};
+      ++$src{NavtreeNode};
+    }
     my @limit_sources = keys %src;
     # If none of the above sources were added, don't configure the CoreSchema
     # tree item for RapidDbic at all:

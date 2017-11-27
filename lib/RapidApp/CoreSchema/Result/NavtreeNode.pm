@@ -99,8 +99,8 @@ __PACKAGE__->apply_TableSpec;
 __PACKAGE__->TableSpec_set_conf( 
 	title => 'Navtree Node',
 	title_multi => 'Navtree Nodes',
-	#iconCls => 'ra-icon-folder',
-	#multiIconCls => 'ra-icon-folders',
+	iconCls => 'ra-icon-folder',
+	multiIconCls => 'ra-icon-folders',
 	display_column => 'text'
 );
 
@@ -120,8 +120,9 @@ __PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 	iconcls => {
 		header => 'Icon Cls',
 		width	=> 150,
-		allow_edit => \0,
-		hidden => \1
+		#allow_edit => \0,
+		hidden => \1,
+    editor => { xtype => 'ra-all-icon-assets-combo', }
 	},
 	
 	expanded => {
