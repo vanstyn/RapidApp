@@ -272,6 +272,7 @@ Ext.ux.RapidApp.AppCombo2.IconCombo = Ext.extend(Ext.ux.RapidApp.AppCombo2.CssCo
 	clearCss: true,
 	initComponent: function() {
 		if (this.value_list) {
+      if(this.value) { this.value_list.unshift(this.value); }
 			var data = [];
 			Ext.each(this.value_list,function(item,index){
 				if(Ext.isArray(item)) {
