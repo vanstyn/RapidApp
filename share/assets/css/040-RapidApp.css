@@ -65,6 +65,17 @@ pre {
 	vertical-align: middle;
 }
 
+/* Special work-around just to be able to use the ExtJS 'folder' icon the same as
+   other iconCls icons. The reason this is needed is because this class has multiple
+   states (with the folder open and teh folder closed). This workaround lets us use
+   it with 'with-icon' and behave the same as a simple icon asset (using the 
+   collapsed/closed version */
+.with-icon.x-tree-node-icon,
+.with-icon .x-tree-node-icon {
+  background-image: url(../../../assets/extjs/current/resources/images/default/tree/folder.gif);
+}
+
+
 .with-inline-icon {
 	padding-left: 18px;
 	line-height: 16px;
