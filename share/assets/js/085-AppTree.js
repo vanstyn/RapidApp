@@ -833,7 +833,6 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 	// General purpose functon for several operations, like add, rename
 	nodeApplyDialog: function(node,opt) {
     var typeInfo = this.lookupNodeTypeInfo(opt.nodeTypeName);
-    
 		var tree = this;
 		var cnf = Ext.apply({
 			url: null, // <-- url is required
@@ -846,6 +845,10 @@ Ext.ux.RapidApp.AppTree = Ext.extend(Ext.tree.TreePanel,{
 			params: { node: node.id },
 			values: {}
 		},opt);
+    
+    if(typeInfo && typeInfo.title) {
+      cnf.title += ' ('+typeInfo.title+')';
+    }
 		
 		if(!cnf.url) { throw "url is a required parameter"; }
 		
