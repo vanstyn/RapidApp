@@ -114,7 +114,7 @@ sub before_load_saved_search {
   
   my $SavedState = $DefaultView->view or return;
   
-  my $state_data = $SavedState->get_column('state_data');
+  my $state_data = $SavedState->get_column('state_data') or return;
   my $search_data = $self->json->decode($state_data) or die usererr "Error deserializing grid_state";
 	$self->apply_to_all_columns( hidden => \1 );
 	return $self->batch_apply_opts_existing($search_data);
