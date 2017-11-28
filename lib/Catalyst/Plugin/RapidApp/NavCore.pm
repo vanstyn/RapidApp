@@ -16,7 +16,79 @@ sub _navcore_inject_controller {
     component => 'Catalyst::Plugin::RapidApp::NavCore::Controller',
     as => 'Controller::View'
   );
+  
+  $c->_navcore_init_default_public_nav_items;
+  
 };
+
+
+sub _navcore_init_default_public_nav_items {
+  my $c = shift;
+  
+  my $cfg  = clone($c->config->{'Plugin::RapidApp::NavCore'} || {});
+  my $itms = $cfg->{default_public_nav_items} or return;
+  
+  # Only auto-init to a clean slate
+  return if ($c->model('RapidApp::CoreSchema::NavtreeNode')->count > 1);
+
+  warn " ** NavCore: Initializing default public navtree/views from 'default_public_nav_items' ...\n";
+  $c->_navcore_create_public_structure($itms,0);
+
+}
+
+
+sub _navcore_create_public_structure {
+  my ($c, $itms, $nav_node_id) = @_;
+  
+  try {
+    $c->model('RapidApp::CoreSchema')->txn_do(sub {
+      $c->__navcore_create_public_structure($itms, $nav_node_id);
+    });
+  }
+  catch {
+    my $err = shift;
+    die $err
+  };
+}
+
+
+sub __navcore_create_public_structure {
+  my ($c, $itms, $nav_node_id) = @_;
+  my $type = ref($itms)||'';
+  
+  return $c->__navcore_create_public_structure(
+    $itms->($c), $nav_node_id
+  ) if ($type eq 'CODE');
+  
+  unless ($type eq 'ARRAY') {
+    $type eq 'HASH'
+      ? $itms = [$itms]
+      : die "items must be supplied as an ArrayRef or a CodeRef which returns an ArrayRef"
+  }
+  
+  $nav_node_id //= 0; # root node
+  
+  my $nRs = $c->model('RapidApp::CoreSchema::NavtreeNode');
+  my $sRs = $c->model('RapidApp::CoreSchema::SavedState');
+  
+  for my $itm (@$itms) {
+    my $create = clone($itm);
+    if(my $children = $itm->{children}) {
+      
+      delete $create->{children};
+      $create->{pid} = $nav_node_id;
+      my $NavNode = $nRs->create($create);
+      
+      $c->__navcore_create_public_structure($children,$NavNode->get_column('id'));
+    }
+    else {
+      $create->{node_id} = $nav_node_id;
+      $create->{title} ||= delete $create->{text} if ($create->{text});
+      $sRs->create($create);
+    }
+  }
+}
+
 
 
 1;
