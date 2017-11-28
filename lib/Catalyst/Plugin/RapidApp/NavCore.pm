@@ -17,19 +17,18 @@ sub _navcore_inject_controller {
     as => 'Controller::View'
   );
   
-  $c->_navcore_init_default_public_nav_items;
-  
+  $c->_navcore_init_default_public_nav_items(0);
 };
 
 
 sub _navcore_init_default_public_nav_items {
-  my $c = shift;
+  my ($c, $force) = @_;
   
   my $cfg  = clone($c->config->{'Plugin::RapidApp::NavCore'} || {});
   my $itms = $cfg->{default_public_nav_items} or return;
   
   # Only auto-init to a clean slate
-  return if ($c->model('RapidApp::CoreSchema::NavtreeNode')->count > 1);
+  return if (!$force && $c->model('RapidApp::CoreSchema::NavtreeNode')->count > 1);
 
   warn " ** NavCore: Initializing default public navtree/views from 'default_public_nav_items' ...\n";
   $c->_navcore_create_public_structure($itms,0);
@@ -87,6 +86,8 @@ sub __navcore_create_public_structure {
       $sRs->create($create);
     }
   }
+  
+  1
 }
 
 

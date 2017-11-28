@@ -1439,6 +1439,78 @@ Ext.ux.RapidApp.AppTree.ServerFilterPlugin = Ext.extend(Ext.util.Observable,{
 Ext.preg('apptree-serverfilter',Ext.ux.RapidApp.AppTree.ServerFilterPlugin);
 
 
+Ext.ux.RapidApp.AppTree.NavCoreImportDefaultsPlugin = Ext.extend(Ext.util.Observable,{
+
+  init: function(tree) {
+    if(tree.import_defaults_url) {
+      this.tree = tree;
+      this.setupButtons.call(this);
+    }
+  },
+  
+  setupButtons: function() {
+    var tb = this.tree.topToolbar;
+    if(!tb || this.importBtn) { return; }
+    
+    this.importBtn = new Ext.Button({
+      text: 'Import Default Items',
+      iconCls: 'ra-icon-tree-down',
+      handler:this.confirmImport, 
+      scope: this
+    });
+    
+    tb.insert(0,this.importBtn);
+  },
+  
+  confirmImport: function() {
+    Ext.Msg.show({
+      icon: Ext.Msg.QUESTION,
+      title: 'Import Default Public Navigation Items?',
+      msg: [
+        'Re-import the default saved searches configured for this application?',
+        '<br><br>',
+        'Existing items will not be changed'
+      ].join(''),
+      buttons: Ext.Msg.YESNO,
+      fn: function(sel) {
+        if(sel == 'yes') {
+          this.doImport.call(this); 
+        }
+      },
+      scope: this
+    });
+  },
+  
+  hideMask: function() { 
+    if(this._loadMask) { this._loadMask.hide(); }
+  },
+  
+  showMask: function(msg) {
+    this.hideMask.call(this);
+    msg = msg || 'Please wait...';
+    this._loadMask = new Ext.LoadMask(this.tree.getEl(), {msg:msg});
+    this._loadMask.show();
+  },
+  
+  doImport: function() {
+  
+    this.showMask('Running import...');
+    Ext.Ajax.request({
+      url: this.tree.import_defaults_url,
+      params: { navcore_confirm_import: 1 }, // just to make it harder to run by accident
+      failure: this.hideMask,
+      success: function(response,options) {
+        this.hideMask();
+        var rootnode = this.tree.getRootNode();
+        this.tree.getLoader().load(rootnode);
+      },
+      scope: this
+    });
+  }
+  
+});
+Ext.preg('ra-navcore-import-defaults',Ext.ux.RapidApp.AppTree.NavCoreImportDefaultsPlugin);
+
 
 
 /**

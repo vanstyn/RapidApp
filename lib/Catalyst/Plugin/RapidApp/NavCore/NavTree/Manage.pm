@@ -57,10 +57,19 @@ sub BUILD {
 	$self->root_node->{allowAdd} = \0;
 	
 	$self->add_ONCONTENT_calls('apply_permissions');
+  
+  $self->add_plugin('ra-navcore-import-defaults');
+  $self->apply_actions( import_defaults => 'import_defaults_action' );
 }
 
 sub apply_permissions {
 	my $self = shift;
+  
+  # This is what causes the 'ra-navcore-import-defaults' plugin to become active:
+  $self->apply_extconfig( 
+    import_defaults_url => $self->suburl('import_defaults') 
+  ) if ($self->is_import_allowed);
+  
 	return if ($self->can_edit_navtree);
 	
 	$self->apply_extconfig(
@@ -68,6 +77,28 @@ sub apply_permissions {
 		expand_node_url => undef
 	);
 }
+
+has 'default_public_nav_items', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  my $cfg  = clone($self->app->config->{'Plugin::RapidApp::NavCore'} || {});
+  $cfg->{default_public_nav_items}
+};
+
+sub is_import_allowed {
+  my $self = shift;
+  $self->is_admin 
+    and $self->default_public_nav_items 
+    and $self->c->can('_navcore_init_default_public_nav_items')
+}
+
+sub import_defaults_action {
+  my $self = shift;
+  die usererr "PERMISSION DENIED" unless ($self->is_import_allowed);
+  die "Malformed request" unless $self->c->req->params->{navcore_confirm_import};
+  
+  $self->c->_navcore_init_default_public_nav_items(1)
+}
+
 
 
 sub fetch_nodes {
