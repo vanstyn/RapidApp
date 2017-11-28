@@ -16,7 +16,10 @@ sub _navcore_inject_controller {
     component => 'Catalyst::Plugin::RapidApp::NavCore::Controller',
     as => 'Controller::View'
   );
-  
+};
+
+after 'setup_finalize' => sub {
+  my $c = shift;
   $c->_navcore_init_default_public_nav_items(0);
 };
 
@@ -41,7 +44,9 @@ sub _navcore_create_public_structure {
   
   try {
     $c->model('RapidApp::CoreSchema')->txn_do(sub {
-      $c->__navcore_create_public_structure($itms, $nav_node_id);
+      my $trk_def = {};
+      $c->__navcore_create_public_structure($itms, $nav_node_id, $trk_def);
+      $c->__navcore_set_default_views($trk_def);
     });
   }
   catch {
@@ -52,7 +57,8 @@ sub _navcore_create_public_structure {
 
 
 sub __navcore_create_public_structure {
-  my ($c, $itms, $nav_node_id) = @_;
+  my ($c, $itms, $nav_node_id, $trk_def) = @_;
+  $trk_def ||= {};
   my $type = ref($itms)||'';
   
   return $c->__navcore_create_public_structure(
@@ -73,21 +79,45 @@ sub __navcore_create_public_structure {
   for my $itm (@$itms) {
     my $create = clone($itm);
     if(my $children = $itm->{children}) {
-      
+      # The presence of 'children' means its a node (folder)
       delete $create->{children};
       $create->{pid} = $nav_node_id;
       my $NavNode = $nRs->create($create);
       
-      $c->__navcore_create_public_structure($children,$NavNode->get_column('id'));
+      $c->__navcore_create_public_structure($children,$NavNode->get_column('id'),$trk_def);
     }
     else {
+      # otherwise its a saved search/view
       $create->{node_id} = $nav_node_id;
       $create->{title} ||= delete $create->{text} if ($create->{text});
-      $sRs->create($create);
+      my $source_model = $create->{_default_for} ? delete $create->{_default_for} : undef;
+      
+      my $Row = $sRs->create($create);
+      
+      if($source_model) {
+        die "saw '$source_model' more than once in _default_for" if ($trk_def->{$source_model});
+        $trk_def->{$source_model} = $Row->get_column('id');
+      }
     }
   }
   
   1
+}
+
+sub __navcore_set_default_views {
+  my $c = shift;
+  my $trk_def = shift || {};
+  my @list = keys %$trk_def;
+  return unless (scalar(@list) > 0);
+  
+  $c->_rapiddbic_initialize_default_views_rows;
+  
+  my $Rs = $c->model('RapidApp::CoreSchema::DefaultView');
+  for my $source_model (@list) {
+    my $Row = $Rs->find($source_model) or die "Invalid source_model '$source_model'";
+    $Row->set_column( view_id => $trk_def->{$source_model} );
+    $Row->update;
+  }
 }
 
 

@@ -233,6 +233,12 @@ before 'setup_component' => sub {
 
 after 'setup_finalize' => sub {
   my $c = shift;
+  $c->_rapiddbic_initialize_default_views_rows
+};
+
+
+sub _rapiddbic_initialize_default_views_rows {
+  my $c = shift;
   
   my $config = $c->config->{'Plugin::RapidApp::RapidDbic'} or die
     "No 'Plugin::RapidApp::RapidDbic' config specified!";
@@ -249,8 +255,7 @@ after 'setup_finalize' => sub {
       { key => 'primary' }
     ) for (@source_models);
   }
-};
-
+}
 
 1;
 
