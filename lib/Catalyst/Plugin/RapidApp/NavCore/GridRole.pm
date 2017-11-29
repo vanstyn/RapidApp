@@ -124,7 +124,7 @@ sub load_saved_search {
 	%$baseParams = ( %$baseParams, %$new_base_params );
 	$self->DataStore->apply_extconfig( baseParams => $baseParams );
 	
-	
+	return if (!$Search->state_data || $Search->state_data eq '{}');
 	my $search_data = $self->json->decode($Search->state_data) or die usererr "Error deserializing grid_state";
 	
 	$self->apply_to_all_columns( hidden => \1 );
