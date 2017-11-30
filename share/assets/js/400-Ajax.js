@@ -418,6 +418,17 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
               title = style ? '<span style="' + style + '">' + title + '</span>' : title;
               conf.tabTitle = title || conf.tabTitle;
               conf.tabIconCls = titleEl.getAttribute('class') || conf.tabIconCls || 'ra-icon-page-white-world';
+              
+              // -- New: allow the template content itself to set the refresh iterval like this:
+              //   <title class="icon-something" ap-refresh-interval="300">Some Title</title>
+              // Exposing this as a custom attr in the <title> tag because we're already using it
+              // to set the tab icon.
+              var reload = titleEl.getAttribute('ap-refresh-interval');
+              if(reload && reload == parseInt(reload,10)) {
+                reload = parseInt(reload,10);
+                container.autopanel_refresh_interval = reload;
+              }
+              // --
             }
           }
           // ------------------------------------
