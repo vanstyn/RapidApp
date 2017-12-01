@@ -1,5 +1,18 @@
 Revision history for RapidApp
 
+1.3100 2017-12-01
+    - Added new NavCore config option 'default_public_nav_items' (VANSTYN)
+    - Added new NavCore config option 'custom_navtree_nodes' (VANSTYN)
+    - Added button to Manage Navtree to import 'default_public_nav_items' (VANSTYN)
+    - Default session expire increased from 1 to 2 hours (VANSTYN)
+    - autopanel_refresh_interval can now be set via template <title> (VANSTYN)
+    - Fixes and improvements related to 'Custom Links' added in 1.2110 (VANSTYN)
+    - CoreSchemaAdmin now shows NavtreeNode by default (VANSTYN)
+    - Built-in 'x-tree-node-icon' can now be used like iconCls (VANSTYN)
+    - Improvements to IconCombo (VANSTYN)
+    - Users can now change icons for all Navtree items (VANSTYN)
+    - Misc tweaks and bug fixes (VANSTYN)
+
 1.3005 2017-10-24
     - Added new util sugar funcs encode_json_ascii and decode_json_ascii (VANSTYN)
     - Pre-support for next DBIC release (resolve_relationship_condition) (VANSTYN)
