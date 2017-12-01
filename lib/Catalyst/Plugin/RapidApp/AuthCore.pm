@@ -63,8 +63,8 @@ before 'setup_dispatcher' => sub {
     $cs_cnf->{init_admin_password} = $config->{init_admin_password};
   }
   
-  # Default session expire 1 hour
-  $config->{expires} ||= 60*60;
+  # Default session expire 2 hour
+  $config->{expires} ||= 2*60*60;
   
   $config->{credential} ||= {
     class => 'Password',
