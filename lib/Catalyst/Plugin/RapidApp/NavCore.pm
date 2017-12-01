@@ -92,6 +92,15 @@ sub __navcore_create_public_structure {
       $create->{title} ||= delete $create->{text} if ($create->{text});
       my $source_model = $create->{_default_for} ? delete $create->{_default_for} : undef;
       
+      # Existence/absence of state_data deterimines if it is a saved search or a simple
+      # internal link. Check the url to see if it is a module, and set dummy state_data
+      # if it is to force it to be a saved search, so it can be updated later by users:
+      unless($create->{state_data}) {
+        my $rootModule = $c->model('RapidApp')->rootModule;
+        my $url = $create->{url};
+        $create->{state_data} = '{}' if (try{$rootModule->get_Module($create->{url})});
+      }
+      
       my $Row = $sRs->create($create);
       
       if($source_model) {

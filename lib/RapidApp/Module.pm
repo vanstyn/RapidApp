@@ -386,7 +386,16 @@ sub get_Module {
   my @parts = split('/',$path);
   my $first = shift @parts;
   # If $first is undef then the path is absolute (starts with '/'):
-  return $self->topmost_module->get_Module(join('/',@parts)) unless ($first);
+  unless ($first) {
+    my $topModule = $self->topmost_module;
+    # New: support returning modules when the module_root_namespace is supplied in the path:
+    shift @parts if (
+      !$topModule->has_module($parts[0]) && 
+      $parts[0] eq $self->app->module_root_namespace
+    );
+    
+    return $topModule->get_Module(join('/',@parts));
+  }
   
   # If there are no more parts in the path, then the name is a direct submodule:
   return $self->Module($first) unless (scalar @parts > 0);
