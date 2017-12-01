@@ -224,7 +224,21 @@ Ext.ux.RapidApp.AppTab.TabPanel = Ext.extend(Ext.TabPanel, {
 		return this.navsource;
 	},
 
-	loadContent: function() {
+	loadContent: function(cnfo,extra_args) {
+  
+    // NEW: if we're the main-load-target and it's a simple, absolute url, just perform a
+    // Hashnav which will automatically trigger a loadTab with properly normalized options.
+    // This is being done to fix issues with navtree Custom Links with query-strings in the
+    // URL which is converted by the hashnav event and causes 2 tabs to open (with the first
+    // one not properly handling the query-string)
+    if(this.id == 'main-load-target') {
+      var url = cnfo.autoLoad.url;
+      if(url && url.search('/') == 0 && !cnfo.autoLoad.params && !extra_args) {
+        var hash = ['#!',url].join('');
+        return Ext.ux.RapidApp.HashNav.handleHashChange(hash);
+      }
+    }  
+  
 		this.fireEvent( 'navload' );
 		return this.loadTab.apply(this,arguments);
 	},
