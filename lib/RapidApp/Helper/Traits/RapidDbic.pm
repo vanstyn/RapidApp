@@ -287,7 +287,7 @@ sub _ra_rapiddbic_generate_model {
     $connect_opt_defaults
   );
   
-  my $loader_opt_defaults = [qw/create=static generate_pod=0/];
+  my $loader_opt_defaults = [qw/create=static generate_pod=0 preserve_case=1/];
   
   # -- GitHub Issue #164 --
   # turn on qualify_objects by default whenever a 'db-schema' is supplied:

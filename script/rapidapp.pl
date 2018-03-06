@@ -105,7 +105,7 @@ rapidapp.pl - Bootstrap a RapidApp/Catalyst application
 
    rapidapp.pl --helpers RapidDbic MyApp -- \
      --dsn 'dbi:Pg:dbname=foo;host=localhost;port=5432',larry,secretpw \
-     --loader-option db_schema='%' --loader-option generate_pod=1 \
+     --loader-option db_schema='%' --loader-option preserve_case=0 \
      --connect-option quote_names=0
 
    rapidapp.pl --helpers RapidDbic MyApp -- --dsn \
