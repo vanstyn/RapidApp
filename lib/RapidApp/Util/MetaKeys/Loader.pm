@@ -23,6 +23,8 @@ sub new {
     exists $args{skip_load_external} && !$args{skip_load_external} 
   );
   
+  $args{preserve_case} = 1 unless (exists $args{preserve_case});
+  
   my $metakeys_data = exists $args{metakeys} ? delete $args{metakeys} : undef;
   
   # -- NEW: Experimental limit/exclude opts (Added for GitHub Issue #152):
