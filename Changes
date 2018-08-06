@@ -1,5 +1,15 @@
 Revision history for RapidApp
 
+1.3101 2018-08-06
+    - Replace Hash::Merge with new RapidApp::Util::Hash::Merge - #177 (VANSTYN)
+    - RapidDbic default loader-option preserve_case=1 (instead of 0) (VANSTYN)
+    - Require Catalyst::Controller::SimpleCAS 1.002 (VANSTYN)
+    - Require Plack 1.0047 (VANSTYN)
+    - Require Catalyst::Runtime 5.90118 (VANSTYN)
+    - Require DBIx::Class::Schema::Loader 0.07049 (VANSTYN)
+    - Require Catalyst::Controller::SimpleCAS 1.002 (VANSTYN)
+    - Require File::Copy::Recursive 0.44 (VANSTYN)
+
 1.3100 2017-12-01
     - Added new NavCore config option 'default_public_nav_items' (VANSTYN)
     - Added new NavCore config option 'custom_navtree_nodes' (VANSTYN)
