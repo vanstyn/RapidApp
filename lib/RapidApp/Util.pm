@@ -16,8 +16,8 @@ use RapidApp::JSON::MixedEncoder qw(
   encode_json decode_json encode_json_utf8 decode_json_utf8 encode_json_ascii decode_json_ascii
 );
 
-use Hash::Merge qw( merge );
-Hash::Merge::set_behavior( 'RIGHT_PRECEDENT' );
+use RapidApp::Util::Hash::Merge qw( merge );
+RapidApp::Util::Hash::Merge::set_behavior( 'RIGHT_PRECEDENT' );
 
 
 BEGIN {

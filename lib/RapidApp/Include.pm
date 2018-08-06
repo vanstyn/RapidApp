@@ -77,7 +77,7 @@ sub perlutil {
 	calleruse 'DateTime';
 	calleruse qw(Term::ANSIColor :constants);
 	calleruse 'Clone';
-	calleruse 'Hash::Merge';
+	calleruse 'RapidApp::Util::Hash::Merge';
 	calleruse qw(Carp carp croak confess cluck longmess shortmess);
 }
 

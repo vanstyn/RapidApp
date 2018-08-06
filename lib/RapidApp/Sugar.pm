@@ -24,8 +24,8 @@ use RapidApp::Responder::UserError;
 use RapidApp::Handler;
 use HTML::Entities;
 use Scalar::Util qw(blessed);
-use Hash::Merge qw( merge );
-Hash::Merge::set_behavior( 'RIGHT_PRECEDENT' );
+use RapidApp::Util::Hash::Merge qw( merge );
+RapidApp::Util::Hash::Merge::set_behavior( 'RIGHT_PRECEDENT' );
 use Clone qw(clone);
 
 use Types::Standard qw(:all);
