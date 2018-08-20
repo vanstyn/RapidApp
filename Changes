@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+1.3102 2018-08-20
+    - AutoPrereqs 'skip = DBIx::Class::_Util' - #176 (VANSTYN)
+
 1.3101 2018-08-06
     - Replace Hash::Merge with new RapidApp::Util::Hash::Merge - #177 (VANSTYN)
     - RapidDbic default loader-option preserve_case=1 (instead of 0) (VANSTYN)
