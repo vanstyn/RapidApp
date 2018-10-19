@@ -48,6 +48,7 @@ has 'Store', is => 'ro', lazy => 1, default => sub {
 
 sub _store_owns_template {
   my ($self, $name) = @_;
+  return 0 if ($self->{IGNORE_STORE_OWNERSHIP});
   $self->{_store_owns_template}{$name} //= do { # Only ask the Store if it owns a template once
     $name =~ /^\//
       ? 0 # never ask about absolute paths
@@ -240,6 +241,12 @@ sub template_exists {
   return $self->_store_owns_template($template)
     ? $self->Store->template_exists($template)
     : $self->get_template_path($template) ? 1 : 0;
+}
+
+sub template_exists_locally {
+  my $self = shift;
+  local $self->{IGNORE_STORE_OWNERSHIP} = 1;
+  $self->template_exists(@_)
 }
 
 # Copied from Template::Provider::load
