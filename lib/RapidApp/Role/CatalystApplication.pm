@@ -248,6 +248,25 @@ sub _rapidapp_top_level_dispatch {
         $c->forward($err->action);
         last;
       }
+      
+      # ------
+      # New: support a custom app-wide error template:
+      if(my $template = $c->config->{RapidApp}{error_template}) {
+        try {
+          my $TC = $c->template_controller;
+          my $body = $TC->template_render($template,{ error => $err },$c);
+          
+          $c->response->status(500);
+          $c->response->body($body);
+          $c->clear_errors;
+          last
+        }
+        catch {
+          my $e = shift;
+          warn 'EXCEPTION TRYING TO RENDER WITH CUSTOM error_template: ' . $e;
+        };
+      }
+      # ------
     }
   }
   catch {
