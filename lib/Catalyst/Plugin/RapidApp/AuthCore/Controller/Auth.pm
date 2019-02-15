@@ -63,8 +63,9 @@ sub to_referer :Chained('base') :Args(0) {
   my $c = shift;
   
   my $url = join($c->mount_url,'/auth/login');
+  my $to = $self->_parse_to_referer($c);
   
-  if(my $to = $self->_parse_to_referer($c)) {
+  if($to && $to ne '/' && $to ne $c->mount_url.'/') {
     if ($c->session && $c->session_is_valid and $c->user_exists) {
       # if we're already logged in, send them directly:
       $url = $self->_url_extract_convert_fragment($to);
