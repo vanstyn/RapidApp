@@ -242,24 +242,57 @@ sub _rapidapp_top_level_dispatch {
   
   try {
     $orig->($c, @args);
-    for my $err (@{ $c->error }) {
+    if(my ($err) = (@{ $c->error })) {
       if (blessed($err) && $err->isa('RapidApp::Responder')) {
         $c->clear_errors;
         $c->forward($err->action);
-        last;
       }
       
       # ------
       # New: support a custom app-wide error template:
-      if(my $template = $c->config->{RapidApp}{error_template}) {
+      elsif(my $template = $c->config->{RapidApp}{error_template}) {
         try {
           my $TC = $c->template_controller;
-          my $body = $TC->template_render($template,{ error => $err },$c);
           
-          $c->response->status(500);
+          # --------
+          # This is just a little fallback code to automatically dump the template 'error'
+          # variable in case it is an object/reference but being used directly in the error
+          # template. Exceptions are caught and put in the 'error' TT var. The exception
+          # could be a simple text message, OR it could be an object. If user code throws
+          # exception objects, their error template should know how to handle them, however,
+          # if they miss this detail and don't, we try to save them from shooting themselves
+          # in the foot by dumping the object rather than allowing it to be rendered as simply
+          # 'Some:Class=HASH(0x1046f198)' which is almost never useful -- BUT, we also must
+          # take into account whether or not the object already stringifies, and only do this
+          # override when it does not, which is exactly what this code does. 
+          #  Note that this is not full-proof, and currently this only works when the template
+          #  stash class is Template::Stash::XS, which is most likely, but by no means 
+          #  guaranteed. But in that case this code just won't be called
+          my $orig_get = \&Template::Stash::XS::get;
+          no warnings 'redefine';
+          local *Template::Stash::XS::get = sub {
+            my ($self, $var) = @_;
+            my $val = $self->$orig_get($var);
+            require SQL::Abstract;
+            return ($var eq 'error' && ! SQL::Abstract::is_plain_value($val))
+              ? join('',"$val - OBJECT DUMP: ",Dumper($val))
+              : $val
+          };
+          # --------
+          
+          # If the error is an object or HashRef with a 'status_code' 
+          # method/key which returns a value that looks like an HTTP 
+          # status code, use it, otherwise stick with the standard 500:
+          my $status = try{$err->status_code} || try{$err->{status_code}};
+          $status = 500 unless ($status && ($status =~ /^\d{3}$/));
+          
+          my $body = $TC->template_render($template,{ 
+            error => $err, error_status_code => $status
+          },$c);
+          
+          $c->response->status($status);
           $c->response->body($body);
           $c->clear_errors;
-          last
         }
         catch {
           my $e = shift;
