@@ -271,7 +271,9 @@ sub convert_render_cols_hash {
 	my $hash = shift;
 	
 	foreach my $col (keys %$hash) {
-		my $field = $self->get_column($col) or die "column $col does not exist in columns hash";
+		my $field = $self->get_column($col) or 
+      warn "ExcelExport: column $col does not exist in columns hash"
+      and next;
 		my $colname = $field->render_column ? $field->render_column : $field->name;
 		$hash->{$colname} = delete $hash->{$col};
 	}
