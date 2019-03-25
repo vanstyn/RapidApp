@@ -1,5 +1,14 @@
 Revision history for RapidApp
 
+1.3103 2019-03-25
+    - ExcelExport on invalid columns is now non-fatal (VANSTYN)
+    - Added new cfg 'error_template' for custom exception handling (VANSTYN)
+    - More robust handling for user-defined exception objects (VANSTYN)
+    - Improvements to AuthCore login passthrough redirect (VANSTYN)
+    - Improve JS for AuthCore login templates for autofocus (VANSTYN)
+    - Require DateTime 1.50 (VANSTYN)
+    - Added template_exists_locally() method to Template Provider (VANSTYN)
+
 1.3102 2018-08-20
     - AutoPrereqs 'skip = DBIx::Class::_Util' - #176 (VANSTYN)
 
