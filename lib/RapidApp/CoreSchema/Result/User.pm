@@ -8,9 +8,14 @@ use MooseX::NonMoose;
 use namespace::autoclean;
 extends 'DBIx::Class::Core';
 
-use DBIx::Class::PassphraseColumn 0.02;
+#use DBIx::Class::PassphraseColumn 0.02;
+use RapidApp::DBIC::Component::PassphraseColumn; # temp
 
-__PACKAGE__->load_components("InflateColumn::DateTime","PassphraseColumn");
+__PACKAGE__->load_components(
+  "InflateColumn::DateTime",
+  #"PassphraseColumn",
+  '+RapidApp::DBIC::Component::PassphraseColumn'
+);
 
 __PACKAGE__->table('user');
 
