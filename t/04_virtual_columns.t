@@ -86,7 +86,7 @@ ok(
 #  bisect shows the first breaking commit:
 #  https://github.com/dbsrgits/dbix-class/commit/786c1cddede6675b9fc5fc46ae4e1e136ef2c392
 ok(
-  my $NewAlbum = $albRs->create({
+  my $NewOtherAlbum = $albRs->create({
     title => "Death Metal Banjo Skullcrush",
     artistid => $NewArtist
   }),
