@@ -1,5 +1,16 @@
 Revision history for RapidApp
 
+1.3105 2019-09-11
+    - Temporary local/built-in in version of PassphraseColumn with required fixes (VANSTYN)
+       - this is intented to be a very temporary fix until fixes to the main distribution of
+         DBIx::Class::Passphrase column are released (this may has already happened, but I
+         am moving forward with this just to limit the number of changes at once, this this
+         has been queued up for sme time. This will be addressed properly in the very next 
+         release)
+
+1.3104 2019-09-11
+    - busted  release (cpan) skipping to 1.3105
+
 1.3103 2019-03-25
     - ExcelExport on invalid columns is now non-fatal (VANSTYN)
     - Added new cfg 'error_template' for custom exception handling (VANSTYN)
