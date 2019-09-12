@@ -1,32 +1,27 @@
-language: perl
-perl:
-   - "5.26"
-   - "5.24"
-   - "5.22"
-   - "5.20"
-   - "5.18"
-   - "5.16"
-   - "5.14"
-   - "5.12"
-   - "5.10"
-
+---
+before_install:
+  - export HARNESS_OPTIONS=j10:c HARNESS_TIMER=1
+  - git config --global user.name "Dist Zilla Plugin TravisCI"
+  - git config --global user.email $HOSTNAME":not-for-mail@travis-ci.org"
 install:
-   - cpanm --quiet --notest --skip-satisfied Dist::Zilla
-   - cpanm --quiet --notest --skip-satisfied Devel::Cover::Report::Coveralls
-   # We're also installing Catalyst and DBIC w/o tests to keep travis build time down:
-   - cpanm --quiet --notest --skip-satisfied DBIx::Class
-   - cpanm --quiet --notest --skip-satisfied Catalyst
-   - "dzil authordeps | cpanm --quiet --notest --skip-satisfied"
-   
-   ##FIXME: now installing *ALL* deps with notests until the CPAN stack is 
-   # more reliable. The frequency of failures due to temporary upstream 
-   # broken dists has become too much of a nuisance
-   - "dzil listdeps   | cpanm --quiet --notest --skip-satisfied"
-   #- "dzil listdeps   | cpanm --quiet --skip-satisfied"
-   ##
-
+  - cpanm  --quiet  --notest --skip-installed Dist::Zilla
+  - dzil authordeps | grep -ve '^\W' | xargs -n 5 -P 10 cpanm  --quiet   --notest  --skip-installed
+  - dzil listdeps | grep -ve '^\W' | cpanm  --quiet   --notest  --skip-installed
+language: perl
+matrix:
+  include:
+    - perl: '5.30'
+    - perl: '5.28'
+    - perl: '5.26'
+    - perl: '5.24'
+    - perl: '5.22'
+    - dist: trusty
+      perl: '5.20'
+    - dist: trusty
+      perl: '5.18'
+    - dist: trusty
+      perl: '5.16'
+    - dist: trusty
+      perl: '5.14'
 script:
-   - HARNESS_PERL_SWITCHES=-MDevel::Cover=-coverage,statement,branch,condition,path,subroutine dzil test --author --release --keep
-
-after_success:
-  - cd .build/latest && cover && cover -report coveralls
+  - dzil smoke --release --author
