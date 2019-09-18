@@ -283,6 +283,8 @@ __PACKAGE__->loader_options(
 
 );
 
+=end pod_to_ignore
+
 =head1 NAME
 
 [% schema_class %] - L<DBIx::Class::Schema::Loader> class
