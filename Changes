@@ -1,5 +1,12 @@
 Revision history for RapidApp
 
+1.3106 2019-10-01
+    - Template::Controller no longer sets a default Content-Type (VANSTYN)
+    - Added Template Access class API method ->template_content_type (VANSTYN)
+    - Require Catalyst 5.90124 (VANSTYN)
+    - Merge PR #180
+    - Update travis config (GETTY)
+
 1.3105 2019-09-11
     - Temporary local/built-in in version of PassphraseColumn with required fixes (VANSTYN)
        - this is intented to be a very temporary fix until fixes to the main distribution of
