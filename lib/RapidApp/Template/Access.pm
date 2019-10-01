@@ -489,6 +489,12 @@ sub get_external_tpl_headers {
   return undef
 }
 
+# Optionally return the Content-Type that should be served with the template:
+sub template_content_type {
+  my ($self,@args) = @_;
+  my $template = join('/',@args);
+  return undef
+}
 
 # This is called by the controller at the top of the view request, and if it
 # returns a value, that will be used as the psgi response, bypassing all other

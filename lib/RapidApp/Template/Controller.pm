@@ -399,6 +399,8 @@ sub view :Chained('base') :Args {
   my $iframe = $external || $self->is_iframe_request($c); # <-- external must use iframe
   my ($output,$content_type);
   
+  $content_type = $self->Access->template_content_type($template);
+  
   my @cls = ('ra-scoped-reset');
   my $tpl_cls = $self->Access->template_css_class($template);
   push @cls, $tpl_cls if ($tpl_cls);
@@ -494,10 +496,12 @@ sub view :Chained('base') :Args {
       # Ask the Access class for custom headers for this external template, and
       # if it has them, set them in the response object now. And pull out $content_type
       # if this operation set it (i.e. the template provides its own Content-Type)
+      # NEW: the template can also now provide its content type via ->template_content_type
+      #  which takes priority and is the preferred API
       my $headers  = $external ? $self->Access->get_external_tpl_headers($template) : undef;
       if($headers) {
         $c->res->header( $_ => $headers->{$_} ) for (keys %$headers);
-        $content_type = $c->res->content_type;
+        $content_type ||= $c->res->content_type;
       }
     
       # If this external template provides its own headers, including Content-Type, and that is
@@ -536,7 +540,6 @@ sub view :Chained('base') :Args {
         )
     ;
     
-    $content_type ||= 'text/html; charset=utf-8';
   }
   
   # Decode as UTF-8 for user consumption:
@@ -638,8 +641,8 @@ sub delete :Chained('base') :Args {
 
 sub _detach_response {
   my ($self, $c, $status, $body, $content_type) = @_;
-  $content_type ||= 'text/plain; charset=utf-8';
-  $c->response->content_type($content_type);
+  #$content_type ||= 'text/plain; charset=utf-8';
+  $c->response->content_type($content_type) if ($content_type);
   $c->response->status($status);
   $c->response->body($body);
   return $c->detach;
