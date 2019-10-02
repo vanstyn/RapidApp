@@ -541,6 +541,14 @@ sub view :Chained('base') :Args {
     ;
     
   }
+  
+  # ----
+  # TODO/FIXME: back-compat force utf8 since removing code which sets content_type
+  # this is being done this way to match previous (pre 1.3105) code as close as possible
+  # this still needs to be revisited
+  utf8::decode($output);
+  $output = Encode::encode("UTF-8", $output);
+  # ----
 
   return $self->_detach_response($c,$status,$output,$content_type);
 }
