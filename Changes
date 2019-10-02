@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+1.3107 2019-10-02
+    - Fix template unicode bug introduced in 1.3106 (VANSTYN)
+
 1.3106 2019-10-01
     - Template::Controller no longer sets a default Content-Type (VANSTYN)
     - Added Template Access class API method ->template_content_type (VANSTYN)
