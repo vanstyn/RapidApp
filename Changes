@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+1.3108 2019-10-02
+    - REALLY fix (hopefully) unicode bug in 1.3106 (VANSTYN)
+
 1.3107 2019-10-02
     - Fix template unicode bug introduced in 1.3106 (VANSTYN)
 
