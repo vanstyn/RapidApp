@@ -541,9 +541,6 @@ sub view :Chained('base') :Args {
     ;
     
   }
-  
-  # Decode as UTF-8 for user consumption:
-  utf8::decode($output); # FIXME?? This probably shouldn't be always called anymore
 
   return $self->_detach_response($c,$status,$output,$content_type);
 }
