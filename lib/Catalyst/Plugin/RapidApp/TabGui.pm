@@ -61,10 +61,7 @@ before 'setup_components' => sub {
   unshift @navtrees, (
     {
       module => 'navtree',
-      class => 'Catalyst::Plugin::RapidApp::NavCore::NavTree',
-      params => {
-        title => 'Foo'
-      }
+      class => $c->_navcore_navtree_class,
     },
     { xtype => 'spacer', height => '5px' } 
   ) if ($c->_navcore_enabled);

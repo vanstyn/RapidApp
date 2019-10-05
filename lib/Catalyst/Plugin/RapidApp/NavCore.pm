@@ -6,6 +6,7 @@ with 'Catalyst::Plugin::RapidApp::CoreSchema';
 
 use RapidApp::Util qw(:all);
 use CatalystX::InjectComponent;
+require Module::Runtime;
 
 after 'setup_components' => sub { (shift)->_navcore_inject_controller(@_) };
 sub _navcore_inject_controller {
@@ -22,6 +23,24 @@ after 'setup_finalize' => sub {
   my $c = shift;
   $c->_navcore_init_default_public_nav_items(0);
 };
+
+# New: expert-only - allow apps to use a custom navtree_class, but require that
+# it be a subclass of Catalyst::Plugin::RapidApp::NavCore::NavTree
+sub _navcore_navtree_class {
+  my $c = shift;
+  my $base_class = 'Catalyst::Plugin::RapidApp::NavCore::NavTree';
+  
+  my $cfg = $c->config->{'Plugin::RapidApp::NavCore'} || {};
+  my $class = $cfg->{navtree_class} or return $base_class;
+
+  Module::Runtime::require_module( $class );
+  die join('',
+    "\nPlugin::RapidApp::NavCore: bad custom navtree_class '$class'\n",
+    "  only modules which are subclasses of '$base_class' are allowed"
+  ) unless $class->isa($base_class);
+
+  return $class
+}
 
 
 sub _navcore_init_default_public_nav_items {
