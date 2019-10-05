@@ -126,8 +126,6 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
     my $model = $s->{model};
     my $schema = $self->app->model($model)->schema;
     
-    scream($s, $self->configs->{$model});
-    
     my $require_role = $self->require_role || try{$self->configs->{$model}{require_role}};
     my $menu_req_role = $self->configs->{$model}{menu_require_role} || $require_role || $self->menu_require_role;
     
