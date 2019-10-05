@@ -226,6 +226,57 @@ sub _initialize_linked_user_model {
   
 }
 
+# Can be called as user/pass, or just user as a user object
+sub _authcore_apply_login {
+  my ($c, $user, $pass) = @_;
+
+  my $error    = undef;
+  my $username = undef;
+  
+  $c->delete_expired_sessions;
+  
+  if($c->user) {
+    $c->delete_session('logout');
+    $c->logout;
+  }
+  
+  if(blessed $user) {
+    $c->set_authenticated( $user )
+  }
+  else {
+    if($c->authenticate({ username => $user, password => $pass })) {
+      $c->log->info("Password authentication success for user '$user'")
+    }
+    else {
+      $error = "Password authentication failure for user '$user'";
+    }
+  }
+  
+  $username = $c->user->username;
+  
+  $error ||= 'unknown login failure' unless ($username);
+  
+  if ($error) {
+    $c->log->info("AuthCore: $error");
+    return 0;
+  }
+  
+  $c->session->{RapidApp_username} = $username;
+  
+  # New: set the X-RapidApp-Authenticated header now so the response
+  # itself will reflect the successful login (since in either case, the
+  # immediate response is a simple redirect). This is for client info/debug only
+  $c->res->header('X-RapidApp-Authenticated' => $username);
+
+  my $dt = DateTime->now( time_zone => 'local' );
+  $c->user->update({ last_login_ts => join(' ',$dt->ymd('-'),$dt->hms(':')) });
+    
+  # Something is broken!
+  $c->_save_session_expires;
+  
+  1
+}
+
 
 1;
 

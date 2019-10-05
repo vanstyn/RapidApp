@@ -189,38 +189,7 @@ sub do_login {
 	my $user = shift;
 	my $pass = shift;
   
-  $c->delete_expired_sessions;
-  
-	if($c->authenticate({ username => $user, password => $pass })) {
-    $c->session->{RapidApp_username} = $user;
-    
-    # New: set the X-RapidApp-Authenticated header now so the response
-    # itself will reflect the successful login (since in either case, the
-    # immediate response is a simple redirect). This is for client info/debug only
-    $c->res->header('X-RapidApp-Authenticated' => $c->user->username);
-
-    $c->log->info("Successfully authenticated user '$user'") if ($c->debug);
-    $c->user->update({ 
-      last_login_ts => DateTime->now( time_zone => 'local' ) 
-    });
-    
-    # Something is broken!
-    $c->_save_session_expires;
-    
-    # New: upon successful login, override redirect target with client-supplied 'to' if present.
-    # This provides a mechanism for the client to set its own redirect target via ?to=/some/path
-    my $to = $c->req->params->{to};
-    if ($to && $to ne '') {
-      $to = $self->_url_extract_convert_fragment( uri_unescape($to) );
-      $c->req->params->{redirect} = $to; 
-    }
-    
-    return 1;
-  }
-  else {
-    $c->log->info("Authentication failed for user '$user'") if ($c->debug);
-    return 0;
-  }
+  $c->_authcore_apply_login($user,$pass)
 }
 
 
