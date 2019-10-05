@@ -95,7 +95,7 @@ sub _appcmp_enforce_build_plugins {
 sub test_permission {
   my $self = shift;
   my $c = RapidApp->active_request_context;
-  return (
+  (
     $c and
     $self->role_checker and
     $self->require_role and
@@ -107,7 +107,8 @@ sub test_permission {
                                           #    TODO: investigate further...
     $c->can('session_is_valid') and $c->session_is_valid and
     ! $self->role_checker->($c,$self->require_role)
-  ) ? 0 : 1;
+  ) ? 0 : $self->parent_module && $self->parent_module->can('test_permission') 
+          ? $self->parent_module->test_permission : 1 
 }
 
 
