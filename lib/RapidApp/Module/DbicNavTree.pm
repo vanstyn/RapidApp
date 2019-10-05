@@ -126,8 +126,10 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
     my $model = $s->{model};
     my $schema = $self->app->model($model)->schema;
     
+    scream($s, $self->configs->{$model});
+    
     my $require_role = $self->require_role || try{$self->configs->{$model}{require_role}};
-    my $menu_req_role = $require_role || $self->menu_require_role;
+    my $menu_req_role = $self->configs->{$model}{menu_require_role} || $require_role || $self->menu_require_role;
     
     my @children = ();
     for my $source (sort @{$s->{sources}}) {
@@ -170,7 +172,7 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
         params    => {},
         expand    => 1,
         children  => [],
-        require_role => $local_require_role || $menu_req_role
+        require_role => $local_require_role
       }
     }
     
@@ -198,7 +200,8 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
         tabIconCls => $iconcls,
         exclude_sources => $exclude_sources,
         header_template => $template,
-        require_role => $require_role
+        require_role => $require_role,
+        menu_require_role => $menu_req_role
       }
     });
     
