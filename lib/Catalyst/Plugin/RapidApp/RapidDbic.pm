@@ -8,6 +8,7 @@ use RapidApp::Util qw(:all);
 require Module::Runtime;
 require Catalyst::Utils;
 use List::Util;
+require Module::Runtime;
 
 
 before 'setup_components' => sub {
@@ -27,9 +28,24 @@ before 'setup_components' => sub {
   my $tgui_cnf = $c->config->{'Plugin::RapidApp::TabGui'};
   $tgui_cnf->{navtrees} ||= [];
   
+  # ---
+  # New: expert-only - allow apps to use a custom navtree_class, but require that
+  # it be a subclass of RapidApp::Module::DbicNavTree
+  my $navtree_class = 'RapidApp::Module::DbicNavTree';
+  if (my $class = $config->{navtree_class}) {
+    Module::Runtime::require_module( $class );
+    die join('',
+      "\nPlugin::RapidApp::RapidDbic: bad custom navtree_class '$class'\n",
+      "  only modules which are subclasses of '$navtree_class' are allowed"
+    ) unless $class->isa($navtree_class);
+  
+    $navtree_class = $class;
+  }
+  # ---
+  
   push @{$tgui_cnf->{navtrees}}, {
     module => $config->{dbic_tree_module_name},
-    class => 'RapidApp::Module::DbicNavTree',
+    class => $navtree_class,
     params => {
       dbic_models => $config->{dbic_models},
       table_class	=> $config->{table_class},
