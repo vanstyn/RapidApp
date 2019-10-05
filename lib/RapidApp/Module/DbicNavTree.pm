@@ -140,6 +140,8 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
       # place (note this probably needs to be fixed in there for exactly this reason)
       my $cust_merged = clone( Catalyst::Utils::merge_hashes($cust_def_config,$cust_config) );
       
+      my $local_require_role = $cust_merged->{require_role} || $require_role;
+      
       my $grid_class = $cust_merged->{grid_class} ? delete $cust_merged->{grid_class} :
         try{$self->configs->{$model}{grid_class}} || $self->table_class;
       
@@ -150,7 +152,7 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
       $self->apply_init_modules( $module_name => {
         class => $grid_class,
         params => {
-          require_role => $require_role,
+          require_role => $local_require_role,
           %$cust_merged, 
           ResultSource => $Source, 
           source_model => $model . '::' . $source,
@@ -168,7 +170,7 @@ has 'TreeConfig', is => 'ro', isa => 'ArrayRef[HashRef]', lazy => 1, default => 
         params    => {},
         expand    => 1,
         children  => [],
-        require_role => $menu_req_role
+        require_role => $local_require_role || $menu_req_role
       }
     }
     
