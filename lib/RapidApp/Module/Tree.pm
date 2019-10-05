@@ -285,12 +285,7 @@ sub call_fetch_nodes {
   ######
   ######
   
-  # -- New: automatically test/exclude nodes according to 'require_role'
-  @$nodes = grep { 
-    ! $_->{require_role} or
-    $self->role_checker->($self->c,$_->{require_role})
-  } @$nodes if ($self->role_checker);
-  # --
+  $nodes = $self->filter_nodes_recursive($nodes);
   
   die "Error: 'fetch_nodes()' was supposed to return an ArrayRef, but instead it returned: " . Dumper($nodes)
     unless (ref($nodes) eq 'ARRAY');
@@ -305,6 +300,37 @@ sub call_fetch_nodes {
   }
   
   return $nodes;
+}
+
+sub node_allowed {
+  my $self = shift;
+  my $node = shift or return 0;
+  
+  (     $self->role_checker 
+     && $node->{require_role} 
+     && ! $self->role_checker->($self->c,$_->{require_role})
+  ) ? 0 : 1
+}
+
+sub filter_nodes_recursive {
+  my $self = shift;
+  my $nodes = shift;
+  if((ref($nodes)||'') eq 'HASH') {
+    if($nodes->{children}) {
+      $nodes->{children} = $self->filter_nodes_recursive($nodes->{children});
+    }
+    return $nodes;
+  }
+  elsif((ref($nodes)||'') eq 'ARRAY') {
+    @$nodes =
+      map  { $self->filter_nodes_recursive($_) } 
+      grep { $self->node_allowed($_) } 
+    @$nodes;
+    return $nodes;
+  }
+  else {
+    return $nodes
+  }
 }
 
 sub prepare_node {
