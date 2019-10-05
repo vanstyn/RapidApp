@@ -1,5 +1,13 @@
 Revision history for RapidApp
 
+1.3200 2019-10-05
+    - Fully support username & password changes which apply to active sessions (VANSTYN)
+    - RapidDbic now supports 'menu_require_role' on per model basis (VANSTYN)
+    - RapidDbic now supports 'require_role' setting on per Source basis (VANSTYN)
+    - Tree module 'require_role' check now works recursive (VANSTYN)
+    - RapidDbic allows custom NavTree module with 'navtree_class' param (VANSTYN)
+    - NavCore allows custom NavTree module with 'navtree_class' param (VANSTYN)
+
 1.3108 2019-10-02
     - REALLY fix (hopefully) unicode bug in 1.3106 (VANSTYN)
 
