@@ -111,6 +111,43 @@ sub decoded_session_data {
   return try{ Storable::thaw(MIME::Base64::decode($value)) };
 }
 
+
+sub encode_set_session_data {
+  my $self = shift;
+  my $data = shift;
+  
+  die "encode_set_session_data(): first argument must be a HashRef"
+    unless ($data && ref($data) eq 'HASH');
+    
+  $self->session_data( MIME::Base64::encode(Storable::nfreeze($data)) ) && return $self
+}
+
+sub set_encoded_session_keys {
+  my $self = shift;
+  my $new = shift;
+  
+  die "set_encoded_session_keys(): first argument must be a HashRef"
+    unless ($new && ref($new) eq 'HASH');
+    
+  my $data = $self->decoded_session_data or die "Failed to get current encoded session data";
+  
+  $self->encode_set_session_data({ %$data, %$new }) && return $self
+}
+
+sub set_expires {
+  my $self = shift;
+  my $epoch = shift;
+  die "set_expires(): requires valid unix epoch argument" unless (defined $epoch);
+  die "set_expires(): supplied value '$epoch' is not a valid unix epoch" unless (
+    ($epoch =~ /^\d+$/) && $epoch >= 0 && $epoch < 2**31
+  );
+  
+  $self->set_encoded_session_keys({ __expires => $epoch });
+  $self->expires($epoch);
+  return $self
+}
+
+
 __PACKAGE__->load_components('+RapidApp::DBIC::Component::TableSpec');
 __PACKAGE__->add_virtual_columns(
   expires_in => {

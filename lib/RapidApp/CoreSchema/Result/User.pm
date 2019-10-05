@@ -134,6 +134,7 @@ __PACKAGE__->add_virtual_columns( set_pw => {
 
 __PACKAGE__->apply_TableSpec;
 
+use RapidApp::Util qw(:all);
 
 # Always returns undef unless 'linked_user_model' is configured
 sub linkedRow {
@@ -146,6 +147,49 @@ sub linkedRow {
     $Row
   }
 }
+
+
+sub update {
+  my $self = shift;
+  my $columns = shift;
+  $self->set_inflated_columns($columns) if ($columns);
+  
+  my $username_change = $self->is_column_changed('username');
+  my $password_change = $self->is_column_changed('password');
+  
+  $self->next::method;
+  
+  # When a username is changed, update all active sessions with the new
+  # username. This allows current sessions to seamlessly keep working
+  if($username_change) {
+    my $epoch = time;
+    $_->set_encoded_session_keys({
+      RapidApp_username => $self->username,
+      __updated         => $epoch,
+      __user            => { $self->get_columns }
+    })->update for ($self->sessions->all);
+  }
+  
+  # When the password is changed, invalidate all current sessions *except*
+  # the session of the user making the change, when they are changing their
+  # own password. This means that changing a user password instantly terminates
+  # their access to the system, even if they are already logged in
+  if($password_change) {
+    my $Rs = $self->sessions;
+  
+    if(my $c = RapidApp->active_request_context) {
+      $Rs = $Rs->search_rs({ 
+        'me.id' => { '!=' => join(':','session',$c->sessionid) }
+      });
+    }
+    
+    $_->set_expires(0)->update for ($Rs->all);
+  }
+  
+  
+  $self
+}
+
 
 
 __PACKAGE__->TableSpec_set_conf( 
