@@ -431,18 +431,26 @@ sub func_debug_around {
       #my $i = $opt{stack};
       print STDERR $newline;
       foreach my $data (@$stack) {
-        print STDERR '((stack ' . sprintf("%2s",$i--) . ')) ' . sprintf("%7s",'[' . $data->{line} . ']') . ' ' . 
+        my ($fn) = split(/\s+/,(reverse split(/\//,$data->{filename}))[0]);
+        print STDERR '[ ^ ' . sprintf("%3s",$i--) . '   ] ' . CYAN . sprintf("%20s",$fn) . ' ' .
+        BOLD . sprintf("%-5s",$data->{line}) . CLEAR . CYAN . '-> ' . CLEAR .
           GREEN . $data->{subroutine} . CLEAR . $newline;
       }
-      print STDERR '((stack  0)) ' .  sprintf("%7s",'[' . $opt{line} . ']') . ' ' .
-        GREEN . $class . '::' . $name . $newline . CLEAR;
-      $class = "$self";
+      
+
+      #print STDERR '((stack  0)) ' .  sprintf("%7s",'[' . $opt{line} . ']') . ' ' .
+      #  GREEN . $class . '::' . $name . $newline . CLEAR;
+      #$class = "$self";
     }
     else {
       print STDERR $newline if ($new_nest);
     }
     
-    print STDERR '[' . $opt{line} . '] ' . CLEAR . $opt{color} . $class . CLEAR . '->' . 
+    if($opt{stack}) {
+      print STDERR CLEAR . "[ ^ " . BOLD . "stack" . CLEAR . " ]";
+    }
+    
+    print STDERR CLEAR . CYAN . BOLD . ' ==> ' . CLEAR . $opt{color}  . $class . CLEAR . '->' . 
         $opt{color} . BOLD . $name . CLEAR . $in;
     
     my $spaces = ' ' x (2 + length($opt{line}));
