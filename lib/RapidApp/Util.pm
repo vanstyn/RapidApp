@@ -19,6 +19,10 @@ use RapidApp::JSON::MixedEncoder qw(
 use RapidApp::Util::Hash::Merge qw( merge );
 RapidApp::Util::Hash::Merge::set_behavior( 'RIGHT_PRECEDENT' );
 
+use Data::Printer;
+
+our $DEBUG_AROUND_COUNT = 0;
+our $DEBUG_AROUND_CALL_NO = 0;
 
 BEGIN {
   use Exporter;
@@ -350,6 +354,9 @@ sub func_debug_around {
   my $name = shift;
   my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
   
+  my $Id = $DEBUG_AROUND_COUNT++;
+  
+  
   %opt = (
     track_stats    => 1,
     time      => 1,
@@ -400,6 +407,22 @@ sub func_debug_around {
     my $self = shift;
     my @args = @_;
     
+    my $printed_newlines = 0;
+    
+    my $_PRINTER = sub {
+      for my $text (@_) {
+        my $char = "\n";
+        my $newlines = () = $text =~ /\Q$char/g;
+        $printed_newlines = $printed_newlines + $newlines;
+        print STDERR $text
+      }
+    };
+    
+    my $Count = $DEBUG_AROUND_CALL_NO++;
+    my $is_odd = $Count % 2 == 1;
+  
+    my $label_color = $is_odd ? CLEAR.CYAN.BOLD : CLEAR.MAGENTA.BOLD;
+    
     my $nest_level = $debug_around_nest_level;
     local $debug_around_nest_level = $debug_around_nest_level + 1;
     
@@ -414,14 +437,47 @@ sub func_debug_around {
     
     my $has_refs = 0;
     
-    my $in = '(' . UNDERLINE . @args . CLEAR . '): ';
+    my $class = $opt{pkg};
+    
+    my $oneline = ! $leave_nest || ! $nest_level;
+    
+    $_PRINTER->($newline) if ($new_nest);
+    
+    $_PRINTER->(join('',
+      $label_color,"[$Id/$Count]",'==> ',CLEAR,$opt{color},$class,CLEAR,'->', 
+      $opt{color},BOLD,$name,CLEAR,
+      '( ' . MAGENTA . 'args in: ' . BOLD . scalar(@args) .  CLEAR . ' ) '
+    ));
+    
     if($opt{list_args}) {
-      my @print_args = map { (ref($_) and ++$has_refs) ? "$_" : MAGENTA . "'$_'" . CLEAR } @args;
-      $in = '(' . join(',',@print_args) . '): ';
+      $oneline = 0;
+      my @plines = split(/\r?\n/,np(@args, colored => 0));
+      $plines[0] = "Supplied arguments: $plines[0]";
+      my $max = 0;
+      $max < $_ and $max = $_ for (map { length($_) } @plines);
+      
+      for my $line (@plines) {
+        my $pad = $max - length($line);
+        $_PRINTER->(join('',$newline,(' ' x ($nest_level+6)), ON_CYAN,'  ', $line,ON_CYAN, (' ' x ($pad+3)),'  ',CLEAR));
+      }
+      $_PRINTER->($newline);
+      
+
+    
     }
     
-    my $class = $opt{pkg};
+    
+    
+    
+    #my $in = '( ' . MAGENTA . 'args in: ' . BOLD . scalar(@args) .  CLEAR . ' ): ';
+    #if($opt{list_args}) {
+    #  my @print_args = map { (ref($_) and ++$has_refs) ? "$_" : MAGENTA . "'$_'" . CLEAR } @args;
+    #  $in = '(' . join(',',@print_args) . '): ';
+    #}
+    
+    
     if($opt{stack}) {
+      $oneline = 0;
       my $stack = caller_data_brief($opt{stack} + 3);
       shift @$stack;
       shift @$stack;
@@ -429,12 +485,21 @@ sub func_debug_around {
       @$stack = reverse @$stack;
       my $i = scalar @$stack;
       #my $i = $opt{stack};
-      print STDERR $newline;
+      $_PRINTER->($newline);
+      
+      my $max_fn = 0;
       foreach my $data (@$stack) {
         my ($fn) = split(/\s+/,(reverse split(/\//,$data->{filename}))[0]);
-        print STDERR '[ ^ ' . sprintf("%3s",$i--) . '   ] ' . CYAN . sprintf("%20s",$fn) . ' ' .
+        $max_fn = length($fn) if (length($fn) > $max_fn);
+        $data->{fn} = $fn;
+      }
+      
+      my $pfx = ' ';
+      foreach my $data (@$stack) {
+        $_PRINTER->($label_color,'|'.$pfx . CLEAR . sprintf("%3s",$i--) . ' | ' . CYAN . sprintf("%".$max_fn."s",$data->{fn}) . ' ' .
         BOLD . sprintf("%-5s",$data->{line}) . CLEAR . CYAN . '-> ' . CLEAR .
-          GREEN . $data->{subroutine} . CLEAR . $newline;
+          GREEN . $data->{subroutine} . CLEAR . $newline);
+        $pfx = '^';
       }
       
 
@@ -442,23 +507,42 @@ sub func_debug_around {
       #  GREEN . $class . '::' . $name . $newline . CLEAR;
       #$class = "$self";
     }
-    else {
-      print STDERR $newline if ($new_nest);
-    }
+    #else {
+    #  print STDERR $newline and $oneline = 0 if ($new_nest);
+    #}
     
     if($opt{stack}) {
-      print STDERR CLEAR . "[ ^ " . BOLD . "stack" . CLEAR . " ]";
+      $_PRINTER->(CLEAR . $label_color . "|^" .CLEAR . BOLD "  -->" . CLEAR);
     }
     
-    print STDERR CLEAR . CYAN . BOLD . ' ==> ' . CLEAR . $opt{color}  . $class . CLEAR . '->' . 
-        $opt{color} . BOLD . $name . CLEAR . $in;
+    unless($oneline) {
+      $_PRINTER->($label_color . "[$Id/$Count]",'^^  ' . CLEAR) unless ($opt{stack});
+      $_PRINTER->(' ',$opt{color}  . $class . CLEAR . '->' . $opt{color} . BOLD . $name . ' ' . CLEAR);
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     my $spaces = ' ' x (2 + length($opt{line}));
     my $in_func = sub {
-      print STDERR $newline . ON_WHITE.BOLD . BLUE . "$spaces Supplied arguments dump: " . 
-        $opt{dump_func}->($opt{verbose_in},\@args) . CLEAR . $newline . ": " 
+      $_PRINTER->($newline . ON_WHITE.BOLD . BLUE . "$spaces Supplied arguments dump: " . 
+        $opt{dump_func}->($opt{verbose_in},\@args) . CLEAR . $newline . ": ")
           if($has_refs && $opt{verbose_in});
     };
+    
+    
+    
+    
+    
+    
     
     my $res;
     my @res;
@@ -485,10 +569,39 @@ sub func_debug_around {
       $current_nest_elapse = $debug_around_nest_elapse;
     }
     
+
+    
+    if($opt{list_out}) {
+      $oneline = 0;
+      my @plines = split(/\r?\n/,np(@res_copy, colored => 0));
+      $plines[0] = "Returned values: $plines[0]";
+      my $max = 0;
+      $max < $_ and $max = $_ for (map { length($_) } @plines);
+      
+      for my $line (@plines) {
+        my $pad = $max - length($line);
+        $_PRINTER->(join('',$newline,(' ' x ($nest_level+6)), ON_GREEN,'  ', $line,ON_GREEN, (' ' x ($pad+3)),'  ',CLEAR));
+      }
+      $_PRINTER->($newline);
+    }
+    
+    
+    
+    
+    
     # after timestamp, calculate elapsed (to the millisecond):
     my $elapsed_raw = tv_interval($t0);
     my $adj_elapsed = $elapsed_raw - $current_nest_elapse;
     $debug_around_nest_elapse += $elapsed_raw; #<-- send our elapsed time up the chain
+    
+    if($opt{list_out}) {
+      $_PRINTER->($label_color . $label_color . "[$Id/$Count]", '^^^ ' . CLEAR . $opt{color}  . $class . CLEAR . '->' . 
+        $opt{color} . BOLD . $name . ' ');
+    }
+    
+    $_PRINTER->($opt{ret_color} . 'Ret itms: ' . scalar(@res_copy) . CLEAR);    
+    $_PRINTER->(CLEAR . ' in ' . ON_WHITE.RED . sprintf('%.5fs',$elapsed_raw) . ' (' . sprintf('%.5fs',$adj_elapsed) . ' exclusive)' . CLEAR);
+    
     
     # -- Track stats in global %$RapidApp::Util::debug_around_stats:
     if($opt{track_stats}) {
@@ -529,9 +642,10 @@ sub func_debug_around {
       $result =~ s/\n/${newline}/gm;
       
       # Reset cursor position if nesting happened:
-      print STDERR "\r$indent" unless ($RapidApp::Util::debug_around_last_nest_level == $nest_level);
+      $_PRINTER->("\r$indent") unless ($RapidApp::Util::debug_around_last_nest_level == $nest_level);
       
-      print STDERR $result . $newline;
+      #print STDERR $result . $newline;
+      $_PRINTER->($newline);
       
     }
     else {
@@ -541,7 +655,12 @@ sub func_debug_around {
       # to the begining of the line so it will get overwritten, which is
       # almost as good as if we had not printed anything in the first place...
       # (note if the function printed something too we're screwed)
-      print STDERR "\r";
+      $_PRINTER->("\r");
+    }
+    
+    if($printed_newlines > 5) {
+      $_PRINTER->($label_color,"[$Id/$Count]", ('-' x 80), '^^^^', "\n\n",CLEAR);
+    
     }
     
     return wantarray ? @res : $res;
