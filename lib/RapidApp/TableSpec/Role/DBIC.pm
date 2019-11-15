@@ -790,8 +790,102 @@ sub colspec_select_columns {
 	$colspec_select_columns_source = $deparse->coderef2text(\&colspec_select_columns);
 }
 
-# Applies the original column order defined in the table Schema:
+
+
+sub _order_columns_by_result_source1 {
+  my ($self, $rsource, @columns) = @_;
+  
+  my @local;
+  my %relmap;
+  for my $col (@columns) {
+    my ($rel,$remote) = split($self->relation_sep,$col,2);
+    if($remote) {
+      my $arr = $relmap{$rel} ||= [];
+      push @$arr,$remote;
+    }
+    else {
+      push @local, $col;
+    }
+  }
+  
+  my %loc = map {$_=>1} @local;
+  my @new_order = grep { $loc{$_} } ( $rsource->columns, $rsource->relationships );
+  
+  for my $rel ( grep { $relmap{$_} } $rsource->relationships ) {
+    my $rel_source = $rsource->related_source($rel);
+    push @new_order, 
+      map { join($self->relation_sep,$rel,$_) }
+      $self->_order_columns_by_result_source($rel_source,@{$relmap{$rel}});
+
+  }
+  
+  return uniq(@new_order)
+}
+
+
+
+sub _order_columns_by_result_source {
+  my ($self, $rsource, @columns) = @_;
+  
+  my @local;
+  my %relmap;
+  for my $col (@columns) {
+    my ($rel,$remote) = split($self->relation_sep,$col,2);
+    if($remote) {
+      my $arr = $relmap{$rel} ||= [];
+      push @$arr,$remote;
+    }
+    else {
+      push @local, $col;
+    }
+  }
+  
+  my %loc = map {$_=>1} @local;
+  my @new_order = grep { $loc{$_} } ( $rsource->columns, $rsource->relationships );
+  
+  for my $rel ( grep { $relmap{$_} } $rsource->relationships ) {
+    my $rel_source = $rsource->related_source($rel);
+    push @new_order, 
+      map { join($self->relation_sep,$rel,$_) }
+      $self->_order_columns_by_result_source($rel_source,@{$relmap{$rel}});
+
+  }
+  
+  return uniq(@new_order)
+}
+
+
+
+
 sub apply_natural_column_order {
+  my $self = shift;
+  
+  $self->apply_natural_column_order_new;
+  #$self->apply_natural_column_order_old;
+  
+}
+
+sub apply_natural_column_order_new {
+  my $self = shift;
+  
+  my @new_order = $self->_order_columns_by_result_source(
+    $self->ResultSource, 
+    @{$self->column_order}
+  );
+  
+  # Add all the current columns to the end of the new list in case any
+  # got missed. (this prevents the chance of this operation dropping any 
+  # of the existing columns, dupes are filtered out below):
+  push @new_order, $self->updated_column_order;
+
+  my %seen = ();
+  @{$self->column_order} = grep { !$seen{$_}++ } @new_order;
+  return $self->updated_column_order; #<-- for good measure
+}
+
+
+# Applies the original column order defined in the table Schema:
+sub apply_natural_column_order_old {
 	my $self = shift;
 	my $class = $self->ResultClass;
 
