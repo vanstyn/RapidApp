@@ -1,5 +1,11 @@
 Revision history for RapidApp
 
+1.3201 2019-11-25
+    - Performance refactor of apply_natural_column_order() (VANSTYN)
+    - Improve debug_around (this is soon to be moved into a separate lib) (VANSTYN)
+    - AuthCore: comsolidation of $c->_authcore_apply_login (VANSTYN)
+    
+
 1.3200 2019-10-05
     - Fully support username & password changes which apply to active sessions (VANSTYN)
     - RapidDbic now supports 'menu_require_role' on per model basis (VANSTYN)
