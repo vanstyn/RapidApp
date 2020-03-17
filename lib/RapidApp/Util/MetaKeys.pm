@@ -9,7 +9,7 @@ use Types::Standard qw(:all);
 use Scalar::Util qw(blessed);
 
 use RapidApp::Util::MetaKeys::FK;
-use JSON qw( from_json -support_by_pp );
+use JSON::MaybeXS qw( from_json );
 use Path::Class qw( file dir );
 use Try::Tiny;
 

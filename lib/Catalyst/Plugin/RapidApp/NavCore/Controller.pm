@@ -8,7 +8,7 @@ use RapidApp::Util qw(:all);
 require Module::Runtime;
 require Catalyst::Utils;
 
-use JSON qw(decode_json);
+use JSON::MaybeXS qw(decode_json);
 
 # Controller for loading a saved search in CoreSchema via ID
 

@@ -40,12 +40,12 @@ our %SCALARREF_VALUE_MAP = (
 # ---
 
 
-# copied from JSON::PP
+# copied from JSON::PP, but match prototypes to Cpanel::JSON::XS.
 my $JSON; # cache
-sub encode_json ($) { # encode
+sub encode_json ($;$) { # encode
 	($JSON ||= __PACKAGE__->new)->encode($_[0]);
 }
-sub decode_json ($) { # decode
+sub decode_json ($;$$) { # decode
 	($JSON ||= __PACKAGE__->new)->decode($_[0]);
 }
 
