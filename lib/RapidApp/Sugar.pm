@@ -31,7 +31,7 @@ use Clone qw(clone);
 use Types::Standard qw(:all);
 
 our @EXPORT = qw(
-  asjson rawjs mixedjs ashtml rawhtml usererr userexception 
+  asjson rawjs mixedjs ashtml rawhtml usererr userexception
   jsfunc blessed merge infostatus clone
 );
 
@@ -58,23 +58,23 @@ sub rawjs {
 # and will be stacked together, passing each function in the chain through the first argument
 sub jsfunc {
 	my $js = shift or die "jsfunc(): At least one argument is required";
-	
+
 	return jsfunc(@$js) if (ref($js) eq 'ARRAY');
-	
-	blessed $js and not $js->can('TO_JSON_RAW') and 
+
+	blessed $js and not $js->can('TO_JSON_RAW') and
 		die "jsfunc: arguments must be JavaScript function definition strings or objects with TO_JSON_RAW methods";
-	
+
 	$js = $js->TO_JSON_RAW if (blessed $js);
-	
+
 	# Remove undef arguments:
 	@_ = grep { defined $_ } @_;
-	
+
 	$js = 'function(){ ' .
 		'var args = arguments; ' .
 		'args[0] = (' . $js . ').apply(this,arguments); ' .
 		'return (' . jsfunc(@_) . ').apply(this,args); ' .
 	'}' if (scalar @_ > 0);
-	
+
 	return RapidApp::JSON::RawJavascript->new(js=>$js)
 }
 
@@ -125,16 +125,16 @@ my %keyAliases = (
 );
 sub usererr {
 	my %args= ();
-	
+
 	# First arg is always the message.  We stringify it, so it doesn't matter if it was an object.
 	my $msg= shift;
 	defined $msg or die "userexception requires at least a first message argument";
-	
+
 	# If the passed arg is already a UserError object, return it as-is:
 	return $msg if ref($msg) && ref($msg)->isa('RapidApp::Responder::UserError');
-	
+
 	$args{userMessage}= ref($msg) && ref($msg)->isa('RapidApp::HTML::RawHtml')? $msg : "$msg";
-	
+
 	# pull in any other args
 	while (scalar(@_) > 1) {
 		my ($key, $val)= (shift, shift);
@@ -143,14 +143,14 @@ sub usererr {
 			or warn "Invalid attribute for UserError: $key";
 		$args{$key}= $val;
 	}
-	
+
 	# userexception is allowed to have a payload at the end, but this would be meaningless for usererr,
 	#  since usererr is not saved.
 	if (scalar(@_)) {
 		my ($pkg, $file, $line)= caller;
 		warn "Odd number of arguments to usererr at $file:$line";
 	}
-	
+
 	return RapidApp::Responder::UserError->new(\%args);
 }
 
@@ -165,7 +165,7 @@ Examples:
 
   # Die with a custom user-facing message (in plain text), and a title made of html.
   die userexception "Description of what shouldn't have happened", title => rawhtml "<h1>ERROR</h1>";
-  
+
   # Capture some data for the error report, as we show this message to the user.
   die userexception "Description of what shouldn't have happened", $some_debug_info;
 
@@ -173,13 +173,13 @@ Examples:
 
 sub userexception {
 	my %args= ();
-	
+
 	# First arg is always the message.  We stringify it, so it doesn't matter if it was an object.
 	my $msg= shift;
 	defined $msg or die "userexception requires at least a first message argument";
 	$args{userMessage}= ref($msg) && ref($msg)->isa('RapidApp::HTML::RawHtml')? $msg : "$msg";
 	$args{message}= $args{userMessage};
-	
+
 	# pull in any other args
 	while (scalar(@_) > 1) {
 		my ($key, $val)= (shift, shift);
@@ -188,12 +188,12 @@ sub userexception {
 			or warn "Invalid attribute for RapidApp::Error: $key";
 		$args{$key}= $val;
 	}
-	
+
 	# userexception is allowed to have a payload as the last argument
 	if (scalar(@_)) {
 		$args{data}= shift;
 	}
-	
+
 	return RapidApp::Error->new(\%args);
 }
 
@@ -204,7 +204,7 @@ sub userexception {
 #sub hasarray {
 #	my $name = shift;
 #	my %opt = @_;
-#	
+#
 #	my %defaults = (
 #		is => 'ro',
 #		isa => 'ArrayRef',
@@ -218,7 +218,7 @@ sub userexception {
 #			'count_' . $name		=> 'count'
 #		}
 #	);
-#	
+#
 #	my $conf = merge(\%defaults,\%opt);
 #	return caller->can('has')->($name,%$conf);
 #}
@@ -228,7 +228,7 @@ sub userexception {
 #sub hashash {
 #	my $name = shift;
 #	my %opt = @_;
-#	
+#
 #	my %defaults = (
 #		is => 'ro',
 #		isa => 'HashRef',
@@ -242,7 +242,7 @@ sub userexception {
 #			$name . '_names'		=> 'keys',
 #		}
 #	);
-#	
+#
 #	my $conf = merge(\%defaults,\%opt);
 #	return caller->can('has')->($name,%$conf);
 #}

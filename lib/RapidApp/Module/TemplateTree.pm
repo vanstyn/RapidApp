@@ -30,10 +30,10 @@ sub folder_template_tree_items {
 
 sub template_tree_items {
   my $self = shift;
-  
+
   my $TC = $self->TC;
   my $templates = $TC->get_Provider->list_templates($self->template_regex);
-  
+
   my $items = [];
   foreach my $template (@$templates) {
     my $cnf = {
@@ -45,11 +45,11 @@ sub template_tree_items {
       loadContentCnf => { autoLoad => { url => join('/',$TC->tpl_path,$template) }},
       loaded => \1
     };
-    
+
     $self->apply_tpl_node($cnf);
     push @$items, $cnf;
   }
-  
+
   return $items;
 }
 
@@ -57,7 +57,7 @@ sub template_tree_items {
 sub apply_tpl_node {
   my ($self, $node) = @_;
   my $template = $node->{name} or return;
-  
+
   %$node = ( %$node,
     iconCls => 'ra-icon-page-white',
     text => join('',
@@ -72,9 +72,9 @@ sub apply_tpl_node {
 sub fetch_nodes {
   my $self = shift;
   my ($node) = @_;
-  
+
   my $items;
-  
+
   # Return the root node without children to spare the
   # template query until it is actually expanded (unless default_expanded is set):
   if ($node eq 'root') {
@@ -87,31 +87,31 @@ sub fetch_nodes {
       if ($self->default_expanded);
   }
   else {
-    # The only other possible request is for the children of 
+    # The only other possible request is for the children of
     # 'root/tpl-list' above:
     $items = $self->folder_template_tree_items;
   }
-  
+
   return $items;
 }
 
 # Splits and converts a flat list into an ExtJS tree/folder structure
 sub folder_convert {
   my ($self, $items) = @_;
-  
+
   my $root = [];
   my %seen = ( '' => $root );
-  
+
   foreach my $item (@$items) {
     my @parts = split(/\//,$item->{name});
     my $leaf = pop @parts;
-    
+
     my @stack = ();
     foreach my $part (@parts) {
       my $parent = join('/',@stack) || '';
       push @stack, $part;
       my $folder = join('/',@stack);
-      
+
       unless($seen{$folder}) {
         my $cnf = {
           id => 'tpl-' . $folder . '/',
@@ -126,7 +126,7 @@ sub folder_convert {
         push @{$seen{$parent}}, $cnf;
       }
     }
-    
+
     my $folder = join('/',@stack);
     my $new = {
       %$item,

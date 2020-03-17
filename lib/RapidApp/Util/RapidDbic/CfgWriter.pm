@@ -24,14 +24,14 @@ sub BUILD {
 
 sub _update_incs {
   my $self = shift;
-  
+
   my $next = file( $self->pm_file )->resolve->absolute->parent;
-  
+
   until ($next->basename eq 'lib') {
     $next = $next->parent or return undef;
     return undef if ("$next" eq '/' or "$next" eq '.');
   }
-  
+
   eval "use lib '$next'";
 }
 
@@ -50,7 +50,7 @@ has 'get_default_source_entries', is => 'ro', default => sub {
     my $Source = shift;
     my $name = $Source->source_name;
     my @pks = $Source->primary_columns;
-    
+
     # Here we will take the liberty of setting the display_column to
     # 'title' or 'name' if either of those column names exist
     my $disp_col =
@@ -59,8 +59,8 @@ has 'get_default_source_entries', is => 'ro', default => sub {
       scalar(@pks) == 1             ? $pks[0] : undef;
 
     return [
-      $disp_col 
-        ? [ display_column => $disp_col  ] 
+      $disp_col
+        ? [ display_column => $disp_col  ]
         : [ display_column => '', 1      ], #this will be a comment
       [ title        => $name,              ],
       [ title_multi  => "$name Rows",       ],
@@ -75,15 +75,15 @@ has 'get_default_column_entries', is => 'ro', default => sub {
   sub {
     my $Source = shift;
     my $col    = shift;
-    
+
     my $opts = [
       [ header     => $col,        ],
       [ width      => 100,   1     ],
     ];
-    
+
     my $is_virt = 0;
     my $profiles = [];
-    
+
     if($Source->has_relationship($col)) {
       my $info = $Source->relationship_info($col) || {};
       $is_virt = 1 if (($info->{attrs}{accessor}||'') eq 'multi');
@@ -94,39 +94,39 @@ has 'get_default_column_entries', is => 'ro', default => sub {
         # Assume we should turn off allow_add if this is an auto-inc column
         unshift @$opts, [ allow_add => 0 ];
       }
-      
+
       # ---
       # If this is a foreign key column for a simple belongs_to that has a different
       # name (i.e. column 'type_id' used by the rel 'type'), set the 'hidden' profile
       # to prevent the fk_column from conflicting with the rel on add/edit screens.
       if($info->{is_foreign_key}) {
         push @$profiles, 'hidden' if List::Util::first {
-          $_->[0] eq $col || 
+          $_->[0] eq $col ||
           $_->[0] =~ /^self\.${col}$/ ||
           $_->[1] =~ /^self\.${col}$/
-        } 
+        }
           grep { scalar(@$_) == 2 }
-          map { [ %{ $_->{cond} || {} } ] } 
+          map { [ %{ $_->{cond} || {} } ] }
           grep { ($_->{attrs}{accessor}||'') eq 'single' }
-          map { $Source->relationship_info($_) } 
+          map { $Source->relationship_info($_) }
           $Source->relationships
       }
       # ---
-      
+
     }
     else { # must be a virtual column
       $is_virt = 1;
     }
-    
+
     push @$opts, [ sortable => 1, 1 ] if ($is_virt);
-    
+
     push @$opts, (
       [ renderer => 'RA.ux.App.someJsFunc', 1 ],
       [ profiles => $profiles, scalar(@$profiles) == 0 ? 1 : 0 ]
     );
-    
+
     return $opts;
-    
+
   }
 }, isa => CodeRef;
 
@@ -136,23 +136,23 @@ has 'get_default_column_entries', is => 'ro', default => sub {
 
 has 'config_stmt', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
-  
+
   my $m = $self->ppi_document->find( sub {
     $_[1]->isa('PPI::Statement') or return undef;
-    
+
     my @c = $_[1]->children;
-    $c[2] && $c[2]->content eq 'config' && 
-    $c[0]->content eq '__PACKAGE__' && 
+    $c[2] && $c[2]->content eq 'config' &&
+    $c[0]->content eq '__PACKAGE__' &&
     $c[1]->content eq '->' ? 1 : undef
   }) || [];
 
   scalar(@$m) == 0 and die '__PACKAGE__->config statement not found';
   scalar(@$m) > 1  and die 'Multiple __PACKAGE__->config statements found';
-  
+
   my $stmt = $m->[0]
     ->child(3)
     ->find_first('PPI::Statement::Expression');
-  
+
   # -- Make sure there is a trailing comma (,) ... this will keep perltidy from
   # getting confused about the indentation of the last }
   my $Last = (reverse $stmt->children)[0];
@@ -160,7 +160,7 @@ has 'config_stmt', is => 'ro', lazy => 1, default => sub {
     $Last->insert_after(PPI::Token::Operator->new(','));
   }
   # --
-  
+
   return $stmt;
 
 }, isa => InstanceOf['PPI::Statement::Expression'];
@@ -168,19 +168,19 @@ has 'config_stmt', is => 'ro', lazy => 1, default => sub {
 
 has 'schema_class', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
-  
+
   my $tok = $self->_first_kval(
     $self->config_stmt,
     'schema_class'
   ) or die "'schema_class' config key not found!";
-  
+
   my $class = $tok->content;
   $class =~ s/^('|")//;
   $class =~ s/('|")$//;
-  
+
   $self->_update_incs;
   Module::Runtime::require_module( $class );
-  
+
   $class
 
 }, isa => ClassName;
@@ -212,14 +212,14 @@ has 'grid_params_stmt', is => 'ro', lazy => 1, default => sub {
 
 has 'TableSpecs_stmt', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
-  
+
   my $struct = $self->_first_kval(
     $self->rapiddbic_stmt,
     'TableSpecs'
   ) or die "TableSpecs config key not found!";
-  
+
   $self->_find_or_make_inner_stmt( $struct )
-  
+
 }, isa => InstanceOf['PPI::Statement'];
 
 has 'virtual_columns_stmt', is => 'ro', lazy => 1, default => sub {
@@ -236,38 +236,38 @@ has 'virtual_columns_hash', is => 'ro', lazy => 1, default => sub {
 
 sub _process_TableSpecs {
   my $self = shift;
-  
+
   my $Stmt = $self->TableSpecs_stmt;
 
   for my $source (@{$self->source_names}) {
     my $Source = $self->schema_class->source($source);
-  
-    my $SnStmt = $self->_find_or_make_inner_stmt( 
+
+    my $SnStmt = $self->_find_or_make_inner_stmt(
       $self->_find_or_make_kval( $Stmt, $source )
     );
-    
+
     my $defs = $self->get_default_source_entries->($Source);
-    $self->_find_or_add_entry( $SnStmt, @$_ ) for @$defs;    
-    
+    $self->_find_or_add_entry( $SnStmt, @$_ ) for @$defs;
+
     my $colsStmt = $self->_find_or_make_inner_stmt(
       $self->_find_or_make_kval( $SnStmt, 'columns' )
     );
-    
+
     my @cols = $Source->columns;
     push @cols, sort $Source->relationships;
-    
+
     if(my $vcols = $self->virtual_columns_hash->{$source}) {
       push @cols, sort (keys %$vcols) if (ref($vcols)||'' eq 'HASH');
     }
-    
+
     for my $col (uniq @cols) {
-      my $cStmt = $self->_find_or_make_inner_stmt( 
+      my $cStmt = $self->_find_or_make_inner_stmt(
         $self->_find_or_make_kval( $colsStmt, $col )
       );
-      
+
       my $defs = $self->get_default_column_entries->($Source,$col);
       $self->_find_or_add_entry( $cStmt, @$_ ) for @$defs;
-      
+
       # ------
       # These are the hoops we have to jump through to ensure we haven't left a blank line.
       # the reason this is hard is because we must consider if the parent structure ends
@@ -280,8 +280,8 @@ sub _process_TableSpecs {
           $pLast = $pLast->previous_sibling if (
             $pLast->isa('PPI::Token::Whitespace') && !($pLast->content =~ /\n/)
           );
-          $Last->delete if ( 
-            ($pLast->isa('PPI::Token::Whitespace') || $pLast->isa('PPI::Token::Comment')) 
+          $Last->delete if (
+            ($pLast->isa('PPI::Token::Whitespace') || $pLast->isa('PPI::Token::Comment'))
             && $pLast->content =~ /\n$/
           );
         }
@@ -295,40 +295,40 @@ has 'perltidy_argv', is => 'ro', isa => Str, default => sub { '-i=2 -l=100 -nbbc
 
 sub save_to {
   my ($self, $path) = @_;
-  
-  $self->use_perltidy    
+
+  $self->use_perltidy
     ? Perl::Tidy::perltidy(
       source      => \$self->ppi_document->serialize,
       destination => $path,
       argv        => $self->perltidy_argv
-    ) 
+    )
     : $self->ppi_document->save($path);
-    
+
   return 1
 }
 
 
 sub _find_or_make_inner_stmt {
   my ($self, $Node) = @_;
-  
+
   my $Stmt = $self->_first_stmt( $Node );
   return $Stmt if ($Stmt);
-  
+
   scalar($Node->schildren) == 0 or die "unexepted inner value";
-  
+
   $Stmt = PPI::Statement::Expression->new;
   $Node->add_element( $Stmt );
-  
+
   return $Stmt
 }
-  
+
 
 sub _find_or_make_kval {
   my ($self, $Node, $key) = @_;
-  
-  my $Tok = $self->_first_kword($Node, $key);  
+
+  my $Tok = $self->_first_kword($Node, $key);
   return $self->_first_kval($Node,$Tok) if ($Tok);
-  
+
   my $kVal = bless( {
     children => [
       bless( {
@@ -342,62 +342,62 @@ sub _find_or_make_kval {
       content => "{"
     }, 'PPI::Token::Structure' )
   }, 'PPI::Structure::Constructor' );
-  
+
   my @els = $self->_els_for_next_kv(
     $Node,
     $self->_create_kword_tok($key),
     $kVal
   );
-  
+
   $self->_push_children( $Node, @els );
-  
+
   return $kVal
 }
 
 sub _create_kword_tok {
   my ($self, $key) = @_;
-  
-  $key =~ /^\w+$/ 
+
+  $key =~ /^\w+$/
     ? PPI::Token::Word->new($key)
     : bless( { content => "'$key'", separator => "'" }, 'PPI::Token::Quote::Single' );
 }
 
 sub _create_value_tok {
   my ($self, $val) = @_;
-  
+
   local $Data::Dumper::Terse = 1;
   my $value = Data::Dumper::Dumper($val);
   chomp $value;
-  
+
   @{ PPI::Tokenizer->new( \$value )->all_tokens }
 }
 
 
 sub _find_or_add_entry {
   my ($self, $Node, $key, $val, $as_comment) = @_;
-  
-  my $El = $self->_first_kword($Node,$key) 
+
+  my $El = $self->_first_kword($Node,$key)
     || $self->_first_cmt_kword($Node,$key)
     # needed when comments are the first lines within the {} block -- these will
     # not show up as a child of the Statement::Expression, but of the parent structure
-    || $self->_first_cmt_kword($Node->parent,$key); 
-  
+    || $self->_first_cmt_kword($Node->parent,$key);
+
   return $El if ($El);
-  
+
   my @els = $self->_els_for_next_kv(
     $Node,
     $self->_create_kword_tok($key),
     $self->_create_value_tok($val)
   );
-  
+
   if($as_comment) {
     my $Op;
     $Op = shift @els if($els[0]->isa('PPI::Token::Operator'));
     my $Last = $Node->last_element;
     my $cmt_start = $Last && $Last->content =~ /\n/ ? "  #" : "\n  #";
-    
+
     my $str = join('',$cmt_start,(map { $_->content } @els) );
-    @els = ( 
+    @els = (
       PPI::Token::Comment->new($str),
       PPI::Token::Whitespace->new("\n")
     );
@@ -411,7 +411,7 @@ sub _els_for_next_kv {
   my ($self, $Node, $Keytok, @Valtoks) = @_;
 
   my @els = ();
-  
+
   my @schld = $Node->schildren;
   if(scalar(@schld) > 0) {
     my $Last = pop @schld;
@@ -419,7 +419,7 @@ sub _els_for_next_kv {
       push @els, PPI::Token::Operator->new(',');
     }
   }
-  
+
   push @els, (
     $Keytok,
     PPI::Token::Whitespace->new(' '),
@@ -428,7 +428,7 @@ sub _els_for_next_kv {
     @Valtoks,
     PPI::Token::Operator->new(',')
   );
-  
+
   return @els
 }
 
@@ -442,7 +442,7 @@ sub _push_children {
 sub _first_kword {
   my ($self, $Node, $key) = @_;
   return undef unless ($Node);
-  
+
   List::Util::first {
     $_->content eq $key ||
     $_->content =~ /^('|"){1}${key}('|"){1}$/
@@ -453,7 +453,7 @@ sub _first_kword {
 sub _first_cmt_kword {
   my ($self, $Node, $key) = @_;
   return undef unless ($Node);
-  
+
   List::Util::first {
     $_->content =~ /^\s*\#+\s*('|")??${key}('|")??\s+/
   } grep { $_->isa('PPI::Token::Comment') } $Node->children;
@@ -462,12 +462,12 @@ sub _first_cmt_kword {
 sub _first_kval {
   my ($self, $Node, $key) = @_;
   return undef unless ($Node);
-  
+
   my $kWord = blessed($key) ? $key : $self->_first_kword($Node, $key) or return undef;
-  
+
   my $Op = $kWord->snext_sibling;
   $Op && $Op->content eq '=>' or return undef;
-  
+
   $Op->snext_sibling
 }
 
@@ -491,7 +491,7 @@ RapidApp::Util::RapidDbic::CfgWriter - Updates RapidDbic model configs using PPI
 =head1 SYNOPSIS
 
  use RapidApp::Util::RapidDbic::CfgWriter;
- 
+
  my $CfgW = RapidApp::Util::RapidDbic::CfgWriter->new({ pm_file => "$pm_path" });
  $CfgW->save_to( "$pm_path" );
 
@@ -500,7 +500,7 @@ RapidApp::Util::RapidDbic::CfgWriter - Updates RapidDbic model configs using PPI
 This module non-destructively updates the C<TableSpecs> configs of RapidDbic-based
 model classes based on the current state of the associated DBIx:Class schema set
 in the C<schema_class> config. The purpose is to add the base boilerplate configs
-for the schema if it has been changed since the application was originally 
+for the schema if it has been changed since the application was originally
 bootstrapped. It is designed to NOT clobber user-supplied configs by only adding
 the defaults of missing options, leaving the rest alone.
 
@@ -535,7 +535,7 @@ Writes out the updated file contents to the supplied path.
 
 =over
 
-=item * 
+=item *
 
 L<RapidApp>
 

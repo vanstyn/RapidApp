@@ -56,21 +56,21 @@ has 'open_record_url' => ( is => 'ro', isa => 'Maybe[Str]', lazy => 1, default =
 });
 
 
-# get_record_loadContentCnf is used on a per-row basis to set the 
+# get_record_loadContentCnf is used on a per-row basis to set the
 # options used to load the row in a tab when double-clicked
 # This should be overridden in the subclass:
 sub get_record_loadContentCnf {
   my ($self, $record) = @_;
-  
+
   local $_ = $record;
   my $display = $self->get_record_display->($self);
   %$record = %$_;
-  
+
   $display = { title => $display } unless (ref $display);
-  
+
   return $display;
 }
-has 'get_record_display' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default => sub { sub { 
+has 'get_record_display' => ( is => 'ro', isa => 'CodeRef', lazy => 1, default => sub { sub {
   my $self = shift;
   $self->record_pk . ': ' . $_->{$self->record_pk}
 }});
@@ -95,10 +95,10 @@ has 'allow_edit_frozen', is => 'ro', isa => 'Bool', default => 1;
 
 sub BUILD {
   my $self = shift;
-  
+
   if (defined $self->open_record_class) {
     $self->apply_init_modules( item => $self->open_record_class );
-    
+
     # reach into the new sub-module and add a write listener to its store to
     # make it call our store.load() whenever it changes:
     ### Temp disabled because this can cause a big load/hit ##
@@ -106,20 +106,20 @@ sub BUILD {
     #  $self->Module('item',1)->isa('RapidApp::Module::StorCmp')
     #);
   }
-  
+
   if (defined $self->add_record_class) {
     $self->apply_init_modules( add => $self->add_record_class );
-    
+
     # reach into the new sub-module and add a write listener to its store to
     # make it call our store.load() whenever it changes:
-    
+
     ### Temp disabled because this can cause a big load/hit ##
     #$self->Module('add',1)->DataStore->add_listener( write => $self->DataStore->store_load_fn ) if (
     #  $self->Module('add',1)->isa('RapidApp::Module::StorCmp')
     #);
   }
-  
-  
+
+
   $self->apply_extconfig(
     xtype            => 'appgrid2',
     pageSize          => $self->init_pagesize,
@@ -127,7 +127,7 @@ sub BUILD {
     stripeRows        => \1,
     columnLines        => \1,
     gridsearch        => \1,
-    column_allow_save_properties => [qw(width hidden)], 
+    column_allow_save_properties => [qw(width hidden)],
     use_column_summaries => $self->use_column_summaries ? \1 : \0,
     use_autosize_columns => $self->use_autosize_columns ? \1 : \0,
     use_multisort => $self->use_multisort ? \1 : \0,
@@ -142,7 +142,7 @@ sub BUILD {
     open_record_column => $self->open_record_column ? \1 : \0,
     open_record_column_hidden => $self->open_record_column_hidden ? \1 : \0,
   );
-  
+
   # The record_pk is forced to be added/included as a column:
   if (defined $self->record_pk) {
     $self->apply_columns( $self->record_pk => {} );
@@ -150,49 +150,49 @@ sub BUILD {
     #$self->meta->find_attribute_by_name('include_columns_hash')->clear_value($self);
     %{ $self->include_columns_hash } = ();
   }
-  
+
   if (defined $self->open_record_url or defined $self->add_record_class) {
-    $self->add_listener(  beforerender => RapidApp::JSONFunc->new( raw => 1, func => 
-      'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget' 
+    $self->add_listener(  beforerender => RapidApp::JSONFunc->new( raw => 1, func =>
+      'Ext.ux.RapidApp.AppTab.cnt_init_loadTarget'
     ));
   }
-  
+
   # -- Moved into Ext.ux.RapidApp.AppTab.AppGrid2Def:
   #if (defined $self->open_record_url) {
-  #  $self->add_listener( rowdblclick => RapidApp::JSONFunc->new( raw => 1, func => 
-  #    'Ext.ux.RapidApp.AppTab.gridrow_nav' 
+  #  $self->add_listener( rowdblclick => RapidApp::JSONFunc->new( raw => 1, func =>
+  #    'Ext.ux.RapidApp.AppTab.gridrow_nav'
   #  ));
   #}
   # --
-  
+
   $self->apply_actions( save_search => 'save_search' ) if ( $self->can('save_search') );
   $self->apply_actions( delete_search => 'delete_search' ) if ( $self->can('delete_search') );
-  
+
   $self->DataStore->add_read_raw_mungers(RapidApp::Handler->new( scope => $self, method => 'add_loadContentCnf_read_munger' ));
-  
+
   $self->add_ONREQUEST_calls('init_onrequest');
   $self->add_ONREQUEST_calls_late('init_delete_enable');
 }
 
 sub init_onrequest {
   my $self = shift;
-  
+
   $self->apply_extconfig( preload_quick_search => $self->c->req->params->{quick_search} )
     if (try{$self->c->req->params->{quick_search}});
-  
+
   my $quick_search_cols = try{$self->c->req->params->{quick_search_cols}};
   if($quick_search_cols && $quick_search_cols ne '') {
     $quick_search_cols = lc($quick_search_cols);
     my @cols = split(/\s*,\s*/,$quick_search_cols);
     $self->apply_extconfig( init_quick_search_columns => \@cols );
   }
-  
+
   # Added for #94:
   if(my $qs_mode = try{$self->c->req->params->{quick_search_mode}}) {
     $self->apply_extconfig( init_quick_search_mode => $qs_mode );
   }
-  
-  
+
+
   #$self->apply_config(store => $self->JsonStore);
   $self->apply_extconfig(tbar => $self->tbar_items) if (defined $self->tbar_items);
 }
@@ -215,7 +215,7 @@ sub init_delete_enable {
 sub add_loadContentCnf_read_munger {
   my $self = shift;
   my $result = shift;
-  
+
   # Add a 'loadContentCnf' field to store if open_record_class is defined.
   # This data is used when a row is double clicked on to open the open_record_class
   # module in the loadContent handler (JS side object). This is currently AppTab
@@ -225,19 +225,19 @@ sub add_loadContentCnf_read_munger {
       my $loadCfg = {};
       # support merging from existing loadContentCnf already contained in the record data:
       $loadCfg = $self->json->decode($record->{loadContentCnf}) if (defined $record->{loadContentCnf});
-      
+
       %{ $loadCfg } = (
         %{ $self->get_record_loadContentCnf($record) },
         %{ $loadCfg }
       );
-      
+
       unless (defined $loadCfg->{autoLoad}) {
         $loadCfg->{autoLoad} = {};
         $loadCfg->{autoLoad}->{url} = $loadCfg->{url} if ($loadCfg->{url});
       }
-      
+
       $loadCfg->{autoLoad}->{url} = $self->open_record_url unless (defined $loadCfg->{autoLoad}->{url});
-      
+
       $record->{loadContentCnf} = $self->json->encode($loadCfg);
     }
   }
@@ -247,9 +247,9 @@ sub add_loadContentCnf_read_munger {
 #around 'store_read_raw' => sub {
 #  my $orig = shift;
 #  my $self = shift;
-#  
+#
 #  my $result = $self->$orig(@_);
-#  
+#
 #  # Add a 'loadContentCnf' field to store if open_record_class is defined.
 #  # This data is used when a row is double clicked on to open the open_record_class
 #  # module in the loadContent handler (JS side object). This is currently AppTab
@@ -259,16 +259,16 @@ sub add_loadContentCnf_read_munger {
 #      my $loadCfg = {};
 #      # support merging from existing loadContentCnf already contained in the record data:
 #      $loadCfg = $self->json->decode($record->{loadContentCnf}) if (defined $record->{loadContentCnf});
-#      
+#
 #      %{ $loadCfg } = (
 #        %{ $self->get_record_loadContentCnf($record) },
 #        %{ $loadCfg }
 #      );
-#      
+#
 #      $loadCfg->{autoLoad} = {} unless (defined $loadCfg->{autoLoad});
 #      $loadCfg->{autoLoad}->{url} = $self->Module('item')->base_url unless (defined $loadCfg->{autoLoad}->{url});
-#      
-#      
+#
+#
 #      $record->{loadContentCnf} = $self->json->encode($loadCfg);
 #    }
 #  }
@@ -289,14 +289,14 @@ sub options_menu_items {
 
 sub options_menu {
   my $self = shift;
-  
+
   my $items = $self->options_menu_items or return undef;
   return undef unless (ref($items) eq 'ARRAY') && scalar(@$items);
-  
+
   # Make it easy to find the options menu on the client side (JS):
   my $menu_id = $self->instance_id . '-options-menu';
   $self->apply_extconfig('options_menu_id' => $menu_id );
-  
+
   return {
     xtype    => 'button',
     id      => $self->options_menu_button_Id,
@@ -314,18 +314,18 @@ sub options_menu {
 
 sub tbar_items {
   my $self = shift;
-  
+
   my $arrayref = [];
-  
+
   push @$arrayref, '<img src="' . $self->title_icon_href . '" />'     if (defined $self->title_icon_href);
   push @$arrayref, '<b>' . $self->title . '</b>'                if (defined $self->title);
 
   my $menu = $self->options_menu;
-  push @$arrayref, ' ', '-' if (defined $menu and scalar(@$arrayref) > 0); 
+  push @$arrayref, ' ', '-' if (defined $menu and scalar(@$arrayref) > 0);
   push @$arrayref, $menu if (defined $menu);
-  
+
   push @$arrayref, '->';
-  
+
   push @$arrayref, $self->add_button if (
     defined $self->add_record_class and
     $self->show_add_button
@@ -337,16 +337,16 @@ sub show_add_button { 1 }
 
 sub add_button {
   my $self = shift;
-  
+
   my $loadCfg = {
     url => $self->suburl('add'),
     %{ $self->add_loadContentCnf }
   };
-  
+
   my $handler = RapidApp::JSONFunc->new( raw => 1, func =>
     'function(btn) { btn.ownerCt.ownerCt.loadTargetObj.loadContent(' . $self->json->encode($loadCfg) . '); }'
   );
-  
+
   return RapidApp::JSONFunc->new( func => 'new Ext.Button', parm => {
     handler => $handler,
     %{ $self->add_button_cnf }

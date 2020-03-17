@@ -16,14 +16,14 @@ use Time::HiRes qw(gettimeofday tv_interval);
 
 after 'setup_components' => sub {
   my $c = shift;
-  
+
   # This same model/schema is used by AuthCore:
   CatalystX::InjectComponent->inject(
     into => $c,
     component => 'Catalyst::Model::RapidApp::CoreSchema',
     as => 'Model::RapidApp::CoreSchema'
   ) unless ($c->model('RapidApp::CoreSchema'));
-  
+
 };
 
 before 'dispatch' => sub {
@@ -43,16 +43,16 @@ Catalyst::Plugin::RapidApp::RequestLogger - Log all requests to the CoreSchema
 =head1 SYNOPSIS
 
  package MyApp;
- 
+
  use Catalyst   qw/
    RapidApp::RequestLogger
  /;
 
 =head1 DESCRIPTION
 
-Experimental plugin records every Catalyst request to a table in the 
-L<Model::RapidApp::CoreSchema|Catalyst::Model::RapidApp::CoreSchema>. 
-This will obviously slow down the app. 
+Experimental plugin records every Catalyst request to a table in the
+L<Model::RapidApp::CoreSchema|Catalyst::Model::RapidApp::CoreSchema>.
+This will obviously slow down the app.
 
 This plugin is just experimental and not well supported - do not use in production.
 

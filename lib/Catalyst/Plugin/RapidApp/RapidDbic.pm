@@ -13,21 +13,21 @@ require Module::Runtime;
 
 before 'setup_components' => sub {
   my $c = shift;
-  
+
   $c->config->{'Plugin::RapidApp::RapidDbic'} ||= {};
   my $config = $c->config->{'Plugin::RapidApp::RapidDbic'};
   $config->{dbic_models} ||= [];
-  
+
   $config->{dbic_tree_module_name} = 'db';
   $config->{table_class} = $config->{grid_class} if ($config->{grid_class});
   $config->{table_class} ||= 'Catalyst::Plugin::RapidApp::RapidDbic::TableBase';
   $config->{navcore_default_views} //= 1;
   $config->{configs} ||= {};
-  
+
   $c->config->{'Plugin::RapidApp::TabGui'} ||= {};
   my $tgui_cnf = $c->config->{'Plugin::RapidApp::TabGui'};
   $tgui_cnf->{navtrees} ||= [];
-  
+
   # ---
   # New: expert-only - allow apps to use a custom navtree_class, but require that
   # it be a subclass of RapidApp::Module::DbicNavTree
@@ -38,11 +38,11 @@ before 'setup_components' => sub {
       "\nPlugin::RapidApp::RapidDbic: bad custom navtree_class '$class'\n",
       "  only modules which are subclasses of '$navtree_class' are allowed"
     ) unless $class->isa($navtree_class);
-  
+
     $navtree_class = $class;
   }
   # ---
-  
+
   push @{$tgui_cnf->{navtrees}}, {
     module => $config->{dbic_tree_module_name},
     class => $navtree_class,
@@ -61,12 +61,12 @@ before 'setup_components' => sub {
 # Validate we got a valid RapidDbic config by the end of setup_components or die:
 after 'setup_components' => sub {
   my $c = shift;
-  
+
   my $cfg = $c->config->{'Plugin::RapidApp::RapidDbic'};
   die "No 'Plugin::RapidApp::RapidDbic' config specified!" unless (
     $cfg && ref($cfg) eq 'HASH' && scalar(keys %$cfg) > 0
   );
-  
+
   my $mdls = $cfg->{dbic_models};
   die "Plugin::RapidApp::RapidDbic: No dbic_models specified!" unless (
     $mdls && ref($mdls) eq 'ARRAY' && scalar(@$mdls) > 0
@@ -81,14 +81,14 @@ after 'setup_components' => sub {
 
 before 'setup_component' => sub {
   my( $c, $component ) = @_;
-  
+
   my $appclass = ref($c) || $c;
   my $config = $c->config->{'Plugin::RapidApp::RapidDbic'};
-  
+
   my $loc_cmp_name = $component;
   $loc_cmp_name =~ s/^${appclass}\:\://;
 
-  # -- New: read in optional RapidDbic config from the model itself, or from the main 
+  # -- New: read in optional RapidDbic config from the model itself, or from the main
   #    app config under the model's config key (i.e. "Model::DB")
   my $local_cnf = scalar(
         try{ $component->config          ->{RapidDbic}  }
@@ -109,46 +109,46 @@ before 'setup_component' => sub {
   }
   $local_cnf ||= {};
   # --
-  
+
   my %active_models = ();
   foreach my $model (@{$config->{dbic_models}}) {
     my ($schema,$result) = split(/\:\:/,$model,2);
     $active_models{$appclass."::Model::".$schema}++;
   }
   return unless ($active_models{$component});
-  
+
   # this doesn't seem to work, and why is it here?
   #my $suffix = Catalyst::Utils::class2classsuffix( $component );
   #my $config = $c->config->{ $suffix } || {};
   my $cmp_config = try{$component->config} || {};
-  
+
   my $cnf = { %$cmp_config, %$config };
-  
+
   # Look for the 'schema_class' key, and if found assume this is a
   # DBIC model. This is currently overly broad by design
   my $schema_class = $cnf->{schema_class} or return;
-  
+
   # We have to make sure the TableSpec component has been loaded on
   # each Result class *early*, before 'Catalyst::Model::DBIC::Schema'
   # gets ahold of them. Otherwise problems will happen if we try to
   # load it later:
   my ($model_name) = reverse split(/\:\:/,$component); #<-- educated guess, see temp/hack below
   Module::Runtime::require_module($schema_class);
-  
+
   my $lim_sources = $local_cnf->{limit_sources} ? {map{$_=>1} @{$local_cnf->{limit_sources}}} : undef;
   my $exclude_sources = $local_cnf->{exclude_sources} || [];
   my %excl_sources = map { $_ => 1 } @$exclude_sources;
-  
+
   # Base RapidApp module path:
   my $mod_path = join('/','',$c->module_root_namespace,'main');
   $mod_path =~ s/\/+/\//g; #<-- strip double //
-  
+
   for my $class (keys %{$schema_class->class_mappings}) {
     my $source_name = $schema_class->class_mappings->{$class};
-    
+
     next if ($lim_sources && ! $lim_sources->{$source_name});
     next if ($excl_sources{$source_name});
-    
+
     my $virtual_columns = try{$config->{configs}{$model_name}{virtual_columns}{$source_name}};
     if ($class->can('TableSpec_cnf')) {
       die "Cannot setup virtual columns on $class - already has TableSpec loaded"
@@ -162,10 +162,10 @@ before 'setup_component' => sub {
 
     # ----
     # *predict* (guess) what the auto-generated grid module paths will be and set
-    # the open url configs so that cross table links are able to work. this is 
-    # just a stop-gap until this functionality is factored into the RapidApp API 
+    # the open url configs so that cross table links are able to work. this is
+    # just a stop-gap until this functionality is factored into the RapidApp API
     # officially, somehow...
-    
+
     my $module_name = lc($model_name . '_' . $source_name);
     my $grid_url = join('/',$mod_path,$config->{dbic_tree_module_name},$module_name);
     $class->TableSpec_set_conf(
@@ -174,11 +174,11 @@ before 'setup_component' => sub {
       open_url => join('/',$grid_url,"item"),
     );
     # ----
-    
+
     my $is_virtual = $class->_is_virtual_source;
     my $defs_i = $is_virtual ? 'ra-icon-pg-red' : 'ra-icon-pg';
     my $defm_i = $is_virtual ? 'ra-icon-pg-multi-red' : 'ra-icon-pg-multi';
-    
+
     # Nicer defaults:
     $class->TableSpec_set_conf(
     	title => ($class->TableSpec_get_set_conf('title') || $source_name),
@@ -186,7 +186,7 @@ before 'setup_component' => sub {
       iconCls => ($class->TableSpec_get_set_conf('iconCls') || $defs_i),
       multiIconCls => ($class->TableSpec_get_set_conf('multiIconCls') || $defm_i),
     );
-    
+
     # ----------------
     # Apply some column-specific defaults:
 
@@ -195,7 +195,7 @@ before 'setup_component' => sub {
     for my $col ($class->columns,$class->relationships) {
       $col_props{$col}{header} ||= $col;
     }
-    
+
     # For single-relationship columns (belongs_to) we want to hide
     # the underlying fk_column because the relationship column name
     # handles setting it for us. In typical RapidApps this is done manually,
@@ -212,24 +212,24 @@ before 'setup_component' => sub {
           for (grep { $_ ne $rel } keys %$fk_columns);
       }
     }
-    
-    $class->TableSpec_set_conf( column_properties => %col_props ) 
+
+    $class->TableSpec_set_conf( column_properties => %col_props )
       if (keys %col_props > 0);
     # ----------------
-    
+
 
     # --- apply TableSpec configs specified in the plugin config:
     my $TSconfig = try{$config->{configs}->{$model_name}->{TableSpecs}->{$source_name}} || {};
     $class->TableSpec_set_conf( $_ => $TSconfig->{$_} ) for (keys %$TSconfig);
     # ---
-    
-    # Set the editor to use the existing grid unless auto_editor_type is already defined 
+
+    # Set the editor to use the existing grid unless auto_editor_type is already defined
     # *in the RapidDbic plugin config itself*. This is needed to fix a load-order problem
     # in which the TableSpec auto_editor_type could have been already set automatically to
     # 'combo' (this is why we're not checking the actual TableSpec config itself). For the
-    # purposes of RapidDbic, we are taking over and superseding that layer of auto-generated 
+    # purposes of RapidDbic, we are taking over and superseding that layer of auto-generated
     # configs already in action for TableSpecs. Also, if the auto_editor_type is set to
-    # 'grid', replace it with the custom existing grid, too:  
+    # 'grid', replace it with the custom existing grid, too:
     if(!$TSconfig->{auto_editor_type} || $TSconfig->{auto_editor_type} eq 'grid') {
       $class->TableSpec_set_conf(
         auto_editor_type => 'custom',
@@ -243,7 +243,7 @@ before 'setup_component' => sub {
         }
       );
     }
-    
+
   }
 };
 
@@ -255,14 +255,14 @@ after 'setup_finalize' => sub {
 
 sub _rapiddbic_initialize_default_views_rows {
   my $c = shift;
-  
+
   my $config = $c->config->{'Plugin::RapidApp::RapidDbic'} or die
     "No 'Plugin::RapidApp::RapidDbic' config specified!";
-  
+
   # If enabled and available, initialize all rows for Default Model/Source views:
   if($config->{navcore_default_views} && $c->_navcore_enabled) {
     my $rootModule = $c->model('RapidApp')->rootModule;
-    
+
     my $AppTree = $rootModule->Module('main')->Module($config->{dbic_tree_module_name});
     my @source_models = $AppTree->all_source_models;
     my $Rs = $c->model('RapidApp::CoreSchema::DefaultView');
@@ -297,16 +297,16 @@ L<RapidApp::Manual::Bootstrap>
 =head1 SYNOPSIS
 
  package MyApp;
- 
+
  use Catalyst   qw/ RapidApp::RapidDbic /;
 
 Then, also in the main Catalyst app class:
 
  __PACKAGE__->config(
- 
+
     'Plugin::RapidApp::RapidDbic' => {
       dbic_models => ['DB','OtherModel'],
-      
+
       # All custom configs optional...
       configs => {
         DB => {
@@ -332,13 +332,13 @@ Or, within individual DBIC::Schema model class(es):
 
  __PACKAGE__->config(
     schema_class => 'MyApp::DB',
- 
+
     connect_info => {
        # ...
     },
- 
+
     RapidDbic => {
- 
+
       # All custom configs optional...
       grid_params => {
         # to make all grids editable:
@@ -367,7 +367,7 @@ Or, within individual DBIC::Schema model class(es):
         SourceB => {
           display_column => 'foo',
           columns => {
-            foo => { 
+            foo => {
               title => 'Foo',
               # ...
             }
@@ -382,8 +382,8 @@ Or, within individual DBIC::Schema model class(es):
 
 =head1 DESCRIPTION
 
-The RapidDbic plugin provides a very high-level, abstract configuration layer for initializing 
-a structure of interfaces for accessing L<DBIC::Schema|Catalyst::Model::DBIC::Schema> models 
+The RapidDbic plugin provides a very high-level, abstract configuration layer for initializing
+a structure of interfaces for accessing L<DBIC::Schema|Catalyst::Model::DBIC::Schema> models
 for Catalyst/RapidApp. These interfaces are fully functional out-of-the-box, but also provide
 a robust base which can be configured and extended into various forms of custom applications.
 
@@ -393,39 +393,39 @@ across different layers. This includes the L<TabGui|Catalyst::Plugin::RapidApp::
 the main interface and navigation structure, and sets of DBIC-aware modules such as grids, forms and
 trees.
 
-This hooks into a very broad ecosystem of highly customizable and extendable modules which are 
-still in the process of being fully documented... The unconfigured, default state resembles a 
+This hooks into a very broad ecosystem of highly customizable and extendable modules which are
+still in the process of being fully documented... The unconfigured, default state resembles a
 database admin utility, with powerful CRUD features, query builder, batch modify forms, and so on.
 
 RapidDbic is also designed to work with other, high-level plugins to access additional turn-key
-application-wide functionality, such as access and authorization with the 
+application-wide functionality, such as access and authorization with the
 L<AuthCore|Catalyst::Plugin::RapidApp::AuthCore> plugin and saved user-views with the
 L<NavCore|Catalyst::Plugin::RapidApp::NavCore> plugin.
 
 =head1 CONFIG
 
-The only required config option is specifying at least one L<DBIC::Schema|Catalyst::Model::DBIC::Schema> 
+The only required config option is specifying at least one L<DBIC::Schema|Catalyst::Model::DBIC::Schema>
 model to enable. This can be achieved either with the C<dbic_models> option in the plugin config key
 C<'Plugin::RapidApp::RapidDbic'> within the main Catalyst app class/config, or by specifying a C<'RapidDbic'>
 config key in the model class(es) itself (see SYNOPSIS).
 
-The optional additional config options for each model are then divided into two main sections, 
+The optional additional config options for each model are then divided into two main sections,
 C<grid_params> and C<TableSpecs>, which are each further divided into each source name in the
 DBIC schema.
 
 =head2 grid_params
 
-The grid_params section allows overriding the parameters to be supplied to the RapidApp module 
+The grid_params section allows overriding the parameters to be supplied to the RapidApp module
 which is automatically built for each source (with a menu point for each in the navtree). By default,
 this is the grid-based module L<Catalyst::Plugin::RapidApp::RapidDbic::TableBase>, but can be changed
-(with the C<grid_class> config option, see below) to any module extending a DBIC-aware RapidApp 
-module (which are any of the modules based on the "DbicLink" ecosystem) which doesn't even 
+(with the C<grid_class> config option, see below) to any module extending a DBIC-aware RapidApp
+module (which are any of the modules based on the "DbicLink" ecosystem) which doesn't even
 necesarily need to be derived from a grid module at all...
 
 For convenience, the special source name C<'*defaults'> can be used to set params for all sources
 at once.
 
-The DbicLink modules configuration documentation is still in-progress. 
+The DbicLink modules configuration documentation is still in-progress.
 
 =head2 TableSpecs
 
@@ -434,7 +434,7 @@ These provide extra "hints" for how to represent the schema entities in differen
 interface contexts. TableSpec data is passive and is consumed by all DBIC-aware RapidApp Modules
 for building their default configuration(s).
 
-For a listing of the different TableSpec data-points which are available, see the TableSpec 
+For a listing of the different TableSpec data-points which are available, see the TableSpec
 documentation in the manual:
 
 =over
@@ -447,7 +447,7 @@ L<RapidApp::Manual::TableSpec>
 
 =head2 grid_class
 
-Specify a different RapidApp module class name to use for the source. The default is 
+Specify a different RapidApp module class name to use for the source. The default is
 C<Catalyst::Plugin::RapidApp::RapidDbic::TableBase>. The C<grid_params> for each source
 are supplied to the constructor of this class to create the module instances (for each source).
 
@@ -458,7 +458,7 @@ only the individual source.
 
 =head2 virtual_columns
 
-Automatically inject virtual columns via config into the sources... More documentation TDB. 
+Automatically inject virtual columns via config into the sources... More documentation TDB.
 
 In the meantime, see the virtual_column example in the Chinook Demo:
 
@@ -484,7 +484,7 @@ L<Plack::App::RapidApp::rDbic>
 
 =back
 
-For instant gratification, a script-based wrapper is also available which can fire up an app 
+For instant gratification, a script-based wrapper is also available which can fire up an app
 with a single shell command and dsn argument:
 
 =over
@@ -524,7 +524,7 @@ L<Catalyst::Plugin::RapidApp::TabGui>
 
 L<Catalyst::Plugin::RapidApp::NavCore>
 
-=item * 
+=item *
 
 L<Catalyst>
 

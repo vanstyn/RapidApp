@@ -14,9 +14,9 @@ sub process {
 
   $c->response->header('Cache-Control' => 'no-cache');
   $c->stash->{template} = 'templates/rapidapp/ext_viewport.tt';
-  
+
   my @img = ();
-  
+
   push @img, $self->_get_asset_controller_urls(
      $c->controller('Assets::ExtJS'), (qw(
       resources/images/gray/qtip/tip-sprite.gif
@@ -44,7 +44,7 @@ sub process {
       resources/images/gray/panel/left-right.gif
      ))
   );
-  
+
   push @img, $self->_get_asset_controller_urls(
      $c->controller('Assets::RapidApp::Icons'), (qw(
       warning.png
@@ -53,24 +53,24 @@ sub process {
       refresh_24x24.png
      ))
   );
-   
+
   push @img, $self->_get_asset_controller_urls(
      $c->controller('Assets::RapidApp::Misc'), (qw(
       images/rapidapp_powered_logo_tiny.png
      ))
   );
-  
+
   # Misc static images:
   my $pfx = $c->mount_url || '';
   push @{$c->stash->{precache_imgs}}, map { "$pfx$_" } (qw(
     /assets/rapidapp/misc/static/icon-error.gif
     /assets/rapidapp/misc/static/s.gif
   ));
-  
-  
+
+
   $c->stash->{precache_imgs} ||= [];
   @{$c->stash->{precache_imgs}} = uniq(@{$c->stash->{precache_imgs}},@img);
-  
+
   die "ERROR: stash params 'config_url' and 'panel_cfg' cannot be used together"
     if($c->stash->{config_url} && $c->stash->{panel_cfg});
 
@@ -108,7 +108,7 @@ RapidApp::View::Viewport - Render a Module within an ExtJS Viewport
 This is the main View for rendering a top-level RapidApp Module within the browser. This
 component class is used internally by plugins like L<TabGui|Catalyst::Plugin::RapidApp::TabGui>.
 
-The JavaScript function C<Ext.ux.RapidApp.AutoPanel> is used to fetch and decode the 
+The JavaScript function C<Ext.ux.RapidApp.AutoPanel> is used to fetch and decode the
 configured Module URL via Ajax.
 
 More documentation TDB...

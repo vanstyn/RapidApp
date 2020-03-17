@@ -58,37 +58,37 @@ sub crud_profile {
   my $prof = ($self->{_crud_profile} ||= (
     $self->_ra_rapiddbic_opts->{crud_profile} || 'read-only'
   ));
-  
+
   my @valid = qw(read-only editable edit-instant edit-gridadd ed-inst-gridadd);
   my %valid = map {$_=>1} @valid;
-  
+
   die join('',
     "Unknown crud_profile '$prof' -- must be one of (",
     join(', ',@valid),")"
   ) unless ($valid{$prof});
-  
+
   $prof
 }
 
 sub _get_grid_params_section {
     my $self = shift;
-    
+
     my $opts = $self->_ra_rapiddbic_opts;
     my $grid_class = $opts->{grid_class} || 'Catalyst::Plugin::RapidApp::RapidDbic::TableBase';
-    
+
     my $colspecs = q~
              include_colspec     => ['*'], #<-- default already ['*']
              updatable_colspec   => ['*'],
              creatable_colspec   => ['*'],
              destroyable_relspec => ['*'],~;
-    
+
     my $maybe_total_counts = $opts->{total_counts_off}
              ? q~
-             init_total_count_off => 1,~ 
+             init_total_count_off => 1,~
              : '';
-    
+
     my $inner = '';
-    
+
     if ($self->crud_profile eq 'read-only' ) {
       $colspecs = q~
              include_colspec      => ['*'], #<-- default already ['*']
@@ -161,19 +161,19 @@ sub _gen_model {
 
     my @sources = $self->_get_source_list;
     $helper->{source_names} = \@sources;
-    
+
     try {
       my $nfo = $self->{connect_info};
-      
+
       if($nfo && $nfo->{dsn} && $nfo->{dsn} =~ /\:sqlite\:/i) {
         my ($dbi,$drv,$db) = split(/\:/,$nfo->{dsn},3);
-        
+
         my $db_file = file($db)->resolve->absolute;
         my $base_dir = dir($helper->{base})->resolve->absolute;
-        
+
         if($base_dir->contains($db_file)) {
           my $rel = $db_file->relative($base_dir);
-          
+
           $helper->{pre_config_perl_code} = join('',
             q{use Path::Class qw(file);},"\n",
             q{use RapidApp::Util ':all';},"\n",
@@ -181,7 +181,7 @@ sub _gen_model {
               $helper->{app},q{'),'},$rel->stringify,q{');},"\n",
             q|sub _sqlt_db_path { "$db_path" }; # exposed for use by the regen devel script|
           );
-          
+
           $helper->{post_config_perl_code} = join("\n",
             q!## ------!,
             q!## Uncomment these lines to have the schema auto-deployed during!,
@@ -193,59 +193,59 @@ sub _gen_model {
             q!#};!,
             q!## ------!,''
           );
-          
+
           $helper->{connect_info}{dsn} = join('','"',$dbi,':',$drv,':','$db_path','"');
         }
-      
+
       }
     };
-    
+
     $helper->render_file('compclass', $helper->{file} );
-    
+
     my $CfgW = RapidApp::Util::RapidDbic::CfgWriter->new({ pm_file => "$helper->{file}" });
     $CfgW->save_to( "$helper->{file}" );
-    
+
 }
 
 # Must be called *after* _gen_static_schema() is called
 sub _get_source_list {
   my $self = shift;
-  
+
   my $class = $self->{schema_class} or die "No schema class!";
   Module::Runtime::require_module($class) or die "Error loading schema class!";
-  
+
   # Connect to a one-off SQLite memory database just so we can get the sources
   my $schema = $class->connect('dbi:SQLite::memory:');
-  
+
   return sort ($schema->sources);
 }
 
 # This is the cleanest way to munge the arguments passed to make_schema_at (in parent)
-# to inject our custom loader_class option(s). 
+# to inject our custom loader_class option(s).
 #  -- See Catalyst::Helper::Model::DBIC::Schema::_gen_static_schema to understand why
 around '_gen_static_schema' => sub {
   my ($orig,$self,@args) = @_;
-  
+
   my @keys = qw/metakeys limit_schemas_re exclude_schemas_re limit_tables_re exclude_tables_re/;
   my $extra = { map {
-    $self->_ra_rapiddbic_opts->{$_} 
+    $self->_ra_rapiddbic_opts->{$_}
       ? ( $_ => $self->_ra_rapiddbic_opts->{$_} )
       : ()
   } @keys };
 
   my $connect_info = $self->connect_info;
   my $loader_args  = $self->loader_args;
-  
+
   # ---
   # TODO/FIXME: Temp hack to solve a particular case with table names ending in '+'
-  # this should be removed once proper support for passing loader args in 
+  # this should be removed once proper support for passing loader args in
   # rapidapp.pl and rdbic.pl
-  $loader_args->{moniker_map} = sub { 
-    my $table = shift; $table =~ s{\+$}{_plus}; 
-    join '', map ucfirst, split /[\W_]+/, lc $table 
+  $loader_args->{moniker_map} = sub {
+    my $table = shift; $table =~ s{\+$}{_plus};
+    join '', map ucfirst, split /[\W_]+/, lc $table
   };
   # ---
-  
+
   no warnings 'redefine';
 
   local *connect_info = sub {
@@ -338,7 +338,7 @@ __PACKAGE__->config(
     # Configs for the RapidApp::RapidDbic Catalyst Plugin:
     RapidDbic => {
 
-       # use only the relationship column of a foreign-key and hide the 
+       # use only the relationship column of a foreign-key and hide the
        # redundant literal column when the names are different:
        hide_fk_columns => 1,
 

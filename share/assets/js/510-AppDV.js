@@ -184,7 +184,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 	onAdd: function(ds, records, index){
 		var count = this.all.getCount();
 		Ext.ux.RapidApp.AppDV.DataView.superclass.onAdd.apply(this, arguments);
-    
+
     var dsPlug = this.datastore_plus_plugin;
     if(!dsPlug.use_add_form && !this.persist_immediately.create) {
     
@@ -243,7 +243,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			el.highlight();
 		},record);
 	},
-  
+
   scrollRecord: function(record) {
     var dvEl = this.el;
     this.forEachRecordNode(function(el){
@@ -512,7 +512,7 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
 			renderTo: fieldEl
 			//contentEl: dataEl
 		});
-    
+
     if(Record && Record.data && typeof Record.data[fieldname] !== "undefined") {
       // This will not get called in add record context, and we don't want it to:
       cnf.value = Record.data[fieldname];
@@ -746,10 +746,10 @@ Ext.ux.RapidApp.AppDV.DataView = Ext.extend(Ext.DataView, {
             return false; //<-- stop iteration
           }
         },this);
-        
+
         if(Btn && !Btn.disabled && Btn.handler) {
           Btn.handler.call(this,Btn);
-        
+
         }
         
         //console.dir(Btn);

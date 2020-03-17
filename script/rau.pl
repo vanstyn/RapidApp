@@ -22,7 +22,7 @@ rau.pl - RapidApp umbrella utility script
 =head1 SYNOPSIS
 
  rau.pl [MODULE] [options]
- 
+
  Available Modules:
    * model-update
 
@@ -46,9 +46,9 @@ So far, the only module which has been written is L<RapidApp::Util::Rau::ModelUp
 L<RapidApp>
 
 =head1 SUPPORT
- 
+
 IRC:
- 
+
     Join #rapidapp on irc.perl.org.
 
 =head1 AUTHOR

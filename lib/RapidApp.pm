@@ -73,21 +73,21 @@ See L<www.rapidapp.info|http://www.rapidapp.info> and L<RapidApp::Manual> for mo
 =head1 DESCRIPTION
 
 RapidApp is an extension to L<Catalyst> - the Perl MVC framework. It provides a feature-rich
-extended development stack, as well as easy access to common out-of-the-box application paradigms, 
-such as powerful CRUD-based front-ends for L<DBIx::Class> models, user access and authorization, 
-RESTful URL navigation schemes, pure Ajax interfaces with no browser page loads, templating engine 
+extended development stack, as well as easy access to common out-of-the-box application paradigms,
+such as powerful CRUD-based front-ends for L<DBIx::Class> models, user access and authorization,
+RESTful URL navigation schemes, pure Ajax interfaces with no browser page loads, templating engine
 with front-side CMS features, declarative configuration layers, and more...
 
-RapidApp is useful not only for new application development, but also for adding admin interfaces 
+RapidApp is useful not only for new application development, but also for adding admin interfaces
 and snap-in components to existing applications, as well as for rapid prototyping.
 
-Although RapidApp is based on Catalyst, fully encapsulated L<Plack> interfaces are also provided, 
-such as L<Plack::App::RapidApp::rDbic> and L<Rapi::Fs>, which enables RapidApp to be integrated into 
-any application/framework which utilizes PSGI/Plack. 
+Although RapidApp is based on Catalyst, fully encapsulated L<Plack> interfaces are also provided,
+such as L<Plack::App::RapidApp::rDbic> and L<Rapi::Fs>, which enables RapidApp to be integrated into
+any application/framework which utilizes PSGI/Plack.
 
 RapidApp started as an internal project in 2009 and has been under continuous development
-ever since. It has been used very successfully for multiple medium to large-scale client 
-applications (backends with hundreds of tables and tens of millions of rows) as well as 
+ever since. It has been used very successfully for multiple medium to large-scale client
+applications (backends with hundreds of tables and tens of millions of rows) as well as
 many quick and easy apps and interfaces for smaller jobs.
 
 We started open-sourcing RapidApp in 2013, and this work is ongoing...
@@ -119,9 +119,9 @@ L<Template::Toolkit>
 =back
 
 Documentation is still a work-in-progress. Much of it has been done, but much of it still
-remains to be done: L<RapidApp::Manual>. 
+remains to be done: L<RapidApp::Manual>.
 
-Also, be sure to check out the RapidApp website for more information, including several 
+Also, be sure to check out the RapidApp website for more information, including several
 comprehensive video demos and tutorials:
 
 =over
@@ -133,9 +133,9 @@ L<www.rapidapp.info|http://www.rapidapp.info>
 =back
 
 =head1 SUPPORT
- 
+
 IRC:
- 
+
     Join #rapidapp on irc.perl.org.
 
 =head1 AUTHOR

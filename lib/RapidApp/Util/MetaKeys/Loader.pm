@@ -12,21 +12,21 @@ require RapidApp::Util::MetaKeys;
 use RapidApp::Util qw(:all);
 use Data::Printer;
 
-use DBI::Const::GetInfoType '%GetInfoType'; 
+use DBI::Const::GetInfoType '%GetInfoType';
 
 sub new {
   my ($class, %args) = @_;
-  
+
   # Force set option to turn off potentially damaging "load_external" feature
   # of Schema::Loader unless the option is specifically set to 0
   $args{skip_load_external} = 1 unless (
-    exists $args{skip_load_external} && !$args{skip_load_external} 
+    exists $args{skip_load_external} && !$args{skip_load_external}
   );
-  
+
   $args{preserve_case} = 1 unless (exists $args{preserve_case});
-  
+
   my $metakeys_data = exists $args{metakeys} ? delete $args{metakeys} : undef;
-  
+
   # -- NEW: Experimental limit/exclude opts (Added for GitHub Issue #152):
   my @prps = qw/limit_schemas_re exclude_schemas_re limit_tables_re exclude_tables_re/;
   my $limExcl = { map {
@@ -36,33 +36,33 @@ sub new {
     } : ()
   } @prps };
   # --
-  
+
   my $self = $class->next::method(%args);
-  
+
   $self->MetaKeys( $metakeys_data );
   $self->limExcl( $limExcl );
-  
+
   # Logic duplicated from DBIx::Class::Schema::Loader::DBI
   my $driver = $self->dbh->{Driver}->{Name};
-  
+
   # New: detect the MSSQL/ODBC case - TODO: generalize this properly
   if($driver eq 'ODBC') {
     my $dbms_name = $self->dbh->get_info($GetInfoType{SQL_DBMS_NAME});
     $driver = 'MSSQL' if ($dbms_name eq 'Microsoft SQL Server');
   }
-  
+
   my $subclass = 'DBIx::Class::Schema::Loader::DBI::' . $driver;
   Module::Runtime::require_module($subclass);
-  
+
   # Create a new, runtime class for this specific driver
   unless($self->isa($subclass)) {
     my $newclass = join('::',$class,'__FOR__',$driver);
-    
+
     no strict 'refs';
     @{$newclass."::ISA"} = ($subclass);
     $newclass->load_components('+'.$class);
     bless $self, $newclass;
-    
+
     $self->_rebless;
     Class::C3::reinitialize() if $] < 5.009005;
   }
@@ -87,22 +87,22 @@ sub limExcl {
 
 sub _table_fk_info {
   my ($self, $table) = @_;
-  
+
   my $fks = $self->next::method($table);
-  
+
   if(my $MetaKeys = $self->MetaKeys) {
     if(my $FKs = $MetaKeys->table_fks($table->name)) {
-    
+
       # Add extra keys defined in our metakeys, but strip duplicates
-      
+
       my $exist = {};
       $exist
         ->{join('|',@{$_->{local_columns}})}
         ->{$_->{remote_table}->name}
         ->{join('|',@{$_->{remote_columns}})}++
       for (@$fks);
-      
-      push @$fks, ( 
+
+      push @$fks, (
         map  { $self->_fk_cnf_for_metakey($table,$_) }
         grep {
           ! $exist
@@ -111,19 +111,19 @@ sub _table_fk_info {
             ->{ $_->remote_column }
         } @$FKs
       );
-        
+
     }
   }
-    
+
   $fks
 }
 
 
 sub _fk_cnf_for_metakey {
   my ($self, $table, $MetaFK) = @_;
-  
+
   my $schema = $MetaFK->remote_schema || $MetaFK->local_schema || $table->schema;
-  
+
   return {
     attrs => {
       is_deferrable => 1,
@@ -143,7 +143,7 @@ sub _fk_cnf_for_metakey {
 
 sub _tables_list {
   my ($self, @args) = @_;
-  
+
   my $incl = sub {
     my $Tbl = shift;
     if(my $schema = $Tbl->schema) {
@@ -168,7 +168,7 @@ sub _tables_list {
     }
     return 1; # Include unless excluded above
   };
-  
+
   grep { $incl->($_) } $self->next::method(@args)
 }
 
@@ -196,7 +196,7 @@ RapidApp::Util::MetaKeys::Loader - DBIC::S::L-compatable loader_class
 
 L<RapidApp::Util::MetaKeys>
 
-=item * 
+=item *
 
 L<RapidApp>
 

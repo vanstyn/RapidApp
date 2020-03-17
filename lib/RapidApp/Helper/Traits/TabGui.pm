@@ -9,23 +9,23 @@ requires '_ra_catalyst_configs';
 
 around _ra_catalyst_plugins => sub {
   my ($orig,$self,@args) = @_;
-  
+
   my @list = $self->$orig(@args);
-  
-  return grep { 
+
+  return grep {
     $_ ne 'RapidApp' #<-- Base plugin redundant
   } @list, 'RapidApp::TabGui';
 };
 
 around _ra_catalyst_configs => sub {
   my ($orig,$self,@args) = @_;
-  
+
   my @list = $self->$orig(@args);
-  
+
   # Make the TabGui config come first:
   return (
 <<END,
-    # The TabGui plugin mounts the standard ExtJS explorer interface as the 
+    # The TabGui plugin mounts the standard ExtJS explorer interface as the
     # RapidApp root module (which is at the root '/' of the app by default)
     'Plugin::RapidApp::TabGui' => {
       title => "$self->{name} v\$VERSION",

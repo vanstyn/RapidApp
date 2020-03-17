@@ -31,10 +31,10 @@ has 'edit_alias_path', is => 'ro', default => '/tple';
 
 sub BUILD {
   my $self = shift;
-  
+
   my $c = $self->_app;
   my $ns = $self->action_namespace($c);
-  
+
   if($self->read_alias_path) {
     my $path = $self->read_alias_path;
     $path =~ s/^\///;
@@ -51,7 +51,7 @@ sub BUILD {
       }
     }));
   }
-  
+
   if($self->edit_alias_path) {
     my $path = $self->edit_alias_path;
     $path =~ s/^\///;
@@ -88,7 +88,7 @@ has 'store_class', is => 'ro',  default => sub {undef}; # Will be 'RapidApp::Tem
 has 'store_params', is => 'ro', default => sub {undef};
 
 
-# -- 
+# --
 # Only these TT plugins and filters will be allowed in Templates
 # This is *very* important for security if non-admin users will
 # have access to modify templates. These templates and filters
@@ -103,14 +103,14 @@ has 'store_params', is => 'ro', default => sub {undef};
 #
 # (note: these get accessed/used within RapidApp::Template::Context)
 has 'allowed_plugins', is => 'ro', default => sub {[qw(
-  Assert Date Dumper Format HTML Iterator 
+  Assert Date Dumper Format HTML Iterator
   Scalar String Table URL Wrap
 )]}, isa => 'ArrayRef';
 
 has 'allowed_filters', is => 'ro', default => sub {[qw(
-  format upper lower ucfirst lcfirst trim collapse 
-  html html_entity xml html_para html_break 
-  html_para_break html_line_break uri url indent 
+  format upper lower ucfirst lcfirst trim collapse
+  html html_entity xml html_para html_break
+  html_para_break html_line_break uri url indent
   truncate repeat remove replace null
 )]}, isa => 'ArrayRef';
 # --
@@ -125,9 +125,9 @@ has 'auto_editable', is => 'ro', isa => 'Bool', default => 0;
 has 'Access', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   Module::Runtime::require_module($self->access_class);
-  return $self->access_class->new({ 
+  return $self->access_class->new({
     %{ $self->access_params },
-    Controller => $self 
+    Controller => $self
   });
 }, isa => 'RapidApp::Template::Access';
 
@@ -168,7 +168,7 @@ sub _new_Template {
           CACHE_SIZE => 64,
           %{ $opt || {} }
         })
-      ] 
+      ]
     })
   })
 }
@@ -193,7 +193,7 @@ sub get_Provider {
 sub _template_exists {
   my ($self, $c, $template) = @_;
   die "missing template arg" unless ($template);
-  $c->stash->{_template_exists}{$template} = 
+  $c->stash->{_template_exists}{$template} =
     $self->get_Provider->template_exists($template)
       unless (exists $c->stash->{_template_exists}{$template});
   return $c->stash->{_template_exists}{$template};
@@ -206,17 +206,17 @@ sub _template_exists {
 # are allowed to be edited
 sub is_editable_request {
   my ($self, $c) = @_;
-  
+
   # Never editable externally, unless this is an iframe request
   return 0 unless (
     $c->req->header('X-RapidApp-RequestContentType') ||
     (exists $c->req->params->{iframe} && $c->req->params->{iframe} eq 'request')
   );
-  
+
   # check several mechanisms to turn on editing (mouse-over edit controls)
   return (
     $self->auto_editable ||
-    $c->req->params->{editable} || 
+    $c->req->params->{editable} ||
     $c->req->params->{edit} ||
     $c->stash->{editable}
   );
@@ -224,9 +224,9 @@ sub is_editable_request {
 
 sub is_iframe_request {
   my ($self, $c) = @_;
-  
+
   return (
-    $c->req->params->{iframe} || 
+    $c->req->params->{iframe} ||
     $c->stash->{iframe}
   );
 }
@@ -235,12 +235,12 @@ sub is_iframe_request {
 sub is_external_template {
   my ($self, $c, $template) = @_;
   die "missing template arg" unless ($template);
-  
+
   $c->stash->{is_external_template}{$template} = do {
   # Allow params/stash override:
     return $c->req->params->{external} if (exists $c->req->params->{external});
     return $c->stash->{external} if (exists $c->stash->{external});
-    
+
     my $external = (
       # hard-coded external templates:
       $template =~ /^rapidapp\/public\// ||
@@ -253,7 +253,7 @@ sub is_external_template {
       $self->_template_exists($c,$template)
     ) ? 1 : 0;
   } unless (exists $c->stash->{is_external_template}{$template});
-  
+
   return $c->stash->{is_external_template}{$template};
 }
 
@@ -261,13 +261,13 @@ sub is_external_template {
 sub _resolve_template_name {
   my ($self, @args) = @_;
   return undef unless (defined $args[0]);
-  my $template = join('/',@args); 
-  
+  my $template = join('/',@args);
+
   $template .= '.' . $self->default_template_extension if (
     $self->default_template_extension &&
     ! ( $template =~ /\./ ) #<-- doesn't contain a dot '.'
   );
-  
+
   return $template;
 }
 
@@ -293,15 +293,15 @@ sub _validate_args_template_viewable {
 
 sub _validate_enforce_arguments_path {
   my ($self, $c, @args) = @_;
-  
+
   shift @args if ($args[0] eq 'tpl' || $args[0] eq 'tple');
   return 1 if ($self->_validate_args_template_viewable(@args));
-  
+
   my @pre_args = ();
   while(scalar(@args) > 1) {
-    
+
     push @pre_args, shift @args;
-    
+
     # Special handling for relative requests to special/reserved controller paths.
     # this is based on the same logic/rules as in RapidApp::Module
     $c->redispatch_public_path($c->mount_url,@args) && $c->detach if (
@@ -312,7 +312,7 @@ sub _validate_enforce_arguments_path {
       )
     );
   }
-  
+
   $c->stash->{template} = 'rapidapp/http-404.html';
   $c->stash->{current_view} = 'RapidApp::Template';
   $c->res->status(404);
@@ -321,9 +321,9 @@ sub _validate_enforce_arguments_path {
 
 sub direct :Chained('base') :Args {
   my ($self, $c, @args) = @_;
-  
+
   $self->_validate_enforce_arguments_path($c,@args);
-  
+
   $c->stash->{panel_cfg} = {
     xtype => 'autopanel',
     layout => 'fit',
@@ -332,7 +332,7 @@ sub direct :Chained('base') :Args {
       params => $c->req->params
     }
   };
-  
+
   return $c->detach( $c->view('RapidApp::Viewport') );
 }
 
@@ -351,7 +351,7 @@ sub tpl :Chained('base') :Args {
 # Edit alias
 sub tple :Chained('base') :Args {
   my ($self, $c, @args) = @_;
-  
+
   $c->stash->{editable} = 1;
   $self->view($c,@args)
 }
@@ -361,9 +361,9 @@ sub view :Chained('base') :Args {
   my ($self, $c, @args) = @_;
   my $template = $self->_resolve_template_name(@args)
     or die "No template specified";
-    
+
   local $self->Access->{_local_cache} = {};
-    
+
   if(my $psgi_response = $self->Access->template_psgi_response($template,$c)) {
     $c->res->from_psgi_response( $psgi_response );
     return $c->detach;
@@ -376,45 +376,45 @@ sub view :Chained('base') :Args {
   $status = 200 if ($ra_client);
 
   local $self->{_current_context} = $c;
-  
+
   # Track the top-level template that is being viewed, in case the Access class
   # wants to treat top-level templates differently from nested templates
   #   -- see currently_viewing_template() in RapidApp::Template::Access
   local $self->{_viewing_template} = $template;
-  
+
   $self->Access->template_viewable($template)
     or die "Permission denied - template '$template'";
 
   my $external = $self->is_external_template($c,$template);
   my $editable = $self->is_editable_request($c);
- 
+
   # ---
-  # New: for non-external templates which are being accessed externally, 
+  # New: for non-external templates which are being accessed externally,
   # (i.e. directly from browser) redirect to internal hashnav path:
   unless ($external || $ra_client) {
     return $c->auto_hashnav_redirect_current;
   }
   #---
-  
+
   my $iframe = $external || $self->is_iframe_request($c); # <-- external must use iframe
   my ($output,$content_type);
-  
+
   $content_type = $self->Access->template_content_type($template);
-  
+
   my @cls = ('ra-scoped-reset');
   my $tpl_cls = $self->Access->template_css_class($template);
   push @cls, $tpl_cls if ($tpl_cls);
-  
+
   if($ra_client) {
     # This is a call from within ExtJS, wrap divs to id the templates from javascript
-    
+
     my $cnf = {};
-    
+
     if($iframe) {
-      # This is an iframe request. Build an iframe panel which will make the request 
-      # again but without the X-RapidApp-RequestContentType header which will be 
+      # This is an iframe request. Build an iframe panel which will make the request
+      # again but without the X-RapidApp-RequestContentType header which will be
       # handled as a direct browser request (see logic further down)
-      
+
       my %params = ( %{$c->req->params}, editable => $editable, iframe => 'request' );
       my $qs = join('&',map { $_ . '=' . uri_escape($params{$_}) } keys %params);
       my $iframe_src = join('/','',$self->action_namespace($c),'view',$template) . '?' . $qs;
@@ -436,52 +436,52 @@ sub view :Chained('base') :Args {
       };
     }
     else {
-    
+
       my $html = $self->_render_template(
         $editable ? 'Template_wrap' : 'Template_raw',
         $template, $c
       );
-    
+
       $cnf = {
         xtype => 'panel',
         autoScroll => \1,
         bodyCssClass => join(' ',@cls),
-        
+
         # try to set the title/icon by finding/parsing <title> in the 'html'
         autopanel_parse_title => \1,
-        
+
         # These will only be the title/icon if there is no parsable <title>
         tabTitle => join('/',@args), #<-- not using $template to preserve the orig req name
         tabIconCls => 'ra-icon-page-white-world',
-        
+
         html => $html,
-        
+
         # Load any extra, template-specific configs from the Access class:
         %{ $self->Access->template_autopanel_cnf($template) || {} }
       };
     }
-    
+
     # No reason to load the plugin unless we're editable:
     if ($editable) {
       $cnf->{plugins} ||= [];
       push @{$cnf->{plugins}}, 'template-controller-panel';
       $cnf->{template_controller_url} = '/' . $self->action_namespace($c);
     }
-    
+
     # This is doing the same thing that the overly complex 'Module' controller does:
     $content_type = 'text/javascript; charset=utf-8';
     $output = encode_json_utf8($cnf);
   }
   else {
     # This is a direct browser call:
-    
+
     my $html = $self->_render_template(
       $editable ? 'Template_wrap' : 'Template_raw',
       $template, $c
     );
-    
+
     my @head = ();
-    
+
     # If we're in an iframe tab, we want to make sure we set the base target
     # to prevent the chance of trying to load a link inside the frame (even
     # though local links are already hanlded/converted - we still need to
@@ -490,9 +490,9 @@ sub view :Chained('base') :Args {
       exists $c->req->params->{iframe} &&
       $c->req->params->{iframe} eq 'request'
     );
-    
+
     if($external) {
-      
+
       # Ask the Access class for custom headers for this external template, and
       # if it has them, set them in the response object now. And pull out $content_type
       # if this operation set it (i.e. the template provides its own Content-Type)
@@ -503,9 +503,9 @@ sub view :Chained('base') :Args {
         $c->res->header( $_ => $headers->{$_} ) for (keys %$headers);
         $content_type ||= $c->res->content_type;
       }
-    
+
       # If this external template provides its own headers, including Content-Type, and that is
-      # *not* text/html, don't populate @head, even if it is $editable (which is rare - or maybe 
+      # *not* text/html, don't populate @head, even if it is $editable (which is rare - or maybe
       # even impossible - here anyway)
       unless($content_type && ! ($content_type =~ /^text\/html/)){
         # If we're editable and external we need to include CSS for template edit controls:
@@ -528,20 +528,20 @@ sub view :Chained('base') :Args {
       # Include all the ExtJS, RapidApp and local app CSS/JS
       push @head, $c->all_html_head_tags;
     }
-    
+
     # Only include the RapidApp/ExtJS assets and wrap 'ra-scoped-reset' if
     # this is *not* an external template. If it is an external template,
     # ignore @head entirely if its empty:
-    $output = $external 
-      ? ( scalar(@head) == 0 ? $html : join("\n",@head,$html) ) 
+    $output = $external
+      ? ( scalar(@head) == 0 ? $html : join("\n",@head,$html) )
       : join("\n",
           '<head>', @head, '</head>',
           '<div class="' . join(' ',@cls) . '">', $html, '</div>'
         )
     ;
-    
+
   }
-  
+
   # ----
   # TODO/FIXME: back-compat force utf8 since removing code which sets content_type
   # this is being done this way to match previous (pre 1.3105) code as close as possible
@@ -559,20 +559,20 @@ sub get :Chained('base') :Args {
   my ($self, $c, @args) = @_;
   my $template = $self->_resolve_template_name(@args)
     or die "No template specified";
-  
+
   local $self->{_current_context} = $c;
-  
+
   $self->Access->template_readable($template)
     or return $self->_detach_response($c,403,"Permission denied - template '$template'");
-  
+
   my ($data, $error) = $self->get_Provider->load($template);
-  
+
   return $self->_detach_response($c,400,"Failed to get template '$template'")
     unless (defined $data);
-  
+
   # Decode as UTF-8 for user consumption:
-  utf8::decode($data); 
-  
+  utf8::decode($data);
+
   return $self->_detach_response($c,200,$data);
 }
 
@@ -581,28 +581,28 @@ sub set :Chained('base') :Args {
   my ($self, $c, @args) = @_;
   my $template = $self->_resolve_template_name(@args)
     or die "No template specified";
-  
+
   local $self->{_current_context} = $c;
-  
+
   exists $c->req->params->{content}
     or return $self->_detach_response($c,400,"Template 'content' required");
-  
+
   $self->Access->template_writable($template)
     or return $self->_detach_response($c,403,"Modify template '$template' - Permission denied");
-  
+
   my $content = $c->req->params->{content};
-  
+
   # Special status 418 means the supplied content is a bad template
   unless ($c->req->params->{skip_validate}) {
     my $err = $self->_get_template_error('Template_raw',\$content,$c);
     return $self->_detach_response($c,418,$err) if ($err);
   }
-  
+
   # Encode the template content in UTF-8
   utf8::encode($content);
-  
+
   $self->get_Provider->update_template($template,$content);
-  
+
   return $self->_detach_response($c,200,'Template Updated');
 }
 
@@ -610,15 +610,15 @@ sub create :Chained('base') :Args {
   my ($self, $c, @args) = @_;
   my $template = $self->_resolve_template_name(@args)
     or die "No template specified";
-  
+
   local $self->{_current_context} = $c;
-  
+
   $self->Access->template_creatable($template)
     or return $self->_detach_response($c,403,"Create template '$template' - Permission denied");
-  
-  die "Create template '$template' - already exists" 
+
+  die "Create template '$template' - already exists"
     if $self->_template_exists($c,$template);
-  
+
   $self->get_Provider->create_template($template)
     or die "Failed to create template '$template'";
 
@@ -629,15 +629,15 @@ sub delete :Chained('base') :Args {
   my ($self, $c, @args) = @_;
   my $template = $self->_resolve_template_name(@args)
     or die "No template specified";
-  
+
   local $self->{_current_context} = $c;
-  
+
   $self->Access->template_deletable($template)
     or return $self->_detach_response($c,403,"Delete template '$template' - Permission denied");
-  
-  die "Delete template '$template' - doesn't exists" 
+
+  die "Delete template '$template' - doesn't exists"
     unless $self->_template_exists($c,$template);;
-  
+
   $self->get_Provider->delete_template($template)
     or die "Failed to delete template '$template'";
 
@@ -655,13 +655,13 @@ sub _detach_response {
 
 sub _render_template {
   my ($self, $meth, $template, $c) = @_;
-  
+
   my $TT = $self->$meth;
   local $self->{_current_context} = $c;
   local $self->{_div_wrap} = 1 if ($meth eq 'Template_wrap');
   my $vars = $self->get_wrapped_tt_vars($template);
   my $output;
-  
+
   # TODO/FIXME: this is duplicate logic that has to be handled for the
   # top-level template which doesn't seem to go through process() in Context:
   $output = $self->Template_raw->context->_template_error_content(
@@ -670,7 +670,7 @@ sub _render_template {
       $self->Access->template_writable($template)
     )
   ) unless $TT->process( $template, $vars, \$output );
-  
+
   return $output;
 }
 
@@ -689,26 +689,26 @@ sub _get_template_error {
 # Internal render function - designed to be called interactively
 # from other parts of the application to render a template (i.e.
 # not associated with a Template::Controller request)
-# 
+#
 # TODO: This function will replace/merge with $c->template_render
 # in RapidApp::Role::CatalystApplication
 sub template_render {
 	my ($self, $template, $vars, $c) = @_;
   $vars ||= {};
   $c ||= RapidApp->active_request_context;
-  
+
   # The current context may not be available:
   # see DummyAccess in RapidApp::Template::Access:
   local $self->{_dummy_access} = 1 unless ($c);
   local $self->{_current_context} = $c || $self->_app;
-  
+
   # The get_template_vars() API in the Access class expects
   # to have access to the catalyst context (i.e. request) so
   # we only call it and merge it in if we have $c, which is
   # optional in this method
-  %$vars = (%{ $self->get_wrapped_tt_vars($template) }, %$vars) 
+  %$vars = (%{ $self->get_wrapped_tt_vars($template) }, %$vars)
     if ($c);
-  
+
   my $TT = $self->Template_raw;
 
 	my $out;
@@ -723,10 +723,10 @@ sub template_render {
 sub get_wrapped_tt_vars {
   my ($self,$template) = @_;
   my $vars = $self->Access->get_template_vars($template);
-  
+
   die "Access class method 'get_template_vars()' didn't return a HashRef!"
     unless (ref($vars) eq 'HASH');
-  
+
   for my $var (keys %$vars) {
     next unless (ref($vars->{$var}) eq 'CODE');
     my $coderef = delete $vars->{$var};
@@ -738,23 +738,23 @@ sub get_wrapped_tt_vars {
       }
       catch {
         my $err_msg = "!! EXCEPTION IN CODEREF TEMPLATE VARIABLE '$var': $_";
-        
+
         # TODO/FIXME:
-        # We set the return value with the exception as a string (i.e. as content) 
-        # instead of re-throwing because TT will display a useless and confusing 
+        # We set the return value with the exception as a string (i.e. as content)
+        # instead of re-throwing because TT will display a useless and confusing
         # error message, something like: "...Useless bare catch()..."
         $ret = $err_msg;
-        
+
         # We may not actually be able to see the error in the template rendering
         # but at least it will be printed on the console (an exception here isn't
-        # actually a *Template* error, per-se ... its an error in the perl code 
+        # actually a *Template* error, per-se ... its an error in the perl code
         # that is called by this CodeRef)
         warn RED.BOLD . $err_msg . CLEAR;
       };
       return $ret;
     };
   }
-  
+
   return $vars;
 }
 

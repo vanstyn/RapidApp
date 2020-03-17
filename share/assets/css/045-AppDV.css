@@ -3,7 +3,7 @@
 .appdv-edit-box {
   visibility:hidden;
   position: absolute;
-  top: 0; 
+  top: 0;
   right: 0;
   padding-top:4px;
   padding-left:4px;
@@ -35,7 +35,7 @@
   display:block;
   visibility:visible;
   position: relative;
-  
+
   background: floralwhite;
   padding-right: 1px;
   float:right;
@@ -108,7 +108,7 @@
 }
 
 
-.editing-record .appdv-tt-generated .edit-record-toggle .save, 
+.editing-record .appdv-tt-generated .edit-record-toggle .save,
 .editing-record .appdv-tt-generated .edit-record-toggle .cancel {
   visibility:visible;
   display:inline-block;
@@ -132,7 +132,7 @@
 
 /******************  record-delete  *****************/
 
-.appdv-tt-generated .delete-record, 
+.appdv-tt-generated .delete-record,
 .appdv-tt-generated .print-view {
   display:inline-block;
   background:url(../../../assets/rapidapp/misc/static/images/cross.png) center right no-repeat;
@@ -159,7 +159,7 @@
     display: none !important;
 }
 
-.appdv-tt-generated .delete-record:hover, 
+.appdv-tt-generated .delete-record:hover,
 .appdv-tt-generated .print-view:hover {
   border-bottom-style: dotted;
   border-color: blue;
@@ -252,7 +252,7 @@ ra-dsapi-deny-destroy .appdv-tt-generated .delete-record, */
 }
 
 
-.appdv-edit-field .data-holder, 
+.appdv-edit-field .data-holder,
 .onepx-transparent-border-bottom {
   border-bottom-style: dotted;
   border-bottom-width: 1px;
@@ -260,7 +260,7 @@ ra-dsapi-deny-destroy .appdv-tt-generated .delete-record, */
 }
 
 /* prevent inheriting padding from parents */
-.appdv-edit-field td, 
+.appdv-edit-field td,
 .appdv-edit-field tr {
   padding: 0px !important;
 }
@@ -276,7 +276,7 @@ ra-dsapi-deny-destroy .appdv-tt-generated .delete-record, */
   cursor:  default;
 }
 
-.editing .appdv-edit-field .icons .save, 
+.editing .appdv-edit-field .icons .save,
 .editing .appdv-edit-field .icons .cancel {
   display:inline-block;
   visibility: visible;
@@ -315,7 +315,7 @@ div.appdv-edit-bigfield .data-wrapper .data-holder {
 .appdv-edit-bigfield div.cancel {
   display:none;
   position: absolute;
-  top: 0; 
+  top: 0;
   right: 0;
   padding-top:4px;
   padding-left:4px;
@@ -362,18 +362,18 @@ div.appdv-edit-bigfield .data-wrapper .data-holder {
   background:url(../../../assets/rapidapp/misc/static/images/bullet_cross.png) center right no-repeat floralwhite;
 }
 
-.appdv-edit-bigfield:hover .icons, 
+.appdv-edit-bigfield:hover .icons,
 .appdv-edit-bigfield:hover .icons .edit {
   display:block;
 }
 
-.editing .appdv-edit-bigfield .icons .edit, 
-.appdv-edit-bigfield:hover .icons .save, 
+.editing .appdv-edit-bigfield .icons .edit,
+.appdv-edit-bigfield:hover .icons .save,
 .appdv-edit-bigfield:hover .icons .cancel {
   display:none;
 }
 
-.editing .appdv-edit-bigfield .icons .save, 
+.editing .appdv-edit-bigfield .icons .save,
 .editing .appdv-edit-bigfield .icons .cancel {
   display:block;
   visibility:visible;
@@ -381,7 +381,7 @@ div.appdv-edit-bigfield .data-wrapper .data-holder {
   float:right;
 }
 
-.editing .appdv-edit-bigfield .icons .save:hover, 
+.editing .appdv-edit-bigfield .icons .save:hover,
 .editing .appdv-edit-bigfield .icons .cancel:hover {
   color:#B8860B;
 }
@@ -389,7 +389,7 @@ div.appdv-edit-bigfield .data-wrapper .data-holder {
 div.appdv-edit-bigfield .icons .pseudo-edit-wrapper {
   display:none;
   position: absolute;
-  top: 0; 
+  top: 0;
   right: 0;
   bottom: -2px;
   left: -2px;
@@ -441,7 +441,7 @@ div.appdv-edit-bigfield .icons .pseudo-edit-wrapper {
 .appdv-tt-generated .clickable .editable-value .save, .appdv-tt-generated .clickable .editable-value .cancel {
 
   position: absolute;
-  top: 0; 
+  top: 0;
   right: 0;
   padding-top:4px;
   padding-left:4px;
@@ -489,7 +489,7 @@ div.appdv-edit-bigfield .icons .pseudo-edit-wrapper {
 
   But the former with support inline edit controls          */
 
-div.appdv-tt-generated.inln, 
+div.appdv-tt-generated.inln,
 div.appdv-tt-generated .inln,
 div.appdv-tt-generated .appdv-edit-field * {
   display: inline-block;
@@ -552,7 +552,7 @@ div.appdv-tt-generated .editable-value .appdv-edit-field .data-holder {
   cursor: default;
 }
 
-/* Give enough room for the dirty flag to display 
+/* Give enough room for the dirty flag to display
   (needed to see it with content like images) */
 .appdv-tt-generated .x-grid3-dirty-cell {
   padding-left:5px;
@@ -563,10 +563,10 @@ div.appdv-tt-generated .editable-value .appdv-edit-field .data-holder {
   cursor: default;
   pointer-events: none;
   opacity: 0.5;
-} 
+}
 
 
-/* 
+/*
   appdv-fill-absolute class name can be set on a tag which encloses a big-field where it uses
   absolute positioning and you want the field and its editor to fill the area completely. This
   is useful for very large text areas that are the last elements of a page.
@@ -607,7 +607,7 @@ div.appdv-tt-generated .editable-value .appdv-edit-field .data-holder {
   left: 0px;
   overflow: auto;
   overflow-x: hidden;
-  text-overflow: ellipsis; 
+  text-overflow: ellipsis;
   padding:0px;
   margin: 0px;
 }

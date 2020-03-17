@@ -28,13 +28,13 @@
     <div class="row">
       <div class="eight columns centered" style="padding-top:0px;max-width:520px;">
         <div class="login_box" style="max-width:500px;">
-          
+
           <div class="login_logo" style="top:-115px;">
             [% IF login_logo_url %]
               <img src="[% mnt_pfx %][% login_logo_url %]" alt="" />
             [% END %]
           </div>
-          
+
           <div class="lb_content">
             <div class="cf" style="height:80px;">
               <h2 class="lb_ribbon lb_blue">
@@ -48,12 +48,12 @@
               <a href="/password_reset" class="right small sl_link">
                 <span>Password Reset</span>
               </a>
-              
+
               <a href="/obtain_username" class="right small sl_link">
                 <span>Obtain Username</span>
               </a>
               -->
-              
+
               <!--
               <div class="right">
                 <span>[% ver_string %]</span>
@@ -66,13 +66,13 @@
                 <center>&nbsp;[% error_status %]&nbsp;</center>
               </div>
             [% END %]
-            
+
             <div class="row m_cont">
               <div class="eight columns centered">
                 <div class="l_pane">
                   [% INCLUDE rapidapp/public/login_form.tt %]
                 </div>
-                
+
                 <!--
                 <div class="l_pane" style="display:none">
                   <form action="index.php" method="post" class="nice" id="rp_form">
@@ -97,23 +97,23 @@
         <div style="position: absolute; bottom: 0px; width:100%;">
           <div style="text-align:center;padding-bottom:5px;height:100%;">
             <a target="_blank" href="http://www.rapidapp.info/">
-              <img 
-                width="165" height="25" border="0" 
+              <img
+                width="165" height="25" border="0"
                 src="[% mnt_pfx %]/assets/rapidapp/misc/static/images/rapidapp_powered_logo_small.png"
               >
             </a>
-          </div> 
+          </div>
         </div>
-        
+
         <div style="position: absolute; bottom: -18px; width:100%;">
           <div class="right" style="float:right;padding-right:15px;font-size:.7em;color:#666666;">
             <span>[% ver_string %]</span>
           </div>
         </div>
-        
+
       </div>
     </div>
   </div>
-  
+
 </body>
 </html>

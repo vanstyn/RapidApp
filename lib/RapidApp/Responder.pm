@@ -56,7 +56,7 @@ It fills in the fields of $c->response
 
 sub writeResponse {
 	my ($self, $c)= @_;
-	
+
 	$c->response->status(500);
 	$c->response->content_type("text/plain");
 	$c->response->body("Unable to generate content for ".$c->stash->{requestContentType});

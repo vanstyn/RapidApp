@@ -16,7 +16,7 @@ use warnings;
 use List::Util;
 
 use Path::Class qw/file dir/;
-my $repo_dir = file($0)->parent->parent->absolute; 
+my $repo_dir = file($0)->parent->parent->absolute;
 
 die "Doesn't look like I'm within a RapidApp repo" unless (
   -f $repo_dir->subdir('script')->file('rdbic.pl')
@@ -38,9 +38,9 @@ exit 0;
 
 sub _prepend_colon_list {
   my ($clist, $add) = @_;
-  
+
   my @list = split(/:/,($clist||''));
-  
+
   return ( List::Util::first { $_ eq $add } @list )
     ? $clist
     : join(':',$add,@list)

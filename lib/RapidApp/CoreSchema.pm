@@ -1,6 +1,6 @@
 package RapidApp::CoreSchema;
 
-# Optional DBIC Schema that provides tables for core/common 
+# Optional DBIC Schema that provides tables for core/common
 # functions, such as users, roles, navtree, saved searches
 
 use Moose;

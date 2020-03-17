@@ -82,7 +82,7 @@ sub update {
   # Fail-safe: prevent changes to the 'DUMMY ROOT NODE' (id 0)
   if ($self->get_column('id') == 0) {
     #warn RED.BOLD "Tried to call update() on the DUMMY ROOT NODE." . CLEAR;
-    # Updated: The 'Organize Tree' section is known to try to update the dummy root 
+    # Updated: The 'Organize Tree' section is known to try to update the dummy root
     # node which is a harmless side-effect which we are just silently ignoring.
     # TODO: investigate the real reason and fix properly
     return undef;
@@ -96,7 +96,7 @@ __PACKAGE__->load_components('+RapidApp::DBIC::Component::TableSpec');
 __PACKAGE__->TableSpec_m2m( roles => 'navtree_node_to_roles', 'role' );
 __PACKAGE__->apply_TableSpec;
 
-__PACKAGE__->TableSpec_set_conf( 
+__PACKAGE__->TableSpec_set_conf(
 	title => 'Navtree Node',
 	title_multi => 'Navtree Nodes',
 	iconCls => 'ra-icon-folder',
@@ -105,11 +105,11 @@ __PACKAGE__->TableSpec_set_conf(
 );
 
 
-__PACKAGE__->TableSpec_set_conf('column_properties_ordered', 
+__PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 
 	pid => { no_column => \1, no_multifilter => \1, no_quick_search => \1 },
 	navtree_node_to_roles => { no_column => \1, no_multifilter => \1, no_quick_search => \1 },
-  
+
   id => {
     header => 'Id',
     width  => 55,
@@ -122,7 +122,7 @@ __PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 		width	=> 200,
 		allow_edit => \0
 	},
-	
+
 	iconcls => {
 		header => 'Icon Cls',
 		width	=> 150,
@@ -130,34 +130,34 @@ __PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 		hidden => \1,
     editor => { xtype => 'ra-all-icon-assets-combo', }
 	},
-	
+
 	expanded => {
 		header => 'Expanded',
 		width	=> 70,
 		allow_edit => \0,
 		hidden => \1
 	},
-  
+
   ordering => {
     header => 'Ordering',
     width	=> 80,
   },
-	
+
 	navtree_nodes => {
 		header => 'Child Nodes',
 		width => 120
 	},
-	
+
 	saved_states => {
 		header => 'Searches',
 		width => 140
 	},
-	
+
 	roles => {
 		header => 'Limit Roles',
 		width => 200
 	}
-	
+
 );
 
 

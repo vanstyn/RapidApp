@@ -11,7 +11,7 @@ use RapidApp::Util qw(:all);
 
 sub base :Chained :PathPrefix :CaptureArgs(0) {}
 
-# This is a special controller designed to render a single RapidApp 
+# This is a special controller designed to render a single RapidApp
 # Module in its own Viewport (i.e. in an iFrame)
 
 sub default :Chained('base') :PathPart('') :Args {
@@ -45,7 +45,7 @@ sub _redispatch_viewport {
   $c->stash->{config_params} = { %{$c->req->params} };
 
   $c->req->params->{__no_hashnav_redirect} = 1;
-  
+
   return $c->redispatch_public_path(@args);
 }
 

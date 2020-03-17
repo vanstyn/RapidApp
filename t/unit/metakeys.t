@@ -16,12 +16,12 @@ my $i = 0;
 for my $text (@formats) {
   $i++;
   my $Obj;
-  
+
   ok(
     $Obj = RapidApp::Util::MetaKeys->load( $text ),
     "Parses to RapidApp::Util::MetaKeys object from load() [$i]"
   );
-  
+
   is_deeply(
     $Obj->data,
     [
@@ -58,7 +58,7 @@ for my $text (@formats) {
     ],
     "  expected data structure ($i)"
   );
-  
+
 }
 
 
@@ -123,7 +123,7 @@ q{[
 q{[
   [{ table: 'task', column: 'assignee_id'}, { table: 'user', column: 'id'}],
   ['task.creator_id',  'user.id'],
-  { 
+  {
     lhs: {
       column: "task_id",
       table : "comment"

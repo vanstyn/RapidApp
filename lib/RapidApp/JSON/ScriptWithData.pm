@@ -13,7 +13,7 @@ RapidApp::JSON::ScriptWithData
 
   use RapidApp::JSON::ScriptWithData;
   use RapidApp::JSON::MixedEncoder 'encode_json';
-  
+
   $swd= RapidApp::JSON::ScriptWithData->new(
     'function () {',
       'blah(12345);',
@@ -22,7 +22,7 @@ RapidApp::JSON::ScriptWithData
       'return baz(a, b);',
     '}'
   );
-  
+
   return encode_json($swd);
 
 =cut

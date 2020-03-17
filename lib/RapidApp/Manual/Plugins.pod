@@ -1,14 +1,14 @@
 =head1 NAME
- 
+
 RapidApp::Manual::Plugins - Suite of plugins available in RapidApp
- 
+
 =head1 DESCRIPTION
 
 RapidApp provides a number of plugins which provide high-level, declarative configuration
 layers to automatically setup common application scenarios with minimal effort required.
 
 These plugins all tie into the standard Catalyst plugin API, and are designed to be used
-together and in different combinations to access various additive sets of functionality. 
+together and in different combinations to access various additive sets of functionality.
 
 The currently available plugins are listed below.
 
@@ -51,5 +51,5 @@ L<CoreSchemaAdmin|Catalyst::Plugin::RapidApp::CoreSchemaAdmin>
 L<RapidApp::Manual>
 
 =back
- 
+
 =cut

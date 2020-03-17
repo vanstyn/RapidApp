@@ -29,17 +29,17 @@ sub get_extjs_dir { Alien::Web::ExtJS::V3->dir->stringify }
 
 around 'inject_asset_controllers' => sub {
   my ($orig,$c,@args) = @_;
-  
+
   my $start = [gettimeofday];
   $c->log->debug("RapidApp - Injecting Asset Controllers...") if ($c->debug);
-  
+
   my %defaults = (
     sha1_string_length => 15,
     use_etags => 1,
   );
-  
+
   my $share_dir = RapidApp->share_dir;
-  
+
   my $assets = [
     {
       controller => 'Assets::ExtJS',
@@ -110,51 +110,51 @@ around 'inject_asset_controllers' => sub {
       }
     },
   ];
-  
+
   ## -----------
   # Easy automatic setup of local assets
-  
+
   # Default to true if not set(i.e. can be set to 0/false to disable)
   my $auto_setup = (
     ! exists $c->config->{'Model::RapidApp'}->{auto_local_assets} ||
     $c->config->{'Model::RapidApp'}->{auto_local_assets}
   ) ? 1 : 0;
-  
+
   my $home = dir( Catalyst::Utils::home($c) );
   my $cfged_dir = $c->config->{'Model::RapidApp'}->{local_assets_dir};
-  
+
   # We can't setup auto local assets if we have no home dir and not manually cfged:
   $auto_setup = 0 unless ($cfged_dir || ($home && -d $home));
-  
+
   if($auto_setup) {
-  
+
     # New, automatic 'local_asset_dir' can now be specified via config:
     my $dir = dir( $cfged_dir || 'root/assets' );
-    
+
     # If relative, make relative to app home (unless manually cfged and already exists as-is):
     unless($cfged_dir && -d $dir) {
       $dir = $home->subdir($dir) if ($home && $dir->is_relative);
     }
-    
+
     # Add local assets if asset include dirs exist in the App directory
     push @$assets, {
       controller => 'Assets::Local::CSS',
       type => 'CSS',
       include => "$dir/css",
     } if (-d $dir->subdir('css'));
-    
+
     push @$assets, {
       controller => 'Assets::Local::JS',
       type => 'JS',
       include => "$dir/js",
     } if (-d $dir->subdir('js'));
-    
+
     push @$assets, {
       controller => 'Assets::Local::Icons',
       type => 'IconSet',
       include => "$dir/icons",
     } if (-d $dir->subdir('icons'));
-    
+
     push @$assets, {
       controller => 'Assets::Local::Misc',
       type => 'Directory',
@@ -164,18 +164,18 @@ around 'inject_asset_controllers' => sub {
   }
   #
   ## -----------
-  
+
   # Check for any configs in the existing local app config:
   my $existing = $c->config->{'Plugin::AutoAssets'}->{assets};
   push @$assets, @$existing if ($existing);
-  
+
   # apply defaults:
   %$_ = (%defaults,%$_) for (@$assets);
-  
+
   $c->config( 'Plugin::AutoAssets' => { assets => $assets } );
-  
+
   my $ret = $c->$orig(@args);
-  
+
   # -----------
   # New: Setup a JS global to contain the list of all auto-generated iconcls values
   my @icon_names = sort { $a cmp $b } uniq(
@@ -183,20 +183,20 @@ around 'inject_asset_controllers' => sub {
     map { values %{ $c->controller($_)->manifest } }
     map { $_->{controller} } grep { $_->{type} eq 'IconSet' } @$assets
   );
-  
+
   my $JsCode = join("\n",'',
     'Ext.ns("Ext.ux.RapidApp");',
     'Ext.ux.RapidApp.AllIconAssetClsNames = [',
     join(",\n", map { "  '$_'" } @icon_names),
     '];'
   );
-  
+
   $c->_inject_single_asset_controller({
     controller => 'Assets::RapidApp::GenJS',
     type => 'JS',
     include => \$JsCode,
   });
-  
+
   # tweak the order so the icon list is available to JS early
   @{$c->asset_controllers} = uniq(
     $c->asset_controllers->[0], # Keep the ExtJS assets first
@@ -205,7 +205,7 @@ around 'inject_asset_controllers' => sub {
   );
   # -----------
 
-  
+
   $c->log->debug(sprintf(
     "RapidApp - Asset Controllers Setup in %0.3f seconds",
     tv_interval($start)

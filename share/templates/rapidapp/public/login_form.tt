@@ -21,20 +21,20 @@
       //  this is where the auth controller will redirect to after login:
       var persist_redirect_target = function() {
         if(hiddenRedirectEl) {
-          // Set the redirect to the current local href *unless* 
+          // Set the redirect to the current local href *unless*
           // we're at the default url path '/auth/login'
           var l = window.location;
           hiddenRedirectEl.setAttribute('value',
-            (l.pathname == '[% mnt_pfx %]/auth/login' && ! l.search) 
-            ? '/' : [l.pathname,l.search,l.hash].join('') 
+            (l.pathname == '[% mnt_pfx %]/auth/login' && ! l.search)
+            ? '/' : [l.pathname,l.search,l.hash].join('')
           );
         }
       };
-      
+
       persist_redirect_target();
       window.onhashchange = persist_redirect_target;
     };
-    
+
     if(typeof Ext !== 'undefined') {
       Ext.onReady(loginFormOnReadyFn);
     }
@@ -46,7 +46,7 @@
   <form action="[% mnt_pfx %][% form_post_url %]" method="post" class="nice" id="l_form">
 
     <input type="hidden" id="redirect" name="redirect" value="" />
-    
+
     [%- IF c.req.params.to -%]
       <input type="hidden" id="to" name="to" value="[% c.req.params.to %]" />
     [%- END -%]

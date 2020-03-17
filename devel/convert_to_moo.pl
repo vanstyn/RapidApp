@@ -22,7 +22,7 @@ use Term::ANSIColor qw(:constants);
 
 use Type::Parser qw( eval_type );
 use Type::Registry;
- 
+
 my $reg = Type::Registry->for_me;
 $reg->add_types("Types::Standard");
 
@@ -37,12 +37,12 @@ $start_dir->recurse(
       my @nlines = ();
       my $ch = 0;
       for my $line (@lines) {
-      
+
         $line =~ /(\r?\n)$/;
         my $nl = $1;
         $line =~ s/\r?\n$//;
         my $orig = $line;
-     
+
         # Removals:
         $ch++ and next if (
           $line =~ /^use MooseX::MarkAsMethods/ ||
@@ -53,7 +53,7 @@ $start_dir->recurse(
           $line =~ /^subtype 'ColSpec'/ ||
           $line =~ /^coerce 'ColSpec'/
         );
-        
+
         if($line =~ /^use Moose\;/) {
           $line = join("\n",
             'use Moo;',
@@ -75,16 +75,16 @@ $start_dir->recurse(
         elsif($line =~ /^with \'MooseX::Traits\'\;/) {
           $line = 'with \'MooX::Traits\';';
         }
-        
-        
+
+
         # Convert types (isa => 'ArrayRef' becomes isa => ArrayRef, etc)
         if($line =~ /\s+isa\s+\=\>\s+\'([^\']+)\'/) {
           my $type = $1;
           my $new = $type;
-          
+
           $new =~ s/(RapidApp::[\w\:]+)/InstanceOf\[\'$1\'\]/;
-          
-          
+
+
           if($new eq 'Maybe[TableSpec]') {
             $new = 'Maybe[InstanceOf[\'RapidApp::TableSpec\']]';
           }
@@ -94,31 +94,31 @@ $start_dir->recurse(
           elsif($new eq 'DBIx::Class::ResultSource') {
             $new = 'InstanceOf[\'DBIx::Class::ResultSource\']';
           }
-          
+
           try {
             my $Type = eval_type($new,$reg);
             $new = $Type->display_name;
           }
-          catch { 
-          
+          catch {
+
             # TODO ...
-          
+
             #if ($type =~ /\|/) {
             #  $new = 'AnyOf['.join(', ',split(/\|/,$type)).']';
             #}
             #elsif($type =~ /::/) {
             #  $new = "InstanceOf['$type']";
             #}
-          
+
           };
-        
-          
+
+
           $line =~ s/\'\Q${type}\E\'/${new}/;
         }
-        
+
         # Convert scalar defaults (default => 'foo' becomes default => sub {'foo'}, etc)
         if(
-          $line =~ /\s+default\s+\=\>\s+(\'[^\']*\')/ || 
+          $line =~ /\s+default\s+\=\>\s+(\'[^\']*\')/ ||
           $line =~ /\s+default\s+\=\>\s+(\"[^\"]*\")/ ||
           $line =~ /\s+default\s+\=\>\s+(\d+)/
         ){
@@ -127,16 +127,16 @@ $start_dir->recurse(
             $line =~ s/\s+default\s+\=\>\s+\Q${def}\E/ default \=\> sub \{ ${def} \}/;
           }
         }
-        
-        
+
+
         unless ($line eq $orig) {
           $ch++;
           $nl = "\n";
         }
         push @nlines, $line, $nl;
       }
-      
-        
+
+
       print join('','  ',$File->relative($start_dir)->stringify);
       if($ch) {
         no warnings 'uninitialized';
@@ -147,7 +147,7 @@ $start_dir->recurse(
         print ' (no changes)';
       }
       print "\n";
-      
+
     }
   }
 );

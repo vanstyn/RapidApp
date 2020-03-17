@@ -1,28 +1,28 @@
 =head1 NAME
- 
+
 RapidApp::Manual::Installation - Installing RapidApp on a new system
 
 =head1 Install with Docker
 
-A complete installation of the current version RapidApp is available on Docker Hub 
+A complete installation of the current version RapidApp is available on Docker Hub
 in the L<rapi/psgi|https://hub.docker.com/r/rapi/psgi>. If you have docker on your
 system, this is the fastest way to install RapidApp and its dependencies:
 
   docker pull rapi/psgi
 
-For more information, see the C<rapi/psgi> documentation on Docker Hub: 
+For more information, see the C<rapi/psgi> documentation on Docker Hub:
 L<https://hub.docker.com/r/rapi/psgi>
 
 =head1 Install from CPAN
- 
+
 RapidApp is a standard CPAN package and can be installed in the standard manner:
 
   cpanm RapidApp
 
-RapidApp does have a lot of dependencies so be prepared for this to take a while. 
+RapidApp does have a lot of dependencies so be prepared for this to take a while.
 
-If you are new to perl and you don't have C<cpanm> (or know what it is) is, or if 
-you would like to play with RapidApp without messing with your main system perl, 
+If you are new to perl and you don't have C<cpanm> (or know what it is) is, or if
+you would like to play with RapidApp without messing with your main system perl,
 see the next section for installation with perlbrew.
 
 =head1 Installation via Perlbrew
@@ -31,7 +31,7 @@ The following is the typical series of commands to run to install a fresh versio
 of perl into your home directory using perlbrew. This isn't specific to RapidApp,
 but perl in general. See L<http://perlbrew.pl> for more info on the perlbrew project.
 
-Run the following commands on any Unix system (including Linux and Mac) to 
+Run the following commands on any Unix system (including Linux and Mac) to
 install a fresh perlbrew and RapidApp:
 
   wget -O - http://install.perlbrew.pl | bash
@@ -41,18 +41,18 @@ Assuming the above worked, it should tell you to run this:
   source ~/perl5/perlbrew/etc/bashrc
 
 Now you have the C<perlbrew> command and you can install a version of perl. To see
-the available versions, you can run C<perlbrew available>. Choose one from the list and 
+the available versions, you can run C<perlbrew available>. Choose one from the list and
 install it. For example:
 
   perlbrew install perl-5.20.1
 
-The above command may take a while. Once it completes, make it the active C<perl> and 
+The above command may take a while. Once it completes, make it the active C<perl> and
 install C<cpanm>
 
   perlbrew switch perl-5.20.1
   perlbrew install-cpanm
 
-Now both C<perl> and C<cpanm> should point to the new perlbrew version within your 
+Now both C<perl> and C<cpanm> should point to the new perlbrew version within your
 shell (as long as you source their bashrc file). To remember this for your account
 for next time, do something like the following:
 
@@ -73,7 +73,7 @@ perlbrew+RapidApp on most Unix-based systems in one swoop:
    | bash -s perl-5.20.1 RapidApp
 
 This can take in the neighborhood of an hour, depending on the speed of your system.
-See L<github.com/vanstyn/instant-perlbrew|https://github.com/vanstyn/instant-perlbrew> for 
+See L<github.com/vanstyn/instant-perlbrew|https://github.com/vanstyn/instant-perlbrew> for
 more information on the C<instant-perlbrew.pl> script and exactly what it does.
 
 =head1 SEE ALSO

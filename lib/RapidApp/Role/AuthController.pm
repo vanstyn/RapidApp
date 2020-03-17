@@ -26,10 +26,10 @@ before '_BEGIN' => sub {
 
 sub enforce_rapidapp_session {
 	my ( $self, $c ) = @_;
-  
+
   # ignored if session plugin isn't loaded:
   return unless $c->can('session_is_valid');
-  
+
 	unless ($c->session_is_valid and $c->user_exists) {
 		$c->res->header('X-RapidApp-Authenticated' => 0);
 		$c->res->header( 'Content-Type' => 'text/plain' );

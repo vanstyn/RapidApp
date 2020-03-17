@@ -17,30 +17,30 @@ my $app_class;
 sub import {
   $target = caller;
   my ($self, $class, @args) = @_;
-  
+
   # Since apps might take a while to start-up:
   pass("[RapidApp::Test]: loading testapp '$class'...");
-  
+
   my $start = [gettimeofday];
-  
+
   require_ok($class);
   Catalyst::Test->import::into($target,$class,@args);
-  
-  my @funcs = grep { 
+
+  my @funcs = grep {
     $_ ne 'import' && $_ ne 'AUTOLOAD'
   } Class::MOP::Class->initialize(__PACKAGE__)->get_method_list;
-  
+
   # Manually export our functions:
   {
     no strict 'refs';
     *{ join('::',$target,$_) } = \*{ $_ } for (@funcs);
   }
-  
+
   ok(
     $class->setup_finished || $class->setup,
     sprintf("$class loaded/started (%0.4f seconds)",tv_interval($start))
   );
-  
+
   $app_class = $class;
 };
 
@@ -52,7 +52,7 @@ sub AUTOLOAD {
 
 ## Setup the "client" object
 my $Client; sub client { $Client }
-$Client = RapidApp::Test::Client->new({ request_caller => sub { 
+$Client = RapidApp::Test::Client->new({ request_caller => sub {
   my $req = shift;
   ok(
     my $res = client->record_response( request($req) ),
@@ -71,7 +71,7 @@ sub app_prefix  { Catalyst::Utils::appprefix(app_class()) }
 sub run_common_tests {
 
   ok($RapidApp::VERSION, 'RapidApp $VERSION ('.$RapidApp::VERSION.')');
-  
+
   my $ver = app_version;
   ok($ver, 'App (' . app_class(). ') $VERSION ('.$ver.')');
 
@@ -79,7 +79,7 @@ sub run_common_tests {
     '/assets/rapidapp/misc/static/images/rapidapp_powered_logo_tiny.png',
     "Fetched RapidApp logo from the Misc asset controller"
   );
-  
+
   action_ok(
     '/any/prefix/path/_ra-rel-mnt_/assets/rapidapp/misc/static/images/rapidapp_powered_logo_tiny.png',
     "Fetched RapidApp logo from the Misc asset controller (via _ra-rel-mnt_)"
@@ -89,7 +89,7 @@ sub run_common_tests {
     '/assets/rapidapp/misc/static/some/bad/file.txt',
     "Invalid asset path not found as expected"
   );
-  
+
   action_notfound(
     '/any/prefix/path/_ra-rel-mnt_/assets/rapidapp/misc/static/some/bad/file.txt',
     "Invalid asset path not found as expected (via _ra-rel-mnt_)"

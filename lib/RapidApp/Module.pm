@@ -31,9 +31,9 @@ has 'auto_init_modules', is => 'ro', isa => 'Maybe[HashRef]', default => sub{und
 
 
 
-has 'instance_id' => ( 
-  is => 'ro', lazy => 1, 
-  traits => ['RapidApp::Role::PerRequestBuildDefReset'], 
+has 'instance_id' => (
+  is => 'ro', lazy => 1,
+  traits => ['RapidApp::Role::PerRequestBuildDefReset'],
   default => sub {
     my $self = shift;
     return 'instance-' . String::Random->new->randregex('[a-z0-9A-Z]{5}');
@@ -44,21 +44,21 @@ has 'instance_id' => (
 
 sub BUILD {
   my $self= shift;
-  
+
   # Init ONREQUEST_called to true to prevent ONREQUEST from running during BUILD:
   $self->ONREQUEST_called(1);
-  
+
   foreach my $mod ($self->module_class_list) {
     my $class= ref($mod) eq ''? $mod : ref $mod eq 'HASH'? $mod->{class} : undef;
     Catalyst::Utils::ensure_class_loaded($class) if defined $class;
   };
-  
+
   # Init:
   $self->cached_per_req_attr_list;
-  
+
   $self->apply_actions(viewport => 'viewport');
   $self->apply_actions(printview => 'printview');
-  
+
   $self->apply_init_modules(%{$self->auto_init_modules})
     if ($self->auto_init_modules);
 }
@@ -66,18 +66,18 @@ sub BUILD {
 sub suburl {
   my $self = shift;
   my $url = shift;
-  
+
   my $new_url = $self->base_url;
   $new_url =~ s/\/$//;
   $url =~ s/^\/?/\//;
-  
+
   $new_url .= $url;
-  
+
   if (defined $self->base_query_string and $self->base_query_string ne '') {
     $new_url .= '?' unless ($self->base_query_string =~ /^\?/);
     $new_url .= $self->base_query_string;
   }
-  
+
   return $new_url;
 }
 
@@ -92,9 +92,9 @@ sub local_url {
 sub urlparams {
   my $self = shift;
   my $params = shift;
-  
+
   my $new = Clone($self->base_params);
-  
+
   if (defined $params and ref($params) eq 'HASH') {
     foreach my $k (keys %{ $params }) {
       $new->{$k} = $params->{$k};
@@ -160,7 +160,7 @@ sub navable {
 ## Code below was moved from roles.
 ##
 ## The original rationales behind why these were separate
-## no longer apply, and have been combined here 
+## no longer apply, and have been combined here
 ##
 ## --------------------------------------------------------------
 
@@ -207,7 +207,7 @@ has 'modules' => (
 has 'per_request_attr_build_defaults' => ( is => 'ro', default => sub {{}}, isa => 'HashRef' );
 has 'per_request_attr_build_not_set' => ( is => 'ro', default => sub {{}}, isa => 'HashRef' );
 
-# TODO: add back in functionality to record the time to load the module. 
+# TODO: add back in functionality to record the time to load the module.
 # removed during the unfactor work in Github Issue #41
 sub timed_new { (shift)->new(@_) }
 
@@ -239,7 +239,7 @@ sub should_clear_per_req {
 sub apply_init_modules {
   my $self = shift;
   my %mods = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-  
+
   $self->apply_modules(%mods);
   foreach my $module (keys %mods) {
     # Initialize every module that we just added and set ONREQUEST_called back to false:
@@ -265,26 +265,26 @@ sub reset_ONREQUEST {
 sub ONREQUEST {
   my $self = shift;
   my ($sec0, $msec0)= gettimeofday;
-  
+
   #$self->c->log->debug(MAGENTA . '[' . $self->get_rapidapp_module_path . ']->ONREQUEST (' . $self->c->request_id . ')');
-  
+
   $self->_lastRequestApplied($self->c->request_id);
-  
+
   $self->init_per_req_attrs;
   $self->c->rapidApp->markDirtyModule($self);
-  
+
   #$self->process_customprompt;
-  
+
   #$self->new_clear_per_req_attrs;
-  
+
   $self->call_ONREQUEST_handlers;
-  
+
   $self->ONREQUEST_called(1);
-  
+
   my ($sec1, $msec1)= gettimeofday;
   my $elapsed= ($sec1-$sec0)+($msec1-$msec0)*.000001;
   $self->c->stash->{onrequest_time_elapsed}+= $elapsed;
-  
+
   #$self->log->debug(sprintf(GREEN."ONREQUEST for %s took %0.3f seconds".CLEAR, $self->module_path, $elapsed));
   return $self;
 }
@@ -300,7 +300,7 @@ sub call_ONREQUEST_handlers {
 
 sub init_per_req_attrs {
   my $self = shift;
-  
+
   foreach my $attr (@{$self->cached_per_req_attr_list}) {
     if($attr->has_value($self)) {
       unless (defined $self->per_request_attr_build_defaults->{$attr->name}) {
@@ -318,7 +318,7 @@ sub init_per_req_attrs {
 sub reset_per_req_attrs {
   my $self = shift;
   my $c = shift;
-  
+
   foreach my $attr (@{$self->cached_per_req_attr_list}) {
 
     # Reset to "not_set":
@@ -334,7 +334,7 @@ sub reset_per_req_attrs {
       $attr->set_value($self,$val);
     }
   }
-  
+
   # Legacy:
   $self->clear_attributes if ($self->no_persist);
 }
@@ -344,9 +344,9 @@ sub reset_per_req_attrs {
 
 #sub new_clear_per_req_attrs {
 #  my $self = shift;
-#  
+#
 #  #$self->ONREQUEST_called(0);
-#  
+#
 #  foreach my $attr (@{$self->cached_per_req_attr_list}) {
 #    # Reset to default:
 #    if(defined $self->per_request_attr_build_defaults->{$attr->name}) {
@@ -361,7 +361,7 @@ sub reset_per_req_attrs {
 #      $self->per_request_attr_build_defaults->{$attr->name} = $val;
 #    }
 #  }
-#  
+#
 #  # Legacy:
 #  $self->clear_attributes if ($self->no_persist);
 #}
@@ -372,7 +372,7 @@ sub reset_per_req_attrs {
 sub THIS_MODULE {
   my $self = shift;
   return $self unless (defined $self->c);
-  
+
   return $self->ONREQUEST if (defined $self->c && $self->c->request_id != $self->_lastRequestApplied);
   return $self;
 }
@@ -382,7 +382,7 @@ sub THIS_MODULE {
 sub get_Module {
   my $self = shift;
   my $path = shift or return $self->THIS_MODULE;
-  
+
   my @parts = split('/',$path);
   my $first = shift @parts;
   # If $first is undef then the path is absolute (starts with '/'):
@@ -390,16 +390,16 @@ sub get_Module {
     my $topModule = $self->topmost_module;
     # New: support returning modules when the module_root_namespace is supplied in the path:
     shift @parts if (
-      !$topModule->has_module($parts[0]) && 
+      !$topModule->has_module($parts[0]) &&
       $parts[0] eq $self->app->module_root_namespace
     );
-    
+
     return $topModule->get_Module(join('/',@parts));
   }
-  
+
   # If there are no more parts in the path, then the name is a direct submodule:
   return $self->Module($first) unless (scalar @parts > 0);
-  
+
   return $self->Module($first)->get_Module(join('/',@parts));
 }
 
@@ -409,9 +409,9 @@ sub Module {
   my $self = shift;
   my $name = shift;
   my $no_onreq = shift;
-  
+
   $self->_load_module($name) or confess "Failed to load Module '$name'";
-  
+
   #return $self->modules_obj->{$name} if ($no_onreq);
   return $self->modules_obj->{$name}->THIS_MODULE;
 }
@@ -421,7 +421,7 @@ sub _load_module {
   my $self = shift;
   my $name = shift or return 0;
   return 0 unless ($self->has_module($name));
-  
+
   #my $class_name = $self->modules->{$name} or return 0;
   my $class_name = $self->get_module($name);
   my $params;
@@ -431,11 +431,11 @@ sub _load_module {
   }
 
   return 1 if (defined $self->modules_obj->{$name} and ref($self->modules_obj->{$name}) eq $class_name);
-  
+
   my $Object = $self->create_module($name,$class_name,$params) or die "Failed to create new $class_name object";
-  
+
   $self->modules_obj->{$name} = $Object;
-  
+
   return 1;
 }
 
@@ -444,45 +444,45 @@ sub create_module {
   my $name = shift;
   my $class_name = shift;
   my $params = shift;
-  
+
   die "Bad module name '$name' -- cannot contain '/'" if ($name =~ /\//);
 
   Module::Runtime::require_module($class_name);
-  
+
   $params = $self->create_module_params unless (defined $params);
-  
+
   if (defined $self->modules_params->{$name}) {
     foreach my $k (keys %{$self->modules_params->{$name}}) {
       $params->{$k} = $self->modules_params->{$name}->{$k};
     }
   }
-  
+
   $params->{app} = $self->app;
   $params->{module_name} = $name;
   $params->{module_path} = $self->module_path;
   $params->{module_path} .= '/' unless substr($params->{module_path}, -1) eq '/';
   $params->{module_path} .= $name;
   $params->{parent_module_ref} = $self;
-  
+
 
   # Colorful console messages, non-standard, replaced with normal logging below:
   #print STDERR
   #  ' >> ' .
-  #  CYAN . "Load: " . BOLD . $params->{module_path} . CLEAR . 
+  #  CYAN . "Load: " . BOLD . $params->{module_path} . CLEAR .
   #  CYAN . " [$class_name]" . CLEAR . "\n"
   #if ($self->app->debug);
-  
+
   my $start = [gettimeofday];
-  
+
   my $Object = $class_name->new($params) or die "Failed to create module instance ($class_name)";
   die "$class_name is not a valid RapidApp Module" unless ($Object->isa('RapidApp::Module'));
-  
+
   my $c = $self->app;
-  $c->log->debug( join('', 
+  $c->log->debug( join('',
     " >> Loaded: ",$params->{module_path}," [$class_name] ",
     sprintf("(%0.3fs)",tv_interval($start))
   )) if ($c->debug);
-  
+
   return $Object;
 }
 
@@ -512,13 +512,13 @@ sub parent_by_name {
 sub applyIf_module_options {
   my $self = shift;
   my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-  
+
   my %unset = ();
   foreach my $opt (keys %new) {
     next if (defined $self->module_options->{$opt});
     $unset{$opt} = $new{$opt};
   }
-  
+
   return $self->apply_module_options(%unset);
 }
 
@@ -526,7 +526,7 @@ sub applyIf_module_options {
 sub apply_module_options {
   my $self = shift;
   my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-    
+
   %{ $self->module_options } = (
     %{ $self->module_options },
     %new
@@ -579,12 +579,12 @@ has 'ONREQUEST_calls_late' => (
 );
 around 'add_ONREQUEST_calls_late' => __PACKAGE__->add_ONREQUEST_calls_modifier;
 
-sub add_ONREQUEST_calls_modifier { 
+sub add_ONREQUEST_calls_modifier {
   return sub {
     my $orig = shift;
     my $self = shift;
     return $self->$orig(@_) if (ref($_[0]));
-    
+
     my @new = ();
     foreach my $item (@_) {
       push @new, RapidApp::Handler->new(
@@ -593,14 +593,14 @@ sub add_ONREQUEST_calls_modifier {
       );
     }
     return $self->$orig(@new);
-  }; 
+  };
 }
 
 sub call_rapidapp_handlers {
   my $self = shift;
   foreach my $Handler (@_) {
     die 'not a RapidApp::Handler' unless (ref($Handler) eq 'RapidApp::Handler');
-    
+
     if($self->print_rapidapp_handlers_call_debug) {
       my $msg = YELLOW . '->call_rapidapp_handlers[' . $self->get_rapidapp_module_path . '] ' . CLEAR;
       $msg .= GREEN;
@@ -614,17 +614,17 @@ sub call_rapidapp_handlers {
       else {
         $msg .= '(no scope)';
       }
-      
+
       if (defined $Handler->method) {
         $msg .= BOLD . '->' . $Handler->method . CLEAR;
       }
       else {
         $msg .= BOLD . '==>CODEREF->()' . CLEAR;
       }
-    
+
       $self->app->log->debug($msg);
     }
-    
+
     $Handler->call;
   }
 }
@@ -665,7 +665,7 @@ sub get_rapidapp_module_path {
 }
 
 
-has 'customprompt_button' => ( 
+has 'customprompt_button' => (
   is => 'rw',
   isa => 'Maybe[Str]',
   traits => [ 'RapidApp::Role::PerRequestBuildDefReset'  ],
@@ -677,7 +677,7 @@ has 'customprompt_button' => (
 );
 
 
-has 'customprompt_data' => ( 
+has 'customprompt_data' => (
   is => 'rw',
   isa => 'HashRef',
   traits => [ 'RapidApp::Role::PerRequestBuildDefReset'  ],
@@ -696,15 +696,15 @@ has 'customprompt_data' => (
 ##################################
 
 
-has 'base_url' => ( 
-  is => 'rw', lazy => 1, default => sub { 
+has 'base_url' => (
+  is => 'rw', lazy => 1, default => sub {
     my $self = shift;
     my $ns = $self->app->module_root_namespace;
     $ns = $ns eq '' ? $ns : '/' . $ns;
     my $parentUrl= defined $self->parent_module? $self->parent_module->base_url.'/' : $ns;
     return $parentUrl . $self->{module_name};
   },
-  traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ] 
+  traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ]
 );
 
 #has 'extra_actions'      => ( is => 'ro',   default => sub {{}} );
@@ -740,7 +740,7 @@ has 'no_persist' => ( is => 'rw', lazy => 1, default => sub {
   my $self = shift;
   # inherit the parent's no_persist setting if its set:
   return $self->parent_module->no_persist if (
-    defined $self->parent_module and 
+    defined $self->parent_module and
     defined $self->parent_module->no_persist
   );
   return undef;
@@ -752,7 +752,7 @@ sub add_render_append {
   my $self = shift;
   my $add or return;
   die 'ref encountered, string expected' if ref($add);
-  
+
   my $cur = $self->render_append;
   return $self->render_append( $cur . $add );
 }
@@ -785,38 +785,38 @@ sub JSON_encode {
 #  request.
 sub simulateRequest {
   my ($self, $req)= @_;
-  
+
   my $c = RapidApp->active_request_context;
-  
+
   my $tempResp= Catalyst::Response->new();
-  
+
   my $origReq= $c->request;
   my $origResp= $c->response;
   my $origStash= $c->stash;
-  
+
   try {
     $c->request($req);
     $c->response($tempResp);
-    
+
     # This is dangerous both any way you do it.  We could make an empty stash, but then might lose important
     #   settings (like those set by ModuleDispatcher)
     $c->stash({ %$origStash });
-    
+
     my $path= $req->uri->path;
     $path =~ s|^/||;
     my @args= split('/', $path);
     $self->c->log->debug("Simulate Request: \"".join('", "', @args));
     my $ctl_ret= $self->Controller($c, @args);
-    
+
     $c->log->debug('controller return: '.(length($ctl_ret) > 20? (ref $ctl_ret).' length='.length($ctl_ret) : $ctl_ret));
     $c->log->debug('body: '.(length($tempResp->body) > 20? (ref $tempResp->body).' length='.length($tempResp->body) : $tempResp->body));
-    
+
     # execute the specified view, if needed
     if (!defined $c->res->body) {
       my $view= $self->c->stash->{current_view_instance} || $c->view($c->stash->{current_view});
       $view->process($c);
     }
-    
+
     $c->request($origReq);
     $c->response($origResp);
     $c->stash($origStash);
@@ -833,7 +833,7 @@ sub simulateRequest {
 sub simulateRequestToSubUrl {
   my ($self, $uri, @params)= @_;
   blessed($uri) && $uri->isa('URI') or $uri= URI->new($uri);
-  
+
   # if parameters were part of the URI, extract them first, then possibly override them with @params
   # Note that "array-style" URI params will be returned as duplicate key entries, so we have to do some work to
   #   assemble the values into lists to match the way you'd expect it to work.
@@ -847,12 +847,12 @@ sub simulateRequestToSubUrl {
         [ $paramHash{$key}, $val ]
         : [ @{$paramHash{$key}}, $val ];
   }
-  
+
   # add in the supplied parameters
   %paramHash= ( %paramHash, @params );
-  
+
   my $req= Catalyst::Request->new( uri => $uri, parameters => \%paramHash );
-    
+
   return $self->simulateRequest($req);
 }
 
@@ -888,8 +888,8 @@ sub Controller {
 
   # dispatch the request to the appropriate handler
 
-  $c->log->debug('--> ' . 
-    GREEN.BOLD . ref($self) . CLEAR . '  ' . 
+  $c->log->debug('--> ' .
+    GREEN.BOLD . ref($self) . CLEAR . '  ' .
     GREEN . join('/',@args) . CLEAR
   ) if ($c->debug);
 
@@ -910,9 +910,9 @@ has 'get_local_args', is => 'ro', isa => 'Maybe[CodeRef]', lazy => 1, default =>
 
 sub local_args {
   my $self = shift;
-  
+
   return $self->get_local_args->() if ($self->get_local_args);
-  
+
   my $path = '/' . $self->c->req->path;
   my $base = quotemeta($self->base_url . '/');
   my ($match) = ($path =~ /^${base}(.+$)/);
@@ -964,23 +964,23 @@ Else, content is called, and its return value is passed to render_data.
 sub controller_dispatch {
   my ($self, $opt, @subargs)= @_;
   my $c = $self->c;
-  
+
   # We're doing this because its the cleanest way to expose the currently dispatching module to
   # other Catalyst Components, such as the view. We needed this specifically to add the literal
   # sql default_value handling (i.e. default column values like \'current_timestamp').
   $c->stash->{'RAPIDAPP_DISPATCH_MODULE'} = $self;
-  
+
   return $self->Module($opt)->Controller($self->c,@subargs)
     if ($opt && !$self->has_action($opt) && $self->_load_module($opt));
-    
+
   return $self->process_action($opt,@subargs)
     if ($opt && $self->has_action($opt));
-    
+
   return $self->process_action($self->default_action,@_)
     if (defined $self->default_action);
-  
+
   my $ct= $self->c->stash->{requestContentType};
-  
+
   # if there were unprocessed arguments which were not an action, and there was no default action, generate a 404
   # UPDATE: unless new 'accept_subargs' attr is true (see attribute declaration above)
   if (defined $opt && !$self->accept_subargs) {
@@ -1021,7 +1021,7 @@ sub controller_dispatch {
       return $self->render_data($self->content);
     }
   }
-  
+
 }
 
 
@@ -1029,7 +1029,7 @@ sub _maybe_render_viewport {
   my $self = shift;
 
   my $rdr_vp = $self->c->stash->{render_viewport} or return 0;
-  
+
   if($rdr_vp && $rdr_vp eq 'printview' && $self->can('printview')) {
     return $self->printview;
   }
@@ -1060,27 +1060,27 @@ For actions that map to strings, a method of that name is called on $self.
 sub process_action {
   my $self = shift;
   my ( $opt, @args ) = @_;
-  
+
   die "No action specified" unless ($opt);
-  
-  $self->c->log->debug('--> ' . 
-    GREEN.BOLD . ref($self) . CLEAR . '  ' . 
-    GREEN . "action{ " . $opt . " }" . CLEAR . '  ' . 
+
+  $self->c->log->debug('--> ' .
+    GREEN.BOLD . ref($self) . CLEAR . '  ' .
+    GREEN . "action{ " . $opt . " }" . CLEAR . '  ' .
     GREEN . join('/',@args) . CLEAR
   ) if ($self->c->debug);
-  
+
   my $coderef = $self->get_action($opt) or die "No action named $opt";
-  
+
   if(my $ret = $self->_maybe_render_viewport) {
     return $ret;
   }
-  
-  # If $coderef is not actually a coderef, we assume its a string representing an 
+
+  # If $coderef is not actually a coderef, we assume its a string representing an
   # object method and we call it directly:
-  return $self->render_data( 
-    ref($coderef) eq 'CODE' ? 
-      $coderef->($self,@args) : 
-        $self->$coderef(@args) 
+  return $self->render_data(
+    ref($coderef) eq 'CODE' ?
+      $coderef->($self,@args) :
+        $self->$coderef(@args)
   );
 }
 
@@ -1114,13 +1114,13 @@ Else, the data is treated as an explicit string for the body.  The body is assig
 =cut
 sub render_data {
   my ($self, $data)= @_;
-  
+
   #$self->c->log->debug(Dumper($data));
-  
+
   # do nothing if the body has been set
   if (defined $self->c->response->body && length $self->c->response->body) {
     $self->c->log->debug("(body set by user)");
-    
+
     # check for the condition that will cause a "Wide character in syswrite" and give a better error message
     if (utf8::is_utf8($self->c->response->body)) {
       $self->c->response->content_type =~ /^text|xml$|javascript$|JSON$/
@@ -1128,13 +1128,13 @@ sub render_data {
     }
     return undef;
   }
-  
+
   # do nothing if the view has been configured
   if (defined $self->c->stash->{current_view} || defined $self->c->stash->{current_view_instance}) {
     $self->c->log->debug("(view set by user)");
     return $data;
   }
-  
+
   # if we want auto-json rendering, use the JSON view
   if ($self->render_as_json && ref($data) && !defined $self->no_json_ref_types->{ref($data)}) {
     $self->c->stash->{current_view} = 'RapidApp::JSON';
@@ -1153,7 +1153,7 @@ sub set_response_warning { (shift)->c->set_response_warning(@_) }
 # if response_callback_scoped is true when set_response_callback is called, the
 # function will be called with the scope (this reference) of the Ext.data.Connection
 # object that initiated the Ajax request (Ext.Ajax.request) and this.response will
-# also contain the response object; This is false by default because setting the 
+# also contain the response object; This is false by default because setting the
 # scope breaks many functions, and this is usually not needed (the only reason to
 # turn this on would be if you need to examine the specific request/response)
 has 'response_callback_scoped' => (
@@ -1167,18 +1167,18 @@ has 'response_callback_scoped' => (
 examples
 
   $self->set_response_callback( 'Ext.ux.MyFunc' );
-  
+
   $self->set_response_callback( alert => 'foo!' );
-  
+
   $self->set_response_callback( 'Ext.Msg.alert' => ( 'A message!!', 'this is awesome!!' ) );
-  
-  my $func = RapidApp::JSONFunc->new( 
-    raw => 1, 
+
+  my $func = RapidApp::JSONFunc->new(
+    raw => 1,
     func => 'function(){ console.log("anon!!"); console.dir(this.response); }'
   );
   $self->response_callback_scoped(1);
-  $self->set_response_callback( 
-    $func => ( "arg1",{ key_in_arg2 => 'blah!!!' },'arg3',\1  ) 
+  $self->set_response_callback(
+    $func => ( "arg1",{ key_in_arg2 => 'blah!!!' },'arg3',\1  )
   );
 
 =cut
@@ -1190,7 +1190,7 @@ sub set_response_callback {
 
   my $data = {};
   $data->{arguments} = [ @args ] if (scalar @args > 0);
-  
+
   if(ref($func) eq 'RapidApp::JSONFunc') {
     die "only 'raw' RapidApp::JSONFunc objects are supported" unless ($func->raw);
     $data->{anonfunc} = $func;
@@ -1198,9 +1198,9 @@ sub set_response_callback {
   else {
     $data->{func} = $func;
   }
-  
+
   $data->{scoped} = \1 if ($self->response_callback_scoped);
-  
+
   return $self->c->response->header( 'X-RapidApp-Callback' => $self->json->encode($data) );
 }
 
@@ -1217,8 +1217,8 @@ has 'response_server_events' => (
 );
 after 'add_response_server_events' => sub {
   my $self = shift;
-  $self->c->response->header( 
-    'X-RapidApp-ServerEvents' => $self->json->encode([ $self->all_response_server_events ]) 
+  $self->c->response->header(
+    'X-RapidApp-ServerEvents' => $self->json->encode([ $self->all_response_server_events ])
   );
 };
 

@@ -10,19 +10,19 @@ requires '_ra_catalyst_configs';
 
 around _ra_catalyst_plugins => sub {
   my ($orig,$self,@args) = @_;
-  
+
   my @list = $self->$orig(@args);
-  
-  return grep { 
+
+  return grep {
     $_ ne 'RapidApp' #<-- Base plugin redundant
   } @list, 'RapidApp::NavCore';
 };
 
 around _ra_catalyst_configs => sub {
   my ($orig,$self,@args) = @_;
-  
+
   my @list = $self->$orig(@args);
-  
+
   # Make the TabGui config come first:
   return ( @list,
 <<END,
@@ -30,7 +30,7 @@ around _ra_catalyst_configs => sub {
     # RapidDbic sources. When used with AuthCore, each user has their own saved
     # views in addition to system-wide saved views. No options are required.
     'Plugin::RapidApp::NavCore' => {
-      # 
+      #
     },
 END
   );

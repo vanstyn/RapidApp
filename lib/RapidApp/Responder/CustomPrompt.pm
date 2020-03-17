@@ -22,7 +22,7 @@ has 'focusField' 		=> ( is => 'ro', isa => 'Maybe[Str]', default => undef );
 
 sub customprompt_data {
 	my $self = shift;
-	
+
 	my $data = {};
 	$data->{title} 			= $self->title if (defined $self->title);
 	$data->{param_name}		= $self->param_name if (defined $self->param_name);
@@ -48,10 +48,10 @@ sub customprompt_json {
 
 sub writeResponse {
 	my ($self, $c)= @_;
-	
+
 	$c->response->header('X-RapidApp-CustomPrompt' => $self->customprompt_json);
 	#$c->response->status(500);
-	
+
 	my $rct= $c->stash->{requestContentType};
 	if ($rct eq 'text/x-rapidapp-form-response' || $rct eq 'JSON') {
 		$c->stash->{json}= { success => \0 };

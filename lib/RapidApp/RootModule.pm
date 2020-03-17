@@ -51,16 +51,16 @@ around 'apply_init_modules' => sub {
 
 sub BUILD {
 	my $self= shift;
-  
+
 	# Execute arbitrary code setup earlier in the init process that needs
 	# to be called after the RapidApp Module tree has been loaded
 	# See RapidApp::Util::rapidapp_add_global_init_coderef() for more info
 	foreach my $coderef (@RapidApp::RootModule::GLOBAL_INIT_CODEREFS) {
 		$coderef->($self);
 	}
-	
+
 	$self->auto_viewport(1);
-	
+
 	## ---
 	## NEW: optional auto initialization of the 'main' Module
 	if($self->main_module_class) {
@@ -88,9 +88,9 @@ around 'Controller' => sub {
 	my ($orig,$self,@a) = @_;
   my $c = $self->c;
   my $config = $c->config->{'Model::RapidApp'};
-  
+
 	$c->stash->{title} = $self->app_title;
-  
+
   # Also ugly - double-nested around. We're doing it this way because we
   # want the '_around_Controller' to take priority over this code, which
   # still takes priority over the original.
@@ -104,18 +104,18 @@ around 'Controller' => sub {
 
     my $args = $c->req->arguments;
     my ($opt) = @$args;
-    
+
     # SPECIAL HANDLING FOR ROOT ('/') REQUEST:
     return $self->content unless ($opt || !$c->can('session') || (
       $c->can('session') && $c->session &&
       $c->session->{RapidApp_username}
     ));
-    
+
     return $self->$orig(@a) unless (
       $opt && !$self->has_subarg($opt) &&
       $config->{root_template_prefix}
     );
-    
+
     return $c->template_dispatcher->default($c,@$args);
 
     return $self->$orig(@a);

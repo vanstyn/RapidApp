@@ -4,7 +4,7 @@ use strict;
 use warnings;
 use Moose;
 extends 'RapidApp::Module::DbicGrid';
-with 
+with
   'RapidApp::Module::Grid::Role::ExcelExport',
   # This is a bit of overlap/entaglement needed for 'NavCore' to be able to
   # work. However, NavCore is not always enabled, and this role only
@@ -29,7 +29,7 @@ has '+open_record_class', lazy => 1, default => sub {
 		class => $self->page_class,
 		params => {
 			ResultSource => $self->ResultSource,
-			get_ResultSet => $self->get_ResultSet, 
+			get_ResultSet => $self->get_ResultSet,
 			#TableSpec => $self->TableSpec,
 			include_colspec => clone( $self->include_colspec ),
 			updatable_colspec => clone( $self->updatable_colspec ),
@@ -78,9 +78,9 @@ has '_rapiddbic_default_views_model_name', is => 'ro', isa => 'Maybe[Str]', lazy
   my $self = shift;
   my $c = $self->app;
   my $config = $c->config->{'Plugin::RapidApp::RapidDbic'};
-   
+
   return (
-     $config->{navcore_default_views} && 
+     $config->{navcore_default_views} &&
     $c->_navcore_enabled
   ) ? 'RapidApp::CoreSchema::DefaultView' : undef;
 };
@@ -89,13 +89,13 @@ has '_rapiddbic_default_views_model_name', is => 'ro', isa => 'Maybe[Str]', lazy
 
 sub BUILD {
 	my $self = shift;
-  
+
   $self->add_plugin('grid-column-properties');
-	
+
 	# Init joined columns hidden:
-	$self->apply_columns( $_ => { hidden => \1 } ) 
+	$self->apply_columns( $_ => { hidden => \1 } )
 		for (grep { $_ =~ /__/ } @{$self->column_order});
-    
+
   my $extra_cnf = $self->extra_extconfig;
   $self->apply_extconfig( %$extra_cnf ) if (keys %$extra_cnf > 0);
 
@@ -107,13 +107,13 @@ sub BUILD {
 before 'load_saved_search' => sub { (shift)->before_load_saved_search };
 sub before_load_saved_search {
 	my $self = shift;
-	
+
   my $model_name = $self->_rapiddbic_default_views_model_name or return;
   my $Rs = $self->c->model($model_name);
   my $DefaultView = $Rs->find($self->source_model) or return;
-  
+
   my $SavedState = $DefaultView->view or return;
-  
+
   my $state_data = $SavedState->get_column('state_data');
   return if (!$state_data || $state_data eq '{}');
   my $search_data = $self->json->decode($state_data) or die usererr "Error deserializing grid_state";

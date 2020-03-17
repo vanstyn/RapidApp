@@ -8,13 +8,13 @@ ExcelTableWriter does not manage the excel file, and instead takes parameters of
 workbook and worksheet objects to use.  This allows quite a bit of flexibility.
 
   my $xls= Excel::Writer::XLSX->new($fh);
-  
+
   my $tw= RapidApp::Spreadsheet::ExcelTableWriter->new(
     wbook => $xls,
     wsheet => $xls->add_worksheet("MyData"),
     columns => [ 'Foo', 'Bar', 'Baz' ]
   );
-  
+
   my $tw= RapidApp::Spreadsheet::ExcelTableWriter->new(
     wbook => $xls,
     wsheet => $xls->add_worksheet("MyData"),
@@ -25,15 +25,15 @@ workbook and worksheet objects to use.  This allows quite a bit of flexibility.
     ],
     headerFormat => $xls->add_format(bold => 1, underline => 1, italic => 1),
   );
-  
+
   $tw->writePreamble("Some descriptive text at the top of the file");
   $tw->writePreamble;
   $tw->writeHeaders;    # optional so long as writeRow gets called
-  
+
   $tw->writeRow(1, 'John Doe', '1234 Reading Rd');
   $tw->writeRow( [ 2, 'Bob Smith', '1234 Eagle Circle');
   $tw->writeRow( { foo_1 => 3, bar => 'Rand AlThor', baz => 'Royal Palace, Cairhien' } );
-  
+
   $tw->autosizeColumns;
 
 =cut
@@ -82,11 +82,11 @@ sub numWsRequired($) {
 
 sub BUILD {
 	my $self= shift;
-	
+
 	my $numWsNeeded= $self->numWsRequired(scalar(@{$self->columns}));
 	$numWsNeeded <= scalar(@{$self->wsheets})
 		or die "Not enough worksheets allocated for ExcelTableWriter (got ".scalar(@{$self->wsheets}).", require $numWsNeeded)";
-	
+
 	for (my $i= 0; $i < scalar(@{$self->columns}); $i++) {
 		my $val= $self->columns->[$i];
 		# convert hashes into the proper object
@@ -105,7 +105,7 @@ Returns the next row that will be written by a call to writePreamble, writeHeadr
 This value is read-only
 
 =cut
-  
+
 sub curRow {
 	my $self= shift;
 	defined $self->{_curRow} and return $self->{_curRow};
@@ -140,11 +140,11 @@ sub sheetForCol {
 
 sub _applyColumnFormats {
 	my $self= shift;
-	
+
 	for (my $i=0; $i < $self->colCount; $i++) {
 		my $fmt= $self->columns->[$i]->format;
 		my $wid= $self->columns->[$i]->width eq 'auto'? undef : $self->columns->[$i]->width;
-		
+
 		my ($wsheet, $sheetCol)= $self->sheetForCol($i);
 		$wsheet->set_column($sheetCol, $sheetCol, $wid, $fmt);
 	}
@@ -153,7 +153,7 @@ sub _applyColumnFormats {
 sub prepareDocument {
 	my $self= shift;
 	!$self->_documentStarted or die 'column formats can only be applied before the first "write"';
-	
+
 	$self->_applyColumnFormats();
 	$self->_documentStarted(1);
 }
@@ -171,7 +171,7 @@ various bits of text at the start of the worksheet.
 sub writePreamble {
 	my ($self, @args)= @_;
 	!$self->_dataStarted or die 'Preamble must come before headers and data';
-	
+
 	$self->_documentStarted or $self->prepareDocument;
 	for (my $i=0; $i < scalar(@args); $i++) {
 		my ($ws, $wsCol)= $self->sheetForCol($i);
@@ -192,7 +192,7 @@ writeheaders can only be called once.  No more writePreamble calls can be made a
 sub writeHeaders {
 	my $self= shift;
 	!$self->_dataStarted or die 'Headers cannot be written twice';
-	
+
 	$self->_documentStarted or $self->prepareDocument;
 	for (my $i=0; $i < $self->colCount; $i++) {
 		my ($ws, $wsCol)= $self->sheetForCol($i);
@@ -238,17 +238,17 @@ sub writeRow {
 	} else {
 		$rowData= [ @_ ];
 	}
-	
+
 	$self->_dataStarted or $self->writeHeaders;
-	
+
 	for (my $i=0; $i < $self->colCount; $i++) {
 		my ($ws, $wsCol)= $self->sheetForCol($i);
-		
+
 		my @args = ($self->curRow, $wsCol, $rowData->[$i]);
 		push @args, $writeRowFormat if ($writeRowFormat);
-		
+
 		$ws->write(@args);
-		
+
 		# -- this logic is dumb and doesn't work right. 'write' already does smart setting of the
 		# type. (commented out by HV on 2012-05-26)
 		#if ($self->columns->[$i]->isString) {
@@ -257,7 +257,7 @@ sub writeRow {
 		#	$ws->write(@args);
 		#}
 		# --
-		
+
 		$self->columns->[$i]->updateWidest(length $rowData->[$i]) if (defined $rowData->[$i]);
 	}
 	$self->{_curRow}++;
@@ -271,7 +271,7 @@ sub rowHashToArray {
 		exists $hash->{$col->name} and $seen++;
 		push @$result, $hash->{$col->name};
 	}
-	
+
 	# elaborate error check, to be helpful....
 	if (!$self->ignoreUnknownRowKeys && scalar(keys(%$hash)) != $seen) {
 		my %tmphash= %$hash;
@@ -295,7 +295,7 @@ sub rowHashToArray {
 
 =item Returns: none
 
-AutosizeColumns should be called after all data has been written.  As each row is written, a 
+AutosizeColumns should be called after all data has been written.  As each row is written, a
 max width is updated per column. Calling autosizeColumns sets the excel column width to these
 maximum values.
 

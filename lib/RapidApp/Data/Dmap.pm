@@ -39,7 +39,7 @@ C<map>-like operation on deep data structures.
         handler => sub { print "barf\n" }
     };
 
-    # This removes all keys named 'cars'    
+    # This removes all keys named 'cars'
     my($bar) = dmap { delete $_->{cars} if ref eq 'HASH'; $_ } $foo;
 
     # This replaces arrays with the number of elements they contains
@@ -89,17 +89,17 @@ Delete all hash references
 
     use Data::Dmap;
     use Data::Dump 'pp';
-    
+
     pp dmap { return $_ unless ref eq 'HASH'; return; } 1, 'foo', [ { a => 1 }, 2];
-    
+
     # Prints:
     # (1, "foo", [2])
-    
+
 Delete every odd number
 
     use Data::Dmap;
     use Data::Dump 'pp';
-    
+
     pp dmap { return if $_ % 2; $_ } [ 1 .. 10 ];
 
     # Prints:
@@ -109,9 +109,9 @@ Replace all hash refs with some C<$object> of class C<thingy>.
 
     use Data::Dmap;
     use Data::Dump 'pp';
-    
+
     pp dmap { return bless $_, 'thingy' if ref eq 'HASH'; $_ } [ 1, "hello", { a => 1 } ];
-    
+
     # Prints:
     # [1, "hello", bless({ a => 1 }, "thingy")]
 
@@ -123,24 +123,24 @@ evaluating the expression for a hash key:
 
     my $characters = { main => 'pooh', secondary => 'piglet' };
     pp dmap { return if $_ eq "piglet"; $_ } $characters;
-    
+
     # Prints:
     # { main => "pooh" }
-    
+
 Because the output from the expression is being traversed, you can use C<dmap> to generate
 data structures:
 
     use Data::Dmap;
     use Data::Dump 'pp';
-    
+
     my $height = 3;
     pp dmap { if(ref eq 'HASH' and $height--) { $_->{a} = {height => $height} } $_ } {};
-    
+
     # Prints:
     # {
     #     a => {
     #         a => {
-    #             a => { 
+    #             a => {
     #                 height => 0
     #             },
     #             height => 1
@@ -159,7 +159,7 @@ in place of the current node.
 
     use Data::Dmap 'cut';
     use Data::Dump 'pp';
-    
+
     my $deep = {
         level => 1,
         data  => {
@@ -169,14 +169,14 @@ in place of the current node.
             }
         }
     };
-    
+
     pp dmap { cut('stop') if ref eq 'HASH' and $_->{level} == 2} $deep;
 
     # Prints:
     #
     # { data => { data => "stop", level => 2 }, level => 1 }
-                       
-                
+
+
 =cut
 
 sub _store_cache {

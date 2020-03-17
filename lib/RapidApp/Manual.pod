@@ -1,46 +1,46 @@
 =head1 NAME
- 
+
 RapidApp::Manual - RapidApp user and developer manual
- 
+
 =head1 DESCRIPTION
- 
+
 This is the L<RapidApp> users manual, which is still a work in progress...
 
-RapidApp is a recently open-sourced web application framework based on L<Catalyst>, ExtJS, 
+RapidApp is a recently open-sourced web application framework based on L<Catalyst>, ExtJS,
 L<Template::Toolkit> and L<DBIx::Class> for quickly creating interactive, data-rich webapps.
 
 For more information see the RapidApp home page at L<http://www.rapidapp.info>.
- 
+
 =head1 SECTIONS
 
 =head2 L<RapidApp::Manual::Installation>
- 
+
 How to install RapidApp, including a walkthrough of installing using perlbrew.
- 
+
 =head2 L<RapidApp::Manual::Bootstrap>
- 
+
 Creating a new application with the L<rapidapp.pl> script.
- 
+
 =head2 L<RapidApp::Manual::Modules>
- 
+
 RapidApp Modules.
 
 =head2 L<RapidApp::Manual::Plugins>
- 
+
 Suite of plugins available in RapidApp.
- 
+
 =head2 L<RapidApp::Manual::RapidDbic>
- 
+
 Usage and config options for the RapidDbic plugin.
- 
+
 =head2 L<RapidApp::Manual::TableSpec>
- 
+
 Listing of 'TableSpec' config options. TableSpecs are additional,
 RapidApp-specific metadata associated with DBIx::Class result classes.
- 
+
 =head2 L<RapidApp::Manual::Assets>
- 
-Built-in functionality for managing and serving "Assets" (CSS, JavaScript, 
+
+Built-in functionality for managing and serving "Assets" (CSS, JavaScript,
 Images, etc)
 
 =cut

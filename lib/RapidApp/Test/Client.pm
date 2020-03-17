@@ -38,18 +38,18 @@ has 'cookie',        is => 'rw', default => sub{undef}, isa => Maybe[Str];
 # i.e. http://localhost:3000
 has 'base_url', is => 'ro', isa => Maybe[Str], default => sub {undef};
 
-has 'agent_string', is => 'ro', lazy => 1, default => sub { 
+has 'agent_string', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   return (ref $self);
 }, isa => Str;
 
 has 'request_caller', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
-  
+
   # create in a closure:
   my $ua = LWP::UserAgent->new;
 	$ua->agent($self->agent_string);
-  
+
   return sub {
     my $request = shift;
     return $ua->request($request);
@@ -58,21 +58,21 @@ has 'request_caller', is => 'ro', lazy => 1, default => sub {
 
 sub make_request {
   my ($self, $req) = @_;
-  
+
   $self->last_request(undef);
   $self->last_response(undef);
   $self->last_request_elapsed(undef);
   $self->request_num( $self->request_num + 1 );
-  
+
   $self->last_request_started([gettimeofday]);
-  
+
   $req->header( Cookie => $self->cookie ) if ($self->cookie);
-  
+
   my $res = $self->request_caller->( $self->last_request($req) );
-  
+
   # Record the response unless the request_caller already did:
   $self->record_response( $res ) unless ($self->last_response);
-  
+
   return $res;
 }
 
@@ -89,7 +89,7 @@ sub record_response {
 
 sub normalize_url {
   my ($self, $url) = @_;
-  
+
   $url = join('',$self->base_url,$url) if (
     $self->base_url &&
     $url =~ /^\// #<-- starts with '/'
@@ -138,19 +138,19 @@ sub last_response_set_cookie {
 sub describe_request {
   my $self = shift;
   my $req = $self->last_request or return '(no request)';
-  
+
   my @list = (
     ' <r', $self->request_num,'> ',
     $self->last_request_type,
     '->', $req->method, '(\'',$req->uri->path,'\')',
   );
-  
+
   # If we already have the response, include the elapsed time:
   push @list,('  [',$self->last_request_elapsed,']')
     if ($self->last_response);
-  
+
   push @list, ' **set-cookie**' if ($self->last_response_set_cookie);
-    
+
   return join('',@list);
 }
 

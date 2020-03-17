@@ -11,7 +11,7 @@
 
         var BodyEl = Ext.getBody();
         BodyEl.addClass('rapidapp-printview');
-        
+
         var ldMask = new Ext.LoadMask(BodyEl, {msg:"Loading Printview..."});
         ldMask.show();
 

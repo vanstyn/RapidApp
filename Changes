@@ -4,7 +4,7 @@ Revision history for RapidApp
     - Performance refactor of apply_natural_column_order() (VANSTYN)
     - Improve debug_around (this is soon to be moved into a separate lib) (VANSTYN)
     - AuthCore: comsolidation of $c->_authcore_apply_login (VANSTYN)
-    
+
 
 1.3200 2019-10-05
     - Fully support username & password changes which apply to active sessions (VANSTYN)
@@ -32,7 +32,7 @@ Revision history for RapidApp
        - this is intented to be a very temporary fix until fixes to the main distribution of
          DBIx::Class::Passphrase column are released (this may has already happened, but I
          am moving forward with this just to limit the number of changes at once, this this
-         has been queued up for sme time. This will be addressed properly in the very next 
+         has been queued up for sme time. This will be addressed properly in the very next
          release)
 
 1.3104 2019-09-11
@@ -239,7 +239,7 @@ Revision history for RapidApp
     - AppDV: Fixes to enable/disable logic for store buttons (VANSTYN)
     - AppDV: improvements to field controls show/hide rules (VANSTYN)
     - AppDV: full-blown, per field validation monitoring (VANSTYN)
-    - AppDV: new attr feature options: (VANSTYN) 
+    - AppDV: new attr feature options: (VANSTYN)
         - refresh_on_hash_change
         - init_record_editable
         - refresh_on_save
@@ -325,7 +325,7 @@ Revision history for RapidApp
     - DbicLnk: include_colspec now defaults to ['*'] (VANSTYN)
     - Fix bug in rendering of SQLite date columns (VANSTYN)
     - Lots of misc bug fixes (VANSTYN)
-    
+
 1.0401 2015-05-11
     - Hotfix for wrong enforced alphabetical sorting of colspec (GETTY)
 
@@ -336,7 +336,7 @@ Revision history for RapidApp
         - Catalyst::Controller::AutoAssets 0.32
         - SQL::Translator 0.11021
         - Moose 2.1404, Moo 2.000001
-        - base 2.18, parent 0.232, namespace::autoclean  0.24 
+        - base 2.18, parent 0.232, namespace::autoclean  0.24
     - Switch to AUTHOR_TESTING for all release tests - PR #144 (GETTY)
     - Introduce general 'RapidAppCache' - PR #143 (GETTY)
         - General-purpose caching in tmpdir using CHI
@@ -389,7 +389,7 @@ Revision history for RapidApp
     - Require Catalyst 5.90084 + Plack 1.0034
 
 1.0201 2015-03-14
-    - Add back dummy vers of previously deleted share dir files to ensure clean on 
+    - Add back dummy vers of previously deleted share dir files to ensure clean on
       systems out in the wild
 
 1.0200 2015-03-13
@@ -419,11 +419,11 @@ Revision history for RapidApp
         - renders raw value only for physical columns, undef otherwise
     - Now requires Catalyst::Controller::AutoAssets 0.31
 
-1.0000 2015-02-07 
+1.0000 2015-02-07
     - First official "1.0" release  ** API CHANGES **
     - New internal class structure for Modules with significant cleanup (#74)
     - Replaced RapidApp::Include with simple RapidApp::Util exporter (#115)
-    - upgr-rapidapp.pl script converts existing code bases (although these 
+    - upgr-rapidapp.pl script converts existing code bases (although these
       changes are not likely to impact most apps, as most of the changes are
       internal -- the existing public config/plugin APIs remain the same)
     - Lots of fixes and improvements related to apps mounted at sub-urls (#114)
@@ -524,7 +524,7 @@ Revision history for RapidApp
     - Name mismatch between source/table name working again (#72)
     - Fix regression related to #68 changes for _resolve_condition calls
     - Purge most code of buggy $1 calls (really fixes #70)
-    - Unit test for _binary_op_fuser() 
+    - Unit test for _binary_op_fuser()
 
 0.99500 2014-10-31 🎃
     - Apps now work properly when started via 'plackup' (#70)
@@ -597,7 +597,7 @@ Revision history for RapidApp
 
 0.99321 2014-06-22
     - Bugfix for edge-case/random scenario in RapidDbic generation of 'auto_editor_type'
-      TableSpec config 
+      TableSpec config
 
 0.99320 2014-06-21
     - Grid export supports CSV, TSV and JSON as well as Excel
@@ -606,7 +606,7 @@ Revision history for RapidApp
 0.99312 2014-06-17
     - Updated documentation
     - Improvements to default login redirect handling in AuthCore
-    - Requires Catalyst::Controller::AutoAssets 0.29 
+    - Requires Catalyst::Controller::AutoAssets 0.29
       (SHOULD *REALLY* RESTORE WINDOWS SUPPORT...)
 
 0.99311 2014-06-16
@@ -631,7 +631,7 @@ Revision history for RapidApp
     - Misc other bugfixes and improvements
     - Removed dependency to CSS::Inliner
     - Requires JavaScript::ExtJS::V3 3.4.11 (minor warning fix)
-    - Requires Catalyst::Controller::AutoAssets 0.28 
+    - Requires Catalyst::Controller::AutoAssets 0.28
       (SHOULD RESTORE WINDOWS SUPPORT!)
 
 0.99302 2014-05-27
@@ -643,13 +643,13 @@ Revision history for RapidApp
 
 0.99300 2014-05-26
     - rapidapp.pl script now available using 'RapidApp::Helper' and friends
-    - RapidDbic config can now be read from model config (from config key 
+    - RapidDbic config can now be read from model config (from config key
       'RapidDbic')
     - Lots of improvements to CoreSchema + plugins
-    - CoreSchemaAdmin plugin now only sets up grids for CoreSchema sources actually 
+    - CoreSchemaAdmin plugin now only sets up grids for CoreSchema sources actually
       in use (unless new option 'all_sources' is supplied)
     - Improvements to RapidApp::View - now supports 'panel_cfg' option
-    - Lots of improvements to AuthCore - more restrictive defaults + generalized 
+    - Lots of improvements to AuthCore - more restrictive defaults + generalized
       redirect logic
     - Fixed delete_expired_sessions AuthCore bug
     - Added 'DirectCmp' controller allowing direct module dispatch via special
@@ -721,7 +721,7 @@ Revision history for RapidApp
 
 0.99100 2014-03-10
     - Requires Catalyst::Runtime 5.90061 with bugfix
-    - Expanded Template Access class API (template_css_class + 
+    - Expanded Template Access class API (template_css_class +
       currently_viewing_template)
     - Fixed bug in relative links within tabs (Github Issue #43)
     - Major refactoring of dispatch and exception internals (Github Issue #41)

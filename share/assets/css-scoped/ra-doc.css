@@ -1,5 +1,5 @@
 /*
- Some base styles to be able to escape from ExtJS global CSS, designed to be wrapped with 
+ Some base styles to be able to escape from ExtJS global CSS, designed to be wrapped with
  CSS::Scopifier to be isolated. I have tried and tried to find some sane default base
  css with no luck. This file is a combination of bootstrap and FF's html.css
 
@@ -727,12 +727,12 @@ li {
 }
 
 
-/*  Override/escape __back__ to ExtJS, for ExtJS-specific content 
+/*  Override/escape __back__ to ExtJS, for ExtJS-specific content
     This is needed for when we nest a module within a 'ra-doc' tag...
-    
+
     These are some specific fixes to undo/override known issues
     with the above with a standard grid module... There are
-    probabably many more scenarios which we'll add case-by-case  
+    probabably many more scenarios which we'll add case-by-case
                                                                     */
 .x-btn button {
   background-color: transparent;
@@ -753,7 +753,7 @@ li {
   margin-bottom: 0 ;
 }
 
-.x-panel .x-form-text, 
+.x-panel .x-form-text,
 .x-form-text, textarea.x-form-field {
   padding: 1px 3px;
 }

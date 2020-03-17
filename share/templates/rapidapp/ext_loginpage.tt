@@ -7,11 +7,11 @@
 </form>
 
 <script type="text/javascript">
-	
+
 	Ext.onReady(function(){
 		[% login_window_code %]
 	});
-	
+
 </script>
 
 [% END %]

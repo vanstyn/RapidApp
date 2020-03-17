@@ -15,7 +15,7 @@ has 'get_header_html', is => 'ro', isa => 'CodeRef', default => sub {
   sub {
     my $o = shift;
     return $o->header_template ? $o->c->template_render(
-      $o->header_template, 
+      $o->header_template,
       { c => $o->c, self => $o }
     ) : undef;
   }
@@ -26,7 +26,7 @@ has 'get_footer_html', is => 'ro', isa => 'CodeRef', default => sub {
   sub {
     my $o = shift;
     return $o->footer_template ? $o->c->template_render(
-      $o->footer_template, 
+      $o->footer_template,
       { c => $o->c, self => $o }
     ) : undef;
   }
@@ -62,20 +62,20 @@ has 'role_checker', is => 'ro', isa => 'Maybe[CodeRef]', default => sub {
 
 sub BUILD {
   my $self = shift;
-  
+
   # Add the Ext.ux.RapidApp.Plugin.EventHandlers plugin to all AppCmp
   # based objects:
   #$self->add_plugin({ ptype => 'rappeventhandlers' });
-  
-  
+
+
   if(scalar(@{$self->plugins}) > 0) {
     # New: Save the plugins set at BUILD time for later to force them to always
     # be applied to the content.
     @{$self->_build_plugins} = @{$self->plugins};
     $self->add_ONREQUEST_calls_early('_appcmp_enforce_build_plugins');
   }
-  
-  $self->apply_extconfig( 
+
+  $self->apply_extconfig(
     require_role => $self->require_role
   ) if ($self->require_role);
 
@@ -100,15 +100,15 @@ sub test_permission {
     $self->role_checker and
     $self->require_role and
     # FIXME: only perform the test for valid sessions. This logic already
-    # happens (i.e. data is already protected from invalid sessions) and 
+    # happens (i.e. data is already protected from invalid sessions) and
     # will need to be updated to consider this new feature
     $c->can('session') and $c->session and #<-- had to add this because 'session_is_valid' below
                                           #    was not returning false (some kind of init issue?)
                                           #    TODO: investigate further...
     $c->can('session_is_valid') and $c->session_is_valid and
     ! $self->role_checker->($c,$self->require_role)
-  ) ? 0 : $self->parent_module && $self->parent_module->can('test_permission') 
-          ? $self->parent_module->test_permission : 1 
+  ) ? 0 : $self->parent_module && $self->parent_module->can('test_permission')
+          ? $self->parent_module->test_permission : 1
 }
 
 
@@ -137,21 +137,21 @@ sub content {
   # ---
 
   my $cnf = $self->get_complete_extconfig;
-  
+
   my $header_html = $self->get_header_html->($self);
   $cnf->{headerCfg} = {
     tag => 'div',
     cls => 'panel-borders',
     html => $header_html
   } if ($header_html);
-  
+
   my $footer_html = $self->get_footer_html->($self);
   $cnf->{footerCfg} = {
     tag => 'div',
     cls => 'panel-borders',
     html => $footer_html
   } if ($footer_html);
-  
+
   return $cnf;
 }
 
@@ -170,7 +170,7 @@ sub apply_all_extconfig_attrs {
       $attr->does('RapidApp::Role::AppCmpConfigParam') and
       $attr->has_value($self)
     );
-    
+
     $self->apply_extconfig( $attr->name => $attr->get_value($self) );
   }
 }
@@ -209,7 +209,7 @@ has 'extconfig' => (
      delete_extconfig_param  => 'delete'
   },
 );
-# 'config' is being renamed to 'extconfig' 
+# 'config' is being renamed to 'extconfig'
 # These mappings are for backward compatability and will be removed
 # at some point. Once they are removed, it will force an API change
 # that can be made at any time, since 'extconfig' is already active
@@ -306,12 +306,12 @@ has 'listener_callbacks' => (
 );
 sub add_listener_callbacks {
   my ($self,$event,@funcs) = @_;
-  
+
   my $list = [];
   $list = $self->get_listener_callbacks($event) if ($self->has_listener_callbacks($event));
-  
+
   foreach my $func (@funcs) {
-    
+
     if (ref($func)) {
       push @$list, $func;
     }
@@ -320,8 +320,8 @@ sub add_listener_callbacks {
       push @$list, RapidApp::JSONFunc->new( raw => 1, func => $func );
     }
   }
-  
-  return $self->apply_listener_callbacks( $event => $list );  
+
+  return $self->apply_listener_callbacks( $event => $list );
 }
 
 
@@ -329,18 +329,18 @@ sub add_listener_callbacks {
 sub add_listener {
   my $self = shift;
   my $event = shift;
-  
+
   $self->add_listener_callbacks($event,@_);
-  
+
   my $handler = RapidApp::JSONFunc->new( raw => 1, func =>
     'function(arg1) {' .
-      
+
       'var cmp = this;' .
-      
+
       'if(arg1.listener_callbacks && !cmp.listener_callbacks) {' .
         'cmp = arg1;' .
       '}' .
-      
+
       'var args = arguments;' .
       'if(cmp.listener_callbacks) {' .
         'var list = this.listener_callbacks["' . $event . '"];' .
@@ -352,7 +352,7 @@ sub add_listener {
       '}' .
     '}'
   );
-  
+
   return $self->apply_listeners( $event => $handler );
 }
 

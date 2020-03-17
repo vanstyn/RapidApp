@@ -21,7 +21,7 @@ use HTML::TokeParser::Simple;
 has 'refresh_on_save', is => 'ro', isa => 'Bool', default => 0, traits => ['ExtProp'];
 
 # Only makes sense when there is exactly one row; will beging editing the *first* record
-# as soon as the page/data is loaded. It is the developer's responsibility to 
+# as soon as the page/data is loaded. It is the developer's responsibility to
 # include [% r.toggle.edit %] someplace in the template so the user can actually
 # save the changes. If the toggle control is not included, or it is otherwise not
 # possible for the user to have manually started the edit, this setting will do nothing.
@@ -59,9 +59,9 @@ has 'TTController'  => (
   }
 );
 
-has 'tt_include_path' => ( 
-  is => 'ro', 
-  isa => 'Str', 
+has 'tt_include_path' => (
+  is => 'ro',
+  isa => 'Str',
   lazy => 1,
   default => sub {
     my $self = shift;
@@ -105,9 +105,9 @@ sub BUILD {
     persist_on_add  => \scalar($self->persist_on_add),
     items => []
   );
-  
+
   $self->add_plugin( 'ra-link-click-catcher' );
-  
+
   #$self->add_listener( afterrender  => 'Ext.ux.RapidApp.AppDV.afterrender_handler' );
   #$self->add_listener(  click     => 'Ext.ux.RapidApp.AppDV.click_handler' );
 
@@ -124,15 +124,15 @@ sub load_xtemplate {
   $self->apply_extconfig( tpl => $self->xtemplate );
   $self->apply_extconfig( FieldCmp_cnf => $self->FieldCmp );
   $self->apply_extconfig( items => [ values %{ $self->DVitems } ] );
-  
+
   my $params = $self->c->req->params;
   my @qry = ();
   foreach my $p (keys %$params) {
     push @qry, $p . '=' . $params->{$p};
   }
-  
+
   my $qry_str = join('&',@qry);
-  
+
   $self->apply_extconfig( printview_url => $self->suburl('printview') . '?' . $qry_str );
 }
 
@@ -155,28 +155,28 @@ sub xtemplate_cnf_classes {
 
 sub xtemplate_cnf {
   my $self = shift;
-  
+
   my $html_out = '';
-  
+
   my $tt_vars = {
     c  => $self->c,
     r  => $self->TTController,
     %{ $self->extra_tt_vars }
   };
-  
+
   my $tt_file = $self->_tt_file;
-  
+
   {
     local $self->{_template_process_ctx} = {};
     my $Template = Template->new({ INCLUDE_PATH => $self->tt_include_path });
     $Template->process($tt_file,$tt_vars,\$html_out)
       or die $Template->error . "  Template file: $tt_file";
   }
-  
+
   $self->_parse_html_set_tabTitle(\$html_out) if ($self->parse_html_tabTitle);
-  
+
   return $html_out unless ($self->apply_css_restrict);
-  
+
   return '<div class="' . join(' ',$self->xtemplate_cnf_classes) . '">' . $html_out . '</div>';
 }
 
@@ -184,7 +184,7 @@ sub xtemplate_cnf {
 
 sub xtemplate {
   my $self = shift;
-  
+
   return RapidApp::JSONFunc->new(
     #func => 'new Ext.XTemplate',
     func => 'Ext.ux.RapidApp.newXTemplate',
@@ -195,7 +195,7 @@ sub xtemplate {
 
 # The 'renderField' function defined here is called by 'autofield' in TTController
 # This is needed because complex logic can't be called directly within {[ ... ]} in
-# XTemplates; only function calls. This function accepts a function as an argument 
+# XTemplates; only function calls. This function accepts a function as an argument
 # (which is allowed) and then calls it in the format and with the arguments expected
 # from a Column renderer:
 sub xtemplate_funcs {
@@ -223,7 +223,7 @@ sub _parse_html_set_tabTitle {
   my ($self, $htmlref) = @_;
 
   my $parser = HTML::TokeParser::Simple->new($htmlref);
-  
+
   while (my $token = $parser->get_token) {
     if($token->is_start_tag('title')) {
       my %cnf = ();
@@ -243,18 +243,18 @@ sub _parse_html_set_tabTitle {
 
 
 
-has 'DVitems' => ( 
-  is => 'ro', 
-  traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ], 
-  isa => 'HashRef', 
-  default => sub {{}} 
+has 'DVitems' => (
+  is => 'ro',
+  traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ],
+  isa => 'HashRef',
+  default => sub {{}}
 );
 
-has 'FieldCmp' => ( 
-  is => 'ro', 
-  traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ], 
-  isa => 'HashRef', 
-  default => sub {{}} 
+has 'FieldCmp' => (
+  is => 'ro',
+  traits => [ 'RapidApp::Role::PerRequestBuildDefReset' ],
+  isa => 'HashRef',
+  default => sub {{}}
 );
 
 
@@ -264,7 +264,7 @@ has 'FieldCmp' => (
 # Dummy read_records:
 sub read_records {
   my $self = shift;
-  
+
   return {
     results => 1,
     rows => [{ $self->record_pk => 1 }]
@@ -276,15 +276,15 @@ sub read_records {
 sub render_xtemplate_with_tt {
   my $self = shift;
   my $xtemplate = shift;
-  
+
   #return $xtemplate;
-  
+
   my $parser = HTML::TokeParser::Simple->new(\$xtemplate);
-  
+
   my $start = '';
   my $inner = '';
   my $end = '';
-  
+
   while (my $token = $parser->get_token) {
     unless ($token->is_start_tag('tpl')) {
       $start .= $token->as_is;
@@ -292,9 +292,9 @@ sub render_xtemplate_with_tt {
     }
     while (my $inToken = $parser->get_token) {
       last if $inToken->is_end_tag('tpl');
-      
+
       $inner .= $inToken->as_is;
-      
+
 
       if ($inToken->is_start_tag('div')) {
         my $class = $inToken->get_attr('class');
@@ -302,7 +302,7 @@ sub render_xtemplate_with_tt {
         if ($submod) {
           my $Module = $self->Module($submod);
         }
-        
+
       }
     }
     while (my $enToken = $parser->get_token) {
@@ -310,27 +310,27 @@ sub render_xtemplate_with_tt {
     }
     last;
   }
-  
+
   #$self->c->scream([$start,$inner,$end]);
-  
+
   my $tpl = '{ FOREACH rows }' . $inner . '{ END }';
-  
+
   my $html_out = '';
   my $Template = Template->new({
     START_TAG  => /\{/,
     END_TAG    => /\}/
   });
-  
+
   my $data = $self->DataStore->read;
-  
+
   #$self->c->scream($data,$tpl);
-  
-  $Template->process(\$tpl,$data,\$html_out) 
+
+  $Template->process(\$tpl,$data,\$html_out)
     or die "Template error (" . $Template->error . ')' .
     "\n\n" .
     "  Template vars:\n" . Dumper($data) . "\n\n" .
     "  Template contents:\n" . Dumper($tpl);
-  
+
   return $start . $html_out . $end;
 }
 

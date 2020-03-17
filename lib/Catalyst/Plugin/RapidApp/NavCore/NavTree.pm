@@ -12,15 +12,15 @@ use RapidApp::Util qw(:all);
 # more sense to declare in the same place.
 has '+node_types', default => sub {
   my $self = shift;
-  
+
   my $iconF = {
     name  => 'iconcls',
     xtype => 'ra-all-icon-assets-combo',
     fieldLabel => 'Icon',
   };
-  
+
   my $urlF = {
-    name  => 'url', 
+    name  => 'url',
     xtype => 'textfield',
     fieldLabel => 'Link URL',
     plugins => [{
@@ -32,7 +32,7 @@ has '+node_types', default => sub {
       'return (v && v.search("/") == 0) ? true : false;',
     '}')
   };
-  
+
   return [{
     type     => 'folder',
     title    => 'Folder',
@@ -65,7 +65,7 @@ has '+node_types', default => sub {
     },
     fields => [{ %$iconF, value => 'ra-icon-link-go' },$urlF]
   }]
-};  
+};
 # ---
 
 
@@ -73,25 +73,25 @@ has 'plugin_config', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
   my $c = $self->app;
   my $config = clone($c->config->{'Plugin::RapidApp::NavCore'} || {});
-  
+
   # -- Default configs --
-  
+
   # allow_manage: Whether or not to allow managing the Navtree (Organize Navtree)
   $config->{allow_manage} //= 1;
-  
+
   # user_views: Whether or not to enable saved views/searches on a per-user basis
   # (also requires Auth to be enabled)
   $config->{user_views} //= $c->can('_authcore_load_plugins') ? 1 : 0;
-  
+
   # User may supply additional custom tree node configs in an ArrayRef here:
   $config->{custom_navtree_nodes} //= undef;
-  
+
   return $config;
 };
 
 sub BUILD {
   my $self = shift;
-  
+
   if($self->plugin_config->{allow_manage}) {
     $self->apply_init_modules(
       'manager' => 'Catalyst::Plugin::RapidApp::NavCore::NavTree::Manage'
@@ -109,15 +109,15 @@ has '+fetch_nodes_deep', default => 1;
 #has 'Rs', is => 'ro', lazy => 1, default => sub {
 sub Rs {
 	my $self = shift;
-	
-	my $Rs = $self->c->model('RapidApp::CoreSchema::NavtreeNode')->search_rs(undef,{ 
+
+	my $Rs = $self->c->model('RapidApp::CoreSchema::NavtreeNode')->search_rs(undef,{
 		order_by => { -asc => 'me.ordering' },
 		group_by => 'me.id'
 	});
-	
-  
+
+
   # TODO: apply perms:
-  
+
 	#my $uid = $self->c->model("DB")->current_user_id;
 	#my @roles = uniq($self->c->model('DB::Role')->search_rs({
 	#	'user_to_roles.user_id' => $uid
@@ -127,7 +127,7 @@ sub Rs {
 	#	{ 'navtree_node_to_roles.role' => { '-in' => \@roles } },
 	#	{ 'navtree_node_to_roles.role' => undef }
 	#],{ join => 'navtree_node_to_roles' }) unless ($self->c->model('DB')->has_roles(qw/admin/));
-	
+
 	return $Rs;
 };
 
@@ -152,13 +152,13 @@ has 'UsersRs', is => 'ro', lazy => 1, default => sub {
 sub get_node_id {
 	my $self = shift;
 	my $node = shift;
-	
+
 	# Allow a Node Row object to be supplied instead of a path string (secondary functionality):
 	if(ref($node)) {
 		return $node->get_column('id') if (ref($node) =~ /NavtreeNode/);
 		return 's-' . $node->get_column('id') if (ref($node) =~ /SavedState/);
 	}
-	
+
 	my @parts = split(/\//,$node);
 	my $id = pop @parts;
 	$id = 0 if ($id eq 'root');
@@ -173,19 +173,19 @@ sub get_node_Row {
 	my $NavtreeNode_only = shift;
 
   return undef unless (defined $node);
-	
+
 	# Return the supplied node object if it is already a Row:
 	return $node if (ref($node));
-	
-	
+
+
 	my $id = $self->get_node_id($node);
 	return undef if ($NavtreeNode_only and ! ($id =~ /^\d+$/));
-	
+
 	if($id =~ /^s\-/) { #<-- if the id starts with 's-' its a SavedState id
 		$id =~ s/^s\-//;
 		return $self->SearchesRs->search_rs({ 'me.id' => $id })->first;
 	}
-	
+
 	return $self->Rs->search_rs({ 'me.id' => $id })->first;
 }
 
@@ -199,9 +199,9 @@ sub get_NavtreeNode {
 sub node_child_count {
 	my $self = shift;
 	my $node = shift;
-	
+
 	my $id = $self->get_node_id($node);
-	
+
 	my $count = 0;
 	$count += $self->Rs->search_rs({ 'me.pid' => $id })->count;
 	$count += $self->SearchesRs->search_rs({ 'me.node_id' => $id })->count;
@@ -213,7 +213,7 @@ sub node_child_count {
 sub get_Node_config {
 	my $self = shift;
 	my $Node = shift;
-	
+
 	my $d = { $Node->get_columns };
 	#my $snode = $node . '/' . $d->{id};
 	my $opts = {
@@ -223,9 +223,9 @@ sub get_Node_config {
 		text	=> $d->{text} || $d->{title},
 		iconCls => $d->{iconcls},
 	};
-	
+
 	$opts->{expanded} = ($d->{expanded} ? \1 : \0) if (defined $d->{expanded});
-	
+
 	# Saved State/Search specific:
 	if($Node->can('node_id')) {
 		$opts->{$_} = \1 for(qw(leaf expanded loaded allowDelete));
@@ -235,7 +235,7 @@ sub get_Node_config {
 			#href => '#!/view/' . $opts->{id}
 			# note: not using 'href' only because we don't want it in the ManageNavTree (subclass)
 		);
-    
+
     # This module supports one custom node type - 'link' - which is identified if the Node
     # object (i.e. SavedState row) returns a value for 'customAttrs'
     if (my $attrs = $Node->customAttrs) {
@@ -245,14 +245,14 @@ sub get_Node_config {
     else {
       $opts->{nodeTypeName} = 'search';
     }
-    
+
 	}
 	# Navtree Node specific
 	else {
     $opts->{nodeTypeName} = 'folder';
 		$opts->{allowCopy} = \0;
 	}
-	
+
 	return $opts;
 }
 
@@ -260,42 +260,42 @@ sub get_Node_config {
 sub fetch_nodes {
 	my $self = shift;
 	my ($node) = @_;
-	
+
 	my $id = $self->get_node_id($node);
-	
+
 	# Ignore non-numeric node ids:
 	return [] unless ($id =~ /^\d+$/);
-	
+
 	my $data = [];
-	
+
 	# Nodes (folder/containers)
 	foreach my $Node ($self->Rs->search_rs({ 'me.pid' => $id })->all) {
-		
+
 		my $opts = $self->get_Node_config($Node);
 		my $snode = $node . '/' . $opts->{id};
-		
+
 		unless ($self->fetch_nodes_deep or $self->node_child_count($snode)) {
 			# Set loaded/expanded to true if this node is empty (causes +/- to not be displayed initially):
 			$opts->{loaded} = \1;
 			delete $opts->{expanded};
 			#$opts->{expanded} = \1;
 		}
-		
+
 		push @$data, $opts;
 	}
-	
+
 	# Saved Searches:
 	foreach my $State ($self->SearchesRs->search_rs({ 'me.node_id' => $id })->all) {
 		my $opts = $self->get_Node_config($State);
 		push @$data, $opts;
 	}
-	
+
 	# Re-Sort heterogeneous node types together (navtree_nodes and saved_states)
 	@$data = sort { $a->{sort_order} <=> $b->{sort_order} } @$data;
-	
+
 	# Add extra, static root items from TreeConfig (original AppNavTree behavior):
 	push @$data, @{$self->next::method} if ($node eq 'root');
-	
+
 	return $data;
 }
 
@@ -323,10 +323,10 @@ sub can_edit_navtree { 1 }
 
 sub is_admin {
   my $self = shift;
-  
+
   return $self->c->check_user_roles('administrator')
     if ($self->c->can('check_user_roles'));
-  
+
   # If we're here it means no Auth is loaded and we're in "single-user" mode
   # (i.e. automatically an admin)
   return 1;
@@ -335,15 +335,15 @@ sub is_admin {
 sub TreeConfig {
 	my $self = shift;
   my @items = ();
-  
+
   if ($self->plugin_config->{user_views}) {
     my $User = try{$self->c->user->get_from_storage};
     push @items, $self->saved_search_tree_items($User) if ($User);
   }
 
-	push @items, $self->organize_navtree_node 
+	push @items, $self->organize_navtree_node
     if ($self->plugin_config->{allow_manage});
-    
+
   push @items, $self->custom_navtree_nodes;
 
 	return \@items;
@@ -353,19 +353,19 @@ sub TreeConfig {
 sub saved_search_tree_items {
 	my $self = shift;
   my $User = shift;
-  
+
 	my $saved_searches = [];
   # TODO: permissions:
 	#my $Rs = $self->c->model('DB::SavedState')->my_saved_states;
   #my $Rs = $self->c->model('RapidApp::CoreSchema::SavedState');
   my $Rs = $User->saved_states;
-	
+
 	#exclude searches with a node_id (which means they are shown in the public tree above)
 	$Rs = $Rs->search_rs(
     { 'me.node_id' => undef },
     { order_by => { -asc => 'me.ordering' } }
-  ); 
-	
+  );
+
 	foreach my $State ($Rs->all) {
 		my $search_id = $State->get_column('id');
 		push @$saved_searches, {
@@ -379,7 +379,7 @@ sub saved_search_tree_items {
 			children	=> []
 		};
 	}
-	
+
 	return {
 		id			=> 'my-saved-searches',
 		text		=> 'My Views',
@@ -416,7 +416,7 @@ sub custom_navtree_nodes {
 sub _prepare_custom_node_cfg {
   my $self = shift;
   my $node = clone(shift);
-  
+
   my $chlds = $node->{children} || [];
   $chlds = [] unless ((ref($chlds)||'') eq 'ARRAY');
   if(scalar(@$chlds) > 0) {

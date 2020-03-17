@@ -28,11 +28,11 @@ use RapidApp::Util qw(:all);
 
 has 'connect_info', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
-  
+
   my ($dsn,$user,$pass) = $self->has_schema
     ? ('dbi:SQLite::memory:','','')
     : split(/\,/,$self->dsn,3);
-    
+
   return {
     dsn       => $dsn,
     user      => $user || '',
@@ -42,21 +42,21 @@ has 'connect_info', is => 'ro', lazy => 1, default => sub {
 
 has 'dsn', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
-  
+
   ( $self->has_schema ||
     $self->has_connect_info
   ) or die "Must supply either dsn or connect_info or schema";
-  
+
   my $info = $self->connect_info;
-  
+
   my $dsn = $info->{dsn} or die "dsn must be supplied in connect_info";
   return $dsn unless ($info->{user} || $info->{user} ne '');
-  
+
   join(',',$dsn, (
     grep { $_ && $_ ne '' }
     $info->{user}, $info->{password}
   ))
-  
+
 }, isa => Str, predicate => 1;
 
 has 'crud_profile',
@@ -81,7 +81,7 @@ has 'connect_options', is => 'ro', isa => ArrayRef[Str], default => sub { [] };
 
 has '_def_ns_pfx', is => 'ro', isa => Str, default => sub { 'rDbicApp' };
 
-has 'app_namespace', is => 'ro', isa => Str,  lazy => 1, default => sub { 
+has 'app_namespace', is => 'ro', isa => Str,  lazy => 1, default => sub {
   my $self = shift;
   my ($class, $i) = ($self->_def_ns_pfx,0);
   $class = join('',$self->_def_ns_pfx,++$i) while( is_class_loaded $class );
@@ -97,65 +97,65 @@ has 'schema', is => 'ro', lazy => 1, default => sub {
 
 has 'schema_class', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
-  $self->has_schema 
+  $self->has_schema
     ? blessed $self->schema
     : join('::',$self->app_namespace,$self->model_name)
 }, isa => Str, predicate => 1;
 
 
-has 'tmpdir', 
-  is      => 'ro', predicate => 1, 
+has 'tmpdir',
+  is      => 'ro', predicate => 1,
   isa     => InstanceOf['Path::Class::Dir'],
   coerce  => sub { dir( $_[0] ) },
   default => sub { File::Spec->tmpdir };
 
 has 'workdir', is => 'ro', lazy => 1, predicate => 1, default => sub {
   my $self = shift;
-  
+
   -d $self->tmpdir or die "tmpdir doesn't exist";
-  
+
   my $tmp = dir( File::Temp::tempdir(
     'rdbic-tmp-XXXXX',
     DIR      => $self->tmpdir,
     CLEANUP  => !$self->no_cleanup,
     UNLINK   => 1
   ));
-  
+
   $tmp
-  
+
 }, isa => InstanceOf['Path::Class::Dir'], coerce => sub {dir($_[0])};
 
 has 'app_dir', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
-  
+
   my $name = $self->app_namespace;
   $name =~ s/\:\:/\-/g;
-  
+
   my $app_dir = $self->workdir->subdir( $name );
   $app_dir->mkpath(1);
-  
+
   $app_dir
-  
+
 }, isa => InstanceOf['Path::Class::Dir'], coerce => sub {dir($_[0])}, init_arg => undef;
 
 
 has 'local_tmp', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
-  
+
   my $tmp = $self->workdir->subdir( 'tmp' );
   $tmp->mkpath(1);
-  
+
   $tmp
-  
+
 }, isa => InstanceOf['Path::Class::Dir'], coerce => sub {dir($_[0])};
 
 has 'app_tmp', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
-  
+
   $self->isolate_app_tmp
     ? $self->local_tmp
     : dir( Catalyst::Utils::class2tempdir( $self->app_namespace ) )
-  
+
 }, isa => InstanceOf['Path::Class::Dir'], coerce => sub {dir($_[0])}, init_arg => undef;
 
 
@@ -176,13 +176,13 @@ has 'model_config', is => 'ro', isa => Maybe[HashRef], default => sub { undef };
 
 sub BUILD {
   my $self = shift;
-  
+
   my $tempdir = $self->app_tmp->stringify;
-  
+
   # Override function used to determine tempdir:
   no warnings 'redefine';
   local *Catalyst::Utils::class2tempdir = sub { $tempdir };
-  
+
   # init:
   $self->_bootstrap
 }
@@ -190,12 +190,12 @@ sub BUILD {
 
 has '_catalyst_psgi_app', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
-  
+
   my $name = $self->app_namespace;
-  
+
   # Handle user-supplied, existing/connected schema object:
   if($self->has_schema) {
-  
+
     ##  -----
     ## Hackish/abusive (but effective) way to set 'quote_names' if not already set, after
     ## the fact. This code is no longer enabled as of GH Issue #99 where we dropped the
@@ -210,7 +210,7 @@ has '_catalyst_psgi_app', is => 'ro', lazy => 1, default => sub {
     #  $self->schema->storage->sql_maker;
     #};
     ## -----
-  
+
     # These override hacks are needed to set the existing schema object
     # and stop Model::DBIC from changing the existing storage/connection.
     no warnings 'redefine';
@@ -219,7 +219,7 @@ has '_catalyst_psgi_app', is => 'ro', lazy => 1, default => sub {
       my $o = shift;
       $o->schema( $self->schema );
     };
-    
+
     Module::Runtime::require_module($name);
   }
   else {
@@ -233,12 +233,12 @@ has '_catalyst_psgi_app', is => 'ro', lazy => 1, default => sub {
 # Init:
 sub prepare_app {
   my $self = shift;
-  
+
   # Override function used to determine tempdir:
   no warnings 'redefine';
   local *Catalyst::Utils::class2tempdir = sub { $self->app_tmp->stringify };
 
- $self->_catalyst_psgi_app 
+ $self->_catalyst_psgi_app
 }
 
 
@@ -254,14 +254,14 @@ sub call {
 
 sub _bootstrap {
   my $self = shift;
-  
+
   my $name = $self->app_namespace;
-  
+
   die "App class namespace '$name' already loaded!" if (is_class_loaded $name);
-  
+
   my @keys = qw/metakeys limit_schemas_re exclude_schemas_re limit_tables_re exclude_tables_re/;
   my $extra = { map { $_ => scalar $self->$_ } @keys };
-  
+
   $extra->{'loader-option'}  = $self->loader_options;
   $extra->{'connect-option'} = $self->connect_options;
 
@@ -279,9 +279,9 @@ sub _bootstrap {
       name   => $name,
       dir    => $self->app_dir,
   });
-  
+
   $helper->mk_app( $name ) or die "mk_app failed";
-  
+
   if (my $config = $self->model_config) {
     my $new_cfg = Catalyst::Utils::merge_hashes(
       $self->model_class->config || {},
@@ -289,7 +289,7 @@ sub _bootstrap {
     );
     $self->model_class->config( $new_cfg );
   }
-  
+
   if($self->has_connect_info) {
     my $new_info = Catalyst::Utils::merge_hashes(
       $self->model_class->config->{connect_info} || {},
@@ -297,7 +297,7 @@ sub _bootstrap {
     );
     $self->model_class->config( connect_info => $new_info );
   }
-  
+
 }
 
 
@@ -305,7 +305,7 @@ sub _bootstrap {
 
 sub DEMOLISH {
   my $self = shift;
-  
+
   if($self->has_workdir && -d $self->workdir) {
     my $tmp = $self->workdir;
     if($self->no_cleanup) {
@@ -315,8 +315,8 @@ sub DEMOLISH {
     #else {
     #  print STDERR "\nRemoving temporary workdir '$tmp' ... ";
     #  $tmp->rmtree;
-    #  -d $tmp 
-    #    ? die "Unknown error removing $tmp." 
+    #  -d $tmp
+    #    ? die "Unknown error removing $tmp."
     #    : print STDERR "done.\n"
     #}
   }
@@ -326,37 +326,37 @@ sub DEMOLISH {
 
 sub _guess_model_name_from_dsn {
   my $odsn = shift;
-  
+
   # strip username/password if present
   my $dsn = (split(/,/,$odsn))[0];
-  
+
   # camelize doesn't handle '-' for us but its a bad class name! (GitHub Issue #124)
-  $dsn =~ s/\-/_/g; 
-  
+  $dsn =~ s/\-/_/g;
+
   my $name = 'DB'; #<-- default
-  
+
   my ($dbi,$drv,@extra) = split(/\:/,$dsn);
-  
+
   die "Invalid dsn string" unless (
     $dbi && $dbi eq 'dbi'
     && $drv && scalar(@extra) > 0
   );
-  
+
   $name = camelize($drv); #<-- second default
-  
+
   # We don't know how to handle more than 3 colon-separated vals
   return $name unless (scalar(@extra) == 1);
-  
+
   my $parm_info = shift @extra;
-  
+
   # 3rd default, is the last part of the dsn is already safe chars:
   return camelize($parm_info) if ($parm_info =~ /^[0-9a-zA-Z\-\_]+$/);
-  
+
   $name = &_normalize_dbname($parm_info) || $drv;
-  
+
   # Fall back to the driver name unless $name contains only simple/safe chars
   camelize( $name =~ /^[0-9a-zA-Z\-\_]+$/ ? $name : $drv )
-  
+
 }
 
 
@@ -387,7 +387,7 @@ sub _normalize_dbname {
 
 sub _coerce_connect_info {
   my $arg = $_[0];
-  
+
   $arg && ref $arg eq 'ARRAY' ? do {
     my ($dsn,$user,$pass,$attrs,$extra) = @$arg;
     $attrs ||= {};
@@ -442,13 +442,13 @@ Plack::App::RapidApp::rDbic - Instant database CRUD using RapidApp
 
 =head1 DESCRIPTION
 
-This module provides a Plack interface to a runtime-generated database CRUD application. 
-It bootstraps and loads a fully working L<RapidApp> application with a 
-L<RapidDbic|Catalyst::Plugin::RapidApp::RapidDbic> configuration for an arbitrary database, which 
-can be supplied as either an existing L<DBIx::Class::Schema> or a simple DBI connect string (dsn) 
+This module provides a Plack interface to a runtime-generated database CRUD application.
+It bootstraps and loads a fully working L<RapidApp> application with a
+L<RapidDbic|Catalyst::Plugin::RapidApp::RapidDbic> configuration for an arbitrary database, which
+can be supplied as either an existing L<DBIx::Class::Schema> or a simple DBI connect string (dsn)
 to have L<DBIx::Class> schema classes generated for you.
 
-This module is used internally by L<rdbic.pl> which exposes only a portion of the available options 
+This module is used internally by L<rdbic.pl> which exposes only a portion of the available options
 as a command-line script.
 
 =head1 CONFIGURATION
@@ -461,7 +461,7 @@ L</connect_info>.
 
 =head2 dsn
 
-Alternative way to supply C<connect_info>, as a string. The database user and password can be 
+Alternative way to supply C<connect_info>, as a string. The database user and password can be
 optionally inlined using commas.
 
 For example:
@@ -487,7 +487,7 @@ generated on-the-fly using L<DBIx::Class::Schema::Loader>.
 
 =head2 schema
 
-Optional alternative existing/connected schema object. This option can be used instead of 
+Optional alternative existing/connected schema object. This option can be used instead of
 C<connect_info>/C<schema_class>.
 
 =head2 app_namespace
@@ -505,7 +505,7 @@ One of five choices to broadly control CRUD interface behavior:
 
 B<Default>
 
-Full CRUD is enabled with 'persist_immediately' turned off globally which 
+Full CRUD is enabled with 'persist_immediately' turned off globally which
 means the user has to click "Save" to apply queued-up changes
 
 =item edit-instant
@@ -515,7 +515,7 @@ applied as soon as the cell is blurred after making a change
 
 =item edit-gridadd
 
-Same as 'editable' except new rows are added directly to the grid 
+Same as 'editable' except new rows are added directly to the grid
 instead of displaying an add record form
 
 =item ed-inst-gridadd
@@ -533,8 +533,8 @@ For more fine-grained control, RapidDbic configs can also be applied in C<model_
 
 =head2 no_cleanup
 
-Set to true to prevent the temp C<workdir> from being cleaned up on exit (ignored when C<workdir> 
-is manually configured). 
+Set to true to prevent the temp C<workdir> from being cleaned up on exit (ignored when C<workdir>
+is manually configured).
 
 Defaults to false.
 
@@ -545,7 +545,7 @@ Parent temporary directory. Defaults to C<tmpdir> from L<File::Spec> (usually C<
 =head2 workdir
 
 Directory in which to generate temporary application files. If left unconfigured, this is an
-automatically generated directory C<'rdbic-tmp-XXXXX'> within C<tmpdir> which is automatically 
+automatically generated directory C<'rdbic-tmp-XXXXX'> within C<tmpdir> which is automatically
 cleaned/removed unless C<no_cleanup> is true.
 
 
@@ -565,12 +565,12 @@ C<workdir>
 
 =head2 model_name
 
-Name of the C<Model::DBIC> in the generated app. Defaults to an auto-generated name based on the 
+Name of the C<Model::DBIC> in the generated app. Defaults to an auto-generated name based on the
 schema/dsn
 
 =head2 model_config
 
-Optional extra config to apply to the C<Model::DBIC> in the generated app. This is useful to be 
+Optional extra config to apply to the C<Model::DBIC> in the generated app. This is useful to be
 able to customize RapidDbic configs (See L<Catalyst::Plugin::RapidApp::RapidDbic>)
 
 =head1 METHODS
@@ -585,13 +585,13 @@ Full class name of the C<Model::DBIC> in the generated app.
 
 =head2 app_dir
 
-Home directory for the generated RapidApp/Catalyst app. This will be the app name within the 
+Home directory for the generated RapidApp/Catalyst app. This will be the app name within the
 C<workdir>
 
 =head2 app_tmp
 
 The temporary directory used by the generated RapidApp/Catalyst app. If C<isolate_app_tmp> is
-true this will be within the C<workdir>, or whatever directory is set in C<local_tmp>. 
+true this will be within the C<workdir>, or whatever directory is set in C<local_tmp>.
 Otherwise it is the standard location returned by C<Catalyst::Utils::class2tempdir> for
 the generated app (which is not cleaned up).
 
@@ -608,7 +608,7 @@ suported options, see L<DBIx::Class::Schema::Loader::Base>.
 =head2 connect_options
 
 Optional ArrayRef of connect_options to be added to the C<%extra_attributes> of the C<connect_info>.
-(See L<DBIx::Class::Storage::DBI/connect_info>). Like C<loader_options>, these should be supplied 
+(See L<DBIx::Class::Storage::DBI/connect_info>). Like C<loader_options>, these should be supplied
 as a list of name=value pairs, for example:
 
   connect_options => [qw/quote_names=0 mysql_enable_utf8=0/]
@@ -629,19 +629,19 @@ be turned back on). Defaults to false (0)
 
 L<rdbic.pl>
 
-=item * 
+=item *
 
 L<RapidApp>
 
-=item * 
+=item *
 
 L<Plack::Component>
 
-=item * 
+=item *
 
 L<Catalyst Advent 2014 - Day 16|http://www.catalystframework.org/calendar/2014/16>
 
-=item * 
+=item *
 
 L<Catalyst Advent 2014 - Day 17|http://www.catalystframework.org/calendar/2014/17>
 

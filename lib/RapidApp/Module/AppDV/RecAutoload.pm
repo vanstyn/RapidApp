@@ -26,9 +26,9 @@ has 'process_coderef' => ( is => 'ro', isa => 'Maybe[CodeRef]', default => undef
 
 sub AUTOLOAD {
   my $self = shift;
-  
+
   my $method = (reverse(split('::',$AUTOLOAD)))[0];
-  
+
   $self->apply_method_rec( $method => 1 );
   return $self->process_coderef->($method, @_) if ($self->process_coderef);
 }

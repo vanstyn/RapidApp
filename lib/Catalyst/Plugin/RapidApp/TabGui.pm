@@ -8,7 +8,7 @@ use RapidApp::Util qw(:all);
 require Module::Runtime;
 require Catalyst::Utils;
 
-sub _navcore_enabled { 
+sub _navcore_enabled {
   my $c = shift;
   return (
     $c->does('Catalyst::Plugin::RapidApp::NavCore') ||
@@ -16,7 +16,7 @@ sub _navcore_enabled {
   ) ? 1 : 0;
 }
 
-sub _authcore_enabled { 
+sub _authcore_enabled {
   my $c = shift;
   return (
     $c->does('Catalyst::Plugin::RapidApp::AuthCore') ||
@@ -26,22 +26,22 @@ sub _authcore_enabled {
 
 before 'setup_components' => sub {
   my $c = shift;
-  
+
   my $config = $c->config->{'Plugin::RapidApp::TabGui'} or die
     "No 'Plugin::RapidApp::TabGui' config specified!";
-  
-  $config->{title} ||= $c->config->{name};  
+
+  $config->{title} ||= $c->config->{name};
   $config->{nav_title} ||= $config->{title};
-  
-  # --- We're aware of the AuthCore plugin, and if it is running we automatically 
+
+  # --- We're aware of the AuthCore plugin, and if it is running we automatically
   # set a banner with a logout link if no banner is specified:
   if($c->_authcore_enabled) {
     $config->{banner_template} ||= 'templates/rapidapp/simple_auth_banner.tt';
   }
   # ---
-  
+
   my @navtrees = ();
-  
+
   if($config->{template_navtree_regex}) {
    push @navtrees, ({
       module => 'tpl_navtree',
@@ -52,10 +52,10 @@ before 'setup_components' => sub {
       }
     });
   }
-  
+
   # New: add custom navtrees by config:
   push @navtrees, @{$config->{navtrees}} if (exists $config->{navtrees});
-  
+
   # --- We're also aware of the NavCore plugin. If it is running we stick its items
   # at the **top** of the navigation tree:
   unshift @navtrees, (
@@ -63,13 +63,13 @@ before 'setup_components' => sub {
       module => 'navtree',
       class => $c->_navcore_navtree_class,
     },
-    { xtype => 'spacer', height => '5px' } 
+    { xtype => 'spacer', height => '5px' }
   ) if ($c->_navcore_enabled);
   # ---
-  
+
   # Turn off the navtree if it has no items:
   $config->{navtree_disabled} = 1 unless (@navtrees > 0);
-  
+
   my $main_module_params = {
     title => $config->{nav_title},
     right_footer => $config->{right_footer} || $config->{title},
@@ -77,7 +77,7 @@ before 'setup_components' => sub {
     init_width => $config->{navtree_init_width} || 230,
     navtrees => \@navtrees
   };
-  
+
   if($config->{dashboard_template}) {
     $main_module_params->{dashboard_class} = 'RapidApp::Module::HtmlContent';
     $main_module_params->{dashboard_params} = {
@@ -88,11 +88,11 @@ before 'setup_components' => sub {
       }
     };
   }
-  
+
   # remap banner_template -> header_template
   $main_module_params->{header_template} = $config->{banner_template}
     if($config->{banner_template});
-  
+
   my @copy_params = qw(
     dashboard_url
     navtree_footer_template
@@ -101,21 +101,21 @@ before 'setup_components' => sub {
     tab_title_max_width
   );
   $config->{$_} and $main_module_params->{$_} = $config->{$_} for (@copy_params);
-  
-  # -- New: enable passthrough to exclude navtrees that define 
+
+  # -- New: enable passthrough to exclude navtrees that define
   # a 'require_role' property (See new API in RapidApp::Module::Explorer)
-  $main_module_params->{role_checker} = 
+  $main_module_params->{role_checker} =
     $c->config->{'Plugin::RapidApp::AuthCore'}{role_checker}
     if ($c->_authcore_enabled);
   # --
-  
+
   # New: allow the user to modify the main module class/params:
   my $main_module_class = $config->{main_module_class} || 'RapidApp::Module::Explorer';
   %$main_module_params = (
     %$main_module_params,
     %{ $config->{main_module_params} || {} }
   );
-  
+
   my $cnf = {
     rootModuleClass => 'RapidApp::RootModule',
     rootModuleConfig => {
@@ -124,9 +124,9 @@ before 'setup_components' => sub {
       main_module_params => $main_module_params
     }
   };
-    
+
   # Apply base/default configs to 'Model::RapidApp':
-  $c->config( 'Model::RapidApp' => 
+  $c->config( 'Model::RapidApp' =>
     Catalyst::Utils::merge_hashes($cnf, $c->config->{'Model::RapidApp'} || {} )
   );
 };
@@ -143,7 +143,7 @@ Catalyst::Plugin::RapidApp::TabGui - Instant tabbed Ajax admin navigation interf
 =head1 SYNOPSIS
 
  package MyApp;
- 
+
  use Catalyst   qw/ RapidApp::TabGui /;
 
 =head1 DESCRIPTION
@@ -164,12 +164,12 @@ URLs are called "hashnav paths" which start with C<#!/> such as:
 
  /#!/some/url/path
 
-The above URL loads the content of C</some/url/path> with a new tab (or existing tab if already 
-open) and works just as well if the TabGui is already loaded as accessing the url from a 
+The above URL loads the content of C</some/url/path> with a new tab (or existing tab if already
+open) and works just as well if the TabGui is already loaded as accessing the url from a
 fresh browser window.
 
 The TabGui is loaded at the root module, which defaults to root of the Catalyst app C</> for
-a dedicated application, but can also be changed to provide an admin section for an existing 
+a dedicated application, but can also be changed to provide an admin section for an existing
 app by setting the C<module_root_namespace> RapidApp config:
 
  # in the main catalyst app class:
@@ -181,7 +181,7 @@ app by setting the C<module_root_namespace> RapidApp config:
   }
  );
 
-In this case, the interface would be accessible via C</adm>, and in turn, the previous hashnav 
+In this case, the interface would be accessible via C</adm>, and in turn, the previous hashnav
 URL example would be:
 
  /adm/#!/some/url/path
@@ -200,13 +200,13 @@ Thus, the following are exactly equivalent:
    RapidApp::RapidDbic
  /
 
-Additionally, there are multiple extra plugins with provide high-level functionality which 
-assume, build upon and/or otherwise interact with the TabGui as the primary navigation interface, 
-such as L<NavCore|Catalyst::Plugin::RapidApp::NavCore> and 
+Additionally, there are multiple extra plugins with provide high-level functionality which
+assume, build upon and/or otherwise interact with the TabGui as the primary navigation interface,
+such as L<NavCore|Catalyst::Plugin::RapidApp::NavCore> and
 L<CoreSchemaAdmin|Catalyst::Plugin::RapidApp::CoreSchemaAdmin>.
 
-The TabGui plugin itself is just a configuration layer. Internally, it assembles and automatically 
-configures a number of RapidApp modules which provide the actual functionality, including 
+The TabGui plugin itself is just a configuration layer. Internally, it assembles and automatically
+configures a number of RapidApp modules which provide the actual functionality, including
 L<RapidApp::Module::Explorer>, L<RapidApp::Module::Tree> and others.
 
 =head1 SEE ALSO
@@ -229,7 +229,7 @@ L<Catalyst::Plugin::RapidApp::RapidDbic>
 
 L<Catalyst::Plugin::RapidApp::NavCore>
 
-=item * 
+=item *
 
 L<Catalyst>
 

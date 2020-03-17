@@ -5,13 +5,13 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
     var eventName = this.isIframe() ? 'domready' : 'afterrender';
     this.panel.on(eventName,this.attachClickListener,this);
   },
-  
+
   isIframe: function() { return Ext.isFunction(this.panel.getFrame); },
-  
+
   getBodyEl: function() {
     // Standard, normal panel
     var El = this.panel.getEl();
-    
+
     // For the special ManagedIFrame case, reach into the iframe
     // and get its inner <body> element:
     if(this.isIframe()) {
@@ -20,10 +20,10 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
         iFrameEl.dom.contentWindow.document.body
       );
     }
-    
+
     return El;
   },
- 
+
 	attachClickListener: function() {
     this.getBodyEl().on('click',function(event,node) {
       var target = event.getTarget(null,null,true);
@@ -38,7 +38,7 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
       }
     },this);
 	},
-  
+
   getTplElMeta: function(tplEl) {
     var metaEl = tplEl.child('div.meta');
     var meta;
@@ -50,22 +50,22 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
     }
     return meta;
   },
-  
+
   editTplEl: function(tplEl) {
     var meta = this.getTplElMeta(tplEl);
     return this.editTemplate(meta);
   },
-  
+
   editTemplate: function(meta) {
     var url = [
       this.panel.template_controller_url,
       'get', meta.name
     ].join('/');
-    
+
     var success_fn = function(response,options) {
       this.loadEditor(meta.name,response.responseText,meta);
     };
-    
+
     Ext.Ajax.request({
       url: url,
       method: 'GET',
@@ -74,23 +74,23 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
       scope: this
     });
   },
-  
+
   createTplEl: function(tplEl) {
     var meta = this.getTplElMeta(tplEl);
     return this.createTemplate(meta);
   },
-  
+
   createTemplate: function(meta) {
     var url = [
       this.panel.template_controller_url,
       'create', meta.name
     ].join('/');
-    
+
     var success_fn = function(response,options) {
       this.tabReload();
       this.editTemplate(meta);
     };
-    
+
     Ext.Ajax.request({
       url: url,
       method: 'GET',
@@ -99,21 +99,21 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
       scope: this
     });
   },
-  
+
   tabReload: function() {
-  
+
     // New: if our own panel supports 'reload' -- use it
     if(Ext.isFunction(this.panel.reload)) {
       return this.panel.reload.call(this.panel);
     }
-    
+
     // Needed to keep a reference to the ownerCt for next time:
     var ownerCt = this.ownerCt || this.panel.ownerCt;
     this.ownerCt = ownerCt;
-  
+
     // reload() is a new feature of AutoPanel:
     return ownerCt.reload();
-    
+
     /* This is the old way which closes and loads a new Tab: */
     //var tab = this.tab || this.panel.ownerCt;
     //var tp = tab.ownerCt;
@@ -123,31 +123,31 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
     //  this.tab = tp.loadContent(cnf);
     //}
   },
-  
+
   setTemplate: function(name,content,skip_validate) {
-  
+
     var set_url = [
       this.panel.template_controller_url,
       'set', name
     ].join('/');
-    
+
     var params = { content: content };
     if(skip_validate) {
       params.skip_validate = 1;
     }
-    
+
     Ext.Ajax.request({
       url: set_url,
       method: 'POST',
       params: params,
       success: function(response,options) {
         this.win.close();
-        
+
         // Reload the tab
         this.tabReload();
-        
+
         // TODO: reload the template element if nested template
-        
+
       },
       failure: function(response,options) {
         if(response.status == 418) {
@@ -190,14 +190,14 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
       scope: this
     });
   },
-  
+
   deleteTemplate: function(name) {
-  
+
     var delete_url = [
       this.panel.template_controller_url,
       'delete', name
     ].join('/');
-    
+
     Ext.Ajax.request({
       url: delete_url,
       method: 'GET',
@@ -208,7 +208,7 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
       }
     });
   },
-  
+
   getFormatEditorCnf: function(format) {
     if (format == 'html-snippet') {
       return {
@@ -221,7 +221,7 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
     else if (format == 'markdown') {
       return {
         xtype: 'ra-md-editor',
-        _noAutoHeight: true 
+        _noAutoHeight: true
       }
     }
     else {
@@ -232,18 +232,18 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
       };
     }
   },
-  
+
   loadEditor: function(name,content,meta) {
-  
+
     var format = meta.format;
     var fp, panel = this.panel;
-		
+
 		var saveFn = function(btn) {
 			var form = fp.getForm();
 			var data = form.findField('content').getRawValue();
       return this.setTemplate(name,data);
 		};
-    
+
     var deleteFn = function(btn) {
 			Ext.Msg.show({
         title: 'Confirm Delete Template',
@@ -262,7 +262,7 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
         scope: this
       });
 		};
-    
+
     // Common config:
     var editField = {
       name: 'content',
@@ -274,7 +274,7 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
     };
     // Format-specific config:
     Ext.apply(editField,this.getFormatEditorCnf(format));
-    
+
     var buttons = [
       '->',
       {
@@ -295,7 +295,7 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
         scope: this
       }
     ];
-    
+
     if(meta.deletable) {
       buttons.unshift({
         name: 'delete',
@@ -307,12 +307,12 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
         handler: deleteFn
       });
     }
-		
+
 		fp = new Ext.form.FormPanel({
 			xtype: 'form',
 			frame: true,
 			labelAlign: 'right',
-			
+
 			//plugins: ['dynamic-label-width'],
 			labelWidth: 160,
 			labelPad: 15,
@@ -323,16 +323,16 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
 			monitorValid: true,
 			buttonAlign: 'left',
 			minButtonWidth: 100,
-			
+
 			items: [ editField ],
 
 			buttons: buttons
 		});
-  
-    if(this.win) { 
-      this.win.close(); 
+
+    if(this.win) {
+      this.win.close();
     }
-    
+
     this.win = new Ext.Window({
 			title: ["Edit Template ('",name,"')"].join(''),
 			layout: 'fit',
@@ -345,10 +345,10 @@ Ext.ux.RapidApp.Plugin.TemplateControllerPanel = Ext.extend(Ext.util.Observable,
 			modal: true,
 			items: fp
 		});
-    
+
     this.win.show();
   }
-	
+
 });
 Ext.preg('template-controller-panel',Ext.ux.RapidApp.Plugin.TemplateControllerPanel);
 

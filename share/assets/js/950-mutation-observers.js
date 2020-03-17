@@ -3,16 +3,16 @@
 (function(win) {
     'use strict';
 
-    var listeners = [], 
-    doc = win.document, 
+    var listeners = [],
+    doc = win.document,
     MutationObserver = win.MutationObserver || win.WebKitMutationObserver,
     observer;
 
     /*
      * Checks a selector for new matching
-     * elements and invokes the callback 
+     * elements and invokes the callback
      * if one is found
-     * 
+     *
      * @param {String} selector
      * @param {Function} fn
      * @api private
@@ -21,7 +21,7 @@
         var elements = doc.querySelectorAll(selector), i = 0, len = elements.length, element;
         for (; i < len; i++) {
             element = elements[i];
-            // Make sure the callback isn't invoked with the 
+            // Make sure the callback isn't invoked with the
             // same element more than once
             if (!element.ready) {
                 element.ready = true;
@@ -34,7 +34,7 @@
     /*
      * Check all selectors for new elements
      * following a change in the DOM
-     * 
+     *
      * @api private
      */
     function checkListeners() {
@@ -47,7 +47,7 @@
     /*
      * Add a selector to watch for when a matching
      * element becomes available in the DOM
-     * 
+     *
      * @param {String} selector
      * @param {Function} fn
      * @api public
@@ -78,26 +78,26 @@
     } else {
         win['ready'] = ready;
     }
-            
+
 })(this);
 
 
-/* 
+/*
   usage:
-  
+
   <div class="ra-mo-expandable-max-height">
     <div class="content" style="max-height: 150px; overflow: hidden;">
       ... long content ...
     </div>
   </div>
-  
+
 */
 
 ready('.ra-mo-expandable-max-height', function(el) {
   // For good measure, make sure we only process a given node once:
   if(el.raMoExpandableMaxHeightInitialized) { return; }
   el.raMoExpandableMaxHeightInitialized = true;
-  
+
   // Do nothing if we contain another ra-mo-expandable-max-height element:
   //  Not yet decided if this should be done. What would really need to happen in this case is
   //  to somehow figure out what the max-height of the children are, and then turn them
@@ -105,7 +105,7 @@ ready('.ra-mo-expandable-max-height', function(el) {
   //  layers display when the parent is smaller than the child, while may not be ideal, is at
   //  least arguably the most expected behaviour
   //if(el.getElementsByClassName('ra-mo-expandable-max-height')[0]) { return; }
-  
+
   var CssStyle = window.getComputedStyle(el,null); // live object representing current styles
   var hasMaxHeight = function() {
     var prop = CssStyle.getPropertyValue('max-height');
@@ -124,7 +124,7 @@ ready('.ra-mo-expandable-max-height', function(el) {
       }
     }
   }
-  
+
   var getRealHeights = function() {
     var heights;
     if(el.offsetParent) {
@@ -135,7 +135,7 @@ ready('.ra-mo-expandable-max-height', function(el) {
       // this means we're not currently rendered/visible, so we can't find out our dimensions. To
       // get the browser to tell us what they really are, we have to create a temp hidden element,
       // move our element to it, then retrieve the dimensions, then move it back to the original
-      // parent element and then clean-up/remove the temp element. 
+      // parent element and then clean-up/remove the temp element.
       var origParent = el.parentElement;
       var origSibling = el.nextSibling;
 
@@ -144,21 +144,21 @@ ready('.ra-mo-expandable-max-height', function(el) {
       hidEl.style.position = 'absolute';
       document.body.appendChild(hidEl);
       hidEl.appendChild(el);
-      
+
       heights = [el.clientHeight,el.scrollHeight];
-    
+
       if(origSibling) {
         origParent.insertBefore(el,origSibling);
       }
       else {
         origParent.appendChild(el);
       }
-      
+
       document.body.removeChild(hidEl);
     }
     return heights;
   }
-  
+
   var getPctShown = function() {
     var heights = getRealHeights() || [];
     if(!heights[1]) { return 100; }
@@ -166,19 +166,19 @@ ready('.ra-mo-expandable-max-height', function(el) {
     if(! pct) { return 100; }
     return pct < 500 ? pct/100 : Math.floor(pct/100);
   }
-  
+
   // Do nothing if nothing is hidden:
   if(getPctShown() == 100) {
     // if we already changed the max-height due to special class we need to set it back
     if(typeof resetMH != undefined) { el.style['max-height'] = resetMH; }
-    return; 
+    return;
   }
-  
+
   // This only works if there is a max-height:
   if(!hasMaxHeight()) { return; }
-  
+
   var origMH = el.style['max-height'];
-  
+
   var wrapEl = document.createElement('div');
   el.parentNode.insertBefore(wrapEl,el);
   wrapEl.appendChild(el);
@@ -186,10 +186,10 @@ ready('.ra-mo-expandable-max-height', function(el) {
   var toggleWrap = document.createElement('div');
   toggleWrap.style['padding-top']   = '5px';
   toggleWrap.style['text-align']    = 'center';
-  
+
   var toggle = document.createElement('a');
   toggle.style['color']         = '#0088cc';
-  
+
   toggleWrap.appendChild(toggle);
 
   var updateToggle = function() {
@@ -203,7 +203,7 @@ ready('.ra-mo-expandable-max-height', function(el) {
       toggle.innerHTML = pct + '% [ show more ]';
     }
   }
-  
+
   var toggleFn = function(e) {
     e.stopPropagation();
     if(toggle.raMoToggleExpanded) {
@@ -214,9 +214,9 @@ ready('.ra-mo-expandable-max-height', function(el) {
     }
     updateToggle();
   }
-  
+
   toggle.onclick = toggleFn;
-  
+
   updateToggle(); //init
 
   wrapEl.appendChild(toggleWrap);

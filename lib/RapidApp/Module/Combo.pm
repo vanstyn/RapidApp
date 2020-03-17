@@ -20,7 +20,7 @@ has 'allowSelectNone', is => 'ro', isa => 'Bool', default => 0;
 
 sub BUILD {
   my $self = shift;
-  
+
   $self->apply_extconfig(
     xtype            => 'appcombo2',
     typeAhead        => \0,

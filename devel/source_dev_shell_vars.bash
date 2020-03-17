@@ -21,7 +21,7 @@ fi;
 do_source_vars() {
   local dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
   local prl="print_dev_exports.pl"
-  
+
   if [ -e "$dir/$prl" ]; then
     local export_cmds;
     export_cmds=`perl $dir/$prl`;
@@ -40,7 +40,7 @@ do_source_vars() {
     fi;
   else
     echo "Error! $prl script not found! Did you move this script?";
-    # note: we're not calling exit here because we've been sourced 
+    # note: we're not calling exit here because we've been sourced
     # and this would cause the parent shell to exit
   fi;
 }

@@ -25,7 +25,7 @@ ok(  $Col->allow_view => "allow_view is true as expected");
 
 
 ok(
-  $Col = RapidApp::Module::DatStor::Column->new({ 
+  $Col = RapidApp::Module::DatStor::Column->new({
     name   => 'col',
     editor => { xtype => 'textfield' }
   }),
@@ -40,7 +40,7 @@ ok(  $Col->allow_view => "[2] allow_view is true as expected");
 
 
 ok(
-  $Col = RapidApp::Module::DatStor::Column->new({ 
+  $Col = RapidApp::Module::DatStor::Column->new({
     name      => 'col',
     editor    => { xtype => 'textfield' },
     no_column => 1
@@ -56,7 +56,7 @@ ok(! $Col->allow_view => "[3] allow_view is false as expected");
 
 
 ok(
-  $Col = RapidApp::Module::DatStor::Column->new({ 
+  $Col = RapidApp::Module::DatStor::Column->new({
     name      => 'col',
     editor    => { xtype => 'textfield' },
     no_column => 1,
@@ -74,7 +74,7 @@ ok(! $Col->allow_view => "[4] allow_view is false as expected");
 
 
 ok(
-  $Col = RapidApp::Module::DatStor::Column->new({ 
+  $Col = RapidApp::Module::DatStor::Column->new({
     name      => 'col',
     editor    => { xtype => 'textfield' },
     allow_edit => 0
@@ -90,7 +90,7 @@ ok(  $Col->allow_view => "[5] allow_view is true as expected");
 
 
 ok(
-  $Col = RapidApp::Module::DatStor::Column->new({ 
+  $Col = RapidApp::Module::DatStor::Column->new({
     name      => 'col',
     editor    => { xtype => 'textfield' },
     allow_edit => 0, allow_add => 1
@@ -107,7 +107,7 @@ ok(  $Col->allow_view => "[6] allow_view is true as expected");
 
 
 ok(
-  $Col = RapidApp::Module::DatStor::Column->new({ 
+  $Col = RapidApp::Module::DatStor::Column->new({
     name      => 'col',
     editor    => { xtype => 'textfield' },
     no_column => 1, allow_add => 1
@@ -124,7 +124,7 @@ ok(! $Col->allow_view => "[7] allow_view is false as expected");
 
 
 ok(
-  $Col = RapidApp::Module::DatStor::Column->new({ 
+  $Col = RapidApp::Module::DatStor::Column->new({
     name      => 'col',
     editor    => { xtype => 'textfield' },
     no_column => 1, allow_view => 1
@@ -140,7 +140,7 @@ ok(  $Col->allow_view => "[8] allow_view is true as expected");
 
 
 ok(
-  $Col = RapidApp::Module::DatStor::Column->new({ 
+  $Col = RapidApp::Module::DatStor::Column->new({
     name      => 'col',
     editor    => { xtype => 'textfield' },
     no_column => \1, allow_view => \0
@@ -156,7 +156,7 @@ ok(! $Col->allow_view => "[9] allow_view is false as expected");
 
 
 ok(
-  $Col = RapidApp::Module::DatStor::Column->new({ 
+  $Col = RapidApp::Module::DatStor::Column->new({
     name      => 'timeslot_id',
     editor    => { xtype => 'textfield' },
     no_column => \1, allow_view => \0, allow_edit => \0
@@ -173,9 +173,9 @@ ok(! $Col->allow_view => "[10] allow_view is false as expected");
 
 
 ok(
-  $Col = RapidApp::Module::DatStor::Column->new({ 
+  $Col = RapidApp::Module::DatStor::Column->new({
     width => 110, 	header => 'Col',
-    editor    => { xtype => 'textfield' }, 
+    editor    => { xtype => 'textfield' },
   }),
   "[11] Object construction success"
 );

@@ -66,12 +66,12 @@ use RapidApp::Util ':all';
 around 'update' => sub {
   my ($orig,$self,@args) = @_;
   $self->_set_extra_columns(@args);
-  
+
   # This is terrible, but there are situations in which the session handling logic
   # of the AuthCore + Session::Store::DBIC crazy straw will try to save a session
   # that is not in the database, but tells dbic that it is, and tries to update it,
   # which barfs. So, here are catching exceptions on update and trying to create
-  # as a new row instead. This situation seems to happen when attempting to 
+  # as a new row instead. This situation seems to happen when attempting to
   # authenticate during the course of another request, when there is no session but
   # the client browser has a session cookie. This is ugly but not all that unsafe,
   # since if update throws an exception, something is already terribly wrong
@@ -83,7 +83,7 @@ around 'update' => sub {
       { $self->get_columns }
     );
   };
-   
+
   return $self
 };
 
@@ -91,13 +91,13 @@ sub _set_extra_columns {
   my $self = shift;
   my $columns = shift;
 	$self->set_inflated_columns($columns) if $columns;
-  
+
   my $expires = $self->get_column('expires');
   $self->set_column( expires_ts => DateTime->from_epoch(
     epoch => $expires,
     time_zone => 'local'
   ) ) if ($expires);
-  
+
   my $data = $self->decoded_session_data;
   if($data) {
     my $user_id = try{$data->{__user}{id}};
@@ -115,22 +115,22 @@ sub decoded_session_data {
 sub encode_set_session_data {
   my $self = shift;
   my $data = shift;
-  
+
   die "encode_set_session_data(): first argument must be a HashRef"
     unless ($data && ref($data) eq 'HASH');
-    
+
   $self->session_data( MIME::Base64::encode(Storable::nfreeze($data)) ) && return $self
 }
 
 sub set_encoded_session_keys {
   my $self = shift;
   my $new = shift;
-  
+
   die "set_encoded_session_keys(): first argument must be a HashRef"
     unless ($new && ref($new) eq 'HASH');
-    
+
   my $data = $self->decoded_session_data or die "Failed to get current encoded session data";
-  
+
   $self->encode_set_session_data({ %$data, %$new }) && return $self
 }
 
@@ -141,7 +141,7 @@ sub set_expires {
   die "set_expires(): supplied value '$epoch' is not a valid unix epoch" unless (
     ($epoch =~ /^\d+$/) && $epoch >= 0 && $epoch < 2**31
   );
-  
+
   $self->set_encoded_session_keys({ __expires => $epoch });
   $self->expires($epoch);
   return $self
@@ -151,8 +151,8 @@ sub set_expires {
 __PACKAGE__->load_components('+RapidApp::DBIC::Component::TableSpec');
 __PACKAGE__->add_virtual_columns(
   expires_in => {
-    data_type => "integer", 
-    is_nullable => 1, 
+    data_type => "integer",
+    is_nullable => 1,
     sql => sub {
       # this is exactly the same method (with time()) how
       # Catalyst::Plugin::Session::Store::DBIC is checking
@@ -163,7 +163,7 @@ __PACKAGE__->add_virtual_columns(
 );
 __PACKAGE__->apply_TableSpec;
 
-__PACKAGE__->TableSpec_set_conf( 
+__PACKAGE__->TableSpec_set_conf(
   title => 'Session',
   title_multi => 'Sessions',
   iconCls => 'ra-icon-environment-network',
@@ -171,7 +171,7 @@ __PACKAGE__->TableSpec_set_conf(
   display_column => 'id',
   priority_rel_columns => 1,
   columns => {
-    id => { 
+    id => {
       width => 300,
       allow_add => \0, allow_edit => \0,
     },
@@ -184,8 +184,8 @@ __PACKAGE__->TableSpec_set_conf(
       width => 100, hidden => \1,
       allow_add => \0, allow_edit => \0,
     },
-    expires_ts => { 
-      allow_add => \0, allow_edit => \0, 
+    expires_ts => {
+      allow_add => \0, allow_edit => \0,
       width => 130
     },
     expires_in => {

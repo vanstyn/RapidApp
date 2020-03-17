@@ -23,7 +23,7 @@ RapidApp::Include
 
   # pulls in basic RapidApp parts
   use RapidApp::Include;
-  
+
   # pulls in basic RapidApp parts, plus useful perl utils,
   #  extjs generators, and sugar methods
   use RapidApp::Include qw(perlutil extjs sugar);

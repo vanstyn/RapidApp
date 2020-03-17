@@ -16,7 +16,7 @@ our @gridColParams= qw(
   no_summary allow_batchedit format align is_nullable documentation
 );
 our @attrs= ( @gridColParams, qw(
-  data_type required_fetch_columns read_raw_munger update_munger 
+  data_type required_fetch_columns read_raw_munger update_munger
   field_readonly field_readonly_config field_config no_fetch broad_data_type
   quick_search_exact_only enum_value_hash search_operator_strf
 ) );
@@ -59,14 +59,14 @@ eval 'sub apply_defaults {
 
 sub _set_render_fn {
 	my ($self,$new,$old) = @_;
-	
+
 	die 'render_fn is depricated, please use renderer instead.';
-	
+
 	return unless ($new);
-	
+
 	# renderer takes priority over render_fn
 	return if (defined $self->renderer);
-	
+
 	$self->xtype('templatecolumn');
 	$self->tpl('{[' . $new . '(values.' . $self->name . ',values)]}');
 }
@@ -74,10 +74,10 @@ sub _set_render_fn {
 sub _set_renderer {
 	my ($self,$new,$old) = @_;
 	return unless ($new);
-	
+
 	$self->xtype(undef);
 	$self->tpl(undef);
-	
+
 	return unless (defined $new and not blessed $new);
 	$self->{renderer}= jsfunc($new);
 }
@@ -85,10 +85,10 @@ sub _set_renderer {
 sub _set_menu_select_editor {
 	my ($self,$new,$old) = @_;
 	return unless ($new);
-	
+
 	my %val_to_disp = ();
 	my @value_list = ();
-	
+
 	foreach my $sel (uniq(@{$new->{selections}})) {
 		push @value_list, [$sel->{value},$sel->{text},$sel->{iconCls}];
 		if(defined $sel->{value} and defined $sel->{text}) {
@@ -96,32 +96,32 @@ sub _set_menu_select_editor {
 
 			$val_to_disp{$sel->{value}} = '<div class="with-icon ' . $sel->{iconCls} . '">' . $sel->{text} . '</div>'
 				if($sel->{iconCls});
-			
+
 			$val_to_disp{$sel->{value}} = '<img src="_ra-rel-mnt_/assets/rapidapp/misc/static/s.gif" class="ra-icon-centered-16x16 ' . $sel->{iconCls} . '">'
 				if($sel->{iconCls} and jstrue($new->{render_icon_only}));
 		};
 	}
-	
+
 	my $first_val;
 	$first_val = $value_list[0]->[0] if (defined $value_list[0]);
-	
+
 	my $mapjs = encode_json(\%val_to_disp);
-	
+
 	my $js = 'function(v){' .
 		'var val_map = ' . $mapjs . ';' .
 		'if(typeof val_map[v] !== "undefined") { return val_map[v]; }' .
 		'return v;' .
 	'}';
-	
+
 	$self->{renderer} = jsfunc($js,$self->{renderer});
-	
+
 	# If there is already a 'value' property set in editor save it to preserve it (see below):
 	my $orig_value = ref($self->{editor}) eq 'HASH' ? $self->{editor}->{value} : undef;
-	
+
   # Update: removed extra, not-needed check of 'allow_edit' param (fixes Github Issue #35)
 
   my $mode = $new->{mode} || 'combo';
-  
+
   if($mode eq 'combo') {
     $self->{editor} = {
       xtype => 'ra-icon-combo',
@@ -130,7 +130,7 @@ sub _set_menu_select_editor {
     };
   }
   elsif($mode eq 'menu') {
-  
+
     $self->{editor} = {
       xtype => 'menu-field',
       menuOnShow => \1,
@@ -139,16 +139,16 @@ sub _set_menu_select_editor {
       minHeight => 10,
       minWidth => 10
     };
-    
+
     $self->{editor}->{header} = $new->{header} || $self->header;
     delete $self->{editor}->{header} unless (
       defined $self->{editor}->{header} and
       $self->{editor}->{header} ne ''
     );
-  
+
   }
   elsif($mode eq 'cycle') {
-  
+
     $self->{editor} = {
       xtype => 'cycle-field',
       cycleOnShow => \1,
@@ -157,15 +157,15 @@ sub _set_menu_select_editor {
       minHeight => 10,
       minWidth => 10
     };
-  
+
   }
   else {
     die "menu_select_editor: Invalid mode '$mode' - must be 'combo', 'menu' or 'cycle'"
   }
-  
+
   # restore the original 'value' if it was already defined (see above)
   $self->{editor}->{value} = $orig_value if (defined $orig_value);
-  
+
   $self->{editor}->{width} = $new->{width} if ($new->{width});
 }
 
@@ -189,96 +189,96 @@ sub new {
 sub apply_attributes {
 	my $self = shift;
 	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-  
+
   # Ignore attribute names which start with underscore (_) -- backcompat fix for special
   # flag/keys added in 1.1000 for the "allow_*" refactor
   delete $new{$_} for (grep { $_ =~ /^\_/ } keys %new);
-	
+
 	foreach my $attr (@attrs) {
 		next unless (exists $new{$attr});
 		$self->$attr($new{$attr});
 		delete $new{$attr};
 	}
-	
+
 	#There should be nothing left over in %new:
 	if (scalar(keys %new) > 0) {
 		#die "invalid attributes (" . join(',',keys %new) . ") passed to apply_attributes";
 		#use Data::Dumper;
 		die  "invalid attributes (" . join(',',keys %new) . ") passed to apply_attributes :\n" . Dumper(\%new);
 	}
-  
+
   $self->_normalize_allow_add_edit
 }
 
 sub applyIf_attributes {
 	my $self = shift;
 	my %new = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-  
+
   # Ignore attribute names which start with underscore (_) -- backcompat fix for special
   # flag/keys added in 1.1000 for the "allow_*" refactor
   delete $new{$_} for (grep { $_ =~ /^\_/ } keys %new);
-	
+
 	foreach my $attr (@attrs) {
 		next unless (exists $new{$attr});
 		$self->$attr($new{$attr}) unless defined $self->{$attr}; # <-- only set attrs that aren't already set
 		delete $new{$attr};
 	}
-	
+
 	#There should be nothing left over in %new:
 	if (scalar(keys %new) > 0) {
 		#die "invalid attributes (" . join(',',keys %new) . ") passed to apply_attributes";
 		#use Data::Dumper;
 		die  "invalid attributes (" . join(',',keys %new) . ") passed to apply_attributes :\n" . Dumper(\%new);
 	}
-  
+
   $self->_normalize_allow_add_edit
 }
 
 ## -----
 ##
-## This just ensures allow_add/allow_edit/allow_view/no_column are always populated, with 
-## values which are already implied by the existing rules. This just makes it easier to 
+## This just ensures allow_add/allow_edit/allow_view/no_column are always populated, with
+## values which are already implied by the existing rules. This just makes it easier to
 ## check later, avoiding all the defined or not checks, etc
 ##
-sub _normalize_allow_add_edit { 
+sub _normalize_allow_add_edit {
   my $self = shift;
-  
+
   $self->no_column(${$self->{no_column}}) if (ref $self->{no_column}); # consistent 0/1
   $self->no_column(0) unless ($self->no_column);
-  
+
   $self->_normalize_allow_edit;
   $self->allow_edit(${$self->{allow_edit}}) if (ref $self->{allow_edit});
 
   $self->_normalize_allow_add;
   $self->allow_add(${$self->{allow_add}})   if (ref $self->{allow_add});
-  
+
   $self->_normalize_allow_view;
   $self->allow_view(${$self->{allow_view}}) if (ref $self->{allow_view});
-  
+
 }
 
 sub _normalize_allow_edit {
   my $self = shift;
-  
+
   # if its already set - and turned off - we're done:
   return if (exists $self->{allow_edit} && !jstrue($self->{allow_edit}));
-  
+
   # remember if allow_edit was *not* already set, because this effects the default for allow_add
   $self->{_allow_edit_init_unset} = 1 unless (exists $self->{allow_edit});
-  
-  # if its true (or not yet set, which implies true) test for any 
-  # conditions which prevent it from being true 
+
+  # if its true (or not yet set, which implies true) test for any
+  # conditions which prevent it from being true
   my $no_edit = (
        ! $self->{editor}
     || ( $self->no_column && $self->{_allow_edit_init_unset} )
   );
-  
+
   $self->allow_edit( $no_edit ? 0 : 1 )
 }
 
 sub _normalize_allow_add {
   my $self = shift;
-  
+
   # if its already set - and turned off - we're done:
   return if (exists $self->{allow_add} && !jstrue($self->{allow_add}));
 
@@ -286,39 +286,39 @@ sub _normalize_allow_add {
 
   # Go with allow_edit when it's explicitly false and we weren't set
   return $self->allow_add(0) if(
-       ! exists $self->{allow_add} 
+       ! exists $self->{allow_add}
     && ! $self->allow_edit
     && ! $self->{_allow_edit_init_unset}
-  ); 
-  
-  # if its true (or not yet set, which implies true) test for any 
-  # conditions which prevent it from being true 
+  );
+
+  # if its true (or not yet set, which implies true) test for any
+  # conditions which prevent it from being true
   my $no_add = (
        ! $self->{editor}
     || ( $self->no_column && ! $self->allow_edit && $self->{_allow_add_init_unset} )
   );
-  
+
   $self->allow_add( $no_add ? 0 : 1 )
 }
 
 sub _normalize_allow_view {
   my $self = shift;
-  
+
   # if its already set - and turned off - we're done:
   return if (exists $self->{allow_view} && !jstrue($self->{allow_view}));
-  
+
   # remember if allow_edit was *not* already set, because this effects the default for allow_add
   $self->{_allow_view_init_unset} = 1 unless (exists $self->{allow_view});
-  
+
   # If allow_edit was expressly set to false:
   #my $deny_edit = (! $self->allow_edit && ! $self->{_allow_edit_init_unset});
-  
-  # if its true (or not yet set, which implies true) test for any 
-  # conditions which prevent it from being true 
+
+  # if its true (or not yet set, which implies true) test for any
+  # conditions which prevent it from being true
   my $no_view = (
-     $self->no_column && $self->{_allow_view_init_unset} 
+     $self->no_column && $self->{_allow_view_init_unset}
   );
-  
+
   $self->allow_view( $no_view ? 0 : 1 )
 }
 ##
@@ -380,19 +380,19 @@ sub delete_field_config_param {
 
 sub get_field_config {
 	my $self = shift;
-	
+
 	my $config = $self->field_config;
 	$config = $self->editor if ($self->editor);
-	
-	my $cnf = { 
+
+	my $cnf = {
 		name		=> $self->name,
 		%$config
 	};
-	
+
 	$cnf = { %$cnf, %{$self->field_readonly_config} } if ($self->field_readonly);
-	
+
 	$self->field_cmp_config($cnf);
-	
+
 	return $cnf;
 }
 

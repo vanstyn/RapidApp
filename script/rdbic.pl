@@ -12,7 +12,7 @@ use Plack::App::RapidApp::rDbic;
 
 use RapidApp::Util qw(:all);
 
-# Special case - move cuddled '-I' arg from post to last so 
+# Special case - move cuddled '-I' arg from post to last so
 # that dbi arg logic can still work (as the second arg)
 push @ARGV, (shift @ARGV) if($ARGV[0] && $ARGV[0] =~ /^\-I\S+/);
 
@@ -29,8 +29,8 @@ if($ARGV[0] && ! ($ARGV[0] =~ /^\-/) ) {
   }
 }
 
-sub _cleanup_exit { 
-  exit 
+sub _cleanup_exit {
+  exit
 }
 END { &_cleanup_exit };
 $SIG{$_} = \&_cleanup_exit for qw(INT KILL TERM HUP QUIT ABRT);
@@ -71,15 +71,15 @@ GetOptions(
   'run-webapi+'     => \$run_webapi,
   'I=s@'            => $includes,
   'metakeys=s'      => \$metakeys,
-  
+
   'limit_tables_re|limit-tables-re=s'       => \$limit_tables_re,
   'limit_schemas_re|limit-schemas-re=s'     => \$limit_schemas_re,
   'exclude_tables_re|exclude-tables-re=s'   => \$exclude_tables_re,
   'exclude_schemas_re|exclude-schemas-re=s' => \$exclude_schemas_re,
-  
+
   'loader-option=s@'  => \$loader_options,
   'connect-option=s@' => \$connect_options
-  
+
 );
 
 pod2usage(1) if ($help || !$dsn);
@@ -101,7 +101,7 @@ if (@$includes) {
     total_counts_off => $total_counts_off,
     isolate_app_tmp  => 1,
     metakeys         => $metakeys,
-    
+
     limit_tables_re    => $limit_tables_re,
     limit_schemas_re   => $limit_schemas_re,
     exclude_tables_re  => $exclude_tables_re,
@@ -109,7 +109,7 @@ if (@$includes) {
     loader_options     => $loader_options,
     connect_options    => $connect_options
   };
-  
+
   $cnf->{schema_class} = $schema_class if ($schema_class);
 
   my $App = Plack::App::RapidApp::rDbic->new( $cnf );
@@ -139,21 +139,21 @@ sub _webapi_psgi {
   Module::Runtime::require_module('Alien::Web::HalBrowser');
 
   my $hal_dir = Alien::Web::HalBrowser->dir;
-  
+
   my $model = $App->model_class;
   Module::Runtime::require_module($model);
-  
+
   my $connect_info = $model->config->{connect_info};
   my $schema_class = $model->config->{schema_class};
-  
+
   Module::Runtime::require_module($schema_class);
-  
+
   my $schema = $schema_class->connect(
     $connect_info->{dsn},
     $connect_info->{user},
     $connect_info->{password}
   );
-  
+
   my $app = WebAPI::DBIC::WebApp->new({
     schema         => $schema,
     writable       => $crud_profile eq 'read-only' ? 0 : 1,
@@ -161,7 +161,7 @@ sub _webapi_psgi {
   })->to_psgi_app;
 
   my $app_prefix = "/webapi-dbic";
-  
+
   my $plack = builder {
     enable "SimpleLogger";  # show on STDERR
 
@@ -173,7 +173,7 @@ sub _webapi_psgi {
     # root redirect for discovery - redirect to API
     mount "/" => sub { [ 302, [ Location => "$app_prefix/" ], [ ] ] };
   };
-  
+
   return $plack
 }
 
@@ -209,7 +209,7 @@ rdbic.pl - Instant CRUD webapp for your database using RapidApp/Catalyst/DBIx::C
 
    --limit-tables-re     Regex limits included table names (see also 'exclude' loader-option)
    --limit-schemas-re    Regex limits RDBMS 'schema' names (see also 'db_schema' loader-option)
-   --exclude-tables-re   Regex string excludes table names 
+   --exclude-tables-re   Regex string excludes table names
    --exclude-schemas-re  Regex string excludes RDBMS 'schema' names
    --total-counts-off    Initialize grids with total counts off (useful for very large tables)
 
@@ -219,13 +219,13 @@ rdbic.pl - Instant CRUD webapp for your database using RapidApp/Catalyst/DBIx::C
         may add multiple paths by using this option multiple times.
 
  CRUD Profiles:
-   * editable         Full CRUD is enabled with 'persist_immediately' turned off globally which 
+   * editable         Full CRUD is enabled with 'persist_immediately' turned off globally which
                       means the user has to click "Save" to apply queued-up changes (DEFAULT)
 
    * edit-instant     Full CRUD is enabled with 'persist_immediately' turned on. Changes are
                       applied as soon as the cell is blurred after making a change
 
-   * edit-gridadd     Same as 'editable' except new rows are added directly to the grid 
+   * edit-gridadd     Same as 'editable' except new rows are added directly to the grid
                       instead of displaying an add record form
 
    * ed-inst-gridadd  Same as 'edit-instant' except new rows are added directly to the grid;
@@ -254,50 +254,50 @@ rdbic.pl - Instant CRUD webapp for your database using RapidApp/Catalyst/DBIx::C
 
 =head1 DESCRIPTION
 
-C<rdbic.pl> is a handy utility which fires up a fully-functional RapidDbic/RapidApp application 
-for a given database/DSN on-the-fly with a single shell command. This avoids having to bootstrap 
-a real application with a name, config, directory, etc with L<rapidapp.pl> or L<catalyst>. 
+C<rdbic.pl> is a handy utility which fires up a fully-functional RapidDbic/RapidApp application
+for a given database/DSN on-the-fly with a single shell command. This avoids having to bootstrap
+a real application with a name, config, directory, etc with L<rapidapp.pl> or L<catalyst>.
 All that needs to be supplied to C<rdbic.pl> is a DSN, although additional options are also available.
 
-C<rdbic.pl> can be used to replace tools like Navicat or PhpMyAdmin for a general-purpose database 
+C<rdbic.pl> can be used to replace tools like Navicat or PhpMyAdmin for a general-purpose database
 client.
 
 Internally, C<rdbic.pl> simply bootstraps a new application using L<RapidApp::Helper> in the same
-manner as L<rapidapp.pl>, but the new app is generated in a temporary directory and immediately 
+manner as L<rapidapp.pl>, but the new app is generated in a temporary directory and immediately
 launched using the standard L<Catalyst> test server, all in one swoop.
 
-The generated/temporary files are automatically cleaned up on exit unless the C<--no-cleanup> 
+The generated/temporary files are automatically cleaned up on exit unless the C<--no-cleanup>
 option is supplied.
 
-You can also specify the location of the temporary directory with the C<--tmpdir> option 
-(defaults to C</tmp> or whatever is returned by File::Spec->tmpdir). If you combine with 
-C<--no-cleanup> you can easily get the full working Catalyst/RapidApp app which was generated, for 
-later use. For instance, these options will create and leave the generated app files within the 
+You can also specify the location of the temporary directory with the C<--tmpdir> option
+(defaults to C</tmp> or whatever is returned by File::Spec->tmpdir). If you combine with
+C<--no-cleanup> you can easily get the full working Catalyst/RapidApp app which was generated, for
+later use. For instance, these options will create and leave the generated app files within the
 current directory:
 
  --tmpdir . --no-cleanup
 
 A shorthand first argument syntax is also supported. If the first argument looks like a dsn (starts
 with 'dbi:') then it will be used as the dsn without having to supply C<--dsn> first. Additionally,
-if the first argument is a path to an existing regular file it is assumed to be an SQLite database 
+if the first argument is a path to an existing regular file it is assumed to be an SQLite database
 file, and the appropriate dsn (i.e. "dbi:SQLite:$ARGV[0]") is used automatically.
 
-C<rdbic.pl> is a wrapper around L<Plack::App::RapidApp::rDbic> which can be used 
-directly in Plack-based setups and provides additional options and functionality not exposed in 
-this script. 
+C<rdbic.pl> is a wrapper around L<Plack::App::RapidApp::rDbic> which can be used
+directly in Plack-based setups and provides additional options and functionality not exposed in
+this script.
 
 See L<Plack::App::RapidApp::rDbic> for more information.
 
-The C<rdbic.pl> script and L<rDbic|Plack::App::RapidApp::rDbic> Plack App were also featured in the 
+The C<rdbic.pl> script and L<rDbic|Plack::App::RapidApp::rDbic> Plack App were also featured in the
 2014 Catalyst Advent Calendar:
 
 =over
 
-=item * 
+=item *
 
 L<Day 16 - "Instant database admin tool with RapidApp and rdbic.pl"|http://www.catalystframework.org/calendar/2014/16>
 
-=item * 
+=item *
 
 L<Day 17 - "The Plack::App::RapidApp::rDbic interface to RapidApp"|http://www.catalystframework.org/calendar/2014/17>
 
@@ -308,9 +308,9 @@ L<Day 17 - "The Plack::App::RapidApp::rDbic interface to RapidApp"|http://www.ca
 L<RapidApp>, L<rapidapp.pl>, L<Plack::App::RapidApp::rDbic>
 
 =head1 SUPPORT
- 
+
 IRC:
- 
+
     Join #rapidapp on irc.perl.org.
 
 =head1 AUTHOR

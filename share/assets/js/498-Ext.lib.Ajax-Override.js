@@ -2,12 +2,12 @@
  *    *** Custom Ext.lib.Ajax library for RapidApp ***
  *
  * Overrides ext-adapter behavior for allowing queuing of AJAX requests.
- * 
+ *
  * This code was adapted from here:
  *  http://www.sencha.com/forum/showthread.php?19171-2.0rc1-Queue-for-concurrent-Ajax-calls
  *
  * But has been reworked and had its logic updated to match the version of Ext.lib.Ajax found
- * in Ext JS 3.4 (since the above was a modified version from 3.0). Additionally, request 
+ * in Ext JS 3.4 (since the above was a modified version from 3.0). Additionally, request
  * header functionality which was broken as of the original version from the above thread has
  * been fixed in this file
  *
@@ -287,7 +287,7 @@ Ext.lib.Ajax = function() {
 
         if (o) {
             o.conn.open(method, uri, true);
-            
+
             // ------
             // New: we have to manually apply this in order for the headers to get carried
             // from/through the queue process. This is needed because of the ugly way in
@@ -307,7 +307,7 @@ Ext.lib.Ajax = function() {
             if(postData && pub.useDefaultHeader && (!pub.headers || !pub.headers[CONTENTTYPE])){
                 initHeader(CONTENTTYPE, pub.defaultPostHeader);
             }
-            
+
             if (pub.defaultHeaders || pub.headers) {
                 setHeader(o);
             }
@@ -372,18 +372,18 @@ Ext.lib.Ajax = function() {
         },
 
         serializeForm : function(form) {
-            var fElements = form.elements || (document.forms[form] || Ext.getDom(form)).elements, 
-                hasSubmit = false, 
-                encoder = encodeURIComponent, 
-                name, 
-                data = '', 
-                type, 
+            var fElements = form.elements || (document.forms[form] || Ext.getDom(form)).elements,
+                hasSubmit = false,
+                encoder = encodeURIComponent,
+                name,
+                data = '',
+                type,
                 hasValue;
-    
+
             Ext.each(fElements, function(element){
                 name = element.name;
                 type = element.type;
-        
+
                 if (!element.disabled && name) {
                     if (/select-(one|multiple)/i.test(type)) {
                         Ext.each(element.options, function(opt){
@@ -460,4 +460,4 @@ Ext.lib.Ajax = function() {
         }
     };
     return pub;
-}();  
+}();

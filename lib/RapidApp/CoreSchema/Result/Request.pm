@@ -43,7 +43,7 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 1, size => 512 },
   "serialized_request",
   { data_type => "text", is_nullable => 1 },
-    
+
 );
 __PACKAGE__->set_primary_key("id");
 
@@ -65,8 +65,8 @@ __PACKAGE__->load_components('+RapidApp::DBIC::Component::TableSpec');
 ## This is MySQL-specific
 #__PACKAGE__->add_virtual_columns(
 #	display => {
-#		data_type => "varchar", 
-#		is_nullable => 0, 
+#		data_type => "varchar",
+#		is_nullable => 0,
 #		size => 255,
 #		sql => 'SELECT CONCAT(self.id,' .
 #			'CONCAT(" - ",' .
@@ -82,7 +82,7 @@ __PACKAGE__->load_components('+RapidApp::DBIC::Component::TableSpec');
 
 __PACKAGE__->apply_TableSpec;
 
-__PACKAGE__->TableSpec_set_conf( 
+__PACKAGE__->TableSpec_set_conf(
 	title => 'HTTP Request',
 	title_multi => 'HTTP Requests',
 	#iconCls => 'ra-icon-world-go',

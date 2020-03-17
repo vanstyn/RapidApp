@@ -30,10 +30,10 @@ Ext.override(Ext.menu.Menu, {
         this.focus();
         this.fireEvent("show", this);
     },
-	 
+
 	// Added 2012-04-02 by HV: further turn off the default tiny menu scroller functions:
 	enableScrolling: false
-	 
+
 });
 // --------
 
@@ -91,7 +91,7 @@ Ext.override(Ext.BoxComponent, {
 Ext.override(Ext.Container, {
 	onRender: function() {
 		Ext.Container.superclass.onRender.apply(this, arguments);
-		
+
 		if (this.onRender_eval) { eval(this.onRender_eval); }
 
 		var thisC = this;
@@ -381,9 +381,9 @@ Ext.override(Ext.form.Field, {
           var range = el.createTextRange();
           range.move("character", pos);
           range.select();
-       } else if(typeof el.selectionStart == "number" ) { 
-          el.focus(); 
-          el.setSelectionRange(pos, pos); 
+       } else if(typeof el.selectionStart == "number" ) {
+          el.focus();
+          el.setSelectionRange(pos, pos);
        } else {
          //alert('Method not supported');
          return;
@@ -403,7 +403,7 @@ Ext.override(Ext.form.Field, {
        }
        return ii;
     }
-   
+
 });
 
 
@@ -411,11 +411,11 @@ Ext.override(Ext.form.Field, {
 var orig_Window_initComponent = Ext.Window.prototype.initComponent;
 Ext.override(Ext.Window, {
   initComponent: function() {
-    
+
     // More flexible way to supply renderTo for a window to contrain
     if(this.smartRenderTo) {
       var El;
-      
+
       // GitHub Issue #6
       // New: the main purpose of this feature is to facilitate containing pop-up
       // windows to their local tab, instead of the whole browser. Places out in the
@@ -425,8 +425,8 @@ Ext.override(Ext.Window, {
       // great for the typical case which is a module living directly within a tab,
       // however, for other cases where a module is nested inline, ExtJS seems to
       // have difficulty correctly masking the content and constraining the window
-      // to the parent. For this reason, we're now bubbling up to find the first 
-      // Tab (i.e. within a TabPanel) and constraining to it. This ensures more 
+      // to the parent. For this reason, we're now bubbling up to find the first
+      // Tab (i.e. within a TabPanel) and constraining to it. This ensures more
       // reliable behavior, and still fully accomplishes the goal of #6
       if(Ext.isFunction(this.smartRenderTo.bubble)) {
         this.smartRenderTo.bubble(function(cmp) {
@@ -436,19 +436,19 @@ Ext.override(Ext.Window, {
           }
         },this);
       }
-      
+
       // Still fall-back - the above bubble only happens when the value supplied in smartRenderTo
       // is a component; it can still be an element (like the built-in 'renderTo')
-      El = El || (Ext.isFunction(this.smartRenderTo.getEl) 
-        ? this.smartRenderTo.getEl() 
+      El = El || (Ext.isFunction(this.smartRenderTo.getEl)
+        ? this.smartRenderTo.getEl()
         : this.smartRenderTo);
-      
+
       // ExtJS is full of CSS style bugs when trying to nest things within grid elements. It
       // breaks scrolling, changes borders, etc, because of improperly overly-broad rules.
       // So if this is a grid, jump up one element higher to escape this CSS space
       //  (See GitHub Issue #6 for more info)
       if(El.hasClass('x-grid-panel')) { El = El.parent(); }
-      
+
       // Special handling -- do not constrain/renderTo at all if we're already nested
       // in an existing window (i.e. fall-back to full-browser. This was added to handle
       // the case (specific to RapidApp) of add-and-select a related row in which the
@@ -489,7 +489,7 @@ Ext.override(Ext.Window, {
     // For now, only handle the case of supplied/set height & width values:
     if(Ext.isNumber(this.height)) { this.height = this.height < maxH ? this.height : maxH; }
     if(Ext.isNumber(this.width))  { this.width  = this.width  < maxW ? this.width  : maxW; }
-    
+
     return orig_Window_initComponent.call(this);
   }
 });
@@ -497,7 +497,7 @@ Ext.override(Ext.Window, {
 
 var orig_Date_parseDate = Date.parseDate;
 Date.parseDate = function(input, format, strict) {
-  // New: handle the case of input formats like 0000-00-00T00:00:00 that 
+  // New: handle the case of input formats like 0000-00-00T00:00:00 that
   // can't natively parse -- these come from SQLite date/datetime cols
   if(Ext.isString(input) && input.length == 19 && input.search('T') == 10) {
     input = input.replace('T',' ');
@@ -510,7 +510,7 @@ var orig_DateField_initComponent = Ext.form.DateField.prototype.initComponent;
 var orig_DateField_onTriggerClick = Ext.form.DateField.prototype.onTriggerClick;
 Ext.override(Ext.form.DateField, {
   initComponent: function() {
-  
+
     // Logic based on AppCombo2 -- just make click trigger/expand the selector,
     // even in edit mode. Its an unfeature to make the user click on the trigger
     // control all the way on the right, which they might not even notice
@@ -541,7 +541,7 @@ Ext.override(Ext.form.DateField, {
             // If we're in a form, we want to start the toggle state on, so that the
             // first click will will trigger instead of the second. The reason is that
             // forms do not trigger the toggle automatically, while other contexts (i.e.
-            // AppDV and edit grid) do. So, we have to start with the toggle in the 
+            // AppDV and edit grid) do. So, we have to start with the toggle in the
             // reverse position for consistent/nice behavior. Note that this difference
             // is already handled in RapidApp custom fields like AppCombo. We need to
             // handle it separately here because we're modifying an existing field class.
@@ -567,8 +567,8 @@ Ext.override(Ext.form.DateField, {
   },
   onMenuHide: function(){
     // This focus call comes from ExtJS core and seems to be a bug -- why would we want to
-    // focus the field when we hide the menu? This is at best not very helpful, and at worst 
-    // harmful if for example the reason the menu hides is because the user clicked on a 
+    // focus the field when we hide the menu? This is at best not very helpful, and at worst
+    // harmful if for example the reason the menu hides is because the user clicked on a
     // different field; this steals the focus back. If the user wants to manually type after
     // starting with the menu, they can click to focus the field themselves (which already
     // hides the menu -- if the field doesn't have focus, it probably means the user doesn't
@@ -619,8 +619,8 @@ Ext.override(Ext.grid.GridView, {
     // ** copy/paste of the entire orioginal doRender() from Ext.grid.GridView (3.4.0) **
     // While having to resort to doing this is unfortunate,there is just no other way
     // to extend and move forward with a more sophisticated model for column rendering.
-    // Because of the way the code is structured, there is no cleaner place to hook. 
-    // this is a copy/paste of the original function, changing only the line which 
+    // Because of the way the code is structured, there is no cleaner place to hook.
+    // this is a copy/paste of the original function, changing only the line which
     // calls the renderer from the column model/object
     doRender : function(columns, records, store, startRow, colCount, stripe) {
         var templates = this.templates,
@@ -648,7 +648,7 @@ Ext.override(Ext.grid.GridView, {
             //build up each column's HTML
             for (i = 0; i < colCount; i++) {
                 column = columns[i];
-                
+
                 meta.id    = column.id;
                 meta.css   = i === 0 ? 'x-grid3-cell-first ' : (i == last ? 'x-grid3-cell-last ' : '');
                 meta.attr  = meta.cellAttr = '';

@@ -2,7 +2,7 @@ package RapidApp::Util::Hash::Merge;
 
 # --- 2018-08-06 by HV ---
 # This is a copy of Hash::Merge v2.00, since later versions do not behave as expected.
-# This is a temporary measure. If at some point I (or someone) has time to figure out 
+# This is a temporary measure. If at some point I (or someone) has time to figure out
 # what to do to get the real Hash::Merge to play nicely, I'd be happy to unfactor this.
 # In the meantime, its too important for this stuff to work properly.
 # -- See https://github.com/vanstyn/RapidApp/issues/177 and possibly #155
@@ -329,15 +329,15 @@ RappidApp::Util::Hash::Merge - Merges arbitrarily deep hashes into a single hash
 =head1 SYNOPSIS
 
     use RappidApp::Util:Hash::Merge qw( merge );
-    my %a = ( 
+    my %a = (
 		'foo'    => 1,
 	    'bar'    => [ qw( a b e ) ],
 	    'querty' => { 'bob' => 'alice' },
 	);
-    my %b = ( 
-		'foo'     => 2, 
+    my %b = (
+		'foo'     => 2,
 		'bar'    => [ qw(c d) ],
-		'querty' => { 'ted' => 'margeret' }, 
+		'querty' => { 'ted' => 'margeret' },
 	);
 
     my %c = %{ merge( \%a, \%b ) };
@@ -356,22 +356,22 @@ RappidApp::Util::Hash::Merge - Merges arbitrarily deep hashes into a single hash
 			'ARRAY => {
 				'SCALAR' => sub { $_[1] },
 				'ARRAY'  => sub { [ @{$_[0]}, @{$_[1]} ] },
-				'HASH'   => sub { $_[1] }, 
+				'HASH'   => sub { $_[1] },
 			},
 			'HASH' => {
 				'SCALAR' => sub { $_[1] },
 				'ARRAY'  => sub { [ values %{$_[0]}, @{$_[1]} ] },
-				'HASH'   => sub { RappidApp::Util:Hash::Merge::_merge_hashes( $_[0], $_[1] ) }, 
+				'HASH'   => sub { RappidApp::Util:Hash::Merge::_merge_hashes( $_[0], $_[1] ) },
 			},
-		}, 
-		'My Behavior', 
+		},
+		'My Behavior',
 	);
-	
+
 	# Also there is OO interface.
-	
+
 	my $merge = RappidApp::Util:Hash::Merge->new( 'LEFT_PRECEDENT' );
 	my %c = %{ $merge->merge( \%a, \%b ) };
-	
+
 	# All behavioral changes (e.g. $merge->set_behavior(...)), called on an object remain specific to that object
 	# The legacy "Global Setting" behavior is respected only when new called as a non-OO function.
 
@@ -395,7 +395,7 @@ See https://github.com/vanstyn/RapidApp/issues/177 for why this copy was created
 
 Copyright (c) 2001,2002 Michael K. Neylon. All rights reserved.
 
-This library is free software.  You can redistribute it and/or modify it 
+This library is free software.  You can redistribute it and/or modify it
 under the same terms as Perl itself.
 
 =cut

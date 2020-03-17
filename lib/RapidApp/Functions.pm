@@ -34,19 +34,19 @@ sub scream {
 sub scream_color {
 	my $color = shift;
   no warnings 'uninitialized';
-  
+
   my $maxdepth = $Data::Dumper::Maxdepth || 4;
   local $Data::Dumper::Maxdepth = $maxdepth;
-  
+
 	local $_ = caller_data(3) unless (
 		$_ eq 'no_caller_data' or (
 			ref($_) eq 'ARRAY' and
 			scalar(@$_) == 3 and
-			ref($_->[0]) eq 'HASH' and 
+			ref($_->[0]) eq 'HASH' and
 			defined $_->[0]->{package}
 		)
 	);
-	
+
 	my $data = $_[0];
 	$data = \@_ if (scalar(@_) > 1);
 	$data = Dumper($data) if (ref $data);
@@ -55,9 +55,9 @@ sub scream_color {
 	my $pre = '';
 	$pre = BOLD . ($_->[2]->{subroutine} ? $_->[2]->{subroutine} . '  ' : '') .
 		'[line ' . $_->[1]->{line} . ']: ' . CLEAR . "\n" unless ($_ eq 'no_caller_data');
-	
+
 	print STDERR $pre . $color . $data . CLEAR . "\n";
-  
+
   return @_;
 }
 
@@ -77,7 +77,7 @@ sub get_mixed_hash_args {
 	my @args = @_;
 	return $args[0] if (ref($args[0]) eq 'HASH');
 	@args = @{ $args[0] } if (ref($args[0]) eq 'ARRAY');
-	
+
 	my $hashref = {};
 	my $last;
 	foreach my $item (@args) {
@@ -99,7 +99,7 @@ sub get_mixed_hash_args_ordered {
 	my @args = @_;
 	return $args[0] if (ref($args[0]) eq 'HASH');
 	@args = @{ $args[0] } if (ref($args[0]) eq 'ARRAY');
-	
+
 	my $hashref = {};
 	my @list = ();
 	my $last;
@@ -138,7 +138,7 @@ sub rapidapp_add_global_init_coderef {
 # with named properties:
 sub caller_data {
 	my $depth = shift || 1;
-	
+
 	my @list = ();
 	for(my $i = 0; $i < $depth; $i++) {
 		my $h = {};
@@ -146,7 +146,7 @@ sub caller_data {
 			$h->{wantarray}, $h->{evaltext}, $h->{is_require}, $h->{hints}, $h->{bitmask}) = caller($i);
 		push @list,$h if($h->{package});
 	}
-	
+
 	return \@list;
 }
 
@@ -154,14 +154,14 @@ sub caller_data_brief {
 	my $depth = shift || 1;
 	my $list = caller_data($depth + 1);
 	my $regex = shift;
-	
+
 	shift @$list;
 	shift @$list;
-	
+
 	my @inc_parms = qw(subroutine line filename);
-	
+
 	my %inc = map { $_ => 1 } @inc_parms;
-	
+
 	my @new = ();
 	my $seq = 0;
 	foreach my $item (@$list) {
@@ -173,7 +173,7 @@ sub caller_data_brief {
 		$seq = 0;
 		push @new, { map { $_ => $item->{$_} } grep { $inc{$_} } keys %$item };
 	}
-	
+
 	return \@new;
 }
 
@@ -216,14 +216,14 @@ sub disp {
 		my $cust = $_{code}->(@_);
 		return $cust if (defined $cust);
 	}
-	
+
 	return join(',',map {disp($_)} @_) if(@_>1);
 	my $val = shift;
 	return 'undef' unless (defined $val);
 	if(ref $val) {
 		return '[' . disp(@$val) . ']' if (ref($val) eq 'ARRAY');
 		return '\\' . disp($$val) if (ref($val) eq 'SCALAR');
-		return '{ ' . join(',',map { $_ . ' => ' . disp($val->{$_}) } keys %$val) . ' }' if (ref($val) eq 'HASH'); 
+		return '{ ' . join(',',map { $_ . ' => ' . disp($val->{$_}) } keys %$val) . ' }' if (ref($val) eq 'HASH');
 		return "$val" #<-- generic fall-back for other references
 	}
 	return "'" . $val . "'";
@@ -233,35 +233,35 @@ sub disp {
 sub print_trunc($$) {
 	my $max_length = shift;
 	my $str = shift;
-	
+
 	die "Invalid max length '$max_length'" unless (
 		defined $max_length &&
 		$max_length =~ /^\d+$/ &&
 		$max_length > 0
 	);
-	
+
 	return 'undef' unless (defined $str);
 	if (ref $str) {
 		$str = disp($str);
 		$str =~ s/^\'//;
 		$str =~ s/\'$//;
 	}
-	
+
 	# escape single quotes:
 	$str =~ s/'/\\'/g;
-	
+
 	# convert tabs:
 	$str =~ s/\t/   /g;
-	
+
 	my $length = length $str;
 	return "'" . $str . "'" if ($length <= $max_length);
-	return "'" . substr($str,0,$max_length) . "'...<$length" . " bytes> "; 
+	return "'" . substr($str,0,$max_length) . "'...<$length" . " bytes> ";
 }
 
 our $debug_arounds_set = {};
 our $debug_around_nest_level = 0;
 our $debug_around_last_nest_level = 0;
-our $debug_around_stats = {}; 
+our $debug_around_stats = {};
 our $debug_around_nest_elapse = 0;
 
 sub debug_around($@) {
@@ -269,38 +269,38 @@ sub debug_around($@) {
 	my $method = shift;
 	my @methods = ( $method );
 	@methods = @$method if (ref($method) eq 'ARRAY');
-	
+
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-	
+
 	%opt = (
 		pkg			=> $pkg,
 		filename		=> $filename,
 		line			=> $line,
 		%opt
 	);
-	
+
 	$pkg = $opt{pkg};
-	
+
 	foreach my $method (@methods) {
-	
+
 		my $package = $pkg;
 		my @namespace = split(/::/,$method);
 		if(scalar @namespace > 1) {
 			$method = pop @namespace;
 			$package = join('::',@namespace);
 		}
-	
+
 		next if ($debug_arounds_set->{$package . '->' . $method}++); #<-- if its already set
-		
+
 		eval "require $package;";
 		my $around = func_debug_around($method, %opt, pkg => $package);
-		
+
 		# It's a Moose class or otherwise already has an 'around' class method:
 		if($package->can('around')) {
 			$package->can('around')->($method => $around);
 			next;
 		}
-		
+
 		# The class doesn't have an around method, so we'll setup manually with Class::MOP:
 		my $meta = Class::MOP::Class->initialize($package);
 		$meta->add_around_method_modifier($method => $around)
@@ -312,7 +312,7 @@ sub debug_around($@) {
 sub func_debug_around {
 	my $name = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-	
+
 	%opt = (
 		track_stats		=> 1,
 		time			=> 1,
@@ -332,26 +332,26 @@ sub func_debug_around {
 		return_ignore	=> sub { 0 },# <-- no debug output prited when this returns true
 		%opt
 	);
-	
+
 	# around wrapper in %opt to allow the user to pass a different one to use:
-	$opt{around} ||= sub { 
+	$opt{around} ||= sub {
 		my $orig = shift;
 		my $self = shift;
 		print STDERR "\n" if ($opt{newline});
 		return $self->$orig(@_);
 	};
-	
+
 	$opt{verbose_in} = 1 if ($opt{verbose} and not defined $opt{verbose_in});
 	$opt{verbose_out} = 1 if ($opt{verbose} and not defined $opt{verbose_out});
-	
+
 	$opt{dump_func} = sub {
 		my $verbose = shift;
 		return UNDERLINE . 'undef' . CLEAR unless (@_ > 0 and defined $_[0]);
-		
+
 		# if list_out is false, return the number of items in the return, underlined
 		return $opt{list_out} ? join(',',map { ref $_ ? "$_" : "'$_'" } @_) : UNDERLINE . @_ . CLEAR
 			unless ($verbose);
-			
+
 		local $Data::Dumper::Maxdepth = $opt{dump_maxdepth};
 		return Dumper(@_) unless ($opt{use_json});
 		#return RapidApp::JSON::MixedEncoder->new->allow_blessed->convert_blessed->allow_nonref->encode(\@_);
@@ -362,27 +362,27 @@ sub func_debug_around {
 		my $orig = shift;
 		my $self = shift;
 		my @args = @_;
-		
+
 		my $nest_level = $debug_around_nest_level;
 		local $debug_around_nest_level = $debug_around_nest_level + 1;
-		
+
 		my $new_nest = $debug_around_last_nest_level < $nest_level ? 1 : 0;
 		my $leave_nest = $debug_around_last_nest_level > $nest_level ? 1 : 0;
 		$debug_around_last_nest_level = $nest_level;
-		
+
 		$debug_around_nest_elapse = 0 if ($nest_level == 0);
 
 		my $indent = $nest_level > 0 ? ('  ' x $nest_level) : '';
 		my $newline = "\n$indent";
-		
+
 		my $has_refs = 0;
-		
+
 		my $in = '(' . UNDERLINE . @args . CLEAR . '): ';
 		if($opt{list_args}) {
 			my @print_args = map { (ref($_) and ++$has_refs) ? "$_" : MAGENTA . "'$_'" . CLEAR } @args;
 			$in = '(' . join(',',@print_args) . '): ';
 		}
-		
+
 		my $class = $opt{pkg};
 		if($opt{stack}) {
 			my $stack = caller_data_brief($opt{stack} + 3);
@@ -394,7 +394,7 @@ sub func_debug_around {
 			#my $i = $opt{stack};
 			print STDERR $newline;
 			foreach my $data (@$stack) {
-				print STDERR '((stack ' . sprintf("%2s",$i--) . ')) ' . sprintf("%7s",'[' . $data->{line} . ']') . ' ' . 
+				print STDERR '((stack ' . sprintf("%2s",$i--) . ')) ' . sprintf("%7s",'[' . $data->{line} . ']') . ' ' .
 					GREEN . $data->{subroutine} . CLEAR . $newline;
 			}
 			print STDERR '((stack  0)) ' .  sprintf("%7s",'[' . $opt{line} . ']') . ' ' .
@@ -404,21 +404,21 @@ sub func_debug_around {
 		else {
 			print STDERR $newline if ($new_nest);
 		}
-		
-		print STDERR '[' . $opt{line} . '] ' . CLEAR . $opt{color} . $class . CLEAR . '->' . 
+
+		print STDERR '[' . $opt{line} . '] ' . CLEAR . $opt{color} . $class . CLEAR . '->' .
 				$opt{color} . BOLD . $name . CLEAR . $in;
-		
+
 		my $spaces = ' ' x (2 + length($opt{line}));
 		my $in_func = sub {
-			print STDERR $newline . ON_WHITE.BOLD . BLUE . "$spaces Supplied arguments dump: " . 
-				$opt{dump_func}->($opt{verbose_in},\@args) . CLEAR . $newline . ": " 
+			print STDERR $newline . ON_WHITE.BOLD . BLUE . "$spaces Supplied arguments dump: " .
+				$opt{dump_func}->($opt{verbose_in},\@args) . CLEAR . $newline . ": "
 					if($has_refs && $opt{verbose_in});
 		};
-		
+
 		my $res;
 		my @res;
 		my @res_copy = ();
-		
+
 		# before timestamp:
 		my $t0 = [gettimeofday];
 		my $current_nest_elapse;
@@ -439,12 +439,12 @@ sub func_debug_around {
 			# How much of the elapsed time was in nested funcs below us:
 			$current_nest_elapse = $debug_around_nest_elapse;
 		}
-		
+
 		# after timestamp, calculate elapsed (to the millisecond):
 		my $elapsed_raw = tv_interval($t0);
 		my $adj_elapsed = $elapsed_raw - $current_nest_elapse;
 		$debug_around_nest_elapse += $elapsed_raw; #<-- send our elapsed time up the chain
-		
+
 		# -- Track stats in global %$RapidApp::Functions::debug_around_stats:
 		if($opt{track_stats}) {
 			no warnings 'uninitialized';
@@ -466,28 +466,28 @@ sub func_debug_around {
 			$stats->{max} = $adj_elapsed if ($adj_elapsed > $stats->{max});
 		}
 		# --
-		
+
 		local $_ = $self;
 		if(!$opt{arg_ignore}->(@args) && !$opt{return_ignore}->(@res_copy)) {
-			
+
 			$in_func->();
-			
+
 			#my $elapsed_short = '[' . sprintf("%.3f", $elapsed_raw ) . 's]';
-			
+
 			my @a = map { sprintf('%.3f',$_) } ($elapsed_raw,$adj_elapsed);
 			my $elapsed_long = '[' . join('|',@a) . ']';
-			
+
 			my $result = $opt{ret_color} . $opt{dump_func}->($opt{verbose_out},@res_copy) . CLEAR;
 			$result = "\n" . ON_WHITE.BOLD . "$spaces Returned: " . $result . "\n" if ($opt{verbose_out});
 			$result .= ' ' . ON_WHITE.RED . $elapsed_long . CLEAR if ($opt{time});
-			
+
 			$result =~ s/\n/${newline}/gm;
-			
+
 			# Reset cursor position if nesting happened:
 			print STDERR "\r$indent" unless ($RapidApp::Functions::debug_around_last_nest_level == $nest_level);
-			
+
 			print STDERR $result . $newline;
-			
+
 		}
 		else {
 			# 'arg_ignore' and/or 'return_ignore' returned true, so we're not
@@ -498,7 +498,7 @@ sub func_debug_around {
 			# (note if the function printed something too we're screwed)
 			print STDERR "\r";
 		}
-		
+
 		return wantarray ? @res : $res;
 	};
 }
@@ -506,11 +506,11 @@ sub func_debug_around {
 # Lets you create a sub and set debug_around on it at the same time
 sub debug_sub($&) {
 	my ($pkg,$filename,$line) = caller;
-	my ($name,$code) = @_; 
-	
+	my ($name,$code) = @_;
+
 	my $meta = Class::MOP::Class->initialize($pkg);
 	$meta->add_method($name,$code);
-	
+
 	return debug_around $name, pkg => $pkg, filename => $filename, line => $line;
 }
 

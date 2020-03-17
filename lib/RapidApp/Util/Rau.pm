@@ -18,17 +18,17 @@ use Pod::Find qw(pod_where);
 sub resolve_classname {
   shift if ($_[0] && $_[0] eq __PACKAGE__);
   my $name = shift;
-  
+
   die "bad argument '$name'" unless ($name =~ /^\w/); # starts with a word char
-  
+
   $name =~ s/_/-/g;
-  my $subclass = join('',map { ucfirst(lc($_)) } split(/-/,$name)); 
-  
+  my $subclass = join('',map { ucfirst(lc($_)) } split(/-/,$name));
+
   my $class = join('::',__PACKAGE__,$subclass);
   unless(scalar Module::Locate::locate($class)) {
     die "no such Rau module '$name' ($class not found)\n";
   }
-  
+
   Module::Runtime::require_module($class);
 
   $class
@@ -48,7 +48,7 @@ sub call { ... }
 sub usage {
   my $class = shift;
 
-  pod2usage( 
+  pod2usage(
     $class ? (-input => pod_where({-inc => 1}, $class)) : (),
     -verbose  => 99,
     -sections => 'NAME|SYNOPSIS|DESCRIPTION'
@@ -75,7 +75,7 @@ This is an internal base class and is not intended to be used directly. See L<ra
 
 =over
 
-=item * 
+=item *
 
 L<rau.pl>
 

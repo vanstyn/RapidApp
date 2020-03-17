@@ -31,7 +31,7 @@ __PACKAGE__->add_columns(
   { data_type => "varchar", is_nullable => 0, size => 32 },
   #"password",
   #{ data_type => "varchar", is_nullable => 1, size => 255 },
-  
+
   password => {
     is_serializable => 1,
     data_type => 'varchar',
@@ -45,7 +45,7 @@ __PACKAGE__->add_columns(
     },
     passphrase_check_method => 'check_password',
   },
-  
+
   "full_name",
   { data_type => "varchar", is_nullable => 1, size => 255 },
   "last_login_ts",
@@ -100,8 +100,8 @@ __PACKAGE__->TableSpec_m2m( roles => "user_to_roles", 'role');
 __PACKAGE__->mk_classdata( 'authen_passphrase_class' );
 __PACKAGE__->mk_classdata( 'authen_passphrase_params' );
 __PACKAGE__->add_virtual_columns( set_pw => {
-	data_type => "varchar", 
-	is_nullable => 1, 
+	data_type => "varchar",
+	is_nullable => 1,
 	sql => "SELECT NULL",
   set_function => sub {
     my ($self,$pw) = @_;
@@ -111,15 +111,15 @@ __PACKAGE__->add_virtual_columns( set_pw => {
           %{ $self->authen_passphrase_params || {} },
           passphrase => $pw
         );
-        
+
         $pw = $self->authen_passphrase_class->new(%params);
-        
+
         # TODO/FIXME: I thought I could pass an Authen::Passphrase object
         # to the PassphraseColumn, but it seemed to always only create the
         # default set in passphrase_class, so I am just doing it manually
-        my $pf = $pw->can('as_rfc2307') 
+        my $pf = $pw->can('as_rfc2307')
           ? $pw->as_rfc2307 : join('','{CRYPT}',$pw->as_crypt);
-        
+
         $self->store_column( password => $pf );
         $self->make_column_dirty('password');
       }
@@ -153,12 +153,12 @@ sub update {
   my $self = shift;
   my $columns = shift;
   $self->set_inflated_columns($columns) if ($columns);
-  
+
   my $username_change = $self->is_column_changed('username');
   my $password_change = $self->is_column_changed('password');
-  
+
   $self->next::method;
-  
+
   # When a username is changed, update all active sessions with the new
   # username. This allows current sessions to seamlessly keep working
   if($username_change) {
@@ -169,30 +169,30 @@ sub update {
       __user            => { $self->get_columns }
     })->update for ($self->sessions->all);
   }
-  
+
   # When the password is changed, invalidate all current sessions *except*
   # the session of the user making the change, when they are changing their
   # own password. This means that changing a user password instantly terminates
   # their access to the system, even if they are already logged in
   if($password_change) {
     my $Rs = $self->sessions;
-  
+
     if(my $c = RapidApp->active_request_context) {
-      $Rs = $Rs->search_rs({ 
+      $Rs = $Rs->search_rs({
         'me.id' => { '!=' => join(':','session',$c->sessionid) }
       });
     }
-    
+
     $_->set_expires(0)->update for ($Rs->all);
   }
-  
-  
+
+
   $self
 }
 
 
 
-__PACKAGE__->TableSpec_set_conf( 
+__PACKAGE__->TableSpec_set_conf(
 	title => 'User',
 	title_multi => 'Users',
 	iconCls => 'ra-icon-businessman',
@@ -204,39 +204,39 @@ __PACKAGE__->TableSpec_set_conf(
     username      => { width => 90,  header => 'Username'  },
     password      => { width => 120, header => 'Password (hashed)',  profiles => ['noedit'] },
     full_name     => { width => 120, header => 'Full Name', hidden => \1   },
-    
-    last_login_ts => { 
+
+    last_login_ts => {
       hidden => \1, # temp: hide only so it doesn't show between password and set_pw
       header => 'Last Login',
-      width => 120,  allow_edit => \0, allow_add => \0  
+      width => 120,  allow_edit => \0, allow_add => \0
     },
-    
-    disabled      => { 
+
+    disabled      => {
       width => 60,  profiles => ['bool'], hidden => \1,
       # Not implemented yet
       no_column => \1, no_quick_search => \1, no_multifilter => \1
     },
-    
-    disabled_ts   => { 
+
+    disabled_ts   => {
       width => 120, hidden => \1,
-      # Not implemented yet   
+      # Not implemented yet
       no_column => \1, no_quick_search => \1, no_multifilter => \1
     },
-    
-    
-    
+
+
+
     roles         => { width => 220,  header => 'Roles'  },
     sessions      => { width => 120,  header => 'Sessions'  },
     saved_states  => { width => 130,  header => 'Saved Views' },
     user_to_roles => { width => 130, header => 'User to Roles', hidden => \1   },
-    
-    set_pw => { 
-      header => 'Set Password*', 
-      width => 130,    
+
+    set_pw => {
+      header => 'Set Password*',
+      width => 130,
       editor => { xtype => 'ra-change-password-field' },
       renderer => 'Ext.ux.RapidApp.renderSetPwValue'
     },
-    
+
   }
 );
 

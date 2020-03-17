@@ -13,7 +13,7 @@ use FindBin '$Bin';
 # expected directory structure within the RapidApp t/
 # directory. We want to always end up with 't/var/tmp'
 sub set_tmpdir_env {
-  
+
   my $dir = dir($Bin);
   while(-d $dir->parent) {
     if (-d $dir->subdir('testapps')) {
@@ -31,18 +31,18 @@ sub set_tmpdir_env {
       $dir = $dir->parent;
     }
   }
-  
+
   die "Unable to resolve test tmp dir" unless (-d $dir->subdir('testapps'));
-  
+
   my $tmpdir = $dir->subdir('tmp')->absolute;
   $tmpdir->mkpath unless (-d $tmpdir);
-  
+
   # Make sure it actually exists/was created:
   die "Error resolving/creating test tmp dir '$tmpdir'" unless (-d $tmpdir);
-  
+
   # Now, set the TMPDIR env variable (used by Catalyst::Utils::class2tempdir)
   $ENV{TMPDIR} = $tmpdir->stringify;
-  
+
 }
 
 

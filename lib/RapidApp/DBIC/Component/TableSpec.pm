@@ -65,26 +65,26 @@ my $default_data_type_profiles = {
   ipaddr      => ['unsearchable'] #<-- postgres-specific
 };
 __PACKAGE__->mk_classdata( 'TableSpec_data_type_profiles' );
-__PACKAGE__->TableSpec_data_type_profiles({ %$default_data_type_profiles }); 
+__PACKAGE__->TableSpec_data_type_profiles({ %$default_data_type_profiles });
 
 
 ## Sets up many_to_many along with TableSpec m2m multi-relationship column
 sub TableSpec_m2m {
 	my $self = shift;
 	my ($m2m,$local_rel,$remote_rel) = @_;
-	
-	$self->is_TableSpec_applied and 
+
+	$self->is_TableSpec_applied and
 		die "TableSpec_m2m must be called before apply_TableSpec!";
-		
+
 	$self->has_column($m2m) and die "'$m2m' is already defined as a column.";
 	$self->has_relationship($m2m) and die "'$m2m' is already defined as a relationship.";
 
 	my $rinfo = $self->relationship_info($local_rel) or die "'$local_rel' relationship not found";
 	eval('require ' . $rinfo->{class});
-	
+
 	die "m2m bridge relationship '$local_rel' is not a multi relationship"
 		unless ($rinfo->{attrs}->{accessor} eq 'multi');
-		
+
 	my $rrinfo = $rinfo->{class}->relationship_info($remote_rel);
   unless($rrinfo) {
     # Note: we're not dying here because this is known to happen when called from Schema::Loader
@@ -92,37 +92,37 @@ sub TableSpec_m2m {
     warn "TableSpec_m2m(): unable to resolve remote rel '$remote_rel' -- falling back to many_to_many\n";
     return $self->many_to_many($m2m,$local_rel,$remote_rel);
   }
-  
+
   Module::Runtime::require_module($rrinfo->{class});
-	
+
 	$rinfo->{table} = &_table_name_safe($rinfo->{class}->table);
 	$rrinfo->{table} = &_table_name_safe($rrinfo->{class}->table);
-	
+
 	$rinfo->{cond_info} = $self->parse_relationship_cond($rinfo->{cond});
 	$rrinfo->{cond_info} = $self->parse_relationship_cond($rrinfo->{cond});
-	
-	# 
+
+	#
 	#my $sql = '(' .
 	#	# SQLite Specific:
 	#	#'SELECT(GROUP_CONCAT(flags.flag,", "))' .
-	#	
+	#
 	#	# MySQL Sepcific:
 	#	#'SELECT(GROUP_CONCAT(flags.flag SEPARATOR ", "))' .
-	#	
+	#
 	#	# Generic (MySQL & SQLite):
 	#	'SELECT(GROUP_CONCAT(`' . $rrinfo->{table} . '`.`' . $rrinfo->{cond_info}->{foreign} . '`))' .
-	#	
-	#	' FROM `' . $rinfo->{table} . '`' . 
+	#
+	#	' FROM `' . $rinfo->{table} . '`' .
 	#	' JOIN `' . $rrinfo->{table} . '` `' . $rrinfo->{table} . '`' .
 	#	'  ON `' . $rinfo->{table} . '`.`' . $rrinfo->{cond_info}->{self} . '`' .
 	#	'   = `' . $rrinfo->{table} . '`.`' . $rrinfo->{cond_info}->{foreign} . '`' .
 	#	#' ON customers_to_flags.flag = flags.flag' .
-	#	' WHERE `' . $rinfo->{cond_info}->{foreign} . '` = ' . $rel . '.' . $cond_data->{self} . 
+	#	' WHERE `' . $rinfo->{cond_info}->{foreign} . '` = ' . $rel . '.' . $cond_data->{self} .
 	#')';
 
 	# Create a relationship exactly like the the local bridge relationship, adding
-	# the 'm2m_attrs' attribute which will be used later on to setup the special, 
-	# m2m-specific multi-relationship column properties (renderer, editor, and to 
+	# the 'm2m_attrs' attribute which will be used later on to setup the special,
+	# m2m-specific multi-relationship column properties (renderer, editor, and to
 	# trigger proxy m2m updates in DbicLink2):
 	$self->add_relationship(
 		$m2m,
@@ -134,30 +134,30 @@ sub TableSpec_m2m {
 			rrinfo => $rrinfo
 		}}
 	);
-	
+
 	# -- Add a normal many_to_many bridge so we have the many_to_many sugar later on:
 	# (we use 'set_$rel' in update_records in DbicLink2)
-	local $ENV{DBIC_OVERWRITE_HELPER_METHODS_OK} = 1 
+	local $ENV{DBIC_OVERWRITE_HELPER_METHODS_OK} = 1
 		unless (exists $ENV{DBIC_OVERWRITE_HELPER_METHODS_OK});
 	$self->many_to_many(@_);
 	#$self->apply_m2m_sugar(@_);
 	# --
 }
 
-## sugar copied from many_to_many (DBIx::Class::Relationship::ManyToMany), 
+## sugar copied from many_to_many (DBIx::Class::Relationship::ManyToMany),
 ## but only sets up add_$rel and set_$rel and won't overwrite existing subs (safer)
 #sub apply_m2m_sugar {
 #	my ($class, $meth, $rel, $f_rel, $rel_attrs) = @_;
 #
 #	my $set_meth = "set_${meth}";
 #	my $add_meth = "add_${meth}";
-#	
-#	$class->can($set_meth) and 
+#
+#	$class->can($set_meth) and
 #		die "m2m: set method '$set_meth' is already defined in (" . ref($class) . ")";
-#		
-#	$class->can($add_meth) and 
+#
+#	$class->can($add_meth) and
 #		die "m2m: add method '$add_meth' is already defined in (" . ref($class) . ")";
-#	
+#
 #    my $add_meth_name = join '::', $class, $add_meth;
 #    *$add_meth_name = subname $add_meth_name, sub {
 #      my $self = shift;
@@ -188,7 +188,7 @@ sub TableSpec_m2m {
 #      $link->insert();
 #      return $obj;
 #    };
-#	
+#
 #	my $set_meth_name = join '::', $class, $set_meth;
 #    *$set_meth_name = subname $set_meth_name, sub {
 #		my $self = shift;
@@ -220,37 +220,37 @@ sub is_TableSpec_applied {
 sub apply_TableSpec {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-	
+
 	# ignore/return if apply_TableSpec has already been called:
 	return if $self->is_TableSpec_applied;
-	
+
 	# make sure _virtual_columns and _virtual_columns_order get initialized
 	$self->add_virtual_columns();
 
-	
+
 	$self->TableSpec_data_type_profiles(
 		%{ $self->TableSpec_data_type_profiles || {} },
 		%{ delete $opt{TableSpec_data_type_profiles} }
 	) if ($opt{TableSpec_data_type_profiles});
-	
+
 	$self->TableSpec($self->create_result_TableSpec($self,%opt));
-	
+
 	$self->TableSpec_rel_columns({});
 	$self->TableSpec_cnf({});
 	$self->TableSpec_built_cnf(undef);
-	
+
 	$self->apply_row_methods();
-	
+
 	# Just doing this to ensure we're initialized:
 	$self->TableSpec_set_conf( apply_TableSpec_timestamp => time );
-	
+
 	# --- Set some base defaults here:
 	my $table = &_table_name_safe($self->table);
 	my ($pri) = ($self->primary_columns,$self->columns); #<-- first primary col, or first col
 	$self->TableSpec_set_conf(
 		display_column => $pri,
 		title => $table,
-    
+
     # --
     # New: initialize the columns cnf key early. It doesn't even need all
     # the columns (just at least one -- we're just doing the base columns
@@ -258,17 +258,17 @@ sub apply_TableSpec {
     # just about getting the Hash defined so that later calls will update
     # this hash rather than create a new one, which can get lost in certain
     # situations (such as a Result Class that loads the TableSpec component
-    # in-line but does not apply any column configs). 
+    # in-line but does not apply any column configs).
     # This was needed added after the recent prelim TableSpec_cnf refactor (in v0.99030)
     # which is a temp/in-between change that consolidates storage of column
-    # configs internally while still preserving the original API for now. 
-    # Yes, this is ugly/hackish but will go away as soon as the full-blown, 
+    # configs internally while still preserving the original API for now.
+    # Yes, this is ugly/hackish but will go away as soon as the full-blown,
     # long-planned TableSpec refactor is undertaken...
     columns => { map { $_ => {} } $self->columns }
     # --
 	);
 	# ---
-	
+
 	return $self;
 }
 
@@ -276,45 +276,45 @@ sub create_result_TableSpec {
 	my $self = shift;
 	my $ResultClass = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-	
+
 	my $table = &_table_name_safe($ResultClass->table);
 
-	my $TableSpec = RapidApp::TableSpec->new( 
+	my $TableSpec = RapidApp::TableSpec->new(
 		name => $table,
 		%opt
 	);
 
 	my $data_types = $self->TableSpec_data_type_profiles;
-	
+
 	## WARNING! This logic overlaps with logic further down (in default_TableSpec_cnf_columns)
 	foreach my $col ($ResultClass->columns) {
 		my $info = $ResultClass->column_info($col);
 		my @profiles = ();
-		
+
 		push @profiles, $info->{is_nullable} ? 'nullable' : 'notnull';
     push @profiles, 'autoinc' if ($info->{is_auto_increment});
-		
+
 		my $type_profile = $data_types->{$info->{data_type}} || ['text'];
-    
+
     # -- PostgreSQL override until array columns are supported (Github Issue #55):
     $type_profile = ['unsearchable','virtual_source'] if (
       $info->{data_type} =~ /\[/ #<-- if the data_type contains a square backect, i.e. 'text[]'
     );
     # --
-    
+
 		$type_profile = [ $type_profile ] unless (ref $type_profile);
 		push @profiles, @$type_profile;
-		
-		$TableSpec->add_columns( { name => $col, profiles => \@profiles } ); 
+
+		$TableSpec->add_columns( { name => $col, profiles => \@profiles } );
 	}
-	
+
 	return $TableSpec;
 }
 
 
 sub get_built_Cnf {
 	my $self = shift;
-	
+
 	$self->TableSpec_build_cnf unless ($self->TableSpec_built_cnf);
 	return $self->TableSpec_built_cnf;
 }
@@ -330,14 +330,14 @@ sub default_TableSpec_cnf  {
 	my $set = shift || {};
 
   my $data = $set;
-	
-	
+
+
 	my $table = &_table_name_safe($self->table);
-  
+
   my $is_virtual = $self->_is_virtual_source;
   my $defs_i = $is_virtual ? 'ra-icon-pg-red' : 'ra-icon-pg';
   my $defm_i = $is_virtual ? 'ra-icon-pg-multi-red' : 'ra-icon-pg-multi';
-	
+
 	# FIXME: These defaults cannot be seen via call from related tablespec, because of
 	# a circular logic situation. For base-defaults, see apply_TableSpec above
 	# This is one of the reasons the whole TableSpec design needs to be refactored
@@ -349,7 +349,7 @@ sub default_TableSpec_cnf  {
 	$defaults{title} = $data->{title} || $table;
 	$defaults{title_multi} = $data->{title_multi} || $defaults{title};
 	($defaults{display_column}) = $self->primary_columns;
-	
+
 	my @display_columns = $data->{display_column} ? ( $data->{display_column} ) : $self->primary_columns;
 
 	# row_display coderef overrides display_column to provide finer grained display control
@@ -359,7 +359,7 @@ sub default_TableSpec_cnf  {
 		$title = sprintf('%.13s',$title) . '...' if (length $title > 13);
 		return $title;
 	};
-	
+
 	$defaults{row_display} = sub {
 		my $display = $orig_row_display->(@_);
 		return $display if (ref $display);
@@ -368,22 +368,22 @@ sub default_TableSpec_cnf  {
 			iconCls => $defaults{singleIconCls}
 		};
 	};
-	
+
 	my $rel_trans = {};
-	
+
 	$defaults{related_column_property_transforms} = $rel_trans;
-  
-  
+
+
   #my $defs = \%defaults;
   #my $col_cnf = $self->default_TableSpec_cnf_columns($set);
   #$defs = merge($defs,$col_cnf);
-  #return merge($defs, $set);  
+  #return merge($defs, $set);
 
   %defaults = ( %defaults, %$set );
   my $defs = \%defaults;
   my $col_cnf = $self->default_TableSpec_cnf_columns($defs);
   $defs->{columns} = $col_cnf->{columns};
-  
+
   return $defs;
 }
 
@@ -400,34 +400,34 @@ sub default_TableSpec_cnf_columns {
 	my $set = shift || {};
 
   my $data = $set;
-	
+
 	my @col_order = $self->default_TableSpec_cnf_column_order($set);
-	
+
 	my $cols = { map { $_ => {} } @col_order };
-  
+
   # lowest precidence:
   #$cols = merge($cols,$set->{column_properties_defaults} || {});
   %$cols = ( %$cols, %{ $set->{column_properties_defaults} || {}} );
 
   #$cols = merge($cols,$set->{column_properties_ordered} || {});
   %$cols = ( %$cols, %{ $set->{column_properties_ordered} || {}} );
-		
+
 	# higher precidence:
 	#$cols = merge($cols,$set->{column_properties} || {});
   %$cols = ( %$cols, %{ $set->{column_properties} || {}} );
-  
+
 	my $data_types = $self->TableSpec_data_type_profiles;
 	#scream(keys %$cols);
-  
+
   my $is_virtual = $self->_is_virtual_source;
-	
+
 	foreach my $col (keys %$cols) {
-		
+
 		my $is_phy = $self->has_column($col) ? 1 : 0;
     $cols->{$col}{is_phy_colname} = $is_phy; #<-- track if this is also a physical column name
 
     my $is_local = $is_phy;
-		
+
 		# If this is both a local column and a relationship, allow the rel to take over
 		# if 'priority_rel_columns' is true:
 		$is_local = 0 if (
@@ -435,7 +435,7 @@ sub default_TableSpec_cnf_columns {
 			$self->has_relationship($col) and
 			$set->{'priority_rel_columns'}
 		);
-		
+
 		# -- If priority_rel_columns is on but we need to exclude a specific column:
 		$is_local = 1 if (
 			! $is_local and
@@ -444,22 +444,22 @@ sub default_TableSpec_cnf_columns {
 			$is_phy
 		);
 		# --
-		
+
 		# Never allow a rel col to take over a primary key:
 		my %pri_cols = map {$_=>1} $self->primary_columns;
 		$is_local = 1 if ($pri_cols{$col});
-		
+
 		unless ($is_local) {
 			# is it a rel col ?
 			if($self->has_relationship($col)) {
 				my $info = $self->relationship_info($col);
-				
+
 				$cols->{$col}->{relationship_info} = $info;
 				my $cond_data = $self->parse_relationship_cond($info->{cond});
 				$cols->{$col}->{relationship_cond_data} = { %$cond_data, %$info };
-				
+
 				if ($info->{attrs}->{accessor} eq 'single' || $info->{attrs}->{accessor} eq 'filter') {
-					
+
           # -- NEW: Virtual Single Relationship - will be read-only
           unless($cond_data->{foreign} && $cond_data->{self}) {
             $cols->{$col}{virtualized_single_rel} = 1;
@@ -468,73 +468,73 @@ sub default_TableSpec_cnf_columns {
             next;
           }
           # --
-          
+
           # New: pass the is_nullable flag in from the local FK column:
           if($self->has_column($cond_data->{self})) {
             $cols->{$col}{is_nullable} = $self->column_info($cond_data->{self})
               ->{is_nullable} ? 1 : 0;
           }
-          
+
 					# Use TableSpec_related_get_set_conf instead of TableSpec_related_get_conf
 					# to prevent possible deep recursion:
-					
+
 					my $display_column = $self->TableSpec_related_get_set_conf($col,'display_column');
 					my $display_columns = $self->TableSpec_related_get_set_conf($col,'display_columns');
-					
-					# -- auto_editor_params/auto_editor_type can be defined in either the local column 
+
+					# -- auto_editor_params/auto_editor_type can be defined in either the local column
 					# properties, or the remote TableSpec conf
 					my $auto_editor_type = $self->TableSpec_related_get_set_conf($col,'auto_editor_type') || 'combo';
 					my $auto_editor_params = $self->TableSpec_related_get_set_conf($col,'auto_editor_params') || {};
 					my $auto_editor_win_params = $self->TableSpec_related_get_set_conf($col,'auto_editor_win_params') || {};
 					$cols->{$col}->{auto_editor_type} = $cols->{$col}->{auto_editor_type} || $auto_editor_type;
 					$cols->{$col}->{auto_editor_params} = $cols->{$col}->{auto_editor_params} || {};
-					$cols->{$col}->{auto_editor_params} = { 
-						%$auto_editor_params, 
-						%{$cols->{$col}->{auto_editor_params}} 
+					$cols->{$col}->{auto_editor_params} = {
+						%$auto_editor_params,
+						%{$cols->{$col}->{auto_editor_params}}
 					};
 					# --
-					
+
 					$display_column = $display_columns->[0] if (
 						! defined $display_column and
 						ref($display_columns) eq 'ARRAY' and
 						@$display_columns > 0
 					);
-					
+
 					## fall-back set the display_column to the first key
 					($display_column) = $self->primary_columns unless ($display_column);
-					
+
 					$display_columns = [ $display_column ] if (
 						! defined $display_columns and
 						defined $display_column
 					);
-					
+
 					die "$col doesn't have display_column or display_columns set!" unless ($display_column);
-					
+
 					$cols->{$col}->{displayField} = $display_column;
 					$cols->{$col}->{display_columns} = $display_columns; #<-- in progress - used for grid instead of combo
-					
+
 					#TODO: needs to be more generalized/abstracted
 					#open_url, if defined, will add an autoLoad link to the renderer to
 					#open/navigate to the related item
 					$cols->{$col}->{open_url} = $self->TableSpec_related_get_set_conf($col,'open_url');
-						
-					$cols->{$col}->{valueField} = $cond_data->{foreign} 
+
+					$cols->{$col}->{valueField} = $cond_data->{foreign}
 						or die "couldn't get foreign col condition data for $col relationship!";
-					
+
 					$cols->{$col}->{keyField} = $cond_data->{self}
 						or die "couldn't get self col condition data for $col relationship!";
-					
+
 					next;
 				}
 				elsif($info->{attrs}->{accessor} eq 'multi') {
 					$cols->{$col}->{title_multi} = $self->TableSpec_related_get_set_conf($col,'title_multi');
 					$cols->{$col}->{multiIconCls} = $self->TableSpec_related_get_set_conf($col,'multiIconCls');
 					$cols->{$col}->{open_url_multi} = $self->TableSpec_related_get_set_conf($col,'open_url_multi');
-					
-					$cols->{$col}->{open_url_multi_rs_join_name} = 
+
+					$cols->{$col}->{open_url_multi_rs_join_name} =
 						$self->TableSpec_related_get_set_conf($col,'open_url_multi_rs_join_name') || 'me';
 				}
-        
+
         # New: add the 'relcol' profile to relationship columns:
         $cols->{$col}->{profiles} ||= [];
         push @{$cols->{$col}->{profiles}}, 'relcol';
@@ -543,41 +543,41 @@ sub default_TableSpec_cnf_columns {
 			}
 			next;
 		}
-		
+
 		## WARNING! This logic overlaps with logic further up (in create_result_TableSpec) FIXME!
 		my $info = $self->column_info($col);
 		my @profiles = ();
-			
+
 		push @profiles, $info->{is_nullable} ? 'nullable' : 'notnull';
     push @profiles, 'autoinc' if ($info->{is_auto_increment});
-		
+
 		my $type_profile = $data_types->{$info->{data_type}} || ['text'];
-    
+
     # -- PostgreSQL override until array columns are supported (Github Issue #55):
     $type_profile = ['unsearchable','virtual_source'] if (
       $info->{data_type} =~ /\[/ #<-- if the data_type contains a square backect, i.e. 'text[]'
     );
     # --
-    
+
 		$type_profile = [ $type_profile ] unless (ref $type_profile);
 		push @profiles, @$type_profile;
-		
+
 		$cols->{$col}->{profiles} = [ $cols->{$col}->{profiles} ] if (
-			defined $cols->{$col}->{profiles} and 
+			defined $cols->{$col}->{profiles} and
 			not ref $cols->{$col}->{profiles}
 		);
 		push @profiles, @{$cols->{$col}->{profiles}} if ($cols->{$col}->{profiles});
-    
+
     push @profiles, 'virtual_source' if ($is_virtual);
-		
+
 		$cols->{$col}->{profiles} = \@profiles;
-		
+
 		## --
 		my $editor = {};
-	
+
 		## Set the 'default' field value to match the default from the db (if exists) for this column:
 		$editor->{value} = $info->{default_value} if (exists $info->{default_value});
-    
+
     # -- NEW:
     # ScalarRef values mean literal SQL which should be evaluated at the time. New feature in
     # RapidApp::JSON::MixedEncoder supports CodeRef values, which call them at encode time. This
@@ -598,23 +598,23 @@ sub default_TableSpec_cnf_columns {
       } unless (
         # just because this one is so common, don't waste resources asking the database
         ${$info->{default_value}} eq 'null'
-      ); 
+      );
     }
     # --
-    
-		
+
+
 		## This sets additional properties of the editor for numeric type columns according
-		## to the DBIC schema (max-length, signed/unsigned, float vs int). The API with "profiles" 
-		## didn't anticipate this fine-grained need, so 'extra_properties' was added specifically 
+		## to the DBIC schema (max-length, signed/unsigned, float vs int). The API with "profiles"
+		## didn't anticipate this fine-grained need, so 'extra_properties' was added specifically
 		## to accomidate this (see special logic in TableSpec::Column):
 		## note: these properties only apply if the editor xtype is 'numberfield' which we assume,
 		## and is already set from the profiles of 'decimal', 'float', etc
 		my $unsigned = ($info->{extra} && $info->{extra}->{unsigned}) ? 1 : 0;
 		$editor->{allowNegative} = \0 if ($unsigned);
-		
+
 		if($info->{size}) {
 			my $size = $info->{size};
-			
+
 			# Special case for 'float'/'decimal' with a specified precision (where 0 is the same as int):
 			if(ref $size eq 'ARRAY' ) {
 				my ($s,$p) = @$size;
@@ -623,7 +623,7 @@ sub default_TableSpec_cnf_columns {
 				$size += 1 unless ($unsigned); #<-- room for a '-'
 				if ($p && $p > 0) {
 					$editor->{maxValue} .= '.' . ('9' x $p);
-					$size += $p + 1 ; #<-- precision plus a spot for '.' in the max field length	
+					$size += $p + 1 ; #<-- precision plus a spot for '.' in the max field length
 					$editor->{decimalPrecision} = $p;
 				}
 				else {
@@ -632,7 +632,7 @@ sub default_TableSpec_cnf_columns {
 			}
 			$editor->{maxLength} = $size;
 		}
-		
+
 		if(keys %$editor > 0) {
 			$cols->{$col}->{extra_properties} = $cols->{$col}->{extra_properties} || {};
 			$cols->{$col}->{extra_properties} = merge($cols->{$col}->{extra_properties},{
@@ -640,22 +640,22 @@ sub default_TableSpec_cnf_columns {
 			});
 		}
 		## --
-    
+
     # --vv-- NEW: handling for 'enum' columns (Github Issue #30):
     if($info->{data_type} eq 'enum' && $info->{extra} && $info->{extra}{list}) {
       my $list = $info->{extra}{list};
-      
+
       my $selections = [];
       # Null choice:
       push @$selections, {
         # #A9A9A9 = light grey
         text => '<span style="color:#A9A9A9;">(None)</span>', value => undef
       } if ($info->{is_nullable});
-      
+
       push @$selections, map {
         { text => $_, value => $_ }
       } @$list;
-    
+
       $cols->{$col}{menu_select_editor} = {
         #mode: 'combo', 'menu' or 'cycle':
         mode        => 'menu',
@@ -669,7 +669,7 @@ sub default_TableSpec_cnf_columns {
       $cols->{$col}{enum_value_hash} = { map {$_=>1} @$list }
     }
     # --^^--
-    
+
   }
 
   return { columns => $cols };
@@ -687,9 +687,9 @@ sub TableSpec_valid_db_columns {
 
   foreach my $rel ($self->relationships) {
     my $info = $self->relationship_info($rel);
-    
+
     my $accessor = $info->{attrs}->{accessor};
-    
+
     # 'filter' means single, but the name is also a local column
     $accessor = 'single' if (
       $accessor eq 'filter' and
@@ -700,7 +700,7 @@ sub TableSpec_valid_db_columns {
       ) and
       ! $pri_cols{$rel} #<-- exclude primary column names. TODO: this check is performed later, fix
     );
-    
+
     if($accessor eq 'single') {
       my $cond_info = $self->parse_relationship_cond($info->{cond});
       if($cond_info->{self} && $cond_info->{foreign}) {
@@ -714,7 +714,7 @@ sub TableSpec_valid_db_columns {
         # cannot introspect in both directions (i.e. not physical
         # foreign keys). These are still "single" in that they map to
         # one related row, but will not be editable and not have a
-        # open link (yet) 
+        # open link (yet)
         push @virtual_single_rels, $rel;
       }
     }
@@ -753,15 +753,15 @@ my %col_prop_names = map {$_=>1} @col_prop_names;
 # flexible arguments as either hash or hashref, and because of
 # the special case of setting the nested 'column_properties'
 # param, if specified as the first argument, and then be able to
-# accept its sub params as either a hash or a hashref. In hindsight, 
+# accept its sub params as either a hash or a hashref. In hindsight,
 # allowing this was probably not worth the extra maintenace/code and
-# was too fancy for its own good (since this case may or may not  
+# was too fancy for its own good (since this case may or may not
 # shift the key/value positions in the arg list) but it is a part
 # of the API for now...
 sub TableSpec_set_conf {
   my $self = shift;
   die "TableSpec_set_conf(): bad arguments" unless (scalar(@_) > 0);
-  
+
   # First arg can be a hashref - deref and call again:
   if(ref($_[0])) {
     die "TableSpec_set_conf(): bad arguments" unless (
@@ -770,30 +770,30 @@ sub TableSpec_set_conf {
     );
     return $self->TableSpec_set_conf(%{$_[0]})
   }
-  
+
   $self->TableSpec_built_cnf(undef); #<-- FIXME!!
-  
+
   # Special handling for setting 'column_properties':
   if ($col_prop_names{$_[0]}) {
     shift @_; #<-- pull out the 'column_properties' first arg
     return $self->_TableSpec_set_column_properties(@_);
   };
-  
+
   # Enforce even number of args for good measure:
-  die join(' ', 
+  die join(' ',
     'TableSpec_set_conf( %cnf ):',
     "odd number of args in key/value list:", Dumper(\@_)
   ) if (scalar(@_) & 1);
-  
+
   my %cnf = @_;
-  
+
   for my $param (keys %cnf) {
     # Also make sure all the keys (even positions) are simple scalars:
     die join(' ',
       'TableSpec_set_conf( %cnf ):',
       'found ref in key position:', Dumper($_)
     ) if (ref($param));
-  
+
     if($col_prop_names{$param}) {
       # Also handle column_properties specified with other params:
       die join(' ',
@@ -803,7 +803,7 @@ sub TableSpec_set_conf {
       $self->_TableSpec_set_column_properties($cnf{$param});
     }
     else {
-      $self->TableSpec_cnf->{$param} = $cnf{$param} 
+      $self->TableSpec_cnf->{$param} = $cnf{$param}
     }
   }
 }
@@ -815,13 +815,13 @@ sub TableSpec_set_conf {
 # single config HashRef). This is only temporary and is a throwback
 # caused by the older/original API design for the TableSpec_cnf and
 # will be removed later on once the other config names can be depricated
-# along with other planned refactored. This is just a stop-gap to 
+# along with other planned refactored. This is just a stop-gap to
 # allow this refactor to be done in stages...
 sub _TableSpec_set_column_properties {
   my $self = shift;
-  die "TableSpec_set_conf( column_properties => %cnf ): bad args" 
+  die "TableSpec_set_conf( column_properties => %cnf ): bad args"
     unless (scalar(@_) > 0);
-  
+
   # First arg can be a hashref - deref and call again:
   if(ref($_[0])) {
     die "TableSpec_set_conf( column_properties => %cnf ): bad args"  unless (
@@ -830,27 +830,27 @@ sub _TableSpec_set_column_properties {
     );
     return $self->_TableSpec_set_column_properties(%{$_[0]})
   }
-  
+
   # Enforce even number of args for good measure:
-  die join(' ', 
+  die join(' ',
     'TableSpec_set_conf( column_properties => %cnf ):',
     "odd number of args in key/value list:", Dumper(\@_)
   ) if (scalar(@_) & 1);
-  
+
   my %cnf = @_;
-  
+
   # Also make sure all the keys (even positions) are simple scalars:
   ref($_) and die join(' ',
     'TableSpec_set_conf( column_properties => %cnf ):',
     'found ref in key position:', Dumper($_)
   ) for (keys %cnf);
-  
+
   my %valid_colnames = map {$_=>1} ($self->TableSpec_valid_db_columns);
-  
+
   my $col_props;
   $col_props ||= $self->TableSpec_cnf->{$_} for (@col_prop_names);
   $col_props ||= {};
-  
+
   for my $col (keys %cnf) {
     warn join(' ',
       "Ignoring config for unknown column name '$col'",
@@ -858,32 +858,32 @@ sub _TableSpec_set_column_properties {
     ) and next unless ($valid_colnames{$col});
     $col_props->{$col} = $cnf{$col};
   }
-  
+
   $self->TableSpec_cnf->{$_} = $col_props for (@col_prop_names);
 }
 
 
 # New function for updating/merging in column configs. This allows
-# setting certain column configs without overwriting existing config 
+# setting certain column configs without overwriting existing config
 # keys that are not being specified:
 sub TableSpec_merge_columns_conf {
   my $self = shift;
   my $conf = shift;
-  
+
   die "TableSpec_merge_columns_conf( \%columns ): bad args"
     unless (ref($conf) eq 'HASH');
-  
+
   my $existing = $self->TableSpec_get_conf('columns') || {};
-  
+
   my @cols = uniq( keys %$conf, keys %$existing );
-  
+
   my %new = ( map {
     $_ => {
       %{ $existing->{$_} || {} },
       %{ $conf->{$_} || {} },
     }
   } @cols );
-  
+
   return $self->TableSpec_set_conf( columns => \%new );
 }
 
@@ -893,12 +893,12 @@ sub TableSpec_get_conf {
   my $self = shift;
   my $param = shift || return undef;
   my $storage = shift || $self->get_built_Cnf;
-  
+
   # Special: map all column prop names into 'column_properties'
   $param = 'column_properties' if ($col_prop_names{$param});
-  
+
   my $value = $storage->{$param};
-  
+
   # --- FIXME FIXME FIXME
   # In the original design of the TableSpec_cnf internals, which
   # was too fancy for its own good, meta/type information was
@@ -916,7 +916,7 @@ sub TableSpec_get_conf {
   # however! It is just temporary until those outside places
   # can be confirmed and eliminated, or a proper deprecation plan
   # can be made, should that even be needed...
-  
+
   if(wantarray && ref($value)) {
     cluck join("\n",'',
       "  WARNING: calling TableSpec_get_conf() in LIST context",
@@ -926,12 +926,12 @@ sub TableSpec_get_conf {
     return @$value if (ref($value) eq 'ARRAY');
     return %$value if (ref($value) eq 'HASH');
   }
-  
+
   # When trying to get a param that does not exist, return an
   # empty list if called in LIST context, otherwise undef
   return wantarray ? () : undef unless (exists $storage->{$param});
   # ---
-  
+
   return $value;
 }
 
@@ -950,9 +950,9 @@ sub TableSpec_related_class {
 	my $rel = shift || return undef;
 	my $info = $self->relationship_info($rel) || return undef;
 	my $relclass = $info->{class};
-	
+
 	eval "require $relclass;";
-	
+
 	#my $relclass = $self->related_class($rel) || return undef;
 	$relclass->can('TableSpec_get_conf') || return undef;
 	return $relclass;
@@ -963,7 +963,7 @@ sub TableSpec_related_get_conf {
 	my $self = shift;
 	my $rel = shift || return undef;
 	my $param = shift || return undef;
-	
+
 	my $relclass = $self->TableSpec_related_class($rel) || return undef;
 
 	return $relclass->TableSpec_get_conf($param);
@@ -976,7 +976,7 @@ sub TableSpec_related_get_set_conf {
 	my $self = shift;
 	my $rel = shift || return undef;
 	my $param = shift || return undef;
-	
+
 	my $relclass = $self->TableSpec_related_class($rel) || return undef;
 
 	#return $relclass->TableSpec_get_conf($param,$relclass->TableSpec_cnf);
@@ -984,7 +984,7 @@ sub TableSpec_related_get_set_conf {
 }
 
 # The "set conf" is different from the "built conf" in that it is passive, and only
-# returns the values which have been expressly "set" on the Result class with a 
+# returns the values which have been expressly "set" on the Result class with a
 # "TableSpec_set_conf" call. The built conf reaches out to code to build a configuration,
 # which causes recursive limitations in that code that reaches out to other TableSpec
 # classes.
@@ -1000,17 +1000,17 @@ sub TableSpec_get_set_conf {
 sub get_foreign_column_from_cond {
 	my $self = shift;
 	my $cond = shift;
-	
+
 	die "currently only single-key hashref conditions are supported" unless (
 		ref($cond) eq 'HASH' and
 		scalar keys %$cond == 1
 	);
-	
+
 	foreach my $i (%$cond) {
 		my ($side,$col) = split(/\./,$i);
 		return $col if (defined $col and $side eq 'foreign');
 	}
-	
+
 	die "Failed to find forein column from condition: " . Dumper($cond);
 }
 
@@ -1028,12 +1028,12 @@ sub get_foreign_column_from_cond {
 # column, including even those with CodeRef conditions...
 sub parse_relationship_cond {
   my ($self,$cond,$info) = @_;
-  
+
   return {} unless (
     ref($cond) eq 'HASH' and
     scalar keys %$cond == 1
   );
-  
+
   my $data = {};
   foreach my $i (%$cond) {
     my ($side,$col) = split(/\./,$i);
@@ -1044,7 +1044,7 @@ sub parse_relationship_cond {
 
 # Works like an around method modifier, but $self is expected as first arg and
 # $orig (method) is expected as second arg (reversed from a normal around modifier).
-# Calls the supplied method and returns what changed in the record from before to 
+# Calls the supplied method and returns what changed in the record from before to
 # after the call. e.g.:
 #
 # my ($changes) = $self->proxy_method_get_changed('update',{ foo => 'sdfds'});
@@ -1059,26 +1059,26 @@ sub parse_relationship_cond {
 sub proxy_method_get_changed {
 	my $self = shift;
 	my $method = shift;
-	
+
   no warnings 'uninitialized'; # because we might compare undef values
-  
+
 	my $origRow = $self;
 	my %old = ();
 	if($self->in_storage) {
 		$origRow = $self->get_from_storage || $self;
 		%old = $origRow->get_columns;
 	}
-	
+
 	my @ret = ();
-	wantarray ? 
-		@ret = $self->$method(@_) : 
+	wantarray ?
+		@ret = $self->$method(@_) :
 			$ret[0] = $self->$method(@_);
-	
+
 	my %new = ();
 	if($self->in_storage) {
 		%new = $self->get_columns;
 	}
-	
+
 	# This logic is duplicated in DbicLink2. Not sure how to avoid it, though,
 	# and keep a clean API
 	my @changed = ();
@@ -1087,7 +1087,7 @@ sub proxy_method_get_changed {
 		next if ($new{$col} eq $old{$col});
 		push @changed, $col;
 	}
-	
+
 	my @new_changed = ();
 	my $fk_map = $self->TableSpec_get_conf('relationship_column_fks_map');
 	foreach my $col (@changed) {
@@ -1095,37 +1095,37 @@ sub proxy_method_get_changed {
 			push @new_changed, $col;
 			next;
 		}
-		
+
 		my $rel = $fk_map->{$col};
 		my $display_col = $self->TableSpec_related_get_set_conf($rel,'display_column');
-		
+
 		my $relOld = $origRow->$rel;
 		my $relNew = $self->$rel;
-		
+
 		unless($display_col and ($relOld or $relNew)) {
 			push @new_changed, $col;
 			next;
 		}
-		
+
 		push @new_changed, $rel;
-		
+
 		$old{$rel} = $relOld->get_column($display_col) if (exists $old{$col} and $relOld);
 		$new{$rel} = $relNew->get_column($display_col) if (exists $new{$col} and $relNew);
 	}
-	
+
 	@changed = @new_changed;
-	
+
 	my $col_props = $self->TableSpec_get_conf('columns');
-	
+
 	my %diff = map {
-		$_ => { 
-			old => $old{$_}, 
+		$_ => {
+			old => $old{$_},
 			new => $new{$_},
-			header => ($col_props->{$_} && $col_props->{$_}->{header}) ? 
+			header => ($col_props->{$_} && $col_props->{$_}->{header}) ?
 				$col_props->{$_}->{header} : $_
-		} 
+		}
 	} @changed;
-	
+
 	return wantarray ? (\%diff,@ret) : [\%diff,@ret];
 }
 
@@ -1147,37 +1147,37 @@ sub getRestKey {
 ### Util functions: to be called in Row-object context
 sub apply_row_methods {
 	my $class = shift;
-	
+
 	my %RowMethods = (
-	
+
 		getOpenUrl => sub { $class->TableSpec_get_conf('open_url') },
-	
+
 		getRecordPkValue => sub {
 			my $self = shift;
 			my @pk_vals = map { $self->get_column($_) } $self->primary_columns;
 			return join('~$~',@pk_vals);
 		},
-		
+
 		getRestKeyVal => sub {
 			my $self = shift;
 			my $col = $class->getRestKey or return $self->getRecordPkValue;
 			return try{$self->get_column($col)};
 		},
-		
+
 		getRestPath => sub {
 			my $self = shift;
 			my $url = $class->getOpenUrl or return undef;
 			my $val = $self->getRestKeyVal or return undef;
 			return "$url/$val";
 		},
-	
+
 		getDisplayValue => sub {
 			my $self = shift;
 			my $display_column = $class->TableSpec_get_conf('display_column');
 			return $self->get_column($display_column) if ($self->has_column($display_column));
 			return $self->getRecordPkValue;
 		},
-		
+
 		inlineNavLink => sub {
 			my $self = shift;
 			my $text = shift || '<span>open</span>';
@@ -1185,13 +1185,13 @@ sub apply_row_methods {
 
 			my $title = $self->getDisplayValue or return undef;
 			my $url = $self->getRestPath or return undef;
-			
+
 			%attrs = (
 				href => '#!' . $url,
 				title => $title,
 				%attrs
 			);
-			
+
 			my $attr_str = join(' ',map { $_ . '="' . $attrs{$_} . '"' } keys %attrs);
 			return '<a ' . $attr_str . '>' . $text . '</a>';
 		},
@@ -1201,7 +1201,7 @@ sub apply_row_methods {
 			return $self->getDisplayValue . ' ' . $self->inlineNavLink;
 		}
 	);
-	
+
 	# --- Actualize/load methods into the Row object namespace:
 	foreach my $meth (keys %RowMethods) {
 		no strict 'refs';
@@ -1214,7 +1214,7 @@ sub apply_row_methods {
 
 sub _table_name_safe {
   my $arg = shift;
-  
+
   my $table = !(ref $arg) && $arg->can('table') ? $arg->table : $arg; # class method or straight function
 
   $table = $$table if ((ref($table)||'') eq 'SCALAR'); # Handle ScalarRef values
@@ -1236,11 +1236,11 @@ sub _table_name_safe {
 #	my $text = shift || '<span>open</span>';
 #	my %attrs = ( class => "magnify-link-tiny", @_ );
 #	my $loadCfg = delete $attrs{loadCfg} || {};
-#	
+#
 #	my $title = $self->getDisplayValue || return undef;
 #	my $url = $self->getOpenUrl || return undef;
 #	my $pk_val = $self->getRecordPkValue || return undef;
-#	
+#
 #	$loadCfg = merge({
 #		title => $title,
 #		autoLoad => {
@@ -1248,10 +1248,10 @@ sub _table_name_safe {
 #			params => { '___record_pk' => $pk_val }
 #		}
 #	},$loadCfg);
-#	
+#
 #	my $href = '#loadcfg:data=' . uri_escape(encode_json($loadCfg));
 #	my $onclick = 'return Ext.ux.RapidApp.InlineLinkHandler.apply(this,arguments);';
-#	
+#
 #	%attrs = (
 #		href => $href,
 #		onclick => $onclick,
@@ -1259,9 +1259,9 @@ sub _table_name_safe {
 #		title => $title,
 #		%attrs
 #	);
-#	
+#
 #	my $attr_str = join(' ',map { $_ . '="' . $attrs{$_} . '"' } keys %attrs);
-#	
+#
 #	return '<a ' . $attr_str . '>' . $text . '</a>';
 #
 #}

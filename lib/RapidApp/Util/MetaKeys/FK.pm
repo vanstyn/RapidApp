@@ -16,7 +16,7 @@ around 'BUILDARGS' => sub {
   my $orig = shift;
   my $class = shift;
   my $args = $_[0];
-  
+
   if(ref($args) && ref($args) eq 'HASH') {
     my @locs = qw(local_column local_table local_schema);
     my %locs = map {$_=>1} @locs;
@@ -73,7 +73,7 @@ has 'remote_schema', is => 'ro', isa => Maybe[Str], lazy => 1, default => sub {
   $rhs->{schema}
 };
 
- 
+
 
 1;
 
@@ -98,7 +98,7 @@ Experimental external definitions of foreign keys. Used internally by L<RapidApp
 
 L<RapidApp::Util::MetaKeys>
 
-=item * 
+=item *
 
 L<RapidApp>
 

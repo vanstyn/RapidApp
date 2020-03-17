@@ -26,7 +26,7 @@ Catalyst::Plugin::RapidApp - main plugin class for RapidApp
 =head1 SYNOPSIS
 
  package MyApp;
- 
+
  use Catalyst   qw/ RapidApp /;
 
 =head1 DESCRIPTION

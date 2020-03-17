@@ -9,13 +9,13 @@ Ext.override(Ext.data.Connection,{
   //request: function(opts) {
   //  return this.request_orig(opts);
   //},
-  
+
   handleResponse_orig: Ext.data.Connection.prototype.handleResponse,
   handleResponse : function(response){
     this.fireEvent('requestcomplete',this,response,response.argument.options);
-    
+
     var options = response.argument.options;
-    
+
     var thisConn = this;
     var success_callback_repeat = function(newopts) {
       // Optional changes/additions to the original request options:
@@ -26,13 +26,13 @@ Ext.override(Ext.data.Connection,{
       }
       thisConn.request(options);
     };
-    
+
     var orig_args= arguments;
     var current_callback_continue= function() { thisConn.handleResponse_orig.apply(thisConn,orig_args); };
-    
+
     Ext.ux.RapidApp.handleCustomServerDirectives(response, current_callback_continue, success_callback_repeat);
   },
-  
+
   doFormUpload_orig: Ext.data.Connection.prototype.doFormUpload,
   doFormUpload : function(o, ps, url){
     var thisConn= this;
@@ -45,7 +45,7 @@ Ext.override(Ext.data.Connection,{
       }
       thisConn.doFormUpload(o, ps, url);
     };
-    
+
     // had to copy/paste from Ext.data.Connection, since there were no smaller routines to subclass...
     var id = Ext.id(),
       doc = document,
@@ -61,20 +61,20 @@ Ext.override(Ext.data.Connection,{
         enctype: form.enctype,
         action: form.action
       };
-    
+
     Ext.fly(frame).set({
       id: id,
       name: id,
       cls: 'x-hidden',
       src: Ext.SSL_SECURE_URL
-    }); 
-    
+    });
+
     doc.body.appendChild(frame);
-    
+
     if(Ext.isIE){
       document.frames[id].name = id;
     }
-    
+
     Ext.fly(form).set({
       target: id,
       method: 'POST',
@@ -82,7 +82,7 @@ Ext.override(Ext.data.Connection,{
       encoding: encoding,
       action: url || buf.action
     });
-    
+
     var addParam= function(k, v){
       hd = doc.createElement('input');
       Ext.fly(hd).set({
@@ -93,14 +93,14 @@ Ext.override(Ext.data.Connection,{
       form.appendChild(hd);
       hiddens.push(hd);
     };
-    
+
     addParam('RequestContentType', 'text/x-rapidapp-form-response');
     Ext.iterate(Ext.urlDecode(ps, false), addParam);
     if (o.params)
       Ext.iterate(o.params, addParam);
     if (o.headers)
       Ext.iterate(o.headers, addParam);
-    
+
     function cb(){
       var me = this,
         r = {responseText : '',
@@ -110,7 +110,7 @@ Ext.override(Ext.data.Connection,{
           argument : o.argument},
         doc,
         firstChild;
-      
+
       try{
         doc = frame.contentWindow.document || frame.contentDocument || WINDOW.frames[id].document;
         if(doc){
@@ -118,47 +118,47 @@ Ext.override(Ext.data.Connection,{
           //   in the headers.  We store it in a second textarea
           var header_json_textarea= doc.getElementById('header_json');
           var json_textarea= doc.getElementById('json');
-          
+
           if (header_json_textarea) {
             r.responseHeaderJson= header_json_textarea.value;
             r.responseHeaders= Ext.decode(r.responseHeaderJson) || {};
           }
-          
+
           if (json_textarea) {
             r.responseText= json_textarea.value;
           }
           else if (doc.body) {
-            if(/textarea/i.test((firstChild = doc.body.firstChild || {}).tagName)){ 
+            if(/textarea/i.test((firstChild = doc.body.firstChild || {}).tagName)){
               r.responseText = firstChild.value;
             }else{
               r.responseText = doc.body.innerHTML;
             }
           }
-          
+
           r.responseXML = doc.XMLDocument || doc;
         }
       }
       catch(e) {}
-      
+
       Ext.EventManager.removeListener(frame, 'load', cb, me);
-      
+
       me.fireEvent('requestcomplete', me, r, o);
-      
+
       function current_callback_continue(fn, scope, args){
         if(Ext.isFunction(o.success)) o.success.apply(o.scope, [r, o]);
         if(Ext.isFunction(o.callback)) o.callback.apply(o.scope, [o, true, r]);
       }
-      
+
       Ext.ux.RapidApp.handleCustomServerDirectives(r, current_callback_continue, success_callback_repeat);
-      
+
       if(!me.debugUploads){
         setTimeout(function(){Ext.removeNode(frame);}, 100);
       }
     }
-    
+
     Ext.EventManager.on(frame, 'load', cb, this);
     form.submit();
-    
+
     Ext.fly(form).set(buf);
     Ext.each(hiddens, function(h) {
       Ext.removeNode(h);
@@ -175,7 +175,7 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
 
   setTitle: function() {
     Ext.ux.AutoPanel.superclass.setTitle.apply(this,arguments);
-    
+
     // If our owner is the RapidApp 'main-load-target' TabPanel, this will
     // update the browser title
     if(this.ownerCt && Ext.isFunction(this.ownerCt.applyTabTitle)) {
@@ -191,13 +191,13 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
   cmpListeners: null,
   cmpConfig: {},
   update_cmpConfig: null,
-  
+
   errorDataForResponse: function(response) {
-    var opt = { 
+    var opt = {
       tabTitle: '<span style="color:gray;">(load failed)</span>',
-      tabIconCls: 'ra-icon-warning' 
+      tabIconCls: 'ra-icon-warning'
     };
-    
+
     var retry_text = [
      'Please try again later.&nbsp;&nbsp;',
      '<div style=height:20px;"></div>',
@@ -213,14 +213,14 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
       '</center>',
      '</div>'
     ].join(' ');
-    
+
     opt.title = 'Load Request Failed:';
     opt.msg = '<div style="padding:10px;font-size:1.3em;color:navy;">&nbsp;&nbsp;' +
-     response.statusText + 
+     response.statusText +
      '&nbsp;</div>' +
      '<br>' + retry_text;
-    
-    
+
+
     // All-purpose timeout message:
     if(response.isTimeout) {
       opt.tabTitle = '<span style="color:gray;">(timed out)</span>';
@@ -232,11 +232,11 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
        '<li>The system may be temporarily down for maintentence.</li>' +
        '</ol>' + retry_text;
     }
-    
+
     return opt;
-  
+
   },
-  
+
   onAutoLoadFailure: function(el,response) {
     // --- RapidApp Exceptions are handled in global Ajax handlers:
     if(
@@ -244,7 +244,7 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
       response.getResponseHeader('X-RapidApp-Exception')
     ) { return; }
     // ---
-    
+
     var opt = this.errorDataForResponse(response);
 
     return this.setErrorBody(opt.title,opt.msg,opt);
@@ -254,26 +254,26 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
   // an exception (X-RapidApp-Exception) occurs during content load:
   doAutoLoad: function() {
     var u = this.body.getUpdater();
-    
+
     // -- Set the 'Updater' timeout: (note conversion from millisecs to secs)
     u.timeout = (this.timeout)/1000;
-    
+
     //New: allow custom timeout to be set via autoLoad param:
     if(Ext.isObject(this.autoLoad) && this.autoLoad.timeout) {
       u.timeout = (this.autoLoad.timeout)/1000;
     }
     // --
-    
+
     // -----  AutoPanel failure handler  -----
     u.on('failure',this.onAutoLoadFailure,this);
     // -----   ***   -----
-    
+
     u.AutoPanelId = this.getId();
     Ext.ux.AutoPanel.superclass.doAutoLoad.call(this);
   },
 
   initComponent: function() {
-    
+
     // -- Make sure no highlighting can happen during load (this prevents highlight
     //    bugs that can happen if we double-clicked something to spawn this panel)
     var thisEl;
@@ -281,24 +281,24 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
       thisEl = this.getEl();
       thisEl.addClass('ra-ap-body');
       thisEl.addClass('no-text-select');
-      
+
       this.on('resize',this.setSafesizeClasses,this);
       this.setSafesizeClasses();
-      
+
       // Listen for clicks on custom 'ra-autopanel-reloader' elements
       // to fire reload of the panel. This provides inline access to
-      // this function within the html/content of the panel. 
+      // this function within the html/content of the panel.
       // (Added for Github Issue #24)
       thisEl.on('click',function(e,t,o) {
         var target = e.getTarget(null,null,true);
         if(target && target.hasClass('ra-autopanel-reloader')) {
         // in the case of nested AutoPanels, don't allow this event to
         // bubble up higher:
-        e.stopEvent(); 
+        e.stopEvent();
         this.reload();
         }
       }, this);
-      
+
     },this);
     // Allowing highlighting within the panel once loading is complete:
     this.on('afterlayout',function(){
@@ -312,10 +312,10 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
       disableCaching: true,
       render: function(el, response, updater, callback) {
         if (!updater.isUpdating() && el.dom) {
-          
+
           var conf, content_type = response.getResponseHeader('Content-Type');
           var cont_parts = content_type.split(';');
-          
+
           // Expected content-type returned by a RapidApp module:
           if(cont_parts[0] == 'text/javascript') {
             try {
@@ -330,12 +330,12 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
             };
           }
           else {
-            var html, title, icon = 'ra-icon-document', 
+            var html, title, icon = 'ra-icon-document',
               style = "font-weight:lighter;font-family:arial;";
             if (cont_parts[0] == 'text/html') {
               icon = 'ra-icon-page-white-world';
               html = response.responseText;
-              
+
               // --- Support special syntax to parse tab title/icon/style
               var div = document.createElement('div');
               var El = new Ext.Element(div);
@@ -351,7 +351,7 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
                 icon = titleEl.getAttribute('class') || icon;
                 style = titleEl.getAttribute('style') || style;
               }
-             
+
               // ---
             }
             else if (cont_parts[0] == 'text/plain') {
@@ -360,16 +360,16 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
             }
             else {
               icon: 'ra-icon-page-white';
-              html = '<b>Warning, Unknown Content-Type: ' + content_type + 
+              html = '<b>Warning, Unknown Content-Type: ' + content_type +
                 '</b><br><br><pre>' + response.responseText + '</pre>';
             }
-            
+
             if(!title || title == '') {
               title = cont_parts[0];
               var size = response.getResponseHeader('Content-Length');
               if(size) { title = title + ' [' + Ext.util.Format.fileSize(size) + ']'; }
             }
-            
+
             conf = {
               xtype: 'panel',
               autoScroll: true,
@@ -378,23 +378,23 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
               html: '<div style="padding:5px;">' + html + '</div>'
             };
           }
-          
+
           Ext.apply(conf,container.cmpConfig);
-            
+
           // new: 'update_cmpConfig' - same thing as cmpConfig except it is a
-          // function-based api which allows updating the config based on 
+          // function-based api which allows updating the config based on
           // the existing config instead of blindly like cmpConfig does
           if(Ext.isFunction(container.update_cmpConfig)) {
             container.update_cmpConfig(conf);
           }
-          
+
           if(container.cmpListeners) {
             conf.initComponent = function() {
               this.on(container.cmpListeners);
               this.constructor.prototype.initComponent.call(this);
             };
           }
-          
+
           // ------------------------------------
           // TODO/FIXME: new feature - deduplicate/refactor/merge with above -
           //  Allow regular JSON configs to also tap into the tab title/icon/style
@@ -418,7 +418,7 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
               title = style ? '<span style="' + style + '">' + title + '</span>' : title;
               conf.tabTitle = title || conf.tabTitle;
               conf.tabIconCls = titleEl.getAttribute('class') || conf.tabIconCls || 'ra-icon-page-white-world';
-              
+
               // -- New: allow the template content itself to set the refresh iterval like this:
               //   <title class="icon-something" ap-refresh-interval="300">Some Title</title>
               // Exposing this as a custom attr in the <title> tag because we're already using it
@@ -432,40 +432,40 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
             }
           }
           // ------------------------------------
-          
-          // NEW: optional override option to disable any tab title/icon 
+
+          // NEW: optional override option to disable any tab title/icon
           // configured in returned page
           if(container.autopanel_ignore_tabtitle) {
             if(conf.tabTitle) { delete conf.tabTitle; }
             if(conf.tabIconCls) { delete conf.tabIconCls; }
             if(conf.tabTitleCls) { delete conf.tabTitleCls; }
           }
-          
+
           // New: If this is html content (i.e. not an Ext container/panel)
           // set the default body class to 'ra-scoped-reset' to escape from the
           // global ExtJS CSS which does not have useful defaults for this case
           if(conf.html && !conf.bodyCssClass) {
             conf.bodyCssClass = 'ra-scoped-reset';
           }
-          
+
           // just for good measure, stop any existing auto refresh:
           updater.stopAutoRefresh();
-          
+
           container.setBodyConf.call(container,conf,el,true);
-          
+
           // autopanel_refresh_interval can be set from either the inner
           // dynamic panel, or hard-coded on the autopanel container itself:
-          var refresh_interval = 
+          var refresh_interval =
             container.autopanel_refresh_interval ||
             conf.autopanel_refresh_interval;
-          
+
           if(refresh_interval) {
             updater.startAutoRefresh(
               refresh_interval,
               container.autoLoad
             );
           }
-          
+
           // This is legacy and should probably be removed:
           if (conf.rendered_eval) { eval(conf.rendered_eval); }
         }
@@ -478,24 +478,24 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
   setBodyConf: function(conf,thisEl,clear) {
     // Always attempt to find and remove loading-indicator
     this.purgeLoadingIndicator();
-  
+
     thisEl = thisEl || this.getEl();
     if(this.items.getCount() > 0) { this.removeAll(true); }
-    
+
     // Clear the existing innerHTML (deletes the loading-indicator)
     // Previously, the loading-indicator was just hidden off the bottom
     // of the panel, but certain situations could make it show back up,
     // such as when the browser tries to scroll a label into view (as
     // described in Github Issue #46 which this change was added for).
     if(clear) { thisEl.dom.innerHTML = ''; }
-    
+
     var cmp = this.insert(0,conf);
     this.doLayout();
     if(cmp && Ext.isFunction(cmp.relayEvents)) {
       cmp.relayEvents(this,['show','activate']);
     }
   },
-  
+
   htmlForError: function(title,msg) {
     return [
         '<div class="ra-autopanel-error">',
@@ -521,7 +521,7 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
       tabIconCls: 'ra-icon-cancel',
       html: this.htmlForError(title,msg)
     },opt);
-    
+
     opt.bodyConf = opt.bodyConf || {
       layout: 'fit',
       autoScroll: true,
@@ -529,37 +529,37 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
       xtype: 'panel',
       html: opt.html
     };
-    
+
     if(!this.autopanel_ignore_tabtitle) {
       this.setTitle(opt.tabTitle);
       this.setIconClass(opt.tabIconCls);
     }
     this.setBodyConf(opt.bodyConf,this.getEl());
   },
-  
+
   purgeLoadingIndicator: function() {
     var loadEl = this.getEl().child('div.loading-indicator');
     if(loadEl) { loadEl.remove(); }
   },
-  
+
   reload: function() {
     // Call removeAll now so that any listeners associated with remove/destroy can
     // be called early (removeAll also gets called during the load process later).
-    // This is being done mainly to accomidate unsaved change detection in 
-    // DataStorePlus-driven components, but is the right/clean thing to do 
+    // This is being done mainly to accomidate unsaved change detection in
+    // DataStorePlus-driven components, but is the right/clean thing to do
     // regardless. Note that this is still not totally ideal, because it is already
     // too late for the user to stop the reload (as with a simple close) but at
     // least they have one last chance to save the outstanding changes which is
-    // better than nothing. 
+    // better than nothing.
     // UPDATE -- don't do this after all because it can lead to a deadlock situation
-    //           just purge the listeners b/c it is too late for the user to save 
+    //           just purge the listeners b/c it is too late for the user to save
     //           their changes if they clicked reload on the tab. Just like there
     //           is nothing we can do if they refreshed the browser.
     //this.removeAll();
     // TODO: hook into the guts of this process to support
     // actually cancelling the reload. This would need to be done by calling and
     // testing the result of 'beforeremove'
-    
+
     // NEW/Updated:
     // Clear *only* 'beforeremove' events -- we can't call purgeListeners()
     // because it breaks things like resize events. We only really need to
@@ -569,15 +569,15 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
     if(befRem && typeof befRem == 'object') {
       befRem.clearListeners();
     }
-    
+
     // Purge any child listeners for good measure (probably not needed)
     this.items.each(function(itm) { itm.purgeListeners(); });
 
     // Now call load using the same/original autoLoad config:
     this.load(this.autoLoad);
   },
-  
-  
+
+
   // This method sets 5 informational CSS classes on the body element
   // pertaining to the current size of the element within the browser.
   // There is no active RapidApp code that takes any action based on
@@ -599,7 +599,7 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
   //   * ra-safesize-large
   //
   // These are provided to limit the number of rules required to cover the
-  // entire spectrum of sizes w/o gaps. They can be used alone, or in combination with 
+  // entire spectrum of sizes w/o gaps. They can be used alone, or in combination with
   // the more-specific resolution values to zero in on the size at one end
   // of the size spectrum and not the other (for example, custom CSS could
   // be set for several different small styles and single rules for medium/large)
@@ -607,17 +607,17 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
     var El = this.getEl();
     var width = El.getWidth() + 4;
     var height = El.getHeight() + 4;
-    
+
     // 4x3
     var xWidth = parseInt(height/0.75);
     if(xWidth > width) { xWidth = width; }
-    
+
     //16x9
     var xwWidth = parseInt(height/0.5625);
     if(xwWidth > width) { xwWidth = width; }
-    
+
     var wClass, hClass, xClass, xwClass, smlClass;
-    
+
     wClass = 'ra-safesize-w0';
     if(width > 100)  { wClass = 'ra-safesize-w100'; }
     if(width > 320)  { wClass = 'ra-safesize-w320'; }
@@ -626,7 +626,7 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
     if(width > 800)  { wClass = 'ra-safesize-w800'; }
     if(width > 1024) { wClass = 'ra-safesize-w1024'; }
     if(width > 1400) { wClass = 'ra-safesize-w1400'; }
-    
+
     hClass = 'ra-safesize-h0';
     if(height > 50)  { hClass = 'ra-safesize-h50'; }
     if(height > 120) { hClass = 'ra-safesize-h120'; }
@@ -636,7 +636,7 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
     if(height > 600) { hClass = 'ra-safesize-h600'; }
     if(height > 768) { hClass = 'ra-safesize-h768'; }
     if(height > 1050) { hClass = 'ra-safesize-h768'; }
-    
+
     xClass = 'ra-safesize-0x0';
     if(xWidth > 200)  { xClass = 'ra-safesize-200x150'; }
     if(xWidth > 320)  { xClass = 'ra-safesize-320x240'; }
@@ -645,7 +645,7 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
     if(xWidth > 800)  { xClass = 'ra-safesize-800x600'; }
     if(xWidth > 1024) { xClass = 'ra-safesize-1024x768'; }
     if(xWidth > 1400) { xClass = 'ra-safesize-1400x1050'; }
-    
+
     xwClass = 'ra-safesize-0x0ws';
     if(xwWidth > 320)  { xwClass = 'ra-safesize-320x200ws'; }
     if(xwWidth > 480)  { xwClass = 'ra-safesize-480x270ws'; }
@@ -654,20 +654,20 @@ Ext.ux.AutoPanel = Ext.extend(Ext.Panel, {
     if(xwWidth > 1024) { xwClass = 'ra-safesize-1024x576ws'; }
     if(xwWidth > 1280) { xwClass = 'ra-safesize-1280x720ws'; }
     if(xwWidth > 1920) { xwClass = 'ra-safesize-1920x1080ws'; }
-    
+
     // Alternate broader small/medium/large
     smlClass = 'ra-safesize-small';
     if(xWidth > 480)  { smlClass = 'ra-safesize-medium'; }
     if(xWidth > 800)  { smlClass = 'ra-safesize-large'; }
-    
+
     if(this.current_safesize_Classes) {
       El.removeClass(this.current_safesize_Classes);
     }
-    
+
     this.current_safesize_Classes = [wClass,hClass,xClass,xwClass,smlClass];
     El.addClass(this.current_safesize_Classes);
   }
-  
+
 });
 Ext.reg('autopanel',Ext.ux.AutoPanel);
 
@@ -695,7 +695,7 @@ Ext.ux.RapidApp.showAjaxError = function(title,msg,options,data) {
     else {
       return Ext.ux.RapidApp.errMsgHandler(title,msg,data.as_text,data.extra_opts);
     }
-  
+
   }
 
 }
@@ -704,7 +704,7 @@ Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
   if (!response || !response.getResponseHeader || response.ajaxExceptionChecked){
     return;
   }
-  
+
   response.ajaxExceptionChecked = true;
 
   try {
@@ -713,16 +713,16 @@ Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
       var data = response.result || Ext.decode(response.responseText, true) || {};
       var title = data.title || 'Error';
       var msg = data.msg || 'unknown error - Ext.ux.RapidApp.ajaxCheckException';
-      
+
       Ext.ux.RapidApp.showAjaxError(title,msg,options,data);
     }
-    
+
     var warning = response.getResponseHeader('X-RapidApp-Warning');
     if (warning) {
       var data;
         try        { data = Ext.decode(warning); }
         catch(err) { data = { title: 'Warning', msg: warning }; }
-        
+
       var title = data.title || 'Warning';
       var msg = data.msg || 'Unknown (X-RapidApp-Warning)';
       Ext.ux.RapidApp.errMsgHandler(title,msg,data.as_text,{
@@ -732,7 +732,7 @@ Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
         win_height: 300
       });
     }
-    
+
     var eval_code = response.getResponseHeader('X-RapidApp-EVAL');
     if (eval) { eval(eval_code); }
   }
@@ -741,13 +741,13 @@ Ext.ux.RapidApp.ajaxCheckException = function(conn,response,options) {
 
 Ext.ux.RapidApp.ajaxRequestContentType = function(conn,options) {
   if (!options.headers) { options.headers= {}; }
-  
+
   if(options.url && !options.pfx_applied) {
     var pfx = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
     options.url = [pfx,options.url].join('');
     options.pfx_applied = true;
   }
-  
+
   options.headers['X-RapidApp-RequestContentType']= 'JSON';
   options.headers['X-RapidApp-VERSION'] = Ext.ux.RapidApp.VERSION;
 };
@@ -780,11 +780,11 @@ Ext.ux.RapidApp.ajaxException = function(conn,response,options) {
       return Ext.ux.RapidApp.ajaxCheckException.apply(this,arguments);
     }
     else {
-      // If we're here, it means a raw exception was encountered (5xx) 
+      // If we're here, it means a raw exception was encountered (5xx)
       // without an X-RapidApp-Exception header, so just throw the raw
-      // response body as text. This should not happen - it probably means 
+      // response body as text. This should not happen - it probably means
       // the server-side failed to catch the exception. The message will
-      // probably be ugly, but it is the best/safest thing we can do at 
+      // probably be ugly, but it is the best/safest thing we can do at
       // this point:
       return Ext.ux.RapidApp.showAjaxError(
         'Ajax Exception - ' + response.statusText + ' (' + response.status + ')',
@@ -796,17 +796,17 @@ Ext.ux.RapidApp.ajaxException = function(conn,response,options) {
   else {
     // If we're here it means the request failed altogether, and didn't even
     // send back a response with headers (server is down, network down, etc).
-    
+
     // If this is an AutoPanel load request, take no action, since AutoPanel
-    // handles its own errors by showing them as its content: 
+    // handles its own errors by showing them as its content:
     // (TODO - consolidate this handling)
     if(options && options.scope && options.scope.AutoPanelId) {
       return;
     }
-    
+
     // For all other types of Ajax requests (such as CRUD actions), display
     // the error to the user in a standard window:
-    var msg = (response && response.statusText) ? 
+    var msg = (response && response.statusText) ?
       response.statusText : 'unknown error';
     return Ext.ux.RapidApp.showAjaxError(
       'Ajax Request Failed',
@@ -827,7 +827,7 @@ Ext.Ajax.on('beforerequest',Ext.ux.RapidApp.ajaxRequestContentType);
 
 Ext.ux.RapidApp.ajaxShowGlobalMask = function(conn,options) {
   if(options.loadMaskMsg) {
-  
+
     conn.LoadMask = new Ext.LoadMask(Ext.getBody(),{
       msg: options.loadMaskMsg
       //removeMask: true
@@ -847,16 +847,16 @@ Ext.Ajax.on('requestexception',Ext.ux.RapidApp.ajaxHideGlobalMask,this);
 
 
 /* -------------------------------------------------------------------------------------
-/* ------------------------------------------------------------------------------------- 
+/* -------------------------------------------------------------------------------------
  This should be used instead of 'new Ext.data.Connection()' whenever creating a
  custom Conn object. The reason one might want to create a custom Conn object
  instead of using the Ext.Ajax singleton is to be able to set custom event listeners
  that apply to just that one connection. But we want these to also fire the global
  RapidApp event listeners, too:                                                         */
 Ext.ux.RapidApp.newConn = function(config) {
-  
+
   config = config || {};
-  
+
   // Copy default properties from Ext.Ajax
   var props = Ext.copyTo({},Ext.Ajax,[
     'autoAbort',
@@ -865,16 +865,16 @@ Ext.ux.RapidApp.newConn = function(config) {
     'timeout'
   ]);
   Ext.apply(props,config);
-  
+
   var Conn = new Ext.data.Connection(props);
-  
+
   // Relay all the events of Ext.Ajax:
   Ext.Ajax.relayEvents(Conn,[
     'beforerequest',
     'requestexception',
     'requestcomplete'
   ]);
-  
+
   return Conn;
 };
 /* -------------------------------------------------------------------------------------
@@ -887,7 +887,7 @@ Ext.ux.RapidApp.newConn = function(config) {
 NEW - general-purpose Ajax content loader, triggered by special CSS class 'ra-async-box'
 
 This is essentially a lighter, stand-alone version of 'AutoPanel' but it is designed
-to load on-the-fly in any tag with the 'ra-async-box' class and a 'src' attibute 
+to load on-the-fly in any tag with the 'ra-async-box' class and a 'src' attibute
 defined. This is meant to follow the same pattern as iframe, but our use of 'src' is
 a bastardization. The content is designed to load either within another ExtJS component
 or not, and hooks the appropriate resize events in either case. If we're within another
@@ -895,12 +895,12 @@ component, while we do hook its resize event, we do _NOT_ properly participate i
 layout. We are essentially stand-alone, bound to the original element.
 
 The reason for this is to support more flexibility to load async content without needing
-to setup a full-blown container structure with child items, etc, as is the case with 
+to setup a full-blown container structure with child items, etc, as is the case with
 AutoPanel. We may take some of these ideas back to AutoPanel as well
 
    -- STILL EXPERIMENTAL --   */
 Ext.ux.RapidApp.loadAsyncBoxes = function(Target) {
-  
+
   var Element, Container;
   if(Target && Target instanceof Ext.BoxComponent) {
     Container = Target;
@@ -909,40 +909,40 @@ Ext.ux.RapidApp.loadAsyncBoxes = function(Target) {
   else {
     Element = Target || Ext.getBody();
   }
-  
+
   if(!Element || ! (Element instanceof Ext.Element)) { return; }
-  
+
   var nodes = Element.query('.ra-async-box');
-  
+
   Ext.each(nodes,function(dom,index){
     var El = new Ext.Element(dom);
     if(El.hasClass('loaded')) { return; }
-    
+
     var src = El.getAttribute('src');
     if(!src) { return; }
-    
+
     // Clear any existing content
     El.dom.innerHTML = '';
-    
+
     // Add the 'loaded' class early to ensure we're only processed once
     El.addClass('loaded');
-    
+
     var loadMask = new Ext.LoadMask(El);
     loadMask.show();
-    
+
     var reloadFn = function() {
       loadMask.hide();
       El.removeClass('loaded');
       El.dom.innerHTML = '';
       return Ext.ux.RapidApp.loadAsyncBoxes(Target);
     };
-    
+
     // Hook to reload on 'ra-autopanel-reloader' clicks, just like AutoPanel
     if(!El.reloadClickListener) {
       El.reloadClickListener = function(e,t,o) {
         var target = e.getTarget(null,null,true);
         if(target && target.hasClass('ra-autopanel-reloader')) {
-          e.stopEvent(); 
+          e.stopEvent();
           reloadFn.call(El);
         }
       };
@@ -950,58 +950,58 @@ Ext.ux.RapidApp.loadAsyncBoxes = function(Target) {
     }
 
     var failure = function(response,options) {
-    
+
       // re-use markup code from AutoPanel:
       var opt  = Ext.ux.AutoPanel.prototype.errorDataForResponse(response);
       var html = Ext.ux.AutoPanel.prototype.htmlForError(opt.title,opt.msg);
-      
+
       var size = El.getSize();
-      
+
       var div = document.createElement('div');
       var errEl = new Ext.Element(div);
-      
+
       var height = size.height - 18;
       var width  = size.width  - 18;
       if(width  < 80) { width  = 80; }
       if(height < 30) { height = 30; }
-      
+
       errEl.setSize(width,height);
 
-      errEl.setStyle({ 
-        'position'    : 'relative', 
+      errEl.setStyle({
+        'position'    : 'relative',
         'overflow'    : 'auto',
         'white-space' : 'nowrap'
       });
-      
+
       errEl.dom.innerHTML = html;
-      
+
       El.dom.innerHTML = '';
       El.appendChild(errEl); // must already be appened before we call boxWrap()
       errEl.boxWrap(); // apply same styles as panel 'frame' option
-      
+
       loadMask.hide();
 
     };
-    
+
     var success = function(response,options) {
       var ct = response.getResponseHeader('Content-Type');
       if(ct) { ct = ct.split(';')[0]; }
-      
+
       // The 'text/javascript' content type means this is a ExtJS config
       if(ct && ct == 'text/javascript') {
 
         var cnf = Ext.decode(response.responseText);
-        
+
         // Our height and width is bound to the existing size of the element (if it has them)
         var size = El.getSize();
         if(size.height) { cnf.height = size.height; }
         if(size.width)  { cnf.width  = size.width;  }
-        
+
         loadMask.hide();
         var Cmp = Ext.create(cnf);
-        
+
         Cmp.reload = reloadFn;
-        
+
         // --
         // resizeFn: Calls itself recursively up to 20 times until the height is greater than 0.
         // This gives the dom extra time to finish updating itself for when the ra-async-box has
@@ -1046,13 +1046,13 @@ Ext.ux.RapidApp.loadAsyncBoxes = function(Target) {
           }
           _reSize();
         };
-        
+
         // Save a reference to the resizeFn within the DOM object so it can be found again
         // later by the asyncBoxesOnResize listener, below - but NOT found if the element
         // is removed or no longer contained within the DOM (.
         dom._onAsyncBoxResize = resizeFn;
         // --
-        
+
         if(Container) {
           // If we're within another component/container, we'll hook into its
           // 'resize' event to trigger recalculation of our size. This only
@@ -1060,7 +1060,7 @@ Ext.ux.RapidApp.loadAsyncBoxes = function(Target) {
           // absolute positioning or when a width percent value is supplied, etc
           // --
           // NEW: hook using a global function only ONCE - this prevents duplicate listeners
-          // from being attached to the same componenet mutliple times, which can 
+          // from being attached to the same componenet mutliple times, which can
           // happen when AppDV templates, or other dynamic content include ra-async-box
           // that is updated or replaced via refresh of other mechanism. This listener
           // is applied exactly 1 time per unique Container object, and uses the DOM
@@ -1071,7 +1071,7 @@ Ext.ux.RapidApp.loadAsyncBoxes = function(Target) {
             Container._asyncBoxResizeListener = Ext.ux.RapidApp.asyncBoxesOnResize;
             Container.on('resize',Container._asyncBoxResizeListener,Container);
           }
-          
+
           // Set our ownerCt, even though we're not proper participants in the layout
           Cmp.ownerCt = Container;
         }
@@ -1105,7 +1105,7 @@ Ext.ux.RapidApp.loadAsyncBoxes = function(Target) {
     });
   },this);
 };
-// This is the global async resize listener function which we attach to 
+// This is the global async resize listener function which we attach to
 Ext.ux.RapidApp.asyncBoxesOnResize = function(Target) {
   var args = arguments;
   var Element, Container;
@@ -1116,11 +1116,11 @@ Ext.ux.RapidApp.asyncBoxesOnResize = function(Target) {
   else {
     Element = Target || Ext.getBody();
   }
-  
+
   if(!Element || ! (Element instanceof Ext.Element)) { return; }
-  
+
   var nodes = Element.query('.ra-async-box');
-  
+
   Ext.each(nodes,function(dom,index){
     if (dom._onAsyncBoxResize) {
       dom._onAsyncBoxResize.apply(Target,args);

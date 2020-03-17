@@ -20,10 +20,10 @@ has 'msg', is => 'ro', isa => 'Str', default => '';
 
 sub writeResponse {
 	my ($self, $c)= @_;
-	
+
 	# X-RapidApp-Info header not used yet, but it is intended to display a non-invasive status/info message
 	$c->response->header('X-RapidApp-Info' => $self->msg);
-	
+
 	$c->response->status($self->status);
 	$c->response->body('');
 }

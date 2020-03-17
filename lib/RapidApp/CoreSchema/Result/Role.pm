@@ -43,7 +43,7 @@ __PACKAGE__->has_many(
 __PACKAGE__->load_components('+RapidApp::DBIC::Component::TableSpec');
 __PACKAGE__->apply_TableSpec;
 
-__PACKAGE__->TableSpec_set_conf( 
+__PACKAGE__->TableSpec_set_conf(
 	title => 'Role',
 	title_multi => 'Roles',
 	iconCls => 'ra-icon-user-pref',
@@ -52,7 +52,7 @@ __PACKAGE__->TableSpec_set_conf(
   priority_rel_columns => 1,
 );
 
-__PACKAGE__->TableSpec_set_conf('column_properties_ordered', 
+__PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 
   id => { no_column => \1, no_multifilter => \1, no_quick_search => \1 },
 
@@ -61,12 +61,12 @@ __PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 		width	=> 150,
     allow_edit => \1
 	},
-	
+
 	description => {
 		header => 'Description',
 		width	=> 350,
 	},
-	
+
 );
 
 __PACKAGE__->meta->make_immutable;

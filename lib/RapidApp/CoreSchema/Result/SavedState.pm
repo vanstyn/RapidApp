@@ -75,12 +75,12 @@ __PACKAGE__->belongs_to(
 
 sub loadContentCnf {
 	my $self = shift;
-	
+
 	#my $params = $self->decoded_params;
 	#$params->{search_id} = $self->get_column('id');
-  
+
   my $url = '/view/' . $self->get_column('id');
-  
+
   # New: if there is no state_data or params, use the declared URL outright:
   $url = $self->url unless($self->params || $self->state_data);
 
@@ -100,10 +100,10 @@ sub loadContentCnf {
 # Called from the tree module to get custom attrs
 sub customAttrs {
   my $self = shift;
-  
+
   # If there no state_data or params, this this is a 'link' node type, and we return
   # a packet for 'customAttrs'. See the NavTree grid for additional logic.
-  return $self->params || $self->state_data ? undef : { 
+  return $self->params || $self->state_data ? undef : {
     url     => $self->url,
     iconcls => $self->iconcls
   }
@@ -113,7 +113,7 @@ sub customAttrs {
 __PACKAGE__->load_components('+RapidApp::DBIC::Component::TableSpec');
 __PACKAGE__->apply_TableSpec;
 
-__PACKAGE__->TableSpec_set_conf( 
+__PACKAGE__->TableSpec_set_conf(
 	title => 'Saved View',
 	title_multi => 'Saved Views',
 	iconCls => 'ra-icon-data-view',
@@ -122,39 +122,39 @@ __PACKAGE__->TableSpec_set_conf(
   auto_editor_type => 'grid'
 );
 
-__PACKAGE__->TableSpec_set_conf('column_properties_ordered', 
+__PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 
 	id => { no_column => \1, no_multifilter => \1, no_quick_search => \1 },
 	node_id => { no_column => \1, no_multifilter => \1, no_quick_search => \1 },
   user_id => { no_column => \1, no_multifilter => \1, no_quick_search => \1 },
-	
+
 	title => {
 		header => 'View Name/Title',
 		width	=> 170,
 	},
-	
+
 	subtitle => {
 		header => 'Subtitle',
 		width	=> 225,
 		hidden => \1
 	},
-  
+
   ordering => {
     header => 'Order Num',
     hidden => 1
   },
-	
+
 	iconcls => {
 		width	=> 110,
 		header => 'Icon Class',
 	},
-	
+
 	url => {
 		width	=> 150,
 		header => 'Url',
 		allow_edit => \0
 	},
-	
+
 	params => {
 		width	=> 250,
 		header => 'Params',
@@ -163,7 +163,7 @@ __PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 		allow_edit => \0,
 		allow_view => \1
 	},
-	
+
 	state_data => {
 		width	=> 250,
 		header => 'State Data',
@@ -171,17 +171,17 @@ __PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 		#allow_edit => \0,
 		hidden => \1
 	},
-	
+
 	node => {
 		width	=> 175,
 		header => 'Navtree Parent Node',
 	},
-  
+
   user => {
 		width	=> 130,
 		header => 'User',
 	},
-	
+
 );
 
 

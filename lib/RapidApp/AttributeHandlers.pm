@@ -53,7 +53,7 @@ use Attribute::Handlers;
 #[16:36] <vs> I can only get it to work if I put the atttribute definitions in the package directly
 #[16:36] <@Caelum> try: require base; base->import('DBIx::Class');
 #[16:36] <@Caelum> that would be the equivalent of the Moose "extends"
-#[16:37] <vs> aha... ok, let me try that... 
+#[16:37] <vs> aha... ok, let me try that...
 #[16:38] <vs> yep, that works!
 #[16:38] <@Caelum> bonus points if you can figure out why and submit the appropriate RT tickets :)
 #[16:39] <vs> I've been beating my head against this for hours... it reminds me how much I still don't know about perl...
@@ -69,14 +69,14 @@ use Attribute::Handlers;
 
 sub Debug :ATTR(CODE,BEGIN) {
 	my ($package, $symbol, $referent, $attr, $data, $phase, $filename, $linenum) = @_;
-	
+
 	my $name = *{$symbol}{NAME};
-	
-	die __PACKAGE__ . '::Debug(): invalid attribute data: "' . $data . '" - expected hash/list arguments' 
+
+	die __PACKAGE__ . '::Debug(): invalid attribute data: "' . $data . '" - expected hash/list arguments'
 		if (defined $data and ref($data) ne 'ARRAY');
-	
+
 	scream_color(BOLD.CYAN,"debug_around set on: $package" . '::' . "$name at line $linenum");
-	
+
 	my %opt = (pkg => $package, filename => $filename, line => $linenum);
 	%opt = ( %opt, @$data ) if (ref($data) eq 'ARRAY');
 
@@ -85,9 +85,9 @@ sub Debug :ATTR(CODE,BEGIN) {
 
 sub nDebug :ATTR(CODE,BEGIN) {
 	my ($package, $symbol, $referent, $attr, $data, $phase, $filename, $linenum) = @_;
-	
+
 	my $name = *{$symbol}{NAME};
-	
+
 	scream_color(BOLD.CYAN,"NOT setting debug_around on: $package" . '::' . "$name at line $linenum");
 }
 
@@ -97,7 +97,7 @@ sub nDebug :ATTR(CODE,BEGIN) {
 ## Automatically setup 'debug_around' on methods with the 'Debug' attribute:
 #sub Debug :ATTR_SUB {
 #	my ($package, $symbol, $referent, $attr, $data, $phase, $filename, $linenum) = @_;
-#	
+#
 #	scream(join('',
 #		ref($referent), " ",
 #		*{$symbol}{NAME}, " ",
@@ -107,8 +107,8 @@ sub nDebug :ATTR(CODE,BEGIN) {
 #		"in phase $phase\n",
 #		"in file $filename at line $linenum\n"
 #	));
-#	
-#	
+#
+#
 #	return debug_around(*{$symbol}{NAME}, pkg => $package, filename => $filename, line => $linenum);
 #}
 

@@ -11,25 +11,25 @@ sub record_Request {
 	my $self = shift;
 	my $ReqData = shift or die "Missing Request Data";
 	my $extra = shift || {};
-  
+
   # Also support full Catalyst Context arg:
   my $c = (
-    blessed $ReqData && 
+    blessed $ReqData &&
     $ReqData->can('request') &&
     $ReqData->request->isa('Catalyst::Request')
   ) ? $ReqData : undef;
   $ReqData = $c->request if ($c);
-  
-	
-	my $dt = $extra->{unix_timestamp} ? 
-		DateTime->from_epoch(epoch => $extra->{unix_timestamp}, time_zone => 'local') : 
+
+
+	my $dt = $extra->{unix_timestamp} ?
+		DateTime->from_epoch(epoch => $extra->{unix_timestamp}, time_zone => 'local') :
 			DateTime->now( time_zone => 'local' );
-	
+
 	my $data = {
 		timestamp => $dt->ymd . ' ' . $dt->hms(':'),
 		serialized_request => $extra->{full_request_yaml} || ''
 	};
-	
+
 	if(ref $ReqData eq 'HASH') {
 		%$data = ( %$data,
 			client_ip => $ReqData->{address} || $ReqData->{client_ip},
@@ -52,9 +52,9 @@ sub record_Request {
 	else {
 		die "Expected Request Data as either a Hash or Catalyst::Request object";
 	}
-  
+
   return $self->create($data) if(defined wantarray);
-  
+
   # populate for speed in VOID context:
 	$self->populate([$data]);
   return 1;
@@ -64,9 +64,9 @@ sub record_Request {
 sub record_ctx_Request {
 	my $self = shift;
 	my $c = shift or return undef;
-  
+
   my $Request = $c->request or return undef;
-  
+
   my $data = {
     client_ip => ($Request->address || undef),
     uri => ($Request->uri || undef),
@@ -77,7 +77,7 @@ sub record_ctx_Request {
   };
 
   return $self->create($data) if(defined wantarray);
-  
+
   # populate for speed in VOID context:
 	$self->populate([$data]);
   return 1;

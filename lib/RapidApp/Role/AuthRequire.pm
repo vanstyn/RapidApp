@@ -21,9 +21,9 @@ around 'Controller' => sub {
 	my $orig = shift;
 	my $self = shift;
 	my ( $c, $opt, @args ) = @_;
-	
+
 	#$self->c->res->status(205);
-	
+
 	unless ($self->c->session_is_valid and $self->c->user_exists) {
 		$self->c->res->header('X-RapidApp-Authenticated' => 0);
 		
@@ -34,10 +34,10 @@ around 'Controller' => sub {
 				or die "Misconfigured auth_module_path";
 			return $authModule->viewport;
 		}
-		
+
 		return $self->render_data($self->non_auth_content);
 	}
-	
+
 	$self->c->res->header('X-RapidApp-Authenticated' => $self->c->user->get('username'));
 	return $self->$orig(@_);
 };

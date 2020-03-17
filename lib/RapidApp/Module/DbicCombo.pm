@@ -35,7 +35,7 @@ has 'type_filter', is => 'ro', isa => 'Bool', lazy => 1, default => sub{ (shift)
 =head2 min_type_filter_chars
 
 Setting passed to the 'minChars' ExtJS combo config. Defaults to '0' which causes filter/query
-to fire with every user ketstroke. For large tables where matching on as little as a single character 
+to fire with every user ketstroke. For large tables where matching on as little as a single character
 will be too slow, or to reduce the number/rate of queries fired, set this to a higher value.
 =cut
 has 'min_type_filter_chars', is => 'ro', isa => 'Int', default => 0;
@@ -43,7 +43,7 @@ has 'min_type_filter_chars', is => 'ro', isa => 'Int', default => 0;
 =head2 auto_complete
 
 Boolean. True to enable 'typeAhead' in the ExtJS combo, meaning that text from the filtered results
-will be auto-completed in the box. This only makes sense when type_filter is on and will auto enable 
+will be auto-completed in the box. This only makes sense when type_filter is on and will auto enable
 filter_match_start. This is an "unfeature" (very annoying) if used inappropriately. Defaults to false.
 =cut
 has 'auto_complete', is => 'ro', isa => 'Bool', default => sub{0};
@@ -65,11 +65,11 @@ has 'result_class', is => 'ro', lazy => 1, default => sub {
 
 sub BUILD {
   my $self = shift;
-  
+
   # Remove the width hard coded in AppCombo2 (still being left in AppCombo2 for legacy
   # but will be removed in the future)
   $self->delete_extconfig_param('width');
-  
+
   # base config:
   $self->apply_extconfig(
     itemId         => $self->name . '_combo',
@@ -78,7 +78,7 @@ sub BUILD {
     typeAhead      => \0,
     selectOnFocus  => \0,
   );
-  
+
   # type_filter overrides:
   $self->apply_extconfig(
     editable      => \1,
@@ -92,12 +92,12 @@ sub BUILD {
                           '</div>'
                      ),
   ) if ($self->type_filter);
-  
+
   # auto_complete overrides:
   $self->apply_extconfig(
-    typeAhead     => \1 
+    typeAhead     => \1
   ) if ($self->auto_complete);
-  
+
   # user_editable overrides:
   $self->apply_extconfig(
     editable         => \1,
@@ -108,28 +108,28 @@ sub BUILD {
     no_click_trigger => \1,
     is_user_editable => \1,
     autoSelect       => \0
-  ) if ($self->user_editable); 
+  ) if ($self->user_editable);
 }
 
 
 sub read_records {
   my $self = shift;
   my $p = $self->c->req->params;
-  
+
   delete $p->{type_filter_query} if ( $p->{type_filter_query} && (
     # Discard type_filter queries if type_filter is not enabled:
     ! $self->type_filter ||
     # As well as empty/only whitespace
     $p->{type_filter_query} =~ /^\s*$/
   ));
-  
+
   # record_pk and valueField are almost always the the same
   my @cols = uniq(
     $self->record_pk,
     $self->valueField,
     $self->displayField
   );
-  
+
   # Start with a select on only the columns we need:
   my $Rs = $self->ResultSet->search_rs(undef,{
     select => [map {$self->_resolve_select($_)} @cols],
@@ -141,25 +141,25 @@ sub read_records {
     $self->RS_condition,
     $self->RS_attr
   );
-  
+
   # Set the default order_by so the list is sorted alphabetically:
   $Rs = $Rs->search_rs(undef,{
-    order_by => { 
-      '-asc' => $self->_resolve_select($self->displayField) 
+    order_by => {
+      '-asc' => $self->_resolve_select($self->displayField)
     }
   }) unless (exists $Rs->{attrs}{order_by});
-  
+
   # And set a fail-safe max number of rows:
   $Rs = $Rs->search_rs(undef,{ rows => 500 }) unless (exists $Rs->{attrs}{rows});
-  
+
   # Filter for type_filter
   $Rs = $Rs->search_rs(
     $self->_like_type_filter_for($p->{type_filter_query})
   ) if ($p->{type_filter_query});
-  
+
   # Finally, chain through the custom 'AppComboRs' ResultSet method if defined:
   $Rs = $Rs->AppComboRs if ($Rs->can('AppComboRs'));
-  
+
   my $rows = [ $Rs
     ->search_rs(undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' })
     ->all
@@ -174,7 +174,7 @@ sub read_records {
   # query, and applies to only 1 row. However, we don't expect both a valueqry
   # and a type_filter_query together. The valueqry is sent to obtain the display
   # value for an existing value in the combo, and we support the case of
-  # properly displaying an existing value even if it does not show up (i.e. 
+  # properly displaying an existing value even if it does not show up (i.e.
   # cannot be selected) in the dropdown list.
   $self->_apply_valueqry($rows,$p->{valueqry}) if (
     $p->{valueqry} &&
@@ -190,23 +190,23 @@ sub read_records {
 
 sub _apply_valueqry {
   my ($self, $rows, $valueqry) = @_;
-  
+
   # If the valueqry row is already present, we don't need to do anything:
   return if ( List::Util::first {
     $_->{$self->record_pk} eq $valueqry
   } @$rows );
-  
+
   my $Row = $self->ResultSet
     ->search_rs({ join('.','me',$self->record_pk) => { '=' => $valueqry }})
     ->first
   or return;
-  
+
   unshift @$rows, { $Row->get_columns };
 }
 
 sub _resolve_select {
   my ($self, $col) = @_;
-  
+
   $self->{_resolve_select_cache}{$col} ||= do {
     my $Source = $self->ResultSet->result_source;
     my $class = $Source->schema->class($Source->source_name);
@@ -221,13 +221,13 @@ sub _binary_op_fuser { RapidApp::Module::StorCmp::Role::DbicLnk::_binary_op_fuse
 
 sub _like_type_filter_for {
   my ($self,$str) = @_;
-  
-  my $like_arg = $self->filter_match_start 
+
+  my $like_arg = $self->filter_match_start
     ? join('',    $str,'%')  # <-- start of the column
     : join('','%',$str,'%'); # <-- anywhere in the column
-  
+
   my $sel = $self->_resolve_select($self->displayField);
-  
+
   my $sm = $self->ResultSet->result_source->schema->storage->sql_maker;
   return &_binary_op_fuser($sm,$sel => { like => $like_arg });
 

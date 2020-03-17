@@ -22,18 +22,18 @@ It also is responsible for cleaning temporary values from the Modules after the 
 =cut
 sub dispatch {
 	my ($self, $c, @args)= @_;
-	
+
 	# get the root module (or sub-module, if we've been configured that way)
 	my $targetModule= $c->rapidApp->module($self->dispatchTarget);
-		
+
 	# now run the controller
 	my $result = $targetModule->THIS_MODULE->Controller($c, @args);
 	$c->stash->{controllerResult} = $result;
-	
+
 	# if the body was not set, make sure a view was chosen
 	defined $c->res->body || defined $c->stash->{current_view} || defined $c->stash->{current_view_instance}
 		or die "No view was selected, and a body was not generated";
-	
+
 	return $result;
 }
 

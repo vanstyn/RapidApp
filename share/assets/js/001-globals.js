@@ -37,7 +37,7 @@ Ext.ux.RapidApp.util.parseFirstTextFromHtml = function(str) {
         return Ext.ux.RapidApp.util.parseFirstTextFromHtml(el.children[0].innerHTML);
       }
     }
-    
+
     // This will have any html entities decoded, and stripped of leading/trailing whitespace:
     var txtarea = document.createElement( 'textarea' );
     txtarea.innerHTML = str;

@@ -23,35 +23,35 @@ DBIx::Class::VirtualColumns - Add virtual columns to DBIx::Class schemata
  package Your::Schema::Class;
  use strict;
  use warnings;
- 
+
  use base 'DBIx::Class';
- 
+
  __PACKAGE__->load_components(
    "VirtualColumns",
    "PK",
    "Core",
  );
- 
+
  __PACKAGE__->table("sometable");
  __PACKAGE__->add_columns(qw/dbcol1 dbcol2/);
  __PACKAGE__->add_virtual_columns(qw/vcol1 vcol2 vcol3/);
- 
+
  # =========================================================
  # Somewhere else
- 
+
  my $item = $schema->resultset('Artist')->find($id);
  $item->vcol1('test'); # Set 'test'
  $item->get_column('vcol1'); # Return 'test'
- 
+
  my $otheritem = $schema->resultset('Artist')->create({
      dbcol1 => 'value1',
      dbcol2 => 'value2',
      vcol1  => 'value3',
      vcol2  => 'value4',
  });
- 
+
  $otheritem->vcol1(); # Now is 'value3'
- 
+
  # Get the column metadata just like for a regular DBIC column
  my $info = $result_source->column_info('vcol1');
 
@@ -64,44 +64,44 @@ the L<DBIx::Class::Row> object and without introducting an additional
 interface.
 
 Most L<DBIx::Class> methods like C<set_column>, C<set_columns>, C<get_column>,
-C<get_columns>, C<column_info>, ... will work with regular as well as 
+C<get_columns>, C<column_info>, ... will work with regular as well as
 virtual columns.
 
 =head1 USAGE
 
-Use this module if you want to add 'virtual' columns to a DBIC class 
-which behave like real columns (e.g. if you want to use the C<set_column>, 
+Use this module if you want to add 'virtual' columns to a DBIC class
+which behave like real columns (e.g. if you want to use the C<set_column>,
 C<get_column> methods)
 
-However if you only want to add non-column data to L<DBIx::Class::Row> 
+However if you only want to add non-column data to L<DBIx::Class::Row>
 objects, then there are easier/better ways:
 
  __PACKAGE__->mk_group_accessors(simple => qw(foo bar baz));
 
 =head1 METHODS
 
-=head2 add_virtual_columns 
+=head2 add_virtual_columns
 
 Adds virtual columns to the result source. If supplied key => hashref pairs,
-uses the hashref as the column_info for that column. Repeated calls of this 
+uses the hashref as the column_info for that column. Repeated calls of this
 method will add more columns, not replace them.
 
- $table->add_virtual_columns(qw/column1 column2/); 
- OR 
- $table->add_virtual_columns(column1 => \%column1_info, column2 => \%column2_info, ...); 
+ $table->add_virtual_columns(qw/column1 column2/);
+ OR
+ $table->add_virtual_columns(column1 => \%column1_info, column2 => \%column2_info, ...);
 
-The column names given will be created as accessor methods on your 
-C<DBIx::Class::Row objects>, you can change the name of the accessor by 
-supplying an "accessor" in the column_info hash. 
+The column names given will be created as accessor methods on your
+C<DBIx::Class::Row objects>, you can change the name of the accessor by
+supplying an "accessor" in the column_info hash.
 
-The following options are currently recognised/used by 
+The following options are currently recognised/used by
 DBIx::Class::VirtualColumns:
 
 =over
 
 =item * accessor
 
-Use this to set the name of the accessor method for this column. If not set, 
+Use this to set the name of the accessor method for this column. If not set,
 the name of the column will be used.
 
 =back
@@ -111,30 +111,30 @@ the name of the column will be used.
 sub add_virtual_columns {
     my $self = shift;
     my @columns = @_;
-    
-    $self->_virtual_columns( {} ) 
+
+    $self->_virtual_columns( {} )
         unless defined $self->_virtual_columns() ;
-    
+
     # Add columns & accessors
     while (my $column = shift @columns) {
         my $column_info = ref $columns[0] ? shift(@columns) : {};
-        
+
         # Check column
         $self->throw_exception("Cannot override existing column '$column' with virtual one")
             if ($self->has_column($column) or exists $self->_virtual_columns->{$column});
 
         $self->_virtual_columns->{$column} = $column_info;
-        
+
         my $accessor = $column_info->{accessor} || $column;
-        
-        # Add default acceccor 
+
+        # Add default acceccor
         no strict 'refs';
         *{$self.'::'.$accessor} = sub {
             my $self = shift;
             return $self->get_column($column) unless @_;
             $self->set_column($column, shift);
         };
-        
+
     }
 }
 
@@ -148,7 +148,7 @@ sub add_virtual_column { shift->add_virtual_columns(@_) }
 
 =head2 has_any_column
 
-Returns true if the source has a virtual or regular column of this name, 
+Returns true if the source has a virtual or regular column of this name,
 false otherwise.
 
 =cut
@@ -156,7 +156,7 @@ false otherwise.
 sub has_any_column {
     my $self = shift;
     my $column = shift;
-    return ($self->_virtual_columns->{$column} || 
+    return ($self->_virtual_columns->{$column} ||
         $self->has_column($column)) ? 1:0;
 }
 
@@ -175,7 +175,7 @@ sub has_virtual_column {
 =head2 remove_virtual_columns
 
  $table->remove_columns(qw/col1 col2 col3/);
-  
+
 Removes virtual columns from the result source.
 
 =cut
@@ -183,7 +183,7 @@ Removes virtual columns from the result source.
 sub remove_virtual_columns {
     my $self = shift;
     my @columns = @_;
-    
+
     foreach my $column  (@columns)  {
         delete $self->_virtual_columns->{$column};
     }
@@ -204,12 +204,12 @@ Splits attributes for regular and virtual columns
 =cut
 
 sub _virtual_filter {
-    my ($self,$attrs) = @_;  
+    my ($self,$attrs) = @_;
 
     if ( !$self->_virtual_columns ) {
         $self->_virtual_columns( {} );
     }
-    
+
     my $virtual_attrs = {};
     my $main_attrs = {};
     foreach my $attr (keys %$attrs) {
@@ -230,21 +230,21 @@ Overloaded method. L<DBIx::Class::Row/"new">
 
 sub new {
     my ( $class, $attrs ) = @_;
-    
+
     # Split main and virtual values
     my ($virtual_attrs,$main_attrs) = $class->_virtual_filter($attrs);
 
     # Call new method
     my $return = $class->next::method($main_attrs);
-    
+
     # Prefill localized data
     $return->{_virtual_values} = {};
-    
+
     # Set localized data
     while ( my($key,$value) = each %$virtual_attrs ) {
         $return->store_column($key,$value);
     }
-    
+
     return $return;
 }
 
@@ -274,10 +274,10 @@ Overloaded method. L<DBIx::Class::Row/"get_colums">
 
 sub get_columns {
     my $self = shift;
-    
+
     return $self->next::method(@_) unless $self->in_storage;
     my %data = $self->next::method(@_);
-    
+
     if (defined $self->_virtual_columns) {
         foreach my $column (keys %{$self->_virtual_columns}) {
             $data{$column} = $self->{_virtual_values}{$column};
@@ -368,13 +368,13 @@ Overloaded method. L<DBIx::Class::Row/"update">
 sub update {
     my $self = shift;
     my $attr = shift;
- 
+
     # Filter localized values
     my ($virtual_attrs,$main_attrs) = $self->_virtual_filter($attr);
-    
+
     # Do regular update
     $self->next::method($main_attrs);
-    
+
     if (scalar %{$virtual_attrs}) {
         while ( my($column,$value) = each %$virtual_attrs ) {
             $self->{_virtual_values}{$column} = $value;
@@ -385,23 +385,23 @@ sub update {
 
 =head1 CAVEATS
 
-The best way to add non-column data to DBIC objects is to use 
-L<Class::Accessor::Grouped>. 
+The best way to add non-column data to DBIC objects is to use
+L<Class::Accessor::Grouped>.
 
  __PACKAGE__->mk_group_accessors(simple => qw(foo bar baz));
 
-Use L<DBIx::Class::VirtualColumns> only if you rely on L<DBIx::Class::Row> 
-methods like C<set_column>, C<get_column>, ... 
+Use L<DBIx::Class::VirtualColumns> only if you rely on L<DBIx::Class::Row>
+methods like C<set_column>, C<get_column>, ...
 
 =head1 SUPPORT
 
-This module was just a proof of concept, and is not actively developed 
+This module was just a proof of concept, and is not actively developed
 anymore. Patches are still welcome though.
 
-Please report any bugs to 
+Please report any bugs to
 C<bug-dbix-class-virtualcolumns@rt.cpan.org>, or through the web interface at
 L<http://rt.cpan.org/Public/Bug/Report.html?Queue=DBIx::Class::VirtualColumns>.
-I will be notified, and then you'll automatically be notified of progress on 
+I will be notified, and then you'll automatically be notified of progress on
 your report as I make changes.
 
 =head1 AUTHOR
@@ -411,17 +411,17 @@ your report as I make changes.
     maros [at] k-1.com
     L<http://www.revdev.at>
 
-=head1 ACKNOWLEDGEMENTS 
+=head1 ACKNOWLEDGEMENTS
 
 This module was written for Revdev L<http://www.revdev.at>, a nice litte
 software company I run with Koki and Domm (L<http://search.cpan.org/~domm/>).
 
 =head1 COPYRIGHT
 
-DBIx::Class::VirtualColumns is Copyright (c) 2008 Maroš Kollár 
+DBIx::Class::VirtualColumns is Copyright (c) 2008 Maroš Kollár
 - L<http://www.revdev.at>
 
-This program is free software; you can redistribute it and/or modify it under 
+This program is free software; you can redistribute it and/or modify it under
 the same terms as Perl itself.
 
 The full text of the license can be found in the

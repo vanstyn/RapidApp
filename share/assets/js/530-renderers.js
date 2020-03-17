@@ -42,11 +42,11 @@ Ext.ux.RapidApp.IconClsRenderFn = function(val) {
 
 
 Ext.ux.RapidApp.renderRed = function(val) {
-  return '<span style="color:red;">' + val + '</span>'; 
+  return '<span style="color:red;">' + val + '</span>';
 }
 
 Ext.ux.RapidApp.boolCheckMark = function(val) {
-  if (val == null || val === "" || val <= 0) { 
+  if (val == null || val === "" || val <= 0) {
     return [
       '<img src="',Ext.BLANK_IMAGE_URL,
       '" class="ra-icon-12x12 ra-icon-cross-light-12x12">'
@@ -92,7 +92,7 @@ Ext.ux.RapidApp.renderJSONjsDump = function(v) {
     return '<pre>' + dump + '</pre>';
   } catch(err) {
     //console.log('ERROR: ' + err);
-    return Ext.ux.showNull(v); 
+    return Ext.ux.showNull(v);
   }
 }
 
@@ -114,18 +114,18 @@ Ext.ux.RapidApp.renderSourceCode = function(v) {
 Ext.ux.RapidApp.renderSourceCodeLineNumbers = function(v) {
   if (v == null || v === "") { return Ext.ux.showNull(v); }
   var code = Ext.util.Format.htmlEncode(v);
-  
+
   var numlines = code.split(/\r\n|\r|\n/).length;
   var pad = numlines.toString().length;
   var style = 'color:red;opacity:0.5;font-weight:bolder;';
-  
+
   var line = 1;
   code = code.replace(/^/gm, function() {
     var digits = line.toString().length;
     var prefix = (new Array((pad-digits)+1)).join('&nbsp;');
     return [prefix,'<span style="',style,'">',line++,':','</span>&nbsp;'].join('');
   });
-  
+
   return ['<pre class="ra-pre-wrap">',code,'</pre>'].join("\n");
 }
 
@@ -134,14 +134,14 @@ Ext.ux.RapidApp.renderSourceCodeLineNumbers = function(v) {
 // Reference/proof-of-concept
 Ext.ux.RapidApp.renderSourceCodeLineNumbersExpand = function(v) {
   var val = Ext.ux.RapidApp.renderSourceCodeLineNumbers(v);
-  
-  
+
+
   return [
-    '<div class="ra-mo-expandable-max-height" style="max-height: 150px; overflow: hidden;">', 
+    '<div class="ra-mo-expandable-max-height" style="max-height: 150px; overflow: hidden;">',
       val,
     '</div>'
   ].join("\n");
-  
+
 }
 
 
@@ -156,9 +156,9 @@ Ext.ux.RapidApp.getWithIconClsRenderer = function(icon_cls) {
 
 Ext.ux.RapidApp.getRendererStatic = function(str,meta) {
   meta = meta || {};
-  return function(value,metaData) { 
+  return function(value,metaData) {
     Ext.apply(metaData,meta);
-    return str; 
+    return str;
   }
 }
 
@@ -171,7 +171,7 @@ Ext.ux.RapidApp.imgTagAutoSizeRender = function(v,maxheight) {
   var div = document.createElement('div');
   div.innerHTML = v;
   var domEl = div.firstChild;
-  if(domEl && domEl.tagName == 'IMG') { 
+  if(domEl && domEl.tagName == 'IMG') {
     var El = new Ext.Element(domEl);
     var styles = 'max-width:100%;height:auto;width:auto;';
     if(maxheight) { styles += 'max-height:' + maxheight + ';'; }
@@ -193,12 +193,12 @@ Ext.ux.RapidApp.getImgTagRendererDefault = function(src,w,h,alt) {
   if(h){ def += 'height="' + h + '" '; }
   if(alt){ def += 'alt="' + alt + '" '; }
   def += '>';
-  
+
   return function(v) {
     if(!v) { return def; }
     if(w == 'autosize') {
       var maxheight = h;
-      return Ext.ux.RapidApp.imgTagAutoSizeRender(v); 
+      return Ext.ux.RapidApp.imgTagAutoSizeRender(v);
     }
     return v;
   }
@@ -210,9 +210,9 @@ Ext.ux.RapidApp.getRendererPastDatetimeRed = function(format) {
   return function(date) {
     var dt = Date.parseDate(date,"Y-m-d H:i:s");
     if (! dt) { dt = Date.parseDate(date,"Y-m-d"); }
-    
+
     if (! dt) { return Ext.ux.showNull(date); }
-    
+
     var out = renderer(date);
     var nowDt = new Date();
     // in the past:
@@ -235,7 +235,7 @@ Ext.ux.RapidApp.NO_DBIC_REL_LINKS = false;
 Ext.ux.RapidApp.DbicRelRestRender = function(c) {
   // -- New: support case of no record object and render the disp/value outright. This
   // is an unusual use case, but could happen if the user calls the column 'renderer'
-  // manually with a single value argument (see server-side code for the renderer 
+  // manually with a single value argument (see server-side code for the renderer
   // which wraps/calls this function). This is the best way to handle this case:
   if(typeof c.record == 'undefined') {
     return Ext.ux.showNull(c.disp || c.value);
@@ -248,46 +248,46 @@ Ext.ux.RapidApp.DbicRelRestRender = function(c) {
   // multi-rel: no link for 0 records:
   // UPDATE: *DO* show links for 0 now that these can be used to add new related records
   //if(c.multi_rel && c.value == '0') { return disp; }
-  
-  if(!c.value && c.value != 0) { 
+
+  if(!c.value && c.value != 0) {
     if(!disp && (!key_value && key_value != 0)) {
       // If everything is unset, including the key_col value itself,
-      // we render like a normal empty value. It is only when the 
+      // we render like a normal empty value. It is only when the
       // key_col is set but the value/disp is not (indicating a broken
-      // or missing link/relationship) that we want to render the special 
+      // or missing link/relationship) that we want to render the special
       // "unavailable" string (see the following code block) -- SEE UPDATED
       // NOTE BELOW
       return Ext.ux.showNull(key_value);
     }
-    c.value = key_value; 
+    c.value = key_value;
   }
-  
+
   if(!c.value && c.value != 0) { return disp; }
   if(!disp)                    { return c.value; }
   if(!c.open_url)              { return disp; }
-  
+
   var url = '#!' + c.open_url + '/';
   if(c.rest_key) { url += c.rest_key + '/'; }
 
   // Added for GitHub #119 -- don't show links for bad rels
-  if(!key_value && key_value != '0' && key_value != '') { 
-    return (c.is_phy_colname || c.multi_rel) ? disp : Ext.ux.showNull(key_value); 
+  if(!key_value && key_value != '0' && key_value != '') {
+    return (c.is_phy_colname || c.multi_rel) ? disp : Ext.ux.showNull(key_value);
   }
 
   if(c.rs) {
     // For multi-rel. value actually only contains the count of related
     // rows. key_value will contain the id of the row from which the rs originated
-    url += key_value + '/rel/' + c.rs; 
+    url += key_value + '/rel/' + c.rs;
   }
   else {
     // For single-rel
     url += c.value;
   }
-  
+
   if(Ext.ux.RapidApp.NO_DBIC_REL_LINKS) {
     return disp;
   }
-  
+
   return disp + "&nbsp;" + Ext.ux.RapidApp.inlineLink(
     url,
     "<span>open</span>",
@@ -302,19 +302,19 @@ Ext.ux.RapidApp.DbicSingleRelationshipColumnRender = function(c) {
   var disp = c.record.data[c.render_col];
   var key_value = c.record.data[c.key_col];
 
-  if(!c.value && c.value != 0) { 
+  if(!c.value && c.value != 0) {
     if(!disp && (!key_value && key_value != 0)) {
       // If everything is unset, including the key_col value itself,
-      // we render like a normal empty value. It is only when the 
+      // we render like a normal empty value. It is only when the
       // key_col is set but the value/disp is not (indicating a broken
-      // or missing link/relationship) that we want to render the special 
+      // or missing link/relationship) that we want to render the special
       // "unavailable" string (see the following code block) -- SEE UPDATED
       // NOTE BELOW
       return Ext.ux.showNull(key_value);
     }
-    c.value = key_value; 
+    c.value = key_value;
   }
-  
+
   if(c.value == null && disp == null) {
     // UPDATE: this code path will actually never occur now (after adding the
     // above call to 'showNull'). It will either display the normal null/empty
@@ -332,19 +332,19 @@ Ext.ux.RapidApp.DbicSingleRelationshipColumnRender = function(c) {
       '&times&nbsp;unavailable&nbsp;&times;' +
     '</span>';
   }
-  
+
   if(!c.value && c.value != 0) { return disp; }
   if(!disp)                    { return c.value; }
   if(!c.open_url)              { return disp; }
-  
-  var loadCfg = { 
-    title: disp, 
-    autoLoad: { 
-      url: c.open_url, 
-      params: { ___record_pk: "'" + c.value + "'" } 
+
+  var loadCfg = {
+    title: disp,
+    autoLoad: {
+      url: c.open_url,
+      params: { ___record_pk: "'" + c.value + "'" }
     }
   };
-    
+
   var url = "#loadcfg:" + Ext.urlEncode({data: Ext.encode(loadCfg)});
 
   return disp + "&nbsp;" + Ext.ux.RapidApp.inlineLink(
@@ -376,7 +376,7 @@ Ext.ux.RapidApp.increaseDecreaseRenderer = function(v) {
   if (v == null || v === "") { return Ext.ux.showNull(v); }
   if(v == 0) { return  '<span style="color:#333333;font-size:1.3em;font-weight:bolder;">&ndash;</span>'; }
   if(v < 0) { return   '<span style="color:red;font-weight:bold;">' + v + '</span>'; }
-  return           '<span style="color:green;font-weight:bold;">+' + v + '</span>'; 
+  return           '<span style="color:green;font-weight:bold;">+' + v + '</span>';
 };
 
 // Renders pct up tp 2 decimal points (i.e. .412343 = 41.23%) in green or red for +/-
@@ -385,7 +385,7 @@ Ext.ux.RapidApp.increaseDecreasePctRenderer = function(val) {
   var v = Math.round(val*10000)/100;
   if(v == 0) { return  '<span style="color:#333333;font-size:1.3em;font-weight:bolder;">&ndash;</span>'; }
   if(v < 0) { return   '<span style="color:red;font-weight:bold;">-' + Math.abs(v) + '%</span>'; }
-  return           '<span style="color:green;font-weight:bold;">+' + v + '%</span>'; 
+  return           '<span style="color:green;font-weight:bold;">+' + v + '%</span>';
 };
 
 // Renders money up tp 2 decimal points (i.e. 41.2343 = $41.23) in green or red for +/-
@@ -394,7 +394,7 @@ Ext.ux.RapidApp.increaseDecreaseMoneyRenderer = function(val) {
   var v = Math.round(val*100)/100;
   if(v == 0) { return  '<span style="color:#333333;font-size:1.3em;font-weight:bolder;">&ndash;</span>'; }
   if(v < 0) { return   '<span style="color:red;font-weight:bold;">' + Ext.util.Format.usMoney(v) + '</span>'; }
-  return           '<span style="color:green;font-weight:bold;">+' + Ext.util.Format.usMoney(v) + '</span>'; 
+  return           '<span style="color:green;font-weight:bold;">+' + Ext.util.Format.usMoney(v) + '</span>';
 };
 
 
@@ -402,19 +402,19 @@ Ext.ux.RapidApp.increaseDecreaseMoneyRenderer = function(val) {
 // a number greater than or equal to 'maxvalue'. Otherwise, the value
 // is returned as-is.
 Ext.ux.RapidApp.getInfinityNumRenderer = function(maxvalue,type) {
-  if(!Ext.isNumber(maxvalue)) { 
-    return function(v) { return Ext.ux.showNull(v); }; 
+  if(!Ext.isNumber(maxvalue)) {
+    return function(v) { return Ext.ux.showNull(v); };
   }
   return function(v) {
     if(Number(v) >= Number(maxvalue)) {
       // also increase size because the default size of the charater is really small
       return '<span title="' + v + '" style="font-size:1.5em;">&infin;</span>';
     }
-    
+
     if(type == 'duration') {
       return Ext.ux.RapidApp.renderDuration(v);
     }
-    
+
     return Ext.ux.showNull(v);
   }
 };
@@ -464,14 +464,14 @@ Ext.ux.RapidApp.renderSecondsElapsed = function(s) {
   var hours = Math.floor  ((( s % (365*24*60*60)) % (24*60*60)) / (60*60));
   var mins  = Math.floor (((( s % (365*24*60*60)) % (24*60*60)) % (60*60)  / 60));
   var secs  =             ((( s % (365*24*60*60)) % (24*60*60)) % (60*60)) % 60;
-  
+
   var list = [];
   if(years) { list.push(years + 'y'); }
   if(days)  { list.push(days  + 'd'); }
   if(hours) { list.push(hours + 'h'); }
   if(mins)  { list.push(mins  + 'm'); }
   if(secs)  { list.push(secs  + 's'); }
-  
+
   if (list.length == 0) {
     return Ext.ux.showNull(s);
   }
@@ -516,7 +516,7 @@ Ext.ux.RapidApp.jsonArrArrToHtmlTable = function(v) {
         children: cells
       });
     });
-    
+
     table_markup = Ext.DomHelper.markup({
       tag: 'table',
       cls: 'r-simple-table',
@@ -560,8 +560,8 @@ Ext.ux.RapidApp.renderBase64 = function(str) {
         str.replace(/(\r\n|\n|\r)/gm,"")
       )
     );
-  } catch(err) { 
-    return str; 
+  } catch(err) {
+    return str;
   }
 }
 
@@ -584,7 +584,7 @@ String.prototype.bin2hex = function () {
 }
 
 Ext.ux.RapidApp.formatHexStr = function(str) {
-  
+
   // http://stackoverflow.com/a/4017825
   function splitStringAtInterval (string, interval) {
     var result = [];
@@ -592,7 +592,7 @@ Ext.ux.RapidApp.formatHexStr = function(str) {
       result.push(string.substring (i, i+interval));
     return result;
   }
-  
+
   str = ['0x',str.toUpperCase()].join('');
   return splitStringAtInterval(str,8).join(' ');
 }

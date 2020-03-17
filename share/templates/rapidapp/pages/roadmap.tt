@@ -13,7 +13,7 @@
 The current version of RapidApp (RapidApp 1) needs a couple of things done before being publically released as-is.
 
 <ul>
-  <li><strike>Clean up CSS/JS and convert to use 
+  <li><strike>Clean up CSS/JS and convert to use
     <a target="_blank" href="https://metacpan.org/module/Catalyst::Controller::AutoAssets">Catalyst::Controller::AutoAssets</a>
   </strike></li>
   <li><strike>
@@ -38,7 +38,7 @@ The current version of RapidApp (RapidApp 1) needs a couple of things done befor
     Factor out custom "Modules" and convert to use normal Catalyst Controllers
   </li>
   <li>
-    Move "TableSpec" from the Schema class layer to the Catalyst DBIC model layer 
+    Move "TableSpec" from the Schema class layer to the Catalyst DBIC model layer
     (this is currently emulated by the RapidDbic plugin in RapidApp 1)
   </li>
   <li>

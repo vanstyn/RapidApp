@@ -49,39 +49,39 @@ sub BUILD {
     double_tree        => jstrue($self->double_tree) ? \1 : \0,
     ddAppendOnly      => jstrue($self->ddAppendOnly) ? \1 : \0,
   );
-  
+
   $self->apply_extconfig( extra_node_actions => $self->extra_node_actions ) if ($self->extra_node_actions);
-  
+
   $self->apply_extconfig(
     add_node_text       => $self->add_button_text,
     add_node_iconCls    => $self->add_button_iconCls,
     delete_node_text    => $self->delete_button_text,
     delete_node_iconCls  => $self->delete_button_iconCls
   );
-  
+
   $self->apply_actions( nodes   => 'call_fetch_nodes' );
   $self->apply_actions( node   => 'call_fetch_node' ) if ($self->can('fetch_node'));
-  
+
   if($self->op_available('add_node')) {
     $self->apply_actions( add   => 'call_add_node' );
     $self->apply_extconfig( add_node_url => $self->suburl('add') );
   }
-  
+
   if($self->op_available('delete_node')) {
-    $self->apply_actions( delete   => 'call_delete_node' ); 
+    $self->apply_actions( delete   => 'call_delete_node' );
     $self->apply_extconfig( delete_node_url => $self->suburl('delete') );
   }
-  
+
   if($self->op_available('rename_node')) {
     $self->apply_actions( rename   => 'call_rename_node' );
     $self->apply_extconfig( rename_node_url => $self->suburl('rename') );
   }
-  
+
   if($self->op_available('copy_node')) {
     $self->apply_actions( copy => 'call_copy_node' );
     $self->apply_extconfig( copy_node_url => $self->suburl('copy') );
   }
-  
+
   if($self->op_available('move_node')) {
     $self->apply_actions( move => 'call_move_node' );
     $self->apply_extconfig( move_node_url => $self->suburl('move') );
@@ -91,7 +91,7 @@ sub BUILD {
     $self->apply_actions( expand   => 'call_expand_node' );
     $self->apply_extconfig( expand_node_url => $self->suburl('expand') );
   }
-  
+
   $self->add_ONREQUEST_calls('init_onreq');
 }
 
@@ -153,7 +153,7 @@ around 'content' => sub {
 
 sub init_onreq {
   my $self = shift;
-  
+
   $self->apply_extconfig(
     id            => $self->instance_id,
     dataUrl        => $self->suburl('/nodes'),
@@ -161,11 +161,11 @@ sub init_onreq {
     root          => $self->root_node,
     tbar          => $self->tbar,
   );
-  
+
   my $node = $self->init_jump_to_node or return;
 
-  $self->add_listener( 
-    afterrender => RapidApp::JSONFunc->new( raw => 1, func => 
+  $self->add_listener(
+    afterrender => RapidApp::JSONFunc->new( raw => 1, func =>
       'function(tree) {' .
         'Ext.ux.RapidApp.AppTree.jump_to_node_id(tree,"' . $node . '");' .
       '}'
@@ -176,11 +176,11 @@ sub init_onreq {
 
 sub init_jump_to_node {
   my $self = shift;
-  
+
   my $node;
   $node = $self->root_node_name if ($self->show_root_node);
   $node = $self->c->req->params->{node} if ($self->c->req->params->{node});
-  
+
   return $node;
 }
 
@@ -474,7 +474,7 @@ sub call_copy_node {
   # point_node is undef if point is append
   my $point_node = $self->c->req->params->{point_node};
   my $point = $self->c->req->params->{point};
-  
+
   my $data = $self->copy_node($node,$target,$point,$point_node,$name);
   
   die "copy_node() returned invalid data" unless (ref($data) eq 'HASH' and $data->{child}); 
@@ -539,7 +539,7 @@ has 'tbar', is => 'ro', lazy => 1, default => sub { undef };
 #  my $self = shift;
 #  return undef;
 #  return ['->'];
-#  
+#
 #  my $tbar = [];
 #
 #  push @$tbar, $self->delete_button if ($self->can('delete_node'));
@@ -555,18 +555,18 @@ has 'tbar', is => 'ro', lazy => 1, default => sub { undef };
 #
 #sub add_button {
 #  my $self = shift;
-#  
+#
 #  return RapidApp::JSONFunc->new(
-#    func => 'new Ext.Button', 
+#    func => 'new Ext.Button',
 #    parm => {
 #      text     => $self->add_button_text,
 #      iconCls  => $self->add_button_iconCls,
-#      handler   => RapidApp::JSONFunc->new( 
-#        raw => 1, 
-#        func => 'function(btn) { ' . 
+#      handler   => RapidApp::JSONFunc->new(
+#        raw => 1,
+#        func => 'function(btn) { ' .
 #          'var tree = btn.ownerCt.ownerCt;'.
 #          'tree.nodeAdd();' .
-#          #'tree.nodeAdd(tree.activeNonLeafNode());' .        
+#          #'tree.nodeAdd(tree.activeNonLeafNode());' .
 #        '}'
 #      )
 #  });
@@ -575,19 +575,19 @@ has 'tbar', is => 'ro', lazy => 1, default => sub { undef };
 #
 #sub delete_button {
 #  my $self = shift;
-#  
+#
 #  return RapidApp::JSONFunc->new(
-#    func => 'new Ext.Button', 
+#    func => 'new Ext.Button',
 #    parm => {
 #      tooltip    => $self->delete_button_text,
 #      iconCls  => $self->delete_button_iconCls,
-#      handler   => RapidApp::JSONFunc->new( 
-#        raw => 1, 
-#        func => 'function(btn) { ' . 
+#      handler   => RapidApp::JSONFunc->new(
+#        raw => 1,
+#        func => 'function(btn) { ' .
 #          'var tree = btn.ownerCt.ownerCt;'.
 #          'tree.nodeDelete(tree.getSelectionModel().getSelectedNode());' .
 #          #'Ext.ux.RapidApp.AppTree.del(tree,"' . $self->suburl('/delete') . '");' .
-#          
+#
 #        '}'
 #      )
 #  });

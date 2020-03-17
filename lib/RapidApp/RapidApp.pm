@@ -55,9 +55,9 @@ sub _setup_finalize {
 
 sub _build_rootModule {
 	my $self= shift;
-	
+
   return;
-  
+
 	# if we're doing this at runtime, just load the module.
 	if (RapidApp->active_request_context) {
 		return $self->_load_root_module;
@@ -71,29 +71,29 @@ sub _build_rootModule {
 
 sub _load_root_module {
 	my $self= shift;
-	
+
 	#my $log= sEnv->log;
 	#sEnv->catalystClass->debug
 	#	and $log->debug("Running require on root module ".$self->rootModuleClass);
 	#$log->_flush if $log->can('_flush');
 	Catalyst::Utils::ensure_class_loaded($self->rootModuleClass);
-	
+
 	my $mParams= $self->rootModuleConfig || {};
   $mParams->{app} = $self->_app;
 	$mParams->{module_name}= '';
 	$mParams->{module_path}= '/';
 	$mParams->{parent_module_ref}= undef;
-  
+
   my $cfg = $self->_app->config->{'RapidApp'} || {};
   $mParams->{auto_init_modules} = $cfg->{load_modules} if ($cfg->{load_modules});
 
   $self->rootModule($self->rootModuleClass->timed_new($mParams));
-  
+
 }
 
 sub performModulePreload {
 	my $self= shift;
-	
+
 	# Access the root module, causing it to get built
 	# We set RapidAppModuleLoadTimeTracker to instruct the modules to record their load times.
 	#if ($self->catalystAppClass->debug) {
@@ -112,7 +112,7 @@ sub performModulePreload {
 
 #sub displayLoadTimes {
 #	my ($self, $loadTimes)= @_;
-#	
+#
 #	my $bar= '--------------------------------------------------------------------------------------';
 #	my $summary= "Loaded RapidApp Modules:\n";
 #	my @colWid= ( 25, 50, 7 );
@@ -131,7 +131,7 @@ sub performModulePreload {
 #	}
 #	$summary.= sprintf("'%.*s+%.*s+%.*s'\n",     $colWid[0],      $bar,  $colWid[1],    $bar,  $colWid[2],   $bar);
 #	$summary.= "\n";
-#	
+#
 #	sEnv->log->debug($summary);
 #}
 
@@ -146,7 +146,7 @@ sub module {
 		@path= split('/', $path[0]);
 	}
 	@path= grep /.+/, @path;  # ignore empty strings
-	
+
 	my $m= $self->rootModule;
 	for my $part (@path) {
 		$m= $m->Module($part) or die "No such module: ".join('/',@path);
@@ -167,19 +167,19 @@ sub markDirtyModule {
 sub cleanupAfterRequest {
 	my ($self, $c)= @_;
 	return unless scalar(keys %{$self->dirtyModules} );
-	
+
 	my ($sec0, $msec0)= $c->debug && gettimeofday;
-	
+
 	$self->cleanDirtyModules($c);
-	
+
 	if ($c->debug) {
 		my ($sec1, $msec1)= gettimeofday;
 		my $elapsed= ($sec1-$sec0)+($msec1-$msec0)*.000001;
-		
+
 		$c->log->info(sprintf("Module init (ONREQUEST) took %0.3f seconds", $c->stash->{onrequest_time_elapsed}));
 		$c->log->info(sprintf("Cleanup took %0.3f seconds", $elapsed));
 	}
-	
+
 	# Now that the request is done, we can run post-processing tasks.
 	# These might also get modules dirty, so we clean again after each one.
 	if (scalar @{$self->postprocessing_tasks}) {
@@ -191,11 +191,11 @@ sub cleanupAfterRequest {
       $sub->($c);
 			$self->cleanDirtyModules($c);
 		}
-		
+
 		if ($c->debug) {
 			my ($sec1, $msec1)= gettimeofday;
 			my $elapsed= ($sec1-$sec0)+($msec1-$msec0)*.000001;
-			
+
 			$c->log->info(sprintf("Post-processing tasks took %0.3f seconds", $elapsed));
 		}
 	}
@@ -259,7 +259,7 @@ has 'cache' => ( is => 'ro', default => sub {
 
 # so far for the main namespace, will probably be changed, every
 # systempart using the cache should make a clear key for the specific
-# input and code that 
+# input and code that
 has 'cache_key' => ( is => 'ro', lazy => 1, default => sub {
 	my ( $self ) = @_;
 	my $class = ref $self;

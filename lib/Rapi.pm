@@ -18,8 +18,8 @@ Rapi - Namespace for RapidApp-based apps
 
 This is the designated namespace for applications which are based on RapidApp
 and will be distributed via CPAN. The idea is that these applications will
-support their own bootstrap functionality (like L<rapidapp.pl>, but be 
-specific to the given app). 
+support their own bootstrap functionality (like L<rapidapp.pl>, but be
+specific to the given app).
 
 The I<plan> is to create a C<rapi.pl> to call into this bootstrap API, such as:
 
@@ -41,9 +41,9 @@ L<RapidApp>
 =cut
 
 =head1 SUPPORT
- 
+
 IRC:
- 
+
     Join #rapidapp on irc.perl.org.
 
 =head1 AUTHOR

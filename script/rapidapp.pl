@@ -90,7 +90,7 @@ rapidapp.pl - Bootstrap a RapidApp/Catalyst application
     application-name. These additional arguments will be processed by helpers
     which accept options.
 
- application-name must be a valid Perl module name and can include "::", 
+ application-name must be a valid Perl module name and can include "::",
  which will be converted to '-' in the project name.
 
 
@@ -115,7 +115,7 @@ rapidapp.pl - Bootstrap a RapidApp/Catalyst application
 =head1 DESCRIPTION
 
 The C<rapidapp.pl> script bootstraps a RapidApp/Catalyst application, creating a
-directory structure populated with skeleton files.  
+directory structure populated with skeleton files.
 
 This script is simply an extension on top of C<catalyst.pl>. See L<catalyst>.
 
@@ -124,9 +124,9 @@ This script is simply an extension on top of C<catalyst.pl>. See L<catalyst>.
 L<RapidApp>, L<rdbic.pl>, L<catalyst>, L<Catalyst::Manual>, L<Catalyst::Manual::Intro>
 
 =head1 SUPPORT
- 
+
 IRC:
- 
+
     Join #rapidapp on irc.perl.org.
 
 =head1 AUTHOR

@@ -14,13 +14,13 @@ has 'ext_name', is => 'ro', isa => 'Str', lazy => 1, default => sub { (shift)->n
 
 sub get_ext_value {
   my ($attr, $obj) = @_;
-  
+
   my $value = $attr->get_value($obj);
-  
+
   if($attr->has_type_constraint && $attr->type_constraint->equals('Bool')) {
     return $value ? \1 : \0;
   }
-  
+
   return $value
 }
 
@@ -30,7 +30,7 @@ sub _apply_ext_value {
   $obj->apply_extconfig( $attr->ext_name => $attr->get_ext_value($obj) )
 }
 
-# Hook all events which set the value and automatically apply 
+# Hook all events which set the value and automatically apply
 # to the extconfig of the object/instance
 
 after 'set_initial_value' => sub { (shift)->_apply_ext_value(@_) };

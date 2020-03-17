@@ -31,27 +31,27 @@ Catalyst::Plugin::RapidApp::CoreSchema - Injects the CoreSchema model
 =head1 SYNOPSIS
 
  package MyApp;
- 
+
  use Catalyst   qw/ RapidApp::CoreSchema /;
 
 =head1 DESCRIPTION
 
 This is the base RapidApp/Catalyst plugin which sets up the "CoreSchema" database
 for use as the common persistence store for multiple optional
-"Core" plugins, such as L<AuthCore|Catalyst::Plugin::RapidApp::AuthCore> and 
+"Core" plugins, such as L<AuthCore|Catalyst::Plugin::RapidApp::AuthCore> and
 L<NavCore|Catalyst::Plugin::RapidApp::NavCore>.
 
 All plugins which use the CoreSchema and provide actual end-user features automatically
 load this plugin, so it should never need to be loaded manually/directly.
 
-This plugin simply injects the special DBIC-based 
+This plugin simply injects the special DBIC-based
 L<Model::RapidApp::CoreSchema|Catalyst::Model::RapidApp::CoreSchema>
 into the application to be available as:
 
  $c->model('RapidApp::CoreSchema');
 
-With the default configuration, the L<Model::RapidApp::CoreSchema|Catalyst::Model::RapidApp::CoreSchema> 
-automatically initializes and deploys itself to an SQLite database file in the root of 
+With the default configuration, the L<Model::RapidApp::CoreSchema|Catalyst::Model::RapidApp::CoreSchema>
+automatically initializes and deploys itself to an SQLite database file in the root of
 the application named C<rapidapp_coreschema.db>.
 
 =head1 SEE ALSO
@@ -70,7 +70,7 @@ L<Catalyst::Model::RapidApp::CoreSchema>
 
 L<Catalyst::Plugin::RapidApp::CoreSchemaAdmin>
 
-=item * 
+=item *
 
 L<Catalyst>
 

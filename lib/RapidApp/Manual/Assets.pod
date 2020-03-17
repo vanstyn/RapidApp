@@ -1,15 +1,15 @@
 =head1 NAME
- 
+
 RapidApp::Manual::Assets - Asset handling in RapidApp (CSS, JS, Images, etc.)
- 
+
 =head1 DESCRIPTION
- 
+
 RapidApp uses L<Catalyst::Controller::AutoAssets> internally to manage
 and serve built-in asset files as well as provide mechanisms for additional
 user-defined and application-specific assets.
 
-RapidApp automatically loads a set of L<Catalyst::Controller::AutoAssets> 
-controllers during startup, and associated html head/include tags are inserted in 
+RapidApp automatically loads a set of L<Catalyst::Controller::AutoAssets>
+controllers during startup, and associated html head/include tags are inserted in
 content/templates in appropriate locations as well.
 
 Built-in, and optional local and custom asset controllers are automatically setup
@@ -18,7 +18,7 @@ as described below.
 =head1 BUILT-IN ASSETS
 
 The built-in assets are the same for every RapidApp application. This list
-of controllers is for reference purposes only, as there is nothing that can be 
+of controllers is for reference purposes only, as there is nothing that can be
 changed or configured about the built-in assets.
 
 =head2 *::Controller::Assets::ExtJS (/assets/extjs)
@@ -35,9 +35,9 @@ JS asset controller for built-in RapidApp javascripts.
 
 =head2 *::Controller::Assets::RapidApp::Icons (/assets/rapidapp/icons)
 
-IconSet asset controller for built-in RapidApp icons. B<icon_name_prefix> 
-for the built-in icons is set to C<ra-icon->. See 
-L<Catalyst::Controller::AutoAssets::Handler::IconSet> for more info on 
+IconSet asset controller for built-in RapidApp icons. B<icon_name_prefix>
+for the built-in icons is set to C<ra-icon->. See
+L<Catalyst::Controller::AutoAssets::Handler::IconSet> for more info on
 the IconSet asset type.
 
 =head2 *::Controller::Assets::RapidApp::Filelink (/assets/rapidapp/filelink)
@@ -47,7 +47,7 @@ HtmlEditor content locations) - will be removed/consolidated in the future.
 
 =head2 *::Controller::Assets::RapidApp::Misc (/assets/rapidapp/misc)
 
-Directory asset controller for additional, miscellaneous static files 
+Directory asset controller for additional, miscellaneous static files
 needed by RapidApp
 
 =head1 LOCAL ASSETS
@@ -72,13 +72,13 @@ JS asset controller for local javascripts.
 
 Setup if local directory exists: B<root/assets/icons>
 
-IconSet asset controller for local icons. B<icon_name_prefix> is set to 
+IconSet asset controller for local icons. B<icon_name_prefix> is set to
 C<icon->. Each image file found within the local app directory B<root/assets/icons>
 will be setup and available as a CSS icon class (compatible with the ExtJS config
 'iconCls'). For example, the image 'apple.png' will get the CSS class name
 'icon-apple'.
 
-See L<Catalyst::Controller::AutoAssets::Handler::IconSet> for more info on 
+See L<Catalyst::Controller::AutoAssets::Handler::IconSet> for more info on
 the IconSet asset type.
 
 =head2 *::Controller::Assets::Local::Misc (/assets/local/misc)
@@ -90,12 +90,12 @@ Directory asset controller for additional, miscellaneous static files.
 The B<allow_static_requests> option is enabled so files within this
 directory can be accessed via static URL path C</assets/local/misc/static/*>.
 This is basically like Static::Simple but with the extra benefits of
-AutoAssets. Note that for deployment, this static URL prefix can be 
+AutoAssets. Note that for deployment, this static URL prefix can be
 aliased (such as with the C<Alias> Apache directive) in the web server
 config in exactly the same way as Catalyst docs describe for Static::Simple,
 if desired.
 
-See L<Catalyst::Controller::AutoAssets::Handler::Directory> for more info on 
+See L<Catalyst::Controller::AutoAssets::Handler::Directory> for more info on
 the Directory asset type.
 
 
@@ -119,5 +119,5 @@ that cover 99% of cases.
 L<RapidApp::Manual>
 
 =back
- 
+
 =cut

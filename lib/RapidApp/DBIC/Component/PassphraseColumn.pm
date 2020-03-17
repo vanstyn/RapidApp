@@ -3,7 +3,7 @@ use warnings;
 
 package # hide from PAUSE
   RapidApp::DBIC::Component::PassphraseColumn;
-  
+
 # Temp copy of DBIx::Class::PassphraseColumn with fix for null columns.
 # will stop using this as soon as the real module merges that fix
 # https://github.com/rafl/dbix-class-passphrasecolumn/pull/3

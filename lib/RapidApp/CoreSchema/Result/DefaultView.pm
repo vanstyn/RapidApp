@@ -11,10 +11,10 @@ extends 'DBIx::Class::Core';
 __PACKAGE__->table("default_view");
 
 __PACKAGE__->add_columns(
-  "source_model" => { 
-    data_type => "varchar", 
-    is_nullable => 0, 
-    size => 255 
+  "source_model" => {
+    data_type => "varchar",
+    is_nullable => 0,
+    size => 255
   },
   "view_id" =>  {
     data_type => "integer",
@@ -41,7 +41,7 @@ __PACKAGE__->belongs_to(
 __PACKAGE__->load_components('+RapidApp::DBIC::Component::TableSpec');
 __PACKAGE__->apply_TableSpec;
 
-__PACKAGE__->TableSpec_set_conf( 
+__PACKAGE__->TableSpec_set_conf(
 	title => 'Source Default View',
 	title_multi => 'Source Default Views',
 	iconCls => 'ra-icon-data-preferences',
@@ -49,7 +49,7 @@ __PACKAGE__->TableSpec_set_conf(
 	display_column => 'source_model'
 );
 
-__PACKAGE__->TableSpec_set_conf('column_properties_ordered', 
+__PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 
   view_id => { no_column => \1, no_multifilter => \1, no_quick_search => \1 },
 
@@ -59,13 +59,13 @@ __PACKAGE__->TableSpec_set_conf('column_properties_ordered',
     allow_add => \0,
     allow_edit => \0
 	},
-	
+
 	view => {
 		header => 'View',
 		width	=> 225,
     allow_add => \0,
 	}
-	
+
 );
 
 

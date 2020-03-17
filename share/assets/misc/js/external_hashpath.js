@@ -1,5 +1,5 @@
 // This tiny javascript should be loaded in the *external* document root
-// to enable handling hashpaths (#!/some/rapidapp/path) and redirecting 
+// to enable handling hashpaths (#!/some/rapidapp/path) and redirecting
 // into authenticated, ExtJS/RapidApp tab pages. This is only needed when
 // a custom, non-login page is set (e.g. if 'public_root_template' is set
 // in the 'Plugin::RapidApp::AuthCore' config)
@@ -16,7 +16,7 @@ if(typeof Ext == 'undefined') {
       );
     }
   }
-  
+
   // Set listeners:
   window.onload = window.onload || rapidapp_external_hashchange;
   window.onhashchange = window.onhashchange || rapidapp_external_hashchange;

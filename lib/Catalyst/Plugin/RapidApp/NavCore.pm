@@ -11,7 +11,7 @@ require Module::Runtime;
 after 'setup_components' => sub { (shift)->_navcore_inject_controller(@_) };
 sub _navcore_inject_controller {
   my $c = shift;
-  
+
   CatalystX::InjectComponent->inject(
     into => $c,
     component => 'Catalyst::Plugin::RapidApp::NavCore::Controller',
@@ -29,7 +29,7 @@ after 'setup_finalize' => sub {
 sub _navcore_navtree_class {
   my $c = shift;
   my $base_class = 'Catalyst::Plugin::RapidApp::NavCore::NavTree';
-  
+
   my $cfg = $c->config->{'Plugin::RapidApp::NavCore'} || {};
   my $class = $cfg->{navtree_class} or return $base_class;
 
@@ -45,10 +45,10 @@ sub _navcore_navtree_class {
 
 sub _navcore_init_default_public_nav_items {
   my ($c, $force) = @_;
-  
+
   my $cfg  = clone($c->config->{'Plugin::RapidApp::NavCore'} || {});
   my $itms = $cfg->{default_public_nav_items} or return;
-  
+
   # Only auto-init to a clean slate
   return if (!$force && $c->model('RapidApp::CoreSchema::NavtreeNode')->count > 1);
 
@@ -60,7 +60,7 @@ sub _navcore_init_default_public_nav_items {
 
 sub _navcore_create_public_structure {
   my ($c, $itms, $nav_node_id) = @_;
-  
+
   try {
     $c->model('RapidApp::CoreSchema')->txn_do(sub {
       my $trk_def = {};
@@ -79,22 +79,22 @@ sub __navcore_create_public_structure {
   my ($c, $itms, $nav_node_id, $trk_def) = @_;
   $trk_def ||= {};
   my $type = ref($itms)||'';
-  
+
   return $c->__navcore_create_public_structure(
     $itms->($c), $nav_node_id
   ) if ($type eq 'CODE');
-  
+
   unless ($type eq 'ARRAY') {
     $type eq 'HASH'
       ? $itms = [$itms]
       : die "items must be supplied as an ArrayRef or a CodeRef which returns an ArrayRef"
   }
-  
+
   $nav_node_id //= 0; # root node
-  
+
   my $nRs = $c->model('RapidApp::CoreSchema::NavtreeNode');
   my $sRs = $c->model('RapidApp::CoreSchema::SavedState');
-  
+
   for my $itm (@$itms) {
     my $create = clone($itm);
     if(my $children = $itm->{children}) {
@@ -102,7 +102,7 @@ sub __navcore_create_public_structure {
       delete $create->{children};
       $create->{pid} = $nav_node_id;
       my $NavNode = $nRs->create($create);
-      
+
       $c->__navcore_create_public_structure($children,$NavNode->get_column('id'),$trk_def);
     }
     else {
@@ -110,7 +110,7 @@ sub __navcore_create_public_structure {
       $create->{node_id} = $nav_node_id;
       $create->{title} ||= delete $create->{text} if ($create->{text});
       my $source_model = $create->{_default_for} ? delete $create->{_default_for} : undef;
-      
+
       # Existence/absence of state_data deterimines if it is a saved search or a simple
       # internal link. Check the url to see if it is a module, and set dummy state_data
       # if it is to force it to be a saved search, so it can be updated later by users:
@@ -119,16 +119,16 @@ sub __navcore_create_public_structure {
         my $url = $create->{url};
         $create->{state_data} = '{}' if (try{$rootModule->get_Module($create->{url})});
       }
-      
+
       my $Row = $sRs->create($create);
-      
+
       if($source_model) {
         die "saw '$source_model' more than once in _default_for" if ($trk_def->{$source_model});
         $trk_def->{$source_model} = $Row->get_column('id');
       }
     }
   }
-  
+
   1
 }
 
@@ -137,9 +137,9 @@ sub __navcore_set_default_views {
   my $trk_def = shift || {};
   my @list = keys %$trk_def;
   return unless (scalar(@list) > 0);
-  
+
   $c->_rapiddbic_initialize_default_views_rows;
-  
+
   my $Rs = $c->model('RapidApp::CoreSchema::DefaultView');
   for my $source_model (@list) {
     my $Row = $Rs->find($source_model) or die "Invalid source_model '$source_model'";
@@ -162,7 +162,7 @@ Catalyst::Plugin::RapidApp::NavCore - Saved views and editable navtrees for Rapi
 =head1 SYNOPSIS
 
  package MyApp;
- 
+
  use Catalyst   qw/
    RapidApp::RapidDbic
    RapidApp::NavCore
@@ -182,7 +182,7 @@ which provides a drag and drop interface to organize the tree, add folder struct
 delete and copy the previously saved views.
 
 When used in tandem with the L<AuthCore|Catalyst::Plugin::RapidApp::AuthCore> plugin, each
-user is given their own, private folder of saved searches which show up under "My Views" in the 
+user is given their own, private folder of saved searches which show up under "My Views" in the
 navtree, in addition to the public saved searches which show up the same for all users.
 
 When used in this mode, the Save Search dialog provides a checkbox to save as a "public" view
@@ -195,9 +195,9 @@ visa versa.
 The saved views are made accessible via virtual controller path under C</view/[search_id]> in
 the application which translate into the real module path, with applied saved state data, internally.
 
-Like other Core plugins, NavCore uses 
-L<Model::RapidApp::CoreSchema|Catalyst::Model::RapidApp::CoreSchema> 
-to persist its data. Internally, the CoreSchema database also has a "DefaultView" source 
+Like other Core plugins, NavCore uses
+L<Model::RapidApp::CoreSchema|Catalyst::Model::RapidApp::CoreSchema>
+to persist its data. Internally, the CoreSchema database also has a "DefaultView" source
 which can be used to specify a given saved view to be used by default for each source to
 load instead of the default grid state, which is determined according to the schema as well
 as any additional global TableSpec configurations.
@@ -226,7 +226,7 @@ L<Catalyst::Plugin::RapidApp::CoreSchema>
 
 L<Catalyst::Plugin::RapidApp::CoreSchemaAdmin>
 
-=item * 
+=item *
 
 L<Catalyst>
 

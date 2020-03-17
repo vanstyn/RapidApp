@@ -42,7 +42,7 @@ __PACKAGE__->belongs_to(
 __PACKAGE__->load_components('+RapidApp::DBIC::Component::TableSpec');
 __PACKAGE__->apply_TableSpec;
 
-__PACKAGE__->TableSpec_set_conf( 
+__PACKAGE__->TableSpec_set_conf(
 	title => 'Nav Node to Role Link',
 	title_multi => 'Nav Node to Role Links',
 	#iconCls => 'ra-icon-arrow-sprocket',
@@ -51,7 +51,7 @@ __PACKAGE__->TableSpec_set_conf(
 	priority_rel_columns => 1,
 );
 
-__PACKAGE__->TableSpec_set_conf('column_properties_ordered', 
+__PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 
 	node_id => { no_column => \1, no_multifilter => \1, no_quick_search => \1 },
 
@@ -59,12 +59,12 @@ __PACKAGE__->TableSpec_set_conf('column_properties_ordered',
 		header => 'Node',
 		width	=> 150,
 	},
-	
+
 	role => {
 		header => 'role',
 		width	=> 150,
 	}
-	
+
 );
 
 

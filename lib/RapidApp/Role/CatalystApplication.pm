@@ -44,11 +44,11 @@ sub default_favicon_url {
 
 sub favicon_head_tag {
   my $c = shift;
-  
+
   # allow the user to override via config if they really want to:
   my $custom = $c->config->{'RapidApp'}{favicon_head_tag};
   return $custom if ($custom);
-  
+
   my $url = $c->default_favicon_url;
   return $url ? join('','<link rel="icon" href="',$url,'" type="image/x-icon" />') : undef
 }
@@ -56,13 +56,13 @@ sub favicon_head_tag {
 # This method comes from Catalyst::Plugin::AutoAssets
 around 'all_html_head_tags' => sub {
   my ($orig,$c,@args) = @_;
-  
+
   my $html = $c->$orig(@args);
   if(my $tag = $c->favicon_head_tag) {
     $html = join("\r\n",'<!-- AUTO GENERATED favicon_head_tag -->',$tag,'',$html);
   }
   return $html
-}; 
+};
 
 
 # ---
@@ -88,11 +88,11 @@ around 'dump_these' => sub {
     @new_these = (
       # Put the original, non-depth-limited Request and Reponse data back in.
       # We need to do this because there are other places in native Catalyst
-      # code (e.g. log_request_uploads) which rely on getting the the unaltered 
+      # code (e.g. log_request_uploads) which rely on getting the the unaltered
       # request/response objects out of 'dump_these'. Also, these objects aren't
       # the ones which need to be limited anyway, so we preserve them as-is.
       # Added for Github Issue #54, and to preserve the API as of Catalyst 5.90065.
-      # Note: the functioning of this stuff in Catalyst is legacy and may be 
+      # Note: the functioning of this stuff in Catalyst is legacy and may be
       # refactored in a later version of Catalyst...
       $req_arr,$res_arr,
       @{$VAR1 || []}
@@ -106,17 +106,17 @@ around 'dump_these' => sub {
 
 before 'setup_middleware' => sub {
   my $app = shift;
-  
+
   $app->_normalize_catalyst_config;
-  
+
   # Set the Encoding to UTF-8 unless one is already set:
   $app->encoding('UTF-8') unless ($app->encoding);
-  
+
   # Force this standard setting. When it is off, in certain cases, it
   # can lead to bizzare regex exceptions. This setting is already automatically
   # set for all new apps created by recent versions of catalyst.pl
   $app->config( disable_component_resolution_regex_fallback => 1 );
-  
+
   unshift @{ $app->config->{'psgi_middleware'} ||= [] },
     '+RapidApp::Plack::Middleware'
 };
@@ -141,7 +141,7 @@ around 'setup_components' => sub {
 
 sub setupRapidApp {
   my $app = shift;
-  
+
   my @inject = (
     @{ $app->config->{ra_inject_components} || [] },
     ['RapidApp::RapidApp' => 'RapidApp']
@@ -155,7 +155,7 @@ sub setupRapidApp {
     ['RapidApp::View::JSON'          => 'View::RapidApp::JSON'       ],
     ['RapidApp::View::Template'      => 'View::RapidApp::Template'   ]
   );
-  
+
   ## This code allowed for automatic detection of an alternate, locally-defined
   ## 'ModuleDispatcher' controller to act as the root module controller. This
   ## functionality is not used anyplace, has never been public, and is not worth
@@ -224,22 +224,22 @@ around 'dispatch' => \&_rapidapp_top_level_dispatch;
 
 sub _rapidapp_top_level_dispatch {
 	my ($orig, $c, @args)= @_;
-  
+
   # New: simpler global to get $c in user code. can be accessed from
   # anywhere with: 'RapidApp->active_request_context()'
   local $RapidApp::ACTIVE_REQUEST_CONTEXT = $c;
-	
+
 	# put the debug flag into the stash, for easy access in templates
 	$c->stash->{debug} = $c->debug;
-	
+
 	# provide hints for our controllers on what contect type is expected
 	$c->stash->{requestContentType}=
 		$c->req->header('X-RapidApp-RequestContentType')
 		|| $c->req->param('RequestContentType')
 		|| '';
-	
+
 	$c->stash->{onrequest_time_elapsed}= 0;
-  
+
   try {
     $orig->($c, @args);
     if(my ($err) = (@{ $c->error })) {
@@ -247,13 +247,13 @@ sub _rapidapp_top_level_dispatch {
         $c->clear_errors;
         $c->forward($err->action);
       }
-      
+
       # ------
       # New: support a custom app-wide error template:
       elsif(my $template = $c->config->{RapidApp}{error_template}) {
         try {
           my $TC = $c->template_controller;
-          
+
           # --------
           # This is just a little fallback code to automatically dump the template 'error'
           # variable in case it is an object/reference but being used directly in the error
@@ -264,9 +264,9 @@ sub _rapidapp_top_level_dispatch {
           # in the foot by dumping the object rather than allowing it to be rendered as simply
           # 'Some:Class=HASH(0x1046f198)' which is almost never useful -- BUT, we also must
           # take into account whether or not the object already stringifies, and only do this
-          # override when it does not, which is exactly what this code does. 
+          # override when it does not, which is exactly what this code does.
           #  Note that this is not full-proof, and currently this only works when the template
-          #  stash class is Template::Stash::XS, which is most likely, but by no means 
+          #  stash class is Template::Stash::XS, which is most likely, but by no means
           #  guaranteed. But in that case this code just won't be called
           my $orig_get = \&Template::Stash::XS::get;
           no warnings 'redefine';
@@ -279,17 +279,17 @@ sub _rapidapp_top_level_dispatch {
               : $val
           };
           # --------
-          
-          # If the error is an object or HashRef with a 'status_code' 
-          # method/key which returns a value that looks like an HTTP 
+
+          # If the error is an object or HashRef with a 'status_code'
+          # method/key which returns a value that looks like an HTTP
           # status code, use it, otherwise stick with the standard 500:
           my $status = try{$err->status_code} || try{$err->{status_code}};
           $status = 500 unless ($status && ($status =~ /^\d{3}$/));
-          
-          my $body = $TC->template_render($template,{ 
+
+          my $body = $TC->template_render($template,{
             error => $err, error_status_code => $status
           },$c);
-          
+
           $c->response->status($status);
           $c->response->body($body);
           $c->clear_errors;
@@ -312,7 +312,7 @@ sub _rapidapp_top_level_dispatch {
     $c->response->body(" *** Uncaught Exception in Catalyst Engine ***\n\n\n$err");
     $c->response->status(500);
   };
-	
+
 	if (!defined $c->response->content_type) {
 		$c->log->error("Body was set, but content-type was not!  This can lead to encoding errors!");
 	}
@@ -327,7 +327,7 @@ sub module_root_namespace {
 # path and dispatch it. It essentially starts over in handle_request at
 # the 'prepare_action' phase with a different request path set, leaving
 # all other details of the request the same. This is meant to be called
-# during an existing request (dispatch phase). This is used internally in 
+# during an existing request (dispatch phase). This is used internally in
 # places like NavCore for saved searches:
 sub redispatch_public_path {
   my ($c, @args) = @_;
@@ -447,11 +447,11 @@ sub _report_debug_around_stats {
 	my $c = shift;
 	my $stats = $RapidApp::Util::debug_around_stats || return;
 	return unless (ref($stats) && keys %$stats > 0);
-	
+
 	my $total = $c->stats->elapsed;
-	
+
 	my $display = $c->_get_debug_around_stats_ascii($total,"Catalyst Request Elapsed");
-	
+
 	print STDERR "\n" . $display;
 }
 
@@ -460,15 +460,15 @@ sub _get_debug_around_stats_ascii {
 	my $c = shift;
 	my $total = shift or die "missing total arg";
 	my $total_heading = shift || 'Total Elapsed';
-	
+
 	my $stats = $RapidApp::Util::debug_around_stats || return;
 	return unless (ref($stats) && keys %$stats > 0);
-	
+
 	my $auto_width = 'calls';
 	my @order = qw(class sub calls min/max/avg total pct);
-	
+
 	$_->{pct} = ($_->{total}/$total)*100 for (values %$stats);
-	
+
 	my $tsum = 0;
 	my $csum = 0;
 	my $count = 0;
@@ -477,7 +477,7 @@ sub _get_debug_around_stats_ascii {
 		$tsum += $stat->{total};
 		$csum += $stat->{calls};
 		$count++;
-		
+
 		$stat->{$_} = sprintf('%.3f',$stat->{$_}) for(qw(min max avg total));
 		$stat->{'min/max/avg'} = $stat->{min} . '/' . $stat->{max} . '/' . $stat->{avg};
 		$stat->{pct} = sprintf('%.1f',$stat->{pct}) . '%';
@@ -487,7 +487,7 @@ sub _get_debug_around_stats_ascii {
 
 	my $tpct = sprintf('%.1f',($tsum/$total)*100) . '%';
 	$tsum = sprintf('%.3f',$tsum);
-	
+
 	my $t = Text::SimpleTable::AutoWidth->new(
 		max_width => Catalyst::Utils::term_width(),
 		captions => \@order
@@ -496,13 +496,13 @@ sub _get_debug_around_stats_ascii {
 	$t->row(@$_) for (@rows);
 	$t->row(' ',' ',' ',' ',' ',' ');
 	$t->row('(' . $count . ' Tracked Functions)','',$csum,'',$tsum,$tpct);
-	
+
 	my $table = $t->draw;
-	
+
 	my $display = BOLD . "Tracked Functions (debug_around) Stats (current request):\n" . CLEAR .
 		BOLD.MAGENTA . $table . CLEAR .
 		BOLD . "Catalyst Request Elapsed: " . YELLOW . sprintf('%.3f',$total) . CLEAR . "s\n\n";
-	
+
 	return $display;
 
 }
@@ -524,11 +524,11 @@ before 'setup_plugins' => sub {
 			$c->config->{'Plugin::Static::Simple'} || {},
 			$c->config->{static} || {}
 		);
-	
+
 	$config->{ignore_extensions} ||= [];
 	$c->config->{'Plugin::Static::Simple'} = $config;
 	# --
-	
+
 };
 # --
 
@@ -543,11 +543,11 @@ sub is_ra_ajax_req {
 # Some some housework on the config for normalization/consistency:
 sub _normalize_catalyst_config {
   my $c = shift;
-  
+
   my $cnf = $c->config;
   $cnf->{name} ||= ref $c ? ref $c : $c;
   $cnf->{'RapidApp'} ||= {};
-  
+
   # New: allow root_template_prefix/root_template to be supplied
   # in the Template Controller config instead of Model::RapidApp
   # since it just makes better sense from the user standpoint:
@@ -556,7 +556,7 @@ sub _normalize_catalyst_config {
     if(exists $tc_cfg->{root_template_prefix});
   $cnf->{'RapidApp'}{root_template} = $tc_cfg->{root_template}
     if(exists $tc_cfg->{root_template});
-  
+
   # ---
   # We're going to transition away from the 'Model::RapidApp' config
   # key because it is confusing, and in the future the current "model"
@@ -581,10 +581,10 @@ my $share_dir = dir( RapidApp->share_dir );
 sub default_tt_include_path {
   my $c = shift;
   my $app = ref $c ? ref $c : $c;
-  
+
   my @paths = ();
   my $home = dir( Catalyst::Utils::home($app) );
-  
+
   if($home && -d $home) {
     my $root = $home->subdir('root');
     if($root && -d $root) {
@@ -593,14 +593,14 @@ sub default_tt_include_path {
       push @paths, "$root";
     }
   }
-  
+
   # This should be redundant if share_dir is setup properly
   if($share_dir && -d $share_dir) {
     my $tpl = $share_dir->subdir('templates');
     push @paths, "$tpl" if ($tpl && -d $tpl);
     push @paths, "$share_dir";
   }
-  
+
   return join(':',@paths);
 }
 
@@ -612,12 +612,12 @@ sub template_render {
 	my $c = shift;
 	my $template = shift;
 	my $vars = shift || {};
-  
-	$TT ||= Template->new({ 
+
+	$TT ||= Template->new({
     INCLUDE_PATH => $c->default_tt_include_path,
     ABSOLUTE => 1
   });
-	
+
 	my $out;
 	$TT->process($template,$vars,\$out) or die $TT->error;
 
@@ -633,8 +633,8 @@ before 'setup_components' => sub {
     View::RapidApp::Viewport
     View::RapidApp::Printview
   );
-  
-  $c->config( $_ => { 
+
+  $c->config( $_ => {
     INCLUDE_PATH => $c->default_tt_include_path,
     ABSOLUTE => 1
   }) for (@views);
@@ -650,9 +650,9 @@ sub add_on_finalize_success {
 	# make sure this is the CONTEXT object and not a class name
 	$c = RapidApp->active_request_context unless (ref $c);
 	my $code = shift or die "No CodeRef supplied";
-	die "add_on_finalize_success(): argument not a CodeRef" 
+	die "add_on_finalize_success(): argument not a CodeRef"
 		unless (ref $code eq 'CODE');
-	
+
 	if(try{$c->stash}) {
 		$c->stash->{on_finalize_success} ||= [];
 		push @{$c->stash->{on_finalize_success}},$code;
@@ -688,11 +688,11 @@ sub run_on_finalize_success_codes {
 		catch {
 			# If we get here, we're screwed. Best we can do is log the error. (i.e. we can't tell the user)
 			my $err = shift;
-			my $errStr = RED.BOLD . "EXCEPTION IN CodeRefs added by 'add_on_finalize_success!! [coderef #" . 
+			my $errStr = RED.BOLD . "EXCEPTION IN CodeRefs added by 'add_on_finalize_success!! [coderef #" .
 				++$num . "]:\n " . CLEAR . RED . (ref $err ? Dumper($err) : $err) . CLEAR;
-			
+
 			try{$c->log->error($errStr)} or warn $errStr;
-			
+
 			# TODO: handle exceptions here like any other. This might require a bit
 			# of work to achieve because by the time we get here we're already past the
 			# code that handles RapidApp exceptions, and the below commented out code doesn't work

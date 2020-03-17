@@ -1,12 +1,12 @@
 =head1 NAME
- 
+
 RapidApp::Manual::Modules - RapidApp Modules
- 
+
 =head1 DESCRIPTION
 
-RapidApp "Modules" are special object classes, specific to RapidApp, that encapsulate a fully 
-working interface, usually with an embedded ExtJS panel/component front-side view, which is 
-designed to render via Ajax within other rendered Modules (such as within a Viewport, Tab panel, 
+RapidApp "Modules" are special object classes, specific to RapidApp, that encapsulate a fully
+working interface, usually with an embedded ExtJS panel/component front-side view, which is
+designed to render via Ajax within other rendered Modules (such as within a Viewport, Tab panel,
 window, etc).
 
 Modules are a special kind of "thick controller" which include controller actions to handle
@@ -19,15 +19,15 @@ is mounted at the root namespace for the application ('/') by default, but can b
 app config option to any location. For instance, to have the module hierarchy start at C</adm>:
 
   # in the main catalyst app class...
-  
+
  __PACKAGE__->config(
   # ...
   'RapidApp' => {
     module_root_namespace => 'adm',
-    
+
     # ...
   }
-  
+
  );
 
 =head1 AVAILABLE MODULES
@@ -37,13 +37,13 @@ achieve all sorts of turn-key interfaces. The bulk of them focus on grids and tr
 a number of composable roles which accomplish broad functions like attaching CRUD DataStores
 to DBIC models (internally these are the "DbicLnk" interfaces).
 
-Modules have their own DSL which is quite powerful. A Module is defined as any class which extends 
+Modules have their own DSL which is quite powerful. A Module is defined as any class which extends
 L<RapidApp::Module>. Built-in modules live within the C<RapidApp::Module::> namespace, such as
 L<RapidApp::Module::Tree> and L<RapidApp::Module::DbicGrid>.
 
 Note that it is B<NOT REQUIRED> to know the Module DSL, or even interact directly with Modules
 at all in order to develop using RapidApp. This is because of the declarative configuration
-layers which are provided by the L<Plugins|RapidApp::Manual::Plugins>. The APIs of the plugins 
+layers which are provided by the L<Plugins|RapidApp::Manual::Plugins>. The APIs of the plugins
 layers will be maintained for backward compatibility from version to version, while the Module
 API may still change somewhat as cleanup work progresses...
 
@@ -52,7 +52,7 @@ API may still change somewhat as cleanup work progresses...
 
 By default, Modules expect to be rendered within an ExtJS container structure via Ajax by the
 special, RapidApp-specific JavaScript function C<Ext.ux.RapidApp.AutoPanel>. Top-level views
-to prepare the HTML markup to accomplish this automatically are provided, such as 
+to prepare the HTML markup to accomplish this automatically are provided, such as
 L<RapidApp::View::Viewport>, which is what is used by plugins like
 L<TabGui|Catalyst::Plugin::RapidApp::TabGui> to render the RESTful navigation interface.
 
@@ -65,14 +65,14 @@ with a simple method modifier:
 
  around content => sub {
   my ($orig, $self, @args) = @_;
-  
+
   return {
     %{ $self->$orig(@args) },
     title => 'Custom title',
     xtype => 'panel',
     width => 420,
     # ...
-  
+
   }
  };
 
@@ -89,7 +89,7 @@ calls can be implemented as well).
 
 There are also special controller dispatch paths provided to directly render any module on-the-fly via
 L<RapidApp::View::Viewport> by prefixing the module path with C</rapidapp/module/direct/[path]>
-or C</rapidapp/module/navable/[path]>. The C<navable> path will wrap the rendered module within a 
+or C</rapidapp/module/navable/[path]>. The C<navable> path will wrap the rendered module within a
 "navable" TabPanel container, which will allow hashnav URL links to work. Otherwise, when rendered
 via C<direct>, any hashnav links will be stripped (unless of course the target module is already
 a navable component).
@@ -104,14 +104,14 @@ not support this mode because their height is always based on a container.
 The direct module dispatch URLs are useful to render a specific module outside the context of
 RapidApp-provided interfaces, such as directly within HTML of public/custom content, via C<iframe>:
 
- <iframe 
-    class="ux-mif" 
-    frameborder="0" 
-    style="overflow: auto; width: 100%; height: 450px;" 
+ <iframe
+    class="ux-mif"
+    frameborder="0"
+    style="overflow: auto; width: 100%; height: 450px;"
     src="/rapidapp/module/navable/some/module/path"
   ></iframe>
 
-To summarize, all the following URLs can be used to access the same module (assuming the 
+To summarize, all the following URLs can be used to access the same module (assuming the
 C<module_root_namespace> is set to 'adm', and the L<TabGui|Catalyst::Plugin::RapidApp::TabGui>
 plugin is active):
 
@@ -138,5 +138,5 @@ L<RapidApp::Module>
 L<RapidApp::Manual::Plugins>
 
 =back
- 
+
 =cut

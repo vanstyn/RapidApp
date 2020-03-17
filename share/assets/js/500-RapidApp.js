@@ -12,7 +12,7 @@ Ext.ux.RapidApp.AJAX_URL_PREFIX = Ext.ux.RapidApp.AJAX_URL_PREFIX || '';
 // Window Group for Custom Prompts to make them higher than other windows and load masks
 Ext.ux.RapidApp.CustomPromptWindowGroup = new Ext.WindowGroup();
 Ext.ux.RapidApp.CustomPromptWindowGroup.zseed = 20050;
-	
+
 /* Global Server Event Object */
 Ext.ux.RapidApp.EventObjectClass = Ext.extend(Ext.util.Observable,{
 	constructor: function(config) {
@@ -20,7 +20,7 @@ Ext.ux.RapidApp.EventObjectClass = Ext.extend(Ext.util.Observable,{
 		Ext.ux.RapidApp.EventObjectClass.superclass.constructor.call(this,config);
 		this.on('serverevent',this.onServerEvent,this);
 	},
-	
+
 	Fire: function() {
 		var a = arguments;
 		var arg_list = [ "'serverevent'" ];
@@ -30,9 +30,9 @@ Ext.ux.RapidApp.EventObjectClass = Ext.extend(Ext.util.Observable,{
 		var eval_str = 'this.fireEvent(' + arg_list.join(',') + ');';
 		eval( eval_str );
 	},
-	
+
 	handlerMap: {},
-	
+
 	attachServerEvents: function() {
 		var a = Array.prototype.slice.call(arguments, 0);
 		var handler = a.shift();
@@ -40,12 +40,12 @@ Ext.ux.RapidApp.EventObjectClass = Ext.extend(Ext.util.Observable,{
 			this.attachHandlerToEvent(handler,event);
 		},this);
 	},
-	
+
 	attachHandlerToEvent: function(handler,event) {
 		if(! Ext.isObject(handler) || ! Ext.isFunction(handler.func) || ! Ext.isString(handler.id)) {
 			throw "handler must be an object with func and id";
 		}
-		
+
 		if (! Ext.isArray(this.handlerMap[event])) { this.handlerMap[event] = []; }
 
 		var skip = false;
@@ -55,17 +55,17 @@ Ext.ux.RapidApp.EventObjectClass = Ext.extend(Ext.util.Observable,{
 				skip = true;
 			};
 		});
-		
+
 		if(skip) { return; }
-		
+
 		return this.handlerMap[event].push(handler);
 	},
-	
+
 	onServerEvent: function() {
 		var events = Array.prototype.slice.call(arguments, 0);
 		var handlers = [];
 		var seenIds = {};
-		
+
 		Ext.each(events,function(event) {
 			if(Ext.isArray(this.handlerMap[event])) {
 				Ext.each(this.handlerMap[event],function(handler) {
@@ -75,10 +75,10 @@ Ext.ux.RapidApp.EventObjectClass = Ext.extend(Ext.util.Observable,{
 				},this);
 			}
 		},this);
-		
+
 		return this.callHandlers(handlers);
 	},
-	
+
 	callHandlers: function(handlers) {
 		Ext.each(handlers,function(handler) {
 			var scope = Ext.getCmp(handler.id);
@@ -87,13 +87,13 @@ Ext.ux.RapidApp.EventObjectClass = Ext.extend(Ext.util.Observable,{
 			}
 			else {
 				// TODO: remove the invalid id from handlerMap
-				
+
 			}
 		},this);
 	}
 });
 Ext.ux.RapidApp.EventObject = new Ext.ux.RapidApp.EventObjectClass();
-	
+
 
 Ext.ns('Ext.ux.RapidApp.userPrefs');
 Ext.ux.RapidApp.userPrefs.timezone= 'America/New_York';
@@ -163,7 +163,7 @@ Ext.ux.RapidApp.errMsgHandler = function(title,msg) {
 Ext.ux.RapidApp.errMsgHandler = function(title,msg,as_text,extra_opts) {
   extra_opts = extra_opts || {};
 	var win, rtCmp = extra_opts.smartRenderTo;
-	
+
 	var body = as_text ? '<pre>' + Ext.util.Format.nl2br(msg) + '</pre>' : msg;
 
   // This is a bit lazy (string match rather than real API) to change
@@ -180,7 +180,7 @@ Ext.ux.RapidApp.errMsgHandler = function(title,msg,as_text,extra_opts) {
   else if(extra_opts.warn_icon) {
     headCls.push('ra-icon-warning-32x32');
   }
-	
+
 	win = new Ext.Window({
 		manager: Ext.ux.RapidApp.CustomPromptWindowGroup,
     smartRenderTo: rtCmp, // if set, purely optional
@@ -248,24 +248,24 @@ Ext.ux.RapidApp.handleCustomServerDirectives= function(response, continue_curren
 	if (auth != null)
 		if (!Ext.ux.RapidApp.updateAuthenticated(auth, success_callback_repeat))
 			return;
-	
+
 	var customprompt = response.getResponseHeader('X-RapidApp-CustomPrompt');
 	if (customprompt)
 		return Ext.ux.RapidApp.handleCustomPrompt(customprompt,success_callback_repeat);
-	
+
 	// If it was an exception, it got handled/displayed already in ajaxCheckException, so don't process further.
 	if(response.getResponseHeader('X-RapidApp-Exception'))
 		return;
-	
+
 	continue_current_callback();
-	
+
 	var servercallback = response.getResponseHeader('X-RapidApp-Callback');
 	if (servercallback) {
 		// Put the response into "this" and then call the callback handler with "this" scope
 		this.response = response;
 		Ext.ux.RapidApp.handleServerCallBack.call(this,servercallback);
 	}
-	
+
 	var serverevents = response.getResponseHeader('X-RapidApp-ServerEvents');
 	if (serverevents) {
 		Ext.ux.RapidApp.handleServerEvents(serverevents);
@@ -290,17 +290,17 @@ Ext.ux.RapidApp.updateAuthenticated= function(authValue, success_callback_repeat
 
 
 // Call an arbitrary function specified in the response from the server (X-RapidApp-Callback)
-// If "scoped" is true, the function is called with the scope (this) of the Ext.data.Connection 
+// If "scoped" is true, the function is called with the scope (this) of the Ext.data.Connection
 // that made the Ajax request to the server, and the response is available in 'this.response'
 Ext.ux.RapidApp.handleServerCallBack = function(headerdata) {
 
 	var data = {};
 	Ext.apply(data,Ext.decode(headerdata));
-	
+
 	if (! data.func && ! data.anonfunc) {
 		throw "Neither 'func' nor 'anonfunc' was specified in X-RapidApp-Callback header data";
 	}
-	
+
 	var arr_to_param_str = function(name,arr) {
 		var str = '';
 		Ext.each(arr,function(item,index) {
@@ -311,25 +311,25 @@ Ext.ux.RapidApp.handleServerCallBack = function(headerdata) {
 		});
 		return str;
 	}
-	
+
 	var arg_str = '';
 	if (data.arguments) {
 		arg_str = arr_to_param_str('data.arguments',data.arguments);
 	}
-	
+
 	var anonfunc;
-	if (data.anonfunc && ! data.func) {	
+	if (data.anonfunc && ! data.func) {
 		eval('anonfunc = ' + data.anonfunc + ';');
 		data.func = 'anonfunc';
 	}
-	
+
 	var func;
 	if (data.scoped) {
 		var scope = this;
-		eval('func = function() { return ' + data.func + '.call(scope,' + arg_str + '); };'); 
+		eval('func = function() { return ' + data.func + '.call(scope,' + arg_str + '); };');
 	}
 	else {
-		eval('func = function() { return ' + data.func + '(' + arg_str + '); };'); 
+		eval('func = function() { return ' + data.func + '(' + arg_str + '); };');
 	}
 	return func();
 }
@@ -337,7 +337,7 @@ Ext.ux.RapidApp.handleServerCallBack = function(headerdata) {
 Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 
 	var win;
-	
+
 	// Defaults
 	var data = {
 		title: 'Untitled X-RapidApp-CustomPrompt',
@@ -353,7 +353,7 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 			}
 		]
 	};
-	
+
 	var default_formpanel_cnf = {
 		itemId: 'formpanel',
 		frame: true,
@@ -365,42 +365,42 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 			width: 175
 		}
 	};
-	
+
 	Ext.apply(data,Ext.decode(headerdata));
 	if(! data.formpanel_cnf) { data.formpanel_cnf = {}; }
-	
+
 	if(data.validate) {
 		default_formpanel_cnf.monitorValid = true;
 	}
-	
-	
+
+
 	Ext.apply(default_formpanel_cnf,data.formpanel_cnf);
 	data.formpanel_cnf = default_formpanel_cnf;
-	
+
 	var btn_handler = function(btn) {
-		
+
 		win.callingHandler = true;
-		
+
 		var formpanel = win.getComponent('formpanel');
 		if(!formpanel) { return; }
-		
+
 		var form = formpanel.getForm();
 		var data = form.getFieldValues();
-		
+
 		var headers = {
 			'X-RapidApp-CustomPrompt-Button': btn.text,
 			'X-RapidApp-CustomPrompt-Data': Ext.encode(data)
 		};
-		
+
 		// Recall the original request, adding in the customprompt header ata:
 		var newopts = { headers: headers };
 		//btn.ownerCt.ownerCt.close();
 		win.close();
 		return formpanel.success_callback(newopts);
 	}
-	
+
 	var onEsc = null;
-	
+
 	// Custom buttons:
 	var buttons = [];
 	Ext.each(data.buttons,function(text) {
@@ -409,16 +409,16 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 			text: text,
 			handler: btn_handler
 		}
-		
+
 		if(data.EnterButton && data.EnterButton == text) {
-			
+
 			var click_fn = btn_handler.createCallback({text: text});
-			
+
 			btn.listeners = {
 				click: click_fn,
 				afterrender: function(b) {
 					var fp = b.ownerCt.ownerCt;
-					
+
 					new Ext.KeyMap(fp.el, {
 						key: Ext.EventObject.ENTER,
 						shift: false,
@@ -426,25 +426,25 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 						fn: function(){ this.el.dom.click(); },
 						scope: b
 					});
-					
+
 				}
 			}
 		}
-		
+
 		if(data.EscButton && data.EscButton == text) {
 			onEsc = btn_handler.createCallback({text:text});
 		}
 		else if(data.validate) {
 			btn.formBind = true;
 		}
-		
+
 		if(data.buttonIcons[text]) {
 			btn.iconCls = data.buttonIcons[text];
 		}
-		
+
 		buttons.push(btn);
 	});
-	
+
 	// Cancel:
 	if(!data.noCancel) {
 		buttons.push({
@@ -456,8 +456,8 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 			}
 		});
 	}
-	
-		
+
+
 	var formpanel = {
 		xtype: 'form',
 		itemId: 'formpanel',
@@ -467,9 +467,9 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 		buttons: buttons,
 		success_callback: success_callback // <-- storing this here so we can use it in the btn handler
 	};
-	
+
 	Ext.apply(formpanel,data.formpanel_cnf);
-	
+
 	var window_cnf = {
 		manager: Ext.ux.RapidApp.CustomPromptWindowGroup,
 		title: data.title,
@@ -488,14 +488,14 @@ Ext.ux.RapidApp.handleCustomPrompt = function(headerdata,success_callback) {
 				if(field) { field.focus('',10); field.focus('',200); field.focus('',500); }
 			},
 			beforeclose: function(w){
-				if(onEsc && !w.callingHandler) { 
-					w.callingHandler = true; 
-					onEsc(); 
+				if(onEsc && !w.callingHandler) {
+					w.callingHandler = true;
+					onEsc();
 				}
 			}
 		}
 	};
-	
+
 	if(data.noCancel && !onEsc) { window_cnf.closable = false; }
 
 	win = new Ext.Window(window_cnf);
@@ -630,14 +630,14 @@ Ext.ux.RapidApp.validateCsvEmailStr = function(v) {
 Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 
 	nodeProperty: 'dataValue',
-	
+
 	buttonAlign: 'right',
-	
+
 	afterSelectHandler: Ext.emptyFn,
 	afterSelectHandler_scope: null,
-	
+
 	initComponent: function() {
-		
+
 		// Handle an initial value:
 		if(this.value) {
 			var init_value = this.value.valueOf();
@@ -646,7 +646,7 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 				cmp.setValue(init_value);
 			});
 		}
-		
+
 		this.buttons = [
 			{
 				text: 'Select',
@@ -661,7 +661,7 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 
 					this.setValue(data.display);
 					btn.ownerCt.ownerCt.close();
-					
+
 					var scope = this;
 					if(this.afterSelectHandler_scope) { scope = this.afterSelectHandler_scope; }
 					this.afterSelectHandler.call(scope,data,app,arguments);
@@ -675,7 +675,7 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 				}
 			}
 		];
-		
+
 		//this.setEditable(false);
 				//console.dir(this);
 		//this.constructor.superclass.constructor.prototype.initComponent.apply(this, arguments);
@@ -705,10 +705,10 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 				node: this[this.nodeProperty]
 			};
 		}
-		
+
 		return autoLoad;
 	},
-	
+
 	getPickerApp: function() {
 		var autoLoad = this.getAutoLoad();
 		return {
@@ -718,7 +718,7 @@ Ext.ux.RapidApp.CustomPickerField = Ext.extend(Ext.form.TriggerField, {
 			layout: 'fit'
 		};
 	},
-	
+
 	onTriggerClick: function() {
 		var win = new Ext.Window({
 			Combo: this,
@@ -788,17 +788,17 @@ Ext.ux.IFrame = function (parentElement) {
 
    // Create the iframe which will be returned
    var iframe = document.createElement("iframe");
- 
+
    // If no parent element is specified then use body as the parent element
    if(parentElement == null)
       parentElement = document.body;
- 
+
    // This is necessary in order to initialize the document inside the iframe
    parentElement.appendChild(iframe);
- 
+
    // Initiate the iframe's document to null
    iframe.doc = null;
- 
+
    // Depending on browser platform get the iframe's document, this is only
    // available if the iframe has already been appended to an element which
    // has been added to the document
@@ -811,15 +811,15 @@ Ext.ux.IFrame = function (parentElement) {
    else if(iframe.document)
       // Others?
       iframe.doc = iframe.document;
- 
+
    // If we did not succeed in finding the document then throw an exception
    if(iframe.doc == null)
       throw "Document not found, append the parent element to the DOM before creating the IFrame";
- 
+
    // Create the script inside the iframe's document which will call the
    iframe.doc.open();
    iframe.doc.close();
- 
+
    // Return the iframe, now with an extra property iframe.doc containing the
    // iframe's document
    return iframe;
@@ -827,7 +827,7 @@ Ext.ux.IFrame = function (parentElement) {
 
 Ext.ns('Ext.ux.iFramePostwith');
 Ext.ux.iFramePostwith = function (to,p) {
-	
+
 	// TODO: in order to detect the completion of the submit there will
 	// need to be a server-side process to return js code with an 'onload'
 	// event. In the mean time, we don't clean up ourselves, but we do
@@ -837,10 +837,10 @@ Ext.ux.iFramePostwith = function (to,p) {
 	if(old_iframe){
 		document.body.removeChild(old_iframe);
 	}
-	
+
 	var iframe = new Ext.ux.IFrame(document.body);
 	iframe.id = id;
-	
+
 	var myForm = iframe.doc.createElement("form");
 	myForm.method="post" ;
 	myForm.action = to ;
@@ -864,23 +864,23 @@ Ext.ux.iFramePostwith = function (to,p) {
  --- http://encosia.com/ajax-file-downloads-and-iframes/ ---
  This assumes that the content returned from 'url' will be "Content-disposition: attachment;"
  The purpose is to allow a background download operation that won't be
- cancelled if the user clicks around the app before the response comes back, (which 
- happens with Ext.ux.postwith) and also won't navigate the page if an error occurs during 
- the download. The downside of this is that nothing will be shown to the user if an error or 
- exception occurs, the download will just never happen. To address this limitation, see the 
+ cancelled if the user clicks around the app before the response comes back, (which
+ happens with Ext.ux.postwith) and also won't navigate the page if an error occurs during
+ the download. The downside of this is that nothing will be shown to the user if an error or
+ exception occurs, the download will just never happen. To address this limitation, see the
  alternate method 'Ext.ux.RapidApp.winDownload' below (which has its own, different limitations)
- 
- UPDATE: one limitation of this function is with long URLs since it uses a GET instead of a 
+
+ UPDATE: one limitation of this function is with long URLs since it uses a GET instead of a
  POST. This will fail if the encoded URL is longer than ~2k characters
 */
 Ext.ns('Ext.ux.iframeBgDownload');
 Ext.ux.iframeBgDownload = function (url,params,timeout) {
 	var timer, timeout = timeout || Ext.Ajax.timeout;
-	
+
 	if(params) { url += '?' + Ext.urlEncode(params); }
-	
+
 	var iframe = document.createElement("iframe");
-	
+
 	var cleanup = function() {
 		if(timer) { timer.cancel(); } //<-- turn off the timeout timer
 		var task = new Ext.util.DelayedTask(function(){
@@ -888,22 +888,22 @@ Ext.ux.iframeBgDownload = function (url,params,timeout) {
 		});
 		// give the download dialog plenty of time to be displayed before we
 		// remove the iframe:
-		task.delay(2000); 
+		task.delay(2000);
 	};
-	
+
 	// Start the fail-safe timeout timer:
-	// (we need this because we have no way of detecting an exception in the 
+	// (we need this because we have no way of detecting an exception in the
 	// iframe load)
 	timer = new Ext.util.DelayedTask(cleanup);
 	timer.delay(timeout);
-	
-	// This event only gets fired in FireFox (12) for file downloads. IE and 
+
+	// This event only gets fired in FireFox (12) for file downloads. IE and
 	// Chrome have to wait for the timeout, which is lame and sucks.
 	iframe.onload = cleanup; //<-- cleanup as soon as the iframe load completes
-	
+
 	iframe.style.display = "none";
 	iframe.src = url;
-	document.body.appendChild(iframe); 
+	document.body.appendChild(iframe);
 }
 
 /*
@@ -923,44 +923,44 @@ Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.winDownload = function (url,params,msg,timeout) {
 	var timer, timeout = timeout || Ext.Ajax.timeout;
 	msg = msg || 'Downloading File...';
-	
+
 	if(params) { url += '?' + Ext.urlEncode(params); }
-	
+
 	var win;
-	
+
 	var iframe = document.createElement("iframe");
 	iframe.height = '100%';
 	iframe.width = '100%';
 	iframe.setAttribute("frameborder", '0');
 	iframe.setAttribute("allowtransparency", 'true');
 	iframe.src = url;
-	
+
 	var cleanup = function(){
 		if(timer) { timer.cancel(); } //<-- turn off the timeout timer
 		if(!win) { return; }
 		win.hide(); // <-- hide immediately
-		
+
 		var task = new Ext.util.DelayedTask(function(){
 			win.close()
 		});
 		// give the download dialog plenty of time to be displayed before we
 		// actually close/destroy the window and iframe:
-		task.delay(2000); 
+		task.delay(2000);
 	};
-	
+
 	// Unfortunately, this event is only fired in FireFox if it is a
 	// file download. In IE and Chrome, it never gets fired and so the
 	// window never gets hidden. The user has to close the dialog box
 	// themselves.
 	iframe.onload = cleanup;
-	
+
 	// Silently close the window after timeout. TODO: add an option to
 	// update the window/iframe contents with a message instead. That would
 	// only be useful in FireFox, since in other browsers we have no way of
 	// knowing if the download was successful once the timeout is reached.
 	timer = new Ext.util.DelayedTask(cleanup);
 	timer.delay(timeout);
-	
+
 	win = new Ext.Window({
 		title: msg,
 		modal: true,
@@ -987,16 +987,16 @@ Ext.ux.RapidApp.winDownload = function (url,params,msg,timeout) {
 }
 
 /*
- Another, simple download function but uses a self-closing (browser) window. 
- Again, assumes url is a file download. This is just left in for reference, 
- because it is rough looking. See Ext.ux.RapidApp.winDownload above which uses 
+ Another, simple download function but uses a self-closing (browser) window.
+ Again, assumes url is a file download. This is just left in for reference,
+ because it is rough looking. See Ext.ux.RapidApp.winDownload above which uses
  an Ext Window and has better error handling and control
 */
 Ext.ns('Ext.ux.winIframeDownload');
 Ext.ux.winPostwith = function (url,params) {
 	if(params) { url += '?' + Ext.urlEncode(params); }
 	return window.open(
-		url,"winDownload", 
+		url,"winDownload",
 		"height=100,width=200," +
 		"menubar=no,status=no,location=no,toolbar=no,resizable=no"
 	);
@@ -1034,7 +1034,7 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
   var rand = Math.floor(Math.random()*100000);
   var winId = cfg.winId || 'win-' + rand;
   var formId = 'winformpost-' + rand;
-  
+
   Ext.applyIf(cfg,{
     title: '',
     height: 400,
@@ -1048,9 +1048,9 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
   });
 
   cfg.extra_buttons = cfg.extra_buttons || [];
-  
+
 	var cancel_fn = function(){ Ext.getCmp(winId).close(); cfg.cancelHandler(); }
-	
+
 	cfg.fieldset['anchor'] = '100% 100%';
 
 	var scope = this;
@@ -1059,9 +1059,9 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 		Ext.getCmp(winId).close();
 		// Call the success function if it was passed in the cfg:
 		if (cfg.success) { cfg.success.apply(scope,arguments); }
-		
+
 		var call_args = arguments;
-		
+
 		// Call additional specified success callbacks. These can be functions outright,
 		// or objects containing a custom scope and handler:
 		if(Ext.isArray(cfg.success_callbacks)) {
@@ -1078,10 +1078,10 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
 				}
 			});
 		}
-		
+
 		if (cfg.eval_response && response.responseText) { return eval(response.responseText); }
 	};
-  
+
   var Btn;
   Btn = new Ext.Button({
     formBind: true,
@@ -1091,7 +1091,7 @@ Ext.ux.RapidApp.WinFormPost = function(cfg) {
         btn.setDisabled(true);
         btn.setText(cfg.disableBtnText);
       }
-      
+
       var form = Ext.getCmp(formId).getForm();
 
       if (cfg.useSubmit) {
@@ -2419,7 +2419,7 @@ Ext.preg('fieldhelp',Ext.ux.FieldHelp);
 
 
 /* 2011-01-28 by HV:
- Extended Saki's Ext.ux.form.DateTime to updateValue on 'select' and then 
+ Extended Saki's Ext.ux.form.DateTime to updateValue on 'select' and then
  fire the new event 'updated'
 */
 Ext.ns('Ext.ux.RapidApp.form');
@@ -2428,14 +2428,14 @@ Ext.ux.RapidApp.form.DateTime2 = Ext.extend(Ext.ux.form.DateTime ,{
     this.df.onTriggerClick();
   },
 	initComponent: function() {
-    
+
     // Pass in the 'allowBlank' flag because it is used by RapidApp
     // for extra logic, like rendering of select '(None)'
     if(typeof this.allowBlank !== 'undefined') {
       this.dateConfig = this.dateConfig || {};
       this.dateConfig.allowBlank = this.allowBlank;
     }
-  
+
 		Ext.ux.RapidApp.form.DateTime2.superclass.initComponent.call(this);
 		this.addEvents( 'updated' );
 		this.on('change',this.updateValue,this);
@@ -2450,14 +2450,14 @@ Ext.ux.RapidApp.form.DateTime2 = Ext.extend(Ext.ux.form.DateTime ,{
     // twice for it to get focus
     this.df.focus = Ext.emptyFn;
 	},
-	
+
 	setMinMax: function(newDate) {
-		
+
 		if (this.minValue) {
 			var val = this.minValue;
 			var dt = Date.parseDate(val, this.hiddenFormat);
 			this.df.setMinValue(dt);
-			
+
 			if (newDate && newDate.getDayOfYear() != dt.getDayOfYear()) {
 				this.setTimeFullRange();
 			}
@@ -2469,7 +2469,7 @@ Ext.ux.RapidApp.form.DateTime2 = Ext.extend(Ext.ux.form.DateTime ,{
 			var val = this.maxValue;
 			var dt = Date.parseDate(val, this.hiddenFormat);
 			this.df.setMaxValue(dt);
-			
+
 			if (newDate && newDate.getDayOfYear() != dt.getDayOfYear()) {
 				this.setTimeFullRange();
 			}
@@ -2478,31 +2478,31 @@ Ext.ux.RapidApp.form.DateTime2 = Ext.extend(Ext.ux.form.DateTime ,{
 			}
 		}
 	},
-	
+
 	setTimeFullRange: function() {
 		var MaxDt = new Date();
 		MaxDt.setHours(23);
 		MaxDt.setMinutes(59);
 		MaxDt.setSeconds(59);
 		this.tf.setMaxValue(MaxDt);
-		
+
 		var MinDt = new Date();
 		MinDt.setHours(0);
 		MinDt.setMinutes(0);
 		MinDt.setSeconds(0);
 		this.tf.setMinValue(MinDt);
 	},
-	
+
 	updateValue: function(cmp,newVal) {
 		Ext.ux.RapidApp.form.DateTime2.superclass.updateValue.call(this);
-		
+
 		var newDate = null;
 		if(newVal && newVal.getDayOfYear) { newDate = newVal; }
-		
+
 		this.setMinMax(newDate);
 		this.fireEvent('updated',this);
 	},
-  
+
   // New: return formatted date string instead of Date object
   // this prevents the system seeing the value as changed when
   // it hasn't and producing a db update
@@ -2535,7 +2535,7 @@ Ext.ux.RapidApp.form.DateTime2 = Ext.extend(Ext.ux.form.DateTime ,{
     this._rawLastSetValue = val;
     return Ext.ux.RapidApp.form.DateTime2.superclass.setValue.call(this,val);
   },
-  
+
   // The TimeField is a combo, so we need to pass in calls to assertValue(), which
   // is called by the EditorGrid when hitting ENTER, TAB, etc. Without this, hitting
   // ENTER after manually typing a time value will not persist the change. We also
@@ -2560,21 +2560,21 @@ Ext.ux.RapidApp.ClickBox = Ext.extend(Ext.BoxComponent, {
 	handler: function(){},
 	scope: null,
 	initComponent: function() {
-		
+
 		if(!this.scope) {
 			this.scope = this;
 		}
-		
+
 		this.autoEl = {};
-		if(this.cls) { 
+		if(this.cls) {
 			this.autoEl.cls = this.cls;
 		}
-		if(this.qtip) { 
-			this.autoEl['ext:qtip'] = this.qtip; 
+		if(this.qtip) {
+			this.autoEl['ext:qtip'] = this.qtip;
 		}
-		
+
 		Ext.ux.RapidApp.ClickBox.superclass.initComponent.call(this);
-		
+
 		this.on('afterrender',function(box) {
 		 	var el = box.getEl();
 			if(this.overCls) {
@@ -2591,13 +2591,13 @@ Ext.ux.RapidApp.BoxToolBtn = Ext.extend(Ext.ux.RapidApp.ClickBox, {
 	toolType: 'gear',
 
 	initComponent: function() {
-		
+
     var cls = this.cls;
 		this.cls = 'x-tool x-tool-' + this.toolType;
     if(cls){ this.cls += ' ' + cls; }
 		this.overCls = 'x-tool-' + this.toolType + '-over';
 		if(this.toolQtip) { this.qtip = this.toolQtip; }
-		
+
 		Ext.ux.RapidApp.BoxToolBtn.superclass.initComponent.call(this);
 	}
 });
@@ -2623,38 +2623,38 @@ Ext.reg('rcompdataview', Ext.ux.RapidApp.ComponentDataView);
  Container
 */
 Ext.ux.RapidApp.AjaxCmp = Ext.extend(Ext.Component, {
-	
+
 	autoLoad: null,
-	
+
 	applyCnf: {},
-	
+
 	// deleteId: If set to true the ID of the dynamically fetched
 	// component will be deleted before its created
 	deleteId: false,
-	
+
 	initComponent: function() {
 		if(!Ext.isObject(this.autoLoad)) { throw 'autoLoad must be an object' };
 		if(!Ext.isObject(this.applyCnf)) { throw 'applyCnf must be an object' };
-		
+
 		this.ajaxReq = {
 			disableCaching: true,
 			success: function(response, opts) {
-				if(response.responseText) { 
+				if(response.responseText) {
 					var cmpconf = Ext.decode(response.responseText);
 					if(!Ext.isObject(cmpconf)) { throw 'responseText is not a JSON encoded object'; }
-					
+
 					// preserve plugins:
 					if (Ext.isArray(cmpconf.plugins) && Ext.isArray(this.applyCnf.plugins)) {
 						Ext.each(cmpconf.plugins,function(plugin) {
 							this.applyCnf.plugins.push(plugin);
 						},this);
 					}
-					
+
 					Ext.apply(cmpconf,this.applyCnf);
 					cmpconf.renderTo = this.getEl();
-					
+
 					if(this.deleteId && cmpconf.id) { delete cmpconf.id };
-					
+
 					var Cmp = Ext.ComponentMgr.create(cmpconf,'panel');
 					this.component = Cmp;
 					Cmp.relayEvents(this,this.events);
@@ -2664,7 +2664,7 @@ Ext.ux.RapidApp.AjaxCmp = Ext.extend(Ext.Component, {
 			scope: this
 		};
 		Ext.apply(this.ajaxReq,this.autoLoad);
-		
+
 		this.on('afterrender',function() {
 			Ext.Ajax.request(this.ajaxReq);
 		},this);
@@ -2673,20 +2673,20 @@ Ext.ux.RapidApp.AjaxCmp = Ext.extend(Ext.Component, {
 });
 Ext.reg('ajaxcmp',Ext.ux.RapidApp.AjaxCmp);
 
-/* 
+/*
  This works just like checkbox except it renders a simple div and toggles a class
  instead of using a real "input" type=checkbox element. I needed to create this because
  I couldn't get normal checkbox to work properly within AppDV - 2011-05-29 by HV
 */
 Ext.ux.RapidApp.LogicalCheckbox = Ext.extend(Ext.form.Checkbox,{
 	defaultAutoCreate : { tag: 'div', cls: 'x-logical-checkbox ra-icon-checkbox-clear' },
-	
+
 	onRender: function(ct, position) {
 		if(this.value == "0") { this.value = false; }
 		if(typeof this.value !== 'undefined') { this.checked = this.value ? true : false; }
 		Ext.ux.RapidApp.LogicalCheckbox.superclass.onRender.apply(this,arguments);
 	},
-	
+
 	setValue: function(v) {
 		Ext.ux.RapidApp.LogicalCheckbox.superclass.setValue.apply(this,arguments);
 		if (v) {
@@ -2728,29 +2728,29 @@ Ext.reg('logical-checkbox',Ext.ux.RapidApp.LogicalCheckbox);
 */
 Ext.ns('Ext.ux.RapidApp.menu');
 Ext.ux.RapidApp.menu.ToggleSubmenuItem = Ext.extend(Ext.menu.Item,{
-	
+
 	submenuShowPending: false,
 	showMenuLoadMask: null,
 	loadingIconCls: 'ra-icon-loading', // <-- set this to null to disable the loading icon feature
-	
+
 	initComponent: function() {
 		if(this.menu && !this.handler) {
-			
+
 			this.itemCls = 'x-menu-item x-menu-item-arrow';
-			
+
 			this.origMenu = this.menu;
 			delete this.menu;
-			
+
 			if (typeof this.origMenu.getEl != "function") {
 				this.origMenu = new Ext.menu.Menu(this.origMenu);
 			}
-			
+
 			this.origMenu.on('show',this.onSubmenuShow,this);
 			this.origMenu.allowOtherMenus = true;
-			
+
 			this.handler = function(btn) {
 				if(this.submenuShowPending) { return; }
-				
+
 				if(this.origMenu.isVisible()) {
 					this.origMenu.hide();
 					this.setShowPending(false);
@@ -2760,12 +2760,12 @@ Ext.ux.RapidApp.menu.ToggleSubmenuItem = Ext.extend(Ext.menu.Item,{
 					this.origMenu.show.defer(100,this.origMenu,[btn.getEl(),'tr?']);
 				}
 			}
-      
+
       this.on('afterrender',this.hookParentMenu,this);
 		}
 		Ext.ux.RapidApp.menu.ToggleSubmenuItem.superclass.initComponent.call(this);
 	},
-  
+
   // Manually hook into the parent menu and hide when it does. We broke
   // ties with the parent menu on purpose to achieve the toggle functionality
   // so we need to manually reconnect with the hide event
@@ -2774,11 +2774,11 @@ Ext.ux.RapidApp.menu.ToggleSubmenuItem = Ext.extend(Ext.menu.Item,{
       this.parentMenu.on('hide',this.origMenu.hide,this.origMenu);
     }
   },
-	
+
 	onSubmenuShow: function() {
 		this.setShowPending(false);
 	},
-	
+
 	setShowPending: function(val) {
 		if(val) {
 			this.submenuShowPending = true;
@@ -2804,39 +2804,39 @@ Ext.ux.RapidApp.GridSelectSetDialog = Ext.extend(Ext.Window, {
 
 	grid: null,
 	initSelectedIds: [],
-	
+
 	//private:
 	selectedIdMap: {},
 	localGrid: null,
 	localFields: null,
 	localStore: null,
-		
+
 	layout: 'hbox',
 	layoutConfig: {
 		align: 'stretch',
 		pack: 'start'
 	},
-		
+
 	initComponent: function() {
-		
+
 		this.selectedIdMap = {};
 		Ext.each(this.initSelectedIds,function(id){
 			this.selectedIdMap[id] = true;
 		},this);
-		
+
 		var grid = this.grid;
 		var cmConfig = grid.getColumnModel().config;
-		
+
 		this.localFields = [];
-		
+
 		Ext.each(cmConfig,function(item) {
 			this.localFields.push({ name: item.dataIndex });
 		},this);
-		
+
 		this.localStore = new Ext.data.JsonStore({ fields: this.localFields });
-		
+
 		var cmp = this;
-		
+
 		this.localGrid = {
 			flex: 1,
 			xtype: 'grid',
@@ -2851,24 +2851,24 @@ Ext.ux.RapidApp.GridSelectSetDialog = Ext.extend(Ext.Window, {
 				}
 			}
 		};
-		
+
 		grid.flex = 1;
-		
+
 		this.items = [
 			this.localGrid,
 			grid
 		];
-		
+
 		grid.getStore().on('load',this.applyFilter,this);
-		
+
 		grid.on('rowdblclick',function(grid,index,e) {
 			var Record = this.grid.getStore().getAt(index);
 			this.addSelected(Record);
 		},this);
-		
+
 		Ext.ux.RapidApp.GridSelectSetDialog.superclass.initComponent.call(this);
 	},
-	
+
 	applyFilter: function() {
 		var Store = this.grid.getStore();
 		Store.filter([{
@@ -2878,21 +2878,21 @@ Ext.ux.RapidApp.GridSelectSetDialog = Ext.extend(Ext.Window, {
 			scope: this
 		}]);
 	},
-	
+
 	addSelected: function(Record) {
 		var Store = this.grid.getStore();
 		this.localStore.add(Record);
 		this.selectedIdMap[Record.data[Store.idProperty]] = true;
 		this.applyFilter();
 	},
-	
+
 	unSelect: function(Record) {
 		var Store = this.grid.getStore();
 		this.localStore.remove(Record);
 		delete this.selectedIdMap[Record.data[Store.idProperty]];
 		this.applyFilter();
 	}
-	
+
 });
 Ext.reg('grid-selectset-dialog',Ext.ux.RapidApp.GridSelectSetDialog);
 
@@ -2905,28 +2905,28 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 
 	grid: null,
 	initSelectedIds: [],
-	
+
 	dblclickAdd: true,
 	dblclickRemove: false,
-	
+
 	leftTitle: 'Selected',
 	leftIconCls: 'ra-icon-checkbox-yes',
 	rightTitle: 'Not Selected',
 	rightIconCls: 'ra-icon-checkbox-no',
-	
+
 	showCountsInTitles: true,
-	
+
 	baseParams: {},
-	
+
 	//private:
 	selectedIdMap: {},
 	localGrid: null,
 	localFields: null,
 	localStore: null,
-		
+
 	// Emulate border layout:
 	style: { 'background-color': '#f0f0f0' },
-		
+
 	layout: 'hbox',
 	layoutConfig: {
 		align: 'stretch',
@@ -2934,27 +2934,27 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 	},
 
 	initComponent: function() {
-		
+
 		this.addEvents( 'selectionsave' );
-		
+
 		var cmp = this;
-		
+
 		this.selectedIdMap = {};
 		Ext.each(this.initSelectedIds,function(id){
 			this.selectedIdMap[id] = true;
 		},this);
-		
+
 		var grid = this.grid;
 		var cmConfig = grid.getColumnModel().config;
 		var store = grid.getStore();
 
 		this.localFields = [];
-		
+
 		Ext.each(cmConfig,function(item) {
 			this.localFields.push({ name: item.dataIndex });
 		},this);
-		
-		this.localStore = new Ext.data.JsonStore({ 
+
+		this.localStore = new Ext.data.JsonStore({
 			fields: this.localFields,
 			api: store.api,
 			listeners: {
@@ -2963,15 +2963,15 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 				}
 			}
 		});
-		
+
 		//Apply any baseParams to the store:
 		Ext.iterate(this.baseParams,function(k,v) {
 			this.localStore.setBaseParam(k,v);
 			store.setBaseParam(k,v);
 		},this);
-		
+
 		this.on('afterrender',function(){ this.localStore.load(); },this);
-		
+
 		this.localGrid = new Ext.grid.GridPanel({
 			xtype: 'grid',
 			store: this.localStore,
@@ -2981,7 +2981,7 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 			enableColumnMove: false,
 			viewConfig: grid.viewConfig
 		});
-		
+
 		this.addButton = new Ext.Button({
 			text: 'Add',
 			iconCls: 'ra-icon-arrow-left',
@@ -2991,7 +2991,7 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 			},
 			disabled: true
 		});
-		
+
 		this.removeButton = new Ext.Button({
 			text: 'Remove',
 			iconCls: 'ra-icon-arrow-right',
@@ -3001,10 +3001,10 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 			},
 			disabled: true
 		});
-		
+
 		this.items = [
 			{
-				
+
 				itemId: 'left-panel',
 				title: this.leftTitle,
 				iconCls: this.leftIconCls,
@@ -3052,36 +3052,36 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 				]
 			}
 		];
-		
+
 		store.on('load',this.applyFilter,this);
-			
+
 		if(this.dblclickRemove) {
 			this.localGrid.on('rowdblclick',function(grid,index,e) {
 				var Record = grid.getStore().getAt(index);
 				cmp.unSelect(Record);
 			},this);
 		}
-		
+
 		if(this.dblclickAdd) {
 			grid.on('rowdblclick',function(grid,index,e) {
 				var Record = this.grid.getStore().getAt(index);
 				this.addSelected(Record);
 			},this);
 		}
-		
+
 		var localSelMod = this.localGrid.getSelectionModel();
 		var selMod = this.grid.getSelectionModel();
-		
+
 		localSelMod.on('selectionchange',this.onSelectionChange,this);
 		selMod.on('selectionchange',this.onSelectionChange,this);
-		
+
 		// When one grid is clicked clear the other:
 		localSelMod.on('rowselect',function(){ selMod.clearSelections(); },this);
 		selMod.on('rowselect',function(){ localSelMod.clearSelections(); },this);
-		
+
 		Ext.ux.RapidApp.AppGridSelector.superclass.initComponent.call(this);
 	},
-	
+
 	applyFilter: function() {
 		var Store = this.grid.getStore();
 		Store.filter([{
@@ -3092,35 +3092,35 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 		}]);
 		this.updateTitleCounts();
 	},
-	
+
 	addRowsSelected: function() {
 		var sm = this.grid.getSelectionModel();
 		Ext.each(sm.getSelections(),function(Record) {
 			this.addSelected(Record);
 		},this);
 	},
-	
+
 	removeRowsSelected: function() {
 		var sm = this.localGrid.getSelectionModel();
 		Ext.each(sm.getSelections(),function(Record) {
 			this.unSelect(Record);
 		},this);
 	},
-	
+
 	addSelected: function(Record) {
 		var Store = this.grid.getStore();
 		this.localStore.add(Record);
 		this.selectedIdMap[Record.data[Store.idProperty]] = true;
 		this.applyFilter();
 	},
-	
+
 	unSelect: function(Record) {
 		var Store = this.grid.getStore();
 		this.localStore.remove(Record);
 		delete this.selectedIdMap[Record.data[Store.idProperty]];
 		this.applyFilter();
 	},
-	
+
 	getSelectedIds: function() {
 		var ids = [];
 		Ext.iterate(this.selectedIdMap,function(k,v){
@@ -3128,44 +3128,44 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 		},this);
 		return ids;
 	},
-	
+
 	onSelectionChange: function(sm) {
 		this.leftSelectionCheck.call(this);
 		this.rightSelectionCheck.call(this);
 	},
-	
+
 	leftSelectionCheck: function() {
 		var sm = this.localGrid.getSelectionModel();
 		this.removeButton.setDisabled(!sm.hasSelection());
 	},
-	
+
 	rightSelectionCheck: function() {
 		var sm = this.grid.getSelectionModel();
 		this.addButton.setDisabled(!sm.hasSelection());
 	},
-	
+
 	tryClosePage: function() {
 		if (! this.ownerCt) { return; }
 		if (this.ownerCt.closable) { return this.ownerCt.close(); }
 		if (! this.ownerCt.ownerCt) { return; }
 		if (this.ownerCt.ownerCt.closable) { return this.ownerCt.ownerCt.close(); }
 	},
-	
+
 	getSelectedCount: function() {
 		var count = 0;
 		Ext.iterate(this.selectedIdMap,function() { count++; });
 		return count;
 	},
-	
+
 	updateTitleCounts: function() {
 		if(! this.showCountsInTitles) { return; }
-		
+
 		var total = this.grid.getStore().getTotalCount();
 		var selected = this.getSelectedCount();
 		var adjusted = total - selected;
-		
+
 		this.getComponent('left-panel').setTitle(this.leftTitle + ' (' + selected + ')');
-		
+
 		var right_panel = this.getComponent('right-panel');
 		if(selected > total) {
 			right_panel.setTitle(this.rightTitle);
@@ -3174,7 +3174,7 @@ Ext.ux.RapidApp.AppGridSelector = Ext.extend(Ext.Container, {
 			right_panel.setTitle(this.rightTitle + ' (' + adjusted + ')');
 		}
 	}
-	
+
 });
 Ext.reg('appgridselector',Ext.ux.RapidApp.AppGridSelector);
 
@@ -3191,7 +3191,7 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 		if(this.allowChangePageSize) {
 
 			var paging = this;
-			
+
 			var suffix_str = '/<span style="font-size:.9em;vertical-align:top;">' +
 				'page' +
 			'</span>';
@@ -3234,7 +3234,7 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 
 			var orig_text = this.beforePageText;
 			if(paging.pageSize) { orig_text = paging.pageSize + suffix_str; }
-			
+
 			this.pageSizeButton = new Ext.Button({
 				text: orig_text,
 				style: 'font-size:.9em;',
@@ -3257,12 +3257,12 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 				}
 			});
 		}
-		
-		
+
+
 		this.beforePageText = '';
 		//this.displayMsg = '{0} - {1} of <span style="font-size:1.1em;color:#083772;">{2}</span>';
     this.displayMsg = '{0} - {1} of</span>';
-		
+
 		// place the query time label immediately after 'refresh'
 		this.prependButtons = false;
 		this.items = this.items || [];
@@ -3271,9 +3271,9 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
       cls: 'ra-grid-tb-query-time'
 		});
 		this.items.unshift(paging.queryTimeLabel);
-		
+
 		Ext.ux.RapidApp.PagingToolbar.superclass.initComponent.call(this);
-		
+
     this.insert(this.items.getCount() - 1,this.pageSizeButton,' ');
 
     this.totalCountButton = new Ext.Button({
@@ -3312,7 +3312,7 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
     });
     this.insert(this.items.getCount(),this.totalCountButton);
 
-		
+
 		this.store.on('load',function(store) {
 			if(store.reader && store.reader.jsonData) {
 				//'query_time' is returned from the server, see DbicLink2
@@ -3326,7 +3326,7 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 			}
       this.autoSizeInputItem();
 		},this);
-		
+
 		this.store.on('exception',function(store) {
 			paging.queryTimeLabel.setText('--');
 		},this);
@@ -3366,8 +3366,8 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
         this.emptyMsg :
         String.format(
           this.displayMsg,
-          Ext.util.Format.number(this.cursor+1,'0,000'), 
-          Ext.util.Format.number(this.cursor+count,'0,000') 
+          Ext.util.Format.number(this.cursor+1,'0,000'),
+          Ext.util.Format.number(this.cursor+count,'0,000')
         );
       this.displayItem.setText(msg);
 
@@ -3406,10 +3406,10 @@ Ext.ux.RapidApp.PagingToolbar = Ext.extend(Ext.PagingToolbar,{
 
     // Update the max value of the input item:
     this.inputItem.setMaxValue(d.pages);
-    
+
     //this.syncSize(); //<-- commented out for GitHub Issue #161
   },
-  
+
   getPageData : function() {
     if(this.store.total_count_off) {
       var total = 999999999;
@@ -3499,7 +3499,7 @@ Ext.ux.grid.PropertyStore = function(grid, source){
 Ext.extend(Ext.ux.grid.PropertyStore, Ext.util.Observable, {
     setSource : function(o,fields){
         this.source = o;
-        // -- removed by HV -- 
+        // -- removed by HV --
         // this doesn't seem to be needed and causes the page to jump around:
         //this.store.removeAll();
         var data = [];
@@ -3573,7 +3573,7 @@ Ext.ux.grid.PropertyColumnModel = function(grid, store){
     var g = Ext.grid;
     var f = Ext.form;
     this.store = store;
-    
+
     Ext.ux.grid.PropertyColumnModel.superclass.constructor.call(this, [
         {header: this.nameText, width:grid.nameWidth, fixed:true, sortable: true, dataIndex:'header', id: 'name', menuDisabled:true},
         {header: this.valueText, width:grid.valueWidth, resizable:false, dataIndex: 'value', id: 'value', menuDisabled:true}
@@ -3761,7 +3761,7 @@ Ext.reg("propertygrid2", Ext.ux.grid.PropertyGrid);
 /********************************************************************/
 
 
-/* GLOBAL OVERRIDE!!! 
+/* GLOBAL OVERRIDE!!!
 We always want to hide the contents of the grid cell while we're editing it...
 */
 Ext.override(Ext.grid.GridEditor,{
@@ -3771,52 +3771,52 @@ Ext.override(Ext.grid.GridEditor,{
 
 Ext.ns('Ext.ux.RapidApp');
 Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
-	
+
 	editable_fields: {},
-		
+
 	storeReloadButton: true,
-	
+
 	viewConfig: { emptyText: '<span style="color:darkgrey;">(Empty)</span>' },
-	
+
 	markDirty: true,
-	
+
 	use_edit_form: true,
-  
+
   getLoadMaskEl: function() {
     return this.getEl();
   },
-  
+
   show_column_documentation: true,
-	
+
 	initComponent: function() {
-		
+
 		this.on('beforepropertychange',function(source,rec,n,o) {
-			
+
 			// FIXME!!!!!
-			
+
 			if(n == null && o == '0') { return false; }
 			if(o == null && n == '0') { return false; }
 			if(n == true && o == '1') { return false; }
 			if(o == true && n == '1') { return false; }
-			
-			
-			
+
+
+
 		},this);
-		
+
     // This is a workaround for a spurious race-condition bug that is not fully
-    // understood... The root of the issue is that we are tying into the store 
-    // earlier than normal, and it appears that very sporadically the 'store' 
+    // understood... The root of the issue is that we are tying into the store
+    // earlier than normal, and it appears that very sporadically the 'store'
     // property is undefined at this point. That is why we fall back to other
     // locations where the 'store' can be found. This is probably a bug someplace
-    // else, like in AutoPanel or DataStore, but this seems to be the only place 
-    // where we have the problem (again, because no other places do we try to hook 
+    // else, like in AutoPanel or DataStore, but this seems to be the only place
+    // where we have the problem (again, because no other places do we try to hook
     // into the store within 'initComponent' but this should work). TODO/FIXME
     this.bindStore = this.store || this.initialConfig.store;
     if(!this.bindStore && this.ownerCt) {
       this.bindStore = this.ownerCt.store || this.ownerCt.initialConfig.store;
     }
 		delete this.store;
-		
+
 		if(this.storeReloadButton) {
 			var store = this.bindStore;
 			this.tools = [{
@@ -3845,26 +3845,26 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 				});
 			}
 		}
-		
+
 		if(this.columns && ! this.fields) {
 			this.fields = this.columns;
 			delete this.columns;
 		}
-		
+
 		var propgrid = this;
-		
+
 		var columns = [];
 		if(this.bindStore.baseParams.columns) {
 			// append to existing column list if set:
 			columns = Ext.decode(this.bindStore.baseParams.columns);
 		}
-		
+
 		// prune/modify fields according to 'no_column'/'allow_edit'/'allow_view' :
 		var new_fields = [];
 		Ext.each(this.fields,function(field) {
 			field.id = field.dataIndex;
 			columns.push(field.dataIndex);
-      
+
       if(field.documentation && this.show_column_documentation) {
         this.has_documentation_fields = true;
         field.header = [field.header,'<br>',
@@ -3872,10 +3872,10 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
           field.documentation,
         '</div>'].join('');
       }
-			
+
 			// Give the field editor a refernce back to us/the propgrid:
 			if(field.editor) { field.editor.propgrid = propgrid; }
-			
+
       // ** This ugly logic is no longer needed because it now happens in backend
 			//// prune out 'no_column' fields without either 'allow_edit' or 'allow_view':
 			//if(field.no_column && !field.allow_edit && !field.allow_view) { return; }
@@ -3885,54 +3885,54 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 			//
 			//field.allow_view = true;
 			//
-			//if(typeof field.allow_edit !== "undefined" && !field.allow_edit) { 
+			//if(typeof field.allow_edit !== "undefined" && !field.allow_edit) {
 			//	// prune out fields with 'allow_edit' by itself (without aithout allow_view)
 			//	// specificially set to false:
 			//	if(!field.allow_view) { return; }
-			//	
+			//
 			//	// Otherwise, remove the editor (if needed):
 			//	if(field.editor) { delete field.editor; }
 			//}
-      
+
       // New: allow_edit and allow_view are now pre-normalized and populated from
       // the back-end, so we can do this simple check instead of complex logic
-      if(!field.allow_view) { 
-        return; 
+      if(!field.allow_view) {
+        return;
       }
       if(!field.allow_edit  && field.editor) {
         delete field.editor;
       }
       // **
-      
-			
+
+
 			new_fields.push(field);
 		},this);
 		this.fields = new_fields;
-		
+
     // Bump up the width of the name column if there are fields with documentation:
     if(this.has_documentation_fields && this.nameWidth) {
       this.nameWidth = this.nameWidth + 75;
     }
-    
-		
+
+
 		Ext.each(this.fields,function(field) {
-			
+
 			var wrapcss;
-			// Extra logic to handle editors as simple xtypes and not already 
+			// Extra logic to handle editors as simple xtypes and not already
 			// GridEditor objects. This is handled by EditorGridPanel, but not
 			// by the PropertyGrid:
 			if (field.editor) {
-				if (!field.editor.getXType) { 
-					field.editor = Ext.ComponentMgr.create(field.editor,'textfield'); 
+				if (!field.editor.getXType) {
+					field.editor = Ext.ComponentMgr.create(field.editor,'textfield');
 				}
 				if (!field.editor.startEdit){
-					field.editor = new Ext.grid.GridEditor({ 
-						//autoSize: true, 
-						//hideEl: true, 
+					field.editor = new Ext.grid.GridEditor({
+						//autoSize: true,
+						//hideEl: true,
 						field: field.editor
 					});
 				}
-				
+
 				xtype = field.editor.field.xtype;
 				wrapcss = ' with-background-right-image ra-icon-gray-pencil';
 				if (xtype == 'combo' || xtype == 'appcombo2') {
@@ -3941,72 +3941,72 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 
 				this.editable_fields[field.name] = 1;
 			}
-			
+
 			var orig_renderer = field.renderer;
 			field.renderer = function(value,metaData,record,rowIndex,colIndex) {
-				
+
 				// Turn on word-wrap (set to off in a normal grid)
 				metaData.attr = 'style="white-space:normal;"';
-				
+
 				// Mark dirty like in normal grid:
 				var bindRec = propgrid.bindRecord
 				if(bindRec && bindRec.dirty && typeof bindRec.modified[record.id] != 'undefined') {
 					metaData.css += ' x-grid3-dirty-cell';
 				}
-				
+
 				// Make text of the value column selectable (copy/paste):
 				metaData.css += ' yes-text-select';
-				
+
 				// Translate the renderer to work like in a normal grid:
 				if(orig_renderer) {
-					if(!bindRec) { 
+					if(!bindRec) {
             value = orig_renderer.apply(field,arguments);
 					}
 					else {
             var dsp = bindRec.store.datastore_plus_plugin;
             value = dsp ? dsp._masterColumnRender({
-              name: field.name, renderer: orig_renderer, scope: field, 
+              name: field.name, renderer: orig_renderer, scope: field,
               args: [value,metaData,bindRec,0,0,propgrid.bindStore]
             }) : orig_renderer.call(field,value,metaData,bindRec,0,0,propgrid.bindStore);
 					}
 				}
-				
+
 				if(wrapcss) { value = '<div class="' + wrapcss + '">' + value + '</div>'; }
 				return value;
 			}
-			
-			
-			
+
+
+
 		},this);
-		
+
 		if(! this.fields.length > 0) { this.collapsed = true; }
-		
+
 		var params = { columns: Ext.encode(columns) };
-		
+
 		if(this.baseParams) {
 			Ext.apply(params,this.baseParams);
 		}
-		
+
 		Ext.apply(this.bindStore.baseParams,params);
-		
+
 		Ext.ux.RapidApp.AppPropertyGrid.superclass.initComponent.call(this);
-		
+
 		this.on('afterrender',this.loadFirstRecord,this);
 		this.bindStore.on('load',this.loadFirstRecord,this);
 		this.bindStore.on('update',this.loadFirstRecord,this);
 		this.on('beforeedit',this.onBeforeEdit,this);
 		this.on('propertychange',this.onPropertyChange,this);
-		
-		
-		
-		
-		
-		
-		
-		
+
+
+
+
+
+
+
+
 		var cmp = this;
 		/* COPIED FROM datastore-plus FIXME*/
-		/* 
+		/*
 			Property Grids (from DbicAppPropertyPage) aren't normal RapidApp/DataStore2
 			modules and so they don't get the datastore-plus plugin. This needs to be
 			fixed/refactored. In the mean time, this code is copied verbatim from the
@@ -4016,9 +4016,9 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		/**********************/
 		/** For Editor Grids **/
 		if(Ext.isFunction(cmp.startEditing)){
-			
+
 			cmp.startEditing_orig = cmp.startEditing;
-      
+
       // Now calls to the common function:
       cmp.startEditing = function(row,col) {
         return Ext.ux.RapidApp.Plugin.CmpDataStorePlusX.startEditingWrapper.call(
@@ -4030,27 +4030,27 @@ Ext.ux.RapidApp.AppPropertyGrid = Ext.extend(Ext.ux.grid.PropertyGrid,{
 		}
 		/**********************/
 		/**********************/
-		
+
 	},
-	
+
 	onBeforeEdit: function(e) {
 		var field_name = e.record.data.field.name;
 		if (this.editable_fields && ! this.editable_fields[field_name]) {
 			e.cancel = true;
 		}
 	},
-	
+
 	onPropertyChange: function(source,recordId,value,oldValue) {
 		this.bindRecord.beginEdit();
 		this.bindRecord.set(recordId,value);
 		this.bindRecord.endEdit();
 		this.bindRecord.store.saveIfPersist();
 	},
-	
+
 	getBindStore: function() {
 		return this.bindStore;
 	},
-	
+
 	loadFirstRecord: function() {
 		this.bindRecord = this.getBindStore().getAt(0);
 		if(!this.bindRecord) { return; }
@@ -4084,7 +4084,7 @@ Ext.ux.RapidApp.newXTemplate = function(arg) {
  in the future
 */
 Ext.ux.RapidApp.inlineLink = function(href,text,css,style,title) {
-	var link = 
+	var link =
 		'<a href="' + href + '"' +
 		(css ? ' class="' + css + '"' : '') +
 		(style ? ' style="' + style + '"' : '') +
@@ -4099,7 +4099,7 @@ Ext.ux.RapidApp.InlineLinkHandler = function(e) {
 	e.cancelBubble = true;
 	if (e.stopPropagation) e.stopPropagation();
 	if(e.type == 'click' && this.hash) {
-	
+
 		// --- New: handle simple hashpath URL
 		// The reason this is still being done in this function at all is
 		// for the code that stops the event from propagating above
@@ -4107,11 +4107,11 @@ Ext.ux.RapidApp.InlineLinkHandler = function(e) {
 			return window.location.href = this.href;
 		}
 		// ---
-		
+
 		var parts = this.hash.split('#loadcfg:data=');
 		if(parts.length == 2) {
 			var str = parts[1];
-			
+
 			// FireFox has automatically already decoded from URI, but Chrome hasn't,
 			// making this required:
 			str = decodeURIComponent(str);
@@ -4127,25 +4127,25 @@ Ext.ux.RapidApp.InlineLinkHandler = function(e) {
 }
 
 Ext.ux.RapidApp.callFnLink = function(fn_name,text,args,attrs) {
-	
+
 	var arg_str = args;
 	if(Ext.isArray(args)) {
 		arg_str = "'" + args.join("','") + "'";
 	}
-	
+
 	var func_str = "return " + fn_name + ".call(this," + arg_str + ");";
-	
+
 	attrs = attrs || {};
 	attrs = Ext.apply({
 		href: '#',
 		onclick: func_str,
 		ondblclick: func_str
 	},attrs);
-	
+
 	var link = '<a';
 	Ext.iterate(attrs,function(k,v) { link += ' ' + k + '="' + v + '"'; });
 	link += '>' + text + '</a>';
-	
+
 	return link;
 }
 /* ----- */
@@ -4158,8 +4158,8 @@ Ext.ux.RapidApp.DumpObjectIndented = function (obj, indent) {
 
 	for (var property in obj) {
 		var value = obj[property];
-		if (typeof value == 'string') { 
-			value = "'" + value + "'"; 
+		if (typeof value == 'string') {
+			value = "'" + value + "'";
 		}
 		else if (typeof value == 'object'){
 			if (value instanceof Array) {
@@ -4201,7 +4201,7 @@ var jsDump;
 		return '"' + str.toString().replace(/"/g, '\\"') + '"';
 	};
 	function literal( o ){
-		return o + '';	
+		return o + '';
 	};
 	function join( pre, arr, post ){
 		var s = jsDump.separator(),
@@ -4214,21 +4214,21 @@ var jsDump;
 		return [ pre, inner + arr, base + post ].join(s);
 	};
 	function array( arr ){
-		var i = arr.length,	ret = Array(i);					
+		var i = arr.length,	ret = Array(i);
 		this.up();
 		while( i-- )
-			ret[i] = this.parse( arr[i] );				
+			ret[i] = this.parse( arr[i] );
 		this.down();
 		return join( '[', ret, ']' );
 	};
-	
+
 	var reName = /^function (\w+)/;
-	
+
 	jsDump = {
 		parse:function( obj, type ){//type is used mostly internally, you can fix a (custom)type in advance
 			var	parser = this.parsers[ type || this.typeOf(obj) ];
-			type = typeof parser;			
-			
+			type = typeof parser;
+
 			return type == 'function' ? parser.call( this, obj ) :
 				   type == 'string' ? parser :
 				   this.parsers.error;
@@ -4271,7 +4271,7 @@ var jsDump;
 			this.parsers[name] = parser;
 		},
 		// The next 3 are exposed so you can use them
-		quote:quote, 
+		quote:quote,
 		literal:literal,
 		join:join,
 		//
@@ -4290,7 +4290,7 @@ var jsDump;
 				if( name )
 					ret += ' ' + name;
 				ret += '(';
-				
+
 				ret = [ ret, this.parse( fn, 'functionArgs' ), '){'].join('');
 				return join( ret, this.parse(fn,'functionCode'), '}' );
 			},
@@ -4308,10 +4308,10 @@ var jsDump;
 			node:function( node ){
 				var open = this.HTML ? '&lt;' : '<',
 					close = this.HTML ? '&gt;' : '>';
-					
+
 				var tag = node.nodeName.toLowerCase(),
 					ret = open + tag;
-					
+
 				for( var a in this.DOMAttrs ){
 					var val = node[this.DOMAttrs[a]];
 					if( val )
@@ -4321,8 +4321,8 @@ var jsDump;
 			},
 			functionArgs:function( fn ){//function calls it internally, it's the arguments part of the function
 				var l = fn.length;
-				if( !l ) return '';				
-				
+				if( !l ) return '';
+
 				var args = Array(l);
 				while( l-- )
 					args[l] = String.fromCharCode(97+l);//97 is 'a'
@@ -4358,38 +4358,38 @@ var jsDump;
 // use like this:
 // var value = Ext.ux.RapidApp.fieldContextDataGetValue.call(fieldObj,key);
 Ext.ux.RapidApp.fieldContextDataGetValue = function(name) {
-	
+
 	var rec_data = {};
-		
+
 	// In AppGrid2:
-	if(this.gridEditor && this.gridEditor.record) { 
+	if(this.gridEditor && this.gridEditor.record) {
 		rec_data = this.gridEditor.record.data;
 	}
-	
+
 	// In AppDV
-	if(this.Record) { 
+	if(this.Record) {
 		rec_data = this.Record.data;
 	}
-	
+
 	// In AppPropertyGrid
-	if(this.propgrid && this.propgrid.bindRecord) { 
+	if(this.propgrid && this.propgrid.bindRecord) {
 		rec_data = this.propgrid.bindRecord.data;
 	}
-	
+
 	// In a form
-	if(this.ownerCt && this.ownerCt.getForm) { 
+	if(this.ownerCt && this.ownerCt.getForm) {
 		var form = this.ownerCt.getForm();
 		var field = form.findField(name);
 		if (!field) { return null; }
-		if(name) { 
-			rec_data[name] = field.getValue(); 
+		if(name) {
+			rec_data[name] = field.getValue();
 		}
 		if(this.ownerCt.Record && this.ownerCt.Record.data[name]) {
 			if(!rec_data[name] || rec_data[name] == '');
 			rec_data = this.ownerCt.Record.data;
 		}
 	}
-	
+
 	return rec_data[name];
 }
 
@@ -4419,14 +4419,14 @@ Ext.ux.RapidApp.showIframeWindow = function(cnf){
 		height: 225,
 		show_loading: false
 	},cnf || {});
-		
+
 	var win, iframe = document.createElement("iframe");
 	iframe.height = '100%';
 	iframe.width = '100%';
 	iframe.setAttribute("frameborder", '0');
 	iframe.setAttribute("allowtransparency", 'true');
 	iframe.src = cnf.src;
-		
+
 	var winCfg = {
 		title: cnf.title,
 		modal: true,
@@ -4440,11 +4440,11 @@ Ext.ux.RapidApp.showIframeWindow = function(cnf){
 		}],
 		contentEl: iframe
 	};
-	
-	if(cnf.show_loading) { 
-		winCfg.bodyCssClass = 'loading-background'; 
+
+	if(cnf.show_loading) {
+		winCfg.bodyCssClass = 'loading-background';
 	}
-	
+
 	win = new Ext.Window(winCfg);
 	win.show();
 
@@ -4454,7 +4454,7 @@ Ext.ux.RapidApp.showIframeWindow = function(cnf){
 
 // Called from ext_viewport.tt to initialize the main app UI:
 Ext.ux.RapidApp.MainViewportInit = function(opt) {
-  
+
   // New: redirect to <path>/ if it doesn't already end with "/"
   // we need to do this to ensure consistency for relative paths.
   // We have to do it here, because the server side is not able to
@@ -4465,7 +4465,7 @@ Ext.ux.RapidApp.MainViewportInit = function(opt) {
     loc.href = [loc.pathname,'/',loc.search,loc.hash].join('');
     return;
   }
-  
+
   Ext.ux.RapidApp.HistoryInit();
 
   var panel_cfg = opt.panel_cfg || {
@@ -4478,7 +4478,7 @@ Ext.ux.RapidApp.MainViewportInit = function(opt) {
   };
 
   panel_cfg.id = panel_cfg.id || 'maincontainer';
-  
+
   panel_cfg.plugins = panel_cfg.plugins || [];
   panel_cfg.plugins.push('ra-last-panel-redirect');
 

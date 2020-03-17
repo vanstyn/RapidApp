@@ -36,7 +36,7 @@ __PACKAGE__->belongs_to(
 __PACKAGE__->load_components('+RapidApp::DBIC::Component::TableSpec');
 __PACKAGE__->apply_TableSpec;
 
-__PACKAGE__->TableSpec_set_conf( 
+__PACKAGE__->TableSpec_set_conf(
 	title => 'UserToRole',
 	title_multi => 'UserToRoles',
 	#iconCls => 'ra-icon-node',

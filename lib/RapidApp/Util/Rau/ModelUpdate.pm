@@ -15,17 +15,17 @@ use RapidApp::Util ':all';
 sub call {
   my $class = shift;
   my $path = shift || $ARGV[0];
-  
+
   $class->usage unless ($path);
   file($path)->resolve;
-  
+
   print "==> Processing $path ...\n";
-  
+
   my $CfgW = RapidApp::Util::RapidDbic::CfgWriter->new({ pm_file => "$path" })
     or die "error processing pm file";
-    
+
   $CfgW->save_to( "$path" ) or die "Error saving file";
-  
+
   print "==> File updated.\n";
 }
 
@@ -43,7 +43,7 @@ RapidApp::Util::Rau::ModelUpdate - TableSpecs config updater script
 =head1 SYNOPSIS
 
  rau.pl model-update [MODAL_PATH]
- 
+
  Examples:
    rau.pl model-update MyApp/lib/Modal/DB.pm
 
@@ -57,11 +57,11 @@ TableSpecs config section.
 
 =over
 
-=item * 
+=item *
 
 L<RapidApp::Util::RapidDbic::CfgWriter>
 
-=item * 
+=item *
 
 L<rau.pl>
 

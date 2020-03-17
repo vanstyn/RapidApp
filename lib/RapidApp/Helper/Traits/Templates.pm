@@ -6,7 +6,7 @@ use warnings;
 
 around _ra_catalyst_configs => sub {
   my ($orig,$self,@args) = @_;
-  
+
   return (
     $self->$orig(@args),
 <<END,
@@ -29,7 +29,7 @@ around _ra_catalyst_configs => sub {
         #external_tpl_regex  => '^site\/public\/',
       },
 
-      ## To declare a custom template access class instead of the default (which 
+      ## To declare a custom template access class instead of the default (which
       ## is RapidApp::Template::Access). The Access class is used to determine
       ## exactly what type of access is allowed for each template/user, as well as
       ## which template variables should be available when rendering each template

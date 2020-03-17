@@ -46,7 +46,7 @@ my %class_map = (
   'RapidApp::AppGrid2::Role::ExcelExport'   => 'RapidApp::Module::Grid::Role::ExcelExport',
   'RapidApp::Role::DataStore2::SavedSearch' => 'RapidApp::Module::StorCmp::Role::SavedSearch',
   'RapidApp::Role::DbicRowPage'             => 'RapidApp::Module::StorCmp::Role::DbicLnk::RowPg',
-  
+
   # Other pkg/classes:
   'RapidApp::Functions'   => 'RapidApp::Util',
 
@@ -85,28 +85,28 @@ $start_dir->recurse(
 
       # Ignore if we're dealing with one of the old packages itself
       my $is_pkg = List::Util::first { $lines[0] =~ /^package $_/ } @pkg_skips;
-      
+
       if($is_pkg) {
         push @skipped_pkg_files, "$File";
       }
       else {
         for my $line (@lines) {
-        
+
           $line =~ /(\r?\n)$/;
           my $nl = $1;
           $line =~ s/\r?\n$//;
           my $orig = $line;
-          
+
           for my $old (@convs) {
             my $new = $class_map{$old};
             $line =~ s/\Q${old}\E/${new}/g;
           }
-          
+
           # Convert to RapidApp::Util:
           if ($line =~ /^use RapidApp\:\:(Include|Sugar)/) {
             $line = 'use RapidApp::Util qw(:all);';
           }
-          
+
           unless ($line eq $orig) {
             $ch++;
             $nl = "\n";
@@ -114,7 +114,7 @@ $start_dir->recurse(
           push @nlines, $line, $nl;
         }
       }
-        
+
       print join('','  ',$File->relative($start_dir)->stringify);
       if($ch) {
         no warnings 'uninitialized';
@@ -125,7 +125,7 @@ $start_dir->recurse(
         print ' (no changes)';
       }
       print "\n";
-      
+
     }
   }
 );
@@ -168,9 +168,9 @@ Use this script at your own risk, and make sure to backup your code first!
 L<RapidApp>
 
 =head1 SUPPORT
- 
+
 IRC:
- 
+
     Join #rapidapp on irc.perl.org.
 
 =head1 AUTHOR

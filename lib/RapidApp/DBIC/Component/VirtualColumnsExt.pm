@@ -29,10 +29,10 @@ __PACKAGE__->mk_classdata( '_virtual_columns_order' );
 
 sub init_vcols_class_data {
 	my $self = shift;
-	
+
 	$self->_virtual_columns( {} )
         unless defined $self->_virtual_columns();
-     
+
     $self->_virtual_columns_order( [] )
         unless defined $self->_virtual_columns_order();
 }
@@ -41,19 +41,19 @@ sub init_vcols_class_data {
 sub add_virtual_columns {
 	my $self = shift;
     my @columns = @_;
-	
+
 	$self->init_vcols_class_data;
-	
+
 	foreach my $column (@columns) {
 		next if (
 			ref $column or
-			$self->has_column($column) or 
+			$self->has_column($column) or
 			exists $self->_virtual_columns->{$column} #<-- redundant since we override 'has_column'
 		);
-		
+
 		push @{$self->_virtual_columns_order}, $column;
 	}
-	
+
 	return $self->next::method(@_);
 }
 
@@ -87,24 +87,24 @@ sub get_column {
 		defined $self->_virtual_columns &&
         exists $self->_virtual_columns->{$column}
 	);
-	
+
 	$self->init_virtual_column_value($column);
-	
+
 	return $self->next::method($column);
 }
 
-# TODO/FIXME: 
+# TODO/FIXME:
 #  here we are loading/appending all defined virtual columns during the call
-#  to get_columns(), which is slow/expensive. What we should be doing is 
-#  hooking into 'inflate_result' to *preload* the values into the row object 
+#  to get_columns(), which is slow/expensive. What we should be doing is
+#  hooking into 'inflate_result' to *preload* the values into the row object
 #  ('_column_data' attr) in the same location as ordinary columns which should
 #  then allow the native get_columns() to work as-is...
 sub get_columns {
     my $self = shift;
-    
+
     return $self->next::method(@_) unless $self->in_storage;
     my %data = $self->next::method(@_);
-    
+
     if (defined $self->_virtual_columns) {
         foreach my $column (keys %{$self->_virtual_columns}) {
             my $value = undef;
@@ -169,12 +169,12 @@ sub init_virtual_column_value {
 	};
   my $info = $self->column_info($column);
 	$attr->{join} = $info->{join} if (exists $info->{join});
-	
+
 	my $row = $Source->resultset->search_rs($cond,$attr)->first or return undef;
-	
+
 	# optionally update a supplied reference, passed by argument:
 	$$valref = $row->{$column} if (ref($valref) eq 'SCALAR');
-	
+
   local $self->{_virtual_columns_no_prepare_set} = 1;
   return $self->store_column($column,$row->{$column});
 }
@@ -188,10 +188,10 @@ sub init_virtual_column_value {
 sub prepare_set {
 	my $self = shift;
 	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
-  
+
   # Check special flag to abort preparing set functions
   return if ($self->{_virtual_columns_no_prepare_set});
-  
+
 	return unless (defined $self->_virtual_columns);
 	$self->{_virtual_columns_pending_set_function} ||= {};
 	foreach my $column (keys %opt) {
@@ -228,34 +228,34 @@ sub set_column {
 sub update {
   my $self = shift;
   $self->prepare_set(@_);
-  
+
   # Disable preparing any more set functions. We need to do this
   # because update() will call store_column() on every column (which
-  # in turn calls prepare_set). We only want to prepare_set for 
+  # in turn calls prepare_set). We only want to prepare_set for
   # virtual columns which are actually being changed, and that has
   # already happened by this point.
   local $self->{_virtual_columns_no_prepare_set} = 1;
-  
+
   # Do regular update
   $self->next::method(@_);
-    
+
   $self->execute_pending_set_functions;
-  
+
   # NEW: if any of the set functions have left the row dirty, update again:
   # (principal of least astonishment)
   my %dirty = $self->get_dirty_columns;
   $self->next::method if(scalar(keys %dirty) > 0);
-  
+
   return $self;
 }
 
 sub insert {
   my $self = shift;
   $self->prepare_set(@_);
- 
+
   # Do regular insert
   $self->next::method(@_);
-    
+
   $self->execute_pending_set_functions;
   return $self;
 }

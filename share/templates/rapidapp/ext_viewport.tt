@@ -19,7 +19,7 @@
 </script>
 
 [% IF precache_imgs %]
-<!-- 
+<!--
  Hidden prefetch images: (Github Issue #24)
  These images are used in the basic elements of the interface and
  so we're preloading them upfront so the UI will always display

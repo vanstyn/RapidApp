@@ -13,19 +13,19 @@ use Clone qw(clone);
 #
 # This works with the chained resultset design of DBIC. Each call to
 # search_rs actually creates a new object based on the object it was
-# called from. Here we set custom attributes that will be passed 
+# called from. Here we set custom attributes that will be passed
 # along to all subsequent chained resultset objects that get created.
 # This allows us to apply the base_rs exactly one time without causing
-# a deep recursion loop. 
+# a deep recursion loop.
 #
 # We also save the reference to the condition added by base_rs so we
 # can remove it again, so we have the extra ability to get around
 # the base_rs restrictions if we need to using the special accessor
 # method native_rs. Because of the stacked design, with resultset's
-# being progressively filtered/limited with each new chained call, this 
-# is the only practical way to accomplish this. 
+# being progressively filtered/limited with each new chained call, this
+# is the only practical way to accomplish this.
 #
-# The whole purpose of this is to be able to set useful defaults without 
+# The whole purpose of this is to be able to set useful defaults without
 # having to call a custom/special search method in all locations, yet
 # still preserving a way to get to the original, unfiltered Rs.
 #
@@ -57,12 +57,12 @@ sub search_rs {
 ### now removed "Issue 13305" workaround
 sub as_subselect_rs {
 	my $self = (shift)->_get_apply_base_rs;
-	
+
 	# Set DISABLED to prevent the base_rs from being applied during the native
-	# as_subselect_rs call which creates a new fresh object and calls search() 
+	# as_subselect_rs call which creates a new fresh object and calls search()
 	local $DISABLED = 1;
 	my $subRs = $self->next::method(@_);
-	
+
 	# manually set the _base_rs_applied flag on the newly created rs object so it
 	# won't be applied again on any additional searches chained
 	return $subRs->search_rs({},{ _base_rs_applied => 1 });
@@ -84,7 +84,7 @@ sub as_subselect_rs {
 ##sub count_rs :Debug {
 ##	my $self= shift;
 ##	$self = $self->_get_apply_base_rs unless ($DISABLED);
-##	
+##
 ##	local $DISABLED= 1;
 ##	$self->SUPER::count_rs(@_);
 ##}
@@ -94,7 +94,7 @@ sub as_subselect_rs {
 ##sub count :Debug {
 ##	my $self= shift;
 ##	$self = $self->_get_apply_base_rs unless ($DISABLED);
-##	
+##
 ##	local $DISABLED= 1;
 ##	$self->SUPER::count(@_);
 ##}
@@ -102,7 +102,7 @@ sub as_subselect_rs {
 ##sub count_literal :Debug{
 ##	my $self= shift;
 ##	$self = $self->_get_apply_base_rs unless ($DISABLED);
-##	
+##
 ##	local $DISABLED= 1;
 ##	$self->SUPER::count_literal(@_);
 ##}
@@ -113,7 +113,7 @@ sub as_subselect_rs {
 sub _get_apply_base_rs {
 	my $Rs = shift;
 	return $Rs if ($Rs->{attrs}->{_base_rs_applied} || $DISABLED);
-	
+
 	$Rs = $Rs->SUPER::search_rs({},{ _base_rs_applied => 1 })->base_rs;
 	return $Rs->SUPER::search_rs({},{ _base_rs_condition_ref => $Rs->{attrs}->{where} })
 }
@@ -125,46 +125,46 @@ sub _get_apply_base_rs {
 # the only way to do this is to make a global change to the where, clone
 # it, and then make a global change to put it back. This should probably be
 # profiled to see how expensive this is. It would be great to find another
-# way of doing this. 
+# way of doing this.
 sub native_rs {
 	my $self = shift;
 	my $Rs = $self->search_rs({},{ where => {} });
-	
+
 	my $type = ref($Rs->{attrs}->{_base_rs_condition_ref}) or return $self;
-	
+
 	# 1. Save the contents of the base condition:
 	my $orig_cond = clone($Rs->{attrs}->{_base_rs_condition_ref});
-	
-	# 2. Temporarily set the base condition to be empty: 
+
+	# 2. Temporarily set the base condition to be empty:
 	%{ $Rs->{attrs}->{_base_rs_condition_ref} } = () if ($type eq 'HASH');
 	@{ $Rs->{attrs}->{_base_rs_condition_ref} } = () if ($type eq 'ARRAY');
-	
+
 	# 3. Clone the where clause hashref in its current state with the empty base condition:
 	my $where = clone($Rs->{attrs}->{where});
-	
+
 	# 4. Set the base condition back to its original contents:
 	%{ $Rs->{attrs}->{_base_rs_condition_ref} } = %$orig_cond if ($type eq 'HASH');
 	@{ $Rs->{attrs}->{_base_rs_condition_ref} } = @$orig_cond if ($type eq 'ARRAY');
-	
+
 	# 5. Use the new where clause for this ResultSet object
 	$Rs->{attrs} = { %{$Rs->{attrs}}, where => $where };
-	
+
 	### -- vv -- Proof that this is working as expected:
 	#print STDERR YELLOW . "New WHERE:\n" . Dumper($Rs->search_rs->{attrs}->{where}) . CLEAR;
 	#print STDERR GREEN . "\nOriginal WHERE:\n" .Dumper($self->search_rs->{attrs}->{where}) . CLEAR;
 	### -- ^^ --
-	
+
 	return $Rs;
 }
 
 # Useful debug function, not directly specific to this module, useful for any ResultSet. Dumps
-# what *would* be the SQL if the ResultSet were executed now. Uses the same mechanism as 
-# DBIC_TRACE=1 (which needs to be on for this to work) 
+# what *would* be the SQL if the ResultSet were executed now. Uses the same mechanism as
+# DBIC_TRACE=1 (which needs to be on for this to work)
 sub dump_effective_sql {
 	my $self = shift;
 	my $debug_obj = $self->result_source->storage->debugobj;
 	my ($sql, $bindargs) = @${$self->as_query};
-	
+
 	print STDERR BOLD . "\n\ndump_effective_sql():\n" . CLEAR;
 	$debug_obj->print($sql, $bindargs);
 	print STDERR "\n\n\n";
