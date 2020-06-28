@@ -252,7 +252,7 @@ sub _authcore_apply_login {
     }
   }
   
-  $username = $c->user->username;
+  $username = $c->user->username unless ($error);
   
   $error ||= 'unknown login failure' unless ($username);
   
