@@ -241,6 +241,13 @@ sub _authcore_apply_login {
   }
   
   if(blessed $user) {
+  
+    # Note: if $user is a RapidApp::CoreSchema::User object, you need 
+    # to convert it into a Catalyst Auth user object like this:
+    #
+    #   $user = $c->get_user($user->get_column('id'));
+    #
+  
     $c->set_authenticated( $user )
   }
   else {
