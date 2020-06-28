@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+1.3202 2020-06-28
+    - Fix bug introduced in 1.3201 breaking proper auth fail handle (#183) (VANSTYN)
+
 1.3201 2019-11-25
     - Performance refactor of apply_natural_column_order() (VANSTYN)
     - Improve debug_around (this is soon to be moved into a separate lib) (VANSTYN)
