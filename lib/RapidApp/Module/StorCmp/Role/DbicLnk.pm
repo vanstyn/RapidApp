@@ -110,7 +110,8 @@ has 'reload_on_show', is => 'ro', isa => 'Bool', , traits => ['ExtProp'], defaul
 has 'searchbox_modes', is => 'ro', isa => 'ArrayRef', default => sub {[
   'RapidApp::Module::Grid::SearchBox::Normal',
   'RapidApp::Module::Grid::SearchBox::Exact',
-  'RapidApp::Module::Grid::SearchBox::AnyKeywords'
+  'RapidApp::Module::Grid::SearchBox::AnyKeywords',
+  'RapidApp::Module::Grid::SearchBox::AllKeywords'
 ]};
 
 sub _get_searchbox_object {
