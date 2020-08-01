@@ -9,6 +9,19 @@ use Types::Standard ':all';
 
 use RapidApp::Util qw(:all);
 
+has '+documentation', default => sub { join(" ",
+  'The keyword search considers each word of the typed in query separately, rather then considering the',
+  'query as a single value to match'.
+  "\n\n",
+  'For instance, with this mode, if you searched for "Foo Bar" the result would include all rows with any',
+  'of the selected columns containing the value "Foo" or the value "Bar" rather then matching only values',
+  'containing "Foo Bar" together and in that order.',
+  "\n\n",
+  "This is one of the broadest, deep substring search modes, so it can potentially be extremely slow, depending",
+  "on which columns are included in the search and the total number of rows in the table, so it should be used",
+  "selectively and with caution"
+)};
+
 
 has '+mode_name',       default => sub { 'any_keyword' };
 has '+label',           default => sub { 'Search Keywords' };

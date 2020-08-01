@@ -905,6 +905,80 @@ table.r-simple-table  tr > td:first-child,
 
 
 
+
+
+.ra-searchbox-info .ra-relative-date {
+  font-size: 11px;
+  font-family: arial,tahoma,verdana,helvetica;
+  color: #333333;
+  background-image: url(../../../assets/rapidapp/misc/static/images/gears_view_48x48.png);
+	background-repeat: no-repeat;
+	background-position: 30px 8px;
+  padding:2px;
+}
+
+.ra-searchbox-info .ra-relative-date .title {
+  
+  text-align: center;
+  font-size: 2.4em;
+  font-weight: bold;
+  padding-left: 6px;
+  padding-top:10px;
+  padding-bottom: 10px;
+  line-height: 48px;
+  opacity:0.9;
+}
+
+
+.ra-searchbox-info div.mode-section {
+  border: 1px hidden;
+  border-radius: 5px;
+  padding-left:10px;
+  padding-right:5px;
+  padding-bottom:5px;
+  margin-top:5px;
+}
+
+.ra-searchbox-info div.active-mode {
+  border: 1px dashed crimson !important;
+}
+
+.ra-searchbox-info h3 {
+  font-size: 1.3em;
+  color:navy;
+}
+
+.ra-searchbox-info div.active-mode h3 {
+
+}
+
+.ra-searchbox-info h5 {
+  font-size: 1.1em;
+  font-weight: normal;
+  opacity:0.7;
+  padding-left:7px;
+  padding-bottom: 10px;
+  padding-top:2px;
+}
+
+.ra-searchbox-info .ra-relative-date .sub {
+  padding-bottom: 6px;
+  padding-left:4px;
+}
+
+
+.ra-searchbox-info .ra-relative-date span.active {
+  display:inline;
+}
+
+.ra-searchbox-info .ra-relative-date span.active i {
+  color: crimson !important;
+  opacity: 0.6;
+  font-size:.8em;
+}
+
+
+
 .ra-relative-date {
   font-size: 11px;
   font-family: arial,tahoma,verdana,helvetica;

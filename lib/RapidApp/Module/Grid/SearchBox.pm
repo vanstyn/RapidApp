@@ -41,6 +41,13 @@ has 'choose_columns',
   required => 1;
 
 
+# Plain text description of how the given search mode works. Shown
+# to the user via new About menu point
+has 'documentation',
+  is => 'ro',
+  isa => Str,
+  required => 1;
+
 ## Idea feature for future; arbirarary type-ahead functionality
 #has 'type_ahead',
 #  is => 'ro', 
@@ -105,7 +112,8 @@ sub searchbox_ext_config {
     mode_name       => $self->mode_name,
     label           => $self->label,
     menu_text       => $self->menu_text || $self->label,
-    choose_columns => $self->choose_columns ? \1 : \0
+    choose_columns  => $self->choose_columns ? \1 : \0,
+    documentation   => $self->documentation
   }
 }
 

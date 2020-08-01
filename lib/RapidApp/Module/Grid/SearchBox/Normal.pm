@@ -10,6 +10,16 @@ use Types::Standard ':all';
 use RapidApp::Util qw(:all);
 use Scalar::Util qw(looks_like_number);
 
+
+has '+documentation', default => sub { join(" ",
+  'This is the default quick search mode which searches substrings of all the selected columns, and is also',
+  'case insensitive.',
+  "\n\n",
+  'As a "substring" search, this means means partial values will match, even if it the search term matches',
+  'just a few letters within any of the column values. Since this is an intensive, string comparison search,',
+  'this search can be slow depending on the number of rows in the table as well as which columns are included.'
+)};
+
 has '+mode_name',       default => sub { 'like' };
 has '+label',           default => sub { 'Quick Search' };
 has '+menu_text',       default => sub { 'Normal' };

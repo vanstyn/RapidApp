@@ -480,6 +480,102 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 	}, // eo function init
 	// }}}
 	// {{{
+    
+    
+    showAboutMenuDialog: function(itm,e) {
+      if(this.aboutDialogMenu) {
+        if(Ext.isFunction(this.aboutDialogMenu.destroy)) {
+          this.aboutDialogMenu.destroy();
+        }
+      }
+      
+        
+      var html_lines = [
+        '<div class="ra-searchbox-info">',
+          '<div class="ra-relative-date">',
+              '<div class="title"><i>Search Box Modes</i></div>',
+              '<div class="sub">',
+                'The quick search box can be used with any of the following available <b><i>Modes</i></b> ',
+                'which affect the way the typed in search term is used to filter the list of records.', 
+              '</div>'
+      ];
+      
+      html_lines.push('<div style="padding:2px 8px;">');
+      
+      Ext.each(this.searchbox_configs,function(cfg) {
+        var is_active = cfg.mode_name == this.grid.quicksearch_mode ? true : false;
+        
+        is_active 
+          ? html_lines.push('<div class="active-mode mode-section">')
+          : html_lines.push('<div class="mode-section">');
+          
+        var heading = is_active
+          ? cfg.menu_text + '&nbsp;&nbsp;<span class="active with-icon ra-icon-bullet-tick"><i>Active Mode</i></span>'
+          : cfg.menu_text;
+        
+        html_lines.push('<br>','<h3 class="with-icon ra-icon-element-view">',heading,'</h3>');
+        html_lines.push('<h5>',cfg.label,'</h5>');
+        
+        html_lines.push(
+          '<div class="sub">',
+          Ext.util.Format.nl2br(cfg.documentation || ''),
+          '</div>'
+        );
+        html_lines.push('</div>');
+        
+      },this);
+      
+      
+      html_lines.push(
+            '</div>',
+          '</div>',
+        '</div>'
+      );
+      
+      this.aboutDialogMenu = new Ext.menu.Menu({
+        style: 'padding-top:5px;padding-left:5px;padding-right:5px;',
+        width: 500,
+        layout: 'anchor',
+        showSeparator: false,
+        items: [
+          { 
+            xtype: 'label',
+            html: html_lines.join("\n")
+          },
+          {
+            xtype: 'panel',
+            buttonAlign: 'center',
+            border: false,
+            buttons: [
+              {
+                xtype: 'button',
+                iconCls: 'ra-icon-nav-up-left-blue',
+                text: '&nbsp;&nbsp;OK / Back',
+                width: 200,
+                scope: this,
+                handler: function(btn) {
+                  this.aboutDialogMenu.hide();
+                },
+              }
+            ]
+          }
+        ]
+      });
+      
+     this.aboutDialogMenu.on('hide',function() {
+       this.aboutDialogMenu.destroy();
+       delete this.aboutDialogMenu;
+       if(this.outerMenuLastPosition) {
+         this.outerMenu.showAt(this.outerMenuLastPosition);
+         delete this.outerMenuLastPosition;
+       
+       }
+     },this);
+     this.outerMenuLastPosition = this.outerMenu.getPosition();
+     this.aboutDialogMenu.showAt(this.outerMenuLastPosition);
+    },
+    
+    
 	/**
 	 * adds plugin controls to <b>existing</b> toolbar and calls reconfigure
 	 * @private
@@ -546,8 +642,15 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
     
 		this.outerMenu = new Ext.menu.Menu();
 		this.outerMenu.add(
+      {
+				xtype: 'menutextitem',
+        labelStyle: 'padding: 3px 21px 3px 27px',
+        html: '<div style="margin:4px 25px 2px 6px;color:darkred;"><b>Search Box Options:</b></div>',
+        iconCls: 'ra-icon-flash',
+			},
+      { xtype: 'menuseparator' },
 			{
-				text: 'Mode',
+				text: 'Set Search Mode',
 				iconCls: 'ra-icon-gears-view',
 				hideOnClick: false,
 				menu: this.modeMenu
@@ -557,7 +660,16 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 				iconCls: 'x-cols-icon',
 				hideOnClick: false,
 				menu: this.menu
-			}
+			},
+      { xtype: 'menuseparator' },
+      {
+				text: '<i>About / Usage</i>',
+				iconCls: 'ra-icon-information',
+				hideOnClick: false,
+				handler: this.showAboutMenuDialog,
+        scope:this 
+			},
+      
 		);
 		
 		// Only enable the new 'outerMenu' if allow_set_quicksearch_mode is true:
