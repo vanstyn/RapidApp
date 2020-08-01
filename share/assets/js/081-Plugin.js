@@ -450,6 +450,13 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		// -- New: disable plugin if there are no quick_search columns (2012-04-11 by HV)
 		if(!this.getQuickSearchColumns().length > 0) { return; }
 		// --
+    
+    this.searchbox_configs = this.grid.searchbox_configs || [];
+    
+    // NEW: the behavior of the quick search is now controlled via new config
+    // param searchbox_configs, and if it is present and empty, then there are
+    // no available quicksearch modes, so we will disable the plugin
+    if(!this.searchbox_configs.length > 0) { return; }
 		
 		this.fieldNameMap = {};
 		
@@ -513,35 +520,35 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		}
 		
 		this.grid.quicksearch_mode = this.grid.quicksearch_mode || 'like';
-		
-		this.searchText = (this.grid.quicksearch_mode == 'exact') ?
-			'Exact Search' : this.searchText;
-		
-		this.modeMenu = new Ext.menu.Menu();
-		this.modeMenu.add(
-			{
-				xtype: 'menucheckitem',
-				text: 'Normal',
-				group: 'quick_search_mode',
-				header: 'Quick Search',
-				mode: 'like',
-				checked: (this.grid.quicksearch_mode == 'like' ? true : false)
-			},
-			{
-				xtype: 'menucheckitem',
-				text: 'Exact (faster)',
-				group: 'quick_search_mode',
-				header: 'Exact Search',
-				mode: 'exact',
-				checked: (this.grid.quicksearch_mode == 'exact' ? true : false)
-			}
-		);
-		
+    
+    this.modeMenu = new Ext.menu.Menu();
+    
+    Ext.each(this.searchbox_configs,function(cfg) {
+      var mode = cfg.mode_name;
+      if(mode) {
+        var menuCfg = {
+          xtype: 'menucheckitem',
+          text: cfg.menu_text || cfg.label || mode,
+          group: 'quick_search_mode',
+          header: cfg.label || mode,
+          mode: mode,
+          checked: false
+        };
+        
+        if(this.grid.quicksearch_mode == mode) {
+          this.searchText = menuCfg.header;
+          menuCfg.checked = true;
+        }
+        this.modeMenu.add(menuCfg)
+      }
+    },this);
+    
+    
 		this.outerMenu = new Ext.menu.Menu();
 		this.outerMenu.add(
 			{
 				text: 'Mode',
-				iconCls: 'ra-icon-preferences',
+				iconCls: 'ra-icon-gears-view',
 				hideOnClick: false,
 				menu: this.modeMenu
 			},

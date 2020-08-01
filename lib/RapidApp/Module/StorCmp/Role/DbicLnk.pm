@@ -109,7 +109,8 @@ has 'reload_on_show', is => 'ro', isa => 'Bool', , traits => ['ExtProp'], defaul
 # sub classes of RapidApp::Module::Grid::SearchBox
 has 'searchbox_modes', is => 'ro', isa => 'ArrayRef', default => sub {[
   'RapidApp::Module::Grid::SearchBox::Normal',
-  'RapidApp::Module::Grid::SearchBox::Exact'
+  'RapidApp::Module::Grid::SearchBox::Exact',
+  'RapidApp::Module::Grid::SearchBox::AnyKeywords'
 ]};
 
 sub _get_searchbox_object {
@@ -127,9 +128,10 @@ sub __searchbox_object_ndx {
   
   $self->{__searchbox_object_ndx} //= do {
     my $ndx = {};
+    my $i = 0;
     for my $item (@{$self->searchbox_modes}) {
       my $class;
-      my $params = { grid_module => $self };
+      my $params = { grid_module => $self, loaded_order => ++$i };
       if(my $rtype = ref($item)) {
         $rtype eq 'HASH' or die "bad searchbox mode param - only class name or HashRef supported";
         $class = $item->{class} or die "bad searchbox mode param - class not supplied";
@@ -155,6 +157,15 @@ sub __searchbox_object_ndx {
     
     $ndx
   };
+}
+
+sub _get_searchbox_ext_configs {
+  my $self = shift;
+  return [ 
+    map { $_->searchbox_ext_config }
+    sort { $a->loaded_order <=> $b->loaded_order }
+    values %{$self->__searchbox_object_ndx}
+  ]
 }
 
 
@@ -659,11 +670,9 @@ sub DbicLink_around_BUILD {
     remote_columns        => \1,
     loadMask          => \1,
     quicksearch_mode      => $self->quicksearch_mode,
-    allow_set_quicksearch_mode  => $self->allow_set_quicksearch_mode ? \1 : \0
+    allow_set_quicksearch_mode  => $self->allow_set_quicksearch_mode ? \1 : \0,
+    searchbox_configs => $self->_get_searchbox_ext_configs
   );
-  
-  # Initialize SearchBox (Quick Search) objects early:
-  $self->__searchbox_object_ndx;
   
   # This allows supplying custom BUILD code via a constructor:
   $self->onBUILD->($self) if ($self->onBUILD);
@@ -1501,7 +1510,7 @@ sub chain_Rs_req_quicksearch {
   my $fields = $self->param_decodeIf($params->{qs_fields},[]);
   $opt->{columns} = $fields if (@$fields > 0);
   
-  $SearchBox->chain_query_search_rs($Rs,$opt)
+  $SearchBox->_chain_query_search_rs($Rs,$opt)
 }
   
 # This method is no longer used after the quick search refactor to SearchBox

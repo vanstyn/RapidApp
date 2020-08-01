@@ -12,7 +12,8 @@ use Scalar::Util qw(looks_like_number);
 
 has '+mode_name',       default => sub { 'like' };
 has '+label',           default => sub { 'Quick Search' };
-has '+choose_colummns', default => sub { 1 };
+has '+menu_text',       default => sub { 'Normal' };
+has '+choose_columns', default => sub { 1 };
 
 has 'exact_matches',
   is => 'ro', 
@@ -46,19 +47,35 @@ has '_db_is_Postgres', is => 'ro', lazy => 1, default => sub {
 }, isa => Bool;
 
 
-
 sub chain_query_search_rs {
   my ($self, $Rs, $opt) = @_;
   
   return $Rs unless (ref($opt)||'' eq 'HASH');
   my $query = $opt->{query} or return $Rs;
   
-  die "missing required ArrayRef option 'columns'" unless (ref($opt->{columns})||'' eq 'ARRAY');
-  die "empty list of columns supplied" unless (scalar(@{$opt->{columns}}) > 0);
+  my $search = $self->_get_query_condition_list($Rs,$opt) || [];
+  
+  # If no search conditions have been populated at all it means the query
+  # failed pre-validation for all active columns. We need to simulate
+  # a condition which will return no rows
+  unless(scalar(@$search) > 0) {
+    # Simple dummy condition that will always be false to force 0 results
+    return $Rs->search_rs(\'1 = 2');
+  }
+
+  return $self->_call_search_rs($Rs,{ '-or' => $search })
+}
+
+
+sub _get_query_condition_list {
+ my ($self, $Rs, $opt, $attr) = @_;
+  
+  $self->_enforce_valid_opt($opt);
+  my $query = $opt->{query};
   
   my $Grid = $self->grid_module;
   
-  my $attr = { join => {} };
+  $attr ||= $self->{__current_attr} || { join => {} };
   
   my @search = ();
   for my $col (@{$opt->{columns}}) {
@@ -105,21 +122,15 @@ sub chain_query_search_rs {
     my $cond = $exact
       ? $Grid->_op_fuse($dbicname => { $s->($self->exact_operator) => $query })
       : $Grid->_op_fuse($dbicname => { $s->($self->like_operator) => join('%','',$query,'') });
-    
+
     push @search, $cond;
   }
-  
-  # If no search conditions have been populated at all it means the query
-  # failed pre-validation for all active columns. We need to simulate
-  # a condition which will return no rows
-  unless(scalar(@search) > 0) {
-    # Simple dummy condition that will always be false to force 0 results
-    return $Rs->search_rs(\'1 = 2');
-  }
 
-  
-  return $Grid->_chain_search_rs($Rs,{ '-or' => \@search },$attr);
+  return \@search
 }
+
+
+
 
 
 1;
