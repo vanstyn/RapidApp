@@ -30,6 +30,15 @@ has 'like_operator', is => 'ro', lazy => 1, default => sub {
     
 }, isa => Str;
 
+has 'exact_operator', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  
+  # Special just for Postgres: also cast all exact matches into text to avoid possible
+  # type errors, like out of range numbers for numeric cols, etc
+  $self->_db_is_Postgres ? '::text =' : '='
+    
+}, isa => Str;
+
 
 has '_db_is_Postgres', is => 'ro', lazy => 1, default => sub {
   my $self = shift;
@@ -94,7 +103,7 @@ sub chain_query_search_rs {
 
     # 'text' is the only type which can do a LIKE (i.e. sub-string)
     my $cond = $exact
-      ? $Grid->_op_fuse($dbicname => { $s->('=')    => $query })
+      ? $Grid->_op_fuse($dbicname => { $s->($self->exact_operator) => $query })
       : $Grid->_op_fuse($dbicname => { $s->($self->like_operator) => join('%','',$query,'') });
     
     push @search, $cond;
