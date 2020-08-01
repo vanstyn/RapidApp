@@ -21,6 +21,7 @@ use URI::Escape;
 use Scalar::Util qw(looks_like_number);
 use Digest::SHA1;
 use DateTime;
+require Module::Runtime; 
 require RapidApp::DBIC::Component::TableSpec;
 
 use DBI::Const::GetInfoType '%GetInfoType'; 
@@ -102,6 +103,60 @@ has 'close_on_destroy', is => 'ro', isa => 'Bool', traits => ['ExtProp'], defaul
 # If set to true, every time the component is shown (i.e. re-activating the tab) the 
 # store will reload itself to refresh data.
 has 'reload_on_show', is => 'ro', isa => 'Bool', , traits => ['ExtProp'], default => 0;
+
+# New class API for Search Boxes. This replaces the previous hard-coded 
+# "quicksearch" implementation. Should be a list of classes which are 
+# sub classes of RapidApp::Module::Grid::SearchBox
+has 'searchbox_modes', is => 'ro', isa => 'ArrayRef', default => sub {[
+  'RapidApp::Module::Grid::SearchBox::Normal',
+  'RapidApp::Module::Grid::SearchBox::Exact'
+]};
+
+sub _get_searchbox_object {
+  my $self = shift;
+  my $mode_name = shift or die "no searchbox mode name supplied";
+  
+  my $SearchBox = $self->__searchbox_object_ndx->{$mode_name} 
+    or die "No SearchBox with mode name '$mode_name found!";
+    
+  return $SearchBox
+}
+
+sub __searchbox_object_ndx {
+  my $self = shift;
+  
+  $self->{__searchbox_object_ndx} //= do {
+    my $ndx = {};
+    for my $item (@{$self->searchbox_modes}) {
+      my $class;
+      my $params = { grid_module => $self };
+      if(my $rtype = ref($item)) {
+        $rtype eq 'HASH' or die "bad searchbox mode param - only class name or HashRef supported";
+        $class = $item->{class} or die "bad searchbox mode param - class not supplied";
+        %$params = ( %{$item->{params}}, %$params ) if (ref($item->{params})||'' eq 'HASH');
+      }
+      else {
+        $class = $item;
+      }
+      
+      Module::Runtime::require_module($class);
+      $class->isa('RapidApp::Module::Grid::SearchBox') or die join(' ',
+        "Bad SearchBox mode class '$class'",'-',
+        "must be a subclass of RapidApp::Module::Grid::SearchBox"
+      );
+      
+      my $SearchBox = $class->new($params);
+      my $mode_name = $SearchBox->mode_name;
+      
+      die "Duplicate SearchBox mode name '$mode_name'" if $ndx->{$mode_name};
+      
+      $ndx->{$mode_name} = $SearchBox;
+    }
+    
+    $ndx
+  };
+}
+
 
 # Generate a param string unique to this module by URL/path. This only needs to be unique
 # among modules whose ->content may be rendered within the same request, which is only
@@ -607,6 +662,8 @@ sub DbicLink_around_BUILD {
     allow_set_quicksearch_mode  => $self->allow_set_quicksearch_mode ? \1 : \0
   );
   
+  # Initialize SearchBox (Quick Search) objects early:
+  $self->__searchbox_object_ndx;
   
   # This allows supplying custom BUILD code via a constructor:
   $self->onBUILD->($self) if ($self->onBUILD);
@@ -1422,6 +1479,9 @@ sub chain_Rs_req_explicit_resultset {
 }
 
 
+
+
+
 # Applies Quick Search to ResultSet:
 sub chain_Rs_req_quicksearch {
   my $self = shift;
@@ -1431,82 +1491,21 @@ sub chain_Rs_req_quicksearch {
   delete $params->{qs_query} if (defined $params->{qs_query} and $params->{qs_query} eq '');
   my $query = $params->{qs_query} or return $Rs;
 
-  my $fields = $self->param_decodeIf($params->{qs_fields},[]);
-  return $Rs unless (@$fields > 0);
-
-  my $attr = { join => {} };
-
   my $mode = $params->{quicksearch_mode} || $self->quicksearch_mode;
   $mode = $self->quicksearch_mode unless ($self->allow_set_quicksearch_mode);
-
-  my @search = ();
-  foreach my $field (@$fields) {
-    my $cond = $self->_resolve_quicksearch_condition(
-      $field, $query, { mode => $mode, joinref => $attr->{join} }
-    ) or next; #<-- skip for undef (see below)
-    push @search, $cond;
-  }
-
-  # If no search conditions have been populated at all it means the query
-  # failed pre-validation for all active columns. We need to simulate
-  # a condition which will return no rows
-  unless(scalar(@search) > 0) {
-    # Simple dummy condition that will always be false to force 0 results
-    return $Rs->search_rs(\'1 = 2');
-  }
-
-  return $self->_chain_search_rs($Rs,{ '-or' => \@search },$attr);
+  
+  my $SearchBox = $self->_get_searchbox_object($mode);
+  
+  my $opt = { query => $query };
+  
+  my $fields = $self->param_decodeIf($params->{qs_fields},[]);
+  $opt->{columns} = $fields if (@$fields > 0);
+  
+  $SearchBox->chain_query_search_rs($Rs,$opt)
 }
-
-
-sub _resolve_quicksearch_condition {
-  my ($self, $field, $query, $opt) = @_;
-
-  my $cnf  = $self->get_column($field) or die "field/column '$field' not found!";
-  my $join = $opt->{joinref} or die "missing opt/ref 'joinref'";
-  my $mode = $opt->{mode} or die "missing opt 'mode'";
-
-  # Force to exact mode via optional TableSpec column cnf override:
-  $mode = 'exact' if (
-    exists $cnf->{quick_search_exact_only}
-    && jstrue($cnf->{quick_search_exact_only})
-  );
-
-  my $dtype    = $cnf->{broad_data_type} || 'text';
-  my $dbicname = $self->_extract_hash_inner_AS( $self->resolve_dbic_colname($field,$join) );
-
-  # For numbers, force to 'exact' mode and discard (return undef) for queries
-  # which are not numbers (since we already know they will not match anything). 
-  # This is also now safe for PostgreSQL which complains when you try to search
-  # on a numeric column with a non-numeric value:
-  if ($dtype eq 'integer') {
-    return undef unless $query =~ /^[+-]*[0-9]+$/;
-    $mode = 'exact';
-  }
-  elsif ($dtype eq 'number') {
-    return undef unless (
-      looks_like_number( $query )
-    );
-    $mode = 'exact';
-  }
-
-  # Special-case: pre-validate enums (Github Issue #56)
-  my $enumVh = $cnf->{enum_value_hash};
-  if ($enumVh) {
-    return undef unless ($enumVh->{$query});
-    $mode = 'exact';
-  }
-
-  # New for GitHub Issue #97
-  my $strf = $cnf->{search_operator_strf};
-  my $s = $strf ? sub { sprintf($strf,shift) } : sub { shift };
-
-  # 'text' is the only type which can do a LIKE (i.e. sub-string)
-  return $mode eq 'like' 
-    ? $self->_op_fuse($dbicname => { $s->('like') => join('%','',$query,'') })
-    : $self->_op_fuse($dbicname => { $s->('=')    => $query });
-}
-
+  
+# This method is no longer used after the quick search refactor to SearchBox
+sub _resolve_quicksearch_condition { ... }
 
 
 our ($needs_having,$dbf_active_conditions);
