@@ -18,12 +18,28 @@ has 'exact_matches',
   is => 'ro', 
   isa => Bool, 
   default => sub { 0 };
+  
+has 'like_operator', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  
+  # Special just for Postgres: we want to use "ILIKE" instead of "LIKE" because LIKE
+  # is case-sensitive in Postgres. Additionallly, we want to use the special syntax
+  # ::text to "cast" the column as text first, otherwise we'll get exceptions when
+  # ilike is ran on non text coliumns, like 'date' and other types
+  $self->_db_is_Postgres ? '::text ilike' : 'like'
+    
+}, isa => Str;
+
+
+has '_db_is_Postgres', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
+  $self->grid_module->_dbh_driver eq 'Pg' ? 1 : 0
+}, isa => Bool;
+
 
 
 sub chain_query_search_rs {
   my ($self, $Rs, $opt) = @_;
-  
-  scream(ref($self),$opt);
   
   return $Rs unless (ref($opt)||'' eq 'HASH');
   my $query = $opt->{query} or return $Rs;
@@ -79,7 +95,7 @@ sub chain_query_search_rs {
     # 'text' is the only type which can do a LIKE (i.e. sub-string)
     my $cond = $exact
       ? $Grid->_op_fuse($dbicname => { $s->('=')    => $query })
-      : $Grid->_op_fuse($dbicname => { $s->('like') => join('%','',$query,'') });
+      : $Grid->_op_fuse($dbicname => { $s->($self->like_operator) => join('%','',$query,'') });
     
     push @search, $cond;
   }
