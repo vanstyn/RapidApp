@@ -1,5 +1,14 @@
 Revision history for RapidApp
 
+1.3300 2020-08-05
+   - Quick Search values not applied now get reset on blur (clicking off) (VANSTYN)
+   - Quick Search values now per default included in saved searches (VANSTYN)
+   - SearchBox/Quick Search mode documentation exosed to UI (VANSTYN)
+   - Pq-specific Quick Search fixes (type casting to avoid errors (VANSTYN)
+   - Added new new SearchBox 'keyword' search modes (VANSTYN)
+   - Quick Search refactor to use new 'SearchBox' object class API (VANSTYN)
+   - _authcore_apply_login comment explains setting "authenticated" manually (VANSTYN)
+
 1.3202 2020-06-28
     - Fix bug introduced in 1.3201 breaking proper auth fail handle (#183) (VANSTYN)
 
