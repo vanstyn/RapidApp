@@ -1514,8 +1514,6 @@ sub chain_Rs_req_quicksearch {
   $SearchBox->_chain_query_search_rs($Rs,$opt)
 }
   
-# This method is no longer used after the quick search refactor to SearchBox
-sub _resolve_quicksearch_condition { ... }
 
 
 our ($needs_having,$dbf_active_conditions);
