@@ -93,6 +93,10 @@ has 'use_multisort',           is => 'ro', isa => 'Bool', default => 1;
 
 has 'allow_edit_frozen', is => 'ro', isa => 'Bool', default => 1;
 
+# New, and default to true, include the current value 
+# of the quick search box in saved searches:
+has 'quicksearch_value_in_saved_search', is => 'ro', isa => 'Bool', default => 1;
+
 sub BUILD {
   my $self = shift;
   
@@ -141,6 +145,7 @@ sub BUILD {
     open_record_rest_key => $self->open_record_rest_key,
     open_record_column => $self->open_record_column ? \1 : \0,
     open_record_column_hidden => $self->open_record_column_hidden ? \1 : \0,
+    quicksearch_value_in_saved_search => $self->quicksearch_value_in_saved_search ? \1 : \0
   );
   
   # The record_pk is forced to be added/included as a column:

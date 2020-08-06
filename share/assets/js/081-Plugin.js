@@ -710,6 +710,10 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 			,onTrigger2Click:this.minChars ? Ext.emptyFn : this.onTriggerSearch.createDelegate(this)
 			,minLength:this.minLength
 		});
+    
+    if(! this.grid.preload_quick_search && store.preload_quick_search) {
+      this.grid.preload_quick_search = store.preload_quick_search;
+    }
 		
 		// -----
 		if(this.grid.preload_quick_search) {
@@ -844,7 +848,22 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		}
 		var val = this.field.getValue();
 		var store = this.grid.store;
-
+    
+    
+    
+    if(this.grid.quicksearch_value_in_saved_search) {
+      this.grid.preload_quick_search = val;
+      store.preload_quick_search = val;
+    }
+    else {
+      if(this.grid.preload_quick_search) {
+       delete this.grid.preload_quick_search;
+      }
+      if(store.preload_quick_search) {
+       delete store.preload_quick_search;
+      }
+    }
+    
 		// grid's store filter
 		if('local' === this.mode) {
 			store.clearFilter();
