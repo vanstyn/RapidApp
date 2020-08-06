@@ -711,6 +711,11 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 			,minLength:this.minLength
 		});
     
+    // Always leave the value in the box the same value as the last once actually applied
+    this.field.on('blur',function(field) {
+      field.setValue(this.last_applied_quicksearch_value);
+    },this);
+    
     if(! this.grid.preload_quick_search && store.preload_quick_search) {
       this.grid.preload_quick_search = store.preload_quick_search;
     }
@@ -849,8 +854,6 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 		var val = this.field.getValue();
 		var store = this.grid.store;
     
-    
-    
     if(this.grid.quicksearch_value_in_saved_search) {
       this.grid.preload_quick_search = val;
       store.preload_quick_search = val;
@@ -907,6 +910,8 @@ Ext.ux.RapidApp.Plugin.GridQuickSearch = Ext.extend(Ext.util.Observable, {
 	,applyStoreParams: function() {
 		var val = this.field.disabled ? '' : this.field.getValue();
 		var store = this.grid.store;
+    
+    this.last_applied_quicksearch_value = val;
 		
 		// get fields to search array
 		var fields = [];
