@@ -623,13 +623,12 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 			column_order: column_order,
 		};
 
-		if (!store.multisort_enabled) {
-			var sort = grid.getState().sort;
-			if (sort) {
-				view_config.sort = sort;
-			}
+		var sort = grid.getState().sort;
+		if (store.multisort_enabled || sort === undefined) {
+			sort = {};
 		}
-		
+		view_config.sort = sort;
+
 		/*
 		//MultiFilter data:
 		if(store.filterdata) { view_config.filterdata = store.filterdata; }
