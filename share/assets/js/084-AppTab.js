@@ -593,14 +593,14 @@ Ext.ux.RapidApp.AppTab.AppGrid2Def = {
 		'advanced_config_json',
 		'advanced_config_active',
 		'quicksearch_mode',
-    'custom_headers',
-    'disable_cell_editing',
-    'multisort_enabled',
-    'sorters',
-    'total_count_off',
-    'preload_quick_search'
+		'custom_headers',
+		'disable_cell_editing',
+		'multisort_enabled',
+		'sorters',
+		'total_count_off',
+		'preload_quick_search'
 	],
-	
+
 	// Function to get the current grid state needed to save a search
 	// TODO: factor to use Built-in ExtJS "state machine"
 	getCurSearchData: function () {
