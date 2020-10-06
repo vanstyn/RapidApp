@@ -1,5 +1,18 @@
 Revision history for RapidApp
 
+1.3301 2020-10-06
+   - Expose the SearchBox per-column condition building method (PR #188) (NERDVANA)
+   - Always include "sort" key in saved search JSON (PR #187) (DEVEN)
+   - REQUIRE MOST RECENT VERSIONS OF KEY CPAN MODULES (dist.ini) (VANSTYN)
+      * Catalyst         5.90128
+      * DBI              1.643
+      * DBIx::Class      0.082842
+      * DBD::SQLite      1.66
+      * SQL::Translator  1.62
+      * SQL::Abstract    1.87
+      * Moose            2.213
+      * Moo              2.004000
+
 1.3300 2020-08-05
    - Quick Search values not applied now get reset on blur (clicking off) (VANSTYN)
    - Quick Search values now per default included in saved searches (VANSTYN)
