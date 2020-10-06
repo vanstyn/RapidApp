@@ -57,6 +57,25 @@ has 'documentation',
 
 
 # Every subclass must implement this method:
+
+=head2 chain_query_search_rs
+
+  $modified_resultset = $searchbox->chain_query_search_rs( $resultset, $params );
+  # where $params may contain:
+  {
+    query => $search_text,
+    columns => \@column_name_list,
+  }
+
+This method is called by the Grid to apply the QuickSearch query information in
+C<$params> to the C<$resultset>, returning a chained C<$modified_resultset>.
+
+If the C<$params> do not contain a C<'query'> string, this returns the C<$resultset>
+un-changed.  If the C<$params> describe a search that does not search any columns,
+this method returns a resultset that finds zero rows.
+
+=cut
+
 sub chain_query_search_rs {
   my ($self, $Rs, $opt) = @_;
   
