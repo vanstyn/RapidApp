@@ -1628,40 +1628,19 @@ sub resolve_dbic_rel_alias_by_column_name  {
 # This exists specifically to handle relationship columns:
 has 'custom_dbic_rel_aliases' => ( is => 'ro', isa => 'HashRef', default => sub {{}} );
 
-# Updated: the last item may now be a ref in which case it will be set 
+# Convert a list of relation names to a nested DBIC join hashref
+# i.e.
+#   "a", "b", "c"
+# becomes
+#   { a => { b => { c => {} } } }
+# Updated: the last item may now be a ref in which case it will be set
 # as the last value instead of {}
 sub chain_to_hash {
-	my $self = shift;
-	my @chain = @_;
-	
-	my $hash = {};
-	my $last;
-
-	my @evals = ();
-	my $i = 0;
-	foreach my $item (@chain) {
-		my $right = '{}';
-		my $set_end = 0;
-		if($i++ == 0) {
-			$last = pop @chain;
-			if(ref $last) {
-				$right = '$last';
-				$set_end = 1;
-			}
-			else {
-				# Put it back if its not a ref:
-				push @chain, $last;
-			}
-		}
-		my $left = '$hash->{\'' . join('\'}->{\'',@chain) . '\'}';		
-		unshift @evals, $left . ' = ' . $right;
-		pop @chain unless ($set_end);
-	}
-	eval $_ for (@evals);
-	
-	return $hash;
+  my $self= shift;
+  my $ret= ref $_[-1]? pop : {};
+  $ret= { $_ => $ret } for reverse @_;
+  return $ret;
 }
-
 
 has 'relationship_column_render_column_map', is => 'ro', isa => 'HashRef', default => sub {{}};
 sub get_relationship_column_cnf {
