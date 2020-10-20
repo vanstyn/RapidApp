@@ -1280,7 +1280,8 @@ sub chain_Rs_req_base_Attr {
     'as' => [],
     join => {},
     page => int($params->{start}/$params->{limit}) + 1,
-    rows => $params->{limit}
+    rows => $params->{limit},
+    where => {},
   };
   
   my $columns = $self->get_req_columns;
@@ -1341,7 +1342,7 @@ sub chain_Rs_req_base_Attr {
     $attr->{order_by} = \@order_by;
   }
 
-  return $self->_chain_search_rs($Rs,{},$attr);
+  return $self->_chain_search_rs($Rs,delete $attr->{where},$attr);
 }
 
 # If a join was added to ->{joins}, it needs included, but DBIC might strip it
@@ -1374,14 +1375,13 @@ sub _ensure_all_aliases_joined {
         last;
       }
     }
-    # If no columns used this alias, add a dummy column
+    # If no columns used this alias, reference one of its columns in the where clause
     unless ($anchored) {
       my @cols = $rs->result_source->primary_columns;
       @cols = $rs->result_source->columns unless @cols;
       if (@cols) { # sanity check
-        #warn "selecting $alias.$pk[0] to ensure $alias gets joined\n";
-        push @{ $attr->{select} }, "$alias.$cols[0]";
-        push @{ $attr->{as} }, $alias . '___keep_this_join';
+        my $colname= "$alias.$cols[0]";
+        $attr->{where}{$colname}{'='}{'-ident'} = $colname;
       }
     }
   }
