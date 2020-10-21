@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+1.3302 2020-10-21
+    - Stop DBIC from removing joins needed for virtual columns (PR #190) (NERDVANA)
+
 1.3301 2020-10-06
    - Expose the SearchBox per-column condition building method (PR #188) (NERDVANA)
    - Always include "sort" key in saved search JSON (PR #187) (DEVEN)
