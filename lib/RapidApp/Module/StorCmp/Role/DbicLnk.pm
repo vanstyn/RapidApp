@@ -1280,7 +1280,8 @@ sub chain_Rs_req_base_Attr {
     'as' => [],
     join => {},
     page => int($params->{start}/$params->{limit}) + 1,
-    rows => $params->{limit}
+    rows => $params->{limit},
+    where => {},
   };
   
   my $columns = $self->get_req_columns;
@@ -1305,6 +1306,8 @@ sub chain_Rs_req_base_Attr {
     push @{$attr->{'select'}}, $dbic_name;
     push @{$attr->{'as'}}, $col;
   }
+
+  $self->_ensure_all_aliases_joined('me', $attr->{join}, $Rs, $attr);
 
   my @sorts = defined $params->{sorters}
     ? @{$self->param_decodeIf($params->{sorters},[])}
@@ -1339,7 +1342,50 @@ sub chain_Rs_req_base_Attr {
     $attr->{order_by} = \@order_by;
   }
 
-  return $self->_chain_search_rs($Rs,{},$attr);
+  return $self->_chain_search_rs($Rs,delete $attr->{where},$attr);
+}
+
+# If a join was added to ->{joins}, it needs included, but DBIC might strip it
+# out if it doesn't see any columns using it, like can happen with virtual columns.
+# Iterate all joins and make sure at least one column uses them.
+sub _ensure_all_aliases_joined {
+  my ($self, $alias, $join, $rs, $attr)= @_;
+  my $anchored = 0;
+  # If there are sub-joins, and they get anchored, then this alias will get anchored just
+  # by the keys of this table used to join those other tables.
+  if (ref $join eq 'HASH') {
+    for (keys %$join) {
+      $anchored += $self->_ensure_all_aliases_joined($_, $join->{$_}, $rs->related_resultset($_), $attr);
+    }
+  }
+  elsif (ref $join eq 'ARRAY') {
+    for (@$join) {
+      $anchored += $self->_ensure_all_aliases_joined($_, {}, $rs->related_resultset($_), $attr);
+    }
+  }
+  # If none of the sub-joins are forcing this join to exist
+  # (or there are no sub-joins) add a dummy column.
+  unless ($anchored) {
+    # See if any selected columns reference this join
+    my $prefix = "$alias.";
+    for (grep !ref, @{$attr->{select}}) {
+      if ($prefix eq substr($_, 0, length $prefix)) {
+        $anchored = 1;
+        #warn "ensure joined: $_ requires $alias\n";
+        last;
+      }
+    }
+    # If no columns used this alias, reference one of its columns in the where clause
+    unless ($anchored) {
+      my @cols = $rs->result_source->primary_columns;
+      @cols = $rs->result_source->columns unless @cols;
+      if (@cols) { # sanity check
+        my $colname= "$alias.$cols[0]";
+        $attr->{where}{$colname}{'='}{'-ident'} = $colname;
+      }
+    }
+  }
+  return $anchored;
 }
 
 sub resolve_dbic_colname {
