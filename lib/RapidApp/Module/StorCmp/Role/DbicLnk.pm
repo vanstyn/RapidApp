@@ -1381,7 +1381,7 @@ sub _ensure_all_aliases_joined {
       @cols = $rs->result_source->columns unless @cols;
       if (@cols) { # sanity check
         my $colname= "$alias.$cols[0]";
-        $attr->{where}{$colname}{'='}{'-ident'} = $colname;
+        $attr->{where}{$colname} ||= [ -or => { "=" => undef }, { "!=" => undef } ];
       }
     }
   }
