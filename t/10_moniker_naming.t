@@ -131,14 +131,14 @@ $dbic_helper->schema_class->storage->disconnect; # Make sure temporary file will
 # t/var/tmp/TestMonikerNaming-XXXXX/lib/TestMonikerNaming/
 #   DB
 #     Result
-#       AlbumsPlus.pm
-#       Albums.pm
+#       AlbumPlus.pm
+#       Album.pm
 #   DB.pm
 
 # This module gets loaded in _gen_static_schema
 ok(exists $INC{"$app_class/DB.pm"}, "$app_class/DB.pm loaded");
 # These modules get loaded in DBIx::Class::Schema::Loader::Base::_reload_class
-ok(exists $INC{"$app_class/DB/Result/AlbumsPlus.pm"}, "$app_class/DB/Result/AlbumsPlus.pm loaded");
-ok(exists $INC{"$app_class/DB/Result/Albums.pm"}, "$app_class/DB/Result/Albums.pm loaded");
+ok(exists $INC{"$app_class/DB/Result/AlbumPlus.pm"}, "$app_class/DB/Result/AlbumPlus.pm loaded");
+ok(exists $INC{"$app_class/DB/Result/Album.pm"}, "$app_class/DB/Result/Album.pm loaded");
 
 done_testing;

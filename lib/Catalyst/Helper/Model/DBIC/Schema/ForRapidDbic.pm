@@ -241,8 +241,9 @@ around '_gen_static_schema' => sub {
   # this should be removed once proper support for passing loader args in 
   # rapidapp.pl and rdbic.pl
   $loader_args->{moniker_map} = sub { 
-    my $table = shift; $table =~ s{\+$}{_plus}; 
-    join '', map ucfirst, split /[\W_]+/, lc $table 
+    my ($table, $default) = @_;
+    $default .= 'Plus' if $table =~ /\+$/;
+    $default
   };
   # ---
   
