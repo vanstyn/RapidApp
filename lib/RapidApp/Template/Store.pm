@@ -44,12 +44,12 @@ sub owns_tpl {
 }
 
 
-sub template_exists   { ... }
-sub template_mtime    { ... }
-sub template_content  { ... }
-sub create_template   { ... }
-sub update_template   { ... }
-sub delete_template   { ... }
+sub template_exists   { die "Unimplemented" }
+sub template_mtime    { die "Unimplemented" }
+sub template_content  { die "Unimplemented" }
+sub create_template   { die "Unimplemented" }
+sub update_template   { die "Unimplemented" }
+sub delete_template   { die "Unimplemented" }
 sub list_templates    {[]}
 
 
