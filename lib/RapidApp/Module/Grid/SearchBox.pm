@@ -79,7 +79,7 @@ this method returns a resultset that finds zero rows.
 sub chain_query_search_rs {
   my ($self, $Rs, $opt) = @_;
   
-  ... 
+  die "Unimplemented";
 }
 
 

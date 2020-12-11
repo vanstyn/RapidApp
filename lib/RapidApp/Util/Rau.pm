@@ -42,7 +42,7 @@ sub argv_call {
   $class->call(@ARGV)
 }
 
-sub call { ... }
+sub call { die "Unimplemented" }
 
 
 sub usage {
