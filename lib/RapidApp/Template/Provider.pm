@@ -187,7 +187,7 @@ sub _not_exist_content {
       
       '<div class="meta" style="display:none;">',
         #'<div class="template-name">', $template, '</div>',
-        encode_json_utf8({ 
+        encode_json_ascii({ 
           name => $template,
           format => $self->Access->get_template_format($template)
         }),

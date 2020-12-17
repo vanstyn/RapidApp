@@ -470,7 +470,7 @@ sub view :Chained('base') :Args {
     
     # This is doing the same thing that the overly complex 'Module' controller does:
     $content_type = 'text/javascript; charset=utf-8';
-    $output = encode_json_utf8($cnf);
+    $output = encode_json_ascii($cnf);
   }
   else {
     # This is a direct browser call:
@@ -542,14 +542,22 @@ sub view :Chained('base') :Args {
     
   }
   
-  # ----
-  # TODO/FIXME: back-compat force utf8 since removing code which sets content_type
-  # this is being done this way to match previous (pre 1.3105) code as close as possible
-  # this still needs to be revisited
-  utf8::decode($output);
-  $output = Encode::encode("UTF-8", $output);
-  # ----
-
+  
+  ### Update on 2020-12-16 by @vanstyn
+  ### turned off for GH Issue #192 - this was identified as a problem in #192
+  ### this is a very old comment and it is likely that this "workaround" was already 
+  ### resolved and this was a loose end. However, the RapidApp test suite for all the
+  ### many code paths of rendering templates is still TODO, so the commented out code
+  ### is being left here for now. This still needs to be fully revisited, just as the
+  ### comment below said
+  ## ----
+  ## TODO/FIXME: back-compat force utf8 since removing code which sets content_type
+  ## this is being done this way to match previous (pre 1.3105) code as close as possible
+  ## this still needs to be revisited
+  ##utf8::decode($output);
+  ##$output = Encode::encode("UTF-8", $output);
+  ## ----
+  
   return $self->_detach_response($c,$status,$output,$content_type);
 }
 

@@ -403,7 +403,7 @@ sub set_response_warning {
     defined $warn->{msg}
   );
 
-  $c->res->header( 'X-RapidApp-Warning' => encode_json_utf8($warn) );
+  $c->res->header( 'X-RapidApp-Warning' => encode_json_ascii($warn) );
 }
 
 

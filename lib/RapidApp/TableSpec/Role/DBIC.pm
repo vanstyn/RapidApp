@@ -2045,7 +2045,7 @@ sub get_multi_relationship_column_cnf {
       if(scalar(@{$attr->{join}}) == 0)   { delete $attr->{join}; }
       elsif(scalar(@{$attr->{join}}) == 1) { $attr->{join} = $attr->{join}[0]; }
       
-      my $json = encode_json_utf8($attr);
+      my $json = encode_json_ascii($attr);
       
       $json =~ s/\{\[/\{ \[/g;
       $json =~ s/\]\}/\] \}/g;

@@ -152,7 +152,7 @@ sub _div_wrap_content {
       '<div class="meta" style="display:none;">',
         #'<div class="template-name">' . $template . '</div>',
         #'<div class="template-format">' . $format . '</div>',
-        encode_json_utf8($meta),
+        encode_json_ascii($meta),
       '</div>',
       
       (
@@ -183,7 +183,7 @@ sub _template_error_content {
       
       '<div class="meta" style="display:none;">',
         #'<div class="template-name">', $template, '</div>',
-        encode_json_utf8({ 
+        encode_json_ascii({ 
           name => $template,
           format => $self->Access->get_template_format($template),
           deletable => $self->Access->template_deletable($template)
