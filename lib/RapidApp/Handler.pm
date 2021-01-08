@@ -3,7 +3,7 @@ use Moose;
 
 use RapidApp::Util qw(:all);
 
-has 'scope'		=> ( is => 'rw', default => undef, isa => 'Maybe[Object]' );
+has 'scope'		=> ( is => 'rw', default => undef, isa => 'Maybe[Object]', weak_ref => 1 );
 has 'method'	=> ( is => 'rw', default => undef, isa => 'Maybe[Str]' );
 has 'code'		=> ( is => 'rw', default => undef, isa => 'Maybe[CodeRef]' );
 
