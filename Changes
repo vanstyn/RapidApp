@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+1.3401 2021-01-08
+    - Use weak reference to prevent memory leak (PR #198) (DEVEN)
+
 1.3400 2020-12-16
     - Switch from encode_json_utf8 to encode_json_ascii (VANSTYN)
     - Unfactor old broken UTF-8 hack in template view (GH #192)
