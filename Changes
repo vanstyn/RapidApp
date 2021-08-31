@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+1.3402 2021-08-31
+    - Handle '::' in source names (VANSTYN)
+
 1.3401 2021-01-08
     - Use weak reference to prevent memory leak (PR #198) (DEVEN)
 
