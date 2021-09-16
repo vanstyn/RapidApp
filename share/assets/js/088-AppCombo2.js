@@ -1482,7 +1482,16 @@ Ext.ux.RapidApp.DataStoreAppField = Ext.extend(Ext.ux.RapidApp.ClickActionField,
 								// manually clear any multifilters:
 								if(this.multifilter) {
 									delete this.store.filterdata;
-									delete this.store.filterdata_frozen;
+                  // -- 
+                  // NEW: API change: do not clear Frozen Filter data anymore (2021-09-16 by HV)
+                  //  For the past 11 years, saved grid views when used as grid-combo for FK/single-rel
+                  //  selector had filters cleared because it was deemed to cause more user confusion
+                  //  than benefit. But not doing this is now a greater desire in certain cases. To
+                  //  break back-compat less, this is now turned off only for Frozen multifilters,
+                  //  making the feature available but in a sub-set of scenarios rather than making an
+                  //  across-the-board change
+									////delete this.store.filterdata_frozen;
+                  // --
 									this.multifilter.updateFilterBtn.call(this.multifilter);
 								}
 								
