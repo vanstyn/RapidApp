@@ -256,6 +256,18 @@ sub TableSpec_property_grids {
 			my $info = $Row->result_source->relationship_info($rel);
 			next unless ($info->{attrs}->{accessor} eq 'multi'); #<-- should be redundant
 			my $cond_data = RapidApp::DBIC::Component::TableSpec->parse_relationship_cond($info->{cond});
+      
+      # --
+      # When the relationship 'cond' is a coderef, $cond_data parses to an empty hash.
+      # We do not currently support complex/coderef relationship conditions, so we have to skip them
+      # TODO/FIXME: add support. This would probably require a total refactor; it just won't work
+      #             as long as we're doing it this way, passing the condition through JS client
+      next unless (
+        (ref($cond_data)||'' eq 'HASH')
+        && $cond_data->{foreign}
+        && $cond_data->{self}
+      );
+      # --
 			
 			my $mod_name = 'rel_' . $RelTS->column_prefix . $rel;
 			
