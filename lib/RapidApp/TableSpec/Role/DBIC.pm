@@ -1417,8 +1417,6 @@ sub resolve_dbic_colname {
         
         my $rel_rs;
         
-        my $recent_dbic = $p_source->can('resolve_relationship_condition') ? 1 : 0;
-        
         # Github Issue #95
         if(!$rel_attrs->{where}) {
           # correlate logic works as-is unless the relationship has a 'where'
@@ -1449,10 +1447,19 @@ sub resolve_dbic_colname {
           # single-key relationship conditions (and not multi-key or CodeRef):
           #my $cond = { "${rel}_alias.$cond_data->{foreign}" => \[" = $rel.$cond_data->{self}"] };
           
+          # FUTURE: DBIC is supposed to at some point officially expose resolve_relationship_condition()
+          # as a public method, but until then, the most recent DBIC (currently 0.082842) does have
+          # this method as private (private by underscore prefix convention). Earlier versions of DBIC
+          # didn't have this at all, and private or no, we need it, so we check for and use either:
+          my $resolve_rel_meth = 
+            $p_source->can('resolve_relationship_condition')  ? 'resolve_relationship_condition'  :
+            $p_source->can('_resolve_relationship_condition') ? '_resolve_relationship_condition' : 
+          undef;
+          
           my $cond = do {
-            if($recent_dbic) {
-              # On recent versions on DBIC, we now have a public method to do this:
-              $p_source->resolve_relationship_condition(
+            if($resolve_rel_meth) {
+              # On recent versions on DBIC, we now have a better method to do this:
+              $p_source->$resolve_rel_meth(
                 rel_name       => $col,
                 foreign_alias  => $rel_rs->current_source_alias,
                 self_alias     => $rel
