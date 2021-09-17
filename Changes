@@ -1,5 +1,10 @@
 Revision history for RapidApp
 
+1.3404 2021-09-17
+    - Fix DbicPropPage bug with unsupported coderef cond multi-rels (VANSTYN)
+    - Multi-rels finally work correctly for rels with 'where' attr (VANSTYN)
+    - Fix exception in multi rel cols for coderef conditions + 'where' attr (VANSTYN)
+
 1.3403 2021-09-16
     - Grid Frozen Conditions now active in FK grid combo relcol selector (VANSTYN)
 
