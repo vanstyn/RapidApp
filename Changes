@@ -1,5 +1,8 @@
 Revision history for RapidApp
 
+1.3500 2021-11-22
+    - Fix deep cache bug in module dispatch (#201, PR #202) (DEVEN)
+
 1.3404 2021-09-17
     - Fix DbicPropPage bug with unsupported coderef cond multi-rels (VANSTYN)
     - Multi-rels finally work correctly for rels with 'where' attr (VANSTYN)
