@@ -559,6 +559,7 @@ sub redirect_handle_rest_rel_request {
     # ---
 
     %{$c->req->params} = ( %$p, base_params => $self->json->encode( $p ) );
+    local $c->{request_id} = $c->request_id + 0.01;
     $c->root_module_controller->approot($c,$url);
     return $c->detach;
   }
@@ -576,6 +577,7 @@ sub redirect_handle_rest_rel_request {
       # Simulate the rest_args for proper handling of the remote DbicLink
       # request to operate under the current, alias URL:
       $self->c->stash->{rest_args} = [$RelObj->getRestKey,$RelObj->getRestKeyVal];
+      local $c->{request_id} = $c->request_id + 0.01;
       $c->root_module_controller->approot($c,$url);
       return $c->detach;
     }
