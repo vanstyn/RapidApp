@@ -51,6 +51,7 @@ my $default_data_type_profiles = {
   'double precision' => [ 'number' ],
   datetime    => [ 'datetime' ],
   timestamp   => [ 'datetime' ],
+  'timestamp with time zone' => ['datetime'],
   date        => [ 'date' ],
   blob        => [ 'blob' ],
   longblob    => [ 'blob' ],
