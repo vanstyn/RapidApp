@@ -1,4 +1,15 @@
+/*
+  MdEditor is an ExtJS Field editor that edits Markdown source (or HTML)
+  using the SimpleMDE component.
 
+  This editor is best used in an AppDV context, where the editor is given
+  a large screen area for editing.  To edit individual table cells, see
+  the Ext.ux.RapidApp.MdPopupEditor below.
+
+  Options:
+    initialSideBySide: true, // start the editor in side-by-side mode
+
+*/
 Ext.ux.RapidApp.MdEditor = Ext.extend(Ext.form.Field,{
 
 // ---------------------------------------------------------------------------------------
@@ -189,6 +200,9 @@ iframeHtml: '<html>  \
     if(sbsEl) {
       textify(sbsEl,'side-by-side<br>preview');
     }
+
+    if (this.initialSideBySide)
+      simplemde.toggleSideBySide();
   },
   
   setRawValue : function(v){
@@ -387,6 +401,117 @@ iframeHtml: '<html>  \
 Ext.reg('ra-md-editor',Ext.ux.RapidApp.MdEditor);
 
 
+/*
+  This component is an editor for Markdown fields more appropriate for
+  grids and forms.  When activated, it pops up a dialog window to occupy
+  the entire client area of the current tab.  Also, the markdown editor
+  initially loads in side-by-side mode.
+  When the user selects 'OK' or "Cancel' on the window, the editor
+  automatically triggers a 'blur' event, returning to the original field
+  rendering.
+
+  Options:
+    insideTab: true, // attach the edit window to the inside of the tab view
+    maximize: true,  // stretch the window to the size of its container
+    initialSideBySide: true, // start the editor in side-by-side mode
+
+*/
+Ext.ux.RapidApp.MdPopupEditor = Ext.extend(Ext.form.Field,{
+
+  initComponent: function() {
+    var self= this;
+    this.on('show', this.openEditorDialog, this);
+    this.on('destroy',this.tearDown,this);
+	Ext.applyIf(this, {
+		autoHeight: true,
+		autoWidth: true,
+		insideTab: true,
+		maximize: true,
+		initialSideBySide: true,
+		autoCreate: { tag: 'div' }
+	});
+    Ext.ux.RapidApp.MdPopupEditor.superclass.initComponent.call(this);
+  },
+
+  openEditorDialog: function() {
+    var self= this;
+    if (!this._dialog) {
+      // Find the outermost panel in the current tab
+      var parent;
+      if (this.insideTab) {
+        parent= this.el.findParentNode('.ra-ap-body', 100);
+        if (!parent) parent= this.el.findParentNode('.x-tab-panel-body', 100);
+      }
+      if (!parent) parent= Ext.getBody();
+      this._dialog= Ext.create({
+        xtype: 'window',
+        layout: 'fit',
+        closeAction: 'hide',
+        width: this.maximize? parent.clientWidth : 600,
+        height: this.maximize? parent.clientHeight : 400,
+        renderTo: parent,
+        items: {
+          xtype: 'ra-md-editor',
+          ref: 'mdedit',
+          _noAutoHeight: true,
+          initialSideBySide: true,
+        },
+        buttons: [
+          { text: 'OK',     handler: function(){ self.finishEdit(1, self._dialog.getValue()); } },
+          { text: 'Cancel', handler: function(){ self.finishEdit(0); } },
+        ],
+        getValue: function() {
+          return this.mdedit.getValue();
+        },
+        setValue: function(v) {
+          this.mdedit.setValue(v);
+        }
+      });
+    }
+    this._dialog.setValue(this.value);
+    this.el.dom.textContent= '(editing...)';
+    this._dialog.show();
+  },
+  finishEdit: function(changed, newValue) {
+    this._dialog.hide();
+    this.el.dom.textContent= '(click to edit)';
+    if (changed) {
+      var oldValue= this.value;
+      this.setValue(newValue);
+      this.fireEvent('changed',oldValue,newValue);
+    }
+    this.fireEvent('blur');
+  },
+
+  setRawValue : function(v){
+    if (this._dialog)
+      this._dialog.setValue(v);
+  },
+
+  setValue : function(v){
+    this.value = v;
+    this.setRawValue(v);
+    return this;
+  },
+
+  getRawValue: function() {
+    return this._dialog? this._dialog.getValue() : this.value;
+  },
+
+  getValue : function(){
+    return this.value;
+  },
+
+  tearDown: function() {
+    if (this._dialog) {
+      this._dialog.close();
+      delete this._dialog;
+    }
+  }
+});
+Ext.reg('ra-md-popup-editor',Ext.ux.RapidApp.MdPopupEditor);
+
+
 // This was started in order to be the parent class for MdEditor, but after a redesign it no longer 
 // is. However, since its a working implementation of an iframe-based plaintext editor, it is being
 // left in the code for future reference
@@ -490,5 +615,3 @@ Ext.ux.RapidApp.iframeTextField = Ext.extend(Ext.form.Field,{
   }
   
 });
-
-
