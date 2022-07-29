@@ -123,6 +123,13 @@ This module provides a TT-driven html template for the "page" view of a DBIC sou
 the L<RapidApp::Module::AppDV> class, targeted for this specific (i.e. single row) case. If you
 want a custom designed page for a row, with in-line editable columns, this is the module you want.
 
+Note that the output of the Template Toolkit template is used as source for an
+L<ExtJS XTemplate|https://docs.sencha.com/extjs/3.4.0/#!/api/Ext.XTemplate-method-constructor>
+which gets rendered client-side any time the ExtJS row object changes.  The C<< r.autofield >>
+snippets allow you to inject RapidApp's default wrapper for your fields instead of needing
+to invent them from scratch.  If you want special rendering for your fields, it is better to
+implement it in JavaScript and configure that in the ColSpec, rather than performing custom
+rendering in the TT file.  This module is primarily intended for custom layouts.
 
 =head1 ATTRIBUTES
 
@@ -149,6 +156,36 @@ For an editable version of a column (dependent on editable perms, updatable_cols
 This will also render the value of the column, but will also be an editable/clickable control
 to set the value in-place.
 
+=head1 Inherited from L<RowPg|RapidApp::Module::StorCmp::Role::DbicLnk::RowPg>
+
+=over 12
+
+=item supplied_id
+
+The primary key of the row to be displayed
+
+=item ResultSet
+
+The ResultSet for this module returns a single row
+
+=item req_Row
+
+The DBIC row object to be dipslayed on this DataView
+
+=back
+
+=head1 Inherited from L<DbicDV|RapidApp::Module::DbicDV>
+
+=over 12
+
+=item content
+
+The main output of the Module, which is a configuration object for the
+L<ExtJS DataView|https://docs.sencha.com/extjs/3.4.0/#!/api/Ext.DataView>
+component.
+
+=back
+
 =head1 SEE ALSO
 
 =over
@@ -164,6 +201,14 @@ L<RapidApp::Manual::Modules>
 =item *
 
 L<RapidApp::Module::AppDV>
+
+=item *
+
+L<ExtJS DataView Documentation|https://docs.sencha.com/extjs/3.4.0/#!/api/Ext.DataView>
+
+=item *
+
+L<ExtJS XTemplate Documentation|https://docs.sencha.com/extjs/3.4.0/#!/api/Ext.XTemplate-method-constructor>
 
 =back
 
