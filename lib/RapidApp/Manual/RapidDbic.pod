@@ -16,7 +16,7 @@ RapidDbic can also be used to attach admin sections to existing Catalyst applica
 ease.
 
 Instantly generated RapidDbic CRUD applications can also be initialized and mounted as a 
-L<Plack>-compatable app with L<Plack::App::RapidApp::rDbic>. There is also the command-line wrapper 
+L<Plack>-compatible app with L<Plack::App::RapidApp::rDbic>. There is also the command-line wrapper 
 script L<rdbic.pl> which can be used to launch a working app for any existing database via dsn in 
 a single shell command:
 

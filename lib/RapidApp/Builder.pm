@@ -3,7 +3,7 @@ package RapidApp::Builder;
 use strict;
 use warnings;
 
-# ABSTRACT: Plack-compatable, runtime-generated RapidApp loader
+# ABSTRACT: Plack-compatible, runtime-generated RapidApp loader
 
 use Moose;
 use MooseX::NonMoose;
@@ -123,7 +123,7 @@ __END__
 
 =head1 NAME
 
-RapidApp::Builder - Plack-compatable, runtime-generated RapidApp loader
+RapidApp::Builder - Plack-compatible, runtime-generated RapidApp loader
 
 =head1 SYNOPSIS
 
