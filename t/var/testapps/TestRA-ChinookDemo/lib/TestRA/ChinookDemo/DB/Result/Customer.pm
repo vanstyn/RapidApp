@@ -7,7 +7,7 @@ use warnings;
 
 use Moose;
 use MooseX::NonMoose;
-use MooseX::MarkAsMethods autoclean => 1;
+
 extends 'DBIx::Class::Core';
 __PACKAGE__->load_components("InflateColumn::DateTime");
 __PACKAGE__->table("Customer");
