@@ -16,9 +16,6 @@ use RapidApp::JSON::MixedEncoder qw(
   encode_json decode_json encode_json_utf8 decode_json_utf8 encode_json_ascii decode_json_ascii
 );
 
-use RapidApp::Util::Hash::Merge qw( merge );
-RapidApp::Util::Hash::Merge::set_behavior( 'RIGHT_PRECEDENT' );
-
 use Data::Printer;
 
 our $DEBUG_AROUND_COUNT = 0;
@@ -102,6 +99,36 @@ sub scream_color {
   return @_;
 }
 
+# Extremely hot code path
+sub merge {
+  # Ensure top-level scalars get cloned
+  my $var= clone(_merge_right_precedent(@_));
+  return $var;
+}
+
+sub _merge_right_precedent {
+  my ($left, $right)= @_;
+
+  if (ref $right eq 'ARRAY') {
+    return ref $left eq 'HASH'?  [ values %$left, @$right ]
+      :    ref $left eq 'ARRAY'? [ @$left, @$right ]
+      :    [ $left, @$right ];
+  } elsif (ref $right eq 'HASH' && ref $left eq 'HASH') {
+    my %merge;
+    for (keys %$left) {
+      $merge{$_}= !exists $right->{$_}? $left->{$_}
+        : _merge_right_precedent($left->{$_}, $right->{$_});
+    }
+    for (keys %$right) {
+      $merge{$_}= $right->{$_}
+        unless exists $merge{$_};
+    }
+    return \%merge;
+  }
+  else {
+    return $right;
+  }
+}
 
 # Takes a list and returns a HashRef. List can be a mixed Hash/List:
 #(

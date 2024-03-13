@@ -5,7 +5,6 @@ use RapidApp::Util qw(:all);
 use RapidApp::RapidApp;
 use Scalar::Util 'blessed';
 use CatalystX::InjectComponent;
-use RapidApp::Util::Hash::Merge;
 use Text::SimpleTable::AutoWidth;
 use Catalyst::Utils;
 use Path::Class qw(file dir);
