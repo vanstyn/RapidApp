@@ -60,6 +60,8 @@ use RapidApp::HTML::RawHtml;
 use RapidApp::Handler;
 use HTML::Entities;
 use RapidApp::RootModule;
+use Text::Glob ();
+use Text::WagnerFischer ();
 
 
 ########################################################################
@@ -201,10 +203,10 @@ sub _colspec_select_columns {
         my $pos= rindex($col, $sep);
         next if $pos < 0? length($prefix) : $prefix ne substr($col, 0, $pos+length($sep));
         my $test_col= substr($col, length $prefix);
-        next unless $colspec eq '*' || match_glob($colspec, $test_col);
+        next unless $colspec eq '*' || Text::Glob::match_glob($colspec, $test_col);
         my $distance= ($not? -1 : 1);
         if ($best_match) {
-          $distance *= (1 + ($colspec eq '*'? length $test_col : get_distance($colspec, $test_col)));
+          $distance *= (1 + ($colspec eq '*'? length $test_col : Text::WagnerFischer::distance($colspec, $test_col)));
           next unless !exists $match{$col} || abs $distance < abs $match{$col};
           $not? (delete $match_order{$col}) : ($match_order{$col}= ++$next_order);
         } else {
