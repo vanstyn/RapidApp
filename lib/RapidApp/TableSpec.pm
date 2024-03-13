@@ -156,12 +156,12 @@ sub prune_invalid_columns {
 
 sub updated_column_order {
 	my $self = shift;
-	my %seen = ();
+	my ($column_order, $columns, %seen)= ($self->column_order, $self->columns);
 	# Prune out duplciates and columns not in $self->columns
-	@{$self->column_order} = grep { !$seen{$_}++ and $self->columns->{$_} } @{$self->column_order};
+	@$column_order = grep !$seen{$_}++ && $columns->{$_}, @$column_order;
 	# Append any missing columns to the end (shouldn't be any)
-	push @{$self->column_order}, grep { !$seen{$_} } keys %{$self->columns};
-	return @{$self->column_order};
+	push @$column_order, grep !$seen{$_}, keys %$columns;
+	return @$column_order;
 }
 
 

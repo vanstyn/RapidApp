@@ -310,7 +310,8 @@ sub delete_columns {
   # expected for desired. (although this could be considered breaking the API)
   # This also means that columns can be deleted proactively (before they are added)
   # -- This may be redundant to exclude_columns, need to look into combining these --
-  $self->deleted_column_names->{$_} = 1 for (@columns);
+  my $del= $self->deleted_column_names;
+  $del->{$_} = 1 for (@columns);
   
   # vvv -- deleted columns are now filtered out in column_list instead of using the below code -- vvv
   
@@ -369,19 +370,22 @@ sub apply_columns {
   # Filter out previously deleted column names:
   #%columns = map {$_=>$columns{$_}} grep { !$self->deleted_column_names->{$_} } keys %columns;
   
+  my $self_cols= $self->columns;
   foreach my $name (keys %columns) {
   
     next unless ($self->valid_colname($name));
   
-    unless (defined $self->columns->{$name}) {
-      $self->columns->{$name} = RapidApp::Module::DatStor::Column->new( name => $name );
+    unless (defined $self_cols->{$name}) {
+      $self_cols->{$name} = RapidApp::Module::DatStor::Column->new( name => $name );
       push @{ $self->column_order }, $name;
     }
     
-    $self->columns->{$name}->apply_attributes(%{$columns{$name}});
+    $self_cols->{$name}->apply_attributes(%{$columns{$name}});
     
-    $self->add_read_raw_mungers($self->columns->{$name}->read_raw_munger) if ($self->columns->{$name}->read_raw_munger);
-    $self->add_update_mungers($self->columns->{$name}->update_munger) if ($self->columns->{$name}->update_munger);
+    my $m= $self_cols->{$name}->read_raw_munger;
+    $self->add_read_raw_mungers($m) if $m;
+    $m= $self_cols->{$name}->update_munger;
+    $self->add_update_mungers($m) if $m;
   }
   
   return $self->apply_config(columns => $self->column_list);
@@ -389,19 +393,17 @@ sub apply_columns {
 
 sub column_name_list {
   my $self = shift;
-  return grep { !$self->deleted_column_names->{$_} } @{$self->column_order};
+  my $del= $self->deleted_column_names;
+  return grep !$del->{$_}, @{$self->column_order};
 }
 
 sub column_list {
   my $self = shift;
   
-  # new, safer way to way to handle deleted columns
-  my @colnames = $self->column_name_list;
-  
+  my $cols= $self->columns;
   my @list = ();
-  foreach my $name (@colnames) {
-    push @list, $self->columns->{$name}->get_grid_config;
-  }
+  push @list, $cols->{$_}->get_grid_config
+    for $self->column_name_list; # new, safer way to way to handle deleted columns
   
   return \@list;
 }

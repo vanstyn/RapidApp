@@ -473,25 +473,25 @@ sub filter_base_columns {
 	# filter out columns with invalid characters (*):
 	@columns = grep { /^[A-Za-z0-9\-\_\.]+$/ } @columns;
 	
-	return $self->colspec_select_columns({
+	return $self->colspec_select_columns(
 		colspecs => $self->base_colspec,
 		columns => \@columns,
-	});
+	);
 }
 
 sub filter_include_columns {
 	my $self = shift;
 	my @columns = @_;
 	
-	my @inc_cols = $self->colspec_select_columns({
+	my @inc_cols = $self->colspec_select_columns(
 		colspecs => $self->include_colspec->colspecs,
 		columns => \@columns,
-	});
+	);
 	
-	my @rel_cols = $self->colspec_select_columns({
+	my @rel_cols = $self->colspec_select_columns(
 		colspecs => $self->added_relationship_column_relspecs,
 		columns => \@columns,
-	});
+	);
 	
 	my %allowed = map {$_=>1} @inc_cols,@rel_cols;
 	return grep { $allowed{$_} } @columns;
@@ -508,10 +508,10 @@ sub filter_updatable_columns {
 		!$self->multi_rel_columns_indx->{$self->column_prefix . $_}
 	} @columns;
 	
-	return $self->colspec_select_columns({
+	return $self->colspec_select_columns(
 		colspecs => $self->updatable_colspec->colspecs,
 		columns => \@columns,
-	});
+	);
 }
 
 
@@ -533,10 +533,10 @@ sub filter_creatable_columns {
 	# First filter by include_colspec:
 	@columns = $self->filter_include_columns(@columns);
 	
-	return $self->colspec_select_columns({
+	return $self->colspec_select_columns(
 		colspecs => $self->creatable_colspec->colspecs,
 		columns => \@columns,
-	});
+	);
 }
 
 
@@ -683,10 +683,10 @@ sub get_colspec_column_names {
 	# support for passing colspecs with relspec wildcards:
 	@colspecs = $self->expand_relspec_wildcards(\@colspecs,undef,'?');
 	
-	return $self->colspec_select_columns({
+	return $self->colspec_select_columns(
 		colspecs => \@colspecs,
 		columns => [ $self->updated_column_order ]
-	});
+	);
 }
 
 # returns a list of all loaded column names except those that match the supplied colspec set
@@ -702,10 +702,10 @@ sub colspec_matches_columns {
 	my $self = shift;
 	my $colspecs = shift;
 	my @columns = @_;
-	my @matches = $self->colspec_select_columns({
+	my @matches = $self->colspec_select_columns(
 		colspecs => $colspecs,
 		columns => \@columns
-	});
+	);
 	return 1 if (@columns == @matches);
 	return 0;
 }
@@ -914,11 +914,11 @@ sub reorder_by_colspec_list {
 	! /\./ and $need_base = 0 for (@colspecs);
 	unshift @colspecs, '*' if ($need_base);
 	
-	my @new_order = $self->colspec_select_columns({
+	my @new_order = $self->colspec_select_columns(
 		colspecs => \@colspecs,
 		columns => [ $self->updated_column_order ],
 		best_match_look_ahead => 1
-	});
+	);
 	
 	# Add all the current columns to the end of the new list in case any
 	# got missed. (this prevents the chance of this operation dropping any 
