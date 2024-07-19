@@ -14,7 +14,7 @@ use Carp 'croak';
 require Data::Dumper::Concise;
 use URI::Escape;
 
-use RapidApp::Util::XS::DetectAbortReqest;
+use RapidApp::Util::XS::DetectAbortRequest;
 
 use RapidApp;
 use Template;
@@ -242,7 +242,7 @@ sub _rapidapp_top_level_dispatch {
 	$c->stash->{onrequest_time_elapsed}= 0;
   
   try {
-    $orig->($c, @args);
+    &_handle_aborted_request_around_dispatch($orig,$c,@args);
     if(my ($err) = (@{ $c->error })) {
       if (blessed($err) && $err->isa('RapidApp::Responder')) {
         $c->clear_errors;
@@ -342,10 +342,25 @@ sub _handle_aborted_request_around_dispatch {
   my $fh = $env->{'psgix.io'};
   
   my $Watcher = $fh
-    ? 
+    ? RapidApp::Util::XS::DetectAbortReqest->new( signal => $signal, fh => $fh )
+    : RapidApp::Util::XS::DetectAbortReqest->new( signal => $signal            );
   
-  if(my $fh = $env->{'psgix.io'}) {
-
+  $Watcher->start;
+  
+  my $ret;
+  
+  try {
+    $ret = $orig->($c, @args);
+  }
+  catch {
+    my $err = shift;
+    $Watcher->stop;
+    die $err
+  };
+  
+  $Watcher->stop;
+  
+  return $ret;
 }
 
 

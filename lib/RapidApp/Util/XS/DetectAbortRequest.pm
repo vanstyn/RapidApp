@@ -15,7 +15,7 @@ XSLoader::load('RapidApp::Util::XS::DetectAbortReqest', $RapidApp::Util::XS::Det
 
 has 'fh',             is => 'ro', isa => Maybe[InstanceOf['IO::Handle']], default => sub { undef };
 has 'signal',         is => 'ro', isa => Str, default => sub { 'USR1' };
-has 'watch_interval', is => 'ro', isa => Maybe[Int], default => sub { 1 } 
+has 'watch_interval', is => 'ro', isa => Maybe[Int], default => sub { 1 };
 
 has '_started', is => 'rw', isa => Bool, default => sub {0}, init_arg => undef;
 
@@ -59,7 +59,7 @@ sub stop {
 
 sub DESTROY {
   my $self = shift;
-  and $self->stop if $self->_started;
+  $self->stop if $self->_started;
 }
 
 
