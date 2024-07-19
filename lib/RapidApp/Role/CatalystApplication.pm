@@ -14,6 +14,8 @@ use Carp 'croak';
 require Data::Dumper::Concise;
 use URI::Escape;
 
+use RapidApp::Util::XS::DetectAbortReqest;
+
 use RapidApp;
 use Template;
 
@@ -316,6 +318,38 @@ sub _rapidapp_top_level_dispatch {
 		$c->log->error("Body was set, but content-type was not!  This can lead to encoding errors!");
 	}
 };
+
+
+
+sub _handle_aborted_request_around_dispatch {
+  my ($orig, $c, @args) = @_;
+  
+  my $env = $c->engine->env;
+
+  # Return early if PSGI streaming is not supported
+  unless ($env->{'psgi.streaming'}) {
+    return $c->$orig(@args);
+  }
+
+  my $signal = 'USR1';
+
+  # Set up the local signal handler for USR1
+  local $SIG{$signal} = sub {
+    warn "SIG${signal}: Client Request Abort Detected - stopping Request processing...\n";
+    die "Client aborted the request\n";
+  };
+  
+  my $fh = $env->{'psgix.io'};
+  
+  my $Watcher = $fh
+    ? 
+  
+  if(my $fh = $env->{'psgix.io'}) {
+
+}
+
+
+
 
 sub module_root_namespace {
   my $c = shift;
