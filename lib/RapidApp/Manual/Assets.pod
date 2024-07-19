@@ -110,6 +110,7 @@ See L<Catalyst::Plugin::AutoAssets> for details.
 Also note that custom application controllers can also always be setup as
 normal Catalyst controllers. The above config options are just convenience mechanisms
 that cover 99% of cases.
+
 =head1 SEE ALSO
 
 =over
