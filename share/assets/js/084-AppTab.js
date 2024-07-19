@@ -424,7 +424,7 @@ Ext.reg('apptabpanel', Ext.ux.RapidApp.AppTab.TabPanel);
 
 // This is designed to be a function that can be supplied to a treepanel 
 // click handler. This assumes the node has a compatible 'loadContentCnf'
-// attribute and that the tree has a reference to a compatable 'loadTargetObj'
+// attribute and that the tree has a reference to a compatible 'loadTargetObj'
 // (defined as a property). 
 Ext.ux.RapidApp.AppTab.treenav_click = function(node,event) {
 	var tree = node.getOwnerTree();

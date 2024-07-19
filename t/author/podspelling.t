@@ -18,7 +18,7 @@ add_stopwords(qw(
   AuthCore AuthRequire AutoAsset AutoAssets autofield autoinc
   autosizeColumns AutosizeColumns bashrc bigtext calleruse chacter
   checkbox CMS codebases codepaths colspec ColSpec colspecs ColSpecs
-  compatable conatins CoreSchema CoreSchemaAdmin curRow customizable
+  compatible conatins CoreSchema CoreSchemaAdmin curRow customizable
   customizations DataStore DataStores dbi DbicLink DbicLnk DefaultView
   defintions depricated dmap Domm dropdown dsn DSN dsns equivelent
   excelColIdxToLetter ExcelTableWriter existance exmaples extjs ExtJS

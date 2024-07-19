@@ -180,7 +180,7 @@ __END__
 
 =head1 NAME
 
-RapidApp::Util::MetaKeys::Loader - DBIC::S::L-compatable loader_class
+RapidApp::Util::MetaKeys::Loader - DBIC::S::L-compatible loader_class
 
 
 =head1 DESCRIPTION
