@@ -8,6 +8,9 @@ use warnings;
 
 use RapidApp::Util qw(:all);
 
+use AnyEvent;
+use POSIX qw(SIGUSR1);
+
 sub call {
   my ($self, $env) = @_;
   
@@ -42,7 +45,89 @@ sub call {
   # so we need it to match PATH_INFO
   $env->{REQUEST_URI} = $env->{PATH_INFO};
   
-  $self->app->($env)
+  return $self->app->($env) unless ($env->{'psgi.streaming'});
+  
+  # NEW: utilize PSGI streaming to detect if the client request has aborted or
+  # otherwise gone away and force and exception to be thrown immediately and
+  # further processing of the request terminated
+  
+
+  
+  my $guard;
+  
+  my $signal = 'USR1';
+  
+  # Set up the local signal handler and ensure it stays in scope
+  my $prev_handler = $SIG{$signal};
+  local $SIG{$signal} = sub {
+      $prev_handler->() if $prev_handler;
+      scream("SIGUSR1: Client Request Abort Detected - stopping Request processing...");
+      die "Client aborted the request\n";
+  };
+  
+  my $res = $self->app->($env);
+  
+  if(my $h = $env->{'psgix.io'}) {
+    # Watch for client disconnect before calling the app
+    $guard = AnyEvent->io(
+        fh => $h,
+        poll => 'r',  # This sets up a read watcher on the file handle
+        cb => sub {
+            unless ($h->opened) {
+                # Client has aborted
+                scream("Client Request Abort Detected - sending SIGUSR1...");
+                kill $signal, $$;
+            }
+        },
+    );
+    
+    return Plack::Util::response_cb($res, sub {
+        return sub {
+            my $chunk = shift;
+            if (!defined $chunk) {
+                undef $guard
+            }
+            return $chunk;
+        };
+    });
+    
+  }
+  else {
+    return Plack::Util::response_cb($res, sub {
+        my $responder = shift;
+        
+        scream($responder);
+
+        # Setup a periodic timer to send data to the client and detect disconnects
+        my $timer;
+        my $writer = $responder->([200, ['Content-Type' => 'text/plain']]);
+
+        $timer = AnyEvent->timer(
+            after => 1,
+            interval => 1,
+            cb => sub {
+                try {
+                    $writer->write("");
+                } catch {
+                    kill $signal, $$;
+                    undef $timer; # Stop the timer
+                };
+            },
+        );
+
+        return sub {
+            my $chunk = shift;
+            if (!defined $chunk) {
+                # Cleanup happens automatically when $timer goes out of scope
+                undef $timer;
+                $writer->close;
+            }
+            return $chunk;
+        };
+    });
+  
+  }
+
 }
 
 
