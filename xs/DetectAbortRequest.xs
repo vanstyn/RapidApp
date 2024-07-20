@@ -6,16 +6,19 @@
 #include <signal.h>
 #include <stdlib.h>
 
-static pthread_t watch_thread;
-static int watch_fd;
-static int watch_signal;
-static int stop_watching = 0;
+typedef struct {
+    int fd;
+    int signal;
+    int stop_watching;
+    pthread_t watch_thread;
+} WatchArgs;
 
 void* watch_for_disconnect_io(void* arg) {
+    WatchArgs* args = (WatchArgs*) arg;
     char buf;
-    while (!stop_watching) {
-        if (read(watch_fd, &buf, 1) <= 0) {
-            kill(getpid(), watch_signal);
+    while (!args->stop_watching) {
+        if (read(args->fd, &buf, 1) <= 0) {
+            kill(getpid(), args->signal);
             break;
         }
     }
@@ -23,11 +26,12 @@ void* watch_for_disconnect_io(void* arg) {
 }
 
 void* watch_for_disconnect_timer(void* arg) {
-    while (!stop_watching) {
+    WatchArgs* args = (WatchArgs*) arg;
+    while (!args->stop_watching) {
         sleep(1);
         // Dummy write to trigger disconnect detection
         if (write(STDOUT_FILENO, "", 0) == -1) {
-            kill(getpid(), watch_signal);
+            kill(getpid(), args->signal);
             break;
         }
     }
@@ -35,49 +39,69 @@ void* watch_for_disconnect_timer(void* arg) {
 }
 
 void start_disconnect_watcher_io(int fd, int signal) {
-    watch_fd = fd;
-    watch_signal = signal;
-    stop_watching = 0;
-    pthread_create(&watch_thread, NULL, watch_for_disconnect_io, NULL);
+    WatchArgs* args = malloc(sizeof(WatchArgs));
+    args->fd = fd;
+    args->signal = signal;
+    args->stop_watching = 0;
+    if (pthread_create(&args->watch_thread, NULL, watch_for_disconnect_io, args) != 0) {
+        free(args);
+        Perl_warn("pthread_create() failed");
+    }
 }
 
 void stop_disconnect_watcher_io() {
-    stop_watching = 1;
-    pthread_join(watch_thread, NULL);
+    extern WatchArgs* args;
+    args->stop_watching = 1;
+    if (pthread_join(args->watch_thread, NULL) != 0) {
+        Perl_warn("pthread_join() failed");
+    }
+    free(args);
 }
 
 void start_disconnect_watcher_timer(int signal) {
-    watch_signal = signal;
-    stop_watching = 0;
-    pthread_create(&watch_thread, NULL, watch_for_disconnect_timer, NULL);
+    WatchArgs* args = malloc(sizeof(WatchArgs));
+    args->signal = signal;
+    args->stop_watching = 0;
+    if (pthread_create(&args->watch_thread, NULL, watch_for_disconnect_timer, args) != 0) {
+        free(args);
+        Perl_warn("pthread_create() failed");
+    }
 }
 
 void stop_disconnect_watcher_timer() {
-    stop_watching = 1;
-    pthread_join(watch_thread, NULL);
+    extern WatchArgs* args;
+    args->stop_watching = 1;
+    if (pthread_join(args->watch_thread, NULL) != 0) {
+        Perl_warn("pthread_join() failed");
+    }
+    free(args);
 }
 
-MODULE = RapidApp::Util::XS::DetectAbortReqest  PACKAGE = RapidApp::Util::XS::DetectAbortReqest
+MODULE = RapidApp::Util::XS::DetectAbortRequest  PACKAGE = RapidApp::Util::XS::DetectAbortRequest
 
 void
 start_disconnect_watcher_io(fd, signal)
     int fd
     int signal
+  PROTOTYPE: $$
   CODE:
     start_disconnect_watcher_io(fd, signal);
 
 void
 stop_disconnect_watcher_io()
+  PROTOTYPE: $
   CODE:
     stop_disconnect_watcher_io();
 
 void
 start_disconnect_watcher_timer(signal)
     int signal
+  PROTOTYPE: $
   CODE:
     start_disconnect_watcher_timer(signal);
 
 void
 stop_disconnect_watcher_timer()
+  PROTOTYPE: $
   CODE:
     stop_disconnect_watcher_timer();
