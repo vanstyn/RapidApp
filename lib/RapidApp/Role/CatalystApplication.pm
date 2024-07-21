@@ -14,6 +14,8 @@ use Carp 'croak';
 require Data::Dumper::Concise;
 use URI::Escape;
 
+use RapidApp::Util::PSGI::ThreadSocketWatch;
+
 use RapidApp;
 use Template;
 
@@ -240,7 +242,7 @@ sub _rapidapp_top_level_dispatch {
 	$c->stash->{onrequest_time_elapsed}= 0;
   
   try {
-    $orig->($c, @args);
+    &_handle_aborted_request_around_dispatch($orig,$c, @args);
     if(my ($err) = (@{ $c->error })) {
       if (blessed($err) && $err->isa('RapidApp::Responder')) {
         $c->clear_errors;
@@ -316,6 +318,51 @@ sub _rapidapp_top_level_dispatch {
 		$c->log->error("Body was set, but content-type was not!  This can lead to encoding errors!");
 	}
 };
+
+
+sub _handle_aborted_request_around_dispatch {
+  my ($orig, $c, @args) = @_;
+  
+  my $signal = 'USR1';
+  
+  my $Watcher = RapidApp::Util::PSGI::ThreadSocketWatch->new(
+    psgi_env => $c->engine->env,
+    signal   => join('','SIG',$signal)
+  );
+  
+  if (my $reason = $Watcher->not_startable_reason) {
+    warn "Not able to start ThreadSocketWatch because: $reason";
+    
+    scream($c->engine->env);
+    
+    return $c->$orig(@args);
+  }
+
+  # Set up the local signal handler for USR1
+  local $SIG{$signal} = sub {
+    warn "SIG${signal}: Client Request Abort Detected - stopping Request processing...\n";
+    die "Client aborted the request\n";
+  };
+  
+  $Watcher->start;
+  
+  my $ret;
+  
+  try {
+    $ret = $orig->($c, @args);
+  }
+  catch {
+    my $err = shift;
+    $Watcher->stop;
+    die $err
+  };
+  
+  $Watcher->stop;
+  
+  return $ret;
+}
+
+
 
 sub module_root_namespace {
   my $c = shift;
