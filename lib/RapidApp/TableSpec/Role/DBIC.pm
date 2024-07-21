@@ -592,9 +592,9 @@ sub get_distance {
 
 #around colspec_test => &func_debug_around();
 
-# NOTE: re-implemented in RapidApp::Util::colspec_select_columns, for 
-# ability to replace with XS.
-#
+# TODO:
+# abstract this logic (much of which is redundant) into its own proper class 
+# (merge with Mike's class)
 # Tests whether or not the supplied column name matches the supplied colspec.
 # Returns 1 for positive match, 0 for negative match (! prefix) and undef for no match
 sub _colspec_test($$){
@@ -655,6 +655,18 @@ sub _colspec_test($$){
 	return undef;
 }
 
+#
+# colspec_test_key is used to see if _colspec_test changed, this is
+# the only relevant indicator to refetch the result for the given
+# colspec_test
+#
+use B::Deparse;
+our $colspec_test_source;
+{
+	my $deparse = B::Deparse->new;
+	$colspec_test_source = $deparse->coderef2text(\&_colspec_test);
+}
+
 # New: caching wrapper for performance:
 sub colspec_test($$){
   my ( $self, @args ) = @_;
@@ -698,19 +710,87 @@ sub colspec_matches_columns {
 	return 0;
 }
 
+our $colspec_select_columns_source;
+
 # Returns a sublist of the supplied columns that match the supplied colspec set.
 # The colspec set is considered as a whole, with each column name tested against
 # the entire compiled set, which can contain both positive and negative (!) colspecs,
 # with the most recent match taking precidence.
 sub colspec_select_columns {
-  my $self= shift;
-  # External function so that XS can replace it at runtime
-  # Otherwise functions of this role get copied into who knows what classes
-  RapidApp::Util::_colspec_select_columns(
-    sep => $self->relation_sep,
-    ref $_[0] eq 'HASH'? %{$_[0]} : @_
-  );
+	my $self = shift;
+	my %opt = (ref($_[0]) eq 'HASH') ? %{ $_[0] } : @_; # <-- arg as hash or hashref
+
+	$self->{_colspec_select_columns_cache} = {}
+		unless defined $self->{_colspec_select_columns_cache};
+
+	my $colspecs = $opt{colspecs} or die "colspec_select_columns(): expected 'colspecs'";
+	my $columns = $opt{columns} or die "colspec_select_columns(): expected 'columns'";
+	$columns = [ sort { $a cmp $b } @{$columns} ];
+
+	my $colspec_select_columns_key = join('_',
+		md5_hex(join('_',@{$colspecs})),
+		md5_hex(join('_',@{$columns})),
+	);
+
+	return @{$self->{_colspec_select_columns_cache}{$colspec_select_columns_key}}
+		if defined $self->{_colspec_select_columns_cache}{$colspec_select_columns_key};
+
+	my $cache_key;
+	if ($self->has_cache) {
+		$cache_key = join('_','colspec_select_columns_cache',
+			md5_hex($colspec_test_source.$colspec_select_columns_source),
+			md5_hex($self->ResultClass),
+			$colspec_select_columns_key,
+		);
+		my $cache_content = $self->cache->get($cache_key);
+		return @{$self->{_colspec_select_columns_cache}{$colspec_select_columns_key} = $cache_content}
+			if $cache_content;
+	}
+
+	# if best_match_look_ahead is true, the current remaining colspecs will be passed
+	# to each invocation of colspec_test which will cause it to only return a match
+	# when testing the *closest* (according to WagnerFischer edit distance) colspec
+	# of the set to the column. This prevents 
+	my $best_match = $opt{best_match_look_ahead};
+	
+	$colspecs = [ $colspecs ] unless (ref $colspecs);
+	$columns = [ $columns ] unless (ref $columns);
+	
+	$opt{match_data} = {} unless ($opt{match_data});
+
+	my %match = map { $_ => 0 } @$columns;
+	my @order = ();
+	my $i = 0;
+	for my $spec (@$colspecs) {
+		my @remaining = @$colspecs[++$i .. $#$colspecs];
+		for my $col (@$columns) {
+
+			my @arg = ($spec,$col);
+			push @arg, @remaining if ($best_match); # <-- push the rest of the colspecs after the current for index
+			
+			my $result = $self->colspec_test(@arg) or next;
+			push @order, $col if ($result > 0);
+			$match{$col} = $result;
+			$opt{match_data}->{$col} = {
+				index => $i - 1,
+				colspec => $spec
+			} unless ($opt{match_data}->{$col});
+		}
+	}
+	
+	my $colspec_select_columns = [ uniq(grep { $match{$_} > 0 } @order) ];
+	if ($cache_key) {
+		$self->cache->set($cache_key,$colspec_select_columns);
+	}
+	return @{$self->{_colspec_select_columns_cache}{$colspec_select_columns_key} = $colspec_select_columns};
 }
+
+{
+	my $deparse = B::Deparse->new;
+	$colspec_select_columns_source = $deparse->coderef2text(\&colspec_select_columns);
+}
+
+
 
 sub _order_columns_by_result_source1 {
   my ($self, $rsource, @columns) = @_;

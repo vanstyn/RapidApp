@@ -60,8 +60,6 @@ use RapidApp::HTML::RawHtml;
 use RapidApp::Handler;
 use HTML::Entities;
 use RapidApp::RootModule;
-use Text::Glob ();
-use Text::WagnerFischer ();
 
 
 ########################################################################
@@ -130,95 +128,6 @@ sub _merge_right_precedent {
   else {
     return $right;
   }
-}
-
-# Returns a sublist of the supplied columns that match the supplied colspec set.
-# The colspec set is considered as a whole, with each column name tested against
-# the entire compiled set, which can contain both positive and negative (!) colspecs,
-# with the most recent match taking precidence.
-#my $n= 0;
-#my %seen;
-#open my $fh, '>', "/opt/app/tmp/colspec_test.json" or die;
-#require Cpanel::JSON::XS;
-#my $json= Cpanel::JSON::XS->new->canonical->ascii;
-sub _colspec_select_columns {
-#  my %input = @_;
-#  my $input_key= md5_hex($json->encode(\%input));
-#  my @output= __colspec_select_columns(@_);
-#  unless ($seen{$input_key}++) {
-#    $fh->print($json->encode([ \%input, \@output, delete $input{match_data} ])."\n");
-#    $fh->flush;
-#  }
-#  #exit if ++$n > 10;
-#  @output;
-#}
-#sub __colspec_select_columns {
-  my %opt = @_;
-
-  my $colspecs = $opt{colspecs} or die "colspec_select_columns(): expected 'colspecs'";
-  my $columns = $opt{columns} or die "colspec_select_columns(): expected 'columns'";
-  my $best_match = $opt{best_match_look_ahead};
-  my $match_data = $opt{match_data};
-  my $sep        = $opt{sep} || '__';
-  
-  # Many invocations have zero colspecs?  Seems like a bug.
-  return () unless @$colspecs && @$columns;
-  
-  # Many invocations just compare a single non-wildcard string to a long list of columns
-  my %colset; $colset{$_}= 1 for @$columns;
-  if (@$colspecs == 1 and (my ($not, $name)= $colspecs->[0] =~ /^([!]?)(\w+)\Z/)) {
-    if ($not) {
-      delete $colset{$name};
-      return sort keys %colset;
-    }
-    return exists $colset{$name}? ( $name ) : ();
-  }
-  
-  my (%match, %match_order, $sorted, $next_order);
-  $next_order= 1;
-  for my $i (0..$#$colspecs) {
-    my ($not, $relspec, $colspec)= $colspecs->[$i] =~ /^([!]?)((?:\w+\.)*)([\w*]+)\Z/ or do {
-      warn "Unhandled colspec syntax '$colspecs->[$i]'";
-      next;
-    };
-    my $prefix= ($relspec =~ s/\./$sep/gr);
-    # No wildcard? then just look for this one column
-    if (index($colspec, '*') == -1) {
-      my $col= $prefix . $colspec;
-      next unless exists $colset{$col};
-      # If positive match, add it
-      my $distance= ($not? -1 : 1);
-      if ($best_match) {
-        next exists $match{$col} || abs $distance < abs $match{$col};
-        $not? (delete $match_order{$col}) : ($match_order{$col}= ++$next_order);
-      } else {
-        $not? (delete $match_order{$col}) : ($match_order{$col} ||= ++$next_order);
-      }
-      $match{$col}= $distance;
-      $match_data->{$col}= { index => $i, colspec => $colspecs->[$i] }
-        if $match_data;
-    } else {
-      # Need to compare every remaining column to the wildcard
-      for my $col (@{ $sorted ||= [ sort keys %colset ] }) {
-        my $pos= rindex($col, $sep);
-        next if $pos < 0? length($prefix) : $prefix ne substr($col, 0, $pos+length($sep));
-        my $test_col= substr($col, length $prefix);
-        next unless $colspec eq '*' || Text::Glob::match_glob($colspec, $test_col);
-        my $distance= ($not? -1 : 1);
-        if ($best_match) {
-          $distance *= (1 + ($colspec eq '*'? length $test_col : Text::WagnerFischer::distance($colspec, $test_col)));
-          next unless !exists $match{$col} || abs $distance < abs $match{$col};
-          $not? (delete $match_order{$col}) : ($match_order{$col}= ++$next_order);
-        } else {
-          $not? (delete $match_order{$col}) : ($match_order{$col} ||= ++$next_order);
-        }
-        $match{$col}= $distance;
-        $match_data->{$col}= { index => $i, colspec => $colspecs->[$i] }
-          if $match_data;
-      }
-    }
-  }
-  return sort { $match_order{$a} <=> $match_order{$b} } keys %match_order;
 }
 
 # Takes a list and returns a HashRef. List can be a mixed Hash/List:
