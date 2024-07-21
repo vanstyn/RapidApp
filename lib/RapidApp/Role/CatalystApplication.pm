@@ -117,7 +117,8 @@ before 'setup_middleware' => sub {
   $app->config( disable_component_resolution_regex_fallback => 1 );
   
   unshift @{ $app->config->{'psgi_middleware'} ||= [] },
-    '+RapidApp::Plack::Middleware'
+    '+RapidApp::Plack::Middleware',
+    '+RapidApp::Plack::Middleware::ThreadedSocketWatch'
 };
 
 sub application_has_root_controller {
