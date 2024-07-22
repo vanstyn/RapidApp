@@ -9,6 +9,8 @@ requires 'record_pk';
 
 # Copied from (RapidApp::)Role::DbicLink2
 
+use RapidApp::Util::PSGI::InlineCSocketWatch qw(start_watch_socket stop_watch_socket socket_from_psgi_env);
+use POSIX ':signal_h';
 
 use RapidApp::Util qw(:all);
 use RapidApp::TableSpec::DbicTableSpec;
@@ -788,6 +790,38 @@ sub read_records {
   
   my $Rs = $self->get_read_records_Rs($params);
   
+  
+  my $dbh = $Rs->result_source->schema->storage->dbh;
+  
+  my %attributes;
+
+  # Use eval to handle any errors in accessing attributes
+  foreach my $attr (keys %$dbh) {
+      my $value = eval { $dbh->{$attr} };
+      $value = 'undef' if $@ || !defined $value;
+      $attributes{$attr} = $value;
+  }
+  
+  scream_color(CYAN,\%attributes);
+  
+  my $req_socket = socket_from_psgi_env($self->c->engine->env);
+  my $mysql_socket = $dbh->{mysql_sockfd};
+  
+  if($req_socket && $mysql_socket) {
+    scream("START WATCH");
+    start_watch_socket($req_socket,SIGUSR1,$mysql_socket);
+  }
+  
+  my $signal = 'USR1';
+  
+  local $SIG{$signal} = sub {
+    warn "SIG${signal}: Client Request Abort Detected - stopping Request processing...\n";
+    die RED.BOLD. " ---> SocketWatch signal SIG${signal}: Request Aborted.\n" . CLEAR;
+  };
+  
+  
+
+  
   # -- Github Issue #10 - SQLite-specific fix --
   local $Rs->result_source->storage->dbh
     ->{sqlite_see_if_its_a_number} = 1;
@@ -802,18 +836,26 @@ sub read_records {
   try {
     my $start = [gettimeofday];
     
+    scream("mysql_sockfd_before all: " . $dbh->{mysql_sockfd});
+    
     # -----
     $rows = [ $self->rs_all($Rs2) ];
+    
+    scream("mysql_sockfd_after all: " . $dbh->{mysql_sockfd});
     #Hard coded munger for record_pk:
     foreach my $row (@$rows) { $row->{$self->record_pk} = $self->generate_record_pk_value($row); }
     $self->apply_first_records($Rs2,$rows,$params);
     # -----
+    
+    
+    
     
     my $elapsed = tv_interval($start);
     $self->c->stash->{query_time} = sprintf('%.2f',$elapsed) . 's';
   }
   catch {
     my $err = shift;
+    stop_watch_socket();
     $self->handle_dbic_exception($err);
   };
   
@@ -824,6 +866,7 @@ sub read_records {
   }
   catch {
     my $err = shift;
+    stop_watch_socket();
     local $append_exception_title = '(total count)';
     $self->handle_dbic_exception($err);
   };
@@ -835,6 +878,11 @@ sub read_records {
   };
   
   $self->calculate_column_summaries($ret,$Rs,$params) unless($self->single_record_fetch);
+  
+  scream("mysql_sockfd_after count: " . $dbh->{mysql_sockfd});
+  
+  stop_watch_socket();
+  
   
   return $ret;
 }

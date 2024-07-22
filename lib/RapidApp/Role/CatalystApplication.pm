@@ -242,7 +242,8 @@ sub _rapidapp_top_level_dispatch {
 	$c->stash->{onrequest_time_elapsed}= 0;
   
   try {
-    &_handle_aborted_request_around_dispatch($orig,$c,@args);
+    #&_handle_aborted_request_around_dispatch($orig,$c,@args);
+    $c->$orig(@args);
     if(my ($err) = (@{ $c->error })) {
       if (blessed($err) && $err->isa('RapidApp::Responder')) {
         $c->clear_errors;
@@ -341,7 +342,7 @@ sub _handle_aborted_request_around_dispatch {
   # Set up the local signal handler for USR1
   local $SIG{$signal} = sub {
     warn "SIG${signal}: Client Request Abort Detected - stopping Request processing...\n";
-    die "Client aborted the request\n";
+    die RED.BOLD. " ---> SocketWatch signal SIG${signal}: Request Aborted.\n" . CLEAR;
   };
   
   $Watcher->start;
