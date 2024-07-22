@@ -1,12 +1,18 @@
-package RapidApp::Plack::Middleware::ThreadedSocketWatch;
-use parent 'Plack::Middleware';
-
+package RapidApp::Util::PSGI::ThreadedSocketWatch;
 use strict;
 use warnings;
 
-# ABSTRACT: Inline C threaded client socket watcher
+# ABSTRACT: Inline C socket thread watcher
+
+use Moo;
+use Types::Standard qw(:all);
+use Scalar::Util qw/blessed/;
 
 use RapidApp::Util qw(:all);
+
+use Socket ':all';
+use POSIX ':signal_h';
+use PadWalker 'peek_sub';
 
 use Inline C => <<'END_C';
 #include <sys/stat.h>
@@ -45,13 +51,13 @@ void* watch_main(void* unused) {
       if (watch_fd > max_fd)
         max_fd= watch_fd;
     }
-		// If there's a socket, need to poll it for write status occasionally
+    // If there's a socket, need to poll it for write status occasionally
     // because there's no way to select on that.
-		timeout.tv_sec= sig && watch_fd >= 0? 0 : 1000000;
-		timeout.tv_usec= 500000;
-		// wait for file handles to be readable, or error out
-		n_ready= select(max_fd+1, &rd_fds, NULL, &er_fds, &timeout);
-		if (n_ready > 0) { // triggered by events on files
+    timeout.tv_sec= sig && watch_fd >= 0? 0 : 1000000;
+    timeout.tv_usec= 500000;
+    // wait for file handles to be readable, or error out
+    n_ready= select(max_fd+1, &rd_fds, NULL, &er_fds, &timeout);
+    if (n_ready > 0) { // triggered by events on files
       // New control message
       if (FD_ISSET(control_pipe[0], &rd_fds)) {
         struct control_msg msg;
@@ -67,10 +73,10 @@ void* watch_main(void* unused) {
           continue;
         }
       }
-		} else if (n_ready < 0) {
-			perror("select failed"); // something unexpected went wrong
+    } else if (n_ready < 0) {
+      perror("select failed"); // something unexpected went wrong
       break;
-		}
+    }
     // If watch is armed, check socket status
     if (sig && watch_fd >= 0) {
       bool read_closed= false, write_closed= false;
@@ -101,8 +107,8 @@ void* watch_main(void* unused) {
         watch_fd= -1;
       }
     }
-	}
-	return NULL;
+  }
+  return NULL;
 }
 int watch_socket(int sock, int sig) {
   int err;
@@ -148,16 +154,21 @@ int terminate_watcher() {
 }
 END_C
 
-use POSIX ':signal_h';
-use PadWalker 'peek_sub';
-
-
 sub stop_watch_socket { watch_socket(-1, 0) }
 
-sub call {
-  my ($self, $env) = @_;
+
+has 'psgi_env', is => 'ro', isa => HashRef, required => 1;      
+has 'signal',         is => 'ro', isa => Str, default => sub { 'SIGUSR1' };
+
+has '_started', is => 'rw', isa => Bool, default => sub {0}, init_arg => undef;
+has '_started_and_stopped', is => 'rw', isa => Bool, default => sub {0}, init_arg => undef;
+
+has 'socket', is => 'ro', lazy => 1, default => sub {
+  my $self = shift;
   
-  my $socket;
+  my $env = $self->psgi_env;
+  
+  my $socket = undef;
   if (ref (my $handle = $env->{"psgix.io"})) {
     $socket = fileno($handle);
   } elsif ($env->{'psgix.informational'}) {
@@ -165,53 +176,96 @@ sub call {
     $socket = $$conn_ref if $conn_ref;
   }
   
-  scream($env);
-  
-  unless($socket) {
-    warn "ThreadedSocketWatch: cannot start - psgix.io socket handle not available in psgi env";
-    return $self->app->($env);
-  }
-  
-  my $watch_started = 0;
+  $socket
+};
+
+
+sub BUILD {
+  my $self = shift;
   
   try {
-    $watch_started = 1 if (watch_socket($socket, SIGUSR1));
+    # use POSIX ':signal_h' exports signal keywords, so if this 
+    # fails, it must be a bad signal keyword
+    eval $self->signal; 
   }
   catch {
     my $err = shift;
-    warn "ThreadedSocketWatch: exception - $err";
-    $watch_started = 0;
-    stop_watch_socket(); # for good measure
+    die join('', 'Bad signal value "',$self->signal,'" - did not evaluate as POSIX signal keyword. Caught: ',$err);
   };
   
-  my $return;
+}
+
+sub is_startable { (shift)->not_startable_reason ? 0 : 1 }
+
+sub not_startable_reason {
+  my $self = shift;
+
+  $self->_started and return "already started";
   
-  if($watch_started) {
-    $return = sub {
-      my $responder = shift;
-      
-      local $SIG{USR1} = sub { 
-        die "ThreadedSocketWatch: client aborted/disconnected.\n"; 
-      };
-      
-      my $response = $self->app->($env);
-      
-      # Because we get back a CodeRef, we have to wrap it and call it ourselves
-      # in our own CodeRef so that our localized USR1 signal handler is in scope
-      # when Catalyst Code is actually ran
-      my $ret = ref $response eq 'CODE'
-        ? $response->($responder)
-        : $responder->($response);
-      
-      stop_watch_socket();
-      
-    };
+  $self->_started_and_stopped and return join(" ",
+    "The socket watcher has already been started and was subsequently stopped.",
+    "This Object class should only ever be used once - create a new watcher object if",
+    "you need to start a new watcher thread"
+  );
+  
+  ! $self->psgi_env->{'psgi.streaming'} and return join(" ",
+    "'psgi.streaming' is not set in the supplied PSGI env HashRef",
+    "which is required for this module to work. Make sure you're using a server",
+    "which supports PSGI Streaming"
+  );
+  
+  defined $self->socket or return join (" ",
+    "Unable to access the 'psgix.io' socket via the supplied PSGI env through either",
+    "direct inclusion in the env, nor from indirect access via 'psgix.informational'.",
+    "Access to this raw client socket is required for this module to work. Make sure you",
+    "are using a PSGI server which supports streaming and psgix I/O extensions."  
+  );
+  
+  fileno($self->socket) or return join (" ",
+    "Invalid psgix.io socket - not a file handle" 
+  );
+  
+  return undef;
+}
+
+
+sub start {
+  my $self = shift;
+  
+  if(my $reason = $self->not_startable_reason) {
+    die $reason;
+  }
+  
+  if(watch_socket($self->socket, eval $self->signal)) {
+    $self->_started(1);
   }
   else {
-    return $self->app->($env);
+    stop_watch_socket();
+    die "Unknown error assigning socket to watcher thread";
   }
+}
+
+sub stop {
+  my $self = shift;
   
-  return $return;
+  # Because the thread is always running, we still call stop for good measure,
+  # even when the stop call is invalid (such as not yet started)
+  stop_watch_socket();
+ 
+  $self->_started or die "not started";
+  $self->_started(0);
+  $self->_started_and_stopped(1);
+}
+
+sub DESTROY {
+  my $self = shift;
+  
+  # We always make the call to stop watching because the background thread
+  # survives the life of the object; once it is started for the first time,
+  # It's thread will run for the entire lifertime of the worker. So we want
+  # to error on the side of stopping it from watching sockets. This is a
+  # no-op if it isn't already watching a socket.
+  stop_watch_socket();
 }
 
 
