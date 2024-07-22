@@ -173,20 +173,34 @@ sub call {
     stop_watch_socket(); # for good measure
   };
   
-  my $ret;
+  my $return;
   
   if($watch_started) {
-    local $SIG{USR1} = sub { 
-      die "ThreadedSocketWatch: client aborted/disconnected.\n"; 
+    $return = sub {
+      my $responder = shift;
+      
+      local $SIG{USR1} = sub { 
+        die "ThreadedSocketWatch: client aborted/disconnected.\n"; 
+      };
+      
+      my $response = $self->app->($env);
+      
+      # Because we get back a CodeRef, we have to wrap it and call it ourselves
+      # in our own CodeRef so that our localized USR1 signal handler is in scope
+      # when Catalyst Code is actually ran
+      my $ret = ref $response eq 'CODE'
+        ? $response->($responder)
+        : $responder->($response);
+      
+      stop_watch_socket();
+      
     };
-    $ret = $self->app->($env);
   }
   else {
     return $self->app->($env);
   }
   
-  stop_watch_socket();
-  return $ret;
+  return $return;
 }
 
 
