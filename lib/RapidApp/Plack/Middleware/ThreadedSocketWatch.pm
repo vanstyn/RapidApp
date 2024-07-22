@@ -9,6 +9,7 @@ use warnings;
 use RapidApp::Util qw(:all);
 
 use Inline C => <<'END_C';
+#include <sys/stat.h>
 #define CONTROL_CANCEL    -1
 #define CONTROL_TERMINATE -2
 static pthread_t watch_thread;
@@ -103,9 +104,17 @@ void* watch_main(void* unused) {
 	}
 	return NULL;
 }
-void watch_socket(int sock, int sig) {
+int watch_socket(int sock, int sig) {
   int err;
   struct control_msg msg;
+
+  // If not -1, verify sock is actually a socket
+  if (sock >= 0) {
+    struct stat statbuf;
+    if (fstat(sock, &statbuf) < 0) croak("fstat failed %d", errno);
+    if (!S_ISSOCK(statbuf.st_mode)) croak("Descriptor %d is not a socket", sock);
+  }
+
   if (control_pipe[1] == -1) {
     if (pipe(control_pipe) != 0)
       croak("pipe: %d", errno);
@@ -121,8 +130,9 @@ void watch_socket(int sock, int sig) {
   msg.sig= sig;
   if (write(control_pipe[1], &msg, sizeof(msg)) != sizeof(msg))
     croak("write failed on control pipe");
+  return 1;
 }
-void terminate_watcher() {
+int terminate_watcher() {
   struct control_msg msg;
   if (control_pipe[1] >= 0) {
     msg.fd= CONTROL_TERMINATE;
@@ -134,6 +144,7 @@ void terminate_watcher() {
     close(control_pipe[0]);
     control_pipe[1]= control_pipe[0]= -1;
   }
+  return 1;
 }
 END_C
 
