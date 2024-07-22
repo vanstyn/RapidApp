@@ -221,8 +221,9 @@ sub not_startable_reason {
     "are using a PSGI server which supports streaming and psgix I/O extensions."  
   );
   
-  fileno($self->socket) or return join (" ",
-    "Invalid psgix.io socket - not a file handle" 
+  my $fd_number = ref $self->socket ? fileno($self->socket) : $self->socket;
+  ($fd_number =~ /^[0-9]+$/) or return join (" ",
+    "Invalid psgix.io socket - not a file handle ref or a file descriptor number" 
   );
   
   return undef;
