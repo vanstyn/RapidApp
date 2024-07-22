@@ -164,7 +164,8 @@ sub call {
   my $watch_started = 0;
   
   try {
-    $watch_started = 1 if (watch_socket($socket, SIGUSR1));
+    watch_socket($socket, SIGUSR1);
+    $watch_started = 1;
   }
   catch {
     my $err = shift;
