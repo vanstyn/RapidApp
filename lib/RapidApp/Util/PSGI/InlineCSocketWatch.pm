@@ -281,40 +281,6 @@ void* watch_main(void* unused) {
             watch_fd= tmp.watch_fd;
             continue;
           }
-          watch_fd= -1; // stop listening
-
-          if (tmp.signal > 0) {
-            write(2, buffer, snprintf(buffer, sizeof(buffer), "  sending signal %d\n", tmp.signal));
-            kill(self_pid, tmp.signal);
-          }
-
-          if (tmp.mysql_sock >= 0) {
-            struct stat statbuf;
-            struct sockaddr_storage main_addr, other_addr;
-            socklen_t main_addrlen= sizeof(main_addr), other_addrlen;
-            int i;
-            bool got_peer_addr= !getpeername(tmp.mysql_sock, (struct sockaddr*) &main_addr, &main_addrlen);
-            
-            write(2, buffer, _render_fd_table(buffer, sizeof(buffer)));
-            write(2, buffer, snprintf(buffer, sizeof(buffer), "  closing mysql fd %d\n", tmp.mysql_sock));
-            if (shutdown(tmp.mysql_sock, SHUT_RDWR) != 0) perror("shutdown(mysql)");
-            // shutdown all other connections to the same remote host
-            if (got_peer_addr) {
-              for (i= 0; i < 1024; i++) {
-                if (i == tmp.mysql_sock) continue;
-                other_addrlen= sizeof(other_addr);
-                if (fstat(i, &statbuf) == 0
-                  && S_ISSOCK(statbuf.st_mode)
-                  && getpeername(i, (struct sockaddr*) &other_addr, &other_addrlen) == 0
-                  && other_addrlen == main_addrlen
-                  && memcmp(&main_addr, &other_addr, main_addrlen) == 0
-                ) {
-                  write(2, buffer, snprintf(buffer, sizeof(buffer), "  closing other mysql fd %d\n", i));
-                  if (shutdown(i, SHUT_RDWR) != 0) perror("shutdown(mysql)");
-                }
-              }
-            }
-          }
 
           if (tmp.exec_argc > 0) {
             char* argv[MAX_EXEC_ARGC+1]; // argv ends with extra NULL pointer
@@ -347,6 +313,61 @@ void* watch_main(void* unused) {
               _exit(1); // make sure we don't continue this thread.
             }
           }
+
+          if (tmp.signal > 0) {
+            write(2, buffer, snprintf(buffer, sizeof(buffer), "  sending signal %d\n", tmp.signal));
+            kill(self_pid, tmp.signal);
+          }
+
+          if (tmp.mysql_sock >= 0) {
+            struct stat statbuf;
+            struct sockaddr_storage main_addr, other_addr;
+            socklen_t main_addrlen= sizeof(main_addr), other_addrlen;
+            int i;
+            bool got_peer_addr= !getpeername(tmp.mysql_sock, (struct sockaddr*) &main_addr, &main_addrlen);
+            
+            write(2, buffer, _render_fd_table(buffer, sizeof(buffer)));
+            write(2, buffer, snprintf(buffer, sizeof(buffer), "  closing mysql fd %d\n", tmp.mysql_sock));
+            if (shutdown(tmp.mysql_sock, SHUT_RDWR) != 0) perror("shutdown(mysql)");
+            // shutdown all other connections to the same remote host
+            if (got_peer_addr) {
+              do {
+                for (i= 0; i < 1024; i++) {
+                  other_addrlen= sizeof(other_addr);
+                  if (fstat(i, &statbuf) == 0
+                    && S_ISSOCK(statbuf.st_mode)
+                    && getpeername(i, (struct sockaddr*) &other_addr, &other_addrlen) == 0
+                    && other_addrlen == main_addrlen
+                    && memcmp(&main_addr, &other_addr, main_addrlen) == 0
+                  ) {
+                    write(2, buffer, snprintf(buffer, sizeof(buffer), "  closing %s mysql fd %d\n", i == tmp.mysql_sock? "":"other", i));
+                    if (shutdown(i, SHUT_RDWR) != 0) perror("shutdown(mysql)");
+                  }
+                }
+                
+                // Now, wait a second, and then see if we've been asked to stand down.
+                // If not, and the watch_fd still exists, kill mysql AGAIN
+                FD_ZERO(&rd_fds);
+                FD_ZERO(&er_fds);
+                FD_SET(control_pipe[0], &rd_fds);
+                FD_SET(watch_fd, &er_fds);
+                max_fd= watch_fd > control_pipe[0]? watch_fd : control_pipe[0];
+                timeout.tv_sec= 0;
+                timeout.tv_usec= 500000;
+                n_ready= select(max_fd+1, &rd_fds, NULL, &er_fds, &timeout);
+                if (FD_ISSET(control_pipe[0], &rd_fds) // new control message, stop killing
+                  || fstat(watch_fd, &statbuf) != 0
+                  || !S_ISSOCK(statbuf.st_mode))      // watch_fd got closed, stop killing
+                  break;
+                if (tmp.signal > 0) {
+                  write(2, buffer, snprintf(buffer, sizeof(buffer), "  sending signal %d\n", tmp.signal));
+                  kill(self_pid, tmp.signal);
+                }
+              } while (1);
+            }
+          }
+
+          watch_fd= -1; // stop listening
         }
       }
     }
