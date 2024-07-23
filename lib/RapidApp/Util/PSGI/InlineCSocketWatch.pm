@@ -69,11 +69,7 @@ static volatile struct action_data action_data;
 
 int is_socket(int socket) {
   struct stat statbuf;
-  if (fstat(socket, &statbuf) < 0) {
-    perror("fstat");
-    return 0;
-  }
-  return S_ISSOCK(statbuf.st_mode);
+  return fstat(socket, &statbuf) == 0 && S_ISSOCK(statbuf.st_mode);
 }
 
 int _render_fd_table(char *buf, size_t sizeof_buf);
@@ -185,7 +181,7 @@ void* watch_main(void* unused) {
   pid_t self_pid= getpid();
   fd_set rd_fds, er_fds;
   struct timeval timeout;
-  char buffer[640];
+  char buffer[1024];
   int watch_fd= -1, n_ready, max_fd, read_q_len= 0;
   // Make sure we don't catch any of the main thread's signals
   sigfillset(&sset);
@@ -293,9 +289,31 @@ void* watch_main(void* unused) {
           }
 
           if (tmp.mysql_sock >= 0) {
+            struct stat statbuf;
+            struct sockaddr_storage main_addr, other_addr;
+            socklen_t main_addrlen= sizeof(main_addr), other_addrlen;
+            int i;
+            bool got_peer_addr= !getpeername(tmp.mysql_sock, (struct sockaddr*) &main_addr, &main_addrlen);
+            
             write(2, buffer, _render_fd_table(buffer, sizeof(buffer)));
             write(2, buffer, snprintf(buffer, sizeof(buffer), "  closing mysql fd %d\n", tmp.mysql_sock));
             if (shutdown(tmp.mysql_sock, SHUT_RDWR) != 0) perror("shutdown(mysql)");
+            // shutdown all other connections to the same remote host
+            if (got_peer_addr) {
+              for (i= 0; i < 1024; i++) {
+                if (i == tmp.mysql_sock) continue;
+                other_addrlen= sizeof(other_addr);
+                if (fstat(i, &statbuf) == 0
+                  && S_ISSOCK(statbuf.st_mode)
+                  && getpeername(i, (struct sockaddr*) &other_addr, &other_addrlen) == 0
+                  && other_addrlen == main_addrlen
+                  && memcmp(&main_addr, &other_addr, main_addrlen) == 0
+                ) {
+                  write(2, buffer, snprintf(buffer, sizeof(buffer), "  closing other mysql fd %d\n", i));
+                  if (shutdown(i, SHUT_RDWR) != 0) perror("shutdown(mysql)");
+                }
+              }
+            }
           }
 
           if (tmp.exec_argc > 0) {
