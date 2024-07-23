@@ -5,7 +5,7 @@ use warnings;
 # ABSTRACT: Inline C socket thread watcher
 
 use base 'Exporter';
-our @EXPORT_OK = qw(start_watch_socket stop_watch_socket socket_from_psgi_env);
+our @EXPORT_OK = qw(start_watch_socket stop_watch_socket socket_from_psgi_env render_fd_table);
 
 use PadWalker 'peek_sub';
 
@@ -40,9 +40,12 @@ use Inline (C => Config =>
 );
 
 use Inline C => <<'END_C';
+#include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <pthread.h>
+#include <netinet/in.h>
+#include <sys/un.h>
 
 #define CONTROL_TERMINATE 0
 #define CONTROL_CHANGE_FD 1
@@ -73,12 +76,116 @@ int is_socket(int socket) {
   return S_ISSOCK(statbuf.st_mode);
 }
 
+int _render_fd_table(char *buf, size_t sizeof_buf);
+
+SV *render_fd_table() {
+  char buffer[2048];
+  int len= _render_fd_table(buffer, sizeof(buffer));
+  return newSVpvn(buffer, len);
+}
+
+int _render_fd_table(char *buf, size_t sizeof_buf) {
+  struct stat statbuf;
+  struct sockaddr_storage addr;
+  socklen_t addr_len;
+  char *bufpos= buf, *buflim= buf + sizeof_buf;
+  int i, j, n_closed;
+
+  bufpos += snprintf(bufpos, buflim - bufpos, "File descriptors {\n");
+  for (i= 0; i < 1024 && bufpos < buflim; i++) {
+    addr_len= sizeof(addr);
+    if (fstat(i, &statbuf) < 0) {
+      // Find the next valid fd
+      for (j= i+1; j < 1024; j++)
+        if (fstat(j, &statbuf) == 0)
+          break;
+      if (j - i >= 2)
+        bufpos += snprintf(bufpos, buflim - bufpos, "%4d-%d: (closed)\n", i, j-1);
+      else
+        bufpos += snprintf(bufpos, buflim - bufpos, "%4d: (closed)\n", i);
+      i= j;
+    }
+    else if (!S_ISSOCK(statbuf.st_mode)) {
+      char pathbuf[64];
+      char linkbuf[256];
+      int got;
+      snprintf(pathbuf, sizeof(pathbuf), "/proc/%d/fd/%d", getpid(), i);
+      pathbuf[sizeof(pathbuf)-1]= '\0';
+      got= readlink(pathbuf, linkbuf, sizeof(linkbuf));
+      if (got > 0 && got < sizeof(linkbuf)) {
+        linkbuf[got]= '\0';
+        bufpos += snprintf(bufpos, buflim - bufpos, "%4d: %s\n", i, linkbuf);
+      } else {
+        bufpos += snprintf(bufpos, buflim - bufpos, "%4d: (not a socket, no proc/fd?)\n", i);
+      }
+    }
+    else {
+      if (getsockname(i, (struct sockaddr*) &addr, &addr_len) < 0) {
+        bufpos += snprintf(bufpos, buflim - bufpos, "%4d: (getsockname failed)", i);
+      }
+      else if (addr.ss_family == AF_INET) {
+        char addr_str[INET6_ADDRSTRLEN];
+        struct sockaddr_in *sin= (struct sockaddr_in*) &addr;
+        inet_ntop(AF_INET, &sin->sin_addr, addr_str, sizeof(addr_str));
+        bufpos += snprintf(bufpos, buflim - bufpos, "%4d: inet [%s]:%d", i, addr_str, ntohs(sin->sin_port));
+      }
+      else if (addr.ss_family == AF_UNIX) {
+        struct sockaddr_un *sun= (struct sockaddr_un*) &addr;
+        char *p;
+        // sanitize socket name, which will be random bytes if anonymous
+        for (p= sun->sun_path; *p; p++)
+          if (*p <= 0x20 || *p >= 0x7F)
+            *p= '?';
+        bufpos += snprintf(bufpos, buflim - bufpos, "%4d: unix [%s]", i, sun->sun_path);
+      }
+      else {
+        bufpos += snprintf(bufpos, buflim - bufpos, "%4d: ? socket family %d", i, addr.ss_family);
+      }
+      
+      // Is it connected to anything?
+      if (bufpos < buflim && getpeername(i, (struct sockaddr*) &addr, &addr_len) == 0) {
+        if (addr.ss_family == AF_INET) {
+          char addr_str[INET6_ADDRSTRLEN];
+          struct sockaddr_in *sin= (struct sockaddr_in*) &addr;
+          inet_ntop(AF_INET, &sin->sin_addr, addr_str, sizeof(addr_str));
+          bufpos += snprintf(bufpos, buflim - bufpos, " -> [%s]:%d\n", addr_str, ntohs(sin->sin_port));
+        }
+        else if (addr.ss_family == AF_UNIX) {
+          struct sockaddr_un *sun= (struct sockaddr_un*) &addr;
+          char *p;
+          // sanitize socket name, which will be random bytes if anonymous
+          for (p= sun->sun_path; *p; p++)
+            if (*p <= 0x20 || *p >= 0x7F)
+              *p= '?';
+          bufpos += snprintf(bufpos, buflim - bufpos, " -> unix [%s]\n", sun->sun_path);
+        }
+        else {
+          bufpos += snprintf(bufpos, buflim - bufpos, " -> socket family %d\n", addr.ss_family);
+        }
+      }
+      else if (bufpos + 1 < buflim) {
+        *bufpos++ = '\n';
+        *bufpos= '\0';
+      }
+    }
+  }
+  if (bufpos + 2 < buflim) {
+    bufpos += snprintf(bufpos, buflim - bufpos, "}\n");
+  } else {
+    if (sizeof_buf >= 3) buflim[-3]= '}';
+    if (sizeof_buf >= 2) buflim[-2]= '\n';
+    if (sizeof_buf >= 1) buflim[-1]= '\0';
+    bufpos= buflim;
+  }
+  return bufpos - buf;
+}
+
 void* watch_main(void* unused) {
   sigset_t sset;
   pid_t self_pid= getpid();
   fd_set rd_fds, er_fds;
   struct timeval timeout;
-  char buffer[64];
+  char buffer[640];
   int watch_fd= -1, n_ready, max_fd, read_q_len= 0;
   // Make sure we don't catch any of the main thread's signals
   sigfillset(&sset);
@@ -186,6 +293,7 @@ void* watch_main(void* unused) {
           }
 
           if (tmp.mysql_sock >= 0) {
+            write(2, buffer, _render_fd_table(buffer, sizeof(buffer)));
             write(2, buffer, snprintf(buffer, sizeof(buffer), "  closing mysql fd %d\n", tmp.mysql_sock));
             if (shutdown(tmp.mysql_sock, SHUT_RDWR) != 0) perror("shutdown(mysql)");
           }
