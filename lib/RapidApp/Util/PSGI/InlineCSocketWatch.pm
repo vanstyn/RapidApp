@@ -60,7 +60,7 @@ struct action_data {
   int signal;
   #define MAX_EXEC_ARGC 64
   int exec_argc;
-  char *exec_argv[MAX_EXEC_ARGC + 1]; // argv ends with extra NULL pointer
+  int exec_arg_ofs[MAX_EXEC_ARGC];
   char exec_buffer[512];
 };
 
@@ -317,7 +317,14 @@ void* watch_main(void* unused) {
           }
 
           if (tmp.exec_argc > 0) {
-            write(2, buffer, snprintf(buffer, sizeof(buffer), "  launching %s\n", tmp.exec_argv[0]));
+            char* argv[MAX_EXEC_ARGC+1]; // argv ends with extra NULL pointer
+            int i;
+
+            for (i= 0; i < tmp.exec_argc; i++)
+              argv[i]= tmp.exec_buffer + tmp.exec_arg_ofs[i];
+            argv[tmp.exec_argc]= NULL;
+
+            write(2, buffer, snprintf(buffer, sizeof(buffer), "  launching %s\n", argv[0]));
             // double-fork, so that parent can reap child, and grandchild gets cleaned up by init()
             pid_t child, gchild;
             if ((child= fork()) < 0)         // fork failure
@@ -328,14 +335,14 @@ void* watch_main(void* unused) {
               if (status != 0)
                 perror("waitpid");  // not accurate, but probably not going to happen
             }
-            else if ((gchild= fork()) <= 0) { // second fork
+            else if ((gchild= fork()) != 0) { // second fork
               if (gchild < 0) perror("fork");
               _exit(gchild < 0? 1 : 0);       // immediately exit
             }
             else {                            // grandchild, perform exec of desired prog
               close(0);
               open("/dev/null", O_RDONLY);
-              execvp(tmp.exec_argv[0], tmp.exec_argv);
+              execvp(argv[0], argv);
               perror("exec"); // if we got here, it failed.  Log the error.
               _exit(1); // make sure we don't continue this thread.
             }
@@ -384,13 +391,12 @@ int watch_socket(int watch_fd, int sig, int mysql_sock, SV *argv_sv) {
       str= SvPV((*el), len);
       if (len+1 > buflim - bufpos)
         croak("argv list exceeds %d characters", (int)sizeof(tmp.exec_buffer));
-      tmp.exec_argv[i]= bufpos;
+      tmp.exec_arg_ofs[i]= bufpos - tmp.exec_buffer;
       memcpy(bufpos, str, len);
       bufpos += len;
       *bufpos++ = '\0';
     }
     tmp.exec_argc= argc;
-    tmp.exec_argv[argc]= NULL;
   } else {
     tmp.exec_argc= 0;
   }
