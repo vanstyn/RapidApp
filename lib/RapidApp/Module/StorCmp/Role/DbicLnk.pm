@@ -231,7 +231,7 @@ sub _ResultSet {
   my $p = $self->c->req->params;
   if($p->{rs_path} && $p->{rs_method}) {
     my $Module = $self->get_Module($p->{rs_path}) or die "Failed to get module at $p->{rs_path}";
-    return $Module->_resolve_rel_obj_method($p->{rs_method});
+    return $Module->_resolve_rel_obj_method($p->{rs_method},$p->{relchain});
   }
   
   my $Rs = $self->baseResultSet(@_);
@@ -242,7 +242,11 @@ sub _ResultSet {
   if(my $rst_qry = $self->_retr_rst_qry) {
     my ($key,$val) = split(/\//,$rst_qry,2);
     $Rs = $self->chain_Rs_REST($Rs,$key,$val);
+    
+    scream_color(GREEN,$rst_qry);
   }
+  
+  scream_color(BLUE,$p);
 
   $Rs = $self->ResultSet($Rs) if ($self->can('ResultSet'));
   return $Rs;
@@ -454,7 +458,8 @@ sub prepare_rest_request {
   # This should never happen any more (see "Handle and assume..." above):
   die usererr "Too many args in RESTful URL (" . join('/',@args) . ") - should be 2 (i.e. 'id/1234')"
     if(scalar @args > 2);
-    
+  
+  scream_color(CYAN,[$self->local_args],$self->c->stash->{rest_args},$key,$val,$rel);
   return $self->redirect_handle_rest_rel_request($key,$val,$rel) if ($rel);
   
   # Apply default tabTitle: (see also 'getTabTitle' in DbicRowPage)
@@ -499,7 +504,7 @@ sub restGetRow {
 # This is designed to be called from *another* module to resolve a ResultSet
 # object via arbitrary 'rs_method' path spec
 sub _resolve_rel_obj_method {
-  my ($self, $rs_method) = @_;
+  my ($self, $rs_method,$src_relchain) = @_;
   
   # New: Parse like this in case the middle $val contains '/'
   my @parts = split('/',$rs_method);
@@ -508,9 +513,19 @@ sub _resolve_rel_obj_method {
   my $val = join('/',@parts);
   #my ($key,$val,$rel) = split('/',$rs_method,3);
   
-  my $Row = $self->restGetRow($key,$val);
-  die usererr "No such relationship $rel at ''$rs_method''" unless ($Row->has_relationship($rel));
-  return wantarray ? (scalar $Row->$rel, $Row) : $Row->$rel;
+  my $Row = $self->restGetRow($key,$val,$src_relchain);
+  my $relchain = $Row->can('proxy_relchain_for_relationship') 
+    ? $Row->proxy_relchain_for_relationship($rel)
+    : undef;
+    
+  my $RelObj = $relchain
+    ? eval join('->','$Row',@$relchain,$rel)
+    : $Row->$rel;
+    
+  $Row = eval join('->','$Row',@$relchain) if ($relchain);
+    
+  die usererr "No such relationship $rel at ''$rs_method''" unless ($RelObj);
+  return wantarray ? (scalar $RelObj, $Row, $relchain) : $Row->$rel ;#$RelObj;
 }
 
 sub redirect_handle_rest_rel_request {
@@ -518,7 +533,7 @@ sub redirect_handle_rest_rel_request {
   my $c = $self->c;
   
   my $mth_path = join('/',$key,$val,$rel);
-  my ($RelObj, $Row) = $self->_resolve_rel_obj_method($mth_path);
+  my ($RelObj, $Row, $relchain) = $self->_resolve_rel_obj_method($mth_path);
   my $Src = $RelObj->result_source;
   my $class = $Src->schema->class($Src->source_name);
   
@@ -534,6 +549,19 @@ sub redirect_handle_rest_rel_request {
       rs_path   => $self->module_path,
       rs_method => join('/',$key,$val,$rel)
     };
+    
+    $p->{relchain} = $relchain if ($relchain);
+    
+    scream_color(RED.BOLD,{
+      p => $p, 
+      Row => [ref($Row), { $Row->get_columns}], 
+      RelObj => ref($RelObj),
+      url => $url,
+      rel => $rel,
+   
+    });
+    
+
 
     # ---
     # New: For the case of a multi-relationship, attempt to resolve the reverse 
@@ -558,9 +586,14 @@ sub redirect_handle_rest_rel_request {
     }
     # ---
 
+    
+
     %{$c->req->params} = ( %$p, base_params => $self->json->encode( $p ) );
     local $c->{request_id} = $c->request_id + 0.01;
     $c->root_module_controller->approot($c,$url);
+    
+    scream_color(MAGENTA,$c->req->params,$url);
+    
     return $c->detach;
   }
   else {
@@ -579,6 +612,10 @@ sub redirect_handle_rest_rel_request {
       $self->c->stash->{rest_args} = [$RelObj->getRestKey,$RelObj->getRestKeyVal];
       local $c->{request_id} = $c->request_id + 0.01;
       $c->root_module_controller->approot($c,$url);
+      
+      
+      scream_color(BLUE.ON_WHITE,$self->c->stash->{rest_args},$url);
+      
       return $c->detach;
     }
     else {

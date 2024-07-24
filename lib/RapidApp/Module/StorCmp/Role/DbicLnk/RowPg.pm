@@ -18,11 +18,18 @@ has 'getTabIconCls', is => 'ro', isa => 'Maybe[CodeRef]', default => undef;
 
 sub supplied_id {
   my $self = shift;
+  
+  
+  
+  
   my $id = $self->c->req->params->{$self->record_pk};
   if (not defined $id and $self->c->req->params->{orig_params}) {
     my $orig_params = $self->json->decode($self->c->req->params->{orig_params});
     $id = $orig_params->{$self->record_pk};
   }
+  
+  scream($self->c->req->params,$self->record_pk,$self->_rst_qry_param,$id);
+  
   return $id;
 }
 
@@ -48,13 +55,17 @@ has 'req_Row', is => 'ro', lazy => 1, traits => [ 'RapidApp::Role::PerRequestBui
   unless ($count == 1) {
     my $idErr = defined $supId ? "id: '$supId'" : "'" . $self->c->req->params->{$self->_rst_qry_param} . "'";
 
-    die usererr 'Record not found by ' . $idErr, title => 'Record not found'
+    die usererr 'Record was not found by ' . $idErr, title => 'Record not found'
       unless ($count);
     
     die usererr $count . ' records match ' . $idErr , title => 'Multiple records match';
   }
   
   my $Row = $Rs->first or return undef;
+  
+  if (my $relchain = $self->c->req->params->{relchain}) {
+    $Row = eval join('->','$Row',@$relchain);
+  }
   
   if ($self->getTabTitle) {
     my $title = $self->getTabTitle->($self,$Row);
