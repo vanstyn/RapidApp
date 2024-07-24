@@ -799,7 +799,11 @@ sub read_records {
   my $Rs2 = $self->_chain_search_rs($Rs,undef, { result_class => 'DBIx::Class::ResultClass::HashRefInflator' });
     
   my $rows;
+  my $schema= $Rs->result_source->schema;
+  $schema->on_datastor_query_begin($self, $Rs)
+    if $schema->can('on_datastor_query_begin');
   try {
+
     my $start = [gettimeofday];
     
     # -----
@@ -835,7 +839,8 @@ sub read_records {
   };
   
   $self->calculate_column_summaries($ret,$Rs,$params) unless($self->single_record_fetch);
-  
+  $schema->on_datastor_query_end($self, $Rs, $ret)
+    if $schema->can('on_datastor_query_end');
   return $ret;
 }
 
