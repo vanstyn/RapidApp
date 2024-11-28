@@ -75,7 +75,9 @@ sub export_to_file {
 	my $columns= ($params->{columns})
 		? $self->json->decode($params->{columns})
 		: $self->column_order;
-	
+
+  # These are the types that can be reported in the export.  Used by ExcelTableWriter.
+  my %type_map= ( number => 'number', int => 'number', date => 'date', datetime => 'datetime', time => 'time', bool => 'bool' );
 	# filter out columns that we can't use, and also build the column definitions for ExcelTableWriter
 	my @colDefs = ();
 	foreach my $col (@$columns) {
@@ -87,9 +89,17 @@ sub export_to_file {
 		next if ($field->name eq 'icon');
 		next if $field->no_column;
 		next unless (defined $field->header and defined $field->name);
+
+    # Surprisingly, DataStor::Column doesn't declare a SQL type for the column.
+    # The profile settings multifilter_type and broad_data_type are the best we get.
+    my $type;
+    $type= $type_map{$field->multifilter_type} if $field->multifilter_type;
+    $type //= $type_map{$field->broad_data_type} if $field->broad_data_type;
+    $type //= 'text';
 		push @colDefs, {
 			name => $colname,
-			label => $field->header
+			label => $field->header,
+      type => $type,
 		};
 	}
 	
