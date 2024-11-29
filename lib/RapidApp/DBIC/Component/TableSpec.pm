@@ -29,7 +29,7 @@ __PACKAGE__->mk_classdata( 'TableSpec_cnf' );
 __PACKAGE__->mk_classdata( 'TableSpec_built_cnf' );
 
 # See default profile definitions in RapidApp::TableSpec::Column
-my $default_data_type_profiles = {
+our $default_data_type_profiles = {
   text        => [ 'bigtext' ],
   mediumtext  => [ 'bigtext' ],
   longtext    => [ 'bigtext' ],
