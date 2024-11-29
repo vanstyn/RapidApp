@@ -38,8 +38,8 @@ workbook and worksheet objects to use.  This allows quite a bit of flexibility.
 
 =cut
 
-use Moo;
-use JSON;
+use Moose;
+use Data::Dumper ();
 use Spreadsheet::ParseExcel;
 use RapidApp::Spreadsheet::ExcelTableWriter::ColDef;
 use Scalar::Util 'looks_like_number';
@@ -84,6 +84,7 @@ sub _max_sheet_cols {
 sub numWsRequired($) {
 	my ($self, $numCols)= @_;
   my $max_cols= $self->_max_sheet_cols;
+  $numCols //= @{$self->columns};
 	use integer;
 	return ($numCols + $max_cols - 1) / $max_cols;
 }
@@ -98,7 +99,7 @@ sub sheetForCol {
 
 sub get_cached_format {
   my ($self, $spec)= @_;
-  my $key= JSON->new->canonical->encode($spec);
+  my $key= Data::Dumper->new([$spec])->Terse(1)->Sortkeys(1)->Dump;
   $self->_format_cache->{$key} //= $self->wbook->add_format(%$spec);
 }
 
@@ -116,7 +117,7 @@ sub BUILD {
 	my $self= shift;
 	
 	my $num_sheets_needed= $self->numWsRequired;
-	$num_sheets_needed < scalar(@{$self->wsheets})
+	$num_sheets_needed <= scalar(@{$self->wsheets})
 		or die "Not enough worksheets allocated for ExcelTableWriter (got ".scalar(@{$self->wsheets}).", require $num_sheets_needed)";
 	
 	for (@{$self->columns}) {
@@ -125,7 +126,7 @@ sub BUILD {
       if ref $_ eq 'HASH';
 		# convert scalars into names (and labels)
 		$_= RapidApp::Spreadsheet::ExcelTableWriter::ColDef->new(name => $_)
-      if !ref $val;
+      if !ref;
     # create format objects if they were supplied as hashrefs
     my $fmt= $_->format // $default_format_for_type{$_->type};
     $fmt= $self->get_cached_format($fmt) if ref $fmt eq 'HASH';
@@ -171,13 +172,7 @@ sub _applyColumnFormats {
 	
 	for (my $i=0; $i < $self->colCount; $i++) {
 		my $wid= $self->columns->[$i]->width eq 'auto'? undef : $self->columns->[$i]->width;
-		my $fmt= $self->columns->[$i]->format;
-    # upgrade format hashrefs to format objects
-    if (ref $fmt eq 'HASH') {
-      my $key= JSON->new->canonical->encode($fmt);
-      $fmt= ($format_cache{$key} //= $self->wbook->add_format(%$fmt));
-    }
-		
+		my $fmt= $self->columns->[$i]->_format_obj;
 		my ($wsheet, $sheetCol)= $self->sheetForCol($i);
 		$wsheet->set_column($sheetCol, $sheetCol, $wid, $fmt);
 	}
@@ -237,9 +232,6 @@ sub writeHeaders {
 	$self->{_curRow}++;
 }
 
-
-
-
 =head2 writeRow
 
   $tableWriter->writeRow( \@rowdata );
@@ -276,10 +268,12 @@ sub writeRow {
 	$self->_dataStarted or $self->writeHeaders;
   my %type_method= (
     number   => 'write_number',
-    date     => 'write_date_time',
-    time     => 'write_date_time',
-    datetime => 'write_date_time',
     formula  => 'write_formula',
+    date     => \&_coerce_and_write_date_time,
+    time     => \&_coerce_and_write_date_time,
+    datetime => \&_coerce_and_write_date_time,
+    text     => \&_write_string_or_url,
+    auto     => \&_write_auto,
   );
 	
 	for (my $i=0; $i < $self->colCount; $i++) {
@@ -293,19 +287,43 @@ sub writeRow {
     # as strings, or if strings starting with '=' were not intended to be executed as formulae
     # (opportunity for injection attack, though often disabled in newer Excel versions)
     my $t= $colDef->type;
-    my $method= $type_method{$t} // do {
-      # Only convert to numbers if no leading or trailing zeroes
-      $t eq 'auto' && looks_like_number($val) && $val !~ /^0/ && $val !~ /0$/? 'write_number'
-      # allow any URL with mailto: or (\w+)://
-      : $t =~ m,^(?|mailto:|\w+://), ? 'write_url'
-      : 'write_string'
-    };
+    my $method= $type_method{$t} // 'write_string';
     $ws->$method($self->curRow, $wsCol, $val,
       (defined $writeRowFormat? ($writeRowFormat):()));
 
 		$colDef->updateWidest(length $val);
 	}
 	$self->{_curRow}++;
+}
+
+# The XLSX write_date_time function requires the 'T' character to differentiate
+# between dates and times.  DBIC doesn't always supply it.  Also it can't include
+# a time zone.
+sub _coerce_and_write_date_time {
+	#my ($ws, $col, $row, $val, $fmt)= @_;
+	my $val= $_[3];
+	splice(@_, 3, 1, $val) # don't modify $_[3], out of caution.
+		if $val =~ s/^(\d{4}-\d{2}-\d{2})( |$)/$1T/  # add T on date
+		or $val =~ s/^(\d{2}:\d{2}:\d{2})$/T$1/      # add T before time
+		or $val =~ s/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+))(\+0+)$/$1/ # remove timezone of zeroes
+		# any other pattern gets written as a string.  Might be cases where this should
+		# fully parse and re-format the date...
+	&{$_[0]->can('write_date_time')}
+}
+# Auto-upgrade to URLs with different logic than Writer::XLSX
+# allow any URL with mailto: or (\w+)://
+sub _write_string_or_url {
+	#my ($ws, $col, $row, $val, $fmt)= @_;
+	$_[3] =~ m,^(?|mailto:|\w+://),
+		? &{$_[0]->can('write_url')}
+		: &{$_[0]->can('write_string')}
+}
+sub _write_auto {
+	#my ($ws, $col, $row, $val, $fmt)= @_;
+	# Only convert to numbers if no leading or trailing zeroes
+	looks_like_number($_[3]) && $_[3] !~ /^0/ && $_[3] !~ /0$/
+		? &{$_[0]->can('write_number')}
+		: &_write_string_or_url;
 }
 
 sub rowHashToArray {

@@ -17,7 +17,7 @@ has width      => ( is => 'rw', required => 1, default => 'auto' );
 # widest is updated as data is written
 has widest     => ( is => 'rw', default => 2 );
 # format_obj is built once the workbook is known
-has _format_obj => ( is => 'lazy' );
+has _format_obj => ( is => 'rw' );
 
 # For back-compat with earlier versions
 sub isString {
