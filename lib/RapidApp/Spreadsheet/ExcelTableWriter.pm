@@ -105,7 +105,7 @@ sub get_cached_format {
 
 our %default_format_for_type= (
   auto     => undef,
-  string   => { num_format => '@' },
+  text     => { num_format => '@' },
   number   => undef,
   date     => { num_format => 'YYYY-MM-DD' },
   time     => { num_format => 'HH:MM:SS AM/PM' },
@@ -303,9 +303,10 @@ sub _coerce_and_write_date_time {
 	#my ($ws, $col, $row, $val, $fmt)= @_;
 	my $val= $_[3];
 	splice(@_, 3, 1, $val) # don't modify $_[3], out of caution.
-		if $val =~ s/^(\d{4}-\d{2}-\d{2})( |$)/$1T/  # add T on date
-		or $val =~ s/^(\d{2}:\d{2}:\d{2})$/T$1/      # add T before time
-		or $val =~ s/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+))(\+0+)$/$1/ # remove timezone of zeroes
+		if # 'or', except need to test all 3 regexes and not skip the last one
+		+ ($val =~ s/^(\d{4}-\d{2}-\d{2})( |$)/$1T/)  # add T on date
+		+ ($val =~ s/^(\d{2}:\d{2}:\d{2})$/T$1/)      # add T before time
+		+ ($val =~ s/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?)\+0+/$1/); # remove '+00' timezone of postgres
 		# any other pattern gets written as a string.  Might be cases where this should
 		# fully parse and re-format the date...
 	&{$_[0]->can('write_date_time')}
