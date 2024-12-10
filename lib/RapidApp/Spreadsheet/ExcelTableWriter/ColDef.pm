@@ -3,7 +3,7 @@ package RapidApp::Spreadsheet::ExcelTableWriter::ColDef;
 use Moo;
 use namespace::clean;
 
-our %col_type= map +($_ => $_), qw( auto text number date time datetime formula );
+our %col_type= map +($_ => $_), qw( auto text number date time datetime formula bool );
 sub _check_col_type { exists $col_type{$_[0]} or die "type must be one of ".join(', ', keys %col_type) }
 
 has name       => ( is => 'rw', lazy => 1, builder => 1, predicate => 1 );

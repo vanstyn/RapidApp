@@ -25,9 +25,10 @@ subtest column_formats => sub {
       { name => 'col2', type => 'text' },
       { name => 'col3', type => 'number' },
       { name => 'col4', type => 'datetime' },
+      { name => 'col5', type => 'bool' },
     ]
   );
-  $writer->writeRow('0123.0', '0123.0', '0123.0', '2020-01-01 00:00:01');
+  $writer->writeRow('0123.0', '0123.0', '0123.0', '2020-01-01 00:00:01', '0123');
   undef $writer;
   undef $ws;
   $wb->close();
@@ -41,6 +42,7 @@ subtest column_formats => sub {
   is( $ws->get_cell(1, 2)->value(), 123, 'column type "number" loses zeroes' );
   is( $ws->get_cell(1, 3)->unformatted(), '43831.0000115741', 'column type "datetime" was stored as a number (excel date)' );
   is( $ws->get_cell(1, 3)->value(), '2020-01-01 00:00:01', 'column type "datetime" round-trips as text' );
+  is( $ws->get_cell(1, 4)->value(), 'TRUE', 'column type "bool" round-trips as TRUE' );
 };
 
 undef $temp;

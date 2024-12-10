@@ -78,29 +78,29 @@ around 'BUILDARGS' => sub {
 # Extreme column counts wrap to new worksheets
 
 sub _max_sheet_cols {
-  ref($_[0]->wbook) =~ /XLSX/? 16384 : 256;
+	ref($_[0]->wbook) =~ /XLSX/? 16384 : 256;
 }
 
 sub numWsRequired($) {
 	my ($self, $numCols)= @_;
-  my $max_cols= $self->_max_sheet_cols;
-  $numCols //= @{$self->columns};
+	my $max_cols= $self->_max_sheet_cols;
+	$numCols //= @{$self->columns};
 	use integer;
 	return ($numCols + $max_cols - 1) / $max_cols;
 }
 
 sub sheetForCol {
 	my ($self, $colIdx)= @_;
-  my $max_cols= $self->_max_sheet_cols;
+	my $max_cols= $self->_max_sheet_cols;
 	use integer;
 	$colIdx+= $self->colStart;
 	return $self->wsheets->[$colIdx / $max_cols], $colIdx % $max_cols;
 }
 
 sub get_cached_format {
-  my ($self, $spec)= @_;
-  my $key= Data::Dumper->new([$spec])->Terse(1)->Sortkeys(1)->Dump;
-  $self->_format_cache->{$key} //= $self->wbook->add_format(%$spec);
+	my ($self, $spec)= @_;
+	my $key= Data::Dumper->new([$spec])->Terse(1)->Sortkeys(1)->Dump;
+	$self->_format_cache->{$key} //= $self->wbook->add_format(%$spec);
 }
 
 our %default_format_for_type= (
@@ -110,6 +110,7 @@ our %default_format_for_type= (
   date     => { num_format => 'YYYY-MM-DD' },
   time     => { num_format => 'HH:MM:SS AM/PM' },
   datetime => { num_format => 'YYYY-MM-DD HH:MM:SS' },
+  bool     => { num_format => 'BOOLEAN' },
   formula  => undef,
 );
 
@@ -122,15 +123,15 @@ sub BUILD {
 	
 	for (@{$self->columns}) {
 		# convert hashes into the proper object
-    $_= RapidApp::Spreadsheet::ExcelTableWriter::ColDef->new($_)
-      if ref $_ eq 'HASH';
+		$_= RapidApp::Spreadsheet::ExcelTableWriter::ColDef->new($_)
+			if ref $_ eq 'HASH';
 		# convert scalars into names (and labels)
 		$_= RapidApp::Spreadsheet::ExcelTableWriter::ColDef->new(name => $_)
-      if !ref;
-    # create format objects if they were supplied as hashrefs
-    my $fmt= $_->format // $default_format_for_type{$_->type};
-    $fmt= $self->get_cached_format($fmt) if ref $fmt eq 'HASH';
-    $_->_format_obj($fmt);
+			if !ref;
+		# create format objects if they were supplied as hashrefs
+		my $fmt= $_->format // $default_format_for_type{$_->type};
+		$fmt= $self->get_cached_format($fmt) if ref $fmt eq 'HASH';
+		$_->_format_obj($fmt);
 	}
 }
 
@@ -163,12 +164,12 @@ has '_dataStarted' => ( is => 'rw' );
 use Spreadsheet::ParseExcel::Utility 'int2col';
 
 sub excelColIdxToLetter($) {
-  int2col($_[1]);
+	int2col($_[1]);
 }
 
 sub _applyColumnFormats {
 	my $self= shift;
-  my %format_cache;
+	my %format_cache;
 	
 	for (my $i=0; $i < $self->colCount; $i++) {
 		my $wid= $self->columns->[$i]->width eq 'auto'? undef : $self->columns->[$i]->width;
@@ -225,7 +226,7 @@ sub writeHeaders {
 	for (my $i=0; $i < $self->colCount; $i++) {
 		my ($ws, $wsCol)= $self->sheetForCol($i);
 		$ws->write_string($self->curRow, $wsCol, $self->columns->[$i]->label, $self->headerFormat);
-    # 1.2 multiplier is a guess since bold text is wider
+		# 1.2 multiplier is a guess since bold text is wider
 		$self->columns->[$i]->updateWidest(length($self->columns->[$i]->label)*1.2);
 	}
 	$self->_dataStarted(1);
@@ -266,30 +267,32 @@ sub writeRow {
 	}
 	
 	$self->_dataStarted or $self->writeHeaders;
-  my %type_method= (
-    number   => 'write_number',
-    formula  => 'write_formula',
-    date     => \&_coerce_and_write_date_time,
-    time     => \&_coerce_and_write_date_time,
-    datetime => \&_coerce_and_write_date_time,
-    text     => \&_write_string_or_url,
-    auto     => \&_write_auto,
-  );
+	my %type_method= (
+		bool     => 'write_boolean',
+		number   => 'write_number',
+		formula  => 'write_formula',
+		date     => \&_coerce_and_write_date_time,
+		time     => \&_coerce_and_write_date_time,
+		datetime => \&_coerce_and_write_date_time,
+		text     => \&_write_string_or_url,
+		auto     => \&_write_auto,
+	);
 	
 	for (my $i=0; $i < $self->colCount; $i++) {
 		my $colDef= $self->columns->[$i];
 		my ($ws, $wsCol)= $self->sheetForCol($i);
-    my $val= $rowData->[$i];
-    next unless defined $val && length $val;
+		my $val= $rowData->[$i];
+		# Always export NULLs as empty cells, regardless of type
+		next unless defined $val;
     
-    # The default 'write' method checks the value against patterns to choose how to encode it.
-    # This can be a problem if strings with leading or trailing zeroes are meant to be encoded
-    # as strings, or if strings starting with '=' were not intended to be executed as formulae
-    # (opportunity for injection attack, though often disabled in newer Excel versions)
-    my $t= $colDef->type;
-    my $method= $type_method{$t} // 'write_string';
-    $ws->$method($self->curRow, $wsCol, $val,
-      (defined $writeRowFormat? ($writeRowFormat):()));
+		# The default 'write' method checks the value against patterns to choose how to encode it.
+		# This can be a problem if strings with leading or trailing zeroes are meant to be encoded
+		# as strings, or if strings starting with '=' were not intended to be executed as formulae
+		# (opportunity for injection attack, though often disabled in newer Excel versions)
+		my $t= $colDef->type;
+		my $method= $type_method{$t} // 'write_string';
+		$ws->$method($self->curRow, $wsCol, $val,
+			(defined $writeRowFormat? ($writeRowFormat):()));
 
 		$colDef->updateWidest(length $val);
 	}
