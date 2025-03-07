@@ -1601,8 +1601,7 @@ Ext.ux.RapidApp.Plugin.EmptyToNull = Ext.extend(Ext.util.Observable,{
 		var nativeGetValue = cmp.getValue;
 		cmp.getValue = function() {
 			var value = nativeGetValue.call(cmp);
-			if (value == '') { return null; }
-			return value;
+			return value === ''? null : value;
 		}
 	}
 });
