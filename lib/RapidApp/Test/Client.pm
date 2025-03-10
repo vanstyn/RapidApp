@@ -13,7 +13,7 @@ use Scalar::Util qw(blessed);
 use Time::HiRes qw(gettimeofday tv_interval);
 use LWP::UserAgent;
 use HTTP::Request::Common;
-use JSON qw(decode_json);
+use JSON::MaybeXS qw(decode_json);
 use Try::Tiny;
 
 # shorthand aliases:

@@ -7,7 +7,7 @@ use Import::Into;
 
 use Time::HiRes qw(gettimeofday tv_interval);
 use HTTP::Request::Common;
-use JSON qw(decode_json);
+use JSON::MaybeXS qw(decode_json);
 use Catalyst::Utils;
 use RapidApp::Test::Client;
 
